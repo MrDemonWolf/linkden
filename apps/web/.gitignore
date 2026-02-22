@@ -1,3 +1,6 @@
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# OpenNext build output
+/.open-next/
