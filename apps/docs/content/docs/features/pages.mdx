@@ -1,0 +1,61 @@
+---
+title: Custom Pages
+description: Create custom pages for privacy policy, terms of service, and other static content.
+---
+
+# Custom Pages
+
+LinkDen supports custom pages for static content like privacy policies, terms of service, and any other pages you need. These are accessible at custom URL paths and linked from your public page footer.
+
+## Built-in Page Types
+
+### Privacy Policy
+
+A privacy policy page accessible at `/privacy`. Essential if you collect visitor data through the contact form or analytics.
+
+### Terms of Service
+
+A terms of service page accessible at `/terms`. Useful if you offer services or products through your link page.
+
+## Managing Pages
+
+Navigate to `/admin/pages` in the admin panel to create and manage custom pages.
+
+### Creating a Page
+
+1. Click **Add New Page**.
+2. Enter a **Title** (e.g., "Privacy Policy").
+3. Set the **Slug** (e.g., `privacy`). This determines the URL path.
+4. Write the page content using the rich text editor.
+5. Toggle **Published** to make the page live.
+6. Click **Save**.
+
+### Editing a Page
+
+Click any page in the list to open the editor. Make your changes and click **Save**. Changes are reflected immediately on the public site.
+
+### Deleting a Page
+
+Open the page editor and click **Delete**. A confirmation dialog prevents accidental deletion.
+
+## Page Content
+
+The page editor supports:
+
+- **Headings** (H1-H6) for document structure.
+- **Paragraphs** with basic formatting (bold, italic, underline).
+- **Lists** (ordered and unordered).
+- **Links** to external URLs or other pages.
+- **Code blocks** for technical content.
+
+## Footer Links
+
+Published pages automatically appear in the footer of your public link page. The footer shows links to all published custom pages, providing easy navigation for visitors.
+
+## SEO
+
+Each custom page includes:
+
+- A unique `<title>` tag based on the page title.
+- A `<meta description>` generated from the first paragraph of content.
+- Proper heading hierarchy for search engine crawlers.

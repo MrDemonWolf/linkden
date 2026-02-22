@@ -1,0 +1,28 @@
+{
+  "name": "@linkden/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@clerk/backend": "^1.21.0",
+    "@hono/trpc-server": "^0.3.2",
+    "@linkden/db": "workspace:*",
+    "@linkden/email": "workspace:*",
+    "@linkden/validators": "workspace:*",
+    "@trpc/server": "^11.1.0",
+    "drizzle-orm": "^0.39.0",
+    "hono": "^4.7.0",
+    "resend": "^4.1.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250214.0",
+    "typescript": "^5.8.0",
+    "wrangler": "^4.0.0"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "@linkden/infra",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "npx tsx alchemy.run.ts",
+    "destroy": "npx tsx alchemy.run.ts --destroy"
+  },
+  "dependencies": {
+    "alchemy": "^0.28.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  }
+}

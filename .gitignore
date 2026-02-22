@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+.next/
+.output/
+.turbo/
+out/
+
+# Environment
+.env
+.env.local
+.env.*.local
+.dev.vars
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Testing
+test-results/
+playwright-report/
+
+# Cloudflare
+.wrangler/
+.alchemy/
+
+# Drizzle
+packages/db/drizzle/*.sql
+
+# Local files (not committed)
+TODO.local.md
+*.local.md
+
+# Backup files
+*.bak

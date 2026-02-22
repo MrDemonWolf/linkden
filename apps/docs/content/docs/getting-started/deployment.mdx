@@ -1,0 +1,86 @@
+---
+title: Deployment
+description: Deploy LinkDen to Cloudflare Workers and Pages using Alchemy for automated infrastructure provisioning.
+---
+
+# Deployment
+
+LinkDen uses [Alchemy](https://github.com/sam-goodwin/alchemy) to provision and deploy all Cloudflare resources -- Workers, Pages, D1 database, and KV namespaces -- with a single command.
+
+## Prerequisites
+
+Before deploying, make sure you have:
+
+1. Completed the [Installation](/docs/getting-started/installation) and [Configuration](/docs/getting-started/configuration) guides.
+2. Set `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` in your root `.env` file.
+3. Pushed your database migrations with `pnpm db:push`.
+
+## Deploy to Cloudflare
+
+Run the deploy command from the root of the monorepo:
+
+```bash
+pnpm cf:deploy
+```
+
+This command:
+
+1. Builds the Next.js web app as a static export.
+2. Builds the Hono API server for Cloudflare Workers.
+3. Provisions all Cloudflare resources (D1 database, Workers, Pages).
+4. Uploads the static assets to Cloudflare Pages.
+5. Deploys the API worker.
+
+The first deployment takes a few minutes while resources are created. Subsequent deploys are faster since Alchemy only updates what changed.
+
+## Custom Domain Setup
+
+After the initial deployment, you can add a custom domain:
+
+1. Go to the [Cloudflare dashboard](https://dash.cloudflare.com).
+2. Navigate to **Workers & Pages** and find your LinkDen Pages project.
+3. Go to **Custom Domains** and add your domain.
+4. If your domain is already on Cloudflare, the DNS records are configured automatically.
+5. If your domain uses external DNS, add the CNAME record shown in the dashboard.
+
+For detailed instructions, see [Custom Domain Setup](/docs/self-hosting/custom-domain).
+
+## Verify the Deployment
+
+After deploying:
+
+1. Visit your Pages URL (shown in the deploy output) to see the public link page.
+2. Navigate to `/admin` and sign in with your Clerk account.
+3. Check the admin dashboard to verify the API connection is working.
+
+## Tear Down Resources
+
+If you need to remove all Cloudflare resources:
+
+```bash
+pnpm cf:destroy
+```
+
+This removes the Workers, Pages project, and D1 database. Use with caution -- this deletes all data.
+
+## Continuous Deployment
+
+For automated deployments on every push, see the GitHub Actions workflow in `.github/workflows/deploy.yml`. It runs the CI pipeline first and then deploys on pushes to the `main` branch.
+
+## Troubleshooting
+
+### Build Fails
+
+- Ensure all environment variables are set correctly.
+- Run `pnpm build` locally first to catch errors before deploying.
+- Check that your Cloudflare API token has the required permissions.
+
+### API Connection Issues
+
+- Verify the `NEXT_PUBLIC_API_URL` in `apps/web/.env` matches your deployed Worker URL.
+- Check the Worker logs in the Cloudflare dashboard for errors.
+
+### Database Errors
+
+- Run `pnpm db:push` to ensure the schema is up to date.
+- Check the D1 database in the Cloudflare dashboard for any issues.

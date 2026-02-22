@@ -1,0 +1,114 @@
+---
+title: Environment Variables
+description: Complete reference of all environment variables used by LinkDen across the monorepo.
+---
+
+# Environment Variables Reference
+
+This page is the definitive reference for every environment variable used by LinkDen. Variables are organized by which `.env` file they belong to.
+
+## Root `.env`
+
+These variables are used by the Alchemy deployment infrastructure in `packages/infra`.
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers, Pages, D1, and KV permissions | Yes | -- |
+| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID (found on the dashboard overview) | Yes | -- |
+
+## Web App (`apps/web/.env`)
+
+These variables are used by the Next.js frontend application.
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (starts with `pk_`) | Yes | -- |
+| `CLERK_SECRET_KEY` | Clerk secret key (starts with `sk_`) | Yes | -- |
+| `NEXT_PUBLIC_API_URL` | Full URL of the Hono API server | Yes | `http://localhost:8787` |
+| `NEXT_PUBLIC_SITE_URL` | Public URL of the web app | Yes | `http://localhost:3001` |
+| `NEXT_PUBLIC_SITE_NAME` | Display name for the site (browser title, meta tags) | No | `LinkDen` |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key for contact form CAPTCHA | No | -- |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Clerk sign-in page path | No | `/sign-in` |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Clerk sign-up page path | No | `/sign-up` |
+
+### Notes on `NEXT_PUBLIC_` Variables
+
+Variables prefixed with `NEXT_PUBLIC_` are embedded into the client-side JavaScript bundle at build time. They are visible to visitors in the browser. Never put secrets in `NEXT_PUBLIC_` variables.
+
+## Server App (`apps/server/.env`)
+
+These variables are used by the Hono API server running on Cloudflare Workers.
+
+### Required
+
+| Variable | Description |
+|----------|-------------|
+| `CLERK_SECRET_KEY` | Clerk secret key for JWT verification |
+| `CLERK_PUBLISHABLE_KEY` | Clerk publishable key |
+| `DATABASE_ID` | Cloudflare D1 database ID |
+
+### Email (Optional)
+
+| Variable | Description |
+|----------|-------------|
+| `RESEND_API_KEY` | Resend API key for sending contact form notification emails |
+| `RESEND_FROM_EMAIL` | Verified sender email address for Resend (e.g., `contact@yourdomain.com`) |
+
+### CAPTCHA (Optional)
+
+| Variable | Description |
+|----------|-------------|
+| `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret key for server-side CAPTCHA verification |
+
+### Apple Wallet (Optional)
+
+| Variable | Description |
+|----------|-------------|
+| `APPLE_PASS_TYPE_ID` | Pass type identifier registered in Apple Developer portal (e.g., `pass.com.yourdomain.linkden`) |
+| `APPLE_TEAM_ID` | Your Apple Developer team identifier (10-character alphanumeric) |
+| `APPLE_WWDR_CERT` | Base64-encoded Apple Worldwide Developer Relations (WWDR) certificate |
+| `APPLE_SIGNER_CERT` | Base64-encoded pass signing certificate (.pem) |
+| `APPLE_SIGNER_KEY` | Base64-encoded private key for the signing certificate (.pem) |
+| `APPLE_SIGNER_PASSPHRASE` | Passphrase used when exporting the .p12 certificate |
+
+## Generating Values
+
+### Cloudflare API Token
+
+1. Go to [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens).
+2. Create a custom token with Edit permissions for Pages, Workers, D1, and KV.
+
+### Cloudflare Account ID
+
+Found on the right sidebar of the Cloudflare dashboard overview page.
+
+### Clerk Keys
+
+1. Create an application at [clerk.com](https://clerk.com).
+2. Copy keys from the **API Keys** page in the Clerk dashboard.
+
+### D1 Database ID
+
+Created automatically by Alchemy on first deploy. Found in the Cloudflare dashboard under **Workers & Pages > D1**.
+
+### Resend API Key
+
+1. Sign up at [resend.com](https://resend.com).
+2. Generate an API key from the dashboard.
+
+### Turnstile Keys
+
+1. Go to **Turnstile** in the Cloudflare dashboard.
+2. Add a site to get the site key and secret key.
+
+### Apple Wallet Certificates
+
+See the [Apple Wallet guide](/docs/features/apple-wallet) for detailed certificate generation instructions.
+
+## Security Best Practices
+
+- Never commit `.env` files to version control. They are listed in `.gitignore`.
+- Use different Clerk applications for development and production.
+- Rotate API keys periodically.
+- Use the minimum permissions necessary for Cloudflare API tokens.
+- Store production environment variables in a secrets manager or encrypted vault.

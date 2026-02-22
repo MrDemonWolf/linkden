@@ -1,0 +1,78 @@
+---
+title: Link Manager
+description: Create, edit, reorder, and manage all links and blocks on your LinkDen page.
+---
+
+# Link Manager
+
+The link manager at `/admin/links` is where you create and organize all the content on your public link page. It supports multiple block types and drag-and-drop reordering.
+
+## Link List View
+
+The main view shows all your links and blocks in their current display order. Each item shows:
+
+- **Drag handle** -- Grab and drag to reorder.
+- **Icon** -- The selected brand icon (if any).
+- **Title** -- The link or block title.
+- **Type badge** -- Shows the block type (Link, Heading, Text, Spacer, etc.).
+- **Visibility toggle** -- Show or hide the item on the public page.
+- **Edit button** -- Open the item editor.
+
+## Creating a New Link
+
+1. Click **Add New** in the top right or navigate to `/admin/links/new`.
+2. Select the block type from the type selector.
+3. Fill in the required fields for that type.
+4. Click **Save**.
+
+### Link Fields
+
+| Field | Description | Required |
+|-------|-------------|----------|
+| Type | Block type (Link, Heading, Text, etc.) | Yes |
+| Title | Display text on the button | Yes (except Spacer) |
+| URL | Destination URL | Yes (Link type only) |
+| Icon | Brand icon from the icon picker | No |
+| New Tab | Open link in new tab | No (default: yes) |
+| Visible | Show on public page | No (default: yes) |
+
+## Editing a Link
+
+Click any item in the list or navigate to `/admin/links/[id]`. The edit form is identical to the creation form with your existing values pre-filled.
+
+Changes are saved immediately when you click **Save**. The public page reflects changes within seconds.
+
+## Reordering Links
+
+The link list supports drag-and-drop reordering:
+
+1. Hover over the drag handle on the left side of any item.
+2. Click and hold to pick it up.
+3. Drag to the desired position.
+4. Release to drop.
+
+The new order is saved automatically. No save button is needed for reordering.
+
+## Visibility Toggle
+
+Each item has a visibility toggle (eye icon). Toggling an item off hides it from the public page but keeps it in your admin list. This is useful for:
+
+- Temporarily removing a link without deleting it.
+- Preparing links in advance and making them visible later.
+- Seasonal or time-limited content.
+
+## Deleting a Link
+
+1. Open the item editor by clicking on the item.
+2. Scroll to the bottom and click **Delete**.
+3. Confirm the deletion in the dialog.
+
+Deleted items are permanently removed and cannot be recovered. Export your data first if you want a backup.
+
+## Bulk Actions
+
+The link manager supports selecting multiple items for bulk operations:
+
+- **Delete selected** -- Remove multiple items at once.
+- **Hide selected** -- Toggle visibility off for multiple items.
+- **Show selected** -- Toggle visibility on for multiple items.

@@ -1,0 +1,63 @@
+---
+title: vCard
+description: Set up a downloadable digital business card (vCard) with personal, professional, and social fields.
+---
+
+# vCard
+
+LinkDen lets you create a comprehensive digital business card that visitors can download as a `.vcf` file. The vCard is compatible with all major contact apps on iOS, Android, macOS, and Windows.
+
+## Setting Up Your vCard
+
+Navigate to `/admin/vcard` in the admin panel to configure your vCard.
+
+### Personal Information
+
+- **First Name** and **Last Name** -- Your full name as it should appear in contacts.
+- **Nickname** -- An optional alternative name or handle.
+- **Birthday** -- Optional birthday field.
+- **Photo** -- Uses your profile image from the appearance settings.
+
+### Professional Information
+
+- **Organization** -- Your company or organization name.
+- **Job Title** -- Your role or position.
+- **Department** -- Optional department within the organization.
+
+### Contact Details
+
+- **Email** -- One or more email addresses (personal, work).
+- **Phone** -- One or more phone numbers (mobile, work, home).
+- **Website** -- Your primary website URL.
+
+### Address
+
+- **Street Address** -- Full street address.
+- **City**, **State/Province**, **Postal Code** -- Location details.
+- **Country** -- Country name.
+
+### Social Profiles
+
+- **Twitter/X** -- Your Twitter/X handle.
+- **LinkedIn** -- Your LinkedIn profile URL.
+- **GitHub** -- Your GitHub username.
+- **Instagram** -- Your Instagram handle.
+
+Additional social profiles can be added as custom fields.
+
+## Adding a vCard Block
+
+To add a vCard download button to your public page:
+
+1. Go to `/admin/links`.
+2. Click **Add New**.
+3. Select the **vCard** block type.
+4. Set a title (e.g., "Download My Contact Card").
+5. Optionally select an icon.
+6. Click **Save**.
+
+Visitors who click this button will download your `.vcf` file, which they can open to add you to their contacts.
+
+## vCard Format
+
+LinkDen generates vCard 3.0 format files, which have the widest compatibility across devices and applications. The generated file includes all fields you have filled in and omits empty fields.

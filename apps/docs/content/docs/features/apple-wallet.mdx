@@ -1,0 +1,97 @@
+---
+title: Apple Wallet
+description: Generate signed Apple Wallet passes so visitors can save your contact information to their iPhone or Mac.
+---
+
+# Apple Wallet Pass
+
+LinkDen can generate signed `.pkpass` files that visitors download and add to Apple Wallet on iOS and macOS. This creates a digital business card that lives in their wallet app alongside boarding passes and tickets.
+
+## Prerequisites
+
+To generate Apple Wallet passes, you need:
+
+1. **Apple Developer Account** -- A paid Apple Developer Program membership ($99/year) at [developer.apple.com](https://developer.apple.com).
+2. **Pass Type Identifier** -- A unique identifier registered in the Apple Developer portal.
+3. **Signing Certificates** -- A pass signing certificate and the Apple WWDR intermediate certificate.
+
+## Setup Guide
+
+### 1. Register a Pass Type ID
+
+1. Log in to [developer.apple.com](https://developer.apple.com).
+2. Navigate to **Certificates, Identifiers & Profiles > Identifiers**.
+3. Click the **+** button and select **Pass Type IDs**.
+4. Enter a description (e.g., "LinkDen Business Card") and an identifier (e.g., `pass.com.yourdomain.linkden`).
+5. Click **Register**.
+
+### 2. Create a Signing Certificate
+
+1. In the Apple Developer portal, go to **Certificates**.
+2. Click **+** and select **Pass Type ID Certificate**.
+3. Choose the Pass Type ID you just created.
+4. Follow the instructions to generate a Certificate Signing Request (CSR) using Keychain Access on macOS.
+5. Upload the CSR and download the certificate.
+6. Double-click the downloaded `.cer` file to install it in Keychain Access.
+
+### 3. Export the Certificate and Key
+
+1. Open **Keychain Access** on macOS.
+2. Find the pass certificate (it shows the Pass Type ID).
+3. Expand it to see the private key.
+4. Select both the certificate and key, right-click, and choose **Export 2 items**.
+5. Save as `.p12` format with a passphrase.
+
+### 4. Convert to Base64
+
+Convert the certificates to base64 strings for environment variables:
+
+```bash
+# Download the Apple WWDR certificate
+curl -O https://www.apple.com/certificateauthority/AppleWWDRCAG4.cer
+
+# Convert WWDR cert to base64
+base64 -i AppleWWDRCAG4.cer | tr -d '\n' > wwdr_base64.txt
+
+# Extract the signer certificate
+openssl pkcs12 -in pass.p12 -clcerts -nokeys -out signer_cert.pem
+base64 -i signer_cert.pem | tr -d '\n' > signer_cert_base64.txt
+
+# Extract the signer private key
+openssl pkcs12 -in pass.p12 -nocerts -out signer_key.pem
+base64 -i signer_key.pem | tr -d '\n' > signer_key_base64.txt
+```
+
+### 5. Configure Environment Variables
+
+Add the following to `apps/server/.env`:
+
+```bash
+APPLE_PASS_TYPE_ID=pass.com.yourdomain.linkden
+APPLE_TEAM_ID=YOUR_TEAM_ID
+APPLE_WWDR_CERT=<contents of wwdr_base64.txt>
+APPLE_SIGNER_CERT=<contents of signer_cert_base64.txt>
+APPLE_SIGNER_KEY=<contents of signer_key_base64.txt>
+APPLE_SIGNER_PASSPHRASE=your-p12-passphrase
+```
+
+### 6. Configure the Pass in the Admin Panel
+
+Navigate to `/admin/wallet` to customize the pass appearance:
+
+- **Card Title** -- The name shown on the pass.
+- **Header Fields** -- Up to 3 fields shown at the top (e.g., job title, company).
+- **Primary Fields** -- Your name as the main display.
+- **Secondary Fields** -- Phone, email, website.
+- **Back Fields** -- Additional info shown when the pass is flipped.
+- **Colors** -- Background, foreground, and label colors.
+- **Logo** -- Your logo displayed on the pass.
+
+## Adding a Wallet Block
+
+1. Go to `/admin/links`.
+2. Click **Add New** and select the **Apple Wallet** block type.
+3. Set a title (e.g., "Add to Apple Wallet").
+4. Click **Save**.
+
+The button appears on your public page. On iOS and macOS, tapping it downloads and prompts the user to add the pass to their wallet. On other platforms, the button is hidden or shows a fallback message.

@@ -1,0 +1,86 @@
+---
+title: Contact Form
+description: Enable a built-in contact form with CAPTCHA protection and email delivery via Resend.
+---
+
+# Contact Form
+
+LinkDen includes an optional contact form that lets visitors send you messages without exposing your email address. Messages are delivered to your inbox via Resend and stored in the database for viewing in the admin panel.
+
+## How It Works
+
+1. A visitor fills out the contact form on your public page (name, email, message).
+2. Cloudflare Turnstile verifies the submission is from a real person (if configured).
+3. The message is saved to your D1 database.
+4. If Resend is configured, an email notification is sent to your address.
+5. You can view and manage all submissions in the admin panel at `/admin/contacts`.
+
+## Setting Up the Contact Form
+
+### Enable the Form
+
+The contact form is enabled by default. You can toggle it on or off in `/admin/settings` under the Contact section.
+
+### Configure Resend (Recommended)
+
+To receive email notifications when someone submits the form:
+
+1. Create an account at [resend.com](https://resend.com).
+2. Add and verify your domain, or use the sandbox domain for testing.
+3. Generate an API key from the Resend dashboard.
+4. Add to `apps/server/.env`:
+
+```bash
+RESEND_API_KEY=re_your_api_key_here
+RESEND_FROM_EMAIL=contact@yourdomain.com
+```
+
+Without Resend, messages are still saved to the database but no email is sent.
+
+### Configure Turnstile CAPTCHA (Recommended)
+
+To protect against spam:
+
+1. Go to the **Turnstile** section in the Cloudflare dashboard.
+2. Add your site and select the managed challenge type.
+3. Add to your environment files:
+
+```bash
+# apps/web/.env
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAAA...
+
+# apps/server/.env
+TURNSTILE_SECRET_KEY=0x4AAAAAAA...
+```
+
+Without Turnstile, the form works but has no bot protection.
+
+## Managing Submissions
+
+Navigate to `/admin/contacts` to view all form submissions:
+
+- **Inbox** -- New, unread submissions.
+- **Read** -- Submissions you have viewed.
+- **Archive** -- Submissions you have archived.
+
+Each submission shows:
+
+- Sender name and email.
+- Message content.
+- Submission date and time.
+- Read/unread status.
+
+You can reply directly by clicking the sender's email address, which opens your email client with the address pre-filled.
+
+## Form Fields
+
+The contact form includes:
+
+| Field | Type | Required |
+|-------|------|----------|
+| Name | Text | Yes |
+| Email | Email | Yes |
+| Message | Textarea | Yes |
+| Turnstile | CAPTCHA | If configured |
+
+The form validates all fields client-side before submission and shows inline error messages.

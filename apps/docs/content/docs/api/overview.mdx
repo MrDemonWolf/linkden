@@ -1,0 +1,109 @@
+---
+title: API Overview
+description: Understand LinkDen's API architecture built on tRPC and Hono running on Cloudflare Workers.
+---
+
+# API Overview
+
+LinkDen's API is built with [tRPC](https://trpc.io/) on top of [Hono](https://hono.dev/), running on Cloudflare Workers. This combination provides end-to-end type safety between the frontend and backend with edge performance.
+
+## Architecture
+
+```
+Next.js Frontend (apps/web)
+       |
+       | tRPC Client (HTTP requests)
+       |
+       v
+Hono Server (apps/server)
+       |
+       | tRPC Router
+       |
+       v
+Drizzle ORM (packages/db)
+       |
+       | SQL queries
+       |
+       v
+Cloudflare D1 (SQLite)
+```
+
+### Hono
+
+[Hono](https://hono.dev/) is an ultra-lightweight web framework designed for edge runtimes. It serves as the HTTP layer, handling routing, middleware, and request/response processing. Hono runs natively on Cloudflare Workers with zero cold start time.
+
+### tRPC
+
+[tRPC](https://trpc.io/) provides end-to-end type safety without code generation. The frontend and backend share TypeScript types, so any API changes are caught at compile time. No separate API schema or client generation step is needed.
+
+### Drizzle ORM
+
+[Drizzle ORM](https://orm.drizzle.team/) provides a type-safe SQL query builder that works with Cloudflare D1 (SQLite). The schema is defined in `packages/db` and shared across the monorepo.
+
+## API Routes
+
+The tRPC router is organized into namespaced procedures:
+
+### Public Procedures (No Authentication)
+
+| Procedure | Description |
+|-----------|-------------|
+| `public.getProfile` | Get the public profile (name, bio, image) |
+| `public.getLinks` | Get all visible links in display order |
+| `public.getAppearance` | Get theme and appearance settings |
+| `public.getVCard` | Download the vCard file |
+| `public.getPages` | Get published custom pages |
+| `public.submitContact` | Submit a contact form message |
+| `public.trackView` | Record a page view |
+| `public.trackClick` | Record a link click |
+
+### Protected Procedures (Clerk Authentication Required)
+
+| Procedure | Description |
+|-----------|-------------|
+| `admin.links.*` | CRUD operations for links and blocks |
+| `admin.appearance.*` | Theme and branding management |
+| `admin.vcard.*` | vCard configuration |
+| `admin.wallet.*` | Apple Wallet pass management |
+| `admin.analytics.*` | Analytics data queries |
+| `admin.settings.*` | General settings management |
+| `admin.pages.*` | Custom pages CRUD |
+| `admin.contacts.*` | Contact form submission management |
+| `admin.export` | Export all data as JSON |
+| `admin.import` | Import data from JSON |
+
+## Making API Calls
+
+### From the Frontend
+
+The tRPC client is configured in the Next.js app and available through React hooks:
+
+```typescript
+import { trpc } from "@/lib/trpc";
+
+// In a React component
+const { data: links } = trpc.public.getLinks.useQuery();
+const { data: profile } = trpc.public.getProfile.useQuery();
+```
+
+### Server-Side
+
+Server components can call tRPC procedures directly:
+
+```typescript
+import { trpc } from "@/lib/trpc-server";
+
+const links = await trpc.public.getLinks();
+```
+
+## Error Handling
+
+tRPC errors include:
+
+- `UNAUTHORIZED` -- Missing or invalid authentication.
+- `FORBIDDEN` -- Authenticated but not authorized.
+- `NOT_FOUND` -- Resource does not exist.
+- `BAD_REQUEST` -- Invalid input (validated by Zod schemas from `packages/validators`).
+- `INTERNAL_SERVER_ERROR` -- Unexpected server error.
+
+All input is validated using shared Zod schemas from the `packages/validators` package, ensuring consistent validation between frontend forms and API endpoints.
