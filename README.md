@@ -117,7 +117,7 @@ and Docker.
 | Auth           | Cloudflare Access / Clerk                     |
 | Email          | Resend                                        |
 | Docs           | Fumadocs (MDX), Next.js 16                    |
-| Infrastructure | Alchemy (Cloudflare IaC)                      |
+| Deployment     | OpenNext (Cloudflare adapter), Alchemy (IaC)  |
 | Monorepo       | pnpm Workspaces, Turborepo                    |
 | Linting        | Biome                                         |
 | Testing        | Playwright (E2E)                              |
@@ -179,7 +179,9 @@ and Docker.
 - `pnpm db:push` — Push schema changes to D1.
 - `pnpm db:studio` — Open Drizzle Studio for database
   inspection.
-- `pnpm cf:deploy` — Deploy to Cloudflare via Alchemy.
+- `pnpm cf:deploy` — Deploy API + web to Cloudflare Workers.
+- `pnpm cf:deploy:api` — Deploy only the API worker.
+- `pnpm cf:deploy:web` — Deploy only the web frontend.
 - `pnpm cf:destroy` — Tear down Cloudflare resources.
 - `pnpm test:e2e` — Run Playwright end-to-end tests.
 

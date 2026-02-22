@@ -5,15 +5,15 @@ description: Set up a custom domain for your LinkDen instance with detailed DNS 
 
 # Custom Domain Setup
 
-After deploying LinkDen, you can add a custom domain so your link page is accessible at `yourdomain.com` instead of the default `*.pages.dev` URL. This guide covers setup for both the web app (Cloudflare Pages) and the API (Cloudflare Workers), with instructions for various DNS providers.
+After deploying LinkDen, you can add a custom domain so your link page is accessible at `yourdomain.com` instead of the default `*.workers.dev` URL. This guide covers setup for both the web app and API Workers, with instructions for various DNS providers.
 
 ## Overview
 
-LinkDen has two services that can each get a custom domain:
+LinkDen has two Workers that can each get a custom domain:
 
 | Service | Default URL | Custom Domain Example |
 |---------|------------|----------------------|
-| Web app (Pages) | `linkden.pages.dev` | `links.yourdomain.com` or `yourdomain.com` |
+| Web app (Worker) | `linkden-web.your-subdomain.workers.dev` | `links.yourdomain.com` or `yourdomain.com` |
 | API (Worker) | `linkden-api.your-subdomain.workers.dev` | `api.yourdomain.com` |
 
 You can set up a custom domain for one or both services.
@@ -33,24 +33,15 @@ If your domain is not yet on Cloudflare:
 5. Update your domain's nameservers at your registrar to the ones Cloudflare provides (e.g., `ada.ns.cloudflare.com`, `bob.ns.cloudflare.com`).
 6. Wait for nameserver propagation (usually 15 minutes to 24 hours).
 
-### Set Up the Pages Custom Domain
+### Set Up Custom Domains for Workers
+
+For each Worker (`linkden-web` and `linkden-api`):
 
 1. Go to **Workers & Pages** in the Cloudflare dashboard.
-2. Click on your LinkDen Pages project.
-3. Go to **Custom Domains**.
-4. Click **Set up a custom domain**.
-5. Enter your domain (e.g., `links.yourdomain.com` or `yourdomain.com`).
-6. Click **Activate domain**.
-
-Cloudflare automatically creates the necessary CNAME DNS record. The domain becomes active within minutes.
-
-### Set Up the Worker Custom Domain (API)
-
-1. Go to **Workers & Pages** in the Cloudflare dashboard.
-2. Click on your `linkden-api` Worker.
-3. Go to **Triggers > Custom Domains**.
+2. Click on the Worker.
+3. Go to **Settings > Domains & Routes**.
 4. Click **Add Custom Domain**.
-5. Enter your API domain (e.g., `api.yourdomain.com`).
+5. Enter your domain (e.g., `links.yourdomain.com` for web, `api.yourdomain.com` for API).
 6. Click **Add Custom Domain**.
 
 Cloudflare automatically creates the DNS record and provisions an SSL certificate.
@@ -85,7 +76,7 @@ If your domain uses a DNS provider other than Cloudflare, you need to manually a
 
 ### Step 1: Add the Domain in Cloudflare
 
-Follow the same steps as Option 1 to add the custom domain in the Cloudflare dashboard (Pages > Custom Domains or Workers > Triggers > Custom Domains). Cloudflare shows you the required DNS record.
+Follow the same steps as Option 1 to add the custom domain in the Cloudflare dashboard (Workers & Pages > your Worker > Settings > Domains & Routes). Cloudflare shows you the required DNS record.
 
 ### Step 2: Add DNS Records at Your Provider
 
@@ -95,9 +86,9 @@ Add a CNAME record at your DNS provider:
 
 | Type | Name | Target | TTL |
 |------|------|--------|-----|
-| CNAME | `@` or subdomain | `your-project.pages.dev` | Auto or 300 |
+| CNAME | `@` or subdomain | `linkden-web.your-subdomain.workers.dev` | Auto or 300 |
 
-Replace `your-project.pages.dev` with the actual Pages URL shown in the Cloudflare dashboard.
+Replace `linkden-web.your-subdomain.workers.dev` with the actual Pages URL shown in the Cloudflare dashboard.
 
 #### For the API (Worker)
 
@@ -117,7 +108,7 @@ Add a CNAME record for the API subdomain:
 4. Click **Add New Record**.
 5. Select **CNAME Record**.
 6. For the host, enter `@` (apex) or your subdomain (e.g., `links`).
-7. For the value, enter `your-project.pages.dev`.
+7. For the value, enter `linkden-web.your-subdomain.workers.dev`.
 8. Set TTL to **Automatic**.
 9. Click the checkmark to save.
 
@@ -130,7 +121,7 @@ Note: Namecheap does not support CNAME records on the apex domain (`@`). Use a s
 3. Click **Add** under the records table.
 4. Select **CNAME** as the type.
 5. Enter the host (`@` for apex, or a subdomain like `links`).
-6. Enter the target as `your-project.pages.dev`.
+6. Enter the target as `linkden-web.your-subdomain.workers.dev`.
 7. Set TTL to **1 Hour**.
 8. Click **Save**.
 
@@ -143,7 +134,7 @@ Note: GoDaddy does not support CNAME on the apex domain. Use a subdomain or tran
 3. Click **Create record**.
 4. For the record name, enter a subdomain or leave blank for apex.
 5. For record type, select **CNAME**.
-6. Enter `your-project.pages.dev` as the value.
+6. Enter `linkden-web.your-subdomain.workers.dev` as the value.
 7. Set TTL to **300**.
 8. Click **Create records**.
 
@@ -267,5 +258,5 @@ To remove a custom domain:
 3. Go to **Custom Domains**.
 4. Click the three-dot menu next to the domain and select **Remove**.
 5. Remove the corresponding CNAME record from your DNS provider.
-6. Update your environment variables back to the default `*.pages.dev` / `*.workers.dev` URLs.
+6. Update your environment variables back to the default `*.workers.dev` / `*.workers.dev` URLs.
 7. Redeploy.

@@ -29,15 +29,13 @@ const api = await Worker("linkden-api", {
   compatibilityFlags: ["nodejs_compat"],
 });
 
-// Web frontend is deployed separately via Cloudflare Pages.
-// Connect the GitHub repo to Cloudflare Pages with:
-//   Project name: linkden
-//   Build command: pnpm --filter @linkden/web build
-//   Build output: apps/web/.next
-//   Root directory: /
-//   Framework preset: Next.js
+// Web frontend is deployed as a Cloudflare Worker via @opennextjs/cloudflare.
+// Run `pnpm cf:deploy` from the root to deploy both API + Web workers.
 //
-// This gives you: linkden.pages.dev
-// Add a custom domain later via the Cloudflare Pages dashboard.
+// API:  linkden-api.<account>.workers.dev  (or custom domain via CF dashboard)
+// Web:  linkden-web.<account>.workers.dev  (or custom domain via CF dashboard)
+//
+// To add custom domains, go to your Cloudflare dashboard > Workers & Pages >
+// select the worker > Settings > Domains & Routes.
 
 await app.finalize({ destroy });
