@@ -1,0 +1,98 @@
+---
+title: Custom Domain
+description: Set up a custom domain for your LinkDen instance on Cloudflare Pages.
+---
+
+# Custom Domain Setup
+
+After deploying LinkDen, you can add a custom domain so your link page is accessible at `yourdomain.com` instead of the default `*.pages.dev` URL.
+
+## Option 1: Domain on Cloudflare DNS
+
+If your domain is already using Cloudflare's nameservers, the setup is automatic:
+
+### 1. Add the Custom Domain
+
+1. Go to the [Cloudflare dashboard](https://dash.cloudflare.com).
+2. Navigate to **Workers & Pages**.
+3. Click on your LinkDen Pages project.
+4. Go to **Custom Domains**.
+5. Click **Set up a custom domain**.
+6. Enter your domain (e.g., `links.yourdomain.com` or `yourdomain.com`).
+7. Click **Activate domain**.
+
+Cloudflare automatically creates the necessary DNS records. The domain is active within minutes.
+
+### 2. Update Environment Variables
+
+Update `NEXT_PUBLIC_SITE_URL` in `apps/web/.env` to your new domain:
+
+```bash
+NEXT_PUBLIC_SITE_URL=https://yourdomain.com
+```
+
+Redeploy for the change to take effect:
+
+```bash
+pnpm cf:deploy
+```
+
+## Option 2: Domain on External DNS
+
+If your domain uses a different DNS provider (e.g., Namecheap, GoDaddy, Route 53):
+
+### 1. Add the Custom Domain in Cloudflare
+
+Follow the same steps as Option 1 to add the domain in the Cloudflare dashboard. Cloudflare will show you a CNAME record to add.
+
+### 2. Add the DNS Record
+
+At your DNS provider, add a CNAME record:
+
+| Type | Name | Target |
+|------|------|--------|
+| CNAME | `@` or subdomain | `your-project.pages.dev` |
+
+Replace `your-project.pages.dev` with the actual Pages URL shown in the Cloudflare dashboard.
+
+### 3. Wait for Propagation
+
+DNS changes can take up to 48 hours to propagate, though most providers update within 30 minutes. Cloudflare will show the domain as "Active" once the CNAME is verified.
+
+### 4. SSL Certificate
+
+Cloudflare automatically provisions an SSL certificate for your custom domain. No manual certificate management is needed.
+
+## Using an Apex Domain
+
+To use an apex domain (e.g., `yourdomain.com` without a subdomain):
+
+- **Cloudflare DNS**: Works automatically. Cloudflare uses CNAME flattening.
+- **External DNS**: Some providers do not support CNAME records on the apex. In this case, either:
+  - Transfer your domain to Cloudflare (free).
+  - Use a subdomain instead (e.g., `links.yourdomain.com`).
+  - Check if your provider supports ALIAS or ANAME records as alternatives.
+
+## API Domain
+
+The Hono API Worker gets its own URL (e.g., `linkden-api.your-subdomain.workers.dev`). You can add a custom domain for the Worker too:
+
+1. Go to **Workers & Pages** in the Cloudflare dashboard.
+2. Click on your API Worker.
+3. Go to **Triggers > Custom Domains**.
+4. Add your API domain (e.g., `api.yourdomain.com`).
+
+Update `NEXT_PUBLIC_API_URL` in `apps/web/.env` to match:
+
+```bash
+NEXT_PUBLIC_API_URL=https://api.yourdomain.com
+```
+
+## Verifying the Setup
+
+After configuring your custom domain:
+
+1. Visit your domain in a browser -- you should see the public link page.
+2. Check that the SSL lock icon appears (HTTPS is active).
+3. Navigate to `/admin` and verify the sign-in flow works.
+4. Test that API calls work by viewing analytics or editing a link.

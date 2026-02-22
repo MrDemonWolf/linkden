@@ -1,0 +1,86 @@
+---
+title: Links & Blocks
+description: Manage different link types and block types on your LinkDen page, including links, headings, text blocks, and more.
+---
+
+# Links & Blocks
+
+LinkDen supports multiple block types beyond simple links. Each block appears on your public page in the order you arrange them, and all are managed from the admin panel at `/admin/links`.
+
+## Link Types
+
+### Standard Link
+
+The most common block type. A clickable button that takes visitors to an external URL.
+
+- **Title** -- The text displayed on the button.
+- **URL** -- The destination URL. Validated on save.
+- **Icon** -- Optional brand icon from the 100+ built-in set (GitHub, Twitter/X, Instagram, YouTube, Discord, etc.).
+- **New Tab** -- Whether the link opens in a new browser tab (default: yes).
+
+### Email Link
+
+Displays a `mailto:` link button. Visitors can tap to open their email client with your address pre-filled.
+
+### Phone Link
+
+Displays a `tel:` link button for one-tap calling on mobile devices.
+
+### vCard Download
+
+A button that downloads your digital business card as a `.vcf` file. Configure the vCard content in the [vCard settings](/docs/features/vcard).
+
+### Apple Wallet Pass
+
+A button that downloads a signed `.pkpass` file for adding your contact info to Apple Wallet on iOS and macOS. See the [Apple Wallet guide](/docs/features/apple-wallet) for setup.
+
+## Block Types
+
+### Heading
+
+A text heading that visually separates groups of links. Useful for organizing links into categories like "Social", "Projects", or "Contact".
+
+### Text Block
+
+A paragraph of text displayed on your page. Supports basic formatting. Use it for bios, descriptions, or announcements.
+
+### Spacer
+
+An invisible block that adds vertical space between other blocks. Choose small, medium, or large spacing.
+
+## Brand Icons
+
+LinkDen includes 100+ predefined SVG brand icons. When creating or editing a link, you can search and select from icons including:
+
+- **Social**: GitHub, Twitter/X, Instagram, Facebook, LinkedIn, Mastodon, Bluesky, Threads, TikTok, YouTube, Twitch, Discord, Reddit, Telegram
+- **Development**: Stack Overflow, CodePen, GitLab, Bitbucket, npm, Docker, VS Code
+- **Creative**: Dribbble, Behance, Figma, DeviantArt, Unsplash
+- **Music**: Spotify, Apple Music, SoundCloud, Bandcamp
+- **Business**: Google, Apple, Microsoft, Amazon, Shopify, Stripe, PayPal
+- **Communication**: Email, Phone, WhatsApp, Signal, Slack
+- And many more.
+
+## Managing Links
+
+### Adding a Link
+
+1. Navigate to `/admin/links` in the admin panel.
+2. Click **Add New** or navigate to `/admin/links/new`.
+3. Select the block type (Link, Heading, Text, Spacer, Email, Phone, vCard, Wallet).
+4. Fill in the fields and click **Save**.
+
+### Reordering Links
+
+Links support drag-and-drop reordering in the admin panel. Grab the handle on the left side of any link and drag it to a new position. The order updates automatically.
+
+### Editing a Link
+
+Click any link in the list to open the edit page. Make your changes and click **Save**.
+
+### Deleting a Link
+
+Open the link editor and click **Delete**. A confirmation dialog prevents accidental deletion.
+
+### Toggling Visibility
+
+Each link has a visibility toggle. Hidden links are not shown on the public page but remain in your list for easy re-enabling.

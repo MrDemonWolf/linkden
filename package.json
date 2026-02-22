@@ -1,0 +1,26 @@
+{
+  "name": "linkden",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "db:generate": "pnpm --filter @linkden/db db:generate",
+    "db:push": "pnpm --filter @linkden/db db:push",
+    "db:studio": "pnpm --filter @linkden/db db:studio",
+    "cf:deploy": "pnpm --filter @linkden/infra deploy",
+    "cf:destroy": "pnpm --filter @linkden/infra destroy",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "turbo": "^2.5.0",
+    "typescript": "^5.8.0"
+  },
+  "packageManager": "pnpm@10.29.3",
+  "engines": {
+    "node": ">=20"
+  }
+}

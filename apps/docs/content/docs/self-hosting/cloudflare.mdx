@@ -1,0 +1,116 @@
+---
+title: Cloudflare Deployment
+description: Step-by-step guide to deploying LinkDen on Cloudflare Workers, Pages, and D1.
+---
+
+# Cloudflare Deployment
+
+LinkDen is designed to run entirely on the Cloudflare stack. This guide walks through the complete deployment process, from account setup to a live instance.
+
+## Cloudflare Services Used
+
+| Service | Purpose | Free Tier |
+|---------|---------|-----------|
+| **Cloudflare Pages** | Hosts the Next.js static export (public page + admin) | 500 builds/month, unlimited bandwidth |
+| **Cloudflare Workers** | Runs the Hono API server | 100,000 requests/day |
+| **Cloudflare D1** | SQLite database for all application data | 5 million rows read/day, 100K writes/day |
+| **Cloudflare KV** (optional) | Key-value storage for caching | 100K reads/day |
+
+The free tier is sufficient for most single-user instances.
+
+## Prerequisites
+
+1. A [Cloudflare account](https://cloudflare.com) (free).
+2. Node.js 20+ and pnpm 9+.
+3. The LinkDen repository cloned locally.
+
+## Step-by-Step Deployment
+
+### 1. Create a Cloudflare API Token
+
+1. Log in to the [Cloudflare dashboard](https://dash.cloudflare.com).
+2. Click your profile icon and go to **My Profile > API Tokens**.
+3. Click **Create Token**.
+4. Use the **Custom Token** template with these permissions:
+   - Account: Cloudflare Pages (Edit)
+   - Account: Cloudflare Workers Scripts (Edit)
+   - Account: D1 (Edit)
+   - Account: Workers KV Storage (Edit)
+5. Set the token to apply to your account.
+6. Click **Continue to summary** and then **Create Token**.
+7. Copy the token immediately (it is shown only once).
+
+### 2. Find Your Account ID
+
+1. Go to the Cloudflare dashboard overview page.
+2. Your **Account ID** is displayed on the right sidebar.
+3. Copy it.
+
+### 3. Configure Environment Variables
+
+Add both values to your root `.env` file:
+
+```bash
+CLOUDFLARE_API_TOKEN=your-api-token-here
+CLOUDFLARE_ACCOUNT_ID=your-account-id-here
+```
+
+Complete the rest of the environment setup as described in the [Configuration guide](/docs/getting-started/configuration).
+
+### 4. Push Database Schema
+
+Create the D1 database and push the schema:
+
+```bash
+pnpm db:push
+```
+
+This creates the D1 database on Cloudflare and applies all Drizzle migrations.
+
+### 5. Deploy
+
+```bash
+pnpm cf:deploy
+```
+
+Alchemy handles:
+
+- Building the Next.js app as a static export.
+- Building the Hono API for Workers.
+- Creating/updating all Cloudflare resources.
+- Uploading static assets to Pages.
+- Deploying the API Worker.
+
+### 6. Verify
+
+The deploy output shows your Pages URL (e.g., `https://linkden.pages.dev`) and Worker URL. Visit the Pages URL to confirm your instance is live.
+
+## Subsequent Deploys
+
+After the initial setup, deploying updates is a single command:
+
+```bash
+pnpm cf:deploy
+```
+
+Alchemy only updates resources that changed, making subsequent deploys faster.
+
+## Tearing Down
+
+To remove all Cloudflare resources:
+
+```bash
+pnpm cf:destroy
+```
+
+This deletes the Pages project, Worker, and D1 database. All data is permanently removed.
+
+## Cost Considerations
+
+For a typical single-user link page:
+
+- **Page views**: A page with 10,000 monthly visitors uses about 10,000 Worker requests -- well within the 100,000/day free tier.
+- **Database**: Each page view generates a few D1 reads. 10,000 monthly visitors is roughly 300 reads/day -- trivial against the 5 million/day limit.
+- **Bandwidth**: Cloudflare Pages has unlimited bandwidth on all plans.
+
+Most LinkDen instances will operate entirely within the free tier.

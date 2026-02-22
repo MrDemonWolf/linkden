@@ -1,0 +1,72 @@
+---
+title: Settings
+description: Configure general settings, SEO, branding, export/import, and manage your LinkDen instance.
+---
+
+# Settings
+
+The settings page at `/admin/settings` contains general configuration options, data management tools, and advanced settings for your LinkDen instance.
+
+## General Settings
+
+### Site Name
+
+The name of your site used in the browser title bar, meta tags, and anywhere the site name is referenced. Defaults to "LinkDen" but should be set to your name or brand.
+
+### Site URL
+
+The public URL of your LinkDen instance. Used for generating absolute URLs in vCards, Apple Wallet passes, QR codes, and meta tags.
+
+### SEO Settings
+
+- **Meta Title** -- The title tag for your public page. If not set, uses your display name.
+- **Meta Description** -- The meta description for search engines. If not set, uses your bio.
+- **Social Image** -- The Open Graph image shown when your link is shared on social media. Upload a 1200x630 image for best results.
+
+## Branding
+
+### Whitelabel Mode
+
+Toggle off all LinkDen branding:
+
+- Removes "Powered by LinkDen" from the footer.
+- Uses your custom favicon instead of the LinkDen default.
+- No attribution is required (MIT license).
+
+This is a single toggle switch. Turn it on and all references to LinkDen are removed from the public-facing page.
+
+## Data Management
+
+### Export
+
+Click **Export Data** to download a complete backup of your LinkDen configuration as JSON. See [Export & Import](/docs/features/export-import) for details on what is included.
+
+### Import
+
+Click **Import Data** to restore from a backup or migrate from LinkStack. Supports both LinkDen JSON format and LinkStack export format.
+
+### Clear Analytics
+
+Remove all analytics data (page views, clicks, referrers, countries). This cannot be undone. Export your data first if you want to preserve it.
+
+## Danger Zone
+
+### Reset All Data
+
+Removes all links, appearance settings, vCard configuration, custom pages, and analytics. Resets your instance to a fresh state. Your Clerk authentication and environment variables are not affected.
+
+This action requires typing a confirmation phrase to prevent accidental use.
+
+## Contact Form Settings
+
+### Enable/Disable
+
+Toggle the contact form on or off. When disabled, the form is hidden from the public page and the API endpoint returns a 404.
+
+### Notification Email
+
+The email address where contact form submissions are sent (requires Resend configuration).
+
+### CAPTCHA
+
+Toggle Cloudflare Turnstile CAPTCHA on or off for the contact form. Requires Turnstile site key and secret key in your environment variables.
