@@ -175,32 +175,42 @@ pnpm cf:deploy:api
 pnpm cf:deploy:web
 ```
 
-## Step 7: Set Secrets in Cloudflare Dashboard
+## Step 7: Set Up Authentication
 
-Some environment variables should be set as encrypted secrets:
+LinkDen supports Cloudflare Access and/or Clerk for admin authentication. For Cloudflare deployments, **Cloudflare Access** is recommended — it protects your admin panel at the edge before requests reach your Worker.
 
-### API Worker Secrets
+### Quick Cloudflare Access Setup
 
-1. Go to **Workers & Pages** in the Cloudflare dashboard.
-2. Click on your `linkden-api` Worker.
-3. Go to **Settings > Variables**.
-4. Add:
+1. Go to [Zero Trust](https://one.dash.cloudflare.com) in the Cloudflare dashboard.
+2. Set up a team name (e.g., `mycompany`) if you have not already.
+3. Go to **Settings > Authentication** and add an identity provider (One-time PIN is the simplest).
+4. Go to **Access > Applications > Add an application > Self-hosted**.
+5. Set the application domain to `linkden-web.<your-subdomain>.workers.dev` with path `/admin`.
+6. Create an access policy that allows only your email address.
+7. Set `CF_ACCESS_TEAM_DOMAIN` in `apps/server/wrangler.toml`:
 
-| Variable | Value | Encrypt |
-|----------|-------|---------|
-| `CLERK_SECRET_KEY` | `sk_live_...` | Yes |
-| `CORS_ORIGIN` | `https://linkden-web...workers.dev` | No |
-| `APP_URL` | `https://linkden-api...workers.dev` | No |
-| `RESEND_API_KEY` | `re_...` | Yes |
+```toml
+[vars]
+CF_ACCESS_TEAM_DOMAIN = "mycompany"
+```
 
-Or via CLI:
+Then redeploy: `pnpm cf:deploy:api`
+
+See the [Authentication guide](/docs/api/authentication) for detailed instructions, Clerk setup, or using both providers together.
+
+## Step 8: Set Secrets (Optional)
+
+If using Clerk or Resend, set their secret keys as encrypted secrets on the API Worker:
 
 ```bash
 cd apps/server
-echo "your-secret" | wrangler secret put CLERK_SECRET_KEY
+echo "sk_live_your-key" | wrangler secret put CLERK_SECRET_KEY
+echo "re_your-key" | wrangler secret put RESEND_API_KEY
 ```
 
-## Step 8: Verify the Deployment
+Or via the Cloudflare dashboard: **Workers & Pages > linkden-api > Settings > Variables**.
+
+## Step 9: Verify the Deployment
 
 1. Visit your web Worker URL. You should see the public link page.
 2. Navigate to `/admin` and confirm the sign-in flow works.
@@ -214,7 +224,7 @@ wrangler tail linkden-api
 wrangler tail linkden-web
 ```
 
-## Step 9: Set Up Custom Domains (Optional)
+## Step 10: Set Up Custom Domains (Optional)
 
 See the [Custom Domain guide](/docs/self-hosting/custom-domain) for detailed instructions.
 
