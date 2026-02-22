@@ -14,6 +14,17 @@
   --button-text: #0faced;
   --button-hover-bg: rgba(15, 172, 237, 0.35);
   --border-radius: 16px;
+
+  /* Admin palette */
+  --admin-bg: #fafafa;
+  --admin-surface: #ffffff;
+  --admin-border: #e5e7eb;
+  --admin-text: #111827;
+  --admin-text-secondary: #6b7280;
+  --admin-accent: #6366f1;
+  --admin-accent-hover: #4f46e5;
+  --admin-success: #10b981;
+  --admin-danger: #ef4444;
 }
 
 * {
@@ -32,6 +43,7 @@ body {
 }
 
 @layer components {
+  /* Glass design system (public page) */
   .glass-panel {
     background: var(--surface);
     border: 1px solid var(--surface-border);
@@ -133,6 +145,57 @@ body {
   }
 }
 
+/* Legal content pages */
+.legal-content {
+  line-height: 1.75;
+}
+
+.legal-content h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
+}
+
+.legal-content h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+
+.legal-content p {
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+}
+
+.legal-content ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.legal-content li {
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+}
+
+.legal-content a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.legal-content a:hover {
+  opacity: 0.8;
+}
+
+.legal-content strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
@@ -193,4 +256,9 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Animate page content in */
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
 }

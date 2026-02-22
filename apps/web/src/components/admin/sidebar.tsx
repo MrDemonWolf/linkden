@@ -11,7 +11,6 @@ import {
   Mail,
   Menu,
   Palette,
-  QrCode,
   Settings,
   Wallet,
   X,
@@ -77,11 +76,6 @@ export function Sidebar() {
       label: "Pages",
       href: "/admin/pages",
       icon: <FileText className="w-4 h-4" />,
-    },
-    {
-      label: "QR Code",
-      href: "/qr",
-      icon: <QrCode className="w-4 h-4" />,
     },
     {
       label: "Settings",

@@ -1,21 +1,28 @@
 "use client";
 
 import { trpc } from "@/lib/trpc";
-import { useAuth } from "@clerk/nextjs";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink } from "@trpc/client";
+import { httpLink } from "@trpc/client";
 import { useState } from "react";
 
-export function TrpcProvider({ children }: { children: React.ReactNode }) {
-  const { getToken } = useAuth();
+// Auth token getter — set by ClerkAuthBridge when Clerk is active
+let getAuthToken: (() => Promise<string | null>) | null = null;
 
+export function setAuthTokenGetter(getter: () => Promise<string | null>) {
+  getAuthToken = getter;
+}
+
+const FIVE_MINUTES = 5 * 60 * 1000;
+
+export function TrpcProvider({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 5 * 60 * 1000,
+            staleTime: FIVE_MINUTES,
             retry: 1,
+            refetchOnWindowFocus: false,
           },
         },
       }),
@@ -24,11 +31,18 @@ export function TrpcProvider({ children }: { children: React.ReactNode }) {
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [
-        httpBatchLink({
+        // Use httpLink (not httpBatchLink) so queries are individual GET requests,
+        // which Cloudflare edge can cache. Mutations remain POST.
+        httpLink({
           url: `${process.env.NEXT_PUBLIC_API_URL}/trpc`,
           async headers() {
-            const token = await getToken();
-            return token ? { Authorization: `Bearer ${token}` } : {};
+            if (getAuthToken) {
+              const token = await getAuthToken();
+              if (token) {
+                return { Authorization: `Bearer ${token}` };
+              }
+            }
+            return {};
           },
         }),
       ],

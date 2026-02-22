@@ -109,7 +109,7 @@ export default function PagesListPage() {
 
                 {page.isPublished && (
                   <a
-                    href={`/${page.slug}`}
+                    href={`/p/${page.slug}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="p-2 rounded-lg hover:bg-[rgba(255,255,255,0.08)] transition-colors text-[var(--text-secondary)]"

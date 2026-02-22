@@ -1,0 +1,52 @@
+---
+title: Caching
+description: How LinkDen uses Cloudflare's edge cache for fast public page loads.
+---
+
+# Caching
+
+LinkDen is optimized for Cloudflare's edge network with multiple caching layers that ensure your public page loads in under 50ms for visitors worldwide.
+
+## Caching Layers
+
+### Cloudflare Edge Cache (Worker)
+
+Public tRPC queries (`settings.getPublic` and `links.list`) are cached at the Cloudflare edge using the Cache API:
+
+- **TTL**: 10 minutes (`s-maxage=600`)
+- **Stale-while-revalidate**: 1 hour — visitors get a cached response instantly while the Worker fetches fresh data in the background.
+- **Scope**: Only unauthenticated GET requests are cached. Admin requests with an `Authorization` header always hit the database.
+
+The `X-Cache` response header indicates whether a response was served from edge cache (`HIT`) or origin (`MISS`).
+
+### Client-Side Cache (React Query)
+
+The web app uses TanStack React Query with aggressive defaults:
+
+- **Stale time**: 5 minutes — data is considered fresh and not refetched.
+- **Refetch on focus**: Disabled — switching tabs does not trigger a refetch.
+- **Retry**: 1 attempt on failure.
+
+### Static Asset Cache (Cloudflare Pages)
+
+A `_headers` file configures Cloudflare Pages caching:
+
+| Path                | Cache Strategy                              |
+| ------------------- | ------------------------------------------- |
+| `/_next/static/*`   | Immutable, 1 year (`max-age=31536000`)      |
+| `/`                 | 1 min browser, 10 min edge, 1 hr SWR        |
+| `/privacy`, `/terms`| 1 hour browser, 24 hour edge                |
+| `/admin/*`          | Private, no cache                           |
+| `/favicon.svg`      | 1 day browser, 7 day edge                   |
+
+## Automatic Cache Purge
+
+When an admin saves changes (settings, links, reorder, toggle, delete), the Worker automatically purges the edge cache for public queries. This means visitors see updates within seconds of the admin clicking "Publish" — no manual cache clearing needed.
+
+## SEO Assets
+
+LinkDen auto-generates several SEO files that are cached at the edge:
+
+- **`/sitemap.xml`** — Lists all public routes. Cached for 24 hours.
+- **`/robots.txt`** — Allows indexing of public pages, blocks `/admin` and `/sign-in`. Cached for 7 days.
+- **OpenGraph / Twitter Card tags** — Set from admin settings (meta title, description, image).

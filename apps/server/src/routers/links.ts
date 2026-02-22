@@ -3,6 +3,7 @@ import { CreateLinkSchema, ReorderLinksSchema, UpdateLinkSchema } from "@linkden
 import { TRPCError } from "@trpc/server";
 import { asc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
+import { purgePublicCache } from "../lib/cache";
 import { protectedProcedure, publicProcedure, router } from "../trpc";
 
 export const linksRouter = router({
@@ -35,6 +36,10 @@ export const linksRouter = router({
         metadata: input.metadata,
       })
       .returning();
+
+    const apiUrl = ctx.env.APP_URL || "http://localhost:3000";
+    await purgePublicCache(apiUrl);
+
     return link;
   }),
 
@@ -50,6 +55,10 @@ export const linksRouter = router({
     if (!link) {
       throw new TRPCError({ code: "NOT_FOUND", message: "Link not found" });
     }
+
+    const apiUrl = ctx.env.APP_URL || "http://localhost:3000";
+    await purgePublicCache(apiUrl);
+
     return link;
   }),
 
@@ -62,6 +71,10 @@ export const linksRouter = router({
       if (!deleted) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Link not found" });
       }
+
+      const apiUrl = ctx.env.APP_URL || "http://localhost:3000";
+      await purgePublicCache(apiUrl);
+
       return deleted;
     }),
 
@@ -74,6 +87,9 @@ export const linksRouter = router({
         .set({ sortOrder: item.sortOrder, updatedAt: now })
         .where(eq(links.id, item.id));
     }
+    const apiUrl = ctx.env.APP_URL || "http://localhost:3000";
+    await purgePublicCache(apiUrl);
+
     return { success: true };
   }),
 
@@ -95,6 +111,10 @@ export const linksRouter = router({
         })
         .where(eq(links.id, input.id))
         .returning();
+
+      const apiUrl = ctx.env.APP_URL || "http://localhost:3000";
+      await purgePublicCache(apiUrl);
+
       return link;
     }),
 

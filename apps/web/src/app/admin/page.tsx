@@ -1,167 +1,164 @@
 "use client";
 
-import { StatCard } from "@/components/admin/stat-card";
+import { LeftPanel } from "@/components/admin/left-panel";
+import { PhonePreview } from "@/components/admin/phone-preview";
+import { RightPanel } from "@/components/admin/right-panel";
+import { TopBar } from "@/components/admin/top-bar";
+import {
+  placeholderLinks,
+  placeholderSettings,
+  placeholderSocialLinks,
+} from "@/lib/placeholder-data";
+import { toast } from "@/lib/toast";
 import { trpc } from "@/lib/trpc";
-import { Eye, FileText, Link2, Mail, MousePointerClick, Percent } from "lucide-react";
+import { BarChart3, LayoutGrid, Palette } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
-export default function DashboardPage() {
-  const overview = trpc.analytics.overview.useQuery({ period: "30d" });
+type DeviceSize = "phone" | "tablet" | "desktop";
+type MobileTab = "blocks" | "preview" | "design";
+
+export default function AdminEditorPage() {
+  const router = useRouter();
+  const utils = trpc.useUtils();
+  const [deviceSize, setDeviceSize] = useState<DeviceSize>("phone");
+  const [mobileTab, setMobileTab] = useState<MobileTab>("preview");
+  const [localSettings, setLocalSettings] = useState<Record<string, string>>({
+    ...placeholderSettings,
+  });
+
+  // Load settings from server
+  const settingsQuery = trpc.settings.getAll.useQuery();
   const linksQuery = trpc.links.listAll.useQuery();
-  const contactsQuery = trpc.contact.list.useQuery({ page: 1, limit: 5 });
-  const pagesQuery = trpc.pages.list.useQuery();
 
-  const totalLinks = linksQuery.data?.length ?? 0;
-  const activeLinks = linksQuery.data?.filter((l) => l.isActive).length ?? 0;
-  const unreadContacts = contactsQuery.data?.unreadCount ?? 0;
-  const totalPages = pagesQuery.data?.length ?? 0;
+  useEffect(() => {
+    if (settingsQuery.data) {
+      const map: Record<string, string> = { ...placeholderSettings };
+      for (const s of settingsQuery.data) {
+        map[s.key] = s.value;
+      }
+      setLocalSettings(map);
+    }
+  }, [settingsQuery.data]);
+
+  const updateMutation = trpc.settings.update.useMutation({
+    onSuccess: () => {
+      utils.settings.getAll.invalidate();
+      utils.settings.getPublic.invalidate();
+      toast.success("Published!");
+    },
+    onError: () => toast.error("Failed to publish"),
+  });
+
+  const handleSettingsChange = useCallback((key: string, value: string) => {
+    setLocalSettings((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  function handlePublish() {
+    const settingsArray = Object.entries(localSettings).map(([key, value]) => ({
+      key,
+      value,
+    }));
+    updateMutation.mutate({ settings: settingsArray });
+  }
+
+  function handleNavigate(path: string) {
+    router.push(path);
+  }
+
+  // Use server links or placeholder
+  const links = linksQuery.data && linksQuery.data.length > 0 ? linksQuery.data : placeholderLinks;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-sm text-[var(--text-secondary)] mt-1">
-          Overview of your LinkDen page (last 30 days)
-        </p>
-      </div>
+    <div className="h-screen flex flex-col bg-gray-100">
+      {/* Top Bar */}
+      <TopBar
+        deviceSize={deviceSize}
+        onDeviceSizeChange={setDeviceSize}
+        onPublish={handlePublish}
+        isPublishing={updateMutation.isPending}
+      />
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard
-          icon={<Eye className="w-5 h-5" />}
-          label="Page Views"
-          value={overview.isLoading ? "..." : (overview.data?.totalViews ?? 0).toLocaleString()}
-        />
-        <StatCard
-          icon={<MousePointerClick className="w-5 h-5" />}
-          label="Total Clicks"
-          value={overview.isLoading ? "..." : (overview.data?.totalClicks ?? 0).toLocaleString()}
-        />
-        <StatCard
-          icon={<Percent className="w-5 h-5" />}
-          label="Click-Through Rate"
-          value={overview.isLoading ? "..." : `${overview.data?.ctr ?? 0}%`}
-        />
-        <StatCard
-          icon={<Link2 className="w-5 h-5" />}
-          label="Links"
-          value={linksQuery.isLoading ? "..." : totalLinks}
-          delta={`${activeLinks} active`}
-          deltaType="neutral"
-        />
-        <StatCard
-          icon={<Mail className="w-5 h-5" />}
-          label="Unread Contacts"
-          value={contactsQuery.isLoading ? "..." : unreadContacts}
-          deltaType={unreadContacts > 0 ? "negative" : "neutral"}
-        />
-        <StatCard
-          icon={<FileText className="w-5 h-5" />}
-          label="Custom Pages"
-          value={pagesQuery.isLoading ? "..." : totalPages}
-        />
-      </div>
-
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Links */}
-        <div className="glass-card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Recent Links</h2>
-            <a href="/admin/links" className="text-sm text-brand-cyan hover:underline">
-              View All
-            </a>
-          </div>
-          {linksQuery.isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-12 rounded-lg bg-[rgba(255,255,255,0.04)] animate-pulse"
-                />
-              ))}
-            </div>
-          ) : linksQuery.data && linksQuery.data.length > 0 ? (
-            <div className="space-y-2">
-              {linksQuery.data.slice(0, 5).map((link) => (
-                <div
-                  key={link.id}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.06)] transition-colors"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-[var(--button-bg)] flex items-center justify-center shrink-0">
-                    <Link2 className="w-4 h-4 text-brand-cyan" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{link.title}</p>
-                    <p className="text-xs text-[var(--text-secondary)] truncate">
-                      {link.url || link.type}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-xs text-[var(--text-secondary)]">{link.clickCount} clicks</p>
-                    <span
-                      className={`inline-block w-2 h-2 rounded-full ${
-                        link.isActive ? "bg-emerald-400" : "bg-gray-500"
-                      }`}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-[var(--text-secondary)] text-center py-6">
-              No links yet.{" "}
-              <a href="/admin/links/new" className="text-brand-cyan hover:underline">
-                Create one
-              </a>
-            </p>
-          )}
+      {/* Desktop: 3-panel layout */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Panel - hidden on mobile */}
+        <div className="hidden lg:flex w-[320px] border-r border-gray-200 shrink-0">
+          <LeftPanel onNavigate={handleNavigate} />
         </div>
 
-        {/* Recent Contact Submissions */}
-        <div className="glass-card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Recent Messages</h2>
-            <a href="/admin/contacts" className="text-sm text-brand-cyan hover:underline">
-              View All
-            </a>
-          </div>
-          {contactsQuery.isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="h-12 rounded-lg bg-[rgba(255,255,255,0.04)] animate-pulse"
+        {/* Center - Phone Preview */}
+        <div className="hidden lg:flex flex-1 bg-gray-100">
+          <PhonePreview
+            settings={localSettings}
+            links={links}
+            socialLinks={placeholderSocialLinks}
+            deviceSize={deviceSize}
+          />
+        </div>
+
+        {/* Right Panel - hidden on mobile */}
+        <div className="hidden lg:block w-[360px] border-l border-gray-200 shrink-0">
+          <RightPanel settings={localSettings} onSettingsChange={handleSettingsChange} />
+        </div>
+
+        {/* Mobile: Tab-based view */}
+        <div className="flex-1 lg:hidden flex flex-col">
+          <div className="flex-1 overflow-y-auto">
+            {mobileTab === "blocks" && (
+              <div className="h-full">
+                <LeftPanel onNavigate={handleNavigate} />
+              </div>
+            )}
+            {mobileTab === "preview" && (
+              <div className="h-full bg-gray-100">
+                <PhonePreview
+                  settings={localSettings}
+                  links={links}
+                  socialLinks={placeholderSocialLinks}
+                  deviceSize="phone"
                 />
-              ))}
-            </div>
-          ) : contactsQuery.data && contactsQuery.data.items.length > 0 ? (
-            <div className="space-y-2">
-              {contactsQuery.data.items.map((sub) => (
-                <a
-                  key={sub.id}
-                  href={`/admin/contacts/${sub.id}`}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.06)] transition-colors"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {!sub.isRead && (
-                        <span className="inline-block w-2 h-2 rounded-full bg-brand-cyan mr-2" />
-                      )}
-                      {sub.name}
-                    </p>
-                    <p className="text-xs text-[var(--text-secondary)] truncate">{sub.message}</p>
-                  </div>
-                  <span className="text-xs text-[var(--text-secondary)] shrink-0">
-                    {new Date(sub.createdAt).toLocaleDateString()}
-                  </span>
-                </a>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-[var(--text-secondary)] text-center py-6">
-              No messages yet.
-            </p>
-          )}
+              </div>
+            )}
+            {mobileTab === "design" && (
+              <div className="h-full">
+                <RightPanel settings={localSettings} onSettingsChange={handleSettingsChange} />
+              </div>
+            )}
+          </div>
+
+          {/* Mobile bottom tab bar */}
+          <div className="flex border-t border-gray-200 bg-white shrink-0">
+            <button
+              type="button"
+              onClick={() => setMobileTab("blocks")}
+              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium ${
+                mobileTab === "blocks" ? "text-indigo-600" : "text-gray-500"
+              }`}
+            >
+              <LayoutGrid className="w-5 h-5" />
+              Blocks
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab("preview")}
+              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium ${
+                mobileTab === "preview" ? "text-indigo-600" : "text-gray-500"
+              }`}
+            >
+              <BarChart3 className="w-5 h-5" />
+              Preview
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab("design")}
+              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium ${
+                mobileTab === "design" ? "text-indigo-600" : "text-gray-500"
+              }`}
+            >
+              <Palette className="w-5 h-5" />
+              Design
+            </button>
+          </div>
         </div>
       </div>
     </div>
