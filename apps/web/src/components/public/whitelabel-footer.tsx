@@ -23,7 +23,7 @@ export function WhitelabelFooter({ brandName, brandLogo }: WhitelabelFooterProps
   return (
     <footer className="mt-12 pb-8 text-center">
       <a
-        href="https://github.com/mrdemonwolf/LinkDen"
+        href="https://github.com/mrdemonwolf/linkden"
         target="_blank"
         rel="noopener noreferrer"
         className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
