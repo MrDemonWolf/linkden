@@ -1,11 +1,14 @@
 "use client";
 
+import type { AdminDrawer } from "@/app/admin/page";
 import { toast } from "@/lib/toast";
 import { trpc } from "@/lib/trpc";
 import { DragDropContext, Draggable, type DropResult, Droppable } from "@hello-pangea/dnd";
 import {
   AlignLeft,
+  BarChart3,
   BookOpen,
+  Code,
   Contact,
   Eye,
   EyeOff,
@@ -13,21 +16,41 @@ import {
   Globe,
   GripVertical,
   Heading,
+  Image,
   LayoutGrid,
   Link2,
   Mail,
+  MessageSquare,
   Minus,
   Phone,
   Plus,
   Settings,
   Share2,
+  SplitSquareHorizontal,
   Trash2,
   Type,
+  Video,
   Wallet,
 } from "lucide-react";
 import { useState } from "react";
 
-type LeftSection = "blocks" | "add" | "social" | "pages" | "settings";
+type LeftSection = "blocks" | "add" | "social" | "pages";
+
+type LinkType =
+  | "link"
+  | "heading"
+  | "spacer"
+  | "text"
+  | "email"
+  | "phone"
+  | "vcard"
+  | "wallet"
+  | "divider"
+  | "image"
+  | "video"
+  | "html"
+  | "contact_form"
+  | "social_button";
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
   link: <Link2 className="w-4 h-4" />,
@@ -38,26 +61,61 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
   phone: <Phone className="w-4 h-4" />,
   vcard: <Contact className="w-4 h-4" />,
   wallet: <Wallet className="w-4 h-4" />,
+  divider: <SplitSquareHorizontal className="w-4 h-4" />,
+  image: <Image className="w-4 h-4" />,
+  video: <Video className="w-4 h-4" />,
+  html: <Code className="w-4 h-4" />,
+  contact_form: <MessageSquare className="w-4 h-4" />,
+  social_button: <Share2 className="w-4 h-4" />,
 };
 
-type LinkType = "link" | "heading" | "spacer" | "text" | "email" | "phone" | "vcard" | "wallet";
+interface BlockCategory {
+  label: string;
+  blocks: { type: LinkType; label: string; icon: React.ReactNode }[];
+}
 
-const BLOCK_TYPES: { type: LinkType; label: string; icon: React.ReactNode }[] = [
-  { type: "link", label: "Link", icon: <Link2 className="w-5 h-5" /> },
-  { type: "heading", label: "Heading", icon: <Heading className="w-5 h-5" /> },
-  { type: "text", label: "Text", icon: <Type className="w-5 h-5" /> },
-  { type: "email", label: "Email", icon: <Mail className="w-5 h-5" /> },
-  { type: "phone", label: "Phone", icon: <Phone className="w-5 h-5" /> },
-  { type: "vcard", label: "Contact", icon: <Contact className="w-5 h-5" /> },
-  { type: "spacer", label: "Spacer", icon: <Minus className="w-5 h-5" /> },
-  { type: "wallet", label: "Wallet", icon: <Wallet className="w-5 h-5" /> },
+const BLOCK_CATEGORIES: BlockCategory[] = [
+  {
+    label: "Content",
+    blocks: [
+      { type: "link", label: "Link", icon: <Link2 className="w-5 h-5" /> },
+      { type: "heading", label: "Heading", icon: <Heading className="w-5 h-5" /> },
+      { type: "text", label: "Text", icon: <Type className="w-5 h-5" /> },
+      { type: "spacer", label: "Spacer", icon: <Minus className="w-5 h-5" /> },
+      { type: "divider", label: "Divider", icon: <SplitSquareHorizontal className="w-5 h-5" /> },
+      { type: "html", label: "HTML", icon: <Code className="w-5 h-5" /> },
+    ],
+  },
+  {
+    label: "Social",
+    blocks: [
+      { type: "social_button", label: "Social Button", icon: <Share2 className="w-5 h-5" /> },
+    ],
+  },
+  {
+    label: "Media",
+    blocks: [
+      { type: "image", label: "Image", icon: <Image className="w-5 h-5" /> },
+      { type: "video", label: "Video", icon: <Video className="w-5 h-5" /> },
+    ],
+  },
+  {
+    label: "Contact",
+    blocks: [
+      { type: "email", label: "Email", icon: <Mail className="w-5 h-5" /> },
+      { type: "phone", label: "Phone", icon: <Phone className="w-5 h-5" /> },
+      { type: "contact_form", label: "Contact Form", icon: <MessageSquare className="w-5 h-5" /> },
+      { type: "vcard", label: "vCard", icon: <Contact className="w-5 h-5" /> },
+      { type: "wallet", label: "Wallet Pass", icon: <Wallet className="w-5 h-5" /> },
+    ],
+  },
 ];
 
 interface LeftPanelProps {
-  onNavigate?: (path: string) => void;
+  onOpenDrawer?: (drawer: AdminDrawer) => void;
 }
 
-export function LeftPanel({ onNavigate }: LeftPanelProps) {
+export function LeftPanel({ onOpenDrawer }: LeftPanelProps) {
   const [activeSection, setActiveSection] = useState<LeftSection>("blocks");
 
   const navItems = [
@@ -70,7 +128,7 @@ export function LeftPanel({ onNavigate }: LeftPanelProps) {
   return (
     <div className="flex h-full">
       {/* Icon Rail */}
-      <div className="w-14 bg-gray-50 border-r border-gray-200 flex flex-col items-center py-3 gap-1 shrink-0">
+      <div className="w-14 bg-[var(--admin-bg)] border-r border-[var(--admin-border)] flex flex-col items-center py-3 gap-1 shrink-0">
         {navItems.map((item) => (
           <button
             key={item.id}
@@ -78,8 +136,8 @@ export function LeftPanel({ onNavigate }: LeftPanelProps) {
             onClick={() => setActiveSection(item.id)}
             className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
               activeSection === item.id
-                ? "bg-indigo-100 text-indigo-600"
-                : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                ? "bg-[var(--admin-accent)]/10 text-[var(--admin-accent)]"
+                : "text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)] hover:bg-[var(--admin-bg)]"
             }`}
             title={item.label}
           >
@@ -93,7 +151,7 @@ export function LeftPanel({ onNavigate }: LeftPanelProps) {
           href="https://linkden-docs.pages.dev"
           target="_blank"
           rel="noopener noreferrer"
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
+          className="w-10 h-10 rounded-xl flex items-center justify-center text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)] hover:bg-[var(--admin-bg)] transition-all"
           title="Documentation"
         >
           <BookOpen className="w-5 h-5" />
@@ -101,10 +159,8 @@ export function LeftPanel({ onNavigate }: LeftPanelProps) {
 
         <button
           type="button"
-          onClick={() => {
-            if (onNavigate) onNavigate("/admin/settings");
-          }}
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
+          onClick={() => onOpenDrawer?.("wallet")}
+          className="w-10 h-10 rounded-xl flex items-center justify-center text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)] hover:bg-[var(--admin-bg)] transition-all"
           title="Settings"
         >
           <Settings className="w-5 h-5" />
@@ -112,11 +168,11 @@ export function LeftPanel({ onNavigate }: LeftPanelProps) {
       </div>
 
       {/* Panel Content */}
-      <div className="flex-1 overflow-y-auto bg-white">
+      <div className="flex-1 overflow-y-auto bg-[var(--admin-surface)]">
         {activeSection === "add" && <AddBlocksSection />}
-        {activeSection === "blocks" && <BlockListSection />}
+        {activeSection === "blocks" && <BlockListSection onOpenDrawer={onOpenDrawer} />}
         {activeSection === "social" && <SocialSection />}
-        {activeSection === "pages" && <PagesSection onNavigate={onNavigate} />}
+        {activeSection === "pages" && <PagesSection onOpenDrawer={onOpenDrawer} />}
       </div>
     </div>
   );
@@ -127,13 +183,14 @@ function AddBlocksSection() {
   const createMutation = trpc.links.create.useMutation({
     onSuccess: () => {
       utils.links.listAll.invalidate();
+      utils.links.draftCount.invalidate();
       toast.success("Block added");
     },
     onError: () => toast.error("Failed to add block"),
   });
 
   function handleAddBlock(type: LinkType) {
-    const defaults: Record<string, { title: string; url?: string }> = {
+    const defaults: Record<string, { title: string; url?: string; metadata?: Record<string, unknown> }> = {
       link: { title: "New Link", url: "https://example.com" },
       heading: { title: "Section Title" },
       text: { title: "Text Block", url: "Your text content here..." },
@@ -141,8 +198,13 @@ function AddBlocksSection() {
       phone: { title: "Call Me", url: "+1234567890" },
       vcard: { title: "Save Contact" },
       spacer: { title: "---" },
-      image: { title: "Image", url: "https://example.com/image.jpg" },
-      map: { title: "Find Us", url: "https://maps.google.com" },
+      wallet: { title: "Add to Wallet" },
+      divider: { title: "---", metadata: { style: "solid" } },
+      image: { title: "Image", url: "https://example.com/image.jpg", metadata: { alt: "", caption: "" } },
+      video: { title: "Video", url: "https://youtube.com/watch?v=dQw4w9WgXcQ", metadata: { provider: "youtube" } },
+      html: { title: "HTML Block", metadata: { html: "<p>Custom HTML</p>" } },
+      contact_form: { title: "Get in Touch", metadata: { buttonText: "Send Message" } },
+      social_button: { title: "Follow me", metadata: { platform: "twitter" } },
     };
     const d = defaults[type] || { title: "New Block" };
     createMutation.mutate({
@@ -150,31 +212,39 @@ function AddBlocksSection() {
       title: d.title,
       url: d.url,
       isActive: true,
+      metadata: d.metadata,
     });
   }
 
   return (
     <div className="p-4">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">Add Blocks</h3>
-      <div className="grid grid-cols-2 gap-2">
-        {BLOCK_TYPES.map((block) => (
-          <button
-            key={block.type}
-            type="button"
-            onClick={() => handleAddBlock(block.type)}
-            disabled={createMutation.isPending}
-            className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all text-gray-600 hover:text-indigo-600"
-          >
-            {block.icon}
-            <span className="text-xs font-medium">{block.label}</span>
-          </button>
-        ))}
-      </div>
+      <h3 className="text-sm font-semibold text-[var(--admin-text)] mb-3">Add Blocks</h3>
+      {BLOCK_CATEGORIES.map((category) => (
+        <div key={category.label} className="mb-4">
+          <p className="text-[10px] font-medium text-[var(--admin-text-secondary)] uppercase tracking-wider mb-2">
+            {category.label}
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {category.blocks.map((block) => (
+              <button
+                key={block.type}
+                type="button"
+                onClick={() => handleAddBlock(block.type)}
+                disabled={createMutation.isPending}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-[var(--admin-border)] hover:border-[var(--admin-accent)]/30 hover:bg-[var(--admin-accent)]/5 transition-all text-[var(--admin-text-secondary)] hover:text-[var(--admin-accent)]"
+              >
+                {block.icon}
+                <span className="text-xs font-medium">{block.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
 
-function BlockListSection() {
+function BlockListSection({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawer) => void }) {
   const utils = trpc.useUtils();
   const linksQuery = trpc.links.listAll.useQuery();
 
@@ -186,13 +256,17 @@ function BlockListSection() {
   });
 
   const toggleMutation = trpc.links.toggleActive.useMutation({
-    onSuccess: () => utils.links.listAll.invalidate(),
+    onSuccess: () => {
+      utils.links.listAll.invalidate();
+      utils.links.draftCount.invalidate();
+    },
     onError: () => toast.error("Failed to update"),
   });
 
   const deleteMutation = trpc.links.delete.useMutation({
     onSuccess: () => {
       utils.links.listAll.invalidate();
+      utils.links.draftCount.invalidate();
       toast.success("Block deleted");
     },
     onError: () => toast.error("Failed to delete"),
@@ -223,7 +297,7 @@ function BlockListSection() {
     return (
       <div className="p-4 space-y-2">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-12 rounded-lg bg-gray-100 animate-pulse" />
+          <div key={i} className="h-12 rounded-lg bg-[var(--admin-bg)] animate-pulse" />
         ))}
       </div>
     );
@@ -234,11 +308,11 @@ function BlockListSection() {
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-900">Blocks ({links.length})</h3>
+        <h3 className="text-sm font-semibold text-[var(--admin-text)]">Blocks ({links.length})</h3>
       </div>
 
       {links.length === 0 ? (
-        <p className="text-sm text-gray-500 text-center py-8">
+        <p className="text-sm text-[var(--admin-text-secondary)] text-center py-8">
           No blocks yet. Click the + tab to add one.
         </p>
       ) : (
@@ -252,32 +326,41 @@ function BlockListSection() {
                       <div
                         ref={provided.innerRef}
                         {...provided.draggableProps}
-                        className={`flex items-center gap-2 p-2 rounded-lg border transition-all ${
+                        className={`flex items-center gap-2 p-2 rounded-lg border transition-all cursor-pointer ${
                           snapshot.isDragging
-                            ? "border-indigo-300 bg-indigo-50 shadow-lg"
-                            : "border-gray-200 bg-white hover:border-gray-300"
+                            ? "border-[var(--admin-accent)]/30 bg-[var(--admin-accent)]/5 shadow-lg"
+                            : "border-[var(--admin-border)] bg-[var(--admin-surface)] hover:border-[var(--admin-border)]"
                         } ${!link.isActive ? "opacity-50" : ""}`}
+                        onClick={() => {
+                          if (!snapshot.isDragging) {
+                            onOpenDrawer?.({ type: "link-edit", id: link.id });
+                          }
+                        }}
                       >
                         <div
                           {...provided.dragHandleProps}
-                          className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
+                          className="cursor-grab active:cursor-grabbing text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)]"
+                          onClick={(e) => e.stopPropagation()}
                         >
                           <GripVertical className="w-3.5 h-3.5" />
                         </div>
 
-                        <div className="w-6 h-6 rounded-md bg-gray-100 flex items-center justify-center shrink-0 text-gray-500">
+                        <div className="w-6 h-6 rounded-md bg-[var(--admin-bg)] flex items-center justify-center shrink-0 text-[var(--admin-text-secondary)]">
                           {TYPE_ICONS[link.type] || <Globe className="w-3.5 h-3.5" />}
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-gray-900 truncate">{link.title}</p>
+                          <p className="text-xs font-medium text-[var(--admin-text)] truncate">{link.title}</p>
                         </div>
 
                         <div className="flex items-center gap-0.5 shrink-0">
                           <button
                             type="button"
-                            onClick={() => toggleMutation.mutate({ id: link.id })}
-                            className="p-1 rounded hover:bg-gray-100 text-gray-400"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleMutation.mutate({ id: link.id });
+                            }}
+                            className="p-1 rounded hover:bg-[var(--admin-bg)] text-[var(--admin-text-secondary)]"
                             title={link.isActive ? "Hide" : "Show"}
                           >
                             {link.isActive ? (
@@ -288,11 +371,14 @@ function BlockListSection() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleDelete(link.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(link.id);
+                            }}
                             className={`p-1 rounded transition-colors ${
                               deletingId === link.id
                                 ? "bg-red-100 text-red-500"
-                                : "hover:bg-gray-100 text-gray-400"
+                                : "hover:bg-[var(--admin-bg)] text-[var(--admin-text-secondary)]"
                             }`}
                             title={deletingId === link.id ? "Confirm" : "Delete"}
                           >
@@ -316,8 +402,8 @@ function BlockListSection() {
 function SocialSection() {
   return (
     <div className="p-4">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">Social Links</h3>
-      <p className="text-xs text-gray-500 mb-4">
+      <h3 className="text-sm font-semibold text-[var(--admin-text)] mb-3">Social Links</h3>
+      <p className="text-xs text-[var(--admin-text-secondary)] mb-4">
         Add your social media profiles. These appear as icons on your page.
       </p>
       <div className="space-y-2">
@@ -327,30 +413,30 @@ function SocialSection() {
               <input
                 type="text"
                 placeholder={`${platform} URL`}
-                className="flex-1 text-xs px-3 py-2 rounded-lg border border-gray-200 focus:border-indigo-300 focus:ring-1 focus:ring-indigo-200 outline-none transition-all"
+                className="flex-1 text-xs px-3 py-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] text-[var(--admin-text)] focus:border-[var(--admin-accent)]/30 focus:ring-1 focus:ring-[var(--admin-accent)]/20 outline-none transition-all"
               />
             </div>
           ),
         )}
       </div>
-      <p className="text-[10px] text-gray-400 mt-3">
+      <p className="text-[10px] text-[var(--admin-text-secondary)] mt-3">
         Social links are stored in settings and will be saved when you publish.
       </p>
     </div>
   );
 }
 
-function PagesSection({ onNavigate }: { onNavigate?: (path: string) => void }) {
+function PagesSection({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawer) => void }) {
   const pagesQuery = trpc.pages.list.useQuery();
 
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-900">Custom Pages</h3>
+        <h3 className="text-sm font-semibold text-[var(--admin-text)]">Custom Pages</h3>
         <button
           type="button"
-          onClick={() => onNavigate?.("/admin/pages/new")}
-          className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+          onClick={() => onOpenDrawer?.("pages-new")}
+          className="text-xs text-[var(--admin-accent)] hover:text-[var(--admin-accent-hover)] font-medium"
         >
           + New
         </button>
@@ -359,65 +445,72 @@ function PagesSection({ onNavigate }: { onNavigate?: (path: string) => void }) {
       {pagesQuery.isLoading ? (
         <div className="space-y-2">
           {[1, 2].map((i) => (
-            <div key={i} className="h-10 rounded-lg bg-gray-100 animate-pulse" />
+            <div key={i} className="h-10 rounded-lg bg-[var(--admin-bg)] animate-pulse" />
           ))}
         </div>
       ) : pagesQuery.data && pagesQuery.data.length > 0 ? (
         <div className="space-y-1.5">
           {pagesQuery.data.map((page) => (
-            <a
+            <button
               key={page.id}
-              href={`/admin/pages/${page.id}`}
-              className="flex items-center gap-2 p-2 rounded-lg border border-gray-200 hover:border-gray-300 transition-all"
+              type="button"
+              onClick={() => onOpenDrawer?.({ type: "page-edit", id: page.id })}
+              className="flex items-center gap-2 p-2 rounded-lg border border-[var(--admin-border)] hover:border-[var(--admin-border)] transition-all w-full text-left"
             >
-              <FileText className="w-4 h-4 text-gray-400" />
+              <FileText className="w-4 h-4 text-[var(--admin-text-secondary)]" />
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-gray-900 truncate">{page.title}</p>
-                <p className="text-[10px] text-gray-500">/{page.slug}</p>
+                <p className="text-xs font-medium text-[var(--admin-text)] truncate">{page.title}</p>
+                <p className="text-[10px] text-[var(--admin-text-secondary)]">/{page.slug}</p>
               </div>
               <span
                 className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                  page.isPublished ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                  page.isPublished
+                    ? "bg-green-100 text-green-700"
+                    : "bg-[var(--admin-bg)] text-[var(--admin-text-secondary)]"
                 }`}
               >
                 {page.isPublished ? "Live" : "Draft"}
               </span>
-            </a>
+            </button>
           ))}
         </div>
       ) : (
-        <p className="text-sm text-gray-500 text-center py-6">No custom pages yet.</p>
+        <p className="text-sm text-[var(--admin-text-secondary)] text-center py-6">No custom pages yet.</p>
       )}
 
-      <div className="mt-4 pt-3 border-t border-gray-200 space-y-1.5">
-        <a
-          href="/admin/contacts"
-          className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 text-sm text-gray-600"
+      <div className="mt-4 pt-3 border-t border-[var(--admin-border)] space-y-1.5">
+        <button
+          type="button"
+          onClick={() => onOpenDrawer?.("contacts")}
+          className="flex items-center gap-2 p-2 rounded-lg hover:bg-[var(--admin-bg)] text-sm text-[var(--admin-text-secondary)] w-full text-left transition-colors"
         >
           <Mail className="w-4 h-4" />
           Contacts
-        </a>
-        <a
-          href="/admin/vcard"
-          className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 text-sm text-gray-600"
+        </button>
+        <button
+          type="button"
+          onClick={() => onOpenDrawer?.("vcard")}
+          className="flex items-center gap-2 p-2 rounded-lg hover:bg-[var(--admin-bg)] text-sm text-[var(--admin-text-secondary)] w-full text-left transition-colors"
         >
           <Contact className="w-4 h-4" />
           vCard Editor
-        </a>
-        <a
-          href="/admin/wallet"
-          className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 text-sm text-gray-600"
+        </button>
+        <button
+          type="button"
+          onClick={() => onOpenDrawer?.("wallet")}
+          className="flex items-center gap-2 p-2 rounded-lg hover:bg-[var(--admin-bg)] text-sm text-[var(--admin-text-secondary)] w-full text-left transition-colors"
         >
           <Wallet className="w-4 h-4" />
           Wallet Pass
-        </a>
-        <a
-          href="/admin/analytics"
-          className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 text-sm text-gray-600"
+        </button>
+        <button
+          type="button"
+          onClick={() => onOpenDrawer?.("analytics")}
+          className="flex items-center gap-2 p-2 rounded-lg hover:bg-[var(--admin-bg)] text-sm text-[var(--admin-text-secondary)] w-full text-left transition-colors"
         >
-          <Globe className="w-4 h-4" />
+          <BarChart3 className="w-4 h-4" />
           Full Analytics
-        </a>
+        </button>
       </div>
     </div>
   );

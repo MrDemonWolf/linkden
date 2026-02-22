@@ -15,14 +15,27 @@
   --button-hover-bg: rgba(15, 172, 237, 0.35);
   --border-radius: 16px;
 
-  /* Admin palette */
+  /* Admin palette — light (default) */
   --admin-bg: #fafafa;
   --admin-surface: #ffffff;
-  --admin-border: #e5e7eb;
-  --admin-text: #111827;
-  --admin-text-secondary: #6b7280;
+  --admin-border: #e8e8ec;
+  --admin-text: #18181b;
+  --admin-text-secondary: #71717a;
   --admin-accent: #6366f1;
   --admin-accent-hover: #4f46e5;
+  --admin-success: #10b981;
+  --admin-danger: #ef4444;
+}
+
+/* Admin dark mode */
+.admin-dark {
+  --admin-bg: #09090b;
+  --admin-surface: #18181b;
+  --admin-border: #27272a;
+  --admin-text: #fafafa;
+  --admin-text-secondary: #a1a1aa;
+  --admin-accent: #818cf8;
+  --admin-accent-hover: #6366f1;
   --admin-success: #10b981;
   --admin-danger: #ef4444;
 }

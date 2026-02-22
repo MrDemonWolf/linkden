@@ -9,6 +9,12 @@ export const linkTypeEnum = [
   "phone",
   "vcard",
   "wallet",
+  "divider",
+  "image",
+  "video",
+  "html",
+  "contact_form",
+  "social_button",
 ] as const;
 
 export type LinkType = (typeof linkTypeEnum)[number];
@@ -31,6 +37,8 @@ export const links = sqliteTable(
     sortOrder: integer("sort_order").notNull().default(0),
     clickCount: integer("click_count").notNull().default(0),
     metadata: text("metadata", { mode: "json" }).$type<Record<string, unknown>>(),
+    draft: text("draft", { mode: "json" }).$type<Record<string, unknown>>(),
+    publishedAt: integer("published_at"),
     createdAt: text("created_at")
       .notNull()
       .$defaultFn(() => new Date().toISOString()),
@@ -44,6 +52,7 @@ export const links = sqliteTable(
 export const settings = sqliteTable("settings", {
   key: text("key").primaryKey(),
   value: text("value").notNull().default(""),
+  draftValue: text("draft_value"),
   updatedAt: text("updated_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),

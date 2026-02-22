@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { Moon, Sun } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { Avatar } from "./avatar";
-import { ContactForm } from "./contact-form";
 import { LinkBlock } from "./link-block";
 import { SocialIconsRow } from "./social-icons-row";
 import { WhitelabelFooter } from "./whitelabel-footer";
@@ -31,6 +31,8 @@ interface PublicPageProps {
   isPreview?: boolean;
 }
 
+const VISITOR_THEME_KEY = "linkden-visitor-theme";
+
 export function PublicPage({
   settings,
   links,
@@ -40,7 +42,6 @@ export function PublicPage({
   const profileName = settings.profileName || "LinkDen";
   const profileBio = settings.profileBio || "";
   const profileImage = settings.profileImage || "";
-  const contactEnabled = settings.contactEnabled === "true";
   const captchaSiteKey = settings.captchaSiteKey || "";
   const customCss = settings.customCss || "";
   const customHead = settings.customHead || "";
@@ -49,10 +50,29 @@ export function PublicPage({
   const accentColor = settings.accentColor || "#0FACED";
   const backgroundColor = settings.backgroundColor || "#091533";
   const showVerifiedBadge = settings.verifiedBadge === "true";
+  const themeMode = settings.themeMode || "dark";
+
+  // Visitor dark/light preference
+  const [visitorMode, setVisitorMode] = useState<"dark" | "light" | null>(null);
+
+  useEffect(() => {
+    if (isPreview) return;
+    const stored = localStorage.getItem(VISITOR_THEME_KEY) as "dark" | "light" | null;
+    if (stored) setVisitorMode(stored);
+  }, [isPreview]);
+
+  const toggleVisitorMode = useCallback(() => {
+    const currentMode = visitorMode || themeMode;
+    const next = currentMode === "dark" ? "light" : "dark";
+    setVisitorMode(next);
+    if (!isPreview) {
+      localStorage.setItem(VISITOR_THEME_KEY, next);
+    }
+  }, [visitorMode, themeMode, isPreview]);
 
   // Apply theme CSS variables from settings
   useEffect(() => {
-    if (isPreview) return; // Don't modify document in preview mode
+    if (isPreview) return;
     const root = document.documentElement;
     const themeSettings: Record<string, string> = {
       backgroundColor: "--background",
@@ -133,15 +153,15 @@ export function PublicPage({
     setMeta("twitter:image", metaImage);
   }, [settings, profileName, profileBio, profileImage, isPreview]);
 
-  // Track page view
+  // Track page view via tRPC mutation
   useEffect(() => {
     if (isPreview) return;
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/trpc/analytics.trackPageView`, {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!apiUrl) return;
+    fetch(`${apiUrl}/trpc/analytics.trackPageView`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        referrer: document.referrer,
-      }),
+      body: JSON.stringify({ json: { referrer: document.referrer } }),
     }).catch(() => {});
   }, [isPreview]);
 
@@ -149,7 +169,7 @@ export function PublicPage({
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="min-h-screen flex flex-col relative"
       style={isPreview ? { background: backgroundColor, color: "var(--text-primary)" } : undefined}
     >
       {/* Gradient Header Area */}
@@ -165,7 +185,7 @@ export function PublicPage({
       {/* Content Area - overlaps header */}
       <div className="flex flex-col items-center px-4 -mt-16 pb-12">
         <div className="w-full max-w-md space-y-5 animate-fade-in">
-          {/* Avatar - overlapping the header/body boundary */}
+          {/* Avatar */}
           <div className="flex justify-center">
             <div className="rounded-full p-1 bg-[var(--background)] shadow-xl">
               <Avatar
@@ -193,21 +213,30 @@ export function PublicPage({
           {/* Link Blocks */}
           <div className="space-y-3">
             {activeLinks.map((link) => (
-              <LinkBlock key={link.id} link={link} />
+              <LinkBlock key={link.id} link={link} captchaSiteKey={captchaSiteKey} />
             ))}
           </div>
-
-          {/* Contact Form */}
-          {contactEnabled && !isPreview && (
-            <div className="mt-8">
-              <ContactForm captchaSiteKey={captchaSiteKey} />
-            </div>
-          )}
 
           {/* Footer */}
           <WhitelabelFooter brandName={brandName} brandLogo={brandLogo} />
         </div>
       </div>
+
+      {/* Floating dark/light toggle for visitors */}
+      {!isPreview && (
+        <button
+          type="button"
+          onClick={toggleVisitorMode}
+          className="fixed bottom-4 right-4 w-10 h-10 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm flex items-center justify-center text-white/70 hover:text-white hover:bg-white/20 transition-all z-50"
+          aria-label="Toggle dark/light mode"
+        >
+          {(visitorMode || themeMode) === "dark" ? (
+            <Sun className="w-4 h-4" />
+          ) : (
+            <Moon className="w-4 h-4" />
+          )}
+        </button>
+      )}
     </div>
   );
 }

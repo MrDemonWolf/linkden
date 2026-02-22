@@ -1,113 +1,105 @@
 "use client";
 
-import { BookOpen, ExternalLink, Eye, Monitor, Redo2, Smartphone, Tablet, Undo2 } from "lucide-react";
+import {
+  BookOpen,
+  ChevronDown,
+  ExternalLink,
+  Eye,
+  Monitor,
+  Moon,
+  Smartphone,
+  Sun,
+  Tablet,
+} from "lucide-react";
+import { useState } from "react";
 
 interface TopBarProps {
   deviceSize: "phone" | "tablet" | "desktop";
   onDeviceSizeChange: (size: "phone" | "tablet" | "desktop") => void;
   onPublish: () => void;
+  onDiscardAll?: () => void;
   isPublishing: boolean;
+  draftCount?: number;
+  darkMode?: boolean;
+  onToggleDarkMode?: () => void;
 }
 
-export function TopBar({ deviceSize, onDeviceSizeChange, onPublish, isPublishing }: TopBarProps) {
+export function TopBar({
+  deviceSize,
+  onDeviceSizeChange,
+  onPublish,
+  onDiscardAll,
+  isPublishing,
+  draftCount = 0,
+  darkMode,
+  onToggleDarkMode,
+}: TopBarProps) {
   const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const [showPublishMenu, setShowPublishMenu] = useState(false);
 
   return (
-    <header className="h-14 flex items-center justify-between px-4 bg-white border-b border-gray-200 shrink-0">
+    <header className="h-14 flex items-center justify-between px-4 bg-[var(--admin-surface)] border-b border-[var(--admin-border)] shrink-0">
       {/* Left: Logo */}
       <div className="flex items-center gap-4">
         <a href="/admin" className="flex items-center gap-1.5">
-          <span className="text-lg font-bold text-indigo-600">Link</span>
-          <span className="text-lg font-bold text-gray-900">Den</span>
+          <span className="text-lg font-bold text-[var(--admin-accent)]">Link</span>
+          <span className="text-lg font-bold text-[var(--admin-text)]">Den</span>
         </a>
       </div>
 
-      {/* Center: Device toggles + URL */}
+      {/* Center: Device toggles */}
       <div className="hidden md:flex items-center gap-2">
-        <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
-          <button
-            type="button"
-            onClick={() => onDeviceSizeChange("phone")}
-            className={`p-1.5 rounded-md transition-colors ${
-              deviceSize === "phone"
-                ? "bg-white text-indigo-600 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            title="Phone preview"
-          >
-            <Smartphone className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onDeviceSizeChange("tablet")}
-            className={`p-1.5 rounded-md transition-colors ${
-              deviceSize === "tablet"
-                ? "bg-white text-indigo-600 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            title="Tablet preview"
-          >
-            <Tablet className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onDeviceSizeChange("desktop")}
-            className={`p-1.5 rounded-md transition-colors ${
-              deviceSize === "desktop"
-                ? "bg-white text-indigo-600 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-            title="Desktop preview"
-          >
-            <Monitor className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="flex items-center gap-1 text-gray-400">
-          <button
-            type="button"
-            className="p-1.5 rounded-md hover:bg-gray-100 hover:text-gray-600 transition-colors"
-            title="Undo"
-          >
-            <Undo2 className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            className="p-1.5 rounded-md hover:bg-gray-100 hover:text-gray-600 transition-colors"
-            title="Redo"
-          >
-            <Redo2 className="w-4 h-4" />
-          </button>
+        <div className="flex items-center bg-[var(--admin-bg)] rounded-lg p-0.5">
+          {([
+            { key: "phone" as const, icon: Smartphone, title: "Phone preview" },
+            { key: "tablet" as const, icon: Tablet, title: "Tablet preview" },
+            { key: "desktop" as const, icon: Monitor, title: "Desktop preview" },
+          ]).map(({ key, icon: Icon, title }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onDeviceSizeChange(key)}
+              className={`p-1.5 rounded-md transition-colors ${
+                deviceSize === key
+                  ? "bg-[var(--admin-surface)] text-[var(--admin-accent)] shadow-sm"
+                  : "text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)]"
+              }`}
+              title={title}
+            >
+              <Icon className="w-4 h-4" />
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2">
+        {onToggleDarkMode && (
+          <button
+            type="button"
+            onClick={onToggleDarkMode}
+            className="p-1.5 rounded-lg text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)] hover:bg-[var(--admin-bg)] transition-colors"
+            title={darkMode ? "Light mode" : "Dark mode"}
+          >
+            {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+        )}
+
         <a
           href="/"
           target="_blank"
           rel="noopener noreferrer"
-          className="hidden sm:flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          className="hidden sm:flex items-center gap-1.5 text-sm text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)] px-2.5 py-1.5 rounded-lg hover:bg-[var(--admin-bg)] transition-colors"
         >
           <Eye className="w-3.5 h-3.5" />
           Preview
         </a>
 
         <a
-          href="/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hidden sm:flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          <ExternalLink className="w-3.5 h-3.5" />
-          View Page
-        </a>
-
-        <a
           href="https://linkden-docs.pages.dev"
           target="_blank"
           rel="noopener noreferrer"
-          className="hidden sm:flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          className="hidden sm:flex items-center gap-1.5 text-sm text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)] px-2.5 py-1.5 rounded-lg hover:bg-[var(--admin-bg)] transition-colors"
         >
           <BookOpen className="w-3.5 h-3.5" />
           Docs
@@ -115,14 +107,56 @@ export function TopBar({ deviceSize, onDeviceSizeChange, onPublish, isPublishing
 
         {clerkEnabled && <ClerkUserButton />}
 
-        <button
-          type="button"
-          onClick={onPublish}
-          disabled={isPublishing}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
-        >
-          {isPublishing ? "Publishing..." : "Publish"}
-        </button>
+        {/* Publish button with dropdown */}
+        <div className="relative">
+          <div className="flex items-center">
+            <button
+              type="button"
+              onClick={onPublish}
+              disabled={isPublishing || draftCount === 0}
+              className={`text-white text-sm font-medium px-4 py-2 rounded-l-lg transition-colors disabled:opacity-50 ${
+                draftCount > 0
+                  ? "bg-[var(--admin-accent)] hover:bg-[var(--admin-accent-hover)] animate-pulse-subtle"
+                  : "bg-[var(--admin-accent)] hover:bg-[var(--admin-accent-hover)]"
+              }`}
+            >
+              {isPublishing ? "Publishing..." : draftCount > 0 ? `Publish (${draftCount})` : "Publish"}
+            </button>
+            {onDiscardAll && draftCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowPublishMenu(!showPublishMenu)}
+                className="bg-[var(--admin-accent)] hover:bg-[var(--admin-accent-hover)] text-white px-1.5 py-2 rounded-r-lg border-l border-white/20 transition-colors"
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          {showPublishMenu && (
+            <div className="absolute right-0 top-full mt-1 bg-[var(--admin-surface)] border border-[var(--admin-border)] rounded-lg shadow-lg py-1 min-w-[160px] z-50">
+              <button
+                type="button"
+                onClick={() => {
+                  onPublish();
+                  setShowPublishMenu(false);
+                }}
+                className="w-full text-left px-3 py-2 text-sm text-[var(--admin-text)] hover:bg-[var(--admin-bg)] transition-colors"
+              >
+                Publish All
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onDiscardAll?.();
+                  setShowPublishMenu(false);
+                }}
+                className="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-[var(--admin-bg)] transition-colors"
+              >
+                Discard All Changes
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

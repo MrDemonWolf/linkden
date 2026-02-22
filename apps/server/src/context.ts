@@ -6,5 +6,5 @@ import type { Context } from "./trpc";
 export async function createContext(req: Request, env: Env): Promise<Context> {
   const db = createDb(env.DB);
   const userId = await verifyAuth(req, env);
-  return { db, userId, env };
+  return { db, userId, env, headers: req.headers };
 }
