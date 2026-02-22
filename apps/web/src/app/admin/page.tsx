@@ -5,7 +5,6 @@ import { PhonePreview } from "@/components/admin/phone-preview";
 import { RightPanel } from "@/components/admin/right-panel";
 import { TopBar } from "@/components/admin/top-bar";
 import {
-  placeholderLinks,
   placeholderSettings,
   placeholderSocialLinks,
 } from "@/lib/placeholder-data";
@@ -118,8 +117,8 @@ export default function AdminEditorPage() {
 
   const isPublishing = linksPublishMutation.isPending || settingsPublishMutation.isPending;
 
-  // Use server links or placeholder
-  const links = linksQuery.data && linksQuery.data.length > 0 ? linksQuery.data : placeholderLinks;
+  // Use server links (no placeholder fallback — show empty state when no blocks exist)
+  const links = linksQuery.data ?? [];
 
   const mobileTabItems = [
     { id: "blocks" as const, icon: LayoutGrid, label: "Blocks" },
