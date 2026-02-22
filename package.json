@@ -15,6 +15,7 @@
     "test:e2e": "playwright test"
   },
   "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
     "@playwright/test": "^1.52.0",
     "turbo": "^2.5.0",
     "typescript": "^5.8.0"
@@ -22,5 +23,14 @@
   "packageManager": "pnpm@10.29.3",
   "engines": {
     "node": ">=20"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@biomejs/biome",
+      "esbuild",
+      "workerd",
+      "@swc/core",
+      "sharp"
+    ]
   }
 }

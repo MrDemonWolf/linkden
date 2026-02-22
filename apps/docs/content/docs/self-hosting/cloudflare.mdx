@@ -5,9 +5,19 @@ description: Step-by-step guide to deploying LinkDen on Cloudflare Workers, Page
 
 # Cloudflare Deployment
 
-LinkDen is designed to run entirely on the Cloudflare stack. This guide walks through the complete deployment process, from account setup to a live instance.
+LinkDen is designed to run entirely on the Cloudflare stack. This guide walks through the complete deployment process, from account setup to a live, production-ready instance.
 
-## Cloudflare Services Used
+## Architecture Overview
+
+LinkDen uses three Cloudflare services that work together:
+
+```
+┌─────────────────────┐     ┌──────────────────────┐     ┌──────────────┐
+│  Cloudflare Pages   │────▶│  Cloudflare Workers   │────▶│ Cloudflare D1│
+│  (Next.js static    │     │  (Hono API server)    │     │ (SQLite DB)  │
+│   export - web UI)  │     │                       │     │              │
+└─────────────────────┘     └──────────────────────┘     └──────────────┘
+```
 
 | Service | Purpose | Free Tier |
 |---------|---------|-----------|
@@ -20,97 +30,421 @@ The free tier is sufficient for most single-user instances.
 
 ## Prerequisites
 
-1. A [Cloudflare account](https://cloudflare.com) (free).
-2. Node.js 20+ and pnpm 9+.
-3. The LinkDen repository cloned locally.
+Before you begin, make sure you have the following:
 
-## Step-by-Step Deployment
+1. A [Cloudflare account](https://cloudflare.com) (free tier is sufficient).
+2. **Node.js 20+** installed on your machine.
+3. **pnpm 9+** installed globally (`npm install -g pnpm`).
+4. The LinkDen repository cloned locally:
 
-### 1. Create a Cloudflare API Token
+```bash
+git clone https://github.com/mrdemonwolf/LinkDen.git
+cd LinkDen
+pnpm install
+```
+
+## Step 1: Create a Cloudflare API Token
+
+The API token allows LinkDen's deployment tooling (Alchemy) to manage Cloudflare resources on your behalf.
 
 1. Log in to the [Cloudflare dashboard](https://dash.cloudflare.com).
-2. Click your profile icon and go to **My Profile > API Tokens**.
-3. Click **Create Token**.
-4. Use the **Custom Token** template with these permissions:
-   - Account: Cloudflare Pages (Edit)
-   - Account: Cloudflare Workers Scripts (Edit)
-   - Account: D1 (Edit)
-   - Account: Workers KV Storage (Edit)
-5. Set the token to apply to your account.
-6. Click **Continue to summary** and then **Create Token**.
-7. Copy the token immediately (it is shown only once).
+2. Click your profile icon in the top-right corner.
+3. Go to **My Profile > API Tokens**.
+4. Click **Create Token**.
+5. Select the **Custom token** template.
+6. Configure the following permissions:
 
-### 2. Find Your Account ID
+| Permission Scope | Resource | Access Level |
+|-----------------|----------|--------------|
+| Account | Cloudflare Pages | Edit |
+| Account | Cloudflare Workers Scripts | Edit |
+| Account | D1 | Edit |
+| Account | Workers KV Storage | Edit |
 
-1. Go to the Cloudflare dashboard overview page.
-2. Your **Account ID** is displayed on the right sidebar.
+7. Under **Account Resources**, select your account.
+8. Leave **Client IP Address Filtering** and **TTL** at defaults (or restrict as desired for extra security).
+9. Click **Continue to summary**, then **Create Token**.
+10. **Copy the token immediately.** It is shown only once. Store it securely.
+
+## Step 2: Find Your Account ID
+
+1. Go to the [Cloudflare dashboard](https://dash.cloudflare.com) overview page.
+2. Your **Account ID** is displayed in the right sidebar under **Account details**.
 3. Copy it.
 
-### 3. Configure Environment Variables
+Alternatively, use the Wrangler CLI:
 
-Add both values to your root `.env` file:
+```bash
+npx wrangler whoami
+```
+
+This prints your account name and ID after authenticating.
+
+## Step 3: Install and Authenticate Wrangler CLI
+
+Wrangler is Cloudflare's CLI tool. It is already included as a dev dependency in `apps/server`, but you can also install it globally for convenience:
+
+```bash
+npm install -g wrangler
+```
+
+Authenticate Wrangler with your Cloudflare account:
+
+```bash
+wrangler login
+```
+
+This opens a browser window for OAuth authentication. After approving, Wrangler stores your credentials locally.
+
+To verify the login:
+
+```bash
+wrangler whoami
+```
+
+You should see your account name and ID.
+
+## Step 4: Configure Environment Variables
+
+Create a `.env` file in the project root with your Cloudflare credentials:
 
 ```bash
 CLOUDFLARE_API_TOKEN=your-api-token-here
 CLOUDFLARE_ACCOUNT_ID=your-account-id-here
 ```
 
-Complete the rest of the environment setup as described in the [Configuration guide](/docs/getting-started/configuration).
+Next, configure the web app. Create `apps/web/.env`:
 
-### 4. Push Database Schema
+```bash
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_your-key
+CLERK_SECRET_KEY=sk_live_your-key
+NEXT_PUBLIC_API_URL=https://linkden-api.your-subdomain.workers.dev
+NEXT_PUBLIC_SITE_URL=https://linkden.pages.dev
+NEXT_PUBLIC_SITE_NAME=LinkDen
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=your-turnstile-site-key
+```
 
-Create the D1 database and push the schema:
+And the server app. Create `apps/server/.env`:
+
+```bash
+CLERK_SECRET_KEY=sk_live_your-key
+CLERK_PUBLISHABLE_KEY=pk_live_your-key
+CORS_ORIGIN=https://linkden.pages.dev
+APP_URL=https://linkden.pages.dev
+RESEND_API_KEY=re_your-key
+TURNSTILE_SECRET_KEY=your-turnstile-secret
+```
+
+See the [Environment Variables reference](/docs/self-hosting/environment-variables) for a full list of all variables.
+
+## Step 5: Create the D1 Database
+
+LinkDen uses Cloudflare D1 (SQLite at the edge) for all data storage. Create the database manually or let Alchemy handle it.
+
+### Option A: Let Alchemy Handle It (Recommended)
+
+The `pnpm cf:deploy` command in Step 7 automatically creates the D1 database if it does not exist. Skip to Step 6.
+
+### Option B: Create Manually via Wrangler
+
+```bash
+wrangler d1 create linkden-db
+```
+
+This outputs the database ID. Add it to `apps/server/wrangler.toml`:
+
+```toml
+[[d1_databases]]
+binding = "DB"
+database_name = "linkden-db"
+database_id = "your-database-id-here"
+```
+
+Then push the schema:
 
 ```bash
 pnpm db:push
 ```
 
-This creates the D1 database on Cloudflare and applies all Drizzle migrations.
+This applies the Drizzle ORM schema to your D1 database, creating all necessary tables (links, settings, analytics, wallet_pass, vcard, contact_submissions, pages).
 
-### 5. Deploy
+To verify the schema was applied:
+
+```bash
+wrangler d1 execute linkden-db --command "SELECT name FROM sqlite_master WHERE type='table'"
+```
+
+## Step 6: Configure Clerk Authentication
+
+LinkDen uses [Clerk](https://clerk.com) for authentication. Set up a Clerk application:
+
+1. Sign up at [clerk.com](https://clerk.com) and create a new application.
+2. In the Clerk dashboard, go to **API Keys**.
+3. Copy the **Publishable Key** (`pk_live_...`) and **Secret Key** (`sk_live_...`).
+4. Under **Domains**, add your production URLs:
+   - Pages URL: `https://linkden.pages.dev` (or your custom domain)
+5. Under **Paths**, configure:
+   - Sign-in URL: `/sign-in`
+   - Sign-up URL: `/sign-up`
+   - After sign-in URL: `/admin`
+
+## Step 7: Deploy
+
+With everything configured, deploy the entire stack with a single command:
 
 ```bash
 pnpm cf:deploy
 ```
 
-Alchemy handles:
+This command runs the Alchemy infrastructure-as-code tool, which:
 
-- Building the Next.js app as a static export.
-- Building the Hono API for Workers.
-- Creating/updating all Cloudflare resources.
-- Uploading static assets to Pages.
-- Deploying the API Worker.
+1. Builds the Next.js web app as a static export.
+2. Builds the Hono API server for Cloudflare Workers.
+3. Creates or updates the D1 database.
+4. Uploads static assets to Cloudflare Pages.
+5. Deploys the API Worker.
+6. Configures bindings between the Worker and D1.
 
-### 6. Verify
+The deploy output shows your live URLs:
 
-The deploy output shows your Pages URL (e.g., `https://linkden.pages.dev`) and Worker URL. Visit the Pages URL to confirm your instance is live.
+```
+✓ Pages deployed: https://linkden.pages.dev
+✓ Worker deployed: https://linkden-api.your-subdomain.workers.dev
+```
+
+## Step 8: Set Secrets in Cloudflare Dashboard
+
+Some environment variables should be set as encrypted secrets in the Cloudflare dashboard rather than in plain-text config files.
+
+### Worker Secrets
+
+1. Go to **Workers & Pages** in the Cloudflare dashboard.
+2. Click on your `linkden-api` Worker.
+3. Go to **Settings > Variables**.
+4. Under **Environment Variables**, click **Add variable** for each:
+
+| Variable | Value | Encrypt |
+|----------|-------|---------|
+| `CLERK_SECRET_KEY` | `sk_live_...` | Yes |
+| `CLERK_PUBLISHABLE_KEY` | `pk_live_...` | No |
+| `CORS_ORIGIN` | `https://your-domain.com` | No |
+| `APP_URL` | `https://your-domain.com` | No |
+| `RESEND_API_KEY` | `re_...` | Yes |
+| `TURNSTILE_SECRET_KEY` | `0x...` | Yes |
+
+Alternatively, set secrets via Wrangler CLI:
+
+```bash
+cd apps/server
+echo "your-clerk-secret-key" | wrangler secret put CLERK_SECRET_KEY
+echo "your-resend-api-key" | wrangler secret put RESEND_API_KEY
+echo "your-turnstile-secret" | wrangler secret put TURNSTILE_SECRET_KEY
+```
+
+### Pages Environment Variables
+
+1. Go to **Workers & Pages** in the Cloudflare dashboard.
+2. Click on your LinkDen Pages project.
+3. Go to **Settings > Environment variables**.
+4. Add the `NEXT_PUBLIC_*` variables for the **Production** environment.
+
+Note: Since the Next.js app is a static export, `NEXT_PUBLIC_*` variables are baked in at build time. Changing them requires a redeploy.
+
+## Step 9: Verify the Deployment
+
+1. Visit your Pages URL (e.g., `https://linkden.pages.dev`). You should see the public link page.
+2. Navigate to `/admin` and confirm the Clerk sign-in flow works.
+3. Sign in and try creating a link to verify the API connection.
+4. Check the analytics dashboard to confirm page view tracking.
+
+If something is not working, check the Worker logs:
+
+```bash
+wrangler tail linkden-api
+```
+
+This streams real-time logs from your Worker, showing requests and errors.
+
+## Step 10: Set Up Custom Domains (Optional)
+
+See the [Custom Domain guide](/docs/self-hosting/custom-domain) for detailed instructions on connecting your own domain to both Pages and the Worker.
+
+Quick summary:
+
+- **Pages custom domain**: Cloudflare dashboard > Workers & Pages > your project > Custom Domains
+- **Worker custom domain**: Cloudflare dashboard > Workers & Pages > your Worker > Triggers > Custom Domains
+
+After adding custom domains, update `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SITE_URL`, `CORS_ORIGIN`, and `APP_URL` accordingly and redeploy.
 
 ## Subsequent Deploys
 
 After the initial setup, deploying updates is a single command:
 
 ```bash
+git pull origin main
 pnpm cf:deploy
 ```
 
 Alchemy only updates resources that changed, making subsequent deploys faster.
 
+## SSL/TLS Configuration
+
+Cloudflare provides SSL/TLS automatically for all Pages and Workers deployments:
+
+- **Default `*.pages.dev` and `*.workers.dev` subdomains**: Full SSL is enabled by default with Cloudflare-managed certificates.
+- **Custom domains on Cloudflare DNS**: Cloudflare automatically provisions and renews SSL certificates.
+- **Custom domains on external DNS**: SSL is provisioned after DNS verification completes.
+
+To configure SSL/TLS mode for your zone:
+
+1. Go to your domain in the Cloudflare dashboard.
+2. Navigate to **SSL/TLS**.
+3. Set the encryption mode to **Full (strict)** for maximum security.
+
+No manual certificate management is required.
+
+## Monitoring and Logs
+
+### Real-Time Logs
+
+Stream live logs from your API Worker:
+
+```bash
+wrangler tail linkden-api
+```
+
+Add filters:
+
+```bash
+# Only errors
+wrangler tail linkden-api --status error
+
+# Only specific paths
+wrangler tail linkden-api --search "/trpc"
+```
+
+### Cloudflare Dashboard Analytics
+
+1. **Workers analytics**: Go to Workers & Pages > your Worker > Analytics. View request counts, error rates, CPU time, and duration percentiles.
+2. **Pages analytics**: Go to Workers & Pages > your Pages project > Analytics. View deployment history and build times.
+3. **D1 analytics**: Go to Workers & Pages > D1 > your database. View query counts, rows read/written, and storage usage.
+
+### Web Analytics (Optional)
+
+Enable Cloudflare Web Analytics for visitor insights:
+
+1. Go to **Analytics & Logs > Web Analytics** in the dashboard.
+2. Add your site.
+3. Cloudflare injects the analytics script automatically for Pages projects (or add the snippet manually).
+
 ## Tearing Down
 
-To remove all Cloudflare resources:
+To remove all Cloudflare resources created by Alchemy:
 
 ```bash
 pnpm cf:destroy
 ```
 
-This deletes the Pages project, Worker, and D1 database. All data is permanently removed.
+This deletes:
+- The Cloudflare Pages project
+- The API Worker
+- The D1 database and all data
+
+**This action is irreversible.** All data is permanently removed. Back up your D1 database first if needed:
+
+```bash
+wrangler d1 export linkden-db --output backup.sql
+```
+
+## Troubleshooting
+
+### "Authentication error" on deploy
+
+Your API token may have expired or lack the required permissions. Generate a new token with all the permissions listed in Step 1.
+
+```bash
+# Verify your token works
+wrangler whoami
+```
+
+### CORS errors in the browser console
+
+The `CORS_ORIGIN` environment variable on the Worker must exactly match the origin of your web app (including protocol and no trailing slash).
+
+```bash
+# Correct
+CORS_ORIGIN=https://linkden.pages.dev
+
+# Wrong -- trailing slash
+CORS_ORIGIN=https://linkden.pages.dev/
+
+# Wrong -- HTTP instead of HTTPS
+CORS_ORIGIN=http://linkden.pages.dev
+```
+
+If you use a custom domain, update `CORS_ORIGIN` to match. Multiple origins can be comma-separated:
+
+```bash
+CORS_ORIGIN=https://yourdomain.com,https://linkden.pages.dev
+```
+
+### "D1 database not found" errors
+
+The `DATABASE_ID` in the Worker bindings does not match an existing D1 database. Check your `wrangler.toml`:
+
+```bash
+wrangler d1 list
+```
+
+Verify the `database_id` in `apps/server/wrangler.toml` matches the output.
+
+### Clerk sign-in redirects to wrong URL
+
+In the Clerk dashboard, verify that your production domain is added under **Domains** and that the allowed redirect URLs include your Pages URL.
+
+### Build fails with "out of memory"
+
+The Cloudflare Pages free tier has build limits. Try building locally and deploying the pre-built output:
+
+```bash
+pnpm build
+pnpm cf:deploy
+```
+
+### Worker returns 1101 error (Worker threw exception)
+
+Check the Worker logs for the stack trace:
+
+```bash
+wrangler tail linkden-api --status error
+```
+
+Common causes:
+- Missing environment variable or secret
+- D1 binding not configured
+- Clerk secret key mismatch between environments
+
+### Static assets return 404
+
+Ensure the Next.js app is configured with `output: "export"` in `next.config.ts`. This produces a fully static build that Pages can serve.
 
 ## Cost Considerations
 
 For a typical single-user link page:
 
-- **Page views**: A page with 10,000 monthly visitors uses about 10,000 Worker requests -- well within the 100,000/day free tier.
-- **Database**: Each page view generates a few D1 reads. 10,000 monthly visitors is roughly 300 reads/day -- trivial against the 5 million/day limit.
-- **Bandwidth**: Cloudflare Pages has unlimited bandwidth on all plans.
+| Metric | Typical Usage | Free Tier Limit |
+|--------|--------------|-----------------|
+| Worker requests | ~10K/month (page views + API calls) | 100,000/day |
+| D1 rows read | ~300/day | 5,000,000/day |
+| D1 rows written | ~50/day (analytics + edits) | 100,000/day |
+| D1 storage | < 50 MB | 5 GB |
+| Pages bandwidth | Unlimited | Unlimited |
+| Pages builds | 1-2/week | 500/month |
 
-Most LinkDen instances will operate entirely within the free tier.
+**When you need to upgrade:**
+
+- **Workers Paid plan ($5/month)**: If you exceed 100K requests/day, the paid plan offers 10 million requests/month included.
+- **D1 paid tier**: Included with the Workers Paid plan, with higher read/write limits.
+- **Pages Pro ($20/month)**: Needed only if you require more than 500 builds/month or need preview deployments with access controls.
+
+Most LinkDen instances will operate entirely within the free tier indefinitely.

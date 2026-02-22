@@ -1,0 +1,47 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/ocean.css";
+@import "fumadocs-ui/css/preset.css";
+
+/* LinkDen Midnight Glass — Light */
+:root {
+  --color-fd-primary: hsl(199deg 92% 49%);
+  --color-fd-primary-foreground: hsl(0deg 0% 100%);
+  --color-fd-foreground: hsl(220deg 60% 12%);
+  --color-fd-muted-foreground: hsl(220deg 10% 46%);
+  --color-fd-border: hsl(220deg 15% 90%);
+  --color-fd-ring: hsl(199deg 92% 42%);
+  --color-fd-accent: hsl(199deg 30% 96%);
+  --color-fd-accent-foreground: hsl(220deg 60% 25%);
+}
+
+/* LinkDen Midnight Glass — Dark */
+.dark {
+  --color-fd-background: hsl(225deg 60% 8%);
+  --color-fd-foreground: hsl(210deg 40% 98%);
+  --color-fd-muted: hsl(225deg 40% 11%);
+  --color-fd-card: hsl(225deg 40% 12%);
+  --color-fd-card-foreground: hsl(210deg 40% 98%);
+  --color-fd-secondary: hsl(225deg 40% 15%);
+  --color-fd-secondary-foreground: hsl(210deg 40% 98%);
+  --color-fd-muted-foreground: hsl(210deg 15% 68%);
+  --color-fd-primary: hsl(199deg 92% 55%);
+  --color-fd-primary-foreground: hsl(0deg 0% 100%);
+  --color-fd-ring: hsl(199deg 92% 48%);
+  --color-fd-overlay: hsl(225deg 60% 4% / 60%);
+  --color-fd-border: hsl(225deg 30% 20%);
+  --color-fd-accent: hsl(225deg 30% 16%);
+  --color-fd-accent-foreground: hsl(210deg 40% 98%);
+
+  --shiki-dark: #e1e4e8;
+  --shiki-dark-bg: hsl(225deg 60% 6%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    color-scheme: dark;
+  }
+  body {
+    background-color: var(--color-fd-background, #091533);
+    color: var(--color-fd-muted-foreground, #e5e7eb);
+  }
+}
