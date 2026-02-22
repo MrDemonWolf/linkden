@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Sora font from Google Fonts (loaded in layout.tsx via next/font) ── */
+
 :root {
   --background: #091533;
   --surface: rgba(255, 255, 255, 0.08);
@@ -16,28 +18,46 @@
   --border-radius: 16px;
 
   /* Admin palette — light (default) */
-  --admin-bg: #fafafa;
+  --admin-bg: #f7f7f8;
   --admin-surface: #ffffff;
-  --admin-border: #e8e8ec;
+  --admin-surface-elevated: #ffffff;
+  --admin-border: #e4e4e7;
+  --admin-border-subtle: #f0f0f2;
   --admin-text: #18181b;
   --admin-text-secondary: #71717a;
+  --admin-text-tertiary: #a1a1aa;
   --admin-accent: #6366f1;
   --admin-accent-hover: #4f46e5;
+  --admin-accent-subtle: rgba(99, 102, 241, 0.08);
+  --admin-accent-muted: rgba(99, 102, 241, 0.15);
   --admin-success: #10b981;
   --admin-danger: #ef4444;
+  --admin-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --admin-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --admin-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --admin-ring: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
 
 /* Admin dark mode */
 .admin-dark {
   --admin-bg: #09090b;
-  --admin-surface: #18181b;
+  --admin-surface: #141416;
+  --admin-surface-elevated: #1c1c1f;
   --admin-border: #27272a;
+  --admin-border-subtle: #1f1f23;
   --admin-text: #fafafa;
   --admin-text-secondary: #a1a1aa;
+  --admin-text-tertiary: #71717a;
   --admin-accent: #818cf8;
   --admin-accent-hover: #6366f1;
-  --admin-success: #10b981;
-  --admin-danger: #ef4444;
+  --admin-accent-subtle: rgba(129, 140, 248, 0.08);
+  --admin-accent-muted: rgba(129, 140, 248, 0.15);
+  --admin-success: #34d399;
+  --admin-danger: #f87171;
+  --admin-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --admin-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --admin-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --admin-ring: 0 0 0 2px rgba(129, 140, 248, 0.25);
 }
 
 * {
@@ -49,10 +69,41 @@ body {
   padding: 0;
   background: var(--background);
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Admin shared input style ── */
+.admin-input {
+  width: 100%;
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.admin-input:focus {
+  border-color: var(--admin-accent);
+  box-shadow: var(--admin-ring);
+}
+
+.admin-input::placeholder {
+  color: var(--admin-text-tertiary);
+}
+
+/* ── Admin section label ── */
+.admin-section-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--admin-text-tertiary);
+  margin-bottom: 0.5rem;
 }
 
 @layer components {
@@ -226,6 +277,15 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
+}
+
+/* Admin panel scrollbar override */
+[data-admin-panel] ::-webkit-scrollbar-thumb {
+  background: var(--admin-border);
+}
+
+[data-admin-panel] ::-webkit-scrollbar-thumb:hover {
+  background: var(--admin-text-tertiary);
 }
 
 /* Toast notification styles */

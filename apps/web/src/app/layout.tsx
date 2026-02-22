@@ -1,6 +1,13 @@
 import "@/styles/globals.css";
 import { Providers } from "@/providers";
 import type { Metadata, Viewport } from "next";
+import { Sora } from "next/font/google";
+
+const sora = Sora({
+  subsets: ["latin"],
+  variable: "--font-sora",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -44,8 +51,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" className={sora.variable}>
+      <body className="font-sans">
         <Providers>{children}</Providers>
       </body>
     </html>

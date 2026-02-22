@@ -6,6 +6,9 @@ const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-sora)", "system-ui", "sans-serif"],
+      },
       colors: {
         brand: {
           navy: "#091533",
