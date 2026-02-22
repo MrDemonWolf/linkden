@@ -9,7 +9,7 @@ export const systemRouter = router({
   checkUpdate: protectedProcedure.query(async () => {
     try {
       const response = await fetch(
-        "https://api.github.com/repos/mrdemonwolf/LinkDen/releases/latest",
+        "https://api.github.com/repos/mrdemonwolf/linkden/releases/latest",
         {
           headers: {
             Accept: "application/vnd.github.v3+json",

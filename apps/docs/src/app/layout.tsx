@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "LinkDen - Your Links, Your Brand, Your Rules",
     description: "Self-hosted link-in-bio platform built on Cloudflare. A modern, whitelabel-friendly Linktree alternative.",
   },
-  metadataBase: new URL("https://mrdemonwolf.github.io/LinkDen"),
+  metadataBase: new URL("https://mrdemonwolf.github.io/linkden"),
 };
 
 export default function Layout({ children }: LayoutProps<"/">) {

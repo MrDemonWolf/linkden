@@ -7,7 +7,7 @@ export function baseOptions(): BaseLayoutProps {
       url: "/",
       transparentMode: "top",
     },
-    githubUrl: "https://github.com/mrdemonwolf/LinkDen",
+    githubUrl: "https://github.com/mrdemonwolf/linkden",
     links: [
       { text: "Docs", url: "/docs" },
     ],

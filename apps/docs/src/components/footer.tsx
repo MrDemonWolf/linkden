@@ -6,7 +6,7 @@ export function Footer() {
     <footer className="border-t border-fd-border py-6 text-center text-xs text-fd-muted-foreground">
       <div>
         &copy; {year}{" "}
-        <a href="https://github.com/mrdemonwolf/LinkDen" target="_blank" rel="noopener noreferrer" className="font-medium transition-colors hover:text-fd-foreground">LinkDen</a>
+        <a href="https://github.com/mrdemonwolf/linkden" target="_blank" rel="noopener noreferrer" className="font-medium transition-colors hover:text-fd-foreground">LinkDen</a>
         {" "}by{" "}
         <a href="https://www.mrdemonwolf.com" target="_blank" rel="noopener noreferrer" className="font-medium transition-colors hover:text-fd-foreground">MrDemonWolf, Inc.</a>
       </div>
