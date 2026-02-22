@@ -11,6 +11,14 @@ import {
 } from "@/lib/placeholder-data";
 import { toast } from "@/lib/toast";
 import { trpc } from "@/lib/trpc";
+import { AnalyticsDrawer } from "@/components/admin/drawers/analytics-drawer";
+import { ContactDetailDrawer } from "@/components/admin/drawers/contact-detail-drawer";
+import { ContactsDrawer } from "@/components/admin/drawers/contacts-drawer";
+import { LinkEditDrawer } from "@/components/admin/drawers/link-edit-drawer";
+import { PageEditorDrawer } from "@/components/admin/drawers/page-editor-drawer";
+import { PagesDrawer } from "@/components/admin/drawers/pages-drawer";
+import { VCardDrawer } from "@/components/admin/drawers/vcard-drawer";
+import { WalletDrawer } from "@/components/admin/drawers/wallet-drawer";
 import { BarChart3, LayoutGrid, Palette } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -290,9 +298,23 @@ function DrawerContent({
         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-6">
-        <p className="text-sm text-[var(--admin-text-secondary)]">
-          {drawerTitle} content will be loaded here.
-        </p>
+        {drawer === "analytics" && <AnalyticsDrawer />}
+        {drawer === "vcard" && <VCardDrawer />}
+        {drawer === "wallet" && <WalletDrawer />}
+        {drawer === "contacts" && <ContactsDrawer onOpenDrawer={onOpenDrawer} />}
+        {drawer === "pages" && <PagesDrawer onOpenDrawer={onOpenDrawer} />}
+        {drawer === "pages-new" && (
+          <PageEditorDrawer pageId={null} onOpenDrawer={onOpenDrawer} onClose={onClose} />
+        )}
+        {typeof drawer === "object" && drawer.type === "page-edit" && (
+          <PageEditorDrawer pageId={drawer.id} onOpenDrawer={onOpenDrawer} onClose={onClose} />
+        )}
+        {typeof drawer === "object" && drawer.type === "contact-detail" && (
+          <ContactDetailDrawer id={drawer.id} onClose={onClose} onOpenDrawer={onOpenDrawer} />
+        )}
+        {typeof drawer === "object" && drawer.type === "link-edit" && (
+          <LinkEditDrawer id={drawer.id} onClose={onClose} />
+        )}
       </div>
     </div>
   );
