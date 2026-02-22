@@ -1,4 +1,12 @@
 {
   "title": "Self-Hosting",
-  "pages": ["cloudflare", "custom-domain", "environment-variables"]
+  "pages": [
+    "cloudflare",
+    "vercel",
+    "railway",
+    "coolify",
+    "docker",
+    "custom-domain",
+    "environment-variables"
+  ]
 }

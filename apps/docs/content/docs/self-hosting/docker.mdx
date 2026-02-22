@@ -1,0 +1,620 @@
+---
+title: Docker
+description: Self-host LinkDen with Docker and Docker Compose for full control over your deployment.
+---
+
+# Docker Self-Hosting
+
+This guide covers deploying LinkDen using Docker on any Linux server, VPS, or local machine. Docker gives you full control over the runtime environment, networking, and data storage.
+
+## Architecture
+
+The Docker deployment runs three components:
+
+```
+┌──────────────┐     ┌──────────────────┐     ┌───────────────┐
+│  Caddy/Nginx │────▶│  Hono API Server │────▶│ SQLite Volume │
+│  (static web │     │  (Node.js)       │     │ (/data/)      │
+│   + reverse  │     │  Port 8787       │     │               │
+│   proxy)     │     └──────────────────┘     └───────────────┘
+│  Port 80/443 │
+└──────────────┘
+```
+
+- **Web app**: Next.js static export served by Caddy (or Nginx).
+- **API server**: Hono running on Node.js with `@hono/node-server`.
+- **Database**: SQLite file on a persistent Docker volume.
+
+## Prerequisites
+
+- **Docker** 20.10+ and **Docker Compose** v2+ installed on your server.
+- A domain name pointed at your server (for SSL).
+- Clerk API keys from [clerk.com](https://clerk.com).
+
+## Quick Start
+
+For those who want to get running fast:
+
+```bash
+git clone https://github.com/mrdemonwolf/LinkDen.git
+cd LinkDen
+cp .env.example .env
+# Edit .env with your values (see below)
+docker compose up -d
+```
+
+The rest of this guide breaks down each component in detail.
+
+## Project Structure
+
+Create these files in the repository root:
+
+```
+LinkDen/
+├── Dockerfile.api          # API server container
+├── Dockerfile.web          # Web app container
+├── docker-compose.yml      # Orchestrates everything
+├── Caddyfile               # Reverse proxy config (if using Caddy)
+└── .env                    # Environment variables
+```
+
+## Dockerfile for the API Server
+
+Create `Dockerfile.api`:
+
+```dockerfile
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@10.29.3 --activate
+WORKDIR /app
+
+# Install dependencies
+FROM base AS deps
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/server/package.json apps/server/
+COPY packages/db/package.json packages/db/
+COPY packages/email/package.json packages/email/
+COPY packages/validators/package.json packages/validators/
+RUN pnpm install --frozen-lockfile
+
+# Build
+FROM base AS builder
+COPY --from=deps /app/ ./
+COPY . .
+
+# Runtime
+FROM base AS runner
+RUN apk add --no-cache sqlite
+COPY --from=builder /app/ ./
+
+RUN mkdir -p /data
+
+ENV NODE_ENV=production
+ENV DATABASE_URL=file:/data/linkden.db
+
+EXPOSE 8787
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD wget --spider -q http://localhost:8787/ || exit 1
+
+CMD ["npx", "tsx", "apps/server/src/node-entry.ts"]
+```
+
+### Node.js Entry Point
+
+The Hono server is built for Cloudflare Workers. To run it on Node.js, create `apps/server/src/node-entry.ts`:
+
+```typescript
+import { serve } from "@hono/node-server";
+import app from "./index";
+
+const port = Number(process.env.PORT) || 8787;
+
+serve(
+  { fetch: app.fetch, port },
+  (info) => {
+    console.log(`LinkDen API running on http://localhost:${info.port}`);
+  }
+);
+```
+
+Install the required dependency:
+
+```bash
+cd apps/server && pnpm add @hono/node-server
+```
+
+For the database driver, install `better-sqlite3` or `@libsql/client` in `packages/db`:
+
+```bash
+cd packages/db && pnpm add better-sqlite3 && pnpm add -D @types/better-sqlite3
+```
+
+## Dockerfile for the Web App
+
+Create `Dockerfile.web`:
+
+```dockerfile
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@10.29.3 --activate
+WORKDIR /app
+
+# Install dependencies
+FROM base AS deps
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/web/package.json apps/web/
+COPY packages/ui/package.json packages/ui/
+COPY packages/validators/package.json packages/validators/
+RUN pnpm install --frozen-lockfile
+
+# Build the static export
+FROM base AS builder
+COPY --from=deps /app/ ./
+COPY . .
+
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SITE_URL
+ARG NEXT_PUBLIC_SITE_NAME=LinkDen
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
+ARG NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+ARG NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+ARG CLERK_SECRET_KEY
+
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_SITE_NAME=$NEXT_PUBLIC_SITE_NAME
+ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
+ENV NEXT_PUBLIC_CLERK_SIGN_IN_URL=$NEXT_PUBLIC_CLERK_SIGN_IN_URL
+ENV NEXT_PUBLIC_CLERK_SIGN_UP_URL=$NEXT_PUBLIC_CLERK_SIGN_UP_URL
+ENV CLERK_SECRET_KEY=$CLERK_SECRET_KEY
+
+RUN pnpm --filter @linkden/web build
+
+# Serve with Caddy
+FROM caddy:2-alpine AS runner
+
+COPY --from=builder /app/apps/web/out /srv
+
+COPY <<'EOF' /etc/caddy/Caddyfile
+:3001 {
+    root * /srv
+    file_server
+    try_files {path} {path}.html /index.html
+
+    header {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+
+    # Cache static assets
+    @static path *.js *.css *.png *.jpg *.jpeg *.gif *.svg *.ico *.woff *.woff2
+    header @static Cache-Control "public, max-age=31536000, immutable"
+}
+EOF
+
+EXPOSE 3001
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+  CMD wget --spider -q http://localhost:3001/ || exit 1
+```
+
+## Docker Compose
+
+Create `docker-compose.yml`:
+
+```yaml
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: linkden-api
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+      - CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3001}
+      - APP_URL=${APP_URL:-http://localhost:3001}
+      - DATABASE_URL=file:/data/linkden.db
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL:-}
+      - TURNSTILE_SECRET_KEY=${TURNSTILE_SECRET_KEY:-}
+      - APPLE_PASS_TYPE_ID=${APPLE_PASS_TYPE_ID:-}
+      - APPLE_TEAM_ID=${APPLE_TEAM_ID:-}
+      - APPLE_WWDR_CERT=${APPLE_WWDR_CERT:-}
+      - APPLE_SIGNER_CERT=${APPLE_SIGNER_CERT:-}
+      - APPLE_SIGNER_KEY=${APPLE_SIGNER_KEY:-}
+      - APPLE_SIGNER_PASSPHRASE=${APPLE_SIGNER_PASSPHRASE:-}
+    volumes:
+      - linkden-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8787/"]
+      interval: 30s
+      timeout: 10s
+      start_period: 5s
+      retries: 3
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8787}
+        - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-http://localhost:3001}
+        - NEXT_PUBLIC_SITE_NAME=${NEXT_PUBLIC_SITE_NAME:-LinkDen}
+        - NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+        - NEXT_PUBLIC_CLERK_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_SIGN_IN_URL:-/sign-in}
+        - NEXT_PUBLIC_CLERK_SIGN_UP_URL=${NEXT_PUBLIC_CLERK_SIGN_UP_URL:-/sign-up}
+        - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+    container_name: linkden-web
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  linkden-data:
+    name: linkden-data
+```
+
+## Environment Variables
+
+Create a `.env` file in the project root:
+
+```bash
+# Required: Clerk Authentication
+CLERK_SECRET_KEY=sk_live_your-secret-key
+CLERK_PUBLISHABLE_KEY=pk_live_your-publishable-key
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_your-publishable-key
+
+# Required: URLs (update these for production)
+NEXT_PUBLIC_API_URL=https://api.yourdomain.com
+NEXT_PUBLIC_SITE_URL=https://yourdomain.com
+CORS_ORIGIN=https://yourdomain.com
+APP_URL=https://yourdomain.com
+
+# Optional: Site name
+NEXT_PUBLIC_SITE_NAME=LinkDen
+
+# Optional: Email notifications
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=
+
+# Optional: CAPTCHA
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET_KEY=
+```
+
+See the [Environment Variables reference](/docs/self-hosting/environment-variables) for all available options.
+
+## Building and Starting
+
+```bash
+# Build and start all services
+docker compose up -d --build
+
+# View logs
+docker compose logs -f
+
+# View logs for a specific service
+docker compose logs -f api
+docker compose logs -f web
+
+# Stop all services
+docker compose down
+
+# Stop and remove volumes (deletes database!)
+docker compose down -v
+```
+
+## Reverse Proxy Setup
+
+In production, you should place a reverse proxy in front of the Docker containers to handle SSL termination and route traffic.
+
+### Option A: Caddy (Recommended)
+
+Caddy automatically obtains and renews Let's Encrypt SSL certificates.
+
+Add a `caddy` service to your `docker-compose.yml`:
+
+```yaml
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: linkden-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - web
+      - api
+
+  # ... existing api and web services ...
+  # Remove the "ports" from api and web services since Caddy handles external traffic
+
+volumes:
+  linkden-data:
+  caddy-data:
+  caddy-config:
+```
+
+Create `Caddyfile` in the project root:
+
+```
+yourdomain.com {
+    reverse_proxy web:3001
+}
+
+api.yourdomain.com {
+    reverse_proxy api:8787
+}
+```
+
+That is the entire Caddy configuration. Caddy automatically:
+- Obtains Let's Encrypt SSL certificates for both domains.
+- Redirects HTTP to HTTPS.
+- Renews certificates before they expire.
+
+When using Caddy as the external reverse proxy, remove the `ports` mapping from the `api` and `web` services (they are only accessible through Caddy's internal Docker network):
+
+```yaml
+  api:
+    # Remove: ports: - "8787:8787"
+    expose:
+      - "8787"
+
+  web:
+    # Remove: ports: - "3001:3001"
+    expose:
+      - "3001"
+```
+
+### Option B: Nginx
+
+If you prefer Nginx, add it to `docker-compose.yml`:
+
+```yaml
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: linkden-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - web
+      - api
+```
+
+Create `nginx.conf`:
+
+```nginx
+upstream web {
+    server web:3001;
+}
+
+upstream api {
+    server api:8787;
+}
+
+# Redirect HTTP to HTTPS
+server {
+    listen 80;
+    server_name yourdomain.com api.yourdomain.com;
+    return 301 https://$server_name$request_uri;
+}
+
+# Web app
+server {
+    listen 443 ssl http2;
+    server_name yourdomain.com;
+
+    ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    location / {
+        proxy_pass http://web;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+# API
+server {
+    listen 443 ssl http2;
+    server_name api.yourdomain.com;
+
+    ssl_certificate /etc/letsencrypt/live/api.yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.yourdomain.com/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    location / {
+        proxy_pass http://api;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+For Nginx, you need to manually manage SSL certificates. Use Certbot:
+
+```bash
+# Install certbot
+apt install certbot
+
+# Obtain certificates (stop nginx first, or use webroot plugin)
+certbot certonly --standalone -d yourdomain.com -d api.yourdomain.com
+
+# Auto-renewal is configured automatically by certbot
+```
+
+## Volume Mounts for SQLite Persistence
+
+The SQLite database is stored in a named Docker volume (`linkden-data`) mounted at `/data` inside the API container. This ensures data survives container restarts, image rebuilds, and redeployments.
+
+### Inspect the Volume
+
+```bash
+# List volumes
+docker volume ls | grep linkden
+
+# Inspect volume details
+docker volume inspect linkden-data
+```
+
+### Back Up the Database
+
+```bash
+# Create a backup
+docker exec linkden-api sqlite3 /data/linkden.db ".backup /data/backup.db"
+docker cp linkden-api:/data/backup.db ./linkden-backup-$(date +%Y%m%d).db
+
+# Or directly copy the database file (stop writes first for consistency)
+docker compose stop api
+docker cp linkden-api:/data/linkden.db ./linkden-backup.db
+docker compose start api
+```
+
+### Restore from Backup
+
+```bash
+docker compose stop api
+docker cp ./linkden-backup.db linkden-api:/data/linkden.db
+docker compose start api
+```
+
+### Automated Backups
+
+Create a cron job for daily backups:
+
+```bash
+# Add to crontab (crontab -e)
+0 3 * * * docker exec linkden-api sqlite3 /data/linkden.db ".backup /data/backup.db" && docker cp linkden-api:/data/backup.db /backups/linkden-$(date +\%Y\%m\%d).db && find /backups -name "linkden-*.db" -mtime +30 -delete
+```
+
+This backs up daily at 3 AM and deletes backups older than 30 days.
+
+## Health Checks
+
+Both Dockerfiles include health checks that Docker uses to monitor container health:
+
+- **API**: Sends an HTTP request to `http://localhost:8787/` every 30 seconds.
+- **Web**: Sends an HTTP request to `http://localhost:3001/` every 30 seconds.
+
+Check health status:
+
+```bash
+docker compose ps
+# Look for "(healthy)" in the STATUS column
+
+# Detailed health check info
+docker inspect --format='{{json .State.Health}}' linkden-api | jq
+```
+
+The `web` service has a `depends_on` condition that waits for the `api` to be healthy before starting, ensuring the API is available when the web app comes up.
+
+## Updating LinkDen
+
+To update to a new version:
+
+```bash
+# Pull the latest code
+git pull origin main
+
+# Rebuild and restart (zero-downtime if using rolling updates)
+docker compose up -d --build
+
+# Verify the update
+docker compose ps
+docker compose logs -f --tail=50
+```
+
+The SQLite database is on a persistent volume, so data is preserved across rebuilds.
+
+If the update includes database schema changes, they are applied automatically when the API server starts (Drizzle ORM handles migrations).
+
+## Production Checklist
+
+Before going live, verify:
+
+- [ ] `CORS_ORIGIN` matches the web app's production URL exactly (including `https://`, no trailing slash)
+- [ ] `NEXT_PUBLIC_API_URL` points to the API's production URL
+- [ ] `NEXT_PUBLIC_SITE_URL` matches the web app's production URL
+- [ ] SSL is working (lock icon in browser)
+- [ ] Persistent volume is configured for `/data`
+- [ ] Health checks are passing (`docker compose ps` shows "healthy")
+- [ ] Automatic container restart is enabled (`restart: unless-stopped`)
+- [ ] Database backups are configured
+- [ ] Firewall rules allow only ports 80 and 443 from the internet
+- [ ] Clerk domains are configured for your production URL
+
+## Troubleshooting
+
+### Container keeps restarting
+
+```bash
+# Check logs for the failing container
+docker compose logs api --tail=100
+docker compose logs web --tail=100
+```
+
+Common causes:
+- Missing required environment variables
+- Port conflict (another process using 8787 or 3001)
+- Out of memory (increase server RAM or Docker memory limits)
+
+### "CORS error" in the browser
+
+- `CORS_ORIGIN` on the API must exactly match the web app URL.
+- If using a reverse proxy, ensure it forwards the `Origin` header.
+- Check that the API is accessible from the browser (visit the API URL directly).
+
+### Database file is empty after restart
+
+- Verify the volume is mounted: `docker inspect linkden-api | grep Mounts -A 20`
+- Ensure `DATABASE_URL=file:/data/linkden.db` (path must be inside the mounted volume).
+- Check that the volume was not accidentally removed with `docker compose down -v`.
+
+### Build fails with out-of-memory error
+
+Next.js builds can be memory-intensive. Increase the Docker memory limit:
+
+```bash
+# In docker-compose.yml, add to the web service:
+deploy:
+  resources:
+    limits:
+      memory: 2G
+```
+
+### Cannot connect to API from web app
+
+- If both containers are on the same Docker network, use the service name (`api`) as the hostname.
+- For `NEXT_PUBLIC_API_URL`, use the **external** URL that the browser can reach (not the internal Docker hostname).
+- Verify the API container is healthy: `docker compose ps`.

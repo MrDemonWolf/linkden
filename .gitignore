@@ -8,6 +8,7 @@ dist/
 .output/
 .turbo/
 out/
+.source/
 
 # Environment
 .env

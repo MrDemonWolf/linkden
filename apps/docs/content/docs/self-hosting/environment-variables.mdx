@@ -5,110 +5,290 @@ description: Complete reference of all environment variables used by LinkDen acr
 
 # Environment Variables Reference
 
-This page is the definitive reference for every environment variable used by LinkDen. Variables are organized by which `.env` file they belong to.
+This page is the definitive reference for every environment variable used by LinkDen. Variables are organized by which `.env` file they belong to and which service uses them.
+
+## Quick Start
+
+LinkDen uses three `.env` files across the monorepo:
+
+```
+LinkDen/
+├── .env                    # Cloudflare deployment credentials
+├── apps/
+│   ├── web/.env            # Next.js frontend variables
+│   └── server/.env         # Hono API server variables
+```
+
+Copy the example files to get started:
+
+```bash
+# Root (Cloudflare credentials)
+cp .env.example .env
+
+# Web app
+cp apps/web/.env.example apps/web/.env
+
+# Server
+cp apps/server/.env.example apps/server/.env
+```
 
 ## Root `.env`
 
-These variables are used by the Alchemy deployment infrastructure in `packages/infra`.
+These variables are used by the Alchemy deployment infrastructure in `packages/infra` to manage Cloudflare resources.
 
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers, Pages, D1, and KV permissions | Yes | -- |
-| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID (found on the dashboard overview) | Yes | -- |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers, Pages, D1, and KV permissions | Yes (for Cloudflare deploy) | -- |
+| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID (found on the dashboard overview sidebar) | Yes (for Cloudflare deploy) | -- |
+
+These variables are only needed when deploying to Cloudflare. If you are self-hosting with Docker or another platform, you do not need them.
+
+### Generating a Cloudflare API Token
+
+1. Go to [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens).
+2. Click **Create Token**.
+3. Use the **Custom token** template.
+4. Add these permissions:
+
+| Scope | Resource | Access |
+|-------|----------|--------|
+| Account | Cloudflare Pages | Edit |
+| Account | Cloudflare Workers Scripts | Edit |
+| Account | D1 | Edit |
+| Account | Workers KV Storage | Edit |
+
+5. Select your account under **Account Resources**.
+6. Click **Continue to summary**, then **Create Token**.
+
+### Finding Your Account ID
+
+Go to the [Cloudflare dashboard](https://dash.cloudflare.com). Your Account ID is in the right sidebar under **Account details**. Alternatively:
+
+```bash
+npx wrangler whoami
+```
 
 ## Web App (`apps/web/.env`)
 
-These variables are used by the Next.js frontend application.
+These variables are used by the Next.js frontend application. Variables prefixed with `NEXT_PUBLIC_` are embedded into the client-side JavaScript bundle at build time and are visible to visitors in the browser.
 
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (starts with `pk_`) | Yes | -- |
-| `CLERK_SECRET_KEY` | Clerk secret key (starts with `sk_`) | Yes | -- |
-| `NEXT_PUBLIC_API_URL` | Full URL of the Hono API server | Yes | `http://localhost:8787` |
-| `NEXT_PUBLIC_SITE_URL` | Public URL of the web app | Yes | `http://localhost:3001` |
-| `NEXT_PUBLIC_SITE_NAME` | Display name for the site (browser title, meta tags) | No | `LinkDen` |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key for contact form CAPTCHA | No | -- |
-| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Clerk sign-in page path | No | `/sign-in` |
-| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Clerk sign-up page path | No | `/sign-up` |
+### Required Variables
 
-### Notes on `NEXT_PUBLIC_` Variables
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (starts with `pk_`) | `pk_live_abc123...` |
+| `CLERK_SECRET_KEY` | Clerk secret key (starts with `sk_`). Used during build for middleware. | `sk_live_abc123...` |
+| `NEXT_PUBLIC_API_URL` | Full URL of the Hono API server (no trailing slash) | `https://api.yourdomain.com` |
+| `NEXT_PUBLIC_SITE_URL` | Public URL of the web app (no trailing slash) | `https://yourdomain.com` |
 
-Variables prefixed with `NEXT_PUBLIC_` are embedded into the client-side JavaScript bundle at build time. They are visible to visitors in the browser. Never put secrets in `NEXT_PUBLIC_` variables.
+### Optional Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NEXT_PUBLIC_SITE_NAME` | Display name for the site (browser title, meta tags, Open Graph) | `LinkDen` |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key for contact form CAPTCHA widget | -- |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Path to the Clerk sign-in page | `/sign-in` |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Path to the Clerk sign-up page | `/sign-up` |
+
+### Important Notes on `NEXT_PUBLIC_` Variables
+
+- Variables prefixed with `NEXT_PUBLIC_` are **baked into the static build** at compile time.
+- Changing a `NEXT_PUBLIC_` variable requires a **full rebuild and redeploy** -- the change does not take effect by simply updating the environment variable.
+- **Never put secrets** in `NEXT_PUBLIC_` variables. They are visible to anyone who inspects the JavaScript bundle in the browser.
+- The `CLERK_SECRET_KEY` in the web app is used during the build process for Next.js middleware. It is not exposed to the client.
 
 ## Server App (`apps/server/.env`)
 
-These variables are used by the Hono API server running on Cloudflare Workers.
+These variables are used by the Hono API server. When deploying to Cloudflare Workers, these are set as Worker environment variables or secrets in the Cloudflare dashboard.
 
-### Required
+### Core (Required)
 
-| Variable | Description |
-|----------|-------------|
-| `CLERK_SECRET_KEY` | Clerk secret key for JWT verification |
-| `CLERK_PUBLISHABLE_KEY` | Clerk publishable key |
-| `DATABASE_ID` | Cloudflare D1 database ID |
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `CLERK_SECRET_KEY` | Clerk secret key for JWT verification of authenticated API requests | `sk_live_abc123...` |
+| `CLERK_PUBLISHABLE_KEY` | Clerk publishable key for Clerk middleware | `pk_live_abc123...` |
+| `CORS_ORIGIN` | Allowed origin(s) for CORS. Must exactly match the web app URL including protocol. Multiple origins can be comma-separated. | `https://yourdomain.com` |
+| `APP_URL` | Public URL of the web app. Used for generating absolute URLs (e.g., in emails). | `https://yourdomain.com` |
+
+### Database
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `DATABASE_ID` | Cloudflare D1 database ID (only for Cloudflare deployments) | Cloudflare only |
+| `DATABASE_URL` | SQLite file path or libSQL URL (for non-Cloudflare self-hosting with Docker, Coolify, Railway, etc.) | Non-Cloudflare only |
+
+When running on Cloudflare Workers, the D1 database is bound via `wrangler.toml` as the `DB` binding, and `DATABASE_ID` is the D1 database ID.
+
+When self-hosting outside Cloudflare, use `DATABASE_URL` to point to a local SQLite file:
+
+```bash
+# Local SQLite file
+DATABASE_URL=file:./data/linkden.db
+
+# Remote libSQL (e.g., Turso)
+DATABASE_URL=libsql://your-db.turso.io
+```
 
 ### Email (Optional)
 
-| Variable | Description |
-|----------|-------------|
-| `RESEND_API_KEY` | Resend API key for sending contact form notification emails |
-| `RESEND_FROM_EMAIL` | Verified sender email address for Resend (e.g., `contact@yourdomain.com`) |
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `RESEND_API_KEY` | Resend API key for sending contact form notification emails | `re_abc123...` |
+| `RESEND_FROM_EMAIL` | Verified sender email address for Resend | `contact@yourdomain.com` |
+
+To use the contact form email notifications:
+
+1. Sign up at [resend.com](https://resend.com).
+2. Verify your sending domain.
+3. Generate an API key from the Resend dashboard.
+4. Set both `RESEND_API_KEY` and `RESEND_FROM_EMAIL`.
+
+If these are not set, the contact form still works -- submissions are stored in the database but no email notifications are sent.
 
 ### CAPTCHA (Optional)
 
-| Variable | Description |
-|----------|-------------|
-| `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret key for server-side CAPTCHA verification |
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret key for server-side CAPTCHA verification | `0x4AAAAAABc...` |
+
+Used in conjunction with `NEXT_PUBLIC_TURNSTILE_SITE_KEY` on the web app to protect the contact form from spam.
+
+To set up Turnstile:
+
+1. Go to **Turnstile** in the [Cloudflare dashboard](https://dash.cloudflare.com).
+2. Click **Add site**.
+3. Enter your domain name.
+4. Choose the widget type (Managed is recommended).
+5. Copy the **Site Key** (for `NEXT_PUBLIC_TURNSTILE_SITE_KEY` in the web app).
+6. Copy the **Secret Key** (for `TURNSTILE_SECRET_KEY` in the server).
 
 ### Apple Wallet (Optional)
 
-| Variable | Description |
-|----------|-------------|
-| `APPLE_PASS_TYPE_ID` | Pass type identifier registered in Apple Developer portal (e.g., `pass.com.yourdomain.linkden`) |
-| `APPLE_TEAM_ID` | Your Apple Developer team identifier (10-character alphanumeric) |
-| `APPLE_WWDR_CERT` | Base64-encoded Apple Worldwide Developer Relations (WWDR) certificate |
-| `APPLE_SIGNER_CERT` | Base64-encoded pass signing certificate (.pem) |
-| `APPLE_SIGNER_KEY` | Base64-encoded private key for the signing certificate (.pem) |
-| `APPLE_SIGNER_PASSPHRASE` | Passphrase used when exporting the .p12 certificate |
+These variables enable Apple Wallet pass generation. All six must be set for the feature to work.
 
-## Generating Values
-
-### Cloudflare API Token
-
-1. Go to [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens).
-2. Create a custom token with Edit permissions for Pages, Workers, D1, and KV.
-
-### Cloudflare Account ID
-
-Found on the right sidebar of the Cloudflare dashboard overview page.
-
-### Clerk Keys
-
-1. Create an application at [clerk.com](https://clerk.com).
-2. Copy keys from the **API Keys** page in the Clerk dashboard.
-
-### D1 Database ID
-
-Created automatically by Alchemy on first deploy. Found in the Cloudflare dashboard under **Workers & Pages > D1**.
-
-### Resend API Key
-
-1. Sign up at [resend.com](https://resend.com).
-2. Generate an API key from the dashboard.
-
-### Turnstile Keys
-
-1. Go to **Turnstile** in the Cloudflare dashboard.
-2. Add a site to get the site key and secret key.
-
-### Apple Wallet Certificates
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `APPLE_PASS_TYPE_ID` | Pass type identifier registered in Apple Developer portal | `pass.com.yourdomain.linkden` |
+| `APPLE_TEAM_ID` | Your Apple Developer team identifier (10-character alphanumeric string) | `ABC1234DEF` |
+| `APPLE_WWDR_CERT` | Base64-encoded Apple Worldwide Developer Relations (WWDR) certificate | `MIIE...` |
+| `APPLE_SIGNER_CERT` | Base64-encoded pass signing certificate (.pem format) | `MIID...` |
+| `APPLE_SIGNER_KEY` | Base64-encoded private key for the signing certificate (.pem format) | `MIIE...` |
+| `APPLE_SIGNER_PASSPHRASE` | Passphrase used when exporting the .p12 signing certificate | `your-passphrase` |
 
 See the [Apple Wallet guide](/docs/features/apple-wallet) for detailed certificate generation instructions.
 
+To base64-encode a certificate or key file:
+
+```bash
+base64 -i your-certificate.pem | tr -d '\n'
+```
+
+## Complete `.env` Examples
+
+### Root `.env`
+
+```bash
+# Cloudflare Deployment (only needed for Cloudflare hosting)
+CLOUDFLARE_API_TOKEN=your-cloudflare-api-token
+CLOUDFLARE_ACCOUNT_ID=your-cloudflare-account-id
+```
+
+### `apps/web/.env`
+
+```bash
+# Clerk Authentication (required)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_your-publishable-key
+CLERK_SECRET_KEY=sk_live_your-secret-key
+
+# URLs (required)
+NEXT_PUBLIC_API_URL=https://api.yourdomain.com
+NEXT_PUBLIC_SITE_URL=https://yourdomain.com
+
+# Site Config (optional)
+NEXT_PUBLIC_SITE_NAME=My Links
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+
+# Turnstile CAPTCHA (optional)
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAAB...
+```
+
+### `apps/server/.env`
+
+```bash
+# Clerk Authentication (required)
+CLERK_SECRET_KEY=sk_live_your-secret-key
+CLERK_PUBLISHABLE_KEY=pk_live_your-publishable-key
+
+# CORS and URLs (required)
+CORS_ORIGIN=https://yourdomain.com
+APP_URL=https://yourdomain.com
+
+# Database (pick one based on your hosting)
+# For Cloudflare D1 -- set via wrangler.toml binding, not env var
+# For self-hosted Docker/Coolify/Railway:
+# DATABASE_URL=file:./data/linkden.db
+
+# Email Notifications (optional)
+RESEND_API_KEY=re_your-api-key
+RESEND_FROM_EMAIL=contact@yourdomain.com
+
+# Turnstile CAPTCHA (optional)
+TURNSTILE_SECRET_KEY=0x4AAAAAAB...
+
+# Apple Wallet (optional -- all 6 required for wallet feature)
+APPLE_PASS_TYPE_ID=pass.com.yourdomain.linkden
+APPLE_TEAM_ID=ABC1234DEF
+APPLE_WWDR_CERT=base64-encoded-wwdr-cert
+APPLE_SIGNER_CERT=base64-encoded-signer-cert
+APPLE_SIGNER_KEY=base64-encoded-signer-key
+APPLE_SIGNER_PASSPHRASE=your-passphrase
+```
+
+## Environment Variables by Hosting Platform
+
+Different hosting platforms have different ways of setting environment variables:
+
+| Platform | Web App Variables | Server Variables |
+|----------|------------------|-----------------|
+| **Cloudflare** | Pages > Settings > Environment variables | Workers > Settings > Variables (use "Encrypt" for secrets) |
+| **Docker** | `.env` file or `docker-compose.yml` `environment` block | `.env` file or `docker-compose.yml` `environment` block |
+| **Coolify** | Coolify UI > Service > Environment Variables | Coolify UI > Service > Environment Variables |
+| **Railway** | Railway dashboard > Service > Variables | Railway dashboard > Service > Variables |
+| **Vercel** | Vercel dashboard > Project > Settings > Environment Variables | N/A (API not on Vercel) |
+
 ## Security Best Practices
 
-- Never commit `.env` files to version control. They are listed in `.gitignore`.
-- Use different Clerk applications for development and production.
-- Rotate API keys periodically.
-- Use the minimum permissions necessary for Cloudflare API tokens.
-- Store production environment variables in a secrets manager or encrypted vault.
+- **Never commit `.env` files** to version control. They are included in `.gitignore`.
+- **Use different Clerk applications** for development and production to avoid credential conflicts.
+- **Rotate API keys periodically**, especially `CLERK_SECRET_KEY` and `RESEND_API_KEY`.
+- **Use the minimum permissions necessary** for Cloudflare API tokens.
+- **Encrypt sensitive variables** when your platform supports it (Cloudflare Workers "Encrypt" toggle, Railway's built-in encryption).
+- **Store production credentials in a secrets manager** (1Password, Vault, AWS Secrets Manager) rather than local files.
+- **Never put secrets in `NEXT_PUBLIC_*` variables.** These are embedded in the client-side JavaScript bundle and visible to anyone.
+- **Audit access regularly.** Review who has access to your Cloudflare account, Clerk dashboard, and deployment platforms.
+
+## Troubleshooting
+
+### "Invalid API key" errors from Clerk
+
+- Verify the `CLERK_SECRET_KEY` matches between the web app and server.
+- Ensure you are using the correct environment (development vs. production) keys.
+- Check that the Clerk application has the correct domains configured.
+
+### API returns CORS errors
+
+- `CORS_ORIGIN` must exactly match the web app URL including the protocol (`https://`) and must not have a trailing slash.
+- For local development, set `CORS_ORIGIN=http://localhost:3001`.
+- Multiple origins: `CORS_ORIGIN=https://yourdomain.com,https://www.yourdomain.com`
+
+### "Database not found" errors
+
+- **Cloudflare**: Verify the D1 database binding in `wrangler.toml` matches an existing database. Run `wrangler d1 list` to check.
+- **Self-hosted**: Verify `DATABASE_URL` points to a valid file path and the directory exists.
+
+### Environment variable changes not taking effect
+
+- **`NEXT_PUBLIC_*` variables**: These are baked in at build time. You must rebuild and redeploy.
+- **Server variables on Cloudflare**: After changing Worker secrets, the Worker picks them up on the next request (no redeploy needed for secrets set via dashboard or `wrangler secret put`).
+- **Docker**: Restart the container after changing environment variables.
