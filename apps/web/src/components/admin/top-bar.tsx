@@ -96,7 +96,7 @@ export function TopBar({
         </a>
 
         <a
-          href="https://linkden-docs.pages.dev"
+          href="https://mrdemonwolf.github.io/LinkDen/"
           target="_blank"
           rel="noopener noreferrer"
           className="hidden sm:flex items-center gap-1.5 text-sm text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)] px-2.5 py-1.5 rounded-lg hover:bg-[var(--admin-bg)] transition-colors"

@@ -46,7 +46,7 @@ Your links, your brand, your rules.
 ## Getting Started
 
 Full documentation is available at the
-[LinkDen Docs](https://linkden-docs.pages.dev) site, including
+[LinkDen Docs](https://mrdemonwolf.github.io/LinkDen/) site, including
 guides for self-hosting on Cloudflare, Vercel, Railway, Coolify,
 and Docker.
 
