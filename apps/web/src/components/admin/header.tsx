@@ -1,7 +1,24 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
 import { ExternalLink } from "lucide-react";
+
+const clerkEnabled = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+function ClerkUserButton() {
+  if (!clerkEnabled) return null;
+  // Dynamic require so it doesn't error when Clerk is not installed/configured
+  const { UserButton } = require("@clerk/nextjs");
+  return (
+    <UserButton
+      afterSignOutUrl="/"
+      appearance={{
+        elements: {
+          avatarBox: "w-8 h-8",
+        },
+      }}
+    />
+  );
+}
 
 export function Header() {
   return (
@@ -20,14 +37,7 @@ export function Header() {
           <ExternalLink className="w-3.5 h-3.5" />
           View Page
         </a>
-        <UserButton
-          afterSignOutUrl="/"
-          appearance={{
-            elements: {
-              avatarBox: "w-8 h-8",
-            },
-          }}
-        />
+        <ClerkUserButton />
       </div>
     </header>
   );

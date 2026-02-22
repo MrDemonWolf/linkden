@@ -9,6 +9,7 @@
     "analytics",
     "contact-form",
     "pages",
+    "caching",
     "export-import"
   ]
 }

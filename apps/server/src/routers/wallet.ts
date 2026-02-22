@@ -2,7 +2,7 @@ import { walletPass } from "@linkden/db/schema";
 import { UpdateWalletPassSchema } from "@linkden/validators";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
-import { protectedProcedure, publicProcedure, router } from "../trpc";
+import { protectedProcedure, router } from "../trpc";
 
 export const walletRouter = router({
   /** Protected: get wallet pass config */
@@ -32,8 +32,8 @@ export const walletRouter = router({
     return created;
   }),
 
-  /** Public: placeholder for pass generation */
-  generate: publicProcedure.query(async ({ ctx }) => {
+  /** Protected: generate and download wallet pass (admin-only) */
+  generate: protectedProcedure.query(async ({ ctx }) => {
     const [pass] = await ctx.db.select().from(walletPass).limit(1);
 
     if (!pass) {

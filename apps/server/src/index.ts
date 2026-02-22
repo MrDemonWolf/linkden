@@ -15,7 +15,6 @@ app.use(
     origin: (origin, c) => {
       const allowed = c.env.CORS_ORIGIN || "http://localhost:3001";
       if (origin === allowed) return origin;
-      // Allow multiple origins separated by commas
       const origins = allowed.split(",").map((o) => o.trim());
       if (origins.includes(origin)) return origin;
       return origins[0];
@@ -25,6 +24,62 @@ app.use(
     credentials: true,
   }),
 );
+
+/**
+ * Cloudflare Cache API middleware for public tRPC queries.
+ * Caches unauthenticated GET requests at the edge for 10 minutes
+ * with stale-while-revalidate for an additional hour.
+ */
+app.use("/trpc/*", async (c, next) => {
+  if (c.req.method !== "GET") {
+    await next();
+    return;
+  }
+
+  // Skip cache for authenticated requests
+  const authHeader = c.req.header("Authorization");
+  if (authHeader) {
+    await next();
+    return;
+  }
+
+  const cfCaches = globalThis.caches as unknown as { default: Cache };
+  if (!cfCaches?.default) {
+    await next();
+    return;
+  }
+
+  const cache = cfCaches.default;
+  const cacheKey = new Request(c.req.url, { method: "GET" });
+
+  const cached = await cache.match(cacheKey);
+  if (cached) {
+    // Serve from edge cache
+    return new Response(cached.body, {
+      status: cached.status,
+      headers: {
+        ...Object.fromEntries(cached.headers.entries()),
+        "X-Cache": "HIT",
+      },
+    });
+  }
+
+  await next();
+
+  // Cache successful public responses
+  if (c.res.status === 200) {
+    const response = c.res.clone();
+    const headers = new Headers(response.headers);
+    headers.set("Cache-Control", "public, s-maxage=600, stale-while-revalidate=3600");
+    headers.set("X-Cache", "MISS");
+
+    const cachedResponse = new Response(response.body, {
+      status: response.status,
+      headers,
+    });
+    c.executionCtx.waitUntil(cache.put(cacheKey, cachedResponse));
+  }
+});
 
 app.use(
   "/trpc/*",
@@ -48,12 +103,6 @@ app.post("/analytics/ping", async (c) => {
   });
 
   return c.json({ ok: true });
-});
-
-app.get("/pass", (c) => {
-  return c.json({
-    message: "Wallet pass endpoint. Use /trpc/wallet.generate for pass generation.",
-  });
 });
 
 export default app;

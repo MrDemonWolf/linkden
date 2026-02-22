@@ -1,6 +1,7 @@
 import { settings } from "@linkden/db/schema";
 import { UpdateSettingsSchema } from "@linkden/validators";
 import { inArray } from "drizzle-orm";
+import { purgePublicCache } from "../lib/cache";
 import { protectedProcedure, publicProcedure, router } from "../trpc";
 
 /** Settings keys that are safe for public consumption */
@@ -49,6 +50,10 @@ export const settingsRouter = router({
           set: { value: setting.value, updatedAt: now },
         });
     }
+
+    // Purge edge cache so visitors see updates immediately
+    const apiUrl = ctx.env.APP_URL || "http://localhost:3000";
+    await purgePublicCache(apiUrl);
 
     return { success: true };
   }),

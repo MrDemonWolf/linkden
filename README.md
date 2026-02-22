@@ -1,55 +1,60 @@
 # LinkDen - Self-Hosted Link-in-Bio Platform
 
-LinkDen is a self-hosted Linktree alternative built on the
-Cloudflare stack. Designed as a single-user link-in-bio platform
-with a full admin panel, it replaces heavy PHP frameworks with
-modern TypeScript tooling for blazing-fast page loads and easy
-customization. Fully whitelabel-capable out of the box.
+LinkDen is an open-source, self-hosted link-in-bio platform built
+on the Cloudflare stack. Designed as a single-user platform with
+a modern 3-panel admin editor and a polished public profile page,
+it replaces heavy PHP frameworks with TypeScript tooling for
+blazing-fast edge performance. Fully whitelabel-capable out of
+the box.
 
 Your links, your brand, your rules.
 
 ## Features
 
-- **Single-User Link Page** — Your root URL is your public
-  profile. Visitors land directly on your links with no
-  registration or multi-user overhead.
-- **Full Admin Panel** — Manage links, appearance, analytics,
-  vCard, and Apple Wallet passes from a macOS-inspired dashboard
-  protected by Clerk authentication.
-- **8 Built-in Themes** — Each theme ships with dark and light
-  variants (16 total), plus an auto mode that follows system
-  preference.
+- **3-Panel Admin Editor** — SmartBio-style interface with a
+  block picker on the left, live phone preview in the center,
+  and design/settings controls on the right.
+- **Themed Public Page** — Glassmorphism-styled profile page
+  with gradient headers, social icons row, verified badge, and
+  animated link blocks. Seven built-in themes with dark and
+  light variants.
 - **Multiple Block Types** — Links, headings, spacers, text
-  blocks, email, phone, vCard download, and Apple Wallet pass.
-- **100+ Brand Icons** — Predefined SVG icons for GitHub,
-  Twitter/X, Instagram, YouTube, Discord, Mastodon, Bluesky,
-  and dozens more platforms.
+  blocks, email, phone, vCard download, and Apple Wallet pass
+  with drag-and-drop reordering.
 - **Apple Wallet Business Card** — Generate signed `.pkpass`
   files so visitors can save your contact info directly to
   their iPhone wallet.
-- **vCard Support** — Comprehensive digital business card with
-  downloadable `.vcf` files covering personal, professional,
-  and social fields.
-- **Analytics Dashboard** — Track page views, clicks,
-  referrers, and country data with time-series charts.
+- **vCard Support** — Downloadable `.vcf` digital business
+  cards covering personal, professional, and social fields.
+- **Analytics Dashboard** — Track page views, link clicks,
+  referrers, and geographic data with time-series charts.
+- **Custom Pages** — Create additional pages (privacy policy,
+  terms, etc.) with Markdown content rendered as styled HTML.
+- **Contact Form** — Built-in contact form with CAPTCHA
+  support (Cloudflare Turnstile or Google reCAPTCHA).
+- **Edge Caching** — Cloudflare Cache API integration for
+  sub-50ms public page loads with automatic cache purge on
+  admin saves.
+- **Dual Auth** — Supports Cloudflare Access or Clerk for
+  admin authentication.
+- **SEO Ready** — Auto-generated `sitemap.xml`, `robots.txt`,
+  OpenGraph tags, Twitter Cards, and configurable meta fields.
 - **Full Whitelabel** — Toggle off all LinkDen branding with
   a single setting. Zero attribution required (MIT license).
-- **Branding Customization** — Color pickers, background
-  images, button styles, Google Fonts, custom CSS, and
-  favicon uploads.
-- **Export/Import** — Back up all data as JSON or migrate
-  from LinkStack with a dedicated import format.
-- **Edge Performance** — Static pages served from Cloudflare
-  Pages with API on Workers and D1 SQLite for sub-second
-  load times.
+- **Export / Import** — Back up all settings and links as JSON.
 
 ## Getting Started
+
+Full documentation is available at the
+[LinkDen Docs](https://linkden-docs.pages.dev) site, including
+guides for self-hosting on Cloudflare, Vercel, Railway, Coolify,
+and Docker.
 
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/mrdemonwolf/linkden.git
-   cd linkden
+   git clone https://github.com/mrdemonwolf/LinkDen.git
+   cd LinkDen
    ```
 
 2. Install dependencies:
@@ -58,91 +63,79 @@ Your links, your brand, your rules.
    pnpm install
    ```
 
-3. Copy the example environment files and fill in your keys:
+3. Copy the example environment file and fill in your values:
 
    ```bash
    cp .env.example .env
-   cp apps/web/.env.example apps/web/.env
-   cp apps/server/.env.example apps/server/.env
    ```
 
-4. Set up Clerk authentication:
-   - Create a free account at [clerk.com](https://clerk.com)
-   - Add your `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and
-     `CLERK_SECRET_KEY` to the environment files
-   - Restrict sign-ups to your email only via the Clerk
-     dashboard allowlist
-
-5. Push database migrations:
+4. Generate and push the database schema:
 
    ```bash
+   pnpm db:generate
    pnpm db:push
    ```
 
-6. Start the development servers:
+5. Start all apps in development mode:
 
    ```bash
    pnpm dev
    ```
 
-7. Open `http://localhost:3001` in your browser. The admin
-   panel is at `/admin`.
+6. Open `http://localhost:3001` for the public page and
+   `http://localhost:3001/admin` for the admin panel.
 
 ## Usage
 
-### Public Routes
+| URL                           | Purpose                        |
+| ----------------------------- | ------------------------------ |
+| `http://localhost:3001`       | Public link-in-bio page        |
+| `http://localhost:3001/admin` | Admin panel (3-panel editor)   |
+| `http://localhost:3000`       | API server (tRPC over Hono)    |
+| `http://localhost:3002`       | Documentation site             |
 
-| Route   | Description                                |
-|---------|--------------------------------------------|
-| `/`     | Public link-in-bio page                    |
-| `/qr`   | QR code for the public page URL            |
-| `/pass` | Apple Wallet pass download (iOS/Mac)       |
+### Admin Panel Sections
 
-### Admin Panel (`/admin`)
-
-| Page                | Description                              |
-|---------------------|------------------------------------------|
-| `/admin`            | Dashboard with quick stats and activity  |
-| `/admin/links`      | Link manager with drag-and-drop reorder  |
-| `/admin/links/new`  | Add a new link or block                  |
-| `/admin/links/[id]` | Edit an existing link or block           |
-| `/admin/appearance`  | Themes, colors, fonts, and branding      |
-| `/admin/vcard`      | vCard editor for digital business card   |
-| `/admin/wallet`     | Apple Wallet pass designer               |
-| `/admin/analytics`  | Views, clicks, referrers, and charts     |
-| `/admin/settings`   | SEO, export/import, and danger zone      |
+| Section    | Description                                      |
+| ---------- | ------------------------------------------------ |
+| Blocks     | Add, reorder, and manage link blocks             |
+| Social     | Configure social media icon links                |
+| Design     | Choose themes, customize colors and branding     |
+| Analytics  | View page views, clicks, and referrer stats      |
+| Settings   | Profile info, SEO, contact form, vCard, export   |
+| Pages      | Create custom Markdown pages at `/p/{slug}`      |
 
 ## Tech Stack
 
-| Layer      | Technology                          |
-|------------|-------------------------------------|
-| Frontend   | Next.js (static export)             |
-| Backend    | Hono on Cloudflare Workers          |
-| API        | tRPC                                |
-| Database   | Drizzle ORM + Cloudflare D1 (SQLite)|
-| Auth       | Clerk                               |
-| Styling    | Tailwind CSS + shadcn/ui            |
-| Monorepo   | Turborepo + pnpm workspaces         |
-| Docs       | Fumadocs                            |
-| Deploy     | Alchemy -> Cloudflare Workers/Pages |
-| Wallet     | passkit-generator                   |
+| Layer          | Technology                                    |
+| -------------- | --------------------------------------------- |
+| Frontend       | Next.js 15, React 19, Tailwind CSS 3          |
+| UI Components  | Radix UI, Lucide Icons, Recharts              |
+| State / Data   | tRPC 11, TanStack React Query 5               |
+| Backend        | Hono, Cloudflare Workers                      |
+| Database       | Cloudflare D1 (SQLite), Drizzle ORM           |
+| Auth           | Cloudflare Access / Clerk                     |
+| Email          | Resend                                        |
+| Docs           | Fumadocs (MDX), Next.js 16                    |
+| Infrastructure | Alchemy (Cloudflare IaC)                      |
+| Monorepo       | pnpm Workspaces, Turborepo                    |
+| Linting        | Biome                                         |
+| Testing        | Playwright (E2E)                              |
 
 ## Development
 
 ### Prerequisites
 
-- Node.js 20+
-- pnpm 9+
-- Cloudflare account (free tier works for development)
-- Clerk account (free tier)
-- Apple Developer account ($99/year, only for Wallet passes)
+- Node.js >= 20
+- pnpm 10.x (`corepack enable`)
+- Wrangler CLI (for local D1 and Workers dev)
 
 ### Setup
 
-1. Install pnpm if you don't have it:
+1. Enable corepack and install pnpm:
 
    ```bash
-   corepack enable && corepack prepare pnpm@latest --activate
+   corepack enable
    ```
 
 2. Install all dependencies:
@@ -151,16 +144,19 @@ Your links, your brand, your rules.
    pnpm install
    ```
 
-3. Configure environment variables in `.env`,
-   `apps/web/.env`, and `apps/server/.env`.
+3. Copy and configure environment variables:
 
-4. Generate database migrations:
+   ```bash
+   cp .env.example .env
+   ```
+
+4. Generate the database schema:
 
    ```bash
    pnpm db:generate
    ```
 
-5. Push migrations to your D1 database:
+5. Push the schema to your local D1 database:
 
    ```bash
    pnpm db:push
@@ -174,45 +170,51 @@ Your links, your brand, your rules.
 
 ### Development Scripts
 
-- `pnpm dev` — Start all apps in development mode
-- `pnpm build` — Build all apps and packages
-- `pnpm db:generate` — Generate Drizzle migrations
-- `pnpm db:push` — Push migrations to D1
-- `pnpm db:studio` — Open Drizzle Studio for the database
-- `pnpm cf:deploy` — Deploy to Cloudflare via Alchemy
-- `pnpm cf:destroy` — Tear down Cloudflare resources
-- `pnpm lint` — Run linting across all workspaces
-- `pnpm typecheck` — Run TypeScript type checking
+- `pnpm dev` — Start all apps (web :3001, server :3000,
+  docs :3002) via Turborepo.
+- `pnpm build` — Production build for all packages.
+- `pnpm lint` — Run Biome linter across all packages.
+- `pnpm typecheck` — Run TypeScript type checking.
+- `pnpm db:generate` — Generate Drizzle ORM migrations.
+- `pnpm db:push` — Push schema changes to D1.
+- `pnpm db:studio` — Open Drizzle Studio for database
+  inspection.
+- `pnpm cf:deploy` — Deploy to Cloudflare via Alchemy.
+- `pnpm cf:destroy` — Tear down Cloudflare resources.
+- `pnpm test:e2e` — Run Playwright end-to-end tests.
 
 ### Code Quality
 
-- TypeScript strict mode across all packages
-- Biome for linting and formatting
-- Turborepo for cached, parallel builds
-- tRPC for end-to-end type safety between frontend and API
+- **Biome** for linting and formatting (replaces ESLint
+  and Prettier).
+- **TypeScript** strict mode across all packages.
+- **Zod** schemas shared between client and server via
+  `@linkden/validators`.
+- **tRPC** for end-to-end type safety between frontend
+  and API.
 
 ## Project Structure
 
 ```
-linkden/
-├── apps/
-│   ├── web/            # Next.js frontend (Pages + admin)
-│   ├── server/         # Hono API on Cloudflare Workers
-│   └── docs/           # Fumadocs documentation site
-├── packages/
-│   ├── db/             # Drizzle schema + migrations
-│   ├── ui/             # Shared shadcn/ui components
-│   ├── validators/     # Shared Zod schemas
-│   └── infra/          # Alchemy deployment config
-├── turbo.json          # Turborepo pipeline config
-├── pnpm-workspace.yaml # pnpm workspace definition
-├── version.json        # Current version for update checks
-└── CLAUDE.md           # Project specification
+LinkDen/
+  apps/
+    web/            # Next.js 15 frontend (public page + admin)
+    server/         # Cloudflare Worker API (Hono + tRPC)
+    docs/           # Fumadocs documentation site
+  packages/
+    db/             # Drizzle ORM schema and D1 client
+    ui/             # Shared UI components and theme configs
+    validators/     # Zod schemas shared across apps
+    email/          # Resend email templates
+    infra/          # Alchemy IaC for Cloudflare deployment
+  turbo.json        # Turborepo pipeline config
+  pnpm-workspace.yaml
+  .env.example      # Environment variable template
 ```
 
 ## License
 
-![GitHub license](https://img.shields.io/github/license/mrdemonwolf/linkden.svg?style=for-the-badge&logo=github)
+![GitHub license](https://img.shields.io/github/license/mrdemonwolf/LinkDen.svg?style=for-the-badge&logo=github)
 
 This project is licensed under the MIT License. See the
 [LICENSE](LICENSE) file for details. Fully whitelabel-friendly
