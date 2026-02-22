@@ -148,7 +148,7 @@ export function LeftPanel({ onOpenDrawer }: LeftPanelProps) {
         <div className="flex-1" />
 
         <a
-          href="https://mrdemonwolf.github.io/LinkDen/"
+          href="https://mrdemonwolf.github.io/linkden/"
           target="_blank"
           rel="noopener noreferrer"
           className="w-10 h-10 rounded-xl flex items-center justify-center text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)] hover:bg-[var(--admin-bg)] transition-all"
