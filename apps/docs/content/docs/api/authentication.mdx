@@ -1,94 +1,194 @@
 ---
 title: Authentication
-description: How Clerk authentication works in LinkDen to protect the admin panel and API routes.
+description: How authentication works in LinkDen using Cloudflare Access or Clerk to protect the admin panel and API routes.
 ---
 
 # Authentication
 
-LinkDen uses [Clerk](https://clerk.com/) for authentication. Clerk handles sign-in, session management, and token verification across both the Next.js frontend and the Hono API server.
+LinkDen supports two authentication providers for protecting the admin panel and API routes:
 
-## How It Works
+1. **Cloudflare Access** (recommended for Cloudflare deployments)
+2. **Clerk** (recommended for Vercel, Railway, Docker, or other platforms)
 
-### Frontend (Next.js)
+You can use one or both. The API server checks them in order: Cloudflare Access first, then Clerk.
 
-The Next.js app uses Clerk's React SDK and Next.js middleware:
+## Cloudflare Access
 
-1. **Middleware** (`middleware.ts`) intercepts all requests and checks for a valid Clerk session.
-2. **Public routes** (`/`, `/qr`, `/pass`, `/privacy`, `/terms`) are accessible without authentication.
-3. **Admin routes** (`/admin/*`) require authentication. Unauthenticated visitors are redirected to the Clerk sign-in page.
-4. **Sign-in/Sign-up pages** are hosted by Clerk's embedded components at `/sign-in` and `/sign-up`.
+Cloudflare Access is a Zero Trust identity service built into your Cloudflare account. It places an authentication layer in front of your Workers, so unauthenticated requests never reach your application.
 
-### API Server (Hono)
+### How It Works
 
-The Hono API server verifies Clerk JWTs on protected routes:
+1. When a user visits a protected route (e.g., `/admin`), Cloudflare intercepts the request before it reaches the Worker.
+2. The user is shown a Cloudflare Access login page where they authenticate via their configured identity provider (email OTP, Google, GitHub, etc.).
+3. After successful authentication, Cloudflare sets a `CF-Access-JWT-Assertion` cookie/header containing a signed JWT.
+4. The LinkDen API server verifies this JWT against Cloudflare's public keys at `https://<team-domain>.cloudflareaccess.com/cdn-cgi/access/certs`.
+5. The user's email from the JWT payload is used as their user ID.
 
-1. Public tRPC procedures (e.g., `public.getLinks`) do not require authentication.
-2. Admin tRPC procedures (e.g., `admin.links.create`) verify the Clerk session token from the `Authorization` header.
-3. The Clerk SDK extracts the user ID from the JWT and makes it available in the tRPC context.
+### Setting Up Cloudflare Access
 
-## Single-User Model
+#### Step 1: Enable Cloudflare Zero Trust
 
-LinkDen is a single-user application. Only one person (you) should have access to the admin panel. To enforce this:
+1. Go to the [Cloudflare dashboard](https://dash.cloudflare.com).
+2. Click **Zero Trust** in the left sidebar (or visit [one.dash.cloudflare.com](https://one.dash.cloudflare.com)).
+3. If this is your first time, you will be asked to choose a team name. This becomes your **team domain** (e.g., `mycompany` for `mycompany.cloudflareaccess.com`).
+4. Select the **Free** plan (sufficient for personal use — up to 50 users).
+
+#### Step 2: Configure an Identity Provider
+
+1. In Zero Trust, go to **Settings > Authentication**.
+2. Under **Login methods**, click **Add new**.
+3. Choose your identity provider:
+   - **One-time PIN** (simplest — sends a code to your email, no external provider needed)
+   - **Google** (OAuth)
+   - **GitHub** (OAuth)
+   - Or any other supported provider
+4. Follow the setup instructions for your chosen provider.
+
+For single-user setups, **One-time PIN** is the easiest option — it just sends a login code to your email.
+
+#### Step 3: Create an Access Application for the Admin Panel
+
+1. In Zero Trust, go to **Access > Applications**.
+2. Click **Add an application**.
+3. Choose **Self-hosted**.
+4. Configure the application:
+
+| Field | Value |
+|-------|-------|
+| **Application name** | LinkDen Admin |
+| **Session duration** | 24 hours (or your preference) |
+| **Application domain** | `linkden-web.<your-subdomain>.workers.dev` |
+| **Path** | `/admin` |
+
+5. Click **Next** to configure an access policy.
+
+#### Step 4: Create an Access Policy
+
+1. Set the **Policy name** to "Allow me" (or any name).
+2. Set **Action** to **Allow**.
+3. Add a rule to the **Include** section:
+   - **Selector**: Emails
+   - **Value**: your email address (e.g., `you@example.com`)
+4. Click **Next**, then **Add application**.
+
+This ensures only your email address can access the admin panel. All other visitors are blocked by Cloudflare before the request reaches your Worker.
+
+#### Step 5: (Optional) Protect the API Worker
+
+If you want to protect the entire API server (not just the web admin), create a second Access application:
+
+| Field | Value |
+|-------|-------|
+| **Application name** | LinkDen API |
+| **Application domain** | `linkden-api.<your-subdomain>.workers.dev` |
+| **Path** | Leave empty (protects all routes) |
+
+Use the same access policy. However, note that the API has its own public routes (the public tRPC queries) that do not require authentication, so you may prefer to leave the API Worker unprotected by Access and rely on the API-level auth middleware instead.
+
+#### Step 6: Set the Environment Variable
+
+Set `CF_ACCESS_TEAM_DOMAIN` in your API Worker's `wrangler.toml`:
+
+```toml
+[vars]
+CF_ACCESS_TEAM_DOMAIN = "your-team-name"
+```
+
+Replace `your-team-name` with the team name you chose in Step 1 (e.g., `mycompany`). Do not include `.cloudflareaccess.com`.
+
+Then redeploy:
+
+```bash
+pnpm cf:deploy
+```
+
+### Verifying Cloudflare Access
+
+1. Open your web app URL in an incognito window.
+2. Navigate to `/admin`.
+3. You should see the Cloudflare Access login page (not the LinkDen admin panel).
+4. Authenticate with your configured identity provider.
+5. After login, you should be redirected to the admin panel.
+
+## Clerk
+
+[Clerk](https://clerk.com/) is a hosted authentication service with React components for sign-in, session management, and user management. It is recommended when deploying to platforms other than Cloudflare, or when you want a polished sign-in UI within the app.
+
+### How It Works
+
+1. The Next.js app uses Clerk's React SDK to show sign-in components at `/sign-in`.
+2. After authentication, Clerk provides a session token (JWT) that the frontend includes in API requests via the `Authorization: Bearer <token>` header.
+3. The LinkDen API server verifies the JWT using the Clerk secret key.
+4. The user's Clerk `sub` (subject ID) is used as their user ID.
+
+### Setting Up Clerk
+
+1. Create an account at [clerk.com](https://clerk.com/).
+2. Create a new Clerk application.
+3. Copy the **Publishable Key** (`pk_live_...`) and **Secret Key** (`sk_live_...`).
+4. Set the environment variables:
+
+```bash
+# In your .env file
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_your-key
+CLERK_SECRET_KEY=sk_live_your-key
+```
+
+For Cloudflare Workers, set `CLERK_SECRET_KEY` as a secret on the API Worker:
+
+```bash
+cd apps/server
+echo "sk_live_your-key" | wrangler secret put CLERK_SECRET_KEY
+```
+
+### Single-User Lockdown with Clerk
+
+Since LinkDen is a single-user application, restrict sign-ups:
 
 1. Go to the [Clerk Dashboard](https://dashboard.clerk.com/).
 2. Navigate to **User & Authentication > Restrictions**.
 3. Enable **Allowlist**.
 4. Add your email address to the allowlist.
-5. This prevents anyone else from creating an account.
 
-Without the allowlist, anyone who discovers your sign-up page could create an account. Always enable the allowlist for production deployments.
+Without the allowlist, anyone who discovers your sign-up page could create an account.
 
-## Session Management
+## Using Both Providers
 
-Clerk manages sessions automatically:
+You can configure both Cloudflare Access and Clerk simultaneously. The API server checks them in order:
 
-- **Session tokens** are short-lived JWTs (default: 60 seconds) that are refreshed automatically.
-- **Session cookies** are HTTP-only and secure.
-- **Sign out** invalidates the session on both the frontend and API.
+1. If `CF_ACCESS_TEAM_DOMAIN` is set and the request has a `CF-Access-JWT-Assertion` header, Cloudflare Access is verified first.
+2. If that fails (or is not configured), and `CLERK_SECRET_KEY` is set, the `Authorization: Bearer` header is checked against Clerk.
+3. If neither succeeds, the request is denied for protected routes.
 
-## Environment Variables
+This is useful as a fallback mechanism, but most deployments should use just one provider.
 
-Both apps need Clerk credentials:
+## Environment Variables Summary
 
-### Web App (`apps/web/.env`)
-
-```bash
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
-CLERK_SECRET_KEY=sk_test_...
-```
-
-### API Server (`apps/server/.env`)
-
-```bash
-CLERK_PUBLISHABLE_KEY=pk_test_...
-CLERK_SECRET_KEY=sk_test_...
-```
-
-Use the same Clerk application for both. The publishable key is safe to expose (it is public), while the secret key must be kept private.
-
-## Clerk Dashboard Features
-
-Beyond authentication, the Clerk dashboard provides:
-
-- **User management** -- View and manage user accounts.
-- **Session monitoring** -- See active sessions and revoke them.
-- **Security logs** -- Audit sign-in attempts and account changes.
-- **Customization** -- Style the sign-in and sign-up pages to match your brand.
+| Variable | Provider | Where |
+|----------|----------|-------|
+| `CF_ACCESS_TEAM_DOMAIN` | Cloudflare Access | API Worker `wrangler.toml` `[vars]` |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk | Web app `.env` (baked at build time) |
+| `CLERK_SECRET_KEY` | Clerk | API Worker secret |
 
 ## Troubleshooting
 
-### Redirect Loop on Admin Pages
+### Cloudflare Access login page does not appear
 
-- Verify `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is set correctly in `apps/web/.env`.
-- Ensure the Clerk application is active (not paused) in the Clerk dashboard.
+- Verify the Access Application is configured with the correct domain and path (`/admin`).
+- Check that the Access Application is **active** (not paused) in the Zero Trust dashboard.
+- Clear your browser cookies and try again in an incognito window.
 
-### API Returns 401 Unauthorized
+### API returns 401 Unauthorized
 
-- Check that `CLERK_SECRET_KEY` matches between the web and server apps.
-- Verify the user's session has not expired (try signing out and back in).
-- Check that the `Authorization` header is being sent with API requests.
+- **Cloudflare Access**: Ensure `CF_ACCESS_TEAM_DOMAIN` is set correctly (just the team name, not the full URL).
+- **Clerk**: Ensure `CLERK_SECRET_KEY` matches the key in the Clerk dashboard.
+- Try signing out and back in to refresh the session token.
 
-### Cannot Sign Up
+### Redirect loop on admin pages
+
+- If using Clerk, verify `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is set correctly.
+- If using Cloudflare Access, ensure the Access Application path is `/admin` (not `/admin/*`).
+
+### Cannot sign up with Clerk
 
 - Check the Clerk dashboard allowlist. If enabled, only listed emails can sign up.
-- Verify the sign-up page is accessible at your configured sign-up URL.
