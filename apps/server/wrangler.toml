@@ -4,8 +4,9 @@ compatibility_flags = ["nodejs_compat"]
 main = "src/index.ts"
 
 [vars]
-CORS_ORIGIN = "http://localhost:3001"
-APP_URL = "http://localhost:3000"
+CORS_ORIGIN = "https://linkden-web.mrdemonwolf.workers.dev"
+APP_URL = "https://linkden-api.mrdemonwolf.workers.dev"
+CF_ACCESS_TEAM_DOMAIN = "mrdemonwolf"
 
 [[d1_databases]]
 binding = "DB"

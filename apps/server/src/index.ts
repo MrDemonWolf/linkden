@@ -89,6 +89,10 @@ app.use(
   }),
 );
 
+app.get("/", (c) => {
+  return c.text("OK");
+});
+
 app.post("/analytics/ping", async (c) => {
   const body = await c.req.json();
   const db = (await import("@linkden/db")).createDb(c.env.DB);
