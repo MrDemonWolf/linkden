@@ -1,8 +1,8 @@
 "use client";
 
-import { Eye, MousePointerClick, Percent, Link2, Mail, FileText } from "lucide-react";
-import { trpc } from "@/lib/trpc";
 import { StatCard } from "@/components/admin/stat-card";
+import { trpc } from "@/lib/trpc";
+import { Eye, FileText, Link2, Mail, MousePointerClick, Percent } from "lucide-react";
 
 export default function DashboardPage() {
   const overview = trpc.analytics.overview.useQuery({ period: "30d" });
@@ -74,7 +74,10 @@ export default function DashboardPage() {
           {linksQuery.isLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-12 rounded-lg bg-[rgba(255,255,255,0.04)] animate-pulse" />
+                <div
+                  key={i}
+                  className="h-12 rounded-lg bg-[rgba(255,255,255,0.04)] animate-pulse"
+                />
               ))}
             </div>
           ) : linksQuery.data && linksQuery.data.length > 0 ? (
@@ -94,9 +97,7 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-xs text-[var(--text-secondary)]">
-                      {link.clickCount} clicks
-                    </p>
+                    <p className="text-xs text-[var(--text-secondary)]">{link.clickCount} clicks</p>
                     <span
                       className={`inline-block w-2 h-2 rounded-full ${
                         link.isActive ? "bg-emerald-400" : "bg-gray-500"
@@ -127,7 +128,10 @@ export default function DashboardPage() {
           {contactsQuery.isLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-12 rounded-lg bg-[rgba(255,255,255,0.04)] animate-pulse" />
+                <div
+                  key={i}
+                  className="h-12 rounded-lg bg-[rgba(255,255,255,0.04)] animate-pulse"
+                />
               ))}
             </div>
           ) : contactsQuery.data && contactsQuery.data.items.length > 0 ? (
@@ -145,9 +149,7 @@ export default function DashboardPage() {
                       )}
                       {sub.name}
                     </p>
-                    <p className="text-xs text-[var(--text-secondary)] truncate">
-                      {sub.message}
-                    </p>
+                    <p className="text-xs text-[var(--text-secondary)] truncate">{sub.message}</p>
                   </div>
                   <span className="text-xs text-[var(--text-secondary)] shrink-0">
                     {new Date(sub.createdAt).toLocaleDateString()}

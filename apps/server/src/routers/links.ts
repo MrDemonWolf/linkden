@@ -1,13 +1,9 @@
-import { z } from "zod";
-import { eq, asc, and, sql } from "drizzle-orm";
+import { analytics, links } from "@linkden/db/schema";
+import { CreateLinkSchema, ReorderLinksSchema, UpdateLinkSchema } from "@linkden/validators";
 import { TRPCError } from "@trpc/server";
-import { links, analytics } from "@linkden/db/schema";
-import {
-  CreateLinkSchema,
-  UpdateLinkSchema,
-  ReorderLinksSchema,
-} from "@linkden/validators";
-import { router, publicProcedure, protectedProcedure } from "../trpc";
+import { asc, eq, sql } from "drizzle-orm";
+import { z } from "zod";
+import { protectedProcedure, publicProcedure, router } from "../trpc";
 
 export const linksRouter = router({
   /** Public: active links ordered by sortOrder */
@@ -25,50 +21,43 @@ export const linksRouter = router({
   }),
 
   /** Protected: create a new link */
-  create: protectedProcedure
-    .input(CreateLinkSchema)
-    .mutation(async ({ ctx, input }) => {
-      const [link] = await ctx.db
-        .insert(links)
-        .values({
-          type: input.type,
-          title: input.title,
-          url: input.url,
-          icon: input.icon,
-          iconType: input.iconType,
-          isActive: input.isActive,
-          sortOrder: input.sortOrder,
-          metadata: input.metadata,
-        })
-        .returning();
-      return link;
-    }),
+  create: protectedProcedure.input(CreateLinkSchema).mutation(async ({ ctx, input }) => {
+    const [link] = await ctx.db
+      .insert(links)
+      .values({
+        type: input.type,
+        title: input.title,
+        url: input.url,
+        icon: input.icon,
+        iconType: input.iconType,
+        isActive: input.isActive,
+        sortOrder: input.sortOrder,
+        metadata: input.metadata,
+      })
+      .returning();
+    return link;
+  }),
 
   /** Protected: update a link by id */
-  update: protectedProcedure
-    .input(UpdateLinkSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-      const [link] = await ctx.db
-        .update(links)
-        .set({ ...data, updatedAt: new Date().toISOString() })
-        .where(eq(links.id, id))
-        .returning();
+  update: protectedProcedure.input(UpdateLinkSchema).mutation(async ({ ctx, input }) => {
+    const { id, ...data } = input;
+    const [link] = await ctx.db
+      .update(links)
+      .set({ ...data, updatedAt: new Date().toISOString() })
+      .where(eq(links.id, id))
+      .returning();
 
-      if (!link) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Link not found" });
-      }
-      return link;
-    }),
+    if (!link) {
+      throw new TRPCError({ code: "NOT_FOUND", message: "Link not found" });
+    }
+    return link;
+  }),
 
   /** Protected: delete a link by id */
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const [deleted] = await ctx.db
-        .delete(links)
-        .where(eq(links.id, input.id))
-        .returning();
+      const [deleted] = await ctx.db.delete(links).where(eq(links.id, input.id)).returning();
 
       if (!deleted) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Link not found" });
@@ -77,27 +66,22 @@ export const linksRouter = router({
     }),
 
   /** Protected: batch update sortOrders */
-  reorder: protectedProcedure
-    .input(ReorderLinksSchema)
-    .mutation(async ({ ctx, input }) => {
-      const now = new Date().toISOString();
-      for (const item of input.items) {
-        await ctx.db
-          .update(links)
-          .set({ sortOrder: item.sortOrder, updatedAt: now })
-          .where(eq(links.id, item.id));
-      }
-      return { success: true };
-    }),
+  reorder: protectedProcedure.input(ReorderLinksSchema).mutation(async ({ ctx, input }) => {
+    const now = new Date().toISOString();
+    for (const item of input.items) {
+      await ctx.db
+        .update(links)
+        .set({ sortOrder: item.sortOrder, updatedAt: now })
+        .where(eq(links.id, item.id));
+    }
+    return { success: true };
+  }),
 
   /** Protected: toggle isActive */
   toggleActive: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const [existing] = await ctx.db
-        .select()
-        .from(links)
-        .where(eq(links.id, input.id));
+      const [existing] = await ctx.db.select().from(links).where(eq(links.id, input.id));
 
       if (!existing) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Link not found" });
@@ -120,7 +104,7 @@ export const linksRouter = router({
       z.object({
         id: z.string().uuid(),
         referrer: z.string().max(2000).default(""),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       await ctx.db

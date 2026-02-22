@@ -1,9 +1,9 @@
+import { trpcServer } from "@hono/trpc-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { trpcServer } from "@hono/trpc-server";
-import { appRouter } from "./router";
 import { createContext } from "./context";
 import type { Env } from "./env";
+import { appRouter } from "./router";
 
 type HonoEnv = { Bindings: Env };
 
@@ -23,7 +23,7 @@ app.use(
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
-  })
+  }),
 );
 
 app.use(
@@ -31,7 +31,7 @@ app.use(
   trpcServer({
     router: appRouter,
     createContext: ({ req }, c) => createContext(req, c.env),
-  })
+  }),
 );
 
 app.post("/analytics/ping", async (c) => {
@@ -51,7 +51,9 @@ app.post("/analytics/ping", async (c) => {
 });
 
 app.get("/pass", (c) => {
-  return c.json({ message: "Wallet pass endpoint. Use /trpc/wallet.generate for pass generation." });
+  return c.json({
+    message: "Wallet pass endpoint. Use /trpc/wallet.generate for pass generation.",
+  });
 });
 
 export default app;

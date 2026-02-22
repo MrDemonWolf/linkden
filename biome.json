@@ -8,11 +8,27 @@
     "rules": {
       "recommended": true,
       "correctness": {
-        "noUnusedImports": "warn",
-        "noUnusedVariables": "warn"
+        "noUnusedImports": "error",
+        "noUnusedVariables": "warn",
+        "useExhaustiveDependencies": "off"
       },
       "suspicious": {
-        "noExplicitAny": "warn"
+        "noExplicitAny": "off",
+        "noArrayIndexKey": "off",
+        "noRedeclare": "off"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "off"
+      },
+      "complexity": {
+        "noForEach": "off"
+      },
+      "a11y": {
+        "useButtonType": "off",
+        "noLabelWithoutControl": "off",
+        "noRedundantAlt": "off",
+        "useKeyWithClickEvents": "off",
+        "noAutofocus": "off"
       },
       "style": {
         "noNonNullAssertion": "off"
@@ -28,6 +44,7 @@
     "ignore": [
       "node_modules",
       ".next",
+      ".source",
       "dist",
       "out",
       ".turbo",

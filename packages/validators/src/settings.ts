@@ -5,7 +5,7 @@ export const UpdateSettingsSchema = z.object({
     z.object({
       key: z.string().min(1).max(100),
       value: z.string().max(10000),
-    })
+    }),
   ),
 });
 

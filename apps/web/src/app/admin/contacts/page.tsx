@@ -1,16 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Mail,
-  Trash2,
-  ChevronLeft,
-  ChevronRight,
-  Circle,
-  CheckCircle2,
-} from "lucide-react";
-import { trpc } from "@/lib/trpc";
 import { toast } from "@/lib/toast";
+import { trpc } from "@/lib/trpc";
+import { CheckCircle2, ChevronLeft, ChevronRight, Circle, Mail, Trash2 } from "lucide-react";
+import { useState } from "react";
 
 export default function ContactsPage() {
   const [page, setPage] = useState(1);
@@ -106,21 +99,18 @@ export default function ContactsPage() {
                   )}
                 </button>
 
-                <a
-                  href={`/admin/contacts/${sub.id}`}
-                  className="flex-1 min-w-0"
-                >
+                <a href={`/admin/contacts/${sub.id}`} className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-sm font-medium ${!sub.isRead ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}>
+                    <span
+                      className={`text-sm font-medium ${!sub.isRead ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}
+                    >
                       {sub.name}
                     </span>
                     <span className="text-xs text-[var(--text-secondary)]">
                       &lt;{sub.email}&gt;
                     </span>
                   </div>
-                  <p className="text-sm text-[var(--text-secondary)] line-clamp-2">
-                    {sub.message}
-                  </p>
+                  <p className="text-sm text-[var(--text-secondary)] line-clamp-2">{sub.message}</p>
                   <span className="text-xs text-[var(--text-secondary)] mt-1 block">
                     {new Date(sub.createdAt).toLocaleString()}
                   </span>

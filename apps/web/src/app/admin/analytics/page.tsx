@@ -1,29 +1,29 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { StatCard } from "@/components/admin/stat-card";
+import { toast } from "@/lib/toast";
+import { trpc } from "@/lib/trpc";
 import {
+  ExternalLink,
   Eye,
+  Globe,
   MousePointerClick,
   Percent,
-  TrendingUp,
-  Globe,
-  ExternalLink,
   Trash2,
+  TrendingUp,
 } from "lucide-react";
+import { useMemo, useState } from "react";
 import {
-  ResponsiveContainer,
-  AreaChart,
   Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  Tooltip,
-  CartesianGrid,
-  BarChart,
-  Bar,
 } from "recharts";
-import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
-import { StatCard } from "@/components/admin/stat-card";
 
 type Period = "7d" | "30d" | "90d";
 
@@ -81,9 +81,7 @@ export default function AnalyticsPage() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold">Analytics</h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">
-            Track your page performance
-          </p>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">Track your page performance</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex rounded-lg overflow-hidden border border-[var(--surface-border)]">
@@ -159,7 +157,9 @@ export default function AnalyticsPage() {
               <XAxis
                 dataKey="date"
                 tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 11 }}
-                tickFormatter={(v) => new Date(v).toLocaleDateString("en", { month: "short", day: "numeric" })}
+                tickFormatter={(v) =>
+                  new Date(v).toLocaleDateString("en", { month: "short", day: "numeric" })
+                }
               />
               <YAxis tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 11 }} />
               <Tooltip
@@ -170,8 +170,22 @@ export default function AnalyticsPage() {
                   fontSize: "12px",
                 }}
               />
-              <Area type="monotone" dataKey="views" stroke="#0FACED" fillOpacity={1} fill="url(#viewsGradient)" name="Views" />
-              <Area type="monotone" dataKey="clicks" stroke="#7C3AED" fillOpacity={1} fill="url(#clicksGradient)" name="Clicks" />
+              <Area
+                type="monotone"
+                dataKey="views"
+                stroke="#0FACED"
+                fillOpacity={1}
+                fill="url(#viewsGradient)"
+                name="Views"
+              />
+              <Area
+                type="monotone"
+                dataKey="clicks"
+                stroke="#7C3AED"
+                fillOpacity={1}
+                fill="url(#clicksGradient)"
+                name="Clicks"
+              />
             </AreaChart>
           </ResponsiveContainer>
         ) : (
@@ -202,16 +216,10 @@ export default function AnalyticsPage() {
                     {i + 1}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {item.title || "Unknown"}
-                    </p>
-                    <p className="text-xs text-[var(--text-secondary)] truncate">
-                      {item.url}
-                    </p>
+                    <p className="text-sm font-medium truncate">{item.title || "Unknown"}</p>
+                    <p className="text-xs text-[var(--text-secondary)] truncate">{item.url}</p>
                   </div>
-                  <span className="text-sm font-semibold text-brand-cyan">
-                    {item.clicks}
-                  </span>
+                  <span className="text-sm font-semibold text-brand-cyan">{item.clicks}</span>
                 </div>
               ))}
             </div>
@@ -246,9 +254,7 @@ export default function AnalyticsPage() {
                       style={{ width: `${pct}%` }}
                     />
                     <div className="relative flex items-center justify-between">
-                      <span className="text-sm truncate">
-                        {item.referrer || "Direct"}
-                      </span>
+                      <span className="text-sm truncate">{item.referrer || "Direct"}</span>
                       <span className="text-sm font-semibold text-brand-cyan ml-2">
                         {item.count}
                       </span>
@@ -277,10 +283,7 @@ export default function AnalyticsPage() {
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={countries.data.slice(0, 15)}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-              <XAxis
-                dataKey="country"
-                tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 11 }}
-              />
+              <XAxis dataKey="country" tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 11 }} />
               <YAxis tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 11 }} />
               <Tooltip
                 contentStyle={{

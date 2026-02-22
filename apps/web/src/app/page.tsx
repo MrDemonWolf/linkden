@@ -1,7 +1,7 @@
 "use client";
 
-import { trpc } from "@/lib/trpc";
 import { PublicPage } from "@/components/public/public-page";
+import { trpc } from "@/lib/trpc";
 
 export default function HomePage() {
   const settingsQuery = trpc.settings.getPublic.useQuery();
@@ -35,7 +35,5 @@ export default function HomePage() {
     }
   }
 
-  return (
-    <PublicPage settings={settingsMap} links={linksQuery.data ?? []} />
-  );
+  return <PublicPage settings={settingsMap} links={linksQuery.data ?? []} />;
 }

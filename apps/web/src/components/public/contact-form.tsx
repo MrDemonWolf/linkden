@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
-import { Send, CheckCircle, AlertCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { AlertCircle, CheckCircle, Send } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface ContactFormProps {
   captchaSiteKey?: string;
@@ -34,13 +34,10 @@ export function ContactForm({ captchaSiteKey }: ContactFormProps) {
   useEffect(() => {
     if (!captchaSiteKey || !captchaRef.current) return;
 
-    const existingScript = document.querySelector(
-      'script[src*="turnstile"]'
-    );
+    const existingScript = document.querySelector('script[src*="turnstile"]');
     if (!existingScript) {
       const script = document.createElement("script");
-      script.src =
-        "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
       script.async = true;
       script.onload = renderWidget;
       document.head.appendChild(script);
@@ -86,7 +83,7 @@ export function ContactForm({ captchaSiteKey }: ContactFormProps) {
         captchaToken: captchaToken || "bypass",
       });
     },
-    [name, email, message, captchaToken, captchaSiteKey, submitMutation]
+    [name, email, message, captchaToken, captchaSiteKey, submitMutation],
   );
 
   if (submitted) {
@@ -97,10 +94,7 @@ export function ContactForm({ captchaSiteKey }: ContactFormProps) {
         <p className="text-sm text-[var(--text-secondary)]">
           Thank you for reaching out. You will hear back soon.
         </p>
-        <button
-          onClick={() => setSubmitted(false)}
-          className="glass-button mt-4"
-        >
+        <button onClick={() => setSubmitted(false)} className="glass-button mt-4">
           Send Another
         </button>
       </div>
@@ -119,9 +113,7 @@ export function ContactForm({ captchaSiteKey }: ContactFormProps) {
       )}
 
       <div>
-        <label className="block text-sm text-[var(--text-secondary)] mb-1">
-          Name
-        </label>
+        <label className="block text-sm text-[var(--text-secondary)] mb-1">Name</label>
         <input
           type="text"
           value={name}
@@ -134,9 +126,7 @@ export function ContactForm({ captchaSiteKey }: ContactFormProps) {
       </div>
 
       <div>
-        <label className="block text-sm text-[var(--text-secondary)] mb-1">
-          Email
-        </label>
+        <label className="block text-sm text-[var(--text-secondary)] mb-1">Email</label>
         <input
           type="email"
           value={email}
@@ -149,9 +139,7 @@ export function ContactForm({ captchaSiteKey }: ContactFormProps) {
       </div>
 
       <div>
-        <label className="block text-sm text-[var(--text-secondary)] mb-1">
-          Message
-        </label>
+        <label className="block text-sm text-[var(--text-secondary)] mb-1">Message</label>
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
@@ -163,9 +151,7 @@ export function ContactForm({ captchaSiteKey }: ContactFormProps) {
         />
       </div>
 
-      {captchaSiteKey && (
-        <div ref={captchaRef} className="flex justify-center" />
-      )}
+      {captchaSiteKey && <div ref={captchaRef} className="flex justify-center" />}
 
       <button
         type="submit"

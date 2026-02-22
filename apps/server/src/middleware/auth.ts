@@ -6,7 +6,7 @@ import { verifyToken } from "@clerk/backend";
  */
 export async function verifyClerkToken(
   authHeader: string | null | undefined,
-  secretKey: string
+  secretKey: string,
 ): Promise<string | null> {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return null;

@@ -1,20 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { toast } from "@/lib/toast";
+import { trpc } from "@/lib/trpc";
 import {
+  Briefcase,
   ChevronDown,
   ChevronRight,
-  User,
-  Briefcase,
-  Phone,
-  MapPin,
-  Globe,
-  Share2,
   FileText,
+  Globe,
+  MapPin,
+  Phone,
   Save,
+  Share2,
+  User,
 } from "lucide-react";
-import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
+import { useEffect, useState } from "react";
 
 interface SectionProps {
   title: string;
@@ -23,12 +23,7 @@ interface SectionProps {
   children: React.ReactNode;
 }
 
-function CollapsibleSection({
-  title,
-  icon,
-  defaultOpen = false,
-  children,
-}: SectionProps) {
+function CollapsibleSection({ title, icon, defaultOpen = false, children }: SectionProps) {
   const [open, setOpen] = useState(defaultOpen);
 
   return (
@@ -300,12 +295,7 @@ export default function VCardPage() {
           <Field label="Prefix" value={prefix} onChange={setPrefix} placeholder="Mr." />
           <Field label="Suffix" value={suffix} onChange={setSuffix} placeholder="Jr." />
           <Field label="Nickname" value={nickname} onChange={setNickname} placeholder="Johnny" />
-          <Field
-            label="Birthday"
-            value={birthday}
-            onChange={setBirthday}
-            type="date"
-          />
+          <Field label="Birthday" value={birthday} onChange={setBirthday} type="date" />
         </div>
         <div>
           <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">
@@ -345,18 +335,8 @@ export default function VCardPage() {
             onChange={setOrganization}
             placeholder="Acme Inc."
           />
-          <Field
-            label="Title"
-            value={title}
-            onChange={setTitle}
-            placeholder="Software Engineer"
-          />
-          <Field
-            label="Role"
-            value={role}
-            onChange={setRole}
-            placeholder="Developer"
-          />
+          <Field label="Title" value={title} onChange={setTitle} placeholder="Software Engineer" />
+          <Field label="Role" value={role} onChange={setRole} placeholder="Developer" />
           <Field
             label="Department"
             value={department}
@@ -367,10 +347,7 @@ export default function VCardPage() {
       </CollapsibleSection>
 
       {/* Contact */}
-      <CollapsibleSection
-        title="Contact"
-        icon={<Phone className="w-4 h-4 text-brand-cyan" />}
-      >
+      <CollapsibleSection title="Contact" icon={<Phone className="w-4 h-4 text-brand-cyan" />}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field
             label="Personal Email"
@@ -418,13 +395,8 @@ export default function VCardPage() {
       </CollapsibleSection>
 
       {/* Addresses */}
-      <CollapsibleSection
-        title="Addresses"
-        icon={<MapPin className="w-4 h-4 text-brand-cyan" />}
-      >
-        <h4 className="text-sm font-semibold text-[var(--text-secondary)]">
-          Home Address
-        </h4>
+      <CollapsibleSection title="Addresses" icon={<MapPin className="w-4 h-4 text-brand-cyan" />}>
+        <h4 className="text-sm font-semibold text-[var(--text-secondary)]">Home Address</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
             <Field
@@ -434,17 +406,25 @@ export default function VCardPage() {
               placeholder="123 Main St"
             />
           </div>
-          <Field label="City" value={addressCity} onChange={setAddressCity} placeholder="New York" />
+          <Field
+            label="City"
+            value={addressCity}
+            onChange={setAddressCity}
+            placeholder="New York"
+          />
           <Field label="State" value={addressState} onChange={setAddressState} placeholder="NY" />
           <Field label="ZIP" value={addressZip} onChange={setAddressZip} placeholder="10001" />
-          <Field label="Country" value={addressCountry} onChange={setAddressCountry} placeholder="US" />
+          <Field
+            label="Country"
+            value={addressCountry}
+            onChange={setAddressCountry}
+            placeholder="US"
+          />
         </div>
 
         <div className="border-t border-[var(--surface-border)] my-4" />
 
-        <h4 className="text-sm font-semibold text-[var(--text-secondary)]">
-          Work Address
-        </h4>
+        <h4 className="text-sm font-semibold text-[var(--text-secondary)]">Work Address</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
             <Field
@@ -454,10 +434,30 @@ export default function VCardPage() {
               placeholder="456 Office Blvd"
             />
           </div>
-          <Field label="City" value={addressWorkCity} onChange={setAddressWorkCity} placeholder="San Francisco" />
-          <Field label="State" value={addressWorkState} onChange={setAddressWorkState} placeholder="CA" />
-          <Field label="ZIP" value={addressWorkZip} onChange={setAddressWorkZip} placeholder="94102" />
-          <Field label="Country" value={addressWorkCountry} onChange={setAddressWorkCountry} placeholder="US" />
+          <Field
+            label="City"
+            value={addressWorkCity}
+            onChange={setAddressWorkCity}
+            placeholder="San Francisco"
+          />
+          <Field
+            label="State"
+            value={addressWorkState}
+            onChange={setAddressWorkState}
+            placeholder="CA"
+          />
+          <Field
+            label="ZIP"
+            value={addressWorkZip}
+            onChange={setAddressWorkZip}
+            placeholder="94102"
+          />
+          <Field
+            label="Country"
+            value={addressWorkCountry}
+            onChange={setAddressWorkCountry}
+            placeholder="US"
+          />
         </div>
       </CollapsibleSection>
 
@@ -530,10 +530,7 @@ export default function VCardPage() {
       </CollapsibleSection>
 
       {/* Notes */}
-      <CollapsibleSection
-        title="Notes"
-        icon={<FileText className="w-4 h-4 text-brand-cyan" />}
-      >
+      <CollapsibleSection title="Notes" icon={<FileText className="w-4 h-4 text-brand-cyan" />}>
         <div>
           <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">
             Notes

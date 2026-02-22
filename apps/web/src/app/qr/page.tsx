@@ -1,8 +1,8 @@
 "use client";
 
+import { Download } from "lucide-react";
 import { useState } from "react";
 import QRCode from "react-qr-code";
-import { Download } from "lucide-react";
 
 export default function QRCodePage() {
   const appUrl = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || window.location.origin;
@@ -32,7 +32,7 @@ export default function QRCodePage() {
       a.download = "linkden-qr.png";
       a.click();
     };
-    img.src = "data:image/svg+xml;base64," + btoa(svgData);
+    img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
   }
 
   return (
@@ -43,10 +43,7 @@ export default function QRCodePage() {
           Scan this code to visit your LinkDen page
         </p>
 
-        <div
-          className="inline-block p-6 rounded-2xl"
-          style={{ backgroundColor: bgColor }}
-        >
+        <div className="inline-block p-6 rounded-2xl" style={{ backgroundColor: bgColor }}>
           <QRCode
             id="qr-code-svg"
             value={appUrl}
@@ -59,9 +56,7 @@ export default function QRCodePage() {
 
         <div className="grid grid-cols-2 gap-4 text-left">
           <div>
-            <label className="block text-xs text-[var(--text-secondary)] mb-1">
-              Background
-            </label>
+            <label className="block text-xs text-[var(--text-secondary)] mb-1">Background</label>
             <div className="flex items-center gap-2">
               <input
                 type="color"
@@ -78,9 +73,7 @@ export default function QRCodePage() {
             </div>
           </div>
           <div>
-            <label className="block text-xs text-[var(--text-secondary)] mb-1">
-              Foreground
-            </label>
+            <label className="block text-xs text-[var(--text-secondary)] mb-1">Foreground</label>
             <div className="flex items-center gap-2">
               <input
                 type="color"
@@ -99,9 +92,7 @@ export default function QRCodePage() {
         </div>
 
         <div>
-          <label className="block text-xs text-[var(--text-secondary)] mb-1">
-            Size (px)
-          </label>
+          <label className="block text-xs text-[var(--text-secondary)] mb-1">Size (px)</label>
           <input
             type="range"
             min={128}

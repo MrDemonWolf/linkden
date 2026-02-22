@@ -1,10 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
 import { LinkEditor, type LinkFormData } from "@/components/admin/link-editor";
+import { toast } from "@/lib/toast";
+import { trpc } from "@/lib/trpc";
+import { ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function NewLinkPage() {
   const router = useRouter();

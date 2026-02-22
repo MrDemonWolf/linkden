@@ -1,10 +1,10 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
 import { LinkEditor, type LinkFormData } from "@/components/admin/link-editor";
+import { toast } from "@/lib/toast";
+import { trpc } from "@/lib/trpc";
+import { ArrowLeft } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 
 export default function EditLinkPage() {
   const params = useParams();
@@ -33,10 +33,7 @@ export default function EditLinkPage() {
         <div className="glass-card">
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-10 rounded bg-[rgba(255,255,255,0.04)] animate-pulse"
-              />
+              <div key={i} className="h-10 rounded bg-[rgba(255,255,255,0.04)] animate-pulse" />
             ))}
           </div>
         </div>

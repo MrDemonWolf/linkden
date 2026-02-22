@@ -1,8 +1,8 @@
-import { eq } from "drizzle-orm";
-import { TRPCError } from "@trpc/server";
 import { walletPass } from "@linkden/db/schema";
 import { UpdateWalletPassSchema } from "@linkden/validators";
-import { router, publicProcedure, protectedProcedure } from "../trpc";
+import { TRPCError } from "@trpc/server";
+import { eq } from "drizzle-orm";
+import { protectedProcedure, publicProcedure, router } from "../trpc";
 
 export const walletRouter = router({
   /** Protected: get wallet pass config */
@@ -12,27 +12,25 @@ export const walletRouter = router({
   }),
 
   /** Protected: upsert wallet pass config */
-  update: protectedProcedure
-    .input(UpdateWalletPassSchema)
-    .mutation(async ({ ctx, input }) => {
-      const [existing] = await ctx.db.select().from(walletPass).limit(1);
-      const now = new Date().toISOString();
+  update: protectedProcedure.input(UpdateWalletPassSchema).mutation(async ({ ctx, input }) => {
+    const [existing] = await ctx.db.select().from(walletPass).limit(1);
+    const now = new Date().toISOString();
 
-      if (existing) {
-        const [updated] = await ctx.db
-          .update(walletPass)
-          .set({ ...input, updatedAt: now })
-          .where(eq(walletPass.id, existing.id))
-          .returning();
-        return updated;
-      }
-
-      const [created] = await ctx.db
-        .insert(walletPass)
-        .values({ ...input })
+    if (existing) {
+      const [updated] = await ctx.db
+        .update(walletPass)
+        .set({ ...input, updatedAt: now })
+        .where(eq(walletPass.id, existing.id))
         .returning();
-      return created;
-    }),
+      return updated;
+    }
+
+    const [created] = await ctx.db
+      .insert(walletPass)
+      .values({ ...input })
+      .returning();
+    return created;
+  }),
 
   /** Public: placeholder for pass generation */
   generate: publicProcedure.query(async ({ ctx }) => {

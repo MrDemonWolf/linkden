@@ -10,13 +10,7 @@ interface StatCardProps {
   deltaType?: "positive" | "negative" | "neutral";
 }
 
-export function StatCard({
-  icon,
-  label,
-  value,
-  delta,
-  deltaType = "neutral",
-}: StatCardProps) {
+export function StatCard({ icon, label, value, delta, deltaType = "neutral" }: StatCardProps) {
   return (
     <div className="glass-card flex items-start gap-4">
       <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--button-bg)] text-brand-cyan shrink-0">
@@ -33,7 +27,7 @@ export function StatCard({
               "text-xs font-medium mt-1",
               deltaType === "positive" && "text-emerald-400",
               deltaType === "negative" && "text-red-400",
-              deltaType === "neutral" && "text-[var(--text-secondary)]"
+              deltaType === "neutral" && "text-[var(--text-secondary)]",
             )}
           >
             {delta}

@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure } from "../trpc";
+import { protectedProcedure, router } from "../trpc";
 
 /** Current version from version.json at build time */
 const CURRENT_VERSION = "0.1.0";
@@ -15,7 +15,7 @@ export const systemRouter = router({
             Accept: "application/vnd.github.v3+json",
             "User-Agent": "LinkDen-Server",
           },
-        }
+        },
       );
 
       if (!response.ok) {

@@ -13,13 +13,7 @@ export function WhitelabelFooter({ brandName, brandLogo }: WhitelabelFooterProps
           href="/"
           className="inline-flex items-center gap-2 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
         >
-          {brandLogo && (
-            <img
-              src={brandLogo}
-              alt={brandName || ""}
-              className="h-4 w-auto"
-            />
-          )}
+          {brandLogo && <img src={brandLogo} alt={brandName || ""} className="h-4 w-auto" />}
           {brandName && <span>{brandName}</span>}
         </a>
       </footer>

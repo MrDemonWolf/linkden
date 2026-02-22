@@ -1,36 +1,29 @@
-import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import {
-  links,
-  settings,
   analytics,
-  walletPass,
-  vcard,
   contactSubmissions,
+  links,
   pages,
+  settings,
+  vcard,
+  walletPass,
 } from "@linkden/db/schema";
-import { router, protectedProcedure } from "../trpc";
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+import { protectedProcedure, router } from "../trpc";
 
 export const exportRouter = router({
   /** Protected: JSON of all data */
   exportAll: protectedProcedure.query(async ({ ctx }) => {
-    const [
-      allLinks,
-      allSettings,
-      allAnalytics,
-      allWalletPass,
-      allVcard,
-      allContacts,
-      allPages,
-    ] = await Promise.all([
-      ctx.db.select().from(links),
-      ctx.db.select().from(settings),
-      ctx.db.select().from(analytics),
-      ctx.db.select().from(walletPass),
-      ctx.db.select().from(vcard),
-      ctx.db.select().from(contactSubmissions),
-      ctx.db.select().from(pages),
-    ]);
+    const [allLinks, allSettings, allAnalytics, allWalletPass, allVcard, allContacts, allPages] =
+      await Promise.all([
+        ctx.db.select().from(links),
+        ctx.db.select().from(settings),
+        ctx.db.select().from(analytics),
+        ctx.db.select().from(walletPass),
+        ctx.db.select().from(vcard),
+        ctx.db.select().from(contactSubmissions),
+        ctx.db.select().from(pages),
+      ]);
 
     return {
       version: "1.0",
@@ -60,7 +53,7 @@ export const exportRouter = router({
           contactSubmissions: z.array(z.record(z.unknown())).optional(),
           pages: z.array(z.record(z.unknown())).optional(),
         }),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       // Clear existing data
@@ -71,11 +64,7 @@ export const exportRouter = router({
       ]);
       // links after analytics (FK)
       await ctx.db.delete(links);
-      await Promise.all([
-        ctx.db.delete(settings),
-        ctx.db.delete(walletPass),
-        ctx.db.delete(vcard),
-      ]);
+      await Promise.all([ctx.db.delete(settings), ctx.db.delete(walletPass), ctx.db.delete(vcard)]);
 
       // Insert imported data
       const d = input.data;
@@ -95,9 +84,7 @@ export const exportRouter = router({
         await ctx.db.insert(vcard).values(d.vcard as any);
       }
       if (d.contactSubmissions?.length) {
-        await ctx.db
-          .insert(contactSubmissions)
-          .values(d.contactSubmissions as any);
+        await ctx.db.insert(contactSubmissions).values(d.contactSubmissions as any);
       }
       if (d.pages?.length) {
         await ctx.db.insert(pages).values(d.pages as any);
@@ -117,9 +104,9 @@ export const exportRouter = router({
             icon: z.string().optional(),
             order: z.number().optional(),
             active: z.boolean().optional(),
-          })
+          }),
         ),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       if (input.data.length === 0) {

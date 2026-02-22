@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
-import { Sidebar } from "@/components/admin/sidebar";
 import { Header } from "@/components/admin/header";
+import { Sidebar } from "@/components/admin/sidebar";
+import { SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn } = useAuth();

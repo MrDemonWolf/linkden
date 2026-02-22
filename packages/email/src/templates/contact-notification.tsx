@@ -1,15 +1,14 @@
 import {
-  Html,
-  Head,
   Body,
   Container,
-  Text,
-  Link,
-  Hr,
-  Section,
+  Head,
   Heading,
+  Hr,
+  Html,
+  Link,
+  Section,
+  Text,
 } from "@react-email/components";
-import * as React from "react";
 
 interface ContactNotificationProps {
   name: string;
