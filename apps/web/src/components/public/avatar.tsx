@@ -13,10 +13,7 @@ export function Avatar({ src, alt, size = 96 }: AvatarProps) {
         className="rounded-full bg-[var(--surface)] border-2 border-[var(--surface-border)] flex items-center justify-center"
         style={{ width: size, height: size }}
       >
-        <span
-          className="text-[var(--text-secondary)] font-bold"
-          style={{ fontSize: size * 0.35 }}
-        >
+        <span className="text-[var(--text-secondary)] font-bold" style={{ fontSize: size * 0.35 }}>
           {alt
             .split(" ")
             .map((w) => w[0])

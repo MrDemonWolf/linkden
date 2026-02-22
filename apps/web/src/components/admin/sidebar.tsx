@@ -1,23 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { trpc } from "@/lib/trpc";
+import { cn } from "@/lib/utils";
 import {
+  BarChart3,
+  Contact,
+  FileText,
   LayoutDashboard,
   Link2,
-  Palette,
-  Contact,
-  Wallet,
-  BarChart3,
-  Settings,
-  FileText,
   Mail,
   Menu,
-  X,
+  Palette,
   QrCode,
+  Settings,
+  Wallet,
+  X,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { trpc } from "@/lib/trpc";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 interface NavItem {
   label: string;
@@ -32,7 +32,7 @@ export function Sidebar() {
 
   const contactsQuery = trpc.contact.list.useQuery(
     { page: 1, limit: 1 },
-    { refetchInterval: 30000 }
+    { refetchInterval: 30000 },
   );
   const unreadCount = contactsQuery.data?.unreadCount ?? 0;
 
@@ -102,9 +102,7 @@ export function Sidebar() {
           <span className="text-brand-cyan">Link</span>
           <span>Den</span>
         </h1>
-        <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-          Admin Panel
-        </p>
+        <p className="text-xs text-[var(--text-secondary)] mt-0.5">Admin Panel</p>
       </div>
 
       {navItems.map((item) => (
@@ -116,7 +114,7 @@ export function Sidebar() {
             "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
             isActive(item.href)
               ? "bg-[var(--button-bg)] text-brand-cyan border border-[rgba(15,172,237,0.25)]"
-              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.04)]"
+              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.04)]",
           )}
         >
           {item.icon}
@@ -154,7 +152,7 @@ export function Sidebar() {
       <aside
         className={cn(
           "fixed top-0 left-0 h-full w-[240px] z-40 glass-panel border-r border-[var(--surface-border)] transition-transform duration-300 lg:translate-x-0",
-          isOpen ? "translate-x-0" : "-translate-x-full"
+          isOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <div className="h-full overflow-y-auto">{navContent}</div>

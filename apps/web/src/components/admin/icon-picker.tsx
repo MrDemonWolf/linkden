@@ -1,22 +1,81 @@
 "use client";
 
-import { useState } from "react";
 import { Search, X } from "lucide-react";
+import { useState } from "react";
 
 const BRAND_ICONS = [
-  "github", "twitter", "linkedin", "instagram", "facebook", "youtube",
-  "tiktok", "discord", "twitch", "spotify", "apple", "google",
-  "amazon", "microsoft", "slack", "figma", "dribbble", "behance",
-  "codepen", "stackoverflow", "reddit", "pinterest", "snapchat",
-  "whatsapp", "telegram", "signal", "mastodon", "threads",
-  "medium", "dev", "hashnode", "substack", "patreon", "kofi",
-  "buymeacoffee", "paypal", "stripe", "shopify", "wordpress",
-  "notion", "trello", "jira", "gitlab", "bitbucket",
-  "npm", "docker", "kubernetes", "aws", "vercel", "netlify",
-  "cloudflare", "firebase", "supabase", "planetscale",
-  "mail", "globe", "phone", "map-pin", "calendar", "link",
-  "music", "video", "camera", "book", "briefcase", "code",
-  "database", "server", "shield", "star", "heart", "zap",
+  "github",
+  "twitter",
+  "linkedin",
+  "instagram",
+  "facebook",
+  "youtube",
+  "tiktok",
+  "discord",
+  "twitch",
+  "spotify",
+  "apple",
+  "google",
+  "amazon",
+  "microsoft",
+  "slack",
+  "figma",
+  "dribbble",
+  "behance",
+  "codepen",
+  "stackoverflow",
+  "reddit",
+  "pinterest",
+  "snapchat",
+  "whatsapp",
+  "telegram",
+  "signal",
+  "mastodon",
+  "threads",
+  "medium",
+  "dev",
+  "hashnode",
+  "substack",
+  "patreon",
+  "kofi",
+  "buymeacoffee",
+  "paypal",
+  "stripe",
+  "shopify",
+  "wordpress",
+  "notion",
+  "trello",
+  "jira",
+  "gitlab",
+  "bitbucket",
+  "npm",
+  "docker",
+  "kubernetes",
+  "aws",
+  "vercel",
+  "netlify",
+  "cloudflare",
+  "firebase",
+  "supabase",
+  "planetscale",
+  "mail",
+  "globe",
+  "phone",
+  "map-pin",
+  "calendar",
+  "link",
+  "music",
+  "video",
+  "camera",
+  "book",
+  "briefcase",
+  "code",
+  "database",
+  "server",
+  "shield",
+  "star",
+  "heart",
+  "zap",
 ];
 
 interface IconPickerProps {
@@ -28,9 +87,7 @@ interface IconPickerProps {
 export function IconPicker({ value, onChange, onClose }: IconPickerProps) {
   const [search, setSearch] = useState("");
 
-  const filtered = BRAND_ICONS.filter((icon) =>
-    icon.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = BRAND_ICONS.filter((icon) => icon.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="glass-card w-80 max-h-96 overflow-hidden flex flex-col">
@@ -52,7 +109,6 @@ export function IconPicker({ value, onChange, onClose }: IconPickerProps) {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search icons..."
           className="glass-input pl-8 text-sm"
-          autoFocus
         />
       </div>
 
@@ -77,9 +133,7 @@ export function IconPicker({ value, onChange, onClose }: IconPickerProps) {
           ))}
         </div>
         {filtered.length === 0 && (
-          <p className="text-center text-sm text-[var(--text-secondary)] py-8">
-            No icons found
-          </p>
+          <p className="text-center text-sm text-[var(--text-secondary)] py-8">No icons found</p>
         )}
       </div>
     </div>

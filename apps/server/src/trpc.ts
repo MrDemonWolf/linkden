@@ -1,5 +1,5 @@
-import { initTRPC, TRPCError } from "@trpc/server";
 import type { Database } from "@linkden/db";
+import { TRPCError, initTRPC } from "@trpc/server";
 import type { Env } from "./env";
 
 export interface Context {

@@ -68,7 +68,7 @@ export const themes: ThemeConfig[] = [
     },
     borderRadius: "16px",
     fontFamily:
-      '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+      '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif',
   },
 
   // ──────────────────────────────────────────────
@@ -109,8 +109,7 @@ export const themes: ThemeConfig[] = [
       backdropBlur: false,
     },
     borderRadius: "4px",
-    fontFamily:
-      '"Playfair Display", Georgia, "Times New Roman", Times, serif',
+    fontFamily: '"Playfair Display", Georgia, "Times New Roman", Times, serif',
   },
 
   // ──────────────────────────────────────────────
@@ -151,8 +150,7 @@ export const themes: ThemeConfig[] = [
       backdropBlur: false,
     },
     borderRadius: "8px",
-    fontFamily:
-      '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
 
   // ──────────────────────────────────────────────
@@ -193,8 +191,7 @@ export const themes: ThemeConfig[] = [
       backdropBlur: false,
     },
     borderRadius: "12px",
-    fontFamily:
-      '"DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: '"DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
 
   // ──────────────────────────────────────────────
@@ -235,8 +232,7 @@ export const themes: ThemeConfig[] = [
       backdropBlur: false,
     },
     borderRadius: "2px",
-    fontFamily:
-      '"Fira Code", "JetBrains Mono", "Cascadia Code", "Source Code Pro", "Courier New", monospace',
+    fontFamily: '"Fira Code", "JetBrains Mono", "Cascadia Code", "Source Code Pro", monospace',
   },
 
   // ──────────────────────────────────────────────
@@ -277,8 +273,7 @@ export const themes: ThemeConfig[] = [
       backdropBlur: false,
     },
     borderRadius: "6px",
-    fontFamily:
-      '"Rajdhani", "Orbitron", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    fontFamily: '"Rajdhani", "Orbitron", -apple-system, BlinkMacSystemFont, sans-serif',
   },
 
   // ──────────────────────────────────────────────
@@ -319,8 +314,7 @@ export const themes: ThemeConfig[] = [
       backdropBlur: false,
     },
     borderRadius: "0px",
-    fontFamily:
-      '"Helvetica Neue", Helvetica, Arial, sans-serif',
+    fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
   },
 ];
 

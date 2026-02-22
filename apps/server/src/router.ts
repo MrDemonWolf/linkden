@@ -1,13 +1,13 @@
-import { router } from "./trpc";
-import { linksRouter } from "./routers/links";
-import { settingsRouter } from "./routers/settings";
 import { analyticsRouter } from "./routers/analytics";
+import { contactRouter } from "./routers/contact";
+import { exportRouter } from "./routers/export";
+import { linksRouter } from "./routers/links";
+import { pagesRouter } from "./routers/pages";
+import { settingsRouter } from "./routers/settings";
+import { systemRouter } from "./routers/system";
 import { vcardRouter } from "./routers/vcard";
 import { walletRouter } from "./routers/wallet";
-import { contactRouter } from "./routers/contact";
-import { pagesRouter } from "./routers/pages";
-import { exportRouter } from "./routers/export";
-import { systemRouter } from "./routers/system";
+import { router } from "./trpc";
 
 export const appRouter = router({
   links: linksRouter,

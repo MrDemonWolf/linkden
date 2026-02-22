@@ -1,8 +1,8 @@
-import { eq } from "drizzle-orm";
-import { TRPCError } from "@trpc/server";
 import { vcard } from "@linkden/db/schema";
 import { UpdateVcardSchema } from "@linkden/validators";
-import { router, publicProcedure, protectedProcedure } from "../trpc";
+import { TRPCError } from "@trpc/server";
+import { eq } from "drizzle-orm";
+import { protectedProcedure, publicProcedure, router } from "../trpc";
 
 function generateVcf(data: Record<string, unknown>): string {
   const lines: string[] = ["BEGIN:VCARD", "VERSION:3.0"];
@@ -10,13 +10,9 @@ function generateVcf(data: Record<string, unknown>): string {
   const s = (key: string) => (data[key] as string) ?? "";
 
   if (s("lastName") || s("firstName")) {
+    lines.push(`N:${s("lastName")};${s("firstName")};${s("suffix")};${s("prefix")}`);
     lines.push(
-      `N:${s("lastName")};${s("firstName")};${s("suffix")};${s("prefix")}`
-    );
-    lines.push(
-      `FN:${[s("prefix"), s("firstName"), s("lastName"), s("suffix")]
-        .filter(Boolean)
-        .join(" ")}`
+      `FN:${[s("prefix"), s("firstName"), s("lastName"), s("suffix")].filter(Boolean).join(" ")}`,
     );
   }
 
@@ -37,31 +33,25 @@ function generateVcf(data: Record<string, unknown>): string {
 
   if (s("addressStreet") || s("addressCity")) {
     lines.push(
-      `ADR;TYPE=HOME:;;${s("addressStreet")};${s("addressCity")};${s("addressState")};${s("addressZip")};${s("addressCountry")}`
+      `ADR;TYPE=HOME:;;${s("addressStreet")};${s("addressCity")};${s("addressState")};${s("addressZip")};${s("addressCountry")}`,
     );
   }
 
   if (s("addressWorkStreet") || s("addressWorkCity")) {
     lines.push(
-      `ADR;TYPE=WORK:;;${s("addressWorkStreet")};${s("addressWorkCity")};${s("addressWorkState")};${s("addressWorkZip")};${s("addressWorkCountry")}`
+      `ADR;TYPE=WORK:;;${s("addressWorkStreet")};${s("addressWorkCity")};${s("addressWorkState")};${s("addressWorkZip")};${s("addressWorkCountry")}`,
     );
   }
 
   if (s("website")) lines.push(`URL;TYPE=HOME:${s("website")}`);
   if (s("websiteWork")) lines.push(`URL;TYPE=WORK:${s("websiteWork")}`);
 
-  if (s("socialTwitter"))
-    lines.push(`X-SOCIALPROFILE;TYPE=twitter:${s("socialTwitter")}`);
-  if (s("socialLinkedin"))
-    lines.push(`X-SOCIALPROFILE;TYPE=linkedin:${s("socialLinkedin")}`);
-  if (s("socialGithub"))
-    lines.push(`X-SOCIALPROFILE;TYPE=github:${s("socialGithub")}`);
-  if (s("socialInstagram"))
-    lines.push(`X-SOCIALPROFILE;TYPE=instagram:${s("socialInstagram")}`);
-  if (s("socialFacebook"))
-    lines.push(`X-SOCIALPROFILE;TYPE=facebook:${s("socialFacebook")}`);
-  if (s("socialYoutube"))
-    lines.push(`X-SOCIALPROFILE;TYPE=youtube:${s("socialYoutube")}`);
+  if (s("socialTwitter")) lines.push(`X-SOCIALPROFILE;TYPE=twitter:${s("socialTwitter")}`);
+  if (s("socialLinkedin")) lines.push(`X-SOCIALPROFILE;TYPE=linkedin:${s("socialLinkedin")}`);
+  if (s("socialGithub")) lines.push(`X-SOCIALPROFILE;TYPE=github:${s("socialGithub")}`);
+  if (s("socialInstagram")) lines.push(`X-SOCIALPROFILE;TYPE=instagram:${s("socialInstagram")}`);
+  if (s("socialFacebook")) lines.push(`X-SOCIALPROFILE;TYPE=facebook:${s("socialFacebook")}`);
+  if (s("socialYoutube")) lines.push(`X-SOCIALPROFILE;TYPE=youtube:${s("socialYoutube")}`);
 
   if (s("notes")) lines.push(`NOTE:${s("notes")}`);
 
@@ -77,27 +67,25 @@ export const vcardRouter = router({
   }),
 
   /** Protected: upsert vcard */
-  update: protectedProcedure
-    .input(UpdateVcardSchema)
-    .mutation(async ({ ctx, input }) => {
-      const [existing] = await ctx.db.select().from(vcard).limit(1);
-      const now = new Date().toISOString();
+  update: protectedProcedure.input(UpdateVcardSchema).mutation(async ({ ctx, input }) => {
+    const [existing] = await ctx.db.select().from(vcard).limit(1);
+    const now = new Date().toISOString();
 
-      if (existing) {
-        const [updated] = await ctx.db
-          .update(vcard)
-          .set({ ...input, updatedAt: now })
-          .where(eq(vcard.id, existing.id))
-          .returning();
-        return updated;
-      }
-
-      const [created] = await ctx.db
-        .insert(vcard)
-        .values({ ...input })
+    if (existing) {
+      const [updated] = await ctx.db
+        .update(vcard)
+        .set({ ...input, updatedAt: now })
+        .where(eq(vcard.id, existing.id))
         .returning();
-      return created;
-    }),
+      return updated;
+    }
+
+    const [created] = await ctx.db
+      .insert(vcard)
+      .values({ ...input })
+      .returning();
+    return created;
+  }),
 
   /** Public: generate and return .vcf file */
   download: publicProcedure.query(async ({ ctx }) => {

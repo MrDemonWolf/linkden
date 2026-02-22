@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const linkTypeEnum = [
   "link",
@@ -38,7 +38,7 @@ export const links = sqliteTable(
       .notNull()
       .$defaultFn(() => new Date().toISOString()),
   },
-  (table) => [index("links_sort_order_idx").on(table.sortOrder)]
+  (table) => [index("links_sort_order_idx").on(table.sortOrder)],
 );
 
 export const settings = sqliteTable("settings", {
@@ -68,7 +68,7 @@ export const analytics = sqliteTable(
     index("analytics_created_at_idx").on(table.createdAt),
     index("analytics_event_idx").on(table.event),
     index("analytics_link_id_idx").on(table.linkId),
-  ]
+  ],
 );
 
 export const walletPass = sqliteTable("wallet_pass", {
@@ -175,7 +175,7 @@ export const contactSubmissions = sqliteTable(
       .notNull()
       .$defaultFn(() => new Date().toISOString()),
   },
-  (table) => [index("contact_submissions_created_at_idx").on(table.createdAt)]
+  (table) => [index("contact_submissions_created_at_idx").on(table.createdAt)],
 );
 
 export const pages = sqliteTable("pages", {
@@ -185,9 +185,7 @@ export const pages = sqliteTable("pages", {
   slug: text("slug").notNull().unique(),
   title: text("title").notNull(),
   content: text("content").notNull().default(""),
-  isPublished: integer("is_published", { mode: "boolean" })
-    .notNull()
-    .default(false),
+  isPublished: integer("is_published", { mode: "boolean" }).notNull().default(false),
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),

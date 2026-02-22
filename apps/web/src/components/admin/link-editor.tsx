@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import {
-  Link2,
-  Type,
   AlignLeft,
-  Mail,
-  Phone,
-  Contact,
-  Wallet,
   ChevronDown,
+  Contact,
+  Link2,
+  Mail,
   Minus,
+  Phone,
+  Type,
+  Wallet,
 } from "lucide-react";
+import { useState } from "react";
 import { IconPicker } from "./icon-picker";
 
 const LINK_TYPES = [
@@ -55,7 +55,7 @@ export function LinkEditor({
   const [url, setUrl] = useState(initialData?.url ?? "");
   const [icon, setIcon] = useState(initialData?.icon ?? "");
   const [iconType, setIconType] = useState<"brand" | "lucide" | "custom">(
-    initialData?.iconType ?? "brand"
+    initialData?.iconType ?? "brand",
   );
   const [isActive, setIsActive] = useState(initialData?.isActive ?? true);
   const [showIconPicker, setShowIconPicker] = useState(false);
@@ -153,14 +153,12 @@ export function LinkEditor({
               type === "heading"
                 ? "Section heading..."
                 : type === "text"
-                ? "Text block title..."
-                : "My awesome link"
+                  ? "Text block title..."
+                  : "My awesome link"
             }
             className="glass-input"
           />
-          {errors.title && (
-            <p className="text-red-400 text-xs mt-1">{errors.title}</p>
-          )}
+          {errors.title && <p className="text-red-400 text-xs mt-1">{errors.title}</p>}
         </div>
       )}
 
@@ -177,9 +175,7 @@ export function LinkEditor({
             placeholder="https://..."
             className="glass-input"
           />
-          {errors.url && (
-            <p className="text-red-400 text-xs mt-1">{errors.url}</p>
-          )}
+          {errors.url && <p className="text-red-400 text-xs mt-1">{errors.url}</p>}
         </div>
       )}
 
@@ -196,9 +192,7 @@ export function LinkEditor({
             placeholder="hello@example.com"
             className="glass-input"
           />
-          {errors.url && (
-            <p className="text-red-400 text-xs mt-1">{errors.url}</p>
-          )}
+          {errors.url && <p className="text-red-400 text-xs mt-1">{errors.url}</p>}
         </div>
       )}
 
@@ -215,9 +209,7 @@ export function LinkEditor({
             placeholder="+1 (555) 123-4567"
             className="glass-input"
           />
-          {errors.url && (
-            <p className="text-red-400 text-xs mt-1">{errors.url}</p>
-          )}
+          {errors.url && <p className="text-red-400 text-xs mt-1">{errors.url}</p>}
         </div>
       )}
 
@@ -246,9 +238,7 @@ export function LinkEditor({
           <div className="flex items-center gap-2">
             <select
               value={iconType}
-              onChange={(e) =>
-                setIconType(e.target.value as "brand" | "lucide" | "custom")
-              }
+              onChange={(e) => setIconType(e.target.value as "brand" | "lucide" | "custom")}
               className="glass-select w-28"
             >
               <option value="brand">Brand</option>
@@ -321,11 +311,7 @@ export function LinkEditor({
         >
           {isSubmitting ? "Saving..." : "Save"}
         </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="glass-button px-6 py-2.5"
-        >
+        <button type="button" onClick={onCancel} className="glass-button px-6 py-2.5">
           Cancel
         </button>
       </div>

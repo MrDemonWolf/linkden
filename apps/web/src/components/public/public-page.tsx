@@ -2,8 +2,8 @@
 
 import { useEffect } from "react";
 import { Avatar } from "./avatar";
-import { LinkBlock } from "./link-block";
 import { ContactForm } from "./contact-form";
+import { LinkBlock } from "./link-block";
 import { WhitelabelFooter } from "./whitelabel-footer";
 
 interface LinkData {
@@ -91,7 +91,7 @@ export function PublicPage({ settings, links }: PublicPageProps) {
     function setMeta(name: string, content: string) {
       if (!content) return;
       let meta = document.querySelector(
-        `meta[name="${name}"], meta[property="${name}"]`
+        `meta[name="${name}"], meta[property="${name}"]`,
       ) as HTMLMetaElement;
       if (!meta) {
         meta = document.createElement("meta");

@@ -1,14 +1,7 @@
 "use client";
 
-import {
-  ExternalLink,
-  Mail,
-  Phone,
-  Contact,
-  Wallet,
-  ChevronRight,
-} from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { ChevronRight, Contact, ExternalLink, Mail, Phone, Wallet } from "lucide-react";
 
 interface LinkData {
   id: string;
@@ -53,9 +46,7 @@ export function LinkBlock({ link }: LinkBlockProps) {
       return (
         <div className="glass-card text-sm leading-relaxed text-[var(--text-secondary)]">
           {link.title !== "---" && (
-            <h3 className="font-semibold text-[var(--text-primary)] mb-2">
-              {link.title}
-            </h3>
+            <h3 className="font-semibold text-[var(--text-primary)] mb-2">{link.title}</h3>
           )}
           <p>{link.url}</p>
         </div>
@@ -72,9 +63,7 @@ export function LinkBlock({ link }: LinkBlockProps) {
             <Mail className="w-5 h-5 text-brand-cyan" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-sm font-medium block truncate">
-              {link.title}
-            </span>
+            <span className="text-sm font-medium block truncate">{link.title}</span>
           </div>
           <ChevronRight className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--primary)] transition-colors" />
         </a>
@@ -91,18 +80,14 @@ export function LinkBlock({ link }: LinkBlockProps) {
             <Phone className="w-5 h-5 text-brand-cyan" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-sm font-medium block truncate">
-              {link.title}
-            </span>
+            <span className="text-sm font-medium block truncate">{link.title}</span>
           </div>
           <ChevronRight className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--primary)] transition-colors" />
         </a>
       );
 
     case "vcard":
-      return (
-        <VCardDownloadBlock link={link} onTrack={handleClick} />
-      );
+      return <VCardDownloadBlock link={link} onTrack={handleClick} />;
 
     case "wallet":
       return (
@@ -114,15 +99,11 @@ export function LinkBlock({ link }: LinkBlockProps) {
             <Wallet className="w-5 h-5 text-brand-cyan" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-sm font-medium block truncate">
-              {link.title}
-            </span>
+            <span className="text-sm font-medium block truncate">{link.title}</span>
           </div>
           <ChevronRight className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--primary)] transition-colors" />
         </button>
       );
-
-    case "link":
     default:
       return (
         <a
@@ -142,9 +123,7 @@ export function LinkBlock({ link }: LinkBlockProps) {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <span className="text-sm font-medium block truncate">
-              {link.title}
-            </span>
+            <span className="text-sm font-medium block truncate">{link.title}</span>
           </div>
           <ChevronRight className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--primary)] transition-colors" />
         </a>

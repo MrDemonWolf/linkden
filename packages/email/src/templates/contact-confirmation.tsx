@@ -1,24 +1,11 @@
-import {
-  Html,
-  Head,
-  Body,
-  Container,
-  Text,
-  Hr,
-  Section,
-  Heading,
-} from "@react-email/components";
-import * as React from "react";
+import { Body, Container, Head, Heading, Hr, Html, Section, Text } from "@react-email/components";
 
 interface ContactConfirmationProps {
   name: string;
   ownerName: string;
 }
 
-export function ContactConfirmation({
-  name,
-  ownerName,
-}: ContactConfirmationProps) {
+export function ContactConfirmation({ name, ownerName }: ContactConfirmationProps) {
   return (
     <Html>
       <Head />
@@ -29,18 +16,15 @@ export function ContactConfirmation({
           <Section>
             <Text style={text}>Hi {name},</Text>
             <Text style={text}>
-              Thank you for reaching out! Your message has been received and{" "}
-              {ownerName} will get back to you as soon as possible.
+              Thank you for reaching out! Your message has been received and {ownerName} will get
+              back to you as soon as possible.
             </Text>
             <Text style={text}>
-              This is an automated confirmation. Please do not reply to this
-              email.
+              This is an automated confirmation. Please do not reply to this email.
             </Text>
           </Section>
           <Hr style={hr} />
-          <Text style={footer}>
-            Sent on behalf of {ownerName}
-          </Text>
+          <Text style={footer}>Sent on behalf of {ownerName}</Text>
         </Container>
       </Body>
     </Html>

@@ -1,17 +1,10 @@
 "use client";
 
+import { toast } from "@/lib/toast";
+import { trpc } from "@/lib/trpc";
+import { ArrowLeft, Calendar, ExternalLink, Mail, Trash2, User } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import {
-  ArrowLeft,
-  Mail,
-  User,
-  Calendar,
-  Trash2,
-  ExternalLink,
-} from "lucide-react";
-import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
 import { useState } from "react";
 
 export default function ContactDetailPage() {
@@ -138,9 +131,7 @@ export default function ContactDetailPage() {
 
         {/* Message body */}
         <div>
-          <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-2">
-            Message
-          </h3>
+          <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-2">Message</h3>
           <div className="p-4 rounded-lg bg-[rgba(255,255,255,0.03)] text-sm leading-relaxed whitespace-pre-wrap">
             {sub.message}
           </div>

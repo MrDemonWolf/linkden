@@ -1,5 +1,5 @@
-import { ClerkProvider } from "@clerk/nextjs";
 import { TrpcProvider } from "@/providers/trpc-provider";
+import { ClerkProvider } from "@clerk/nextjs";
 import "@/styles/globals.css";
 
 export const metadata = {

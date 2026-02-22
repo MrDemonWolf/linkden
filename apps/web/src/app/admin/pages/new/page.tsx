@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Save } from "lucide-react";
-import { trpc } from "@/lib/trpc";
 import { toast } from "@/lib/toast";
+import { trpc } from "@/lib/trpc";
+import { ArrowLeft, Save } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function NewPagePage() {
   const router = useRouter();
@@ -75,9 +75,7 @@ export default function NewPagePage() {
         </a>
         <div>
           <h1 className="text-2xl font-bold">Create Page</h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-            Add a new custom page
-          </p>
+          <p className="text-sm text-[var(--text-secondary)] mt-0.5">Add a new custom page</p>
         </div>
       </div>
 
@@ -93,9 +91,7 @@ export default function NewPagePage() {
             placeholder="Privacy Policy"
             className="glass-input"
           />
-          {errors.title && (
-            <p className="text-red-400 text-xs mt-1">{errors.title}</p>
-          )}
+          {errors.title && <p className="text-red-400 text-xs mt-1">{errors.title}</p>}
         </div>
 
         <div>
@@ -112,9 +108,7 @@ export default function NewPagePage() {
               className="glass-input"
             />
           </div>
-          {errors.slug && (
-            <p className="text-red-400 text-xs mt-1">{errors.slug}</p>
-          )}
+          {errors.slug && <p className="text-red-400 text-xs mt-1">{errors.slug}</p>}
         </div>
 
         <div>
@@ -144,9 +138,7 @@ export default function NewPagePage() {
               }`}
             />
           </button>
-          <span className="text-sm">
-            {isPublished ? "Published" : "Draft"}
-          </span>
+          <span className="text-sm">{isPublished ? "Published" : "Draft"}</span>
         </div>
 
         <div className="flex items-center gap-3 pt-2">

@@ -18,7 +18,12 @@ export const UpdateWalletPassSchema = z.object({
   auxiliaryFields: z.array(PassFieldSchema).max(5).optional(),
   backFields: z.array(PassFieldSchema).max(20).optional(),
   barcodeFormat: z
-    .enum(["PKBarcodeFormatQR", "PKBarcodeFormatPDF417", "PKBarcodeFormatAztec", "PKBarcodeFormatCode128"])
+    .enum([
+      "PKBarcodeFormatQR",
+      "PKBarcodeFormatPDF417",
+      "PKBarcodeFormatAztec",
+      "PKBarcodeFormatCode128",
+    ])
     .optional(),
   barcodeMessage: z.string().max(2000).optional(),
   barcodeAltText: z.string().max(200).optional(),

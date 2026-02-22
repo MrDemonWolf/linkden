@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { toast } from "@/lib/toast";
+import { trpc } from "@/lib/trpc";
 import {
+  AlertTriangle,
+  Download,
+  Mail,
+  RefreshCw,
   Save,
   Settings,
   Shield,
-  Mail,
-  Download,
   Upload,
-  AlertTriangle,
-  RefreshCw,
 } from "lucide-react";
-import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
+import { useEffect, useState } from "react";
 
 export default function SettingsPage() {
   const utils = trpc.useUtils();
@@ -268,15 +268,11 @@ export default function SettingsPage() {
         ) : updateCheck.data ? (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-[var(--text-secondary)]">
-                Current Version
-              </span>
+              <span className="text-[var(--text-secondary)]">Current Version</span>
               <span className="font-mono">v{updateCheck.data.currentVersion}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-[var(--text-secondary)]">
-                Latest Version
-              </span>
+              <span className="text-[var(--text-secondary)]">Latest Version</span>
               <span className="font-mono">v{updateCheck.data.latestVersion}</span>
             </div>
             {updateCheck.data.isUpdateAvailable && (
@@ -290,15 +286,11 @@ export default function SettingsPage() {
               </a>
             )}
             {!updateCheck.data.isUpdateAvailable && (
-              <p className="text-sm text-emerald-400">
-                You are running the latest version
-              </p>
+              <p className="text-sm text-emerald-400">You are running the latest version</p>
             )}
           </div>
         ) : updateCheck.error ? (
-          <p className="text-sm text-[var(--text-secondary)]">
-            Unable to check for updates
-          </p>
+          <p className="text-sm text-[var(--text-secondary)]">Unable to check for updates</p>
         ) : null}
       </section>
 

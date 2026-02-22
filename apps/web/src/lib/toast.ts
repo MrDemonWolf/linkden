@@ -10,11 +10,7 @@ function getContainer(): HTMLElement {
   return toastContainer;
 }
 
-function createToast(
-  message: string,
-  type: "success" | "error",
-  duration = 4000
-) {
+function createToast(message: string, type: "success" | "error", duration = 4000) {
   const container = getContainer();
   const toast = document.createElement("div");
   toast.className = `toast toast-${type}`;

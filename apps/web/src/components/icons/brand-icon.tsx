@@ -1,4 +1,4 @@
-import { brandIcons, type BrandIcon } from "./brand-icons";
+import { type BrandIcon, brandIcons } from "./brand-icons";
 
 interface BrandIconProps {
   name: string;
@@ -6,9 +6,7 @@ interface BrandIconProps {
   className?: string;
 }
 
-const iconMap = new Map<string, BrandIcon>(
-  brandIcons.map((icon) => [icon.slug, icon])
-);
+const iconMap = new Map<string, BrandIcon>(brandIcons.map((icon) => [icon.slug, icon]));
 
 const fallbackIcon = iconMap.get("link")!;
 
@@ -40,8 +38,6 @@ export function searchIcons(query: string): BrandIcon[] {
   if (!lower) return brandIcons;
 
   return brandIcons.filter(
-    (icon) =>
-      icon.name.toLowerCase().includes(lower) ||
-      icon.slug.toLowerCase().includes(lower)
+    (icon) => icon.name.toLowerCase().includes(lower) || icon.slug.toLowerCase().includes(lower),
   );
 }

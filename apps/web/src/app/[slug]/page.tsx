@@ -1,17 +1,14 @@
 "use client";
 
-import { useParams } from "next/navigation";
 import { trpc } from "@/lib/trpc";
 import DOMPurify from "dompurify";
+import { useParams } from "next/navigation";
 
 export default function DynamicPage() {
   const params = useParams();
   const slug = params.slug as string;
 
-  const pageQuery = trpc.pages.getBySlug.useQuery(
-    { slug },
-    { enabled: !!slug }
-  );
+  const pageQuery = trpc.pages.getBySlug.useQuery({ slug }, { enabled: !!slug });
 
   if (pageQuery.isLoading) {
     return (
@@ -27,10 +24,7 @@ export default function DynamicPage() {
         <div className="glass-card text-center max-w-md">
           <h1 className="text-3xl font-bold mb-2">404</h1>
           <p className="text-[var(--text-secondary)]">Page not found</p>
-          <a
-            href="/"
-            className="inline-block mt-4 glass-button"
-          >
+          <a href="/" className="inline-block mt-4 glass-button">
             Go Home
           </a>
         </div>

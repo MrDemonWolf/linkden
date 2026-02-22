@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Check, Palette } from "lucide-react";
-import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
 import { ColorPicker } from "@/components/admin/color-picker";
 import { ImageUpload } from "@/components/admin/image-upload";
-import { themes, type ThemeConfig } from "@linkden/ui/themes";
+import { toast } from "@/lib/toast";
+import { trpc } from "@/lib/trpc";
+import { type ThemeConfig, themes } from "@linkden/ui/themes";
+import { Check, Palette } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function AppearancePage() {
   const utils = trpc.useUtils();
@@ -205,21 +205,9 @@ export default function AppearancePage() {
       <section className="glass-card space-y-4">
         <h2 className="text-lg font-semibold">Custom Colors</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <ColorPicker
-            label="Accent Color"
-            value={accentColor}
-            onChange={setAccentColor}
-          />
-          <ColorPicker
-            label="Background"
-            value={backgroundColor}
-            onChange={setBackgroundColor}
-          />
-          <ColorPicker
-            label="Text Color"
-            value={textColor}
-            onChange={setTextColor}
-          />
+          <ColorPicker label="Accent Color" value={accentColor} onChange={setAccentColor} />
+          <ColorPicker label="Background" value={backgroundColor} onChange={setBackgroundColor} />
+          <ColorPicker label="Text Color" value={textColor} onChange={setTextColor} />
         </div>
       </section>
 
@@ -239,16 +227,8 @@ export default function AppearancePage() {
               className="glass-input"
             />
           </div>
-          <ImageUpload
-            label="Brand Logo"
-            value={brandLogo}
-            onChange={setBrandLogo}
-          />
-          <ImageUpload
-            label="Favicon"
-            value={brandFavicon}
-            onChange={setBrandFavicon}
-          />
+          <ImageUpload label="Brand Logo" value={brandLogo} onChange={setBrandLogo} />
+          <ImageUpload label="Favicon" value={brandFavicon} onChange={setBrandFavicon} />
         </div>
       </section>
 

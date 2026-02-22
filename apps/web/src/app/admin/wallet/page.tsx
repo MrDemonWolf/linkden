@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Save, Plus, Trash2, Wallet } from "lucide-react";
-import { trpc } from "@/lib/trpc";
-import { toast } from "@/lib/toast";
 import { ColorPicker } from "@/components/admin/color-picker";
 import { ImageUpload } from "@/components/admin/image-upload";
+import { toast } from "@/lib/toast";
+import { trpc } from "@/lib/trpc";
+import { Plus, Save, Trash2, Wallet } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface PassField {
   key: string;
@@ -282,9 +282,24 @@ export default function WalletPassPage() {
       <section className="glass-card space-y-4">
         <h2 className="text-lg font-semibold">Pass Fields</h2>
         <FieldList title="Header Fields" max={3} fields={headerFields} onChange={setHeaderFields} />
-        <FieldList title="Primary Fields" max={2} fields={primaryFields} onChange={setPrimaryFields} />
-        <FieldList title="Secondary Fields" max={4} fields={secondaryFields} onChange={setSecondaryFields} />
-        <FieldList title="Auxiliary Fields" max={5} fields={auxiliaryFields} onChange={setAuxiliaryFields} />
+        <FieldList
+          title="Primary Fields"
+          max={2}
+          fields={primaryFields}
+          onChange={setPrimaryFields}
+        />
+        <FieldList
+          title="Secondary Fields"
+          max={4}
+          fields={secondaryFields}
+          onChange={setSecondaryFields}
+        />
+        <FieldList
+          title="Auxiliary Fields"
+          max={5}
+          fields={auxiliaryFields}
+          onChange={setAuxiliaryFields}
+        />
         <FieldList title="Back Fields" max={20} fields={backFields} onChange={setBackFields} />
       </section>
 
