@@ -11,8 +11,8 @@ out/
 .source/
 .open-next/
 
-# Environment
-.env
+# Environment — .env is committed (production URLs, no secrets)
+# Use .env.local for local dev overrides (gitignored)
 .env.local
 .env.*.local
 .dev.vars

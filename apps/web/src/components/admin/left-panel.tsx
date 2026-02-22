@@ -5,6 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { DragDropContext, Draggable, type DropResult, Droppable } from "@hello-pangea/dnd";
 import {
   AlignLeft,
+  BookOpen,
   Contact,
   Eye,
   EyeOff,
@@ -87,6 +88,16 @@ export function LeftPanel({ onNavigate }: LeftPanelProps) {
         ))}
 
         <div className="flex-1" />
+
+        <a
+          href="https://linkden-docs.pages.dev"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
+          title="Documentation"
+        >
+          <BookOpen className="w-5 h-5" />
+        </a>
 
         <button
           type="button"
