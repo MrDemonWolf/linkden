@@ -1,0 +1,103 @@
+---
+title: FAQ
+description: Frequently asked questions about LinkDen.
+---
+
+# Frequently Asked Questions
+
+## General
+
+### What is LinkDen?
+
+LinkDen is a self-hosted, open-source link-in-bio platform. It's a modern alternative to Linktree, built on the Cloudflare stack with a full admin panel, live preview editor, and edge performance.
+
+### Is LinkDen free?
+
+Yes. LinkDen is MIT licensed and completely free. Cloudflare's free tier covers Workers, D1, and Pages — so you can deploy at zero cost.
+
+### Can I use LinkDen commercially?
+
+Absolutely. The MIT license allows unrestricted commercial use. You can remove all LinkDen branding and use it for clients, businesses, or any purpose.
+
+### How is LinkDen different from Linktree?
+
+| Feature | LinkDen | Linktree |
+|---------|---------|----------|
+| Pricing | Free (self-hosted) | Free tier + paid plans |
+| Data ownership | You own everything | Linktree owns your data |
+| Custom domain | Full support | Paid plans only |
+| Whitelabel | 100% (MIT license) | Not available |
+| Analytics | Built-in, private | Built-in, Linktree has access |
+| Customization | Full code access | Limited to their editor |
+| Apple Wallet | Built-in | Not available |
+| Hosting | Your Cloudflare account | Linktree's servers |
+
+---
+
+## Deployment
+
+### Do I need a Cloudflare account?
+
+Yes. LinkDen runs on Cloudflare Workers (API) and can deploy the frontend to Cloudflare Pages. However, the Next.js frontend can also be deployed to Vercel, Railway, or any platform that supports Next.js.
+
+### Can I deploy without Cloudflare?
+
+The **API server** requires Cloudflare Workers and D1. The **frontend** (Next.js) can be deployed anywhere — Vercel, Railway, Coolify, Docker, etc. See the [self-hosting guides](/docs/self-hosting/vercel) for alternatives.
+
+### Does LinkDen support multiple users?
+
+LinkDen is designed as a **single-user** platform. One instance = one link page. If you need multiple users, deploy separate instances. This keeps the codebase simple and the database small.
+
+### What's the difference between Clerk and Cloudflare Access auth?
+
+Both protect the admin panel. **Cloudflare Access** is free and works at the network edge — it's the recommended approach. **Clerk** provides a traditional login page with email/password or social login. You can use either or both. See the [authentication guide](/docs/api/authentication).
+
+---
+
+## Features
+
+### Can I add custom blocks?
+
+Yes. The block system supports 14 types out of the box: links, headings, text, spacers, dividers, images, videos, HTML, email, phone, contact form, vCard, wallet pass, and social buttons. To add a custom block type, extend the schema in `packages/db` and add a renderer in `apps/web/src/components/public/blocks/`.
+
+### How do I add a new social brand?
+
+Social brands are auto-generated from [Simple Icons](https://simpleicons.org/) via CI. To add a brand manually, edit the `BRAND_LIST` array in `scripts/generate-social-brands.mjs` and run `pnpm generate:social-brands`.
+
+### Can I use my own domain?
+
+Yes. See the [custom domain guide](/docs/self-hosting/custom-domain) for DNS configuration instructions.
+
+### How does the draft/publish system work?
+
+When you edit blocks or settings in the admin panel, changes are saved as **drafts** — they don't affect your live page. When you click "Publish", all drafts are merged into the live data at once. This lets you make multiple changes and review them before going live.
+
+---
+
+## Troubleshooting
+
+### The admin panel shows "Failed to..." errors
+
+This usually means the API server isn't running or isn't reachable. Check:
+
+1. Is the server running? Run `pnpm dev` from the project root to start both apps.
+2. Is `NEXT_PUBLIC_API_URL` set correctly in `apps/web/.env.local`? It should be `http://localhost:3000` for local development.
+3. Check the server logs for errors — the API runs on port 3000 by default.
+
+### I get CORS errors in the browser
+
+The server's `CORS_ORIGIN` environment variable must match your frontend URL. For local development, set it to `http://localhost:3001` in `apps/server/.dev.vars`.
+
+### Database migrations fail
+
+Run `pnpm db:push` from the project root. If you get schema errors, check that your `packages/db/src/schema.ts` matches the expected structure. For a fresh start, you can reset the D1 database in the Cloudflare dashboard.
+
+### The build fails with type errors
+
+Run `pnpm typecheck` to see all type errors across the monorepo. Common causes:
+- Missing environment variables (type generation depends on them)
+- Out-of-date dependencies — run `pnpm install` to refresh
+
+### Styles look broken after updating
+
+Clear the Next.js cache: `rm -rf apps/web/.next` and restart the dev server.

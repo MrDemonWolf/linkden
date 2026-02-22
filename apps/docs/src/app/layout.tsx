@@ -1,10 +1,14 @@
-import { Inter } from "next/font/google";
+import { Sora } from "next/font/google";
 import type { Metadata } from "next";
 import { Provider } from "@/components/provider";
 import { Footer } from "@/components/footer";
 import "./global.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const sora = Sora({
+  subsets: ["latin"],
+  variable: "--font-sora",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -32,7 +36,7 @@ export const metadata: Metadata = {
 
 export default function Layout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={inter.className} suppressHydrationWarning>
+    <html lang="en" className={`${sora.variable} ${sora.className}`} suppressHydrationWarning>
       <body className="flex flex-col min-h-screen">
         <Provider>{children}</Provider>
         <Footer />

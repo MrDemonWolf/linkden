@@ -1,0 +1,224 @@
+---
+title: API Endpoints
+description: Complete reference for all LinkDen tRPC API procedures.
+---
+
+# API Endpoints
+
+LinkDen exposes **48 tRPC procedures** organized into 8 routers. All endpoints are available at `/trpc/<router>.<procedure>`.
+
+Public procedures require no authentication. Protected procedures require either a Clerk JWT token or a valid Cloudflare Access header.
+
+---
+
+## Links
+
+Manage link blocks on your page.
+
+| Procedure | Type | Auth | Description |
+|-----------|------|------|-------------|
+| `links.list` | Query | Public | Get all active links in display order (live data only) |
+| `links.listAll` | Query | Protected | Get all links with draft overlays merged |
+| `links.draftCount` | Query | Protected | Count links with unpublished changes |
+| `links.create` | Mutation | Protected | Create a new link block |
+| `links.update` | Mutation | Protected | Update a link (writes to draft, not live) |
+| `links.delete` | Mutation | Protected | Delete a link by ID |
+| `links.reorder` | Mutation | Protected | Batch update sort orders |
+| `links.toggleActive` | Mutation | Protected | Toggle visibility via draft |
+| `links.publish` | Mutation | Protected | Publish all link drafts to live |
+| `links.trackClick` | Mutation | Public | Record a link click for analytics |
+
+### Create a Link
+
+```typescript
+// Input
+{
+  type: "link" | "heading" | "text" | "spacer" | "divider" | "image" | "video" | "html" | "email" | "phone" | "vcard" | "wallet" | "contact_form" | "social_button",
+  title: string,
+  url?: string,
+  icon?: string,
+  iconType?: "lucide" | "brand" | "url",
+  isActive?: boolean,
+  metadata?: Record<string, unknown>
+}
+```
+
+### Update a Link
+
+```typescript
+// Input
+{
+  id: string,
+  title?: string,
+  url?: string,
+  icon?: string,
+  iconType?: "lucide" | "brand" | "url",
+  isActive?: boolean,
+  metadata?: Record<string, unknown>
+}
+```
+
+---
+
+## Settings
+
+Manage site-wide configuration.
+
+| Procedure | Type | Auth | Description |
+|-----------|------|------|-------------|
+| `settings.getAll` | Query | Protected | Get all settings (draft values preferred) |
+| `settings.getPublic` | Query | Public | Get live settings only |
+| `settings.draftCount` | Query | Protected | Count settings with unpublished changes |
+| `settings.update` | Mutation | Protected | Update settings (writes to draft) |
+| `settings.publish` | Mutation | Protected | Publish all setting drafts, purge edge cache |
+
+### Available Settings Keys
+
+| Key | Description | Example |
+|-----|-------------|---------|
+| `profileName` | Display name | `"John Doe"` |
+| `profileBio` | Bio text | `"Developer & creator"` |
+| `profileImage` | Avatar URL | `"https://..."` |
+| `theme` | Theme ID | `"midnight-glass"` |
+| `themeMode` | Default mode | `"dark"` / `"light"` / `"system"` |
+| `accentColor` | Primary color | `"#0FACED"` |
+| `backgroundColor` | Page background | `"#091533"` |
+| `textColor` | Text color | `"rgba(255,255,255,0.95)"` |
+| `contactEnabled` | Contact form toggle | `"true"` / `"false"` |
+| `contactEmail` | Notification email | `"you@example.com"` |
+| `captchaSiteKey` | Turnstile site key | `"0x4AAAAAAA..."` |
+| `captchaSecretKey` | Turnstile secret | `"0x4AAAAAAA..."` |
+| `brandName` | Whitelabel name | `"My Brand"` |
+| `brandLogo` | Logo URL | `"https://..."` |
+| `metaTitle` | SEO title | `"My Page"` |
+| `metaDescription` | SEO description | `"My link page"` |
+| `metaImage` | OG image URL | `"https://..."` |
+| `verifiedBadge` | Show badge | `"true"` / `"false"` |
+
+---
+
+## Analytics
+
+Track and query page view and click data.
+
+| Procedure | Type | Auth | Description |
+|-----------|------|------|-------------|
+| `analytics.trackPageView` | Mutation | Public | Record a page view with user-agent and country |
+| `analytics.overview` | Query | Protected | Total views, clicks, and CTR for a period |
+| `analytics.timeSeries` | Query | Protected | Daily event counts for charting |
+| `analytics.byLink` | Query | Protected | Click counts per link |
+| `analytics.topReferrers` | Query | Protected | Top 20 referrer domains |
+| `analytics.countries` | Query | Protected | Country breakdown of views |
+| `analytics.clear` | Mutation | Protected | Delete all analytics data |
+
+### Overview Input
+
+```typescript
+{
+  period: "7d" | "30d" | "90d"
+}
+```
+
+### Overview Response
+
+```typescript
+{
+  totalViews: number,
+  totalClicks: number,
+  ctr: string  // e.g. "12.5"
+}
+```
+
+---
+
+## Contact
+
+Handle contact form submissions.
+
+| Procedure | Type | Auth | Description |
+|-----------|------|------|-------------|
+| `contact.submit` | Mutation | Public | Submit a message (validates CAPTCHA) |
+| `contact.list` | Query | Protected | Paginated list with unread count |
+| `contact.getById` | Query | Protected | Get a single submission |
+| `contact.markRead` | Mutation | Protected | Mark submission as read |
+| `contact.delete` | Mutation | Protected | Delete a submission |
+
+### Submit Input
+
+```typescript
+{
+  name: string,
+  email: string,
+  message: string,
+  captchaToken: string  // Cloudflare Turnstile token
+}
+```
+
+---
+
+## Pages
+
+Manage custom content pages (e.g., `/p/about`).
+
+| Procedure | Type | Auth | Description |
+|-----------|------|------|-------------|
+| `pages.list` | Query | Protected | Get all pages |
+| `pages.getBySlug` | Query | Public | Get a published page by slug |
+| `pages.create` | Mutation | Protected | Create a page (validates slug uniqueness) |
+| `pages.update` | Mutation | Protected | Update a page |
+| `pages.delete` | Mutation | Protected | Delete a page |
+
+### Create/Update Input
+
+```typescript
+{
+  title: string,
+  slug: string,       // URL-safe, unique
+  content: string,    // Markdown
+  isPublished: boolean
+}
+```
+
+---
+
+## vCard
+
+Manage and download vCard contact files.
+
+| Procedure | Type | Auth | Description |
+|-----------|------|------|-------------|
+| `vcard.get` | Query | Protected | Get vCard configuration |
+| `vcard.update` | Mutation | Protected | Create or update vCard data |
+| `vcard.download` | Query | Public | Download generated `.vcf` file |
+
+---
+
+## Wallet
+
+Manage Apple Wallet pass configuration.
+
+| Procedure | Type | Auth | Description |
+|-----------|------|------|-------------|
+| `wallet.get` | Query | Protected | Get wallet pass config |
+| `wallet.update` | Mutation | Protected | Create or update wallet config |
+| `wallet.generate` | Query | Protected | Generate `.pkpass` file (requires Apple signing) |
+
+---
+
+## Export
+
+Import and export all data.
+
+| Procedure | Type | Auth | Description |
+|-----------|------|------|-------------|
+| `export.exportAll` | Query | Protected | Export everything as JSON |
+| `export.importAll` | Mutation | Protected | Replace all data from JSON |
+| `export.importFromLinkStack` | Mutation | Protected | Import from LinkStack format |
+
+---
+
+## System
+
+| Procedure | Type | Auth | Description |
+|-----------|------|------|-------------|
+| `system.checkUpdate` | Query | Protected | Check for new releases on GitHub |

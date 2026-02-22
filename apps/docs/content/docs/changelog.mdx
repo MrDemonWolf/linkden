@@ -1,0 +1,47 @@
+---
+title: Changelog
+description: Release history and notable changes for LinkDen.
+---
+
+# Changelog
+
+All notable changes to LinkDen are documented here. For the full commit history, see the [GitHub repository](https://github.com/mrdemonwolf/linkden/commits/main).
+
+---
+
+## v0.1.0 — Initial Release
+
+**February 2026**
+
+The first public release of LinkDen.
+
+### Core Platform
+- **3-panel admin editor** with live phone preview, drag-and-drop block ordering
+- **14 block types**: link, heading, text, spacer, divider, image, video, HTML, email, phone, contact form, vCard, wallet pass, social button
+- **35+ social brands** auto-generated from Simple Icons via CI/CD
+- **7 built-in themes** with dark and light variants
+- **Draft/Publish system** — edit freely, publish when ready
+
+### Admin Panel
+- Real-time phone, tablet, and desktop preview with device frames
+- Drawer-based sub-pages (analytics, contacts, vCard, wallet, pages)
+- Dark/light mode toggle
+- Export/import data (JSON format)
+- LinkStack migration support
+
+### Features
+- **Apple Wallet** pass generation (`.pkpass`)
+- **vCard** generation and download
+- **Contact form** with Cloudflare Turnstile CAPTCHA and Resend email
+- **Custom pages** with markdown content
+- **Analytics** — page views, link clicks, referrers, country breakdown
+- **Color picker** and custom CSS injection
+- **SEO** — dynamic sitemap, robots.txt, Open Graph meta tags
+
+### Infrastructure
+- **Cloudflare Workers** API server with Hono + tRPC
+- **Cloudflare D1** (SQLite) database with Drizzle ORM
+- **Next.js 15** frontend with static and dynamic rendering
+- **Turborepo** monorepo with shared packages (db, ui, validators)
+- **Dual auth** — Cloudflare Access and/or Clerk
+- **Edge caching** with automatic purge on publish
