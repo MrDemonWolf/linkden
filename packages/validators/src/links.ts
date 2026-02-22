@@ -9,6 +9,12 @@ const linkTypeEnum = z.enum([
   "phone",
   "vcard",
   "wallet",
+  "divider",
+  "image",
+  "video",
+  "html",
+  "contact_form",
+  "social_button",
 ]);
 
 const iconTypeEnum = z.enum(["brand", "lucide", "custom"]);

@@ -6,6 +6,7 @@ export interface Context {
   db: Database;
   userId: string | null;
   env: Env;
+  headers: Headers | null;
 }
 
 const t = initTRPC.context<Context>().create();

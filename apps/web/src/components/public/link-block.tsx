@@ -12,6 +12,12 @@ import {
   Phone,
   Twitter,
 } from "lucide-react";
+import { ContactFormBlock } from "./blocks/contact-form-block";
+import { DividerBlock } from "./blocks/divider-block";
+import { HtmlBlock } from "./blocks/html-block";
+import { ImageBlock } from "./blocks/image-block";
+import { SocialBrandButton } from "./blocks/social-brand-button";
+import { VideoEmbed } from "./blocks/video-embed";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   globe: Globe,
@@ -36,6 +42,7 @@ interface LinkData {
 
 interface LinkBlockProps {
   link: LinkData;
+  captchaSiteKey?: string;
 }
 
 function LinkIcon({ icon }: { icon: string | null }) {
@@ -45,7 +52,7 @@ function LinkIcon({ icon }: { icon: string | null }) {
   return <span className="text-xs font-bold">{icon.slice(0, 2).toUpperCase()}</span>;
 }
 
-export function LinkBlock({ link }: LinkBlockProps) {
+export function LinkBlock({ link, captchaSiteKey }: LinkBlockProps) {
   const trackClick = trpc.links.trackClick.useMutation();
 
   function handleClick() {
@@ -55,6 +62,8 @@ export function LinkBlock({ link }: LinkBlockProps) {
       referrer: typeof document !== "undefined" ? document.referrer : "",
     });
   }
+
+  const metadata = link.metadata || {};
 
   switch (link.type) {
     case "heading":
@@ -69,6 +78,14 @@ export function LinkBlock({ link }: LinkBlockProps) {
     case "spacer":
       return <div className="h-4" />;
 
+    case "divider":
+      return (
+        <DividerBlock
+          style={(metadata.style as "solid" | "dashed" | "dotted" | "gradient") || "solid"}
+          color={metadata.color as string}
+        />
+      );
+
     case "text":
       return (
         <div className="rounded-2xl bg-white/8 border border-white/12 backdrop-blur-sm p-4 text-sm leading-relaxed text-[var(--text-secondary)]">
@@ -77,6 +94,40 @@ export function LinkBlock({ link }: LinkBlockProps) {
           )}
           <p>{link.url ?? ""}</p>
         </div>
+      );
+
+    case "image":
+      return (
+        <ImageBlock
+          url={link.url || ""}
+          alt={(metadata.alt as string) || link.title}
+          caption={metadata.caption as string}
+        />
+      );
+
+    case "video":
+      return <VideoEmbed url={link.url || ""} title={link.title} />;
+
+    case "html":
+      return <HtmlBlock html={(metadata.html as string) || ""} />;
+
+    case "contact_form":
+      return (
+        <ContactFormBlock
+          captchaSiteKey={captchaSiteKey}
+          heading={link.title !== "Get in Touch" ? link.title : undefined}
+          buttonText={metadata.buttonText as string}
+        />
+      );
+
+    case "social_button":
+      return (
+        <SocialBrandButton
+          platform={(metadata.platform as string) || "twitter"}
+          url={link.url || "#"}
+          title={link.title}
+          onTrack={handleClick}
+        />
       );
 
     case "email":

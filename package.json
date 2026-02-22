@@ -15,7 +15,8 @@
     "cf:destroy": "pnpm --filter @linkden/infra destroy",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "generate:social-brands": "pnpm add -D simple-icons -w && node scripts/generate-social-brands.mjs && pnpm remove simple-icons -w"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.0",

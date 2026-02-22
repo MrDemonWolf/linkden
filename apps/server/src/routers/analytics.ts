@@ -1,7 +1,8 @@
 import { analytics, links } from "@linkden/db/schema";
 import { AnalyticsQuerySchema } from "@linkden/validators";
 import { and, count, desc, eq, gte, sql } from "drizzle-orm";
-import { protectedProcedure, router } from "../trpc";
+import { z } from "zod";
+import { protectedProcedure, publicProcedure, router } from "../trpc";
 
 function periodToDate(period: "7d" | "30d" | "90d"): string {
   const days = period === "7d" ? 7 : period === "30d" ? 30 : 90;
@@ -11,6 +12,27 @@ function periodToDate(period: "7d" | "30d" | "90d"): string {
 }
 
 export const analyticsRouter = router({
+  /** Public: track a page view */
+  trackPageView: publicProcedure
+    .input(
+      z.object({
+        referrer: z.string().max(2000).default(""),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userAgent = ctx.headers?.get("user-agent") || "";
+      const country = ctx.headers?.get("cf-ipcountry") || "";
+
+      await ctx.db.insert(analytics).values({
+        event: "page_view",
+        referrer: input.referrer,
+        userAgent,
+        country,
+      });
+
+      return { success: true };
+    }),
+
   /** Overview: total views, clicks, CTR for period */
   overview: protectedProcedure.input(AnalyticsQuerySchema).query(async ({ ctx, input }) => {
     const since = periodToDate(input.period);
