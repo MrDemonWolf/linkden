@@ -3,7 +3,11 @@ compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
 main = "src/index.ts"
 
+[vars]
+CORS_ORIGIN = "http://localhost:3001"
+APP_URL = "http://localhost:3000"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "linkden-db"
-database_id = ""
+database_id = "8f2efc27-b2f4-4139-b807-fdab7adeaee4"
