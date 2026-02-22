@@ -176,7 +176,8 @@ and Docker.
 - `pnpm lint` — Run Biome linter across all packages.
 - `pnpm typecheck` — Run TypeScript type checking.
 - `pnpm db:generate` — Generate Drizzle ORM migrations.
-- `pnpm db:push` — Push schema changes to D1.
+- `pnpm db:push` — Push schema changes to D1 (requires
+  `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`).
 - `pnpm db:studio` — Open Drizzle Studio for database
   inspection.
 - `pnpm cf:deploy` — Deploy API + web to Cloudflare Workers.

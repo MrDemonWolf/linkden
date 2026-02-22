@@ -115,20 +115,33 @@ CLERK_SECRET_KEY=sk_live_your-key
 
 See the [Environment Variables reference](/docs/self-hosting/environment-variables) for a full list of all variables.
 
-## Step 5: Create the D1 Database
+## Step 5: Create the D1 Database and Push Schema
 
-The `pnpm cf:deploy` command automatically creates the D1 database via Alchemy if it does not exist. You can skip this step and go to Step 6.
-
-To create manually:
+Create the D1 database:
 
 ```bash
-wrangler d1 create linkden-db
+npx wrangler d1 create linkden-db
 ```
 
-Then push the schema:
+Copy the `database_id` from the output and update `apps/server/wrangler.toml`:
+
+```toml
+[[d1_databases]]
+binding = "DB"
+database_name = "linkden-db"
+database_id = "your-database-id-here"
+```
+
+Then push the schema. You can use drizzle-kit with a `CLOUDFLARE_API_TOKEN`:
 
 ```bash
-pnpm db:push
+CLOUDFLARE_ACCOUNT_ID=your-account-id CLOUDFLARE_API_TOKEN=your-token pnpm db:push
+```
+
+Or push directly via wrangler (which uses your `wrangler login` session):
+
+```bash
+npx wrangler d1 execute linkden-db --remote --file=packages/db/drizzle/schema.sql
 ```
 
 ## Step 6: Deploy
@@ -141,11 +154,9 @@ pnpm cf:deploy
 
 This command:
 
-1. Builds the Hono API server for Cloudflare Workers.
-2. Creates or updates the D1 database via Alchemy.
-3. Deploys the `linkden-api` Worker with D1 bindings.
-4. Builds the Next.js app via `@opennextjs/cloudflare` (OpenNext).
-5. Deploys the `linkden-web` Worker with static assets.
+1. Deploys the `linkden-api` Worker (Hono API + tRPC) with D1 bindings via wrangler.
+2. Builds the Next.js app via `@opennextjs/cloudflare` (OpenNext).
+3. Deploys the `linkden-web` Worker with static assets via wrangler.
 
 The deploy output shows your live URLs:
 
