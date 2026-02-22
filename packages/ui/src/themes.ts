@@ -324,10 +324,7 @@ export function getTheme(id: string): ThemeConfig | undefined {
   return themes.find((theme) => theme.id === id);
 }
 
-export function getThemeVariant(
-  themeId: string,
-  mode: "dark" | "light",
-): ThemeVariant | undefined {
+export function getThemeVariant(themeId: string, mode: "dark" | "light"): ThemeVariant | undefined {
   const theme = getTheme(themeId);
   if (!theme) return undefined;
   return theme[mode];
