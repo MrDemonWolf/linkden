@@ -9,6 +9,7 @@ dist/
 .turbo/
 out/
 .source/
+.open-next/
 
 # Environment
 .env
@@ -22,14 +23,17 @@ out/
 *.swp
 *.swo
 .DS_Store
+Thumbs.db
 
 # Logs
 *.log
 npm-debug.log*
+pnpm-debug.log*
 
 # Testing
 test-results/
 playwright-report/
+coverage/
 
 # Cloudflare
 .wrangler/
@@ -38,9 +42,19 @@ playwright-report/
 # Drizzle
 packages/db/drizzle/*.sql
 
+# TypeScript
+*.tsbuildinfo
+
+# Clerk
+.clerk/
+
 # Local files (not committed)
 TODO.local.md
 *.local.md
 
 # Backup files
 *.bak
+
+# OS files
+.DS_Store
+Thumbs.db
