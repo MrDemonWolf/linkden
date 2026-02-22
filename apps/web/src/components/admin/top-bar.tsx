@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Eye, Monitor, Redo2, Smartphone, Tablet, Undo2 } from "lucide-react";
+import { BookOpen, ExternalLink, Eye, Monitor, Redo2, Smartphone, Tablet, Undo2 } from "lucide-react";
 
 interface TopBarProps {
   deviceSize: "phone" | "tablet" | "desktop";
@@ -101,6 +101,16 @@ export function TopBar({ deviceSize, onDeviceSizeChange, onPublish, isPublishing
         >
           <ExternalLink className="w-3.5 h-3.5" />
           View Page
+        </a>
+
+        <a
+          href="https://linkden-docs.pages.dev"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden sm:flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+        >
+          <BookOpen className="w-3.5 h-3.5" />
+          Docs
         </a>
 
         {clerkEnabled && <ClerkUserButton />}
