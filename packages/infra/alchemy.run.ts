@@ -1,9 +1,11 @@
-import { Alchemy } from "alchemy";
+import alchemy from "alchemy";
 import { D1Database, Worker } from "alchemy/cloudflare";
 
-const app = new Alchemy("linkden");
-
 const destroy = process.argv.includes("--destroy");
+
+const app = await alchemy("linkden", {
+  phase: destroy ? "destroy" : "up",
+});
 
 const db = await D1Database("linkden-db", {
   adopt: true,
@@ -38,4 +40,4 @@ const api = await Worker("linkden-api", {
 // To add custom domains, go to your Cloudflare dashboard > Workers & Pages >
 // select the worker > Settings > Domains & Routes.
 
-await app.finalize({ destroy });
+await app.finalize();

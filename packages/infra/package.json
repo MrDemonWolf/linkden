@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "deploy": "npx tsx alchemy.run.ts",
-    "destroy": "npx tsx alchemy.run.ts --destroy"
+    "deploy": "pnpm exec tsx alchemy.run.ts",
+    "destroy": "pnpm exec tsx alchemy.run.ts --destroy"
   },
   "dependencies": {
     "alchemy": "^0.28.0"
