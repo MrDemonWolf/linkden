@@ -7,7 +7,8 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./themes": "./src/themes.ts"
+    "./themes": "./src/themes.ts",
+    "./social-brands": "./src/social-brands.ts"
   },
   "scripts": {
     "lint": "biome check ./src",

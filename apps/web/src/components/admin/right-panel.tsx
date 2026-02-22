@@ -1,5 +1,6 @@
 "use client";
 
+import type { AdminDrawer } from "@/app/admin/page";
 import { ColorPicker } from "@/components/admin/color-picker";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { toast } from "@/lib/toast";
@@ -13,7 +14,7 @@ type RightTab = "design" | "analytics" | "settings";
 interface RightPanelProps {
   settings: Record<string, string>;
   onSettingsChange: (key: string, value: string) => void;
-  onOpenDrawer?: (drawer: unknown) => void;
+  onOpenDrawer?: (drawer: AdminDrawer) => void;
 }
 
 export function RightPanel({ settings, onSettingsChange, onOpenDrawer }: RightPanelProps) {

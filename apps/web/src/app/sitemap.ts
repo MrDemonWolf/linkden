@@ -32,7 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         next: { revalidate: 3600 },
       });
       if (res.ok) {
-        const json = await res.json();
+        const json = (await res.json()) as { result?: { data?: { slug: string; updatedAt: string }[] } };
         const pages = json?.result?.data ?? [];
         for (const page of pages) {
           staticRoutes.push({
