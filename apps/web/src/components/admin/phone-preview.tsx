@@ -67,7 +67,7 @@ export function PhonePreview({ settings, links, socialLinks, deviceSize }: Phone
   const scaledHeight = config.viewport.height * config.scale + (config.bezel * 2 * config.scale);
 
   return (
-    <div className="flex flex-col items-center justify-start h-full py-6 overflow-auto">
+    <div className="flex flex-col items-center justify-center h-full py-6 overflow-auto">
       <div
         className="relative transition-all duration-500 ease-out"
         style={{

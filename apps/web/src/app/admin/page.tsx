@@ -11,6 +11,7 @@ import {
 } from "@/lib/placeholder-data";
 import { toast } from "@/lib/toast";
 import { trpc } from "@/lib/trpc";
+import { useThemeMode } from "@/hooks/use-theme-mode";
 import { AnalyticsDrawer } from "@/components/admin/drawers/analytics-drawer";
 import { ContactDetailDrawer } from "@/components/admin/drawers/contact-detail-drawer";
 import { ContactsDrawer } from "@/components/admin/drawers/contacts-drawer";
@@ -19,7 +20,7 @@ import { PageEditorDrawer } from "@/components/admin/drawers/page-editor-drawer"
 import { PagesDrawer } from "@/components/admin/drawers/pages-drawer";
 import { VCardDrawer } from "@/components/admin/drawers/vcard-drawer";
 import { WalletDrawer } from "@/components/admin/drawers/wallet-drawer";
-import { BarChart3, LayoutGrid, Palette } from "lucide-react";
+import { ArrowLeft, BarChart3, Eye, LayoutGrid, Palette, Smartphone, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 type DeviceSize = "phone" | "tablet" | "desktop";
@@ -39,6 +40,7 @@ export type AdminDrawer =
 
 export default function AdminEditorPage() {
   const utils = trpc.useUtils();
+  const { isDark, toggle: toggleDarkMode } = useThemeMode();
   const [deviceSize, setDeviceSize] = useState<DeviceSize>("phone");
   const [mobileTab, setMobileTab] = useState<MobileTab>("preview");
   const [activeDrawer, setActiveDrawer] = useState<AdminDrawer>(null);
@@ -78,7 +80,6 @@ export default function AdminEditorPage() {
   const handleSettingsChange = useCallback(
     (key: string, value: string) => {
       setLocalSettings((prev) => ({ ...prev, [key]: value }));
-      // Write to draft
       settingsUpdateMutation.mutate({ settings: [{ key, value }] });
     },
     [settingsUpdateMutation],
@@ -100,8 +101,6 @@ export default function AdminEditorPage() {
   }
 
   async function handleDiscardAll() {
-    // Reload from server (live data), which will reset drafts in the UI
-    // For a full discard, we'd need a server endpoint. For now, just refetch.
     utils.links.listAll.invalidate();
     utils.settings.getAll.invalidate();
     utils.links.draftCount.invalidate();
@@ -122,124 +121,122 @@ export default function AdminEditorPage() {
   // Use server links or placeholder
   const links = linksQuery.data && linksQuery.data.length > 0 ? linksQuery.data : placeholderLinks;
 
+  const mobileTabItems = [
+    { id: "blocks" as const, icon: LayoutGrid, label: "Blocks" },
+    { id: "preview" as const, icon: Smartphone, label: "Preview" },
+    { id: "design" as const, icon: Palette, label: "Design" },
+  ];
+
   return (
-    <div className="h-screen flex flex-col bg-[var(--admin-bg)]">
-      {/* Top Bar */}
-      <TopBar
-        deviceSize={deviceSize}
-        onDeviceSizeChange={setDeviceSize}
-        onPublish={handlePublish}
-        onDiscardAll={handleDiscardAll}
-        isPublishing={isPublishing}
-        draftCount={totalDraftCount}
-      />
+    <div className={`h-screen flex flex-col ${isDark ? "admin-dark" : ""}`} data-admin-panel>
+      <div className="h-full flex flex-col bg-[var(--admin-bg)] transition-colors duration-200">
+        {/* Top Bar */}
+        <TopBar
+          deviceSize={deviceSize}
+          onDeviceSizeChange={setDeviceSize}
+          onPublish={handlePublish}
+          onDiscardAll={handleDiscardAll}
+          isPublishing={isPublishing}
+          draftCount={totalDraftCount}
+          darkMode={isDark}
+          onToggleDarkMode={toggleDarkMode}
+        />
 
-      {/* Desktop: 3-panel layout */}
-      <div className="flex-1 flex overflow-hidden relative">
-        {/* Left Panel - hidden on mobile */}
-        <div className="hidden lg:flex w-[320px] border-r border-[var(--admin-border)] shrink-0">
-          <LeftPanel onOpenDrawer={handleOpenDrawer} />
-        </div>
+        {/* Desktop: 3-panel layout */}
+        <div className="flex-1 flex overflow-hidden relative">
+          {/* Left Panel - hidden on mobile */}
+          <div className="hidden lg:flex w-[300px] border-r border-[var(--admin-border)] shrink-0">
+            <LeftPanel onOpenDrawer={handleOpenDrawer} />
+          </div>
 
-        {/* Center - Phone Preview */}
-        <div className="hidden lg:flex flex-1 bg-[var(--admin-bg)]">
-          <PhonePreview
-            settings={localSettings}
-            links={links}
-            socialLinks={placeholderSocialLinks}
-            deviceSize={deviceSize}
-          />
-        </div>
-
-        {/* Right Panel - hidden on mobile */}
-        <div className="hidden lg:block w-[360px] border-l border-[var(--admin-border)] shrink-0">
-          <RightPanel
-            settings={localSettings}
-            onSettingsChange={handleSettingsChange}
-            onOpenDrawer={handleOpenDrawer}
-          />
-        </div>
-
-        {/* Drawer overlay */}
-        {activeDrawer && (
-          <div className="absolute inset-0 z-50 flex justify-end">
-            <div
-              className="absolute inset-0 bg-black/20 backdrop-blur-sm"
-              onClick={handleCloseDrawer}
+          {/* Center - Phone Preview */}
+          <div className="hidden lg:flex flex-1 bg-[var(--admin-bg)] items-center justify-center">
+            <PhonePreview
+              settings={localSettings}
+              links={links}
+              socialLinks={placeholderSocialLinks}
+              deviceSize={deviceSize}
             />
-            <div className="relative w-full max-w-2xl bg-[var(--admin-surface)] border-l border-[var(--admin-border)] shadow-2xl animate-slide-in-right overflow-y-auto">
-              <DrawerContent drawer={activeDrawer} onClose={handleCloseDrawer} onOpenDrawer={handleOpenDrawer} />
+          </div>
+
+          {/* Right Panel - hidden on mobile */}
+          <div className="hidden lg:flex w-[340px] border-l border-[var(--admin-border)] shrink-0">
+            <RightPanel
+              settings={localSettings}
+              onSettingsChange={handleSettingsChange}
+              onOpenDrawer={handleOpenDrawer}
+            />
+          </div>
+
+          {/* Drawer overlay — desktop: slide from right, mobile: slide from bottom */}
+          {activeDrawer && (
+            <div className="absolute inset-0 z-50 flex lg:justify-end justify-center items-end lg:items-stretch">
+              <div
+                className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"
+                onClick={handleCloseDrawer}
+              />
+              {/* Desktop drawer */}
+              <div className="relative hidden lg:block w-full max-w-2xl bg-[var(--admin-surface)] border-l border-[var(--admin-border)] animate-slide-in-right overflow-y-auto" style={{ boxShadow: "var(--admin-shadow-lg)" }}>
+                <DrawerContent drawer={activeDrawer} onClose={handleCloseDrawer} onOpenDrawer={handleOpenDrawer} />
+              </div>
+              {/* Mobile drawer — slides up from bottom */}
+              <div className="relative lg:hidden w-full max-h-[85vh] bg-[var(--admin-surface)] border-t border-[var(--admin-border)] rounded-t-2xl animate-slide-up overflow-y-auto" style={{ boxShadow: "var(--admin-shadow-lg)" }}>
+                {/* Drag handle */}
+                <div className="flex justify-center pt-2 pb-1 sticky top-0 bg-[var(--admin-surface)] z-10">
+                  <div className="w-8 h-1 rounded-full bg-[var(--admin-border)]" />
+                </div>
+                <DrawerContent drawer={activeDrawer} onClose={handleCloseDrawer} onOpenDrawer={handleOpenDrawer} />
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Mobile: Tab-based view */}
-        <div className="flex-1 lg:hidden flex flex-col">
-          <div className="flex-1 overflow-y-auto">
-            {mobileTab === "blocks" && (
-              <div className="h-full">
-                <LeftPanel onOpenDrawer={handleOpenDrawer} />
-              </div>
-            )}
-            {mobileTab === "preview" && (
-              <div className="h-full bg-[var(--admin-bg)]">
-                <PhonePreview
-                  settings={localSettings}
-                  links={links}
-                  socialLinks={placeholderSocialLinks}
-                  deviceSize="phone"
-                />
-              </div>
-            )}
-            {mobileTab === "design" && (
-              <div className="h-full">
-                <RightPanel
-                  settings={localSettings}
-                  onSettingsChange={handleSettingsChange}
-                  onOpenDrawer={handleOpenDrawer}
-                />
-              </div>
-            )}
-          </div>
+          {/* Mobile: Tab-based view */}
+          <div className="flex-1 lg:hidden flex flex-col">
+            <div className="flex-1 overflow-y-auto">
+              {mobileTab === "blocks" && (
+                <div className="h-full bg-[var(--admin-surface)]">
+                  <LeftPanel onOpenDrawer={handleOpenDrawer} />
+                </div>
+              )}
+              {mobileTab === "preview" && (
+                <div className="h-full bg-[var(--admin-bg)] flex items-center justify-center">
+                  <PhonePreview
+                    settings={localSettings}
+                    links={links}
+                    socialLinks={placeholderSocialLinks}
+                    deviceSize="phone"
+                  />
+                </div>
+              )}
+              {mobileTab === "design" && (
+                <div className="h-full bg-[var(--admin-surface)]">
+                  <RightPanel
+                    settings={localSettings}
+                    onSettingsChange={handleSettingsChange}
+                    onOpenDrawer={handleOpenDrawer}
+                  />
+                </div>
+              )}
+            </div>
 
-          {/* Mobile bottom tab bar */}
-          <div className="flex border-t border-[var(--admin-border)] bg-[var(--admin-surface)] shrink-0">
-            <button
-              type="button"
-              onClick={() => setMobileTab("blocks")}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium ${
-                mobileTab === "blocks"
-                  ? "text-[var(--admin-accent)]"
-                  : "text-[var(--admin-text-secondary)]"
-              }`}
-            >
-              <LayoutGrid className="w-5 h-5" />
-              Blocks
-            </button>
-            <button
-              type="button"
-              onClick={() => setMobileTab("preview")}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium ${
-                mobileTab === "preview"
-                  ? "text-[var(--admin-accent)]"
-                  : "text-[var(--admin-text-secondary)]"
-              }`}
-            >
-              <BarChart3 className="w-5 h-5" />
-              Preview
-            </button>
-            <button
-              type="button"
-              onClick={() => setMobileTab("design")}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium ${
-                mobileTab === "design"
-                  ? "text-[var(--admin-accent)]"
-                  : "text-[var(--admin-text-secondary)]"
-              }`}
-            >
-              <Palette className="w-5 h-5" />
-              Design
-            </button>
+            {/* Mobile bottom tab bar */}
+            <div className="flex border-t border-[var(--admin-border)] bg-[var(--admin-surface)] shrink-0 safe-area-pb" style={{ paddingBottom: "env(safe-area-inset-bottom, 0)" }}>
+              {mobileTabItems.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setMobileTab(tab.id)}
+                  className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors duration-150 ${
+                    mobileTab === tab.id
+                      ? "text-[var(--admin-accent)]"
+                      : "text-[var(--admin-text-tertiary)]"
+                  }`}
+                >
+                  <tab.icon className={`w-5 h-5 transition-transform duration-150 ${mobileTab === tab.id ? "scale-110" : ""}`} />
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -279,25 +276,25 @@ function DrawerContent({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-3 px-6 py-4 border-b border-[var(--admin-border)] shrink-0">
+      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-[var(--admin-border)] shrink-0 bg-[var(--admin-surface)] sticky top-0 z-10 lg:static">
         <button
           type="button"
           onClick={onClose}
-          className="text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)] transition-colors"
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)] hover:bg-[var(--admin-accent-subtle)] transition-all duration-150"
         >
-          &larr;
+          <ArrowLeft className="w-4 h-4" />
         </button>
-        <h2 className="text-lg font-semibold text-[var(--admin-text)]">{drawerTitle}</h2>
+        <h2 className="text-[14px] font-semibold text-[var(--admin-text)] tracking-tight">{drawerTitle}</h2>
         <div className="flex-1" />
         <button
           type="button"
           onClick={onClose}
-          className="text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)] text-xl transition-colors"
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text)] hover:bg-[var(--admin-accent-subtle)] transition-all duration-150"
         >
-          &times;
+          <X className="w-4 h-4" />
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-5">
         {drawer === "analytics" && <AnalyticsDrawer />}
         {drawer === "vcard" && <VCardDrawer />}
         {drawer === "wallet" && <WalletDrawer />}

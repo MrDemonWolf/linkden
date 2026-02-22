@@ -21,30 +21,32 @@ export function RightPanel({ settings, onSettingsChange, onOpenDrawer }: RightPa
   const [activeTab, setActiveTab] = useState<RightTab>("design");
 
   const tabs = [
-    { id: "design" as const, label: "Design", icon: <Palette className="w-4 h-4" /> },
-    { id: "analytics" as const, label: "Analytics", icon: <BarChart3 className="w-4 h-4" /> },
-    { id: "settings" as const, label: "Settings", icon: <Settings className="w-4 h-4" /> },
+    { id: "design" as const, label: "Design", icon: <Palette className="w-3.5 h-3.5" /> },
+    { id: "analytics" as const, label: "Analytics", icon: <BarChart3 className="w-3.5 h-3.5" /> },
+    { id: "settings" as const, label: "Settings", icon: <Settings className="w-3.5 h-3.5" /> },
   ];
 
   return (
     <div className="h-full flex flex-col bg-[var(--admin-surface)]">
-      {/* Tab bar */}
-      <div className="flex border-b border-[var(--admin-border)] shrink-0">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-xs font-medium border-b-2 transition-colors ${
-              activeTab === tab.id
-                ? "border-indigo-600 text-[var(--admin-accent)]"
-                : "border-transparent text-[var(--admin-text-secondary)] hover:text-gray-700"
-            }`}
-          >
-            {tab.icon}
-            {tab.label}
-          </button>
-        ))}
+      {/* Segmented control tab bar */}
+      <div className="px-4 pt-3 pb-2 shrink-0">
+        <div className="flex items-center bg-[var(--admin-bg)] rounded-lg p-0.5 border border-[var(--admin-border-subtle)]">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[11px] font-semibold rounded-md transition-all duration-150 ${
+                activeTab === tab.id
+                  ? "bg-[var(--admin-surface)] text-[var(--admin-text)] shadow-sm"
+                  : "text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-secondary)]"
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tab content */}
@@ -52,9 +54,9 @@ export function RightPanel({ settings, onSettingsChange, onOpenDrawer }: RightPa
         {activeTab === "design" && (
           <DesignTab settings={settings} onSettingsChange={onSettingsChange} />
         )}
-        {activeTab === "analytics" && <AnalyticsTab />}
+        {activeTab === "analytics" && <AnalyticsTab onOpenDrawer={onOpenDrawer} />}
         {activeTab === "settings" && (
-          <SettingsTab settings={settings} onSettingsChange={onSettingsChange} />
+          <SettingsTab settings={settings} onSettingsChange={onSettingsChange} onOpenDrawer={onOpenDrawer} />
         )}
       </div>
     </div>
@@ -80,20 +82,20 @@ function DesignTab({
   }
 
   return (
-    <div className="p-4 space-y-5">
+    <div className="p-4 space-y-6">
       {/* Theme Mode Toggle */}
       <section>
-        <h3 className="text-sm font-semibold text-[var(--admin-text)] mb-2">Default Mode</h3>
-        <div className="flex items-center bg-[var(--admin-bg)] rounded-lg p-0.5">
+        <p className="admin-section-label">Default Mode</p>
+        <div className="flex items-center bg-[var(--admin-bg)] rounded-lg p-0.5 border border-[var(--admin-border-subtle)]">
           {(["dark", "light", "system"] as const).map((mode) => (
             <button
               key={mode}
               type="button"
               onClick={() => onSettingsChange("themeMode", mode)}
-              className={`flex-1 text-xs font-medium py-1.5 px-2 rounded-md transition-colors capitalize ${
+              className={`flex-1 text-[11px] font-semibold py-1.5 px-2 rounded-md transition-all duration-150 capitalize ${
                 themeMode === mode
-                  ? "bg-[var(--admin-surface)] text-[var(--admin-accent)] shadow-sm"
-                  : "text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)]"
+                  ? "bg-[var(--admin-surface)] text-[var(--admin-text)] shadow-sm"
+                  : "text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-secondary)]"
               }`}
             >
               {mode}
@@ -104,17 +106,17 @@ function DesignTab({
 
       {/* Theme Selector */}
       <section>
-        <h3 className="text-sm font-semibold text-[var(--admin-text)] mb-2">Theme</h3>
+        <p className="admin-section-label">Theme</p>
         <div className="grid grid-cols-2 gap-2">
           {themes.map((theme) => (
             <button
               key={theme.id}
               type="button"
               onClick={() => handleThemeSelect(theme)}
-              className={`relative p-2 rounded-xl border transition-all text-left ${
+              className={`relative p-2 rounded-lg border-2 transition-all duration-150 text-left group ${
                 selectedTheme === theme.id
-                  ? "border-indigo-400 bg-indigo-50 ring-1 ring-indigo-200"
-                  : "border-[var(--admin-border)] hover:border-gray-300"
+                  ? "border-[var(--admin-accent)] bg-[var(--admin-accent-subtle)]"
+                  : "border-[var(--admin-border)] hover:border-[var(--admin-text-tertiary)]"
               }`}
             >
               {selectedTheme === theme.id && (
@@ -123,11 +125,11 @@ function DesignTab({
                 </div>
               )}
               <div
-                className="w-full h-10 rounded-lg mb-1.5 flex items-end p-1.5 gap-0.5"
+                className="w-full h-10 rounded-md mb-1.5 flex items-end p-1.5 gap-0.5 transition-transform duration-150 group-hover:scale-[1.02]"
                 style={{ background: theme.dark.background }}
               >
                 <div
-                  className="w-full h-3 rounded"
+                  className="w-full h-3 rounded-sm"
                   style={{
                     background: theme.dark.surface,
                     border: `1px solid ${theme.dark.surfaceBorder}`,
@@ -142,7 +144,7 @@ function DesignTab({
 
       {/* Colors */}
       <section>
-        <h3 className="text-sm font-semibold text-[var(--admin-text)] mb-2">Colors</h3>
+        <p className="admin-section-label">Colors</p>
         <div className="space-y-3">
           <ColorPicker
             label="Accent"
@@ -164,16 +166,16 @@ function DesignTab({
 
       {/* Branding */}
       <section>
-        <h3 className="text-sm font-semibold text-[var(--admin-text)] mb-2">Branding</h3>
+        <p className="admin-section-label">Branding</p>
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-[var(--admin-text-secondary)] mb-1">Brand Name</label>
+            <label className="block text-[11px] font-medium text-[var(--admin-text-secondary)] mb-1">Brand Name</label>
             <input
               type="text"
               value={settings.brandName || ""}
               onChange={(e) => onSettingsChange("brandName", e.target.value)}
               placeholder="Powered by LinkDen"
-              className="w-full text-sm px-3 py-2 rounded-lg border border-[var(--admin-border)] focus:border-indigo-300 focus:ring-1 focus:ring-indigo-200 outline-none"
+              className="admin-input"
             />
           </div>
           <ImageUpload
@@ -192,17 +194,17 @@ function DesignTab({
   );
 }
 
-function AnalyticsTab() {
+function AnalyticsTab({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawer) => void }) {
   const overview = trpc.analytics.overview.useQuery({ period: "30d" });
 
   return (
     <div className="p-4 space-y-4">
-      <h3 className="text-sm font-semibold text-[var(--admin-text)]">Quick Stats (30 days)</h3>
+      <p className="admin-section-label">Quick Stats (30 days)</p>
 
       {overview.isLoading ? (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 rounded-lg bg-[var(--admin-bg)] animate-pulse" />
+            <div key={i} className="h-14 rounded-lg bg-[var(--admin-bg)] animate-pulse" />
           ))}
         </div>
       ) : overview.data ? (
@@ -212,12 +214,13 @@ function AnalyticsTab() {
           <StatItem label="Click-Through Rate" value={`${overview.data.ctr}%`} />
         </div>
       ) : (
-        <p className="text-sm text-[var(--admin-text-secondary)]">Unable to load analytics.</p>
+        <p className="text-xs text-[var(--admin-text-tertiary)]">Unable to load analytics.</p>
       )}
 
       <button
         type="button"
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--admin-accent)] hover:text-[var(--admin-accent-hover)]"
+        onClick={() => onOpenDrawer?.("analytics")}
+        className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--admin-accent)] hover:text-[var(--admin-accent-hover)] transition-colors"
       >
         <BarChart3 className="w-3.5 h-3.5" />
         View Full Analytics
@@ -228,9 +231,9 @@ function AnalyticsTab() {
 
 function StatItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--admin-bg)] border border-gray-100">
-      <span className="text-xs text-[var(--admin-text-secondary)]">{label}</span>
-      <span className="text-sm font-semibold text-[var(--admin-text)]">{value}</span>
+    <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--admin-bg)] border border-[var(--admin-border-subtle)]">
+      <span className="text-[11px] text-[var(--admin-text-secondary)]">{label}</span>
+      <span className="text-[13px] font-bold text-[var(--admin-text)] tabular-nums">{value}</span>
     </div>
   );
 }
@@ -238,9 +241,11 @@ function StatItem({ label, value }: { label: string; value: string }) {
 function SettingsTab({
   settings,
   onSettingsChange,
+  onOpenDrawer,
 }: {
   settings: Record<string, string>;
   onSettingsChange: (key: string, value: string) => void;
+  onOpenDrawer?: (drawer: AdminDrawer) => void;
 }) {
   const utils = trpc.useUtils();
   const exportQuery = trpc.export.exportAll.useQuery(undefined, { enabled: false });
@@ -290,29 +295,29 @@ function SettingsTab({
   }
 
   return (
-    <div className="p-4 space-y-5">
+    <div className="p-4 space-y-6">
       {/* Profile */}
       <section>
-        <h3 className="text-sm font-semibold text-[var(--admin-text)] mb-2">Profile</h3>
+        <p className="admin-section-label">Profile</p>
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-[var(--admin-text-secondary)] mb-1">Display Name</label>
+            <label className="block text-[11px] font-medium text-[var(--admin-text-secondary)] mb-1">Display Name</label>
             <input
               type="text"
               value={settings.profileName || ""}
               onChange={(e) => onSettingsChange("profileName", e.target.value)}
               placeholder="Your name"
-              className="w-full text-sm px-3 py-2 rounded-lg border border-[var(--admin-border)] focus:border-indigo-300 focus:ring-1 focus:ring-indigo-200 outline-none"
+              className="admin-input"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[var(--admin-text-secondary)] mb-1">Bio</label>
+            <label className="block text-[11px] font-medium text-[var(--admin-text-secondary)] mb-1">Bio</label>
             <textarea
               value={settings.profileBio || ""}
               onChange={(e) => onSettingsChange("profileBio", e.target.value)}
               placeholder="A short description"
               rows={3}
-              className="w-full text-sm px-3 py-2 rounded-lg border border-[var(--admin-border)] focus:border-indigo-300 focus:ring-1 focus:ring-indigo-200 outline-none resize-y"
+              className="admin-input resize-y"
             />
           </div>
           <ImageUpload
@@ -321,58 +326,26 @@ function SettingsTab({
             onChange={(v) => onSettingsChange("profileImage", v)}
             placeholder="https://example.com/avatar.jpg"
           />
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() =>
-                onSettingsChange(
-                  "verifiedBadge",
-                  settings.verifiedBadge === "true" ? "false" : "true",
-                )
-              }
-              className={`relative w-9 h-5 rounded-full transition-colors ${
-                settings.verifiedBadge === "true" ? "bg-[var(--admin-accent)]" : "bg-[var(--admin-border)]"
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 w-4 h-4 rounded-full bg-[var(--admin-surface)] transition-transform shadow-sm ${
-                  settings.verifiedBadge === "true" ? "translate-x-4" : "translate-x-0.5"
-                }`}
-              />
-            </button>
-            <span className="text-xs text-[var(--admin-text-secondary)]">Show verified badge</span>
-          </div>
+          <ToggleRow
+            label="Show verified badge"
+            checked={settings.verifiedBadge === "true"}
+            onChange={() => onSettingsChange("verifiedBadge", settings.verifiedBadge === "true" ? "false" : "true")}
+          />
         </div>
       </section>
 
       {/* Contact Form */}
       <section>
-        <h3 className="text-sm font-semibold text-[var(--admin-text)] mb-2">Contact Form</h3>
+        <p className="admin-section-label">Contact Form</p>
         <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() =>
-                onSettingsChange(
-                  "contactEnabled",
-                  settings.contactEnabled === "true" ? "false" : "true",
-                )
-              }
-              className={`relative w-9 h-5 rounded-full transition-colors ${
-                settings.contactEnabled === "true" ? "bg-[var(--admin-accent)]" : "bg-[var(--admin-border)]"
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 w-4 h-4 rounded-full bg-[var(--admin-surface)] transition-transform shadow-sm ${
-                  settings.contactEnabled === "true" ? "translate-x-4" : "translate-x-0.5"
-                }`}
-              />
-            </button>
-            <span className="text-xs text-[var(--admin-text-secondary)]">Enable contact form</span>
-          </div>
+          <ToggleRow
+            label="Enable contact form"
+            checked={settings.contactEnabled === "true"}
+            onChange={() => onSettingsChange("contactEnabled", settings.contactEnabled === "true" ? "false" : "true")}
+          />
           {settings.contactEnabled === "true" && (
             <div>
-              <label className="block text-xs font-medium text-[var(--admin-text-secondary)] mb-1">
+              <label className="block text-[11px] font-medium text-[var(--admin-text-secondary)] mb-1">
                 Notification Email
               </label>
               <input
@@ -380,7 +353,7 @@ function SettingsTab({
                 value={settings.contactEmail || ""}
                 onChange={(e) => onSettingsChange("contactEmail", e.target.value)}
                 placeholder="your@email.com"
-                className="w-full text-sm px-3 py-2 rounded-lg border border-[var(--admin-border)] focus:border-indigo-300 focus:ring-1 focus:ring-indigo-200 outline-none"
+                className="admin-input"
               />
             </div>
           )}
@@ -389,29 +362,29 @@ function SettingsTab({
 
       {/* CAPTCHA */}
       <section>
-        <h3 className="text-sm font-semibold text-[var(--admin-text)] mb-2 flex items-center gap-1.5">
-          <Shield className="w-4 h-4 text-gray-400" />
+        <p className="admin-section-label flex items-center gap-1.5">
+          <Shield className="w-3.5 h-3.5" />
           CAPTCHA
-        </h3>
+        </p>
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-[var(--admin-text-secondary)] mb-1">Site Key</label>
+            <label className="block text-[11px] font-medium text-[var(--admin-text-secondary)] mb-1">Site Key</label>
             <input
               type="text"
               value={settings.captchaSiteKey || ""}
               onChange={(e) => onSettingsChange("captchaSiteKey", e.target.value)}
               placeholder="0x4AAAAAAA..."
-              className="w-full text-xs px-3 py-2 rounded-lg border border-[var(--admin-border)] focus:border-indigo-300 focus:ring-1 focus:ring-indigo-200 outline-none font-mono"
+              className="admin-input font-mono text-[11px]"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[var(--admin-text-secondary)] mb-1">Secret Key</label>
+            <label className="block text-[11px] font-medium text-[var(--admin-text-secondary)] mb-1">Secret Key</label>
             <input
               type="password"
               value={settings.captchaSecretKey || ""}
               onChange={(e) => onSettingsChange("captchaSecretKey", e.target.value)}
               placeholder="0x4AAAAAAA..."
-              className="w-full text-xs px-3 py-2 rounded-lg border border-[var(--admin-border)] focus:border-indigo-300 focus:ring-1 focus:ring-indigo-200 outline-none font-mono"
+              className="admin-input font-mono text-[11px]"
             />
           </div>
         </div>
@@ -419,26 +392,26 @@ function SettingsTab({
 
       {/* SEO */}
       <section>
-        <h3 className="text-sm font-semibold text-[var(--admin-text)] mb-2">SEO & Meta</h3>
+        <p className="admin-section-label">SEO & Meta</p>
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-[var(--admin-text-secondary)] mb-1">Meta Title</label>
+            <label className="block text-[11px] font-medium text-[var(--admin-text-secondary)] mb-1">Meta Title</label>
             <input
               type="text"
               value={settings.metaTitle || ""}
               onChange={(e) => onSettingsChange("metaTitle", e.target.value)}
               placeholder="Page title for search engines"
-              className="w-full text-sm px-3 py-2 rounded-lg border border-[var(--admin-border)] focus:border-indigo-300 focus:ring-1 focus:ring-indigo-200 outline-none"
+              className="admin-input"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[var(--admin-text-secondary)] mb-1">Meta Description</label>
+            <label className="block text-[11px] font-medium text-[var(--admin-text-secondary)] mb-1">Meta Description</label>
             <textarea
               value={settings.metaDescription || ""}
               onChange={(e) => onSettingsChange("metaDescription", e.target.value)}
               placeholder="Page description"
               rows={2}
-              className="w-full text-sm px-3 py-2 rounded-lg border border-[var(--admin-border)] focus:border-indigo-300 focus:ring-1 focus:ring-indigo-200 outline-none resize-y"
+              className="admin-input resize-y"
             />
           </div>
           <ImageUpload
@@ -450,27 +423,35 @@ function SettingsTab({
         </div>
       </section>
 
-      {/* Quick Links - these now open drawers via the admin page */}
+      {/* Quick Links */}
       <section>
-        <h3 className="text-sm font-semibold text-[var(--admin-text)] mb-2">Quick Access</h3>
-        <div className="space-y-1.5">
-          <span className="block text-xs text-[var(--admin-accent)] font-medium cursor-pointer hover:text-[var(--admin-accent-hover)]">
+        <p className="admin-section-label">Quick Access</p>
+        <div className="space-y-1">
+          <button
+            type="button"
+            onClick={() => onOpenDrawer?.("vcard")}
+            className="text-[11px] font-semibold text-[var(--admin-accent)] hover:text-[var(--admin-accent-hover)] transition-colors block py-0.5"
+          >
             vCard Editor
-          </span>
-          <span className="block text-xs text-[var(--admin-accent)] font-medium cursor-pointer hover:text-[var(--admin-accent-hover)]">
+          </button>
+          <button
+            type="button"
+            onClick={() => onOpenDrawer?.("wallet")}
+            className="text-[11px] font-semibold text-[var(--admin-accent)] hover:text-[var(--admin-accent-hover)] transition-colors block py-0.5"
+          >
             Wallet Pass
-          </span>
+          </button>
         </div>
       </section>
 
       {/* Export/Import */}
       <section>
-        <h3 className="text-sm font-semibold text-[var(--admin-text)] mb-2">Data</h3>
+        <p className="admin-section-label">Data</p>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={handleExport}
-            className="flex items-center gap-1.5 text-xs font-medium text-[var(--admin-text-secondary)] px-3 py-2 rounded-lg border border-[var(--admin-border)] hover:bg-[var(--admin-bg)] transition-colors"
+            className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--admin-text-secondary)] px-3 py-2 rounded-lg border border-[var(--admin-border)] hover:bg-[var(--admin-bg)] hover:border-[var(--admin-text-tertiary)] transition-all duration-150"
           >
             <Download className="w-3.5 h-3.5" />
             Export
@@ -478,13 +459,34 @@ function SettingsTab({
           <button
             type="button"
             onClick={handleImport}
-            className="flex items-center gap-1.5 text-xs font-medium text-[var(--admin-text-secondary)] px-3 py-2 rounded-lg border border-[var(--admin-border)] hover:bg-[var(--admin-bg)] transition-colors"
+            className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--admin-text-secondary)] px-3 py-2 rounded-lg border border-[var(--admin-border)] hover:bg-[var(--admin-bg)] hover:border-[var(--admin-text-tertiary)] transition-all duration-150"
           >
             <Upload className="w-3.5 h-3.5" />
             Import
           </button>
         </div>
       </section>
+    </div>
+  );
+}
+
+function ToggleRow({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) {
+  return (
+    <div className="flex items-center gap-3">
+      <button
+        type="button"
+        onClick={onChange}
+        className={`relative w-9 h-5 rounded-full transition-colors duration-200 ${
+          checked ? "bg-[var(--admin-accent)]" : "bg-[var(--admin-border)]"
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform duration-200 shadow-sm ${
+            checked ? "translate-x-4" : "translate-x-0.5"
+          }`}
+        />
+      </button>
+      <span className="text-[11px] font-medium text-[var(--admin-text-secondary)]">{label}</span>
     </div>
   );
 }

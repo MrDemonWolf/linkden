@@ -78,35 +78,35 @@ const BLOCK_CATEGORIES: BlockCategory[] = [
   {
     label: "Content",
     blocks: [
-      { type: "link", label: "Link", icon: <Link2 className="w-5 h-5" /> },
-      { type: "heading", label: "Heading", icon: <Heading className="w-5 h-5" /> },
-      { type: "text", label: "Text", icon: <Type className="w-5 h-5" /> },
-      { type: "spacer", label: "Spacer", icon: <Minus className="w-5 h-5" /> },
-      { type: "divider", label: "Divider", icon: <SplitSquareHorizontal className="w-5 h-5" /> },
-      { type: "html", label: "HTML", icon: <Code className="w-5 h-5" /> },
+      { type: "link", label: "Link", icon: <Link2 className="w-4.5 h-4.5" /> },
+      { type: "heading", label: "Heading", icon: <Heading className="w-4.5 h-4.5" /> },
+      { type: "text", label: "Text", icon: <Type className="w-4.5 h-4.5" /> },
+      { type: "spacer", label: "Spacer", icon: <Minus className="w-4.5 h-4.5" /> },
+      { type: "divider", label: "Divider", icon: <SplitSquareHorizontal className="w-4.5 h-4.5" /> },
+      { type: "html", label: "HTML", icon: <Code className="w-4.5 h-4.5" /> },
     ],
   },
   {
     label: "Social",
     blocks: [
-      { type: "social_button", label: "Social Button", icon: <Share2 className="w-5 h-5" /> },
+      { type: "social_button", label: "Social Button", icon: <Share2 className="w-4.5 h-4.5" /> },
     ],
   },
   {
     label: "Media",
     blocks: [
-      { type: "image", label: "Image", icon: <Image className="w-5 h-5" /> },
-      { type: "video", label: "Video", icon: <Video className="w-5 h-5" /> },
+      { type: "image", label: "Image", icon: <Image className="w-4.5 h-4.5" /> },
+      { type: "video", label: "Video", icon: <Video className="w-4.5 h-4.5" /> },
     ],
   },
   {
     label: "Contact",
     blocks: [
-      { type: "email", label: "Email", icon: <Mail className="w-5 h-5" /> },
-      { type: "phone", label: "Phone", icon: <Phone className="w-5 h-5" /> },
-      { type: "contact_form", label: "Contact Form", icon: <MessageSquare className="w-5 h-5" /> },
-      { type: "vcard", label: "vCard", icon: <Contact className="w-5 h-5" /> },
-      { type: "wallet", label: "Wallet Pass", icon: <Wallet className="w-5 h-5" /> },
+      { type: "email", label: "Email", icon: <Mail className="w-4.5 h-4.5" /> },
+      { type: "phone", label: "Phone", icon: <Phone className="w-4.5 h-4.5" /> },
+      { type: "contact_form", label: "Contact Form", icon: <MessageSquare className="w-4.5 h-4.5" /> },
+      { type: "vcard", label: "vCard", icon: <Contact className="w-4.5 h-4.5" /> },
+      { type: "wallet", label: "Wallet Pass", icon: <Wallet className="w-4.5 h-4.5" /> },
     ],
   },
 ];
@@ -119,51 +119,63 @@ export function LeftPanel({ onOpenDrawer }: LeftPanelProps) {
   const [activeSection, setActiveSection] = useState<LeftSection>("blocks");
 
   const navItems = [
-    { id: "add" as const, icon: <Plus className="w-5 h-5" />, label: "Add" },
-    { id: "blocks" as const, icon: <LayoutGrid className="w-5 h-5" />, label: "Blocks" },
-    { id: "social" as const, icon: <Share2 className="w-5 h-5" />, label: "Social" },
-    { id: "pages" as const, icon: <FileText className="w-5 h-5" />, label: "Pages" },
+    { id: "add" as const, icon: <Plus className="w-[18px] h-[18px]" />, label: "Add" },
+    { id: "blocks" as const, icon: <LayoutGrid className="w-[18px] h-[18px]" />, label: "Blocks" },
+    { id: "social" as const, icon: <Share2 className="w-[18px] h-[18px]" />, label: "Social" },
+    { id: "pages" as const, icon: <FileText className="w-[18px] h-[18px]" />, label: "Pages" },
   ];
 
   return (
     <div className="flex h-full">
       {/* Icon Rail */}
-      <div className="w-14 bg-[var(--admin-bg)] border-r border-[var(--admin-border)] flex flex-col items-center py-3 gap-1 shrink-0">
+      <div className="w-[52px] bg-[var(--admin-bg)] border-r border-[var(--admin-border)] flex flex-col items-center py-2.5 gap-0.5 shrink-0">
         {navItems.map((item) => (
           <button
             key={item.id}
             type="button"
             onClick={() => setActiveSection(item.id)}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+            className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-150 relative group ${
               activeSection === item.id
-                ? "bg-[var(--admin-accent)]/10 text-[var(--admin-accent)]"
-                : "text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)] hover:bg-[var(--admin-bg)]"
+                ? "bg-[var(--admin-accent)] text-white shadow-sm"
+                : "text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-secondary)] hover:bg-[var(--admin-accent-subtle)]"
             }`}
             title={item.label}
           >
             {item.icon}
+            {/* Tooltip */}
+            <span className="absolute left-full ml-2 px-2 py-1 text-[10px] font-medium bg-[var(--admin-text)] text-[var(--admin-surface)] rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-50">
+              {item.label}
+            </span>
           </button>
         ))}
 
         <div className="flex-1" />
 
+        <div className="w-6 border-t border-[var(--admin-border)] my-1" />
+
         <a
           href="https://mrdemonwolf.github.io/linkden/"
           target="_blank"
           rel="noopener noreferrer"
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)] hover:bg-[var(--admin-bg)] transition-all"
+          className="w-9 h-9 rounded-lg flex items-center justify-center text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-secondary)] hover:bg-[var(--admin-accent-subtle)] transition-all duration-150 relative group"
           title="Documentation"
         >
-          <BookOpen className="w-5 h-5" />
+          <BookOpen className="w-[18px] h-[18px]" />
+          <span className="absolute left-full ml-2 px-2 py-1 text-[10px] font-medium bg-[var(--admin-text)] text-[var(--admin-surface)] rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-50">
+            Docs
+          </span>
         </a>
 
         <button
           type="button"
           onClick={() => onOpenDrawer?.("wallet")}
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)] hover:bg-[var(--admin-bg)] transition-all"
+          className="w-9 h-9 rounded-lg flex items-center justify-center text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-secondary)] hover:bg-[var(--admin-accent-subtle)] transition-all duration-150 relative group"
           title="Settings"
         >
-          <Settings className="w-5 h-5" />
+          <Settings className="w-[18px] h-[18px]" />
+          <span className="absolute left-full ml-2 px-2 py-1 text-[10px] font-medium bg-[var(--admin-text)] text-[var(--admin-surface)] rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-50">
+            Settings
+          </span>
         </button>
       </div>
 
@@ -218,23 +230,21 @@ function AddBlocksSection() {
 
   return (
     <div className="p-4">
-      <h3 className="text-sm font-semibold text-[var(--admin-text)] mb-3">Add Blocks</h3>
+      <h3 className="text-[13px] font-semibold text-[var(--admin-text)] mb-4 tracking-tight">Add Blocks</h3>
       {BLOCK_CATEGORIES.map((category) => (
-        <div key={category.label} className="mb-4">
-          <p className="text-[10px] font-medium text-[var(--admin-text-secondary)] uppercase tracking-wider mb-2">
-            {category.label}
-          </p>
-          <div className="grid grid-cols-2 gap-2">
+        <div key={category.label} className="mb-5">
+          <p className="admin-section-label">{category.label}</p>
+          <div className="grid grid-cols-2 gap-1.5">
             {category.blocks.map((block) => (
               <button
                 key={block.type}
                 type="button"
                 onClick={() => handleAddBlock(block.type)}
                 disabled={createMutation.isPending}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-[var(--admin-border)] hover:border-[var(--admin-accent)]/30 hover:bg-[var(--admin-accent)]/5 transition-all text-[var(--admin-text-secondary)] hover:text-[var(--admin-accent)]"
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] hover:border-[var(--admin-accent)] hover:bg-[var(--admin-accent-subtle)] transition-all duration-150 text-[var(--admin-text-secondary)] hover:text-[var(--admin-accent)] group"
               >
-                {block.icon}
-                <span className="text-xs font-medium">{block.label}</span>
+                <span className="shrink-0 transition-transform duration-150 group-hover:scale-110">{block.icon}</span>
+                <span className="text-[11px] font-medium">{block.label}</span>
               </button>
             ))}
           </div>
@@ -297,7 +307,7 @@ function BlockListSection({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawe
     return (
       <div className="p-4 space-y-2">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-12 rounded-lg bg-[var(--admin-bg)] animate-pulse" />
+          <div key={i} className="h-11 rounded-lg bg-[var(--admin-bg)] animate-pulse" />
         ))}
       </div>
     );
@@ -308,29 +318,42 @@ function BlockListSection({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawe
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-[var(--admin-text)]">Blocks ({links.length})</h3>
+        <h3 className="text-[13px] font-semibold text-[var(--admin-text)] tracking-tight">
+          Blocks
+          {links.length > 0 && (
+            <span className="ml-1.5 text-[10px] font-medium text-[var(--admin-text-tertiary)] bg-[var(--admin-bg)] px-1.5 py-0.5 rounded-full">
+              {links.length}
+            </span>
+          )}
+        </h3>
       </div>
 
       {links.length === 0 ? (
-        <p className="text-sm text-[var(--admin-text-secondary)] text-center py-8">
-          No blocks yet. Click the + tab to add one.
-        </p>
+        <div className="text-center py-10 px-4">
+          <div className="w-10 h-10 rounded-xl bg-[var(--admin-accent-subtle)] flex items-center justify-center mx-auto mb-3">
+            <Plus className="w-5 h-5 text-[var(--admin-accent)]" />
+          </div>
+          <p className="text-xs font-medium text-[var(--admin-text-secondary)] mb-1">No blocks yet</p>
+          <p className="text-[11px] text-[var(--admin-text-tertiary)]">
+            Click the + tab to add your first block.
+          </p>
+        </div>
       ) : (
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="left-panel-blocks">
             {(provided) => (
-              <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-1.5">
+              <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-1">
                 {links.map((link, index) => (
                   <Draggable key={link.id} draggableId={link.id} index={index}>
                     {(provided, snapshot) => (
                       <div
                         ref={provided.innerRef}
                         {...provided.draggableProps}
-                        className={`flex items-center gap-2 p-2 rounded-lg border transition-all cursor-pointer ${
+                        className={`flex items-center gap-2 px-2 py-2 rounded-lg border transition-all duration-150 cursor-pointer group ${
                           snapshot.isDragging
-                            ? "border-[var(--admin-accent)]/30 bg-[var(--admin-accent)]/5 shadow-lg"
-                            : "border-[var(--admin-border)] bg-[var(--admin-surface)] hover:border-[var(--admin-border)]"
-                        } ${!link.isActive ? "opacity-50" : ""}`}
+                            ? "border-[var(--admin-accent)] bg-[var(--admin-accent-subtle)] shadow-md"
+                            : "border-transparent bg-[var(--admin-surface)] hover:bg-[var(--admin-bg)] hover:border-[var(--admin-border)]"
+                        } ${!link.isActive ? "opacity-40" : ""}`}
                         onClick={() => {
                           if (!snapshot.isDragging) {
                             onOpenDrawer?.({ type: "link-edit", id: link.id });
@@ -339,28 +362,29 @@ function BlockListSection({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawe
                       >
                         <div
                           {...provided.dragHandleProps}
-                          className="cursor-grab active:cursor-grabbing text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)]"
+                          className="cursor-grab active:cursor-grabbing text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-secondary)] opacity-0 group-hover:opacity-100 transition-opacity duration-150"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <GripVertical className="w-3.5 h-3.5" />
                         </div>
 
-                        <div className="w-6 h-6 rounded-md bg-[var(--admin-bg)] flex items-center justify-center shrink-0 text-[var(--admin-text-secondary)]">
+                        <div className="w-7 h-7 rounded-md bg-[var(--admin-accent-subtle)] flex items-center justify-center shrink-0 text-[var(--admin-accent)]">
                           {TYPE_ICONS[link.type] || <Globe className="w-3.5 h-3.5" />}
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-[var(--admin-text)] truncate">{link.title}</p>
+                          <p className="text-[12px] font-medium text-[var(--admin-text)] truncate leading-tight">{link.title}</p>
+                          <p className="text-[10px] text-[var(--admin-text-tertiary)] capitalize">{link.type.replace("_", " ")}</p>
                         </div>
 
-                        <div className="flex items-center gap-0.5 shrink-0">
+                        <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               toggleMutation.mutate({ id: link.id });
                             }}
-                            className="p-1 rounded hover:bg-[var(--admin-bg)] text-[var(--admin-text-secondary)]"
+                            className="p-1.5 rounded-md hover:bg-[var(--admin-surface)] text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-secondary)] transition-colors"
                             title={link.isActive ? "Hide" : "Show"}
                           >
                             {link.isActive ? (
@@ -375,12 +399,12 @@ function BlockListSection({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawe
                               e.stopPropagation();
                               handleDelete(link.id);
                             }}
-                            className={`p-1 rounded transition-colors ${
+                            className={`p-1.5 rounded-md transition-all duration-150 ${
                               deletingId === link.id
-                                ? "bg-red-100 text-red-500"
-                                : "hover:bg-[var(--admin-bg)] text-[var(--admin-text-secondary)]"
+                                ? "bg-red-50 text-[var(--admin-danger)]"
+                                : "hover:bg-[var(--admin-surface)] text-[var(--admin-text-tertiary)] hover:text-[var(--admin-danger)]"
                             }`}
-                            title={deletingId === link.id ? "Confirm" : "Delete"}
+                            title={deletingId === link.id ? "Click again to confirm" : "Delete"}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -402,8 +426,8 @@ function BlockListSection({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawe
 function SocialSection() {
   return (
     <div className="p-4">
-      <h3 className="text-sm font-semibold text-[var(--admin-text)] mb-3">Social Links</h3>
-      <p className="text-xs text-[var(--admin-text-secondary)] mb-4">
+      <h3 className="text-[13px] font-semibold text-[var(--admin-text)] mb-1 tracking-tight">Social Links</h3>
+      <p className="text-[11px] text-[var(--admin-text-tertiary)] mb-4 leading-relaxed">
         Add your social media profiles. These appear as icons on your page.
       </p>
       <div className="space-y-2">
@@ -413,13 +437,13 @@ function SocialSection() {
               <input
                 type="text"
                 placeholder={`${platform} URL`}
-                className="flex-1 text-xs px-3 py-2 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] text-[var(--admin-text)] focus:border-[var(--admin-accent)]/30 focus:ring-1 focus:ring-[var(--admin-accent)]/20 outline-none transition-all"
+                className="admin-input text-[11px]"
               />
             </div>
           ),
         )}
       </div>
-      <p className="text-[10px] text-[var(--admin-text-secondary)] mt-3">
+      <p className="text-[10px] text-[var(--admin-text-tertiary)] mt-3 leading-relaxed">
         Social links are stored in settings and will be saved when you publish.
       </p>
     </div>
@@ -432,41 +456,44 @@ function PagesSection({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawer) =
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-[var(--admin-text)]">Custom Pages</h3>
+        <h3 className="text-[13px] font-semibold text-[var(--admin-text)] tracking-tight">Custom Pages</h3>
         <button
           type="button"
           onClick={() => onOpenDrawer?.("pages-new")}
-          className="text-xs text-[var(--admin-accent)] hover:text-[var(--admin-accent-hover)] font-medium"
+          className="text-[11px] text-[var(--admin-accent)] hover:text-[var(--admin-accent-hover)] font-semibold flex items-center gap-0.5 transition-colors"
         >
-          + New
+          <Plus className="w-3.5 h-3.5" />
+          New
         </button>
       </div>
 
       {pagesQuery.isLoading ? (
         <div className="space-y-2">
           {[1, 2].map((i) => (
-            <div key={i} className="h-10 rounded-lg bg-[var(--admin-bg)] animate-pulse" />
+            <div key={i} className="h-11 rounded-lg bg-[var(--admin-bg)] animate-pulse" />
           ))}
         </div>
       ) : pagesQuery.data && pagesQuery.data.length > 0 ? (
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           {pagesQuery.data.map((page) => (
             <button
               key={page.id}
               type="button"
               onClick={() => onOpenDrawer?.({ type: "page-edit", id: page.id })}
-              className="flex items-center gap-2 p-2 rounded-lg border border-[var(--admin-border)] hover:border-[var(--admin-border)] transition-all w-full text-left"
+              className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-[var(--admin-bg)] transition-all duration-150 w-full text-left group"
             >
-              <FileText className="w-4 h-4 text-[var(--admin-text-secondary)]" />
+              <div className="w-7 h-7 rounded-md bg-[var(--admin-accent-subtle)] flex items-center justify-center shrink-0">
+                <FileText className="w-3.5 h-3.5 text-[var(--admin-accent)]" />
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-[var(--admin-text)] truncate">{page.title}</p>
-                <p className="text-[10px] text-[var(--admin-text-secondary)]">/{page.slug}</p>
+                <p className="text-[12px] font-medium text-[var(--admin-text)] truncate leading-tight">{page.title}</p>
+                <p className="text-[10px] text-[var(--admin-text-tertiary)]">/{page.slug}</p>
               </div>
               <span
-                className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
                   page.isPublished
-                    ? "bg-green-100 text-green-700"
-                    : "bg-[var(--admin-bg)] text-[var(--admin-text-secondary)]"
+                    ? "bg-emerald-50 text-emerald-600"
+                    : "bg-[var(--admin-bg)] text-[var(--admin-text-tertiary)]"
                 }`}
               >
                 {page.isPublished ? "Live" : "Draft"}
@@ -475,42 +502,29 @@ function PagesSection({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawer) =
           ))}
         </div>
       ) : (
-        <p className="text-sm text-[var(--admin-text-secondary)] text-center py-6">No custom pages yet.</p>
+        <div className="text-center py-8">
+          <p className="text-xs text-[var(--admin-text-tertiary)]">No custom pages yet.</p>
+        </div>
       )}
 
-      <div className="mt-4 pt-3 border-t border-[var(--admin-border)] space-y-1.5">
-        <button
-          type="button"
-          onClick={() => onOpenDrawer?.("contacts")}
-          className="flex items-center gap-2 p-2 rounded-lg hover:bg-[var(--admin-bg)] text-sm text-[var(--admin-text-secondary)] w-full text-left transition-colors"
-        >
-          <Mail className="w-4 h-4" />
-          Contacts
-        </button>
-        <button
-          type="button"
-          onClick={() => onOpenDrawer?.("vcard")}
-          className="flex items-center gap-2 p-2 rounded-lg hover:bg-[var(--admin-bg)] text-sm text-[var(--admin-text-secondary)] w-full text-left transition-colors"
-        >
-          <Contact className="w-4 h-4" />
-          vCard Editor
-        </button>
-        <button
-          type="button"
-          onClick={() => onOpenDrawer?.("wallet")}
-          className="flex items-center gap-2 p-2 rounded-lg hover:bg-[var(--admin-bg)] text-sm text-[var(--admin-text-secondary)] w-full text-left transition-colors"
-        >
-          <Wallet className="w-4 h-4" />
-          Wallet Pass
-        </button>
-        <button
-          type="button"
-          onClick={() => onOpenDrawer?.("analytics")}
-          className="flex items-center gap-2 p-2 rounded-lg hover:bg-[var(--admin-bg)] text-sm text-[var(--admin-text-secondary)] w-full text-left transition-colors"
-        >
-          <BarChart3 className="w-4 h-4" />
-          Full Analytics
-        </button>
+      <div className="mt-5 pt-4 border-t border-[var(--admin-border)] space-y-0.5">
+        <p className="admin-section-label mb-2">Tools</p>
+        {[
+          { id: "contacts" as const, icon: Mail, label: "Contacts" },
+          { id: "vcard" as const, icon: Contact, label: "vCard Editor" },
+          { id: "wallet" as const, icon: Wallet, label: "Wallet Pass" },
+          { id: "analytics" as const, icon: BarChart3, label: "Full Analytics" },
+        ].map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onOpenDrawer?.(item.id)}
+            className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-[var(--admin-bg)] text-[12px] font-medium text-[var(--admin-text-secondary)] hover:text-[var(--admin-text)] w-full text-left transition-all duration-150 group"
+          >
+            <item.icon className="w-4 h-4 text-[var(--admin-text-tertiary)] group-hover:text-[var(--admin-text-secondary)] transition-colors" />
+            {item.label}
+          </button>
+        ))}
       </div>
     </div>
   );
