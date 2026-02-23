@@ -9,6 +9,7 @@ import {
 	linkClick,
 	socialNetwork,
 } from "@linkden/db/schema/index";
+import { socialBrandMap } from "@linkden/ui/social-brands";
 import { eq, asc, and } from "drizzle-orm";
 import { z } from "zod";
 import { generateVCardString, vcardDataSchema } from "./vcard";
@@ -38,21 +39,25 @@ export const publicRouter = router({
 			settings[row.key] = row.value;
 		}
 
-		// Get active social networks with URLs
+		// Get active social networks with URLs, enrich from catalog
 		const activeSocials = await db
 			.select()
 			.from(socialNetwork)
-			.where(and(eq(socialNetwork.isActive, true)));
+			.where(eq(socialNetwork.isActive, true));
 
 		const socialNetworks = activeSocials
-			.filter((s) => s.url)
-			.map((s) => ({
-				slug: s.slug,
-				name: s.name,
-				url: s.url!,
-				hex: s.hex,
-				svgPath: s.svgPath,
-			}));
+			.map((s) => {
+				const brand = socialBrandMap.get(s.slug);
+				if (!brand) return null;
+				return {
+					slug: s.slug,
+					name: brand.name,
+					url: s.url,
+					hex: brand.hex,
+					svgPath: brand.svgPath,
+				};
+			})
+			.filter((s): s is NonNullable<typeof s> => s !== null);
 
 		// Hide blocks for disabled features
 		const visibleBlocks = scheduledBlocks.filter((b) => {
