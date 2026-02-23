@@ -3,18 +3,11 @@
   "pages": [
     "---Getting Started---",
     "getting-started",
-    "---Features---",
-    "features",
-    "---Admin Panel---",
-    "admin",
-    "---API---",
-    "api",
+    "---Using LinkDen---",
+    "guide",
     "---Self-Hosting---",
     "self-hosting",
-    "---Resources---",
-    "faq",
-    "changelog",
-    "privacy-policy",
-    "terms-of-service"
+    "---Reference---",
+    "reference"
   ]
 }

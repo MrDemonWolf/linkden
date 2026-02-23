@@ -1,0 +1,54 @@
+---
+title: Social Networks
+description: Manage the 100+ social network icons available for Social Icons blocks.
+---
+
+# Social Networks
+
+LinkDen includes 100+ predefined social network icons from [Simple Icons](https://simpleicons.org/). Social networks are managed separately from blocks at `/admin/social`.
+
+## Managing Social Networks
+
+Navigate to `/admin/social` to see all available social networks. The page lets you:
+
+- **Search** networks by name or slug.
+- **Filter** to show all networks or only active ones.
+- **Toggle** networks on/off with a switch.
+
+Active networks become available for use in **Social Icons** blocks.
+
+## Using Social Icons
+
+Once you've activated the networks you want:
+
+1. Go to `/admin/builder`.
+2. Click **Add Block** and select **Social Icons**.
+3. The block automatically uses your active social networks.
+4. Configure the display options:
+
+| Option | Description |
+|--------|-------------|
+| Icon size | Size of each social icon |
+| Icon style | Filled, outlined, or rounded |
+| Show labels | Display the network name below each icon |
+| Spacing | Gap between icons |
+| Use brand colors | Use each network's official brand color |
+
+## Available Networks
+
+LinkDen includes icons for all major platforms:
+
+- **Social**: Twitter/X, Instagram, Facebook, TikTok, Snapchat, Threads, Bluesky, Mastodon
+- **Video**: YouTube, Twitch, Vimeo
+- **Music**: Spotify, SoundCloud, Apple Music, Bandcamp
+- **Development**: GitHub, GitLab, Bitbucket, Stack Overflow, CodePen
+- **Professional**: LinkedIn, Dribbble, Behance
+- **Messaging**: Discord, Telegram, WhatsApp, Signal
+- **Gaming**: Steam, Epic Games, PlayStation, Xbox, Nintendo
+- **Other**: Reddit, Pinterest, Medium, Substack, Patreon, Ko-fi, Buy Me a Coffee, and many more
+
+The full list is automatically updated from the Simple Icons library.
+
+## Icon Updates
+
+Social brand icons are sourced from the `@linkden/ui` package. The icon set is checked weekly via a GitHub Actions workflow that detects when new icons are available from Simple Icons.
