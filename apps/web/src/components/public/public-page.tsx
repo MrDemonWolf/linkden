@@ -1,318 +1,352 @@
 "use client";
 
-import { getTheme, type ThemeVariant } from "@linkden/ui/themes";
-import { DragDropContext, Draggable, type DropResult, Droppable } from "@hello-pangea/dnd";
-import { BadgeCheck, GripVertical, Moon, Sun } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useState } from "react";
+import { themePresets } from "@linkden/ui/themes";
 import { Avatar } from "./avatar";
+import { BannerSection } from "./banner-section";
 import { LinkBlock } from "./link-block";
-import { SocialIconsRow } from "./social-icons-row";
+import { HeaderBlock } from "./header-block";
+import { SocialIconsBlock } from "./social-icons-block";
+import { EmbedBlock } from "./embed-block";
+import { ContactFormBlock } from "./contact-form-block";
 import { WhitelabelFooter } from "./whitelabel-footer";
+import { ThemeToggle } from "./theme-toggle";
 
-interface LinkData {
-  id: string;
-  type: string;
-  title: string;
-  url: string | null;
-  icon: string | null;
-  iconType: string | null;
-  isActive: boolean;
-  clickCount: number;
-  metadata: Record<string, unknown> | null;
+interface SocialNetwork {
+	slug: string;
+	name: string;
+	url: string;
+	hex: string;
+	svgPath: string;
 }
 
-interface SocialLink {
-  platform: string;
-  url: string;
+interface PageData {
+	profile: {
+		name: string;
+		email: string;
+		image: string | null;
+		bio: string | null;
+		isVerified: boolean;
+	};
+	blocks: Array<{
+		id: string;
+		type: string;
+		title: string | null;
+		url: string | null;
+		icon: string | null;
+		embedType: string | null;
+		embedUrl: string | null;
+		socialIcons: string | null;
+		config: string | null;
+		position: number;
+	}>;
+	socialNetworks?: SocialNetwork[];
+	theme: {
+		preset?: string;
+		customColors?: Record<string, string>;
+	} | null;
+	settings: {
+		seoTitle: string | null;
+		seoDescription: string | null;
+		seoOgImage: string | null;
+		brandingEnabled: boolean;
+		brandingText: string;
+		defaultColorMode: string;
+		walletPassEnabled: boolean;
+		vcardEnabled: boolean;
+		contactFormEnabled: boolean;
+		captchaProvider: string;
+		captchaSiteKey: string | null;
+		bannerPreset: string | null;
+		bannerEnabled: boolean;
+		themePreset: string;
+	};
 }
 
-interface PublicPageProps {
-  settings: Record<string, string>;
-  links: LinkData[];
-  socialLinks?: SocialLink[];
-  isPreview?: boolean;
-  isDraggable?: boolean;
-  onReorder?: (sourceIndex: number, destIndex: number) => void;
+export interface ThemeColors {
+	primary: string;
+	accent: string;
+	bg: string;
+	fg: string;
+	card: string;
+	cardFg: string;
+	border: string;
+	muted: string;
+	mutedFg: string;
 }
 
-const VISITOR_THEME_KEY = "linkden-visitor-theme";
+function parseConfig(config: string | null): Record<string, unknown> {
+	if (!config) return {};
+	try {
+		return JSON.parse(config);
+	} catch {
+		return {};
+	}
+}
 
-export function PublicPage({
-  settings,
-  links,
-  socialLinks = [],
-  isPreview = false,
-  isDraggable = false,
-  onReorder,
-}: PublicPageProps) {
-  const profileName = settings.profileName || "LinkDen";
-  const profileBio = settings.profileBio || "";
-  const profileImage = settings.profileImage || "";
-  const captchaSiteKey = settings.captchaSiteKey || "";
-  const captchaType = settings.captchaType || "none";
-  const customCss = settings.customCss || "";
-  const customHead = settings.customHead || "";
-  const brandName = settings.brandName || "";
-  const brandLogo = settings.brandLogo || "";
-  const brandEnabled = settings.brandEnabled !== "false";
-  const accentColor = settings.accentColor || "#0FACED";
-  const backgroundColor = settings.backgroundColor || "#091533";
-  const showVerifiedBadge = settings.verifiedBadge === "true";
-  const themeMode = settings.themeMode || "dark";
-  const themeId = settings.theme || "midnight-glass";
+function getThemeColors(themePresetName: string, colorMode: "light" | "dark"): ThemeColors {
+	const theme = themePresets.find((t) => t.name === themePresetName) ?? themePresets[0];
+	const vars = theme.cssVars[colorMode];
+	return {
+		primary: vars["--ld-primary"],
+		accent: vars["--ld-accent"],
+		bg: vars["--ld-background"],
+		fg: vars["--ld-foreground"],
+		card: vars["--ld-card"],
+		cardFg: vars["--ld-card-foreground"],
+		border: vars["--ld-border"],
+		muted: vars["--ld-muted"],
+		mutedFg: vars["--ld-muted-foreground"],
+	};
+}
 
-  // Visitor dark/light preference
-  const [visitorMode, setVisitorMode] = useState<"dark" | "light" | null>(null);
+export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolean }) {
+	const getInitialColorMode = (): "light" | "dark" => {
+		if (typeof window === "undefined") {
+			return data.settings.defaultColorMode === "dark" ? "dark" : "light";
+		}
+		const saved = localStorage.getItem("linkden-color-mode");
+		if (saved === "light" || saved === "dark") return saved;
+		if (data.settings.defaultColorMode === "dark") return "dark";
+		if (data.settings.defaultColorMode === "system") {
+			return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+		}
+		return "light";
+	};
 
-  useEffect(() => {
-    if (isPreview) return;
-    const stored = localStorage.getItem(VISITOR_THEME_KEY) as "dark" | "light" | null;
-    if (stored) setVisitorMode(stored);
-  }, [isPreview]);
+	const [colorMode, setColorMode] = useState<"light" | "dark">(getInitialColorMode);
 
-  const toggleVisitorMode = useCallback(() => {
-    const currentMode = visitorMode || themeMode;
-    const next = currentMode === "dark" ? "light" : "dark";
-    setVisitorMode(next);
-    if (!isPreview) {
-      localStorage.setItem(VISITOR_THEME_KEY, next);
-    }
-  }, [visitorMode, themeMode, isPreview]);
+	const toggleColorMode = () => {
+		const next = colorMode === "light" ? "dark" : "light";
+		setColorMode(next);
+		localStorage.setItem("linkden-color-mode", next);
+	};
 
-  // Resolve the effective mode and theme variant colors
-  const effectiveMode = (visitorMode || themeMode) as "dark" | "light";
-  const themeVariant: ThemeVariant | null = useMemo(() => {
-    const theme = getTheme(themeId);
-    if (!theme) return null;
-    return theme[effectiveMode === "light" ? "light" : "dark"];
-  }, [themeId, effectiveMode]);
+	const hasBanner = data.settings.bannerEnabled && data.settings.bannerPreset;
+	const themeColors = getThemeColors(data.settings.themePreset, colorMode);
 
-  // Effective colors: use theme variant if available, otherwise fall back to settings
-  const effectiveBg = themeVariant?.background || backgroundColor;
-  const effectiveText = themeVariant?.textPrimary || settings.textColor || "rgba(255,255,255,0.95)";
-  const effectiveAccent = themeVariant?.primary || accentColor;
-  const isLightMode = effectiveMode === "light";
+	return (
+		<div
+			className="min-h-dvh"
+			style={{
+				backgroundColor: themeColors.bg,
+				color: themeColors.fg,
+				transition: "background-color 0.5s ease, color 0.5s ease",
+			}}
+		>
+			<a
+				href="#main-content"
+				className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
+			>
+				Skip to content
+			</a>
 
-  // Apply theme CSS variables from settings
-  useEffect(() => {
-    if (isPreview) return;
-    const root = document.documentElement;
-    root.style.setProperty("--background", effectiveBg);
-    root.style.setProperty("--text-primary", effectiveText);
-    root.style.setProperty("--primary", effectiveAccent);
-    if (themeVariant) {
-      root.style.setProperty("--text-secondary", themeVariant.textSecondary);
-      root.style.setProperty("--surface", themeVariant.surface);
-      root.style.setProperty("--surface-border", themeVariant.surfaceBorder);
-    }
+			{isAdmin && (
+				<a
+					href="/admin"
+					className="fixed left-4 top-4 z-50 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium backdrop-blur-xl transition-colors"
+					style={{
+						backgroundColor: `${themeColors.card}cc`,
+						color: themeColors.cardFg,
+						border: `1px solid ${themeColors.border}`,
+						transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
+					}}
+				>
+					<svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+						<path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+						<path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+					</svg>
+					Admin
+				</a>
+			)}
 
-    if (customCss) {
-      const style = document.createElement("style");
-      style.id = "linkden-custom-css";
-      style.textContent = customCss;
-      document.head.appendChild(style);
-      return () => {
-        const el = document.getElementById("linkden-custom-css");
-        if (el) el.remove();
-      };
-    }
-  }, [effectiveBg, effectiveText, effectiveAccent, themeVariant, customCss, isPreview]);
+			<ThemeToggle colorMode={colorMode} onToggle={toggleColorMode} themeColors={themeColors} />
 
-  // Inject custom head tags
-  useEffect(() => {
-    if (isPreview || !customHead) return;
-    const div = document.createElement("div");
-    div.id = "linkden-custom-head";
-    div.innerHTML = customHead;
-    const children = Array.from(div.children);
-    for (const child of children) {
-      document.head.appendChild(child);
-    }
-    return () => {
-      for (const child of children) {
-        if (child.parentNode === document.head) {
-          document.head.removeChild(child);
-        }
-      }
-    };
-  }, [customHead, isPreview]);
+			{hasBanner && (
+				<BannerSection
+					bannerPreset={data.settings.bannerPreset!}
+					colorMode={colorMode}
+					bgColor={themeColors.bg}
+					themeColors={themeColors}
+				/>
+			)}
 
-  // Update document title and meta
-  useEffect(() => {
-    if (isPreview) return;
-    const metaTitle = settings.metaTitle || profileName;
-    const metaDescription = settings.metaDescription || profileBio;
-    const metaImage = settings.metaImage || profileImage;
+			<main
+				id="main-content"
+				className={`mx-auto max-w-lg px-4 ${hasBanner ? "py-0" : "py-8 md:py-12"}`}
+				role="main"
+			>
+				{/* Profile Section */}
+				<header className={`relative z-10 mb-8 text-center ${hasBanner ? "-mt-20" : ""}`}>
+					<Avatar
+						src={data.profile.image}
+						name={data.profile.name}
+						size="lg"
+						hasBanner={!!hasBanner}
+						ringColor={hasBanner ? themeColors.bg : undefined}
+						themeColors={{ primary: themeColors.primary, accent: themeColors.accent }}
+					/>
+					<h1 className="mt-4 inline-flex items-center justify-center gap-1.5 text-2xl font-bold">
+						{data.profile.name}
+						{data.profile.isVerified && (
+							<svg
+								className="h-6 w-6 text-blue-500 shrink-0"
+								viewBox="0 0 24 24"
+								fill="currentColor"
+								aria-hidden="true"
+								role="img"
+								aria-label="Verified account"
+							>
+								<path fillRule="evenodd" d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-1.549 3.397 4.491 4.491 0 01-1.307 3.497 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clipRule="evenodd" />
+							</svg>
+						)}
+					</h1>
+					{data.profile.bio && (
+						<p
+							className="mt-2 text-sm"
+							style={{
+								color: themeColors.mutedFg,
+								transition: "color 0.5s ease",
+							}}
+						>
+							{data.profile.bio}
+						</p>
+					)}
+				</header>
 
-    document.title = metaTitle;
+				{/* Blocks */}
+				<div className="space-y-3" role="list" aria-label="Links and content">
+					{data.blocks.map((blockData) => {
+						const config = parseConfig(blockData.config);
 
-    function setMeta(name: string, content: string) {
-      if (!content) return;
-      let meta = document.querySelector(
-        `meta[name="${name}"], meta[property="${name}"]`,
-      ) as HTMLMetaElement;
-      if (!meta) {
-        meta = document.createElement("meta");
-        if (name.startsWith("og:") || name.startsWith("twitter:")) {
-          meta.setAttribute("property", name);
-        } else {
-          meta.setAttribute("name", name);
-        }
-        document.head.appendChild(meta);
-      }
-      meta.content = content;
-    }
+						switch (blockData.type) {
+							case "link":
+								return (
+									<LinkBlock
+										key={blockData.id}
+										block={blockData}
+										config={config}
+										colorMode={colorMode}
+										themeColors={themeColors}
+									/>
+								);
+							case "header":
+								return (
+									<HeaderBlock
+										key={blockData.id}
+										block={blockData}
+										config={config}
+										colorMode={colorMode}
+									/>
+								);
+							case "social_icons":
+								return (
+									<SocialIconsBlock
+										key={blockData.id}
+										block={blockData}
+										config={config}
+										colorMode={colorMode}
+										networks={data.socialNetworks}
+									/>
+								);
+							case "embed":
+								return (
+									<EmbedBlock
+										key={blockData.id}
+										block={blockData}
+										config={config}
+										colorMode={colorMode}
+									/>
+								);
+							case "contact_form":
+								return (
+									<ContactFormBlock
+										key={blockData.id}
+										block={blockData}
+										config={config}
+										colorMode={colorMode}
+										captchaProvider={
+											data.settings.captchaProvider
+										}
+										captchaSiteKey={
+											data.settings.captchaSiteKey
+										}
+									/>
+								);
+							default:
+								return null;
+						}
+					})}
+				</div>
 
-    setMeta("description", metaDescription);
-    setMeta("og:title", metaTitle);
-    setMeta("og:description", metaDescription);
-    setMeta("og:image", metaImage);
-    setMeta("twitter:card", "summary_large_image");
-    setMeta("twitter:title", metaTitle);
-    setMeta("twitter:description", metaDescription);
-    setMeta("twitter:image", metaImage);
-  }, [settings, profileName, profileBio, profileImage, isPreview]);
+				{/* VCard / Wallet Buttons */}
+				<div className="mt-8 flex justify-center gap-3">
+					{data.settings.vcardEnabled && (
+						<a
+							href="/api/vcard"
+							className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300"
+							style={{
+								backgroundColor: themeColors.card,
+								color: themeColors.cardFg,
+								border: `1px solid ${themeColors.border}`,
+								transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
+							}}
+							download="contact.vcf"
+						>
+							<svg
+								className="h-4 w-4"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+								strokeWidth={2}
+								aria-hidden="true"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+								/>
+							</svg>
+							Download Contact
+						</a>
+					)}
+					{data.settings.walletPassEnabled && (
+						<a
+							href="/api/wallet-pass"
+							className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300"
+							style={{
+								backgroundColor: themeColors.card,
+								color: themeColors.cardFg,
+								border: `1px solid ${themeColors.border}`,
+								transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
+							}}
+						>
+							<svg
+								className="h-4 w-4"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+								strokeWidth={2}
+								aria-hidden="true"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+								/>
+							</svg>
+							Add to Wallet
+						</a>
+					)}
+				</div>
+			</main>
 
-  // Track page view via tRPC mutation
-  useEffect(() => {
-    if (isPreview) return;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!apiUrl) return;
-    fetch(`${apiUrl}/trpc/analytics.trackPageView`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ json: { referrer: document.referrer } }),
-    }).catch(() => {});
-  }, [isPreview]);
-
-  const activeLinks = links.filter((l) => l.isActive);
-
-  function handleDragEnd(result: DropResult) {
-    if (!result.destination || !onReorder) return;
-    if (result.source.index === result.destination.index) return;
-    onReorder(result.source.index, result.destination.index);
-  }
-
-  const linkBlocksContent = isDraggable ? (
-    <DragDropContext onDragEnd={handleDragEnd}>
-      <Droppable droppableId="preview-blocks">
-        {(provided) => (
-          <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-3">
-            {activeLinks.map((link, index) => (
-              <Draggable key={link.id} draggableId={link.id} index={index}>
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    className={`relative group ${snapshot.isDragging ? "z-50 opacity-90" : ""}`}
-                  >
-                    <div
-                      {...provided.dragHandleProps}
-                      className="absolute -left-6 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity cursor-grab active:cursor-grabbing z-10"
-                    >
-                      <GripVertical className="w-4 h-4 text-[var(--text-secondary)]" />
-                    </div>
-                    <LinkBlock link={link} captchaSiteKey={captchaSiteKey} captchaType={captchaType} />
-                  </div>
-                )}
-              </Draggable>
-            ))}
-            {provided.placeholder}
-          </div>
-        )}
-      </Droppable>
-    </DragDropContext>
-  ) : (
-    <div className="space-y-3">
-      {activeLinks.map((link) => (
-        <LinkBlock key={link.id} link={link} captchaSiteKey={captchaSiteKey} captchaType={captchaType} />
-      ))}
-    </div>
-  );
-
-  return (
-    <div
-      className={`${isPreview ? "min-h-full" : "min-h-screen"} flex flex-col relative transition-colors duration-300`}
-      style={isPreview ? {
-        background: effectiveBg,
-        color: effectiveText,
-        ["--background" as string]: effectiveBg,
-        ["--text-primary" as string]: effectiveText,
-        ["--text-secondary" as string]: themeVariant?.textSecondary || "rgba(255,255,255,0.55)",
-        ["--primary" as string]: effectiveAccent,
-        ["--surface" as string]: themeVariant?.surface || "rgba(255,255,255,0.08)",
-        ["--surface-border" as string]: themeVariant?.surfaceBorder || "rgba(255,255,255,0.12)",
-      } : undefined}
-    >
-      {/* Gradient Header Area */}
-      <div
-        className="relative w-full pt-16 pb-24 px-4"
-        style={{
-          background: isLightMode
-            ? `linear-gradient(135deg, ${effectiveAccent}30 0%, ${effectiveAccent}18 40%, ${effectiveBg} 100%)`
-            : `linear-gradient(135deg, ${effectiveAccent}22 0%, ${effectiveBg} 50%, ${effectiveAccent}11 100%)`,
-        }}
-      >
-        <div className="absolute inset-0 opacity-30" />
-      </div>
-
-      {/* Content Area - overlaps header */}
-      <main className="flex flex-col items-center px-4 -mt-16 pb-12" role="main">
-        <div className={`w-full space-y-5 animate-fade-in ${isPreview ? "" : "max-w-md"}`}>
-          {/* Avatar */}
-          <div className="flex justify-center">
-            <div className="rounded-full p-1 bg-[var(--background)] shadow-xl">
-              <Avatar
-                src={profileImage}
-                alt={profileName}
-                size={104}
-              />
-            </div>
-          </div>
-
-          {/* Name & Bio */}
-          <div className="text-center">
-            <h1 className="text-2xl font-bold tracking-tight inline-flex items-center justify-center gap-1.5">
-              {profileName}
-              {showVerifiedBadge && (
-                <BadgeCheck className="w-5 h-5 text-blue-500 shrink-0" aria-label="Verified" />
-              )}
-            </h1>
-            {profileBio && (
-              <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-xs mx-auto leading-relaxed">
-                {profileBio}
-              </p>
-            )}
-          </div>
-
-          {/* Social Icons Row */}
-          {socialLinks.length > 0 && <SocialIconsRow links={socialLinks} />}
-
-          {/* Link Blocks */}
-          {linkBlocksContent}
-
-          {/* Footer */}
-          {brandEnabled && <WhitelabelFooter brandName={brandName} brandLogo={brandLogo} />}
-        </div>
-      </main>
-
-      {/* Floating dark/light toggle for visitors (and preview) */}
-      <button
-        type="button"
-        onClick={toggleVisitorMode}
-        className={`${isPreview ? "absolute" : "fixed"} bottom-4 right-4 w-10 h-10 rounded-full backdrop-blur-sm flex items-center justify-center transition-all z-50 shadow-lg ${
-          isLightMode
-            ? "bg-black/8 border border-black/15 text-black/50 hover:text-black/80 hover:bg-black/15"
-            : "bg-white/10 border border-white/20 text-white/70 hover:text-white hover:bg-white/20"
-        }`}
-        aria-label={isLightMode ? "Switch to dark mode" : "Switch to light mode"}
-      >
-        {effectiveMode === "dark" ? (
-          <Sun className="w-4 h-4" />
-        ) : (
-          <Moon className="w-4 h-4" />
-        )}
-      </button>
-    </div>
-  );
+			{data.settings.brandingEnabled && (
+				<WhitelabelFooter
+					text={data.settings.brandingText}
+					mutedFg={themeColors.mutedFg}
+				/>
+			)}
+		</div>
+	);
 }

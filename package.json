@@ -1,45 +1,42 @@
 {
   "name": "linkden",
-  "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "type": "module",
   "scripts": {
     "dev": "turbo dev",
-    "dev:web": "turbo -F @linkden/web dev",
-    "dev:server": "turbo -F @linkden/server dev",
-    "dev:docs": "turbo -F @linkden/docs dev",
     "build": "turbo build",
-    "lint": "turbo lint",
-    "typecheck": "turbo typecheck",
-    "test:e2e": "playwright test",
-    "db:generate": "turbo -F @linkden/db db:generate",
+    "check-types": "turbo check-types",
+    "dev:web": "turbo -F web dev:bare",
+    "dev:server": "turbo -F server dev:standalone",
+    "dev:docs": "turbo -F docs dev",
     "db:push": "turbo -F @linkden/db db:push",
-    "db:migrate": "turbo -F @linkden/db db:migrate",
-    "db:studio": "turbo -F @linkden/db db:studio",
-    "db:reset": "pnpm --filter @linkden/server db:reset",
-    "cf:deploy": "pnpm --filter @linkden/server run deploy && pnpm --filter @linkden/web run deploy",
-    "cf:deploy:api": "pnpm --filter @linkden/server run deploy",
-    "cf:deploy:web": "pnpm --filter @linkden/web run deploy",
-    "cf:infra": "pnpm --filter @linkden/infra run deploy",
-    "cf:destroy": "pnpm --filter @linkden/infra destroy",
-    "generate:social-brands": "pnpm add -D simple-icons -w && node scripts/generate-social-brands.mjs && pnpm remove simple-icons -w"
+    "db:generate": "turbo -F @linkden/db db:generate",
+    "deploy": "turbo -F @linkden/infra deploy",
+    "destroy": "turbo -F @linkden/infra destroy",
+    "db:reset": "rm -rf apps/server/.wrangler/state && echo 'Local DB wiped. Run pnpm dev to recreate.'"
+  },
+  "dependencies": {
+    "@linkden/env": "workspace:*",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.0",
-    "@playwright/test": "^1.52.0",
-    "turbo": "^2.5.0",
-    "typescript": "^5.8.0"
+    "@cloudflare/workers-types": "catalog:",
+    "@linkden/config": "workspace:*",
+    "@types/node": "^22.13.14",
+    "turbo": "^2.6.3",
+    "typescript": "catalog:"
   },
   "packageManager": "pnpm@10.29.3",
-  "engines": {
-    "node": ">=20"
-  },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "@biomejs/biome",
       "esbuild",
-      "workerd",
-      "@swc/core",
-      "sharp"
+      "sharp",
+      "workerd"
     ]
   }
 }

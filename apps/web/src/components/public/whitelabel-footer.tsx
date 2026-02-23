@@ -1,38 +1,18 @@
-"use client";
-
 interface WhitelabelFooterProps {
-  brandName?: string;
-  brandLogo?: string;
+	text: string;
+	mutedFg?: string;
+	colorMode?: "light" | "dark";
 }
 
-export function WhitelabelFooter({ brandName, brandLogo }: WhitelabelFooterProps) {
-  if (brandName || brandLogo) {
-    return (
-      <footer className="mt-12 pb-8 text-center">
-        <a
-          href="/"
-          className="inline-flex items-center gap-2 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-        >
-          {brandLogo && <img src={brandLogo} alt={brandName || ""} className="h-4 w-auto" />}
-          {brandName && <span>{brandName}</span>}
-        </a>
-      </footer>
-    );
-  }
-
-  return (
-    <footer className="mt-12 pb-8 text-center">
-      <a
-        href="https://github.com/mrdemonwolf/linkden"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-      >
-        Powered by{" "}
-        <span className="font-semibold">
-          <span className="text-brand-cyan">Link</span>Den
-        </span>
-      </a>
-    </footer>
-  );
+export function WhitelabelFooter({ text, mutedFg, colorMode }: WhitelabelFooterProps) {
+	return (
+		<footer className="pb-6 pt-12 text-center">
+			<p
+				className={`text-xs ${!mutedFg ? (colorMode === "dark" ? "text-gray-600" : "text-gray-400") : ""}`}
+				style={mutedFg ? { color: mutedFg, transition: "color 0.5s ease" } : undefined}
+			>
+				{text}
+			</p>
+		</footer>
+	);
 }
