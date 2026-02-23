@@ -1,99 +1,58 @@
 ---
 title: Appearance
-description: Customize your LinkDen page with branding, colors, fonts, background images, and custom CSS.
+description: Customize your LinkDen page with themes, colors, and custom CSS.
 ---
 
 # Appearance
 
-The appearance settings at `/admin/appearance` let you customize every visual aspect of your public link page beyond the base theme.
+The appearance settings at `/admin/appearance` let you customize the visual look of your public link page beyond the base theme.
 
-## Branding
+## Theme Presets
 
-### Profile Image
+Choose from 7 built-in theme presets. Each preset defines a complete color palette for both light and dark modes. See the [Themes](/docs/features/themes) page for details on each theme.
 
-Upload a profile image that appears at the top of your link page. Supports JPEG, PNG, and WebP formats. Images are automatically resized and optimized.
+## Color Customization
 
-### Display Name
+Override individual theme colors:
 
-The name shown below your profile image. This is typically your name, brand name, or handle.
+- **Primary color** -- The main accent color used for buttons and interactive elements.
+- **Secondary color** -- Supporting color for secondary elements.
+- **Accent color** -- Highlight color for emphasis.
+- **Background color** -- Override the page background.
 
-### Bio
+Colors are set via CSS custom properties (`--ld-primary`, `--ld-secondary`, etc.) and apply on top of the selected theme preset.
 
-A short description that appears below your display name. Use it for a tagline, job title, or brief introduction.
+## Default Color Mode
 
-### Favicon
+Set the default color mode for visitors:
 
-Upload a custom favicon for your link page. This replaces the default browser tab icon. Supports ICO, PNG, and SVG formats.
+- **Light** -- Forces the light variant.
+- **Dark** -- Forces the dark variant.
+- **System** -- Follows the visitor's OS preference.
 
-## Colors
-
-### Primary Color
-
-The main accent color used for link buttons, active states, and interactive elements. Set via a color picker or by entering a hex value directly.
-
-### Background Color
-
-Override the theme's default background color. Useful when you want to keep a theme's layout but match your brand colors exactly.
-
-### Text Color
-
-Override the default text color for headings, body text, and link labels.
-
-## Button Styles
-
-Choose how link buttons are rendered:
-
-- **Filled** -- Solid background with the primary color. White text.
-- **Outlined** -- Transparent background with a border in the primary color.
-- **Soft** -- Light tinted background using the primary color at low opacity.
-
-You can also adjust the button border radius from sharp corners to fully rounded pills.
-
-## Background
-
-### Background Image
-
-Upload a background image that covers the entire page. The image is fixed and centered with `cover` sizing. A semi-transparent overlay ensures text readability.
-
-### Background Gradient
-
-Apply a CSS gradient as the background. Enter any valid CSS gradient value (e.g., `linear-gradient(135deg, #091533, #1a2a6c)`).
-
-## Fonts
-
-### Google Fonts
-
-Enter a Google Fonts family name (e.g., `Inter`, `Poppins`, `JetBrains Mono`) and it is automatically loaded on your public page. You can set separate fonts for headings and body text.
+Visitors can always toggle between light and dark mode using the theme toggle button on the public page.
 
 ## Custom CSS
 
 For advanced customization, add custom CSS that is injected into your public page. This lets you:
 
-- Override any theme styles.
+- Override any theme variable or style.
 - Add animations or transitions.
 - Style specific elements with custom selectors.
 - Implement completely unique designs.
 
-The CSS editor in the admin panel includes syntax highlighting and live preview.
-
 ## Dark / Light Mode Toggle
 
-Visitors to your public page can switch between dark and light mode using the theme toggle button in the page header. The toggle is fully accessible: it has an `aria-label` that describes the current state (e.g., "Switch to light mode") so screen reader users understand what will happen when they activate it.
-
-The initial mode is determined in this order:
+Visitors to your public page can switch between dark and light mode using the theme toggle button. The initial mode is determined by:
 
 1. The visitor's saved preference (stored in `localStorage`).
-2. Your site's default mode as set in the Design tab of the admin panel (`themeMode`: `dark`, `light`, or `system`).
-3. The visitor's OS-level color scheme preference if `system` is selected.
-
-Themes ship with both dark and light variants. Setting `themeMode` to `dark` or `light` locks the starting mode but still allows visitors to switch.
+2. Your site's default color mode setting.
+3. The visitor's OS-level color scheme preference if "system" is selected.
 
 ## Whitelabel
 
-Toggle off all LinkDen branding with a single switch:
+Toggle off all LinkDen branding with a single switch in `/admin/settings` under the **Branding** section:
 
 - Removes the "Powered by LinkDen" footer.
-- Removes the LinkDen favicon (uses your custom one instead).
+- Optionally shows custom footer text and link instead.
 - No attribution is required under the MIT license.
-
-Access this setting at `/admin/settings` under the Branding section.

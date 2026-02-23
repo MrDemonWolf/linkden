@@ -1,11 +1,22 @@
 ---
 title: Apple Wallet
-description: Generate signed Apple Wallet passes so visitors can save your contact information to their iPhone or Mac.
+description: Configure Apple Wallet pass settings so visitors can save your contact information.
 ---
 
-# Apple Wallet Pass
+# Apple Wallet
 
-LinkDen can generate signed `.pkpass` files that visitors download and add to Apple Wallet on iOS and macOS. This creates a digital business card that lives in their wallet app alongside boarding passes and tickets.
+LinkDen supports Apple Wallet pass configuration. When enabled, visitors can download a pass containing your contact information to their iPhone or Mac wallet.
+
+## Enabling Apple Wallet
+
+Toggle the Apple Wallet feature in `/admin/settings` under the **Apple Wallet** section. Configure:
+
+| Field | Description |
+|-------|-------------|
+| Enable Apple Wallet | Toggle the feature on/off |
+| Team ID | Your Apple Developer team identifier |
+| Pass Type ID | Registered pass type identifier |
+| Custom QR URL | Optional custom URL for the QR code on the pass |
 
 ## Prerequisites
 
@@ -44,7 +55,7 @@ To generate Apple Wallet passes, you need:
 
 ### 4. Convert to Base64
 
-Convert the certificates to base64 strings for environment variables:
+Convert the certificates to base64 strings:
 
 ```bash
 # Download the Apple WWDR certificate
@@ -62,58 +73,24 @@ openssl pkcs12 -in pass.p12 -nocerts -out signer_key.pem
 base64 -i signer_key.pem | tr -d '\n' > signer_key_base64.txt
 ```
 
-### 5. Configure Environment Variables
+### 5. Configure in Admin Settings
 
-Add the following to `apps/server/.env`:
+Navigate to `/admin/settings` and fill in the **Apple Wallet** section:
 
-```bash
-APPLE_PASS_TYPE_ID=pass.com.yourdomain.linkden
-APPLE_TEAM_ID=YOUR_TEAM_ID
-APPLE_WWDR_CERT=<contents of wwdr_base64.txt>
-APPLE_SIGNER_CERT=<contents of signer_cert_base64.txt>
-APPLE_SIGNER_KEY=<contents of signer_key_base64.txt>
-APPLE_SIGNER_PASSPHRASE=your-p12-passphrase
-```
+- **Team ID** -- Your Apple Developer team identifier.
+- **Pass Type ID** -- The identifier you registered (e.g., `pass.com.yourdomain.linkden`).
+- **Custom QR URL** -- Optional URL for the QR code on the pass.
 
-All six variables are required. If any are missing or malformed, the wallet drawer in the admin panel will display a configuration warning listing exactly which variables need attention.
+## Pass Preview
 
-### 6. Configure the Pass in the Admin Panel
+The `wallet.generatePreview` API procedure returns your profile data, enabled link blocks, and QR URL for previewing how the pass will appear.
 
-Navigate to the **Wallet** section (accessible via the left panel drawer in the admin editor) to customize the pass appearance:
+## API Reference
 
-- **Card Title** -- The name shown on the pass.
-- **Header Fields** -- Up to 3 fields shown at the top (e.g., job title, company).
-- **Primary Fields** -- Your name as the main display.
-- **Secondary Fields** -- Phone, email, website.
-- **Back Fields** -- Additional info shown when the pass is flipped.
-- **Colors** -- Background, foreground, and label colors.
-- **Logo** -- Your logo displayed on the pass.
-
-The drawer includes a **live preview card** that renders your pass design in real time as you edit the fields and colors, so you can see exactly how it will appear in Apple Wallet before generating the file.
-
-## Configuration Warnings
-
-The wallet drawer checks for required environment variables on load and surfaces any issues as a warning banner. The banner lists each missing or empty variable by name so you know exactly what to configure without digging through logs. The pass generation button is disabled until all required variables are present.
-
-## Checking Wallet Status
-
-Use the `wallet.status` API procedure to programmatically check whether the wallet feature is correctly configured:
-
-```typescript
-// Response
-{
-  configured: boolean,       // true if all required env vars are present
-  missingVars: string[]      // names of any missing variables
-}
-```
+| Procedure | Description |
+|-----------|-------------|
+| `wallet.getConfig` | Get current wallet settings |
+| `wallet.updateConfig` | Update wallet settings |
+| `wallet.generatePreview` | Generate pass preview data |
 
 See [API Endpoints](/docs/api/endpoints) for the full procedure reference.
-
-## Adding a Wallet Block
-
-1. Open the admin panel and select the **Add Blocks** tab in the left panel.
-2. Click the **Apple Wallet** block type. Only one wallet block can exist at a time (single-instance limit).
-3. Set a title (e.g., "Add to Apple Wallet").
-4. Publish your changes.
-
-The button appears on your public page. On iOS and macOS, tapping it downloads the `.pkpass` file and prompts the user to add it to their wallet. On other platforms, the button is hidden or shows a graceful fallback message.

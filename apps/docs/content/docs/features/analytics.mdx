@@ -1,48 +1,64 @@
 ---
 title: Analytics
-description: Track page views, link clicks, referrers, and visitor countries with the built-in analytics dashboard.
+description: Track page views, link clicks, referrers, and visitor countries with the built-in privacy-friendly analytics.
 ---
 
 # Analytics
 
 LinkDen includes a built-in analytics dashboard at `/admin/analytics` that tracks visitor activity without relying on third-party services.
 
+## Dashboard
+
+### Period Selector
+
+Filter all analytics data by time period:
+
+- **7 days** (default)
+- **30 days**
+- **90 days**
+
+All queries re-run when the period changes.
+
+### Stat Cards
+
+Two summary cards displayed in a 2-column grid:
+
+| Card | Icon | Description |
+|------|------|-------------|
+| Total Views | Eye (blue) | Page views for the selected period |
+| Total Clicks | MousePointerClick (green) | Link clicks for the selected period |
+
+### Views Over Time
+
+A bar chart showing daily page views for the selected period. Bars highlight on hover and show the count. Date labels display month and day (e.g., "Feb 23").
+
+### Bottom Grid
+
+Three cards in a 3-column layout (stacks to 1 column on mobile):
+
+| Card | Description | Limit |
+|------|-------------|-------|
+| **Top Links** | Block title, URL, and click count ranked by clicks | Top 10 |
+| **Referrers** | Referrer domain and count ("Direct" for null referrers) | Top 10 |
+| **Countries** | Country name and visit count | Top 20 |
+
 ## What is Tracked
 
 ### Page Views
 
-Every visit to your public link page is recorded with a timestamp. The dashboard shows:
-
-- **Total views** over all time.
-- **Views today** for a quick pulse check.
-- **Time-series chart** showing views over the last 7, 30, or 90 days.
+Every visit to your public link page is recorded with:
+- Timestamp
+- Referrer URL
+- User agent
+- Country (from Cloudflare `CF-IPCountry` header)
 
 ### Link Clicks
 
-Every click on a link button is tracked individually. You can see:
-
-- **Total clicks** per link.
-- **Click-through rate** (clicks / views).
-- **Most popular links** ranked by click count.
-- **Click trends** over time for each link.
-
-### Referrers
-
-The referring URL is captured for each page view, showing where your traffic comes from:
-
-- Direct visits (no referrer).
-- Social media platforms.
-- Search engines.
-- Other websites.
-
-The referrer list is displayed as a ranked table with visit counts.
-
-### Countries
-
-Visitor country is determined from the Cloudflare `CF-IPCountry` header (no IP addresses are stored). The dashboard shows:
-
-- A ranked list of countries by visit count.
-- Percentage breakdown of traffic by country.
+Every click on a link block is tracked with:
+- Block ID
+- Referrer URL
+- User agent
+- Country
 
 ## Privacy
 
@@ -54,16 +70,10 @@ LinkDen's analytics are privacy-focused:
 - **No fingerprinting** techniques are used.
 - Data is stored in your own D1 database, not sent to any external service.
 
-## Dashboard Views
+## Dashboard on Home Page
 
-The analytics dashboard provides several views:
-
-- **Overview** -- Summary cards with key metrics and a combined chart.
-- **Links** -- Per-link click data with sorting and filtering.
-- **Referrers** -- Table of referral sources ranked by volume.
-- **Countries** -- Geographic breakdown of visitors.
-- **Time Range** -- Filter all data by last 7 days, 30 days, 90 days, or all time.
+The admin dashboard at `/admin` also shows a mini bar chart with views over the last 7 days, plus 3 stat cards (total views, total clicks, unread contacts). The full analytics page provides more detailed breakdowns.
 
 ## Data Retention
 
-Analytics data is stored indefinitely in your D1 database. If you want to clear old data, you can use the export feature to back up the data first, then clear the analytics table from the admin settings.
+Analytics data is stored indefinitely in your D1 database. Use the export feature in settings to back up data if needed.

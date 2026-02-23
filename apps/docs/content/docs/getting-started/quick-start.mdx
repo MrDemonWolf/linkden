@@ -5,87 +5,102 @@ description: Get your LinkDen instance set up and publishing your first links in
 
 # Quick Start
 
-This guide walks you through the first-time setup of a deployed LinkDen instance. If you have not yet deployed, see the [Installation](/docs/getting-started/installation) guide first.
+This guide walks you through the first-time setup of a LinkDen instance. If you have not yet installed LinkDen, see the [Installation](/docs/getting-started/installation) guide first.
 
 ---
 
-## 1. Access the Admin Panel
+## 1. Run the Setup Wizard
 
-Navigate to `/admin` on your LinkDen domain (e.g., `https://yoursite.com/admin`).
+Navigate to `/admin/setup` on your LinkDen instance (e.g., `http://localhost:3001/admin/setup`).
 
-You will be prompted to sign in via your configured auth provider:
+The setup wizard walks you through 4 steps:
 
-- **Cloudflare Access** -- Log in through your Cloudflare Access policy (SSO, one-time PIN, etc.).
-- **Clerk** -- Log in via the Clerk-hosted sign-in page using email, Google, or another configured provider.
+### Step 1: Account
 
-After signing in, you land directly in the 3-panel admin editor.
+Create your admin account with Better Auth (email/password):
+
+- **Name** -- Your display name (required).
+- **Email** -- Your email address for sign-in (required).
+- **Password** -- Minimum 8 characters (required).
+
+### Step 2: Profile
+
+Set up your public profile:
+
+- **Bio** -- A short tagline or description (optional).
+- **Avatar URL** -- URL to your profile image (optional).
+
+Both fields can be skipped and configured later in settings.
+
+### Step 3: Theme
+
+Choose a theme preset from the 7 available themes. Each theme is shown as a card with two color swatches. Click any theme to select it.
+
+### Step 4: Done
+
+A confirmation screen with a "Go to Builder" button that redirects to `/admin/builder`.
 
 ---
 
-## 2. Set Up Your Profile
+## 2. Add Your First Blocks
 
-In the **right panel**, click the **Settings** tab. Fill in your profile details:
+The block builder at `/admin/builder` uses a two-panel layout:
 
-- **Display Name** -- Your name or brand (shown on the public page).
-- **Bio** -- A short tagline or description.
-- **Avatar** -- Upload a profile photo (JPEG, PNG, or WebP).
-- **Verified Badge** -- Toggle to show a verified checkmark next to your name.
+- **Left panel** -- Your block list with an "Add Block" dropdown button.
+- **Right panel** -- A live phone preview (visible on larger screens).
 
-Click **Save** (these changes go to draft -- you will publish everything at the end).
+Click **Add Block** to see the 5 block types:
 
----
+| Block Type | Description |
+|------------|-------------|
+| **Link** | A clickable button linking to an external URL |
+| **Header** | A text heading to group or label sections |
+| **Social Icons** | A row of social media icon links |
+| **Embed** | Embed YouTube, Spotify, SoundCloud, or custom content |
+| **Contact Form** | A contact form for visitors to message you |
 
-## 3. Add Your First Links
+### Adding a Link
 
-In the **left panel**, the **Add Blocks** tab is shown by default.
-
-1. Use the search bar to find a block type or browse the grid.
-2. Click **Link** to add a standard link block.
-3. In the edit form that appears, fill in:
+1. Click **Add Block** and select **Link**.
+2. In the edit panel that slides in, fill in:
    - **Title** -- The text shown on the button (e.g., "My Website").
-   - **URL** -- The destination URL (e.g., `https://yoursite.com`).
-   - **Icon** -- Optional. Search the built-in brand icon set.
-4. Click **Save**.
+   - **URL** -- The destination URL.
+3. Use the **Style** tab to configure icon, colors, border, and animation.
+4. Use the **Schedule** tab to set start/end dates for time-limited visibility.
+5. Click **Save Changes**.
 
-The link appears instantly in the phone preview in the center panel.
+### Reordering Blocks
 
-Repeat for as many links as you need. You can also add:
-
-- **Heading** blocks to group links visually.
-- **Text** blocks for announcements or descriptions.
-- **Spacer** blocks for breathing room between sections.
-
-### Reordering Links
-
-Drag any link card directly on the phone preview to reorder. The order updates live.
+Drag any block in the list using the grip handle to reorder. The order updates immediately via the `blocks.reorder` mutation.
 
 ---
 
-## 4. Choose a Theme
+## 3. Manage Social Icons
 
-In the **right panel**, click the **Design** tab.
-
-- Browse the theme grid. Click any theme card to apply it instantly -- the preview updates in real time.
-- Each theme has dark and light variants. Use the **Mode** selector to choose `dark`, `light`, or `system` (follows the visitor's OS preference).
-- Adjust the **Accent Color**, **Background Color**, and **Text Color** if you want to go beyond the theme defaults.
-
-Visitors can also toggle dark/light mode themselves using the button on your public page.
+Navigate to `/admin/social` to toggle which social networks are active. Active networks become available for use in **Social Icons** blocks. Search by name or filter to see only active networks.
 
 ---
 
-## 5. Publish
+## 4. Configure Settings
 
-When you are happy with your setup, click the **Publish** button in the top bar.
+Navigate to `/admin/settings` to configure your instance. The settings page has 11 sections:
 
-Publish saves all draft changes to the live database and automatically purges the edge cache. Your public page updates within seconds.
-
-The Publish button is styled with a gradient glow to make it easy to spot.
+- **Profile** -- Display name, avatar, bio, verified badge.
+- **SEO** -- Page title, meta description, OG image.
+- **Contact Form** -- Enable/disable, delivery mode (database only, email notification, or both).
+- **CAPTCHA** -- Provider (none, Cloudflare Turnstile, Google reCAPTCHA) with site key and secret key.
+- **Email** -- Provider (Resend or Cloudflare Email Workers), API key, from address.
+- **Branding** -- Whitelabel footer toggle with custom text and link.
+- **vCard** -- Enable/disable vCard download button.
+- **Apple Wallet** -- Enable wallet pass with Team ID, Pass Type ID, custom QR URL.
+- **Export / Import** -- Backup and restore data as JSON.
+- **About** -- Current version and update check.
 
 ---
 
-## 6. View Your Public Page
+## 5. View Your Public Page
 
-Click **View Page** in the top bar (or navigate directly to your domain root) to see your live public link page.
+Click **View Page** in the dashboard header (or navigate to your domain root) to see your live public link page.
 
 Share this URL as your link-in-bio across social media profiles.
 
@@ -95,10 +110,9 @@ Share this URL as your link-in-bio across social media profiles.
 
 | Topic | Link |
 |-------|------|
-| Custom domain setup | [Custom Domain](/docs/self-hosting/custom-domain) |
+| Block types and configuration | [Links & Blocks](/docs/features/links) |
+| Themes and appearance | [Themes](/docs/features/themes) |
 | Apple Wallet business card | [Apple Wallet](/docs/features/apple-wallet) |
 | Contact form setup | [Contact Form](/docs/features/contact-form) |
 | Analytics | [Analytics](/docs/features/analytics) |
 | vCard digital business card | [vCard](/docs/features/vcard) |
-| Themes and appearance | [Appearance](/docs/features/appearance) |
-| Environment variable reference | [Environment Variables](/docs/self-hosting/environment-variables) |

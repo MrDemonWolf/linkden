@@ -31,8 +31,7 @@ This guide covers deploying both the LinkDen API server and web app on Coolify u
    - Access the Coolify dashboard at `http://your-server-ip:8000`.
 
 2. **A domain name** (optional but recommended for SSL).
-3. **A Clerk application** set up at [clerk.com](https://clerk.com) with your API keys ready.
-4. The LinkDen repository accessible from your Coolify instance (public GitHub repo or a connected private repo).
+3. The LinkDen repository accessible from your Coolify instance (public GitHub repo or a connected private repo).
 
 ## Architecture on Coolify
 
@@ -156,23 +155,15 @@ COPY --from=deps /app/packages/ ./packages/
 COPY . .
 
 # Build-time environment variables (NEXT_PUBLIC_* must be set at build time)
-ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SERVER_URL
 ARG NEXT_PUBLIC_SITE_URL
 ARG NEXT_PUBLIC_SITE_NAME=LinkDen
 ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
-ARG NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-ARG NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-ARG CLERK_SECRET_KEY
 
-ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_SERVER_URL=$NEXT_PUBLIC_SERVER_URL
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ENV NEXT_PUBLIC_SITE_NAME=$NEXT_PUBLIC_SITE_NAME
 ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
-ENV NEXT_PUBLIC_CLERK_SIGN_IN_URL=$NEXT_PUBLIC_CLERK_SIGN_IN_URL
-ENV NEXT_PUBLIC_CLERK_SIGN_UP_URL=$NEXT_PUBLIC_CLERK_SIGN_UP_URL
-ENV CLERK_SECRET_KEY=$CLERK_SECRET_KEY
 
 RUN pnpm --filter @linkden/web build
 
@@ -208,10 +199,9 @@ services:
     ports:
       - "8787:8787"
     environment:
-      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
-      - CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL:-http://localhost:8787}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3001}
-      - APP_URL=${APP_URL:-http://localhost:3001}
       - DATABASE_URL=file:/data/linkden.db
       - RESEND_API_KEY=${RESEND_API_KEY:-}
       - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL:-}
@@ -229,12 +219,10 @@ services:
       context: .
       dockerfile: Dockerfile.web
       args:
-        - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8787}
+        - NEXT_PUBLIC_SERVER_URL=${NEXT_PUBLIC_SERVER_URL:-http://localhost:8787}
         - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-http://localhost:3001}
         - NEXT_PUBLIC_SITE_NAME=${NEXT_PUBLIC_SITE_NAME:-LinkDen}
         - NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
-        - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
     ports:
       - "3001:3001"
     depends_on:
@@ -295,10 +283,9 @@ In each service's settings in the Coolify dashboard, add the required environmen
 
 | Variable | Value | Notes |
 |----------|-------|-------|
-| `CLERK_SECRET_KEY` | `sk_live_...` | Mark as secret |
-| `CLERK_PUBLISHABLE_KEY` | `pk_live_...` | |
+| `BETTER_AUTH_SECRET` | `your-random-secret` | Mark as secret; generate with `openssl rand -base64 32` |
+| `BETTER_AUTH_URL` | `https://api.yourdomain.com` | Base URL of the API server |
 | `CORS_ORIGIN` | `https://yourdomain.com` | Must match web app URL |
-| `APP_URL` | `https://yourdomain.com` | |
 | `DATABASE_URL` | `file:/data/linkden.db` | SQLite file path |
 | `RESEND_API_KEY` | `re_...` | Optional, mark as secret |
 | `RESEND_FROM_EMAIL` | `contact@yourdomain.com` | Optional |
@@ -310,26 +297,12 @@ Since `NEXT_PUBLIC_*` variables must be available at build time, add them as **B
 
 | Argument | Value |
 |----------|-------|
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | `pk_live_...` |
-| `NEXT_PUBLIC_API_URL` | `https://api.yourdomain.com` |
+| `NEXT_PUBLIC_SERVER_URL` | `https://api.yourdomain.com` |
 | `NEXT_PUBLIC_SITE_URL` | `https://yourdomain.com` |
 | `NEXT_PUBLIC_SITE_NAME` | `LinkDen` |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | `0x...` (optional) |
-| `CLERK_SECRET_KEY` | `sk_live_...` |
 
-## Step 7: Configure Clerk
-
-Update your Clerk application to allow the Coolify deployment URLs:
-
-1. Go to the [Clerk dashboard](https://dashboard.clerk.com).
-2. Open your application.
-3. Under **Domains**, add your production domain (e.g., `yourdomain.com`).
-4. Under **Paths**:
-   - Sign-in URL: `/sign-in`
-   - Sign-up URL: `/sign-up`
-   - After sign-in redirect: `/admin`
-
-## Step 8: Set Up Custom Domains
+## Step 7: Set Up Custom Domains
 
 In the Coolify dashboard for each service:
 
@@ -348,11 +321,11 @@ At your DNS provider, add A records pointing to your Coolify server's IP address
 
 If your server has an IPv6 address, add AAAA records as well.
 
-## Step 9: SSL with Let's Encrypt
+## Step 8: SSL with Let's Encrypt
 
 Coolify automatically provisions Let's Encrypt SSL certificates for your custom domains. No manual configuration is required.
 
-After adding a custom domain in Step 8:
+After adding a custom domain in Step 7:
 
 1. Coolify detects the domain and requests a certificate from Let's Encrypt.
 2. The certificate is provisioned within a few minutes (DNS must be propagated first).
@@ -365,6 +338,12 @@ If SSL provisioning fails:
 - Verify your DNS records are correct and propagated (use `dig yourdomain.com A`).
 - Ensure ports 80 and 443 are open on your server's firewall.
 - Check the Coolify logs for Let's Encrypt errors.
+
+## Step 9: First-Time Auth Setup
+
+After deploying, visit `https://yourdomain.com/admin/setup` to complete the setup wizard. This creates your admin account with your chosen email and password.
+
+After setup is complete, sign in at `/admin/login`.
 
 ## Step 10: Persistent Storage for SQLite
 
@@ -486,7 +465,7 @@ Check the container logs in Coolify (click on the service, then **Logs**). Commo
 
 ### Web app shows "Failed to fetch" or API errors
 
-- Verify `NEXT_PUBLIC_API_URL` was set correctly at **build time**.
+- Verify `NEXT_PUBLIC_SERVER_URL` was set correctly at **build time**.
 - Check that `CORS_ORIGIN` on the API matches the web app's domain.
 - Ensure the API service is running and healthy.
 

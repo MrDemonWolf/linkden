@@ -1,89 +1,96 @@
 ---
 title: Configuration
-description: Configure Clerk authentication, Cloudflare services, and all environment variables for your LinkDen instance.
+description: Configure Better Auth, Cloudflare services, and environment variables for your LinkDen instance.
 ---
 
 # Configuration
 
-LinkDen uses environment variables for all configuration. There are three `.env` files across the monorepo, each serving a different app.
+LinkDen uses a minimal set of environment variables. Most configuration (email, CAPTCHA, branding, etc.) is managed through the admin settings UI and stored in the database.
 
-## Root `.env`
+## Environment Variables
 
-The root `.env` file contains variables shared across the monorepo.
+The root `.env` file contains all required variables:
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `CLOUDFLARE_API_TOKEN` | API token for Cloudflare deployments | Yes |
-| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID | Yes |
+| Variable | Description | Example | Required |
+|----------|-------------|---------|----------|
+| `BETTER_AUTH_SECRET` | Secret key for session signing | `your-secret-key-here` | Yes |
+| `BETTER_AUTH_URL` | Base URL for the auth server | `http://localhost:3000` | Yes |
+| `CORS_ORIGIN` | Allowed CORS origin (frontend URL) | `http://localhost:3001` | Yes |
+| `NEXT_PUBLIC_SERVER_URL` | Public URL of the API server | `http://localhost:3000` | Yes |
 
-## Web App (`apps/web/.env`)
+Copy the example file to get started:
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (starts with `pk_`) | Yes |
-| `CLERK_SECRET_KEY` | Clerk secret key (starts with `sk_`) | Yes |
-| `NEXT_PUBLIC_API_URL` | URL of the Hono API server | Yes |
-| `NEXT_PUBLIC_SITE_URL` | Public URL of the web app | Yes |
-| `NEXT_PUBLIC_SITE_NAME` | Display name for the site | No |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key for CAPTCHA | No |
+```bash
+cp .env.example .env
+```
 
-## Server App (`apps/server/.env`)
+## Better Auth Setup
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `CLERK_SECRET_KEY` | Clerk secret key (same as web) | Yes |
-| `CLERK_PUBLISHABLE_KEY` | Clerk publishable key | Yes |
-| `DATABASE_ID` | Cloudflare D1 database ID | Yes |
-| `RESEND_API_KEY` | Resend API key for contact form emails | No |
-| `RESEND_FROM_EMAIL` | Sender email for contact form | No |
-| `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret for CAPTCHA verification | No |
-| `APPLE_PASS_TYPE_ID` | Apple Wallet pass type identifier | No |
-| `APPLE_TEAM_ID` | Apple Developer team identifier | No |
-| `APPLE_WWDR_CERT` | Base64-encoded Apple WWDR certificate | No |
-| `APPLE_SIGNER_CERT` | Base64-encoded signer certificate | No |
-| `APPLE_SIGNER_KEY` | Base64-encoded signer private key | No |
-| `APPLE_SIGNER_PASSPHRASE` | Passphrase for the signer key | No |
+LinkDen uses [Better Auth](https://www.better-auth.com/) for authentication with email/password sign-in. No external auth service is needed.
 
-## Clerk Authentication Setup
+### How It Works
 
-1. Create a free account at [clerk.com](https://clerk.com).
-2. Create a new application in the Clerk dashboard.
-3. Copy the **Publishable Key** and **Secret Key** from the API Keys section.
-4. Paste them into both `apps/web/.env` and `apps/server/.env`.
-5. **Important**: Restrict sign-ups to your email only.
-   - Go to **User & Authentication > Restrictions** in the Clerk dashboard.
-   - Enable the **Allowlist** and add your email address.
-   - This ensures only you can access the admin panel.
+1. During the setup wizard at `/admin/setup`, you create an admin account with email and password.
+2. Better Auth creates a session with secure cookies (`sameSite: none`, `secure: true`, `httpOnly: true`).
+3. All admin API routes are protected by Better Auth session validation.
+4. The session cookie is sent cross-origin between the Next.js frontend and the Hono API server.
+
+### Generating a Secret
+
+Generate a strong secret for `BETTER_AUTH_SECRET`:
+
+```bash
+openssl rand -base64 32
+```
+
+### Setting the URLs
+
+- `BETTER_AUTH_URL` should point to your API server (where Better Auth runs).
+- `CORS_ORIGIN` should point to your web frontend.
+- `NEXT_PUBLIC_SERVER_URL` should match `BETTER_AUTH_URL` (the API server URL).
+
+For local development:
+
+```bash
+BETTER_AUTH_SECRET=your-generated-secret
+BETTER_AUTH_URL=http://localhost:3000
+CORS_ORIGIN=http://localhost:3001
+NEXT_PUBLIC_SERVER_URL=http://localhost:3000
+```
+
+For production:
+
+```bash
+BETTER_AUTH_SECRET=your-production-secret
+BETTER_AUTH_URL=https://api.yourdomain.com
+CORS_ORIGIN=https://yourdomain.com
+NEXT_PUBLIC_SERVER_URL=https://api.yourdomain.com
+```
+
+## Runtime Configuration (Admin Settings)
+
+Most configuration is managed through the admin settings page (`/admin/settings`) and stored in the database. This includes:
+
+- **Email provider** -- Resend or Cloudflare Email Workers (API key, from address).
+- **CAPTCHA** -- Cloudflare Turnstile or Google reCAPTCHA (site key, secret key).
+- **Branding** -- Whitelabel footer text and link.
+- **vCard** -- Contact card enable/disable.
+- **Apple Wallet** -- Team ID, Pass Type ID, custom QR URL.
+- **SEO** -- Page title, meta description, OG image.
+
+This approach keeps the `.env` file minimal and makes it easy to change settings without redeploying.
 
 ## Cloudflare Setup
 
-1. Log in to the [Cloudflare dashboard](https://dash.cloudflare.com).
-2. Find your **Account ID** on the right sidebar of the overview page.
-3. Create an **API Token** with the following permissions:
-   - Account: Cloudflare Pages (Edit)
-   - Account: Cloudflare Workers (Edit)
-   - Account: D1 (Edit)
-4. Add both values to your root `.env` file.
+For deployment to Cloudflare, you need:
 
-## Cloudflare Turnstile (Optional)
+1. A free account at [cloudflare.com](https://cloudflare.com).
+2. A **Cloudflare API Token** with permissions for Workers, Pages, and D1.
+3. Your **Cloudflare Account ID** (found on the right sidebar of the dashboard overview).
 
-Turnstile provides invisible CAPTCHA protection for the contact form:
-
-1. Go to **Turnstile** in the Cloudflare dashboard.
-2. Add a new site with your domain.
-3. Copy the **Site Key** to `apps/web/.env` as `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
-4. Copy the **Secret Key** to `apps/server/.env` as `TURNSTILE_SECRET_KEY`.
-
-## Resend Email (Optional)
-
-Resend handles sending contact form submissions to your email:
-
-1. Create an account at [resend.com](https://resend.com).
-2. Verify your domain or use the sandbox domain for testing.
-3. Generate an API key and add it to `apps/server/.env`.
-4. Set `RESEND_FROM_EMAIL` to your verified sender address.
+These are used by the Alchemy deployment tool. See [Deployment](/docs/getting-started/deployment) for details.
 
 ## Next Steps
 
 - [Deployment](/docs/getting-started/deployment) -- Deploy your configured instance to Cloudflare.
-- [Environment Variables Reference](/docs/self-hosting/environment-variables) -- Complete reference for all variables.
+- [Settings](/docs/admin/settings) -- Configure all runtime settings through the admin panel.

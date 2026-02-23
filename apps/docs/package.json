@@ -10,7 +10,10 @@
     "postinstall": "fumadocs-mdx"
   },
   "dependencies": {
+    "@linkden/email": "workspace:*",
     "@orama/orama": "^3.1.18",
+    "@react-email/components": "^0.0.36",
+    "@react-email/render": "^1.0.0",
     "fumadocs-core": "16.5.1",
     "fumadocs-mdx": "14.2.6",
     "fumadocs-ui": "16.5.1",

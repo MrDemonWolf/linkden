@@ -10,6 +10,7 @@ export function baseOptions(): BaseLayoutProps {
     githubUrl: "https://github.com/mrdemonwolf/linkden",
     links: [
       { text: "Docs", url: "/docs" },
+      { text: "Email Templates", url: "/emails" },
     ],
     themeSwitch: { enabled: true, mode: "light-dark-system" },
     searchToggle: { enabled: true },

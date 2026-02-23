@@ -102,15 +102,18 @@ CLOUDFLARE_ACCOUNT_ID=your-account-id-here
 
 # App URLs (update after first deploy with your actual worker URLs)
 NEXT_PUBLIC_SITE_URL=https://linkden-web.<your-subdomain>.workers.dev
-NEXT_PUBLIC_API_URL=https://linkden-api.<your-subdomain>.workers.dev
-APP_URL=https://linkden-api.<your-subdomain>.workers.dev
+NEXT_PUBLIC_SERVER_URL=https://linkden-api.<your-subdomain>.workers.dev
 CORS_ORIGIN=https://linkden-web.<your-subdomain>.workers.dev
 
-# Authentication (choose one or both)
-CF_ACCESS_TEAM_DOMAIN=your-team-domain
-# OR
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_your-key
-CLERK_SECRET_KEY=sk_live_your-key
+# Better Auth
+BETTER_AUTH_SECRET=your-random-secret-here
+BETTER_AUTH_URL=https://linkden-api.<your-subdomain>.workers.dev
+```
+
+Generate a secure `BETTER_AUTH_SECRET` with:
+
+```bash
+openssl rand -base64 32
 ```
 
 See the [Environment Variables reference](/docs/self-hosting/environment-variables) for a full list of all variables.
@@ -123,7 +126,7 @@ Create the D1 database:
 npx wrangler d1 create linkden-db
 ```
 
-Copy the `database_id` from the output and update `apps/server/wrangler.toml`:
+Copy the `database_id` from the output and update `apps/server/wrangler.jsonc`:
 
 ```toml
 [[d1_databases]]
@@ -177,34 +180,44 @@ pnpm cf:deploy:web
 
 ## Step 7: Set Up Authentication
 
-LinkDen supports Cloudflare Access and/or Clerk for admin authentication. For Cloudflare deployments, **Cloudflare Access** is recommended — it protects your admin panel at the edge before requests reach your Worker.
+LinkDen uses **Better Auth** with email/password authentication. On first run, a setup wizard at `/admin/setup` guides you through creating the initial admin account.
 
-### Quick Cloudflare Access Setup
+### First-Time Setup
 
-1. Go to [Zero Trust](https://one.dash.cloudflare.com) in the Cloudflare dashboard.
-2. Set up a team name (e.g., `mycompany`) if you have not already.
-3. Go to **Settings > Authentication** and add an identity provider (One-time PIN is the simplest).
-4. Go to **Access > Applications > Add an application > Self-hosted**.
-5. Set the application domain to `linkden-web.<your-subdomain>.workers.dev` with path `/admin`.
-6. Create an access policy that allows only your email address.
-7. Set `CF_ACCESS_TEAM_DOMAIN` in `apps/server/wrangler.toml`:
+1. Deploy the application (Steps 5–6 above).
+2. Visit `https://linkden-web.<your-subdomain>.workers.dev/admin/setup`.
+3. Complete the setup wizard to create your admin account (name, email, and password).
+4. After setup is complete, sign in at `/admin/login`.
 
-```toml
-[vars]
-CF_ACCESS_TEAM_DOMAIN = "mycompany"
-```
+### Set Auth Secrets on the API Worker
 
-Then redeploy: `pnpm cf:deploy:api`
-
-See the [Authentication guide](/docs/api/authentication) for detailed instructions, Clerk setup, or using both providers together.
-
-## Step 8: Set Secrets (Optional)
-
-If using Clerk or Resend, set their secret keys as encrypted secrets on the API Worker:
+Set your Better Auth secret as an encrypted secret on the API Worker:
 
 ```bash
 cd apps/server
-echo "sk_live_your-key" | wrangler secret put CLERK_SECRET_KEY
+echo "your-better-auth-secret" | wrangler secret put BETTER_AUTH_SECRET
+```
+
+Or configure `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` via the Cloudflare dashboard:
+**Workers & Pages > linkden-api > Settings > Variables**.
+
+### Auth Environment Variables
+
+| Variable | Where | Description |
+|----------|-------|-------------|
+| `BETTER_AUTH_SECRET` | API Worker (secret) | Random secret for session signing |
+| `BETTER_AUTH_URL` | API Worker | Base URL of the API server |
+| `CORS_ORIGIN` | API Worker | Frontend URL (must match exactly) |
+| `NEXT_PUBLIC_SERVER_URL` | Web Worker / build | Public URL of the API server |
+
+See the [Authentication guide](/docs/api/authentication) for more details.
+
+## Step 8: Set Secrets (Optional)
+
+If using Resend for email, set its secret key as an encrypted secret on the API Worker:
+
+```bash
+cd apps/server
 echo "re_your-key" | wrangler secret put RESEND_API_KEY
 ```
 
@@ -213,8 +226,8 @@ Or via the Cloudflare dashboard: **Workers & Pages > linkden-api > Settings > Va
 ## Step 9: Verify the Deployment
 
 1. Visit your web Worker URL. You should see the public link page.
-2. Navigate to `/admin` and confirm the sign-in flow works.
-3. Sign in and try creating a link to verify the API connection.
+2. Navigate to `/admin/setup` on first run to create your admin account.
+3. Sign in at `/admin/login` and try creating a link to verify the API connection.
 4. Check the analytics dashboard.
 
 If something is not working, check the Worker logs:
@@ -239,9 +252,9 @@ After adding custom domains, update your environment variables:
 
 ```bash
 NEXT_PUBLIC_SITE_URL=https://links.yourdomain.com
-NEXT_PUBLIC_API_URL=https://api.yourdomain.com
-APP_URL=https://api.yourdomain.com
+NEXT_PUBLIC_SERVER_URL=https://api.yourdomain.com
 CORS_ORIGIN=https://links.yourdomain.com
+BETTER_AUTH_URL=https://api.yourdomain.com
 ```
 
 Then redeploy: `pnpm cf:deploy`
@@ -334,7 +347,7 @@ Check the Worker logs:
 wrangler tail linkden-api --status error
 ```
 
-Common causes: missing environment variable, D1 binding not configured, auth key mismatch.
+Common causes: missing environment variable, D1 binding not configured, `BETTER_AUTH_SECRET` mismatch.
 
 ## Cost Considerations
 

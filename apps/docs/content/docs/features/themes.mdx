@@ -1,45 +1,61 @@
 ---
 title: Themes
-description: Choose from 8 built-in themes with dark and light variants, or customize the appearance to match your brand.
+description: Choose from 7 built-in themes with dark and light variants, or customize colors to match your brand.
 ---
 
 # Themes
 
-LinkDen ships with 8 built-in themes, each available in dark and light variants (16 total). An auto mode follows the visitor's system preference.
+LinkDen ships with 7 built-in themes, each available in dark and light variants (14 total). An auto mode follows the visitor's system preference.
 
 ## Available Themes
 
 ### Default
-A clean, minimal design with a white background (light) or dark gray background (dark). Neutral colors that work for any brand.
+A clean, modern design with cyan (`#0FACED`) accents. Medium border radius. Works for any brand.
 
-### Midnight Glass
-A premium dark theme with deep navy (#091533) background and cyan (#0FACED) accents. Frosted glass card effects with subtle backdrop blur.
+### Corporate Classic
+Professional navy (`#1E3A5F`) palette with subtle border radius. Clean and authoritative.
 
-### Minimal
-Ultra-clean with maximum whitespace. No card backgrounds, just text and simple dividers. Perfect for a typographic, portfolio-style page.
+### Corporate Modern
+Teal (`#0D9488`) accents with a contemporary feel. Balanced border radius.
 
-### Neon
-Bold neon accents on a dark background. Link buttons glow on hover. Eye-catching and modern.
+### Hacker Terminal
+Green (`#16A34A`) on dark background with no border radius. Monospace-inspired, sharp and technical.
 
-### Pastel
-Soft pastel colors with rounded corners and gentle shadows. Warm and approachable feel.
+### Neon Cyber
+Bold purple (`#7C3AED`) accents with large border radius. Eye-catching and vibrant.
 
-### Brutalist
-Raw, unpolished aesthetic with thick borders, monospace fonts, and high contrast. Stands out from typical link pages.
+### Furry Pastel
+Soft pink (`#EC4899`) palette with fully rounded corners (`1rem`). Warm and approachable.
 
-### Gradient
-Background uses a smooth color gradient that you can customize. Links are semi-transparent with blur effects.
+### Furry Bold
+Energetic orange (`#EA580C`) with large border radius. Stands out with high energy.
 
-### Terminal
-Monospace font, green-on-black color scheme, command-prompt styling. For developers and tech enthusiasts.
+## Theme CSS Variables
+
+Each theme defines the following CSS custom properties for both light and dark variants:
+
+| Variable | Description |
+|----------|-------------|
+| `--ld-primary` | Primary accent color |
+| `--ld-secondary` | Secondary color |
+| `--ld-accent` | Accent color for highlights |
+| `--ld-action` | Action/button color |
+| `--ld-background` | Page background |
+| `--ld-foreground` | Main text color |
+| `--ld-card` | Card background |
+| `--ld-card-foreground` | Card text color |
+| `--ld-border` | Border color |
+| `--ld-muted` | Muted background |
+| `--ld-muted-foreground` | Muted text color |
+| `--ld-radius` | Border radius |
 
 ## Selecting a Theme
 
 1. Navigate to `/admin/appearance` in the admin panel.
-2. Browse the theme gallery with live previews.
+2. Browse the theme preset picker.
 3. Click a theme to select it.
-4. Choose the color mode: **Light**, **Dark**, or **Auto**.
-5. Click **Save**.
+
+Alternatively, select a theme during the setup wizard at `/admin/setup` (Step 3).
 
 ## Color Modes
 
@@ -47,16 +63,17 @@ Each theme supports three modes:
 
 - **Light** -- Forces the light variant regardless of system preference.
 - **Dark** -- Forces the dark variant regardless of system preference.
-- **Auto** -- Follows the visitor's operating system preference. If the visitor uses dark mode, they see the dark variant; otherwise, the light variant.
+- **System** -- Follows the visitor's operating system preference.
 
-## Customizing Themes
+Visitors can toggle between light and dark mode using the theme toggle on the public page.
 
-While each theme has a curated default palette, you can further customize through the [Appearance](/docs/features/appearance) settings:
+## Customizing Colors
 
-- Override primary and accent colors with the color picker.
-- Change button styles (filled, outlined, soft).
-- Set custom background images or gradients.
-- Apply custom CSS for fine-grained control.
-- Use Google Fonts to change the typeface.
+Beyond the theme presets, you can override individual colors through the appearance settings:
 
-These customizations layer on top of the selected theme, so you get the base layout and feel of the theme with your own color adjustments.
+- **Primary color** -- Override `--ld-primary`.
+- **Secondary color** -- Override `--ld-secondary`.
+- **Accent color** -- Override `--ld-accent`.
+- **Background color** -- Override `--ld-background`.
+
+You can also add **custom CSS** for fine-grained control over any theme variable or element.

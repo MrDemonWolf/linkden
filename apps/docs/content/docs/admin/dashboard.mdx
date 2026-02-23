@@ -1,86 +1,54 @@
 ---
 title: Admin Dashboard
-description: Overview of the LinkDen 3-panel admin editor with live preview, block management, and design controls.
+description: Overview of the LinkDen admin dashboard with stat cards, charts, and quick navigation.
 ---
 
 # Admin Dashboard
 
-The admin dashboard at `/admin` is your command center for managing your LinkDen instance. It uses a 3-panel editor layout inspired by SmartBio, giving you a live preview of your public page as you make changes.
+The admin dashboard at `/admin` is your command center for managing your LinkDen instance. It provides an overview of key metrics and quick access to all admin features.
 
 ## Accessing the Dashboard
 
 1. Navigate to `/admin` on your LinkDen instance.
-2. Sign in via Cloudflare Access or Clerk (depending on your configuration).
-3. You land on the 3-panel editor.
+2. Sign in with your Better Auth credentials (email/password) at `/admin/login`.
+3. You land on the dashboard.
 
-## Editor Layout
+If this is your first time, you will be redirected to the setup wizard at `/admin/setup` instead.
 
-The admin panel uses a 3-column layout on desktop:
+## Dashboard Layout
 
-### Left Panel (Blocks)
+### Header
 
-The left panel is a collapsible sidebar. It collapses to an icon-only rail to give the preview more space, and expands to show section labels. Click any icon or the expand toggle to switch modes.
+The page header includes two action buttons:
 
-Sections accessible from the left panel:
+- **Builder** -- Links to `/admin/builder` to manage your blocks.
+- **View Page** -- Opens your public page in a new tab.
 
-- **Add Blocks** -- Grid of available block types with labels and short descriptions. Includes a search bar to filter by name. Click a type to add a block instantly. Single-instance block types (vCard, Wallet, Contact Form) are greyed out once already added.
-- **Block List** -- Ordered list of all your blocks. Toggle visibility, delete, or click to edit.
-- **Social** -- Manage social media icon links that appear as a row on your public page.
-- **Drawers** -- Quick-access buttons for Analytics, vCard, Wallet, Contacts, and Pages. These open as slide-in drawers with `role="dialog"` and `aria-modal="true"` for accessibility.
+### Stat Cards
 
-The Docs and Settings shortcuts that were previously at the bottom of the left panel have been removed. Access settings via the Right Panel Settings tab and documentation at the docs site directly.
+Three stat cards are displayed in a 3-column grid:
 
-### Center Panel (Live Preview)
+| Card | Icon | Description |
+|------|------|-------------|
+| **Total Views** | Eye (blue) | Total page views over the last 7 days |
+| **Total Clicks** | MousePointerClick (green) | Total link clicks over the last 7 days |
+| **Unread Contacts** | Mail (orange) | Count of unread contact form submissions (links to `/admin/contacts`) |
 
-A device-frame mockup that renders your actual public page in real time. Changes to blocks, settings, colors, and themes are reflected instantly in the preview.
+### Views Chart
 
-Device size toggles let you preview at three breakpoints:
+A bar chart showing page views over the last 7 days. Each bar displays the view count on hover. Day labels show short weekday names. A "View all" link navigates to the full analytics page at `/admin/analytics`.
 
-| Device | Width | Height |
-|--------|-------|--------|
-| Phone | 393px | 852px |
-| Tablet | 820px | 1180px |
-| Desktop | 1440px | 900px |
+### Version Card
 
-The preview uses premium CSS device frames with reflective gradients, an ambient glow effect behind the frame, a noise texture overlay, and browser chrome styling on the desktop view.
+Shows the current app version. If an update is available, displays an "Update to X.X.X" button linking to the release page. Otherwise shows "Up to date".
 
-**Drag-and-drop reordering** works directly on the phone preview. Grab any link block and drag it to a new position. The order updates live. This feature uses `@hello-pangea/dnd` and works on touch devices as well as mouse.
+## Navigation
 
-### Right Panel (Design / Analytics / Settings)
+The dashboard links to the key admin sections:
 
-Three tabs at the top. Settings groups within each tab are separated by visible section dividers and use consistent `p-5` padding throughout:
-
-- **Design** -- Theme selector with visual previews, color customization (accent, background, text), and branding settings (name, logo).
-- **Analytics** -- Quick stats showing total views, clicks, and CTR.
-- **Settings** -- Profile info (name, bio, avatar), contact form toggle, CAPTCHA type selector, SEO/meta fields, and export/import.
-
-**Verified badge placement:** The verified badge (checkmark icon) is shown inline next to your display name in the profile section of the right panel and on the public page. It is no longer displayed as an overlay on the avatar image.
-
-### Top Bar
-
-The top bar spans the full width and includes:
-
-- **LinkDen logo** -- Rendered in the Sora font.
-- Device size toggles (Phone / Tablet / Desktop)
-- Preview and "View Page" links
-- **Publish button** -- Gradient style with a subtle glow effect. Saves all draft changes to the live page and purges the edge cache. The button label also uses the Sora font.
-
-## Mobile Layout
-
-On screens narrower than 1024px, the 3-panel layout collapses to a bottom tab bar with three tabs: **Blocks**, **Preview**, and **Design**. Tap a tab to switch between panels.
-
-## Publishing Changes
-
-Click the **Publish** button in the top bar to save all pending changes. The public page updates immediately -- the edge cache is automatically purged so visitors see your changes within seconds.
-
-## Dedicated Pages
-
-Some features have their own full-page views accessible from the left panel:
-
-- **Analytics** (`/admin/analytics`) -- Full analytics dashboard with charts.
-- **vCard** (`/admin/vcard`) -- Detailed vCard editor.
-- **Wallet** (`/admin/wallet`) -- Apple Wallet pass designer.
-- **Contacts** (`/admin/contacts`) -- Contact form submissions.
-- **Pages** (`/admin/pages`) -- Custom page management.
-
-Each full page includes a "Back to Editor" link to return to the 3-panel view.
+- `/admin/builder` -- Block builder with drag-and-drop reordering
+- `/admin/analytics` -- Full analytics dashboard
+- `/admin/contacts` -- Contact form submissions
+- `/admin/social` -- Social network management
+- `/admin/settings` -- All configuration options
+- `/admin/appearance` -- Theme and color customization

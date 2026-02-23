@@ -16,23 +16,24 @@ LinkDen gives you a single-user link page at your root URL. Visitors land direct
 ## Key Highlights
 
 - **Edge Performance** -- Static pages served from Cloudflare Pages with API on Workers and D1 SQLite for sub-second load times worldwide.
-- **Full Admin Panel** -- Manage links, appearance, analytics, vCard, and Apple Wallet passes from a macOS-inspired dashboard.
-- **8 Built-in Themes** -- Each theme ships with dark and light variants (16 total) plus auto mode.
-- **100+ Brand Icons** -- Predefined SVG icons for GitHub, Twitter/X, Instagram, YouTube, Discord, and dozens more.
+- **Full Admin Panel** -- Manage blocks, appearance, analytics, vCard, and Apple Wallet passes from a polished dashboard.
+- **7 Built-in Themes** -- Each theme ships with dark and light variants (14 total) plus auto mode.
+- **5 Block Types** -- Link, Header, Social Icons, Embed, and Contact Form blocks with rich configuration options.
+- **100+ Social Brands** -- Predefined icons for GitHub, Twitter/X, Instagram, YouTube, Discord, and dozens more.
 - **Apple Wallet** -- Generate signed `.pkpass` files for iPhone contact cards.
 - **Whitelabel** -- Toggle off all LinkDen branding with a single setting. MIT license, no attribution required.
-- **Export/Import** -- Back up all data as JSON or migrate from LinkStack.
+- **Export/Import** -- Back up all data as JSON.
 
 ## Tech Stack
 
 | Layer     | Technology                           |
 |-----------|--------------------------------------|
-| Frontend  | Next.js (static export)              |
+| Frontend  | Next.js 16, React 19, Tailwind CSS v4 |
 | Backend   | Hono on Cloudflare Workers           |
-| API       | tRPC                                 |
+| API       | tRPC v11                             |
 | Database  | Drizzle ORM + Cloudflare D1 (SQLite) |
-| Auth      | Clerk                                |
-| Styling   | Tailwind CSS + shadcn/ui             |
+| Auth      | Better Auth (email/password)         |
+| Styling   | Tailwind CSS + Radix UI              |
 | Monorepo  | Turborepo + pnpm workspaces          |
 | Deploy    | Alchemy -> Cloudflare Workers/Pages  |
 

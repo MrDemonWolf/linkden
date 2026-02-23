@@ -9,11 +9,11 @@ description: Frequently asked questions about LinkDen.
 
 ### What is LinkDen?
 
-LinkDen is a self-hosted, open-source link-in-bio platform. It's a modern alternative to Linktree, built on the Cloudflare stack with a full admin panel, live preview editor, and edge performance.
+LinkDen is a self-hosted, open-source link-in-bio platform. It's a modern alternative to Linktree, built on the Cloudflare stack with a full admin panel and edge performance.
 
 ### Is LinkDen free?
 
-Yes. LinkDen is MIT licensed and completely free. Cloudflare's free tier covers Workers, D1, and Pages — so you can deploy at zero cost.
+Yes. LinkDen is MIT licensed and completely free. Cloudflare's free tier covers Workers, D1, and Pages -- so you can deploy at zero cost.
 
 ### Can I use LinkDen commercially?
 
@@ -38,39 +38,35 @@ Absolutely. The MIT license allows unrestricted commercial use. You can remove a
 
 ### Do I need a Cloudflare account?
 
-Yes. LinkDen runs on Cloudflare Workers (API) and can deploy the frontend to Cloudflare Pages. However, the Next.js frontend can also be deployed to Vercel, Railway, or any platform that supports Next.js.
+Yes for the primary deployment path. LinkDen runs on Cloudflare Workers (API) and can deploy the frontend to Cloudflare Pages. However, Docker self-hosting is also supported.
 
 ### Can I deploy without Cloudflare?
 
-The **API server** requires Cloudflare Workers and D1. The **frontend** (Next.js) can be deployed anywhere — Vercel, Railway, Coolify, Docker, etc. See the [self-hosting guides](/docs/self-hosting/vercel) for alternatives.
+Yes. LinkDen includes a Docker setup for self-hosting outside Cloudflare. See the [Docker](/docs/self-hosting/docker) and [Coolify](/docs/self-hosting/coolify) guides.
 
 ### Does LinkDen support multiple users?
 
-LinkDen is designed as a **single-user** platform. One instance = one link page. If you need multiple users, deploy separate instances. This keeps the codebase simple and the database small.
+LinkDen is designed as a **single-user** platform. One instance = one link page. If you need multiple users, deploy separate instances.
 
-### What's the difference between Clerk and Cloudflare Access auth?
+### How does authentication work?
 
-Both protect the admin panel. **Cloudflare Access** is free and works at the network edge — it's the recommended approach. **Clerk** provides a traditional login page with email/password or social login. You can use either or both. See the [authentication guide](/docs/api/authentication).
+LinkDen uses Better Auth with email/password authentication. During first-time setup, you create an admin account through the setup wizard. No external auth service (Clerk, Auth0, etc.) is needed. See the [authentication guide](/docs/api/authentication).
 
 ---
 
 ## Features
 
-### Can I add custom blocks?
+### What block types are available?
 
-Yes. The block system supports 14 types out of the box: links, headings, text, spacers, dividers, images, videos, HTML, email, phone, contact form, vCard, wallet pass, and social buttons. To add a custom block type, extend the schema in `packages/db` and add a renderer in `apps/web/src/components/public/blocks/`.
+LinkDen supports 5 block types: **Link**, **Header**, **Social Icons**, **Embed** (YouTube, Spotify, SoundCloud, Custom), and **Contact Form**. Each block type has its own configuration options for styling, scheduling, and behavior.
 
-### How do I add a new social brand?
+### How many themes are there?
 
-Social brands are auto-generated from [Simple Icons](https://simpleicons.org/) via CI. To add a brand manually, edit the `BRAND_LIST` array in `scripts/generate-social-brands.mjs` and run `pnpm generate:social-brands`.
+7 built-in themes, each with both dark and light variants (14 total): Default, Corporate Classic, Corporate Modern, Hacker Terminal, Neon Cyber, Furry Pastel, and Furry Bold. You can also customize colors and add custom CSS.
 
 ### Can I use my own domain?
 
 Yes. See the [custom domain guide](/docs/self-hosting/custom-domain) for DNS configuration instructions.
-
-### How does the draft/publish system work?
-
-When you edit blocks or settings in the admin panel, changes are saved as **drafts** — they don't affect your live page. When you click "Publish", all drafts are merged into the live data at once. This lets you make multiple changes and review them before going live.
 
 ---
 
@@ -80,23 +76,23 @@ When you edit blocks or settings in the admin panel, changes are saved as **draf
 
 This usually means the API server isn't running or isn't reachable. Check:
 
-1. Is the server running? Run `pnpm dev` from the project root to start both apps.
-2. Is `NEXT_PUBLIC_API_URL` set correctly in `apps/web/.env.local`? It should be `http://localhost:3000` for local development.
-3. Check the server logs for errors — the API runs on port 3000 by default.
+1. Is the server running? Run `pnpm dev` from the project root to start all apps.
+2. Is `NEXT_PUBLIC_SERVER_URL` set correctly in `.env`? It should be `http://localhost:3000` for local development.
+3. Check the server logs for errors.
 
 ### I get CORS errors in the browser
 
-The server's `CORS_ORIGIN` environment variable must match your frontend URL. For local development, set it to `http://localhost:3001` in `apps/server/.dev.vars`.
+The `CORS_ORIGIN` environment variable must match your frontend URL exactly. For local development, set it to `http://localhost:3001` in `.env`.
 
 ### Database migrations fail
 
-Run `pnpm db:push` from the project root. If you get schema errors, check that your `packages/db/src/schema.ts` matches the expected structure. For a fresh start, you can reset the D1 database in the Cloudflare dashboard.
+Run `pnpm db:push` from the project root. For a fresh start, you can reset the D1 database in the Cloudflare dashboard.
 
 ### The build fails with type errors
 
-Run `pnpm typecheck` to see all type errors across the monorepo. Common causes:
-- Missing environment variables (type generation depends on them)
-- Out-of-date dependencies — run `pnpm install` to refresh
+Run `pnpm check-types` to see all type errors across the monorepo. Common causes:
+- Missing environment variables
+- Out-of-date dependencies -- run `pnpm install` to refresh
 
 ### Styles look broken after updating
 

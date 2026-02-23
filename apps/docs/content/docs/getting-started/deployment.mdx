@@ -20,7 +20,7 @@ Before deploying, make sure you have:
 Run the deploy command from the root of the monorepo:
 
 ```bash
-pnpm cf:deploy
+pnpm deploy
 ```
 
 This command:
@@ -50,7 +50,7 @@ For detailed instructions, see [Custom Domain Setup](/docs/self-hosting/custom-d
 After deploying:
 
 1. Visit your Pages URL (shown in the deploy output) to see the public link page.
-2. Navigate to `/admin` and sign in with your Clerk account.
+2. Navigate to `/admin/setup` to create your admin account (first time) or `/admin/login` to sign in.
 3. Check the admin dashboard to verify the API connection is working.
 
 ## Tear Down Resources
@@ -58,7 +58,7 @@ After deploying:
 If you need to remove all Cloudflare resources:
 
 ```bash
-pnpm cf:destroy
+pnpm destroy
 ```
 
 This removes the Workers, Pages project, and D1 database. Use with caution -- this deletes all data.
@@ -77,7 +77,7 @@ For automated deployments on every push, see the GitHub Actions workflow in `.gi
 
 ### API Connection Issues
 
-- Verify the `NEXT_PUBLIC_API_URL` in `apps/web/.env` matches your deployed Worker URL.
+- Verify the `NEXT_PUBLIC_SERVER_URL` in `.env` matches your deployed Worker URL.
 - Check the Worker logs in the Cloudflare dashboard for errors.
 
 ### Database Errors

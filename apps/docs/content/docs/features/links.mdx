@@ -1,98 +1,103 @@
 ---
 title: Links & Blocks
-description: Manage different link types and block types on your LinkDen page, including links, headings, text blocks, and more.
+description: Manage the 5 block types on your LinkDen page — links, headers, social icons, embeds, and contact form.
 ---
 
 # Links & Blocks
 
-LinkDen supports multiple block types beyond simple links. Each block appears on your public page in the order you arrange them, and all are managed from the admin panel at `/admin/links`.
+LinkDen supports 5 block types that appear on your public page in the order you arrange them. All blocks are managed from the block builder at `/admin/builder`.
 
-## Link Types
+## Block Types
 
-### Standard Link
+### Link
 
 The most common block type. A clickable button that takes visitors to an external URL.
 
 - **Title** -- The text displayed on the button.
-- **URL** -- The destination URL. Validated on save.
-- **Icon** -- Optional brand icon from the 100+ built-in set (GitHub, Twitter/X, Instagram, YouTube, Discord, etc.).
-- **New Tab** -- Whether the link opens in a new browser tab (default: yes).
+- **URL** -- The destination URL.
+- **Icon** -- Optional icon identifier.
+- **Config options**: emoji, emoji position, icon slug, icon position, text alignment, font weight, outlined style, open in new tab.
 
-### Email Link
+### Header
 
-Displays a `mailto:` link button. Visitors can tap to open their email client with your address pre-filled.
+A text heading that visually separates groups of blocks. Useful for organizing content into categories.
 
-### Phone Link
+- **Title** -- The heading text.
+- **Config options**: heading level (h1-h6), text alignment, font weight, emoji, emoji position, show divider line.
 
-Displays a `tel:` link button for one-tap calling on mobile devices.
+### Social Icons
 
-### vCard Download
+A row of social media icon links. Uses the social networks you have activated in `/admin/social`.
 
-A button that downloads your digital business card as a `.vcf` file. Configure the vCard content in the [vCard settings](/docs/features/vcard).
+- **Config options**: icon size, icon style (filled, outlined, rounded), show labels, spacing, use brand colors.
 
-### Apple Wallet Pass
+### Embed
 
-A button that downloads a signed `.pkpass` file for adding your contact info to Apple Wallet on iOS and macOS. See the [Apple Wallet guide](/docs/features/apple-wallet) for setup.
+Embed content from external platforms directly on your page.
 
-## Block Types
+- **Embed Type** -- YouTube, Spotify, SoundCloud, or Custom.
+- **Embed URL** -- The source URL to embed.
+- **Config options**: aspect ratio, max width, show title.
 
-### Heading
+### Contact Form
 
-A text heading that visually separates groups of links. Useful for organizing links into categories like "Social", "Projects", or "Contact".
+An inline contact form for visitors to send you messages.
 
-### Text Block
+- **Config options**: button text, button emoji, button emoji position, success message.
 
-A paragraph of text displayed on your page. Supports basic formatting. Use it for bios, descriptions, or announcements.
+The contact form requires configuration in `/admin/settings` (Contact Form and optionally CAPTCHA sections).
 
-### Spacer
+## Block Configuration
 
-An invisible block that adds vertical space between other blocks. Choose small, medium, or large spacing.
+All block types share a base configuration with these style options:
 
-## Brand Icons
+| Option | Description |
+|--------|-------------|
+| Color variant | Preset color scheme for the block |
+| Custom background color | Override background color |
+| Custom text color | Override text color |
+| Custom border color | Override border color |
+| Border radius | Corner rounding |
+| Border width | Border thickness |
+| Shadow | Drop shadow effect |
+| Animation | Hover or entrance animation |
+| Padding | Inner spacing |
 
-LinkDen includes 100+ predefined SVG brand icons. When creating or editing a link, you can search and select from icons including:
+## Scheduling
 
-- **Social**: GitHub, Twitter/X, Instagram, Facebook, LinkedIn, Mastodon, Bluesky, Threads, TikTok, YouTube, Twitch, Discord, Reddit, Telegram
-- **Development**: Stack Overflow, CodePen, GitLab, Bitbucket, npm, Docker, VS Code
-- **Creative**: Dribbble, Behance, Figma, DeviantArt, Unsplash
-- **Music**: Spotify, Apple Music, SoundCloud, Bandcamp
-- **Business**: Google, Apple, Microsoft, Amazon, Shopify, Stripe, PayPal
-- **Communication**: Email, Phone, WhatsApp, Signal, Slack
-- And many more.
+Blocks support scheduled visibility with start and end dates. A block outside its scheduled window is automatically hidden from the public page. Configure scheduling in the **Schedule** tab of the block edit panel.
 
-## Single-Instance Block Limits
-
-Certain block types are limited to one instance per page because they represent a single piece of data or a unique UI element. Attempting to add a second instance of these blocks is prevented -- the block is greyed out in the picker once one is already on your page:
-
-| Block Type | Limit | Reason |
-|------------|-------|--------|
-| Apple Wallet | 1 | One pass configuration per site |
-| vCard Download | 1 | One vCard file per site |
-| Contact Form | 1 | One contact form per page |
-
-All other block types (Link, Heading, Text, Spacer, Email, Phone) can be added any number of times.
-
-## Managing Links
+## Managing Blocks
 
 ### Adding a Block
 
-1. Open the admin panel. The **Add Blocks** tab is shown by default in the left panel.
-2. Use the **search bar** at the top of the panel to filter block types by name or description.
-3. Click a block type to add it to the bottom of your list.
-4. A slide-in animation confirms the block was added.
+1. Open the block builder at `/admin/builder`.
+2. Click **Add Block** to open the dropdown menu.
+3. Select a block type.
+4. The block is added and the edit panel opens.
 
 ### Reordering Blocks
 
-Drag-and-drop reordering works directly on the **phone preview** in the center panel. Grab any link card on the preview and drag it to a new position. The order updates live and the change is queued for the next publish. A drag handle icon appears on hover to indicate draggable items.
+Drag any block by its grip handle in the block list. The order is saved immediately.
 
 ### Editing a Block
 
-Click any block in the **Block List** tab of the left panel to open its edit form. Make your changes and click **Save**.
-
-### Deleting a Block
-
-Open the block edit form and click **Delete**. A confirmation dialog prevents accidental deletion.
+Click the pencil icon on any block to open the edit panel with 4 tabs: Content, Style, Options, and Schedule.
 
 ### Toggling Visibility
 
-Each block has a visibility toggle switch in the block list. Hidden blocks are not shown on the public page but remain in your list for easy re-enabling. The toggle uses `role="switch"` and `aria-checked` for full accessibility.
+Click the eye icon to toggle a block's visibility. Hidden blocks remain in your list but are not shown on the public page.
+
+### Deleting a Block
+
+Click the trash icon on any block to delete it. Deletions are permanent.
+
+## Social Networks
+
+Social networks for the Social Icons block type are managed separately at `/admin/social`. This page lets you:
+
+- Search networks by name or slug.
+- Filter to show all or only active networks.
+- Toggle networks on/off with a switch.
+
+Active networks become available for use in Social Icons blocks.

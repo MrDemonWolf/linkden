@@ -32,8 +32,7 @@ Railway runs each service as a separate container. LinkDen uses two services plu
 
 1. A [Railway account](https://railway.app) (GitHub sign-in recommended).
 2. The LinkDen repository forked to your GitHub account (or a private repo connected to Railway).
-3. Clerk API keys from [clerk.com](https://clerk.com).
-4. Node.js 20+ and pnpm 9+ installed locally (for initial setup).
+3. Node.js 20+ and pnpm 9+ installed locally (for initial setup).
 
 ## Step 1: Create a Railway Project
 
@@ -110,10 +109,9 @@ SQLite needs a persistent volume so data survives redeployments:
 
 | Variable | Value |
 |----------|-------|
-| `CLERK_SECRET_KEY` | `sk_live_...` |
-| `CLERK_PUBLISHABLE_KEY` | `pk_live_...` |
+| `BETTER_AUTH_SECRET` | A strong random secret (generate with `openssl rand -base64 32`) |
+| `BETTER_AUTH_URL` | `https://linkden-api-production.up.railway.app` (or your custom API domain) |
 | `CORS_ORIGIN` | `https://yourdomain.com` (update after setting up custom domain) |
-| `APP_URL` | `https://yourdomain.com` |
 | `DATABASE_URL` | `file:/data/linkden.db` |
 | `PORT` | `8787` |
 | `RESEND_API_KEY` | `re_...` (optional) |
@@ -126,7 +124,7 @@ SQLite needs a persistent volume so data survives redeployments:
 
 1. Go to **Settings** > **Networking**.
 2. Under **Public Networking**, click **Generate Domain** to get a Railway-provided URL (e.g., `linkden-api-production.up.railway.app`).
-3. Note this URL -- you need it for the web app's `NEXT_PUBLIC_API_URL`.
+3. Note this URL -- you need it for the web app's `NEXT_PUBLIC_SERVER_URL`.
 
 ## Step 3: Deploy the Web App
 
@@ -148,12 +146,10 @@ Since `NEXT_PUBLIC_*` variables must be present at build time, add them as varia
 
 | Variable | Value |
 |----------|-------|
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | `pk_live_...` |
-| `NEXT_PUBLIC_API_URL` | `https://linkden-api-production.up.railway.app` (or your custom API domain) |
+| `NEXT_PUBLIC_SERVER_URL` | `https://linkden-api-production.up.railway.app` (or your custom API domain) |
 | `NEXT_PUBLIC_SITE_URL` | `https://linkden-web-production.up.railway.app` (or your custom domain) |
 | `NEXT_PUBLIC_SITE_NAME` | `LinkDen` |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | (optional) |
-| `CLERK_SECRET_KEY` | `sk_live_...` |
 | `PORT` | `3001` |
 
 ### Expose the Service
@@ -191,12 +187,12 @@ After setting up custom domains, update the URLs:
 **API service variables:**
 ```
 CORS_ORIGIN=https://yourdomain.com
-APP_URL=https://yourdomain.com
+BETTER_AUTH_URL=https://api.yourdomain.com
 ```
 
 **Web service variables:**
 ```
-NEXT_PUBLIC_API_URL=https://api.yourdomain.com
+NEXT_PUBLIC_SERVER_URL=https://api.yourdomain.com
 NEXT_PUBLIC_SITE_URL=https://yourdomain.com
 ```
 
@@ -226,13 +222,16 @@ If you prefer a managed PostgreSQL database for better concurrency:
 
 This requires modifying `packages/db` to use the Drizzle PostgreSQL driver instead of SQLite. This is an advanced configuration and beyond the default LinkDen setup.
 
-## Step 6: Verify the Deployment
+## Step 6: First-Time Auth Setup
 
-1. Visit your web app URL and confirm the public link page loads.
-2. Navigate to `/admin` and test the Clerk sign-in flow.
-3. Create a test link in the admin panel.
-4. Visit the public page and verify the link appears.
-5. Check analytics data is being recorded.
+After both services are deployed:
+
+1. Visit your web app URL (e.g., `https://yourdomain.com/admin/setup`).
+2. Complete the setup wizard to create your admin account (name, email, and password).
+3. After setup is complete, sign in at `/admin/login`.
+4. Create a test link in the admin panel.
+5. Visit the public page and verify the link appears.
+6. Check analytics data is being recorded.
 
 ## Monitoring
 
