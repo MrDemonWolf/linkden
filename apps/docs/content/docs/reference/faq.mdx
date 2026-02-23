@@ -50,7 +50,7 @@ LinkDen is designed as a **single-user** platform. One instance = one link page.
 
 ### How does authentication work?
 
-LinkDen uses Better Auth with email/password authentication. During first-time setup, you create an admin account through the setup wizard. No external auth service (Clerk, Auth0, etc.) is needed. See the [authentication guide](/docs/api/authentication).
+LinkDen uses Better Auth with email/password authentication. During first-time setup, you create an admin account through the setup wizard. No external auth service (Clerk, Auth0, etc.) is needed. See the [API Reference](/docs/reference/api) for details.
 
 ---
 
@@ -97,3 +97,29 @@ Run `pnpm check-types` to see all type errors across the monorepo. Common causes
 ### Styles look broken after updating
 
 Clear the Next.js cache: `rm -rf apps/web/.next` and restart the dev server.
+
+---
+
+## Updating LinkDen
+
+LinkDen follows semantic versioning. The current version is tracked in `version.json` at the root of the repository. The admin settings page shows a notification when a new version is available.
+
+### Update Process
+
+1. Pull the latest changes: `git pull origin main`
+2. Install updated dependencies: `pnpm install`
+3. Run database migrations if needed: `pnpm db:generate && pnpm db:push`
+4. Rebuild and deploy: `pnpm cf:deploy`
+
+### Rolling Back
+
+If an update causes issues, roll back to a previous version:
+
+```bash
+git log --oneline -10  # Find the commit to roll back to
+git checkout <commit-hash>
+pnpm install
+pnpm cf:deploy
+```
+
+For database rollbacks, restore from your most recent export (see [Export & Import](/docs/guide/export-import)).

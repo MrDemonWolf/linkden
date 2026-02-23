@@ -1,17 +1,81 @@
 ---
-title: API Endpoints
-description: Complete reference for all LinkDen tRPC API procedures.
+title: API Reference
+description: Complete reference for LinkDen's tRPC API — architecture, authentication, and all endpoints.
 ---
 
-# API Endpoints
+# API Reference
 
-LinkDen exposes tRPC procedures organized into 10 routers plus a top-level health check. All endpoints are available at `/trpc/<router>.<procedure>`.
+LinkDen's API is built with [tRPC](https://trpc.io/) v11 on top of [Hono](https://hono.dev/), running on Cloudflare Workers.
 
-Public procedures require no authentication. Protected procedures require a valid Better Auth session cookie.
+## Architecture
+
+```
+Next.js Frontend (apps/web)
+       |
+       | tRPC Client (HTTP requests)
+       |
+       v
+Hono Server (apps/server)
+       |
+       |-- Better Auth (session validation)
+       |-- tRPC Router (packages/api)
+       |
+       v
+Drizzle ORM (packages/db)
+       |
+       | SQL queries
+       |
+       v
+Cloudflare D1 (SQLite)
+```
+
+- **Hono** -- Ultra-lightweight web framework for edge runtimes. Handles routing, middleware, and request/response processing with zero cold start on Cloudflare Workers.
+- **tRPC v11** -- End-to-end type safety without code generation. Router definitions live in `packages/api`.
+- **Better Auth** -- Email/password authentication. Session cookies are validated on protected procedures.
+- **Drizzle ORM** -- Type-safe SQL query builder for Cloudflare D1. Schema in `packages/db/src/schema/`.
+
+## Authentication
+
+LinkDen uses [Better Auth](https://www.better-auth.com/) with email/password sign-in.
+
+### Session Flow
+
+1. During first-time setup at `/admin/setup`, you create an admin account.
+2. Better Auth creates a session with secure cookies.
+3. For subsequent visits, sign in at `/admin/login`.
+4. The session cookie is sent with all API requests to authenticate protected routes.
+
+### Cookie Configuration
+
+| Attribute | Value | Reason |
+|-----------|-------|--------|
+| `sameSite` | `none` | Required for cross-origin requests |
+| `secure` | `true` | Required when `sameSite` is `none` |
+| `httpOnly` | `true` | Prevents JavaScript access to session cookie |
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `BETTER_AUTH_SECRET` | Secret key for session signing |
+| `BETTER_AUTH_URL` | Base URL for the auth server (API server URL) |
+| `CORS_ORIGIN` | Trusted origin for the frontend |
+
+Generate a secret with: `openssl rand -base64 32`
+
+### Troubleshooting Auth
+
+- **401 Unauthorized** -- Check `BETTER_AUTH_SECRET` is set and consistent. Verify `CORS_ORIGIN` matches the frontend URL exactly.
+- **Cannot create account** -- Use the setup wizard at `/admin/setup` for the initial account.
+- **CORS errors** -- `CORS_ORIGIN` must match the frontend URL including protocol, no trailing slash.
 
 ---
 
-## Blocks
+## Endpoint Reference
+
+All endpoints are available at `/trpc/<router>.<procedure>`. Public procedures require no authentication. Protected procedures require a valid Better Auth session cookie.
+
+### Blocks
 
 Manage content blocks on your page.
 
@@ -25,13 +89,13 @@ Manage content blocks on your page.
 | `blocks.reorder` | Mutation | Protected | Batch update block positions |
 | `blocks.toggleEnabled` | Mutation | Protected | Toggle `isEnabled` field |
 
-### Block Types
+#### Block Types
 
 ```typescript
 type BlockType = "link" | "header" | "social_icons" | "embed" | "contact_form"
 ```
 
-### Block Fields
+#### Block Fields
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -40,7 +104,7 @@ type BlockType = "link" | "header" | "social_icons" | "embed" | "contact_form"
 | `title` | string | Display title |
 | `url` | string? | Destination URL (link blocks) |
 | `icon` | string? | Icon identifier |
-| `embedType` | string? | Embed provider (YouTube, Spotify, SoundCloud, Custom) |
+| `embedType` | string? | Embed provider |
 | `embedUrl` | string? | Embed source URL |
 | `socialIcons` | string? | JSON string of social icon data |
 | `isEnabled` | boolean | Visibility on public page |
@@ -49,9 +113,7 @@ type BlockType = "link" | "header" | "social_icons" | "embed" | "contact_form"
 | `scheduledEnd` | string? | ISO datetime for scheduled visibility end |
 | `config` | string? | JSON string of block configuration |
 
----
-
-## Settings
+### Settings
 
 Manage site-wide key-value configuration.
 
@@ -62,7 +124,7 @@ Manage site-wide key-value configuration.
 | `settings.update` | Mutation | Protected | Upsert a single key-value pair |
 | `settings.updateBulk` | Mutation | Protected | Upsert an array of key-value pairs |
 
-### Common Settings Keys
+#### Common Settings Keys
 
 | Key | Description |
 |-----|-------------|
@@ -70,16 +132,13 @@ Manage site-wide key-value configuration.
 | `bio` | Bio text |
 | `avatar_url` | Avatar image URL |
 | `verified_badge` | Show verified checkmark |
-| `theme_preset` | Theme ID (e.g., `default`, `hacker-terminal`) |
+| `theme_preset` | Theme ID |
 | `seo_title` | Page title |
 | `seo_description` | Meta description |
 | `seo_og_image` | Open Graph image URL |
 | `contact_form_enabled` | Contact form toggle |
-| `contact_delivery` | Delivery mode (`database only`, `email notification`, `database + email`) |
-| `captcha_provider` | CAPTCHA mode (`none`, `Cloudflare Turnstile`, `Google reCAPTCHA`) |
-| `captcha_site_key` | CAPTCHA public key |
-| `captcha_secret_key` | CAPTCHA server key |
-| `email_provider` | Email service (`Resend`, `Cloudflare Email Workers`) |
+| `contact_delivery` | Delivery mode |
+| `captcha_provider` | CAPTCHA mode |
 | `branding_enabled` | Whitelabel footer toggle |
 | `branding_text` | Custom footer text |
 | `branding_link` | Custom footer link |
@@ -87,9 +146,7 @@ Manage site-wide key-value configuration.
 | `wallet_enabled` | Apple Wallet toggle |
 | `setup_completed` | Setup wizard completion flag |
 
----
-
-## Contacts
+### Contacts
 
 Handle contact form submissions.
 
@@ -102,9 +159,7 @@ Handle contact form submissions.
 | `contacts.delete` | Mutation | Protected | Delete a submission |
 | `contacts.unreadCount` | Query | Protected | Count of unread submissions |
 
----
-
-## Analytics
+### Analytics
 
 Track and query page view and click data. All queries accept an optional `{ period: "7d" | "30d" | "90d" }` parameter.
 
@@ -117,9 +172,7 @@ Track and query page view and click data. All queries accept an optional `{ peri
 | `analytics.referrers` | Query | Protected | Top 10 referrer domains |
 | `analytics.countries` | Query | Protected | Top 20 countries by page view count |
 
----
-
-## Social
+### Social
 
 Manage social network entries for use in Social Icons blocks.
 
@@ -128,21 +181,17 @@ Manage social network entries for use in Social Icons blocks.
 | `social.list` | Query | Protected | List all networks with optional `activeOnly` filter |
 | `social.toggle` | Mutation | Protected | Set `isActive` true/false for a network by slug |
 
----
-
-## Wallet
+### Wallet
 
 Manage Apple Wallet pass configuration.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `wallet.getConfig` | Query | Protected | Get wallet settings (enabled, teamId, passTypeId, customQrUrl) |
+| `wallet.getConfig` | Query | Protected | Get wallet settings |
 | `wallet.updateConfig` | Mutation | Protected | Update wallet settings |
 | `wallet.generatePreview` | Query | Protected | Returns profile + enabled blocks + QR URL for pass preview |
 
----
-
-## vCard
+### vCard
 
 Manage and generate vCard contact files.
 
@@ -152,41 +201,58 @@ Manage and generate vCard contact files.
 | `vcard.updateConfig` | Mutation | Protected | Update enabled flag and/or vCard data fields |
 | `vcard.preview` | Query | Protected | Returns generated `.vcf` string |
 
-### vCard Data Fields
+#### vCard Data Fields
 
 `fullName`, `nickname`, `birthday`, `photo`, `org`, `title`, `department`, `workEmail`, `workPhone`, `email`, `phone`, `address`, `urls` (array of `{ label, url }`).
 
----
-
-## Backup
+### Backup
 
 Import and export all data.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `backup.export` | Query | Protected | Export all data as JSON (blocks, settings, socialNetworks, contactSubmissions) |
+| `backup.export` | Query | Protected | Export all data as JSON |
 | `backup.import` | Mutation | Protected | Import data with `mode: "merge"` or `"replace"` |
 
----
-
-## Version
+### Version
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
 | `version.current` | Query | Public | Returns `{ version }` |
 | `version.checkUpdate` | Query | Public | Returns `{ current, latest, hasUpdate, releaseUrl, changelog }` |
 
----
-
-## Public
+### Public
 
 Public-facing endpoints (no authentication).
 
 | Procedure | Type | Description |
 |-----------|------|-------------|
 | `public.getPage` | Query | Full page data: profile, schedule-filtered blocks, theme, settings |
-| `public.submitContact` | Mutation | Submit contact form; validates CAPTCHA if configured; stores to DB |
+| `public.submitContact` | Mutation | Submit contact form; validates CAPTCHA if configured |
 | `public.trackView` | Mutation | Record page view with referrer, userAgent, country |
 | `public.trackClick` | Mutation | Record link click with blockId, referrer, userAgent, country |
 | `public.getVCard` | Query | Returns VCard string if vcard is enabled |
 | `public.getSetupStatus` | Query | Returns `{ completed: boolean }` |
+
+## Making API Calls
+
+The tRPC client is configured in the Next.js app:
+
+```typescript
+import { trpc } from "@/utils/trpc";
+
+// In a React component
+const { data } = trpc.public.getPage.useQuery();
+const { data: blocks } = trpc.blocks.list.useQuery();
+```
+
+## Error Handling
+
+tRPC errors include:
+
+- `UNAUTHORIZED` -- Missing or invalid session.
+- `NOT_FOUND` -- Resource does not exist.
+- `BAD_REQUEST` -- Invalid input (validated by Zod schemas from `packages/validators`).
+- `INTERNAL_SERVER_ERROR` -- Unexpected server error.
+
+All input is validated using shared Zod schemas from the `packages/validators` package, ensuring consistent validation between frontend forms and API endpoints.

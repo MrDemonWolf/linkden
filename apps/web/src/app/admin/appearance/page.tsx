@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Palette, Sun, Moon, Monitor, Check, Upload, Undo2, Info } from "lucide-react";
+import { Palette, Sun, Moon, Monitor, Check, Upload, Undo2, Info, Tag, BadgeCheck } from "lucide-react";
 import { themePresets } from "@linkden/ui/themes";
+import { getBannerPresetsForTheme } from "@linkden/ui/banner-presets";
 import { trpc } from "@/utils/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,12 @@ interface SavedState {
 	accentColor: string;
 	bgColor: string;
 	customCss: string;
+	bannerEnabled: boolean;
+	bannerPreset: string;
+	verifiedBadge: boolean;
+	brandingEnabled: boolean;
+	brandingText: string;
+	brandingLink: string;
 }
 
 function buildSavedState(settings: Record<string, string>): SavedState {
@@ -38,6 +45,12 @@ function buildSavedState(settings: Record<string, string>): SavedState {
 		accentColor: settings.custom_accent ?? "#38BDF8",
 		bgColor: settings.custom_background ?? "#FFFFFF",
 		customCss: settings.custom_css ?? "",
+		bannerEnabled: settings.banner_enabled === "true",
+		bannerPreset: settings.banner_preset ?? "",
+		verifiedBadge: settings.verified_badge === "true",
+		brandingEnabled: settings.branding_enabled !== "false",
+		brandingText: settings.branding_text ?? "",
+		brandingLink: settings.branding_link ?? "",
 	};
 }
 
@@ -56,6 +69,12 @@ export default function AppearancePage() {
 		accentColor: "#38BDF8",
 		bgColor: "#FFFFFF",
 		customCss: "",
+		bannerEnabled: false,
+		bannerPreset: "",
+		verifiedBadge: false,
+		brandingEnabled: true,
+		brandingText: "",
+		brandingLink: "",
 	});
 
 	const [selectedTheme, setSelectedTheme] = useState("default");
@@ -66,6 +85,12 @@ export default function AppearancePage() {
 	const [bgColor, setBgColor] = useState("#FFFFFF");
 	const [customCss, setCustomCss] = useState("");
 	const [previewDark, setPreviewDark] = useState(false);
+	const [bannerEnabled, setBannerEnabled] = useState(false);
+	const [bannerPreset, setBannerPreset] = useState("");
+	const [verifiedBadge, setVerifiedBadge] = useState(false);
+	const [brandingEnabled, setBrandingEnabled] = useState(true);
+	const [brandingText, setBrandingText] = useState("");
+	const [brandingLink, setBrandingLink] = useState("");
 
 	// Load settings into state
 	useEffect(() => {
@@ -79,6 +104,12 @@ export default function AppearancePage() {
 			setAccentColor(s.accentColor);
 			setBgColor(s.bgColor);
 			setCustomCss(s.customCss);
+			setBannerEnabled(s.bannerEnabled);
+			setBannerPreset(s.bannerPreset);
+			setVerifiedBadge(s.verifiedBadge);
+			setBrandingEnabled(s.brandingEnabled);
+			setBrandingText(s.brandingText);
+			setBrandingLink(s.brandingLink);
 		}
 	}, [settingsQuery.data]);
 
@@ -89,7 +120,13 @@ export default function AppearancePage() {
 		secondaryColor !== savedState.secondaryColor ||
 		accentColor !== savedState.accentColor ||
 		bgColor !== savedState.bgColor ||
-		customCss !== savedState.customCss;
+		customCss !== savedState.customCss ||
+		bannerEnabled !== savedState.bannerEnabled ||
+		bannerPreset !== savedState.bannerPreset ||
+		verifiedBadge !== savedState.verifiedBadge ||
+		brandingEnabled !== savedState.brandingEnabled ||
+		brandingText !== savedState.brandingText ||
+		brandingLink !== savedState.brandingLink;
 
 	// Warn on navigation with unsaved changes
 	useEffect(() => {
@@ -131,6 +168,12 @@ export default function AppearancePage() {
 				{ key: "custom_accent", value: accentColor },
 				{ key: "custom_background", value: bgColor },
 				{ key: "custom_css", value: customCss },
+				{ key: "banner_enabled", value: String(bannerEnabled) },
+				{ key: "banner_preset", value: bannerPreset },
+				{ key: "verified_badge", value: String(verifiedBadge) },
+				{ key: "branding_enabled", value: String(brandingEnabled) },
+				{ key: "branding_text", value: brandingText },
+				{ key: "branding_link", value: brandingLink },
 			]);
 			setSavedState({
 				theme: selectedTheme,
@@ -140,6 +183,12 @@ export default function AppearancePage() {
 				accentColor,
 				bgColor,
 				customCss,
+				bannerEnabled,
+				bannerPreset,
+				verifiedBadge,
+				brandingEnabled,
+				brandingText,
+				brandingLink,
 			});
 			invalidate();
 			toast.success("Appearance published");
@@ -156,6 +205,12 @@ export default function AppearancePage() {
 		setAccentColor(savedState.accentColor);
 		setBgColor(savedState.bgColor);
 		setCustomCss(savedState.customCss);
+		setBannerEnabled(savedState.bannerEnabled);
+		setBannerPreset(savedState.bannerPreset);
+		setVerifiedBadge(savedState.verifiedBadge);
+		setBrandingEnabled(savedState.brandingEnabled);
+		setBrandingText(savedState.brandingText);
+		setBrandingLink(savedState.brandingLink);
 	};
 
 	// Resolve full theme CSS vars for preview
@@ -169,6 +224,22 @@ export default function AppearancePage() {
 		vars["--ld-background"] = bgColor;
 		return vars;
 	}, [selectedTheme, previewDark, primaryColor, secondaryColor, accentColor, bgColor]);
+
+	// Compute themed banner presets for the picker
+	const themedBannerPresets = useMemo(() => {
+		return getBannerPresetsForTheme(
+			resolvedThemeVars["--ld-primary"],
+			resolvedThemeVars["--ld-accent"],
+			resolvedThemeVars["--ld-background"],
+		);
+	}, [resolvedThemeVars]);
+
+	// Resolve the active banner style for preview
+	const activeBannerStyle = useMemo(() => {
+		if (!bannerEnabled || !bannerPreset) return null;
+		const preset = themedBannerPresets.find((p: { id: string }) => p.id === bannerPreset);
+		return preset ?? null;
+	}, [bannerEnabled, bannerPreset, themedBannerPresets]);
 
 	if (settingsQuery.isLoading) {
 		return (
@@ -191,8 +262,8 @@ export default function AppearancePage() {
 					<h1 className="text-lg font-semibold">Appearance</h1>
 					<p className="text-xs text-muted-foreground">
 						{isDirty
-							? "You have unsaved changes"
-							: "All changes are live"}
+							? "Unsaved changes \u2014 publish to go live"
+							: "Your page is up to date"}
 					</p>
 				</div>
 				<div className="flex gap-2">
@@ -377,6 +448,184 @@ export default function AppearancePage() {
 						</CardContent>
 					</Card>
 
+					{/* Banner */}
+					<Card>
+						<CardHeader>
+							<CardTitle>Banner</CardTitle>
+						</CardHeader>
+						<CardContent className="space-y-3">
+							<label
+								htmlFor="a-banner-enabled"
+								className="flex items-start gap-3 cursor-pointer group"
+							>
+								<button
+									id="a-banner-enabled"
+									type="button"
+									role="switch"
+									aria-checked={bannerEnabled}
+									onClick={() => setBannerEnabled(!bannerEnabled)}
+									className={cn(
+										"relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+										bannerEnabled ? "bg-primary" : "bg-muted",
+									)}
+								>
+									<span
+										className={cn(
+											"inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform",
+											bannerEnabled ? "translate-x-[18px]" : "translate-x-[3px]",
+										)}
+									/>
+								</button>
+								<div className="min-w-0 flex-1">
+									<span className="text-xs font-medium group-hover:text-foreground transition-colors">
+										Show banner on public page
+									</span>
+									<p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+										Displays a gradient banner behind your avatar
+									</p>
+								</div>
+							</label>
+							{bannerEnabled && (
+								<div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+									{themedBannerPresets.map((preset: { id: string; name: string; style: React.CSSProperties; className?: string }) => (
+										<button
+											key={preset.id}
+											type="button"
+											onClick={() => setBannerPreset(preset.id)}
+											className={cn(
+												"group relative h-12 overflow-hidden rounded-md border-2 transition-all",
+												bannerPreset === preset.id
+													? "border-primary ring-2 ring-primary/30"
+													: "border-transparent hover:border-muted-foreground/30",
+											)}
+										>
+											<div
+												className={`absolute inset-0 ${preset.className ?? ""}`}
+												style={preset.style}
+											/>
+											{bannerPreset === preset.id && (
+												<div className="absolute inset-0 flex items-center justify-center bg-black/20">
+													<Check className="h-4 w-4 text-white drop-shadow" />
+												</div>
+											)}
+											<span className="absolute inset-x-0 bottom-0 bg-black/40 px-1 py-0.5 text-[8px] text-white truncate">
+												{preset.name}
+											</span>
+										</button>
+									))}
+								</div>
+							)}
+						</CardContent>
+					</Card>
+
+					{/* Verified Badge */}
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center gap-1.5">
+								<BadgeCheck className="h-4 w-4 text-muted-foreground" />
+								Verified Badge
+							</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<label
+								htmlFor="a-verified"
+								className="flex items-start gap-3 cursor-pointer group"
+							>
+								<button
+									id="a-verified"
+									type="button"
+									role="switch"
+									aria-checked={verifiedBadge}
+									onClick={() => setVerifiedBadge(!verifiedBadge)}
+									className={cn(
+										"relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+										verifiedBadge ? "bg-primary" : "bg-muted",
+									)}
+								>
+									<span
+										className={cn(
+											"inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform",
+											verifiedBadge ? "translate-x-[18px]" : "translate-x-[3px]",
+										)}
+									/>
+								</button>
+								<div className="min-w-0 flex-1">
+									<span className="text-xs font-medium group-hover:text-foreground transition-colors">
+										Show verified badge
+									</span>
+									<p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+										Displays a blue checkmark next to your name
+									</p>
+								</div>
+							</label>
+						</CardContent>
+					</Card>
+
+					{/* Branding */}
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center gap-1.5">
+								<Tag className="h-4 w-4 text-muted-foreground" />
+								Branding
+							</CardTitle>
+						</CardHeader>
+						<CardContent className="space-y-3">
+							<label
+								htmlFor="a-branding-enabled"
+								className="flex items-start gap-3 cursor-pointer group"
+							>
+								<button
+									id="a-branding-enabled"
+									type="button"
+									role="switch"
+									aria-checked={brandingEnabled}
+									onClick={() => setBrandingEnabled(!brandingEnabled)}
+									className={cn(
+										"relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+										brandingEnabled ? "bg-primary" : "bg-muted",
+									)}
+								>
+									<span
+										className={cn(
+											"inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform",
+											brandingEnabled ? "translate-x-[18px]" : "translate-x-[3px]",
+										)}
+									/>
+								</button>
+								<div className="min-w-0 flex-1">
+									<span className="text-xs font-medium group-hover:text-foreground transition-colors">
+										Show whitelabel footer
+									</span>
+									<p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+										Display a footer with custom text and link
+									</p>
+								</div>
+							</label>
+							{brandingEnabled && (
+								<div className="grid gap-3 sm:grid-cols-2">
+									<div className="space-y-1.5">
+										<Label htmlFor="a-branding-text">Custom Text</Label>
+										<Input
+											id="a-branding-text"
+											value={brandingText}
+											onChange={(e) => setBrandingText(e.target.value)}
+											placeholder="Powered by LinkDen"
+										/>
+									</div>
+									<div className="space-y-1.5">
+										<Label htmlFor="a-branding-link">Custom Link</Label>
+										<Input
+											id="a-branding-link"
+											value={brandingLink}
+											onChange={(e) => setBrandingLink(e.target.value)}
+											placeholder="https://linkden.io"
+										/>
+									</div>
+								</div>
+							)}
+						</CardContent>
+					</Card>
+
 					{/* Custom CSS */}
 					<Card>
 						<CardHeader>
@@ -476,20 +725,36 @@ export default function AppearancePage() {
 									}}
 								>
 									{customCss && <style>{customCss}</style>}
+									{/* Banner */}
+									{bannerEnabled && activeBannerStyle && (
+										<div
+											className={`h-20 -mx-4 mb-[-2rem] ${activeBannerStyle.className ?? ""}`}
+											style={activeBannerStyle.style}
+										/>
+									)}
 									{/* Avatar */}
 									<div className="ld-profile mb-4 flex flex-col items-center">
 										<div
 											className="ld-avatar h-14 w-14 rounded-full"
 											style={{
 												background: `linear-gradient(135deg, ${resolvedThemeVars["--ld-primary"]}, ${resolvedThemeVars["--ld-accent"]})`,
+												...(bannerEnabled && activeBannerStyle ? { position: "relative", zIndex: 1 } : {}),
 											}}
 										/>
-										<div
-											className="mt-2 h-3 w-20 rounded"
-											style={{
-												backgroundColor: resolvedThemeVars["--ld-muted"],
-											}}
-										/>
+										<div className="mt-2 flex items-center gap-1">
+											<div
+												className="h-3 w-20 rounded"
+												style={{
+													backgroundColor: resolvedThemeVars["--ld-muted"],
+												}}
+											/>
+											{verifiedBadge && (
+												<BadgeCheck
+													className="h-3.5 w-3.5 shrink-0"
+													style={{ color: resolvedThemeVars["--ld-primary"] }}
+												/>
+											)}
+										</div>
 										<div
 											className="ld-bio mt-1.5 h-2 w-32 rounded"
 											style={{
@@ -534,12 +799,14 @@ export default function AppearancePage() {
 										</div>
 									</div>
 									{/* Footer */}
-									<div
-										className="ld-footer mt-4 text-center text-[8px]"
-										style={{ color: resolvedThemeVars["--ld-muted-foreground"] }}
-									>
-										Powered by LinkDen
-									</div>
+									{brandingEnabled && (
+										<div
+											className="ld-footer mt-4 text-center text-[8px]"
+											style={{ color: resolvedThemeVars["--ld-muted-foreground"] }}
+										>
+											{brandingText || "Powered by LinkDen"}
+										</div>
+									)}
 								</div>
 							</div>
 						</div>
