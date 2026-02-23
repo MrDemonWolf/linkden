@@ -3,15 +3,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Search, Filter, Globe, Save } from "lucide-react";
+import { Search, Globe, Save } from "lucide-react";
 import { trpc } from "@/utils/trpc";
+import { socialBrands, socialBrandMap } from "@linkden/ui/social-brands";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-
-type FilterMode = "all" | "active";
 
 interface NetworkDraft {
 	url: string;
@@ -21,57 +19,92 @@ interface NetworkDraft {
 export default function SocialPage() {
 	const qc = useQueryClient();
 	const [searchQuery, setSearchQuery] = useState("");
-	const [filter, setFilter] = useState<FilterMode>("all");
 	const [drafts, setDrafts] = useState<Record<string, NetworkDraft>>({});
 	const [initialized, setInitialized] = useState(false);
 
+	// DB query only returns configured rows (slug + url + isActive)
 	const socialsQuery = useQuery(trpc.social.list.queryOptions());
 	const updateBulk = useMutation(trpc.social.updateBulk.mutationOptions());
 
-	const socials = socialsQuery.data ?? [];
+	const dbRows = socialsQuery.data ?? [];
 
-	// Initialize drafts from server data
+	// Initialize drafts: merge catalog with DB data
 	useEffect(() => {
-		if (socials.length > 0 && !initialized) {
+		if (!initialized && !socialsQuery.isLoading) {
 			const initial: Record<string, NetworkDraft> = {};
-			for (const s of socials) {
-				initial[s.slug] = { url: s.url ?? "", isActive: s.isActive };
+			// Start with all catalog entries as inactive
+			for (const brand of socialBrands) {
+				initial[brand.slug] = { url: "", isActive: false };
+			}
+			// Overlay DB data
+			for (const row of dbRows) {
+				if (initial[row.slug] !== undefined) {
+					initial[row.slug] = { url: row.url, isActive: row.isActive };
+				}
 			}
 			setDrafts(initial);
 			setInitialized(true);
 		}
-	}, [socials, initialized]);
+	}, [dbRows, socialsQuery.isLoading, initialized]);
 
-	const filtered = socials.filter((s) => {
-		const draft = drafts[s.slug];
-		const matchesSearch =
-			searchQuery === "" ||
-			s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			s.slug.toLowerCase().includes(searchQuery.toLowerCase());
-		const matchesFilter =
-			filter === "all" ||
-			(filter === "active" && (draft?.isActive ?? s.isActive));
-		return matchesSearch && matchesFilter;
-	});
+	// Build the merged + sorted + filtered list
+	const displayList = useMemo(() => {
+		const list = socialBrands.map((brand) => {
+			const draft = drafts[brand.slug] ?? { url: "", isActive: false };
+			return { ...brand, ...draft };
+		});
 
-	// Detect changes
+		// Sort: active with URL first, then active without URL, then inactive
+		list.sort((a, b) => {
+			const aScore = a.isActive ? (a.url ? 0 : 1) : 2;
+			const bScore = b.isActive ? (b.url ? 0 : 1) : 2;
+			if (aScore !== bScore) return aScore - bScore;
+			return a.name.localeCompare(b.name);
+		});
+
+		// Filter by search
+		if (searchQuery) {
+			const q = searchQuery.toLowerCase();
+			return list.filter(
+				(s) =>
+					s.isActive ||
+					s.name.toLowerCase().includes(q) ||
+					s.slug.toLowerCase().includes(q) ||
+					s.category.toLowerCase().includes(q),
+			);
+		}
+
+		return list;
+	}, [drafts, searchQuery]);
+
+	// Detect changes vs DB
 	const hasChanges = useMemo(() => {
-		for (const s of socials) {
-			const draft = drafts[s.slug];
+		// Build a map of DB state
+		const dbMap = new Map(dbRows.map((r) => [r.slug, r]));
+
+		for (const brand of socialBrands) {
+			const draft = drafts[brand.slug];
 			if (!draft) continue;
-			if (draft.url !== (s.url ?? "") || draft.isActive !== s.isActive) {
-				return true;
+			const db = dbMap.get(brand.slug);
+
+			if (draft.isActive && draft.url) {
+				// Should have a DB row
+				if (!db || db.url !== draft.url || db.isActive !== draft.isActive) {
+					return true;
+				}
+			} else {
+				// Should NOT have a DB row
+				if (db) return true;
 			}
 		}
 		return false;
-	}, [socials, drafts]);
+	}, [dbRows, drafts]);
 
 	const handleUrlChange = (slug: string, url: string) => {
 		setDrafts((prev) => ({
 			...prev,
 			[slug]: {
 				url,
-				// Auto-activate when URL is entered, auto-deactivate when cleared
 				isActive: url.trim().length > 0,
 			},
 		}));
@@ -89,15 +122,30 @@ export default function SocialPage() {
 	};
 
 	const handleSaveAll = async () => {
+		const dbMap = new Map(dbRows.map((r) => [r.slug, r]));
 		const changes: Array<{ slug: string; url: string; isActive: boolean }> = [];
-		for (const s of socials) {
-			const draft = drafts[s.slug];
+
+		for (const brand of socialBrands) {
+			const draft = drafts[brand.slug];
 			if (!draft) continue;
-			if (draft.url !== (s.url ?? "") || draft.isActive !== s.isActive) {
+			const db = dbMap.get(brand.slug);
+
+			const shouldExist = draft.isActive && draft.url;
+
+			if (shouldExist) {
+				if (!db || db.url !== draft.url || db.isActive !== draft.isActive) {
+					changes.push({
+						slug: brand.slug,
+						url: draft.url,
+						isActive: draft.isActive,
+					});
+				}
+			} else if (db) {
+				// Remove from DB
 				changes.push({
-					slug: s.slug,
-					url: draft.url,
-					isActive: draft.isActive,
+					slug: brand.slug,
+					url: "",
+					isActive: false,
 				});
 			}
 		}
@@ -110,13 +158,17 @@ export default function SocialPage() {
 			qc.invalidateQueries({
 				queryKey: trpc.social.list.queryOptions().queryKey,
 			});
-			toast.success(`${changes.length} network${changes.length > 1 ? "s" : ""} updated`);
+			toast.success(
+				`${changes.length} network${changes.length > 1 ? "s" : ""} updated`,
+			);
 		} catch {
 			toast.error("Failed to save changes");
 		}
 	};
 
-	const activeCount = Object.values(drafts).filter((d) => d.isActive).length;
+	const activeCount = Object.values(drafts).filter(
+		(d) => d.isActive && d.url,
+	).length;
 
 	return (
 		<div className="space-y-6">
@@ -125,7 +177,8 @@ export default function SocialPage() {
 				<div>
 					<h1 className="text-lg font-semibold">Social Networks</h1>
 					<p className="text-xs text-muted-foreground">
-						Add your profile URLs — networks with URLs are automatically shown on your page
+						Add your profile URLs — networks with URLs are automatically shown
+						on your page ({activeCount} active)
 					</p>
 				</div>
 				<Button
@@ -138,79 +191,54 @@ export default function SocialPage() {
 				</Button>
 			</div>
 
-			{/* Controls */}
-			<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-				<div className="relative flex-1">
-					<Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-					<Input
-						placeholder="Search networks..."
-						value={searchQuery}
-						onChange={(e) => setSearchQuery(e.target.value)}
-						className="pl-8"
-					/>
-				</div>
-				<div className="flex items-center gap-1">
-					<Filter className="mr-1 h-3.5 w-3.5 text-muted-foreground" />
-					<Button
-						variant={filter === "all" ? "default" : "outline"}
-						size="xs"
-						onClick={() => setFilter("all")}
-					>
-						All ({socials.length})
-					</Button>
-					<Button
-						variant={filter === "active" ? "default" : "outline"}
-						size="xs"
-						onClick={() => setFilter("active")}
-					>
-						Active ({activeCount})
-					</Button>
-				</div>
+			{/* Search */}
+			<div className="relative">
+				<Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+				<Input
+					placeholder="Search networks..."
+					value={searchQuery}
+					onChange={(e) => setSearchQuery(e.target.value)}
+					className="pl-8"
+				/>
 			</div>
 
-			{/* List */}
-			{socialsQuery.isError ? (
+			{/* Error state */}
+			{socialsQuery.isError && (
 				<Card>
-					<CardContent className="py-12 text-center">
-						<Globe className="mx-auto mb-3 h-8 w-8 text-destructive/40" />
-						<p className="text-sm font-medium">Failed to load social networks</p>
-						<p className="mt-1 text-xs text-muted-foreground">
-							Make sure the database schema is up to date
+					<CardContent className="py-4 text-center">
+						<p className="text-sm text-destructive">
+							Failed to load saved networks — changes may not reflect current
+							state
 						</p>
 						<Button
 							variant="outline"
 							size="sm"
-							className="mt-3"
+							className="mt-2"
 							onClick={() => socialsQuery.refetch()}
 						>
 							Retry
 						</Button>
 					</CardContent>
 				</Card>
-			) : socialsQuery.isLoading ? (
-				<div className="space-y-1">
-					{Array.from({ length: 8 }).map((_, i) => (
-						<Skeleton key={`sk-${i}`} className="h-12" />
-					))}
-				</div>
-			) : filtered.length === 0 ? (
+			)}
+
+			{/* List */}
+			{displayList.length === 0 ? (
 				<Card>
 					<CardContent className="py-12 text-center">
 						<Globe className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
 						<p className="text-sm font-medium">No networks found</p>
 						<p className="mt-1 text-xs text-muted-foreground">
-							{searchQuery
-								? "Try a different search term"
-								: "No social networks available"}
+							Try a different search term
 						</p>
 					</CardContent>
 				</Card>
 			) : (
 				<div className="space-y-px rounded-lg border overflow-hidden">
-					{filtered.map((social) => {
+					{displayList.map((social) => {
 						const draft = drafts[social.slug] ?? {
-							url: social.url ?? "",
-							isActive: social.isActive,
+							url: "",
+							isActive: false,
 						};
 
 						return (
@@ -236,7 +264,7 @@ export default function SocialPage() {
 									{social.name}
 								</span>
 
-								{/* URL input (always visible) */}
+								{/* URL input */}
 								<div className="min-w-0 flex-1">
 									<Input
 										value={draft.url}
