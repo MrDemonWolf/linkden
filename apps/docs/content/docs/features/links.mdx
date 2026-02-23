@@ -60,27 +60,39 @@ LinkDen includes 100+ predefined SVG brand icons. When creating or editing a lin
 - **Communication**: Email, Phone, WhatsApp, Signal, Slack
 - And many more.
 
+## Single-Instance Block Limits
+
+Certain block types are limited to one instance per page because they represent a single piece of data or a unique UI element. Attempting to add a second instance of these blocks is prevented -- the block is greyed out in the picker once one is already on your page:
+
+| Block Type | Limit | Reason |
+|------------|-------|--------|
+| Apple Wallet | 1 | One pass configuration per site |
+| vCard Download | 1 | One vCard file per site |
+| Contact Form | 1 | One contact form per page |
+
+All other block types (Link, Heading, Text, Spacer, Email, Phone) can be added any number of times.
+
 ## Managing Links
 
-### Adding a Link
+### Adding a Block
 
-1. Navigate to `/admin/links` in the admin panel.
-2. Click **Add New** or navigate to `/admin/links/new`.
-3. Select the block type (Link, Heading, Text, Spacer, Email, Phone, vCard, Wallet).
-4. Fill in the fields and click **Save**.
+1. Open the admin panel. The **Add Blocks** tab is shown by default in the left panel.
+2. Use the **search bar** at the top of the panel to filter block types by name or description.
+3. Click a block type to add it to the bottom of your list.
+4. A slide-in animation confirms the block was added.
 
-### Reordering Links
+### Reordering Blocks
 
-Links support drag-and-drop reordering in the admin panel. Grab the handle on the left side of any link and drag it to a new position. The order updates automatically.
+Drag-and-drop reordering works directly on the **phone preview** in the center panel. Grab any link card on the preview and drag it to a new position. The order updates live and the change is queued for the next publish. A drag handle icon appears on hover to indicate draggable items.
 
-### Editing a Link
+### Editing a Block
 
-Click any link in the list to open the edit page. Make your changes and click **Save**.
+Click any block in the **Block List** tab of the left panel to open its edit form. Make your changes and click **Save**.
 
-### Deleting a Link
+### Deleting a Block
 
-Open the link editor and click **Delete**. A confirmation dialog prevents accidental deletion.
+Open the block edit form and click **Delete**. A confirmation dialog prevents accidental deletion.
 
 ### Toggling Visibility
 
-Each link has a visibility toggle. Hidden links are not shown on the public page but remain in your list for easy re-enabling.
+Each block has a visibility toggle switch in the block list. Hidden blocks are not shown on the public page but remain in your list for easy re-enabling. The toggle uses `role="switch"` and `aria-checked` for full accessibility.

@@ -4,12 +4,14 @@ import { ContactForm } from "@/components/public/contact-form";
 
 interface ContactFormBlockProps {
   captchaSiteKey?: string;
+  captchaType?: string;
   heading?: string;
   buttonText?: string;
 }
 
 export function ContactFormBlock({
   captchaSiteKey,
+  captchaType,
   heading,
   buttonText,
 }: ContactFormBlockProps) {
@@ -31,7 +33,7 @@ export function ContactFormBlock({
           {heading}
         </h3>
       )}
-      <ContactForm captchaSiteKey={captchaSiteKey} />
+      <ContactForm captchaSiteKey={captchaSiteKey} captchaType={captchaType} />
     </div>
   );
 }

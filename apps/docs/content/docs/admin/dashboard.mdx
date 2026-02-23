@@ -19,35 +19,51 @@ The admin panel uses a 3-column layout on desktop:
 
 ### Left Panel (Blocks)
 
-The left panel is your content manager with multiple sections accessible via an icon rail:
+The left panel is a collapsible sidebar. It collapses to an icon-only rail to give the preview more space, and expands to show section labels. Click any icon or the expand toggle to switch modes.
 
-- **Add Blocks** -- Grid of available block types (link, heading, text, email, phone, vCard, spacer, wallet). Click to add a new block.
-- **Block List** -- Drag-and-drop ordered list of all your blocks. Toggle visibility, delete, or reorder.
+Sections accessible from the left panel:
+
+- **Add Blocks** -- Grid of available block types with labels and short descriptions. Includes a search bar to filter by name. Click a type to add a block instantly. Single-instance block types (vCard, Wallet, Contact Form) are greyed out once already added.
+- **Block List** -- Ordered list of all your blocks. Toggle visibility, delete, or click to edit.
 - **Social** -- Manage social media icon links that appear as a row on your public page.
-- **Pages** -- Quick access to custom pages, contacts, vCard, wallet, and analytics.
+- **Drawers** -- Quick-access buttons for Analytics, vCard, Wallet, Contacts, and Pages. These open as slide-in drawers with `role="dialog"` and `aria-modal="true"` for accessibility.
+
+The Docs and Settings shortcuts that were previously at the bottom of the left panel have been removed. Access settings via the Right Panel Settings tab and documentation at the docs site directly.
 
 ### Center Panel (Live Preview)
 
-A phone-frame mockup that renders your actual public page in real time. Changes to blocks, settings, colors, and themes are reflected instantly in the preview.
+A device-frame mockup that renders your actual public page in real time. Changes to blocks, settings, colors, and themes are reflected instantly in the preview.
 
-Device size toggles let you preview at phone (375px), tablet (768px), or desktop (1024px) widths.
+Device size toggles let you preview at three breakpoints:
+
+| Device | Width | Height |
+|--------|-------|--------|
+| Phone | 393px | 852px |
+| Tablet | 820px | 1180px |
+| Desktop | 1440px | 900px |
+
+The preview uses premium CSS device frames with reflective gradients, an ambient glow effect behind the frame, a noise texture overlay, and browser chrome styling on the desktop view.
+
+**Drag-and-drop reordering** works directly on the phone preview. Grab any link block and drag it to a new position. The order updates live. This feature uses `@hello-pangea/dnd` and works on touch devices as well as mouse.
 
 ### Right Panel (Design / Analytics / Settings)
 
-Three tabs at the top:
+Three tabs at the top. Settings groups within each tab are separated by visible section dividers and use consistent `p-5` padding throughout:
 
 - **Design** -- Theme selector with visual previews, color customization (accent, background, text), and branding settings (name, logo).
 - **Analytics** -- Quick stats showing total views, clicks, and CTR.
-- **Settings** -- Profile info (name, bio, avatar, verified badge), contact form toggle, CAPTCHA keys, SEO/meta fields, and export/import.
+- **Settings** -- Profile info (name, bio, avatar), contact form toggle, CAPTCHA type selector, SEO/meta fields, and export/import.
+
+**Verified badge placement:** The verified badge (checkmark icon) is shown inline next to your display name in the profile section of the right panel and on the public page. It is no longer displayed as an overlay on the avatar image.
 
 ### Top Bar
 
 The top bar spans the full width and includes:
 
-- LinkDen logo
-- Device size toggles
+- **LinkDen logo** -- Rendered in the Sora font.
+- Device size toggles (Phone / Tablet / Desktop)
 - Preview and "View Page" links
-- Publish button (saves all changes to the server)
+- **Publish button** -- Gradient style with a subtle glow effect. Saves all draft changes to the live page and purges the edge cache. The button label also uses the Sora font.
 
 ## Mobile Layout
 

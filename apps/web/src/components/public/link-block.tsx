@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import {
   ChevronRight,
@@ -11,6 +12,7 @@ import {
   Mail,
   Phone,
   Twitter,
+  Wallet,
 } from "lucide-react";
 import { ContactFormBlock } from "./blocks/contact-form-block";
 import { DividerBlock } from "./blocks/divider-block";
@@ -43,6 +45,7 @@ interface LinkData {
 interface LinkBlockProps {
   link: LinkData;
   captchaSiteKey?: string;
+  captchaType?: string;
 }
 
 function LinkIcon({ icon }: { icon: string | null }) {
@@ -52,7 +55,7 @@ function LinkIcon({ icon }: { icon: string | null }) {
   return <span className="text-xs font-bold">{icon.slice(0, 2).toUpperCase()}</span>;
 }
 
-export function LinkBlock({ link, captchaSiteKey }: LinkBlockProps) {
+export function LinkBlock({ link, captchaSiteKey, captchaType }: LinkBlockProps) {
   const trackClick = trpc.links.trackClick.useMutation();
 
   function handleClick() {
@@ -115,6 +118,7 @@ export function LinkBlock({ link, captchaSiteKey }: LinkBlockProps) {
       return (
         <ContactFormBlock
           captchaSiteKey={captchaSiteKey}
+          captchaType={captchaType}
           heading={link.title !== "Get in Touch" ? link.title : undefined}
           buttonText={metadata.buttonText as string}
         />
@@ -135,6 +139,7 @@ export function LinkBlock({ link, captchaSiteKey }: LinkBlockProps) {
         <a
           href={link.url?.startsWith("mailto:") ? link.url : `mailto:${link.url ?? ""}`}
           onClick={handleClick}
+          aria-label={`Email: ${link.title}`}
           className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/8 border border-white/12 backdrop-blur-sm hover:bg-white/12 hover:border-white/20 transition-all duration-200 group"
         >
           <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/20 flex items-center justify-center shrink-0">
@@ -150,6 +155,7 @@ export function LinkBlock({ link, captchaSiteKey }: LinkBlockProps) {
         <a
           href={link.url?.startsWith("tel:") ? link.url : `tel:${link.url ?? ""}`}
           onClick={handleClick}
+          aria-label={`Phone: ${link.title}`}
           className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/8 border border-white/12 backdrop-blur-sm hover:bg-white/12 hover:border-white/20 transition-all duration-200 group"
         >
           <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/20 flex items-center justify-center shrink-0">
@@ -159,6 +165,9 @@ export function LinkBlock({ link, captchaSiteKey }: LinkBlockProps) {
           <ChevronRight className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--primary)] group-hover:translate-x-0.5 transition-all" />
         </a>
       );
+
+    case "wallet":
+      return <WalletBlock link={link} onTrack={handleClick} />;
 
     case "vcard":
       return <VCardDownloadBlock link={link} onTrack={handleClick} />;
@@ -170,6 +179,7 @@ export function LinkBlock({ link, captchaSiteKey }: LinkBlockProps) {
           target="_blank"
           rel="noopener noreferrer"
           onClick={handleClick}
+          aria-label={link.title}
           className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/8 border border-white/12 backdrop-blur-sm hover:bg-white/12 hover:border-white/20 transition-all duration-200 group"
         >
           <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/20 flex items-center justify-center shrink-0 text-[var(--primary)]">
@@ -180,6 +190,57 @@ export function LinkBlock({ link, captchaSiteKey }: LinkBlockProps) {
         </a>
       );
   }
+}
+
+function WalletBlock({
+  link,
+  onTrack,
+}: {
+  link: LinkData;
+  onTrack: () => void;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const walletQuery = trpc.wallet.generate.useQuery(undefined, {
+    enabled: false,
+  });
+
+  async function handleAddToWallet() {
+    onTrack();
+    setLoading(true);
+    setError(null);
+    try {
+      await walletQuery.refetch();
+    } catch (err: any) {
+      setError(err?.message || "Failed to generate wallet pass");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-1">
+      <button
+        type="button"
+        onClick={handleAddToWallet}
+        disabled={loading}
+        aria-label="Add to Apple Wallet"
+        className="flex items-center gap-3 p-3.5 rounded-2xl bg-black/80 border border-white/12 backdrop-blur-sm hover:bg-black/90 hover:border-white/20 transition-all duration-200 group w-full text-left"
+      >
+        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+          <Wallet className="w-5 h-5 text-white" />
+        </div>
+        <span className="flex-1 text-sm font-medium truncate text-white">
+          {loading ? "Generating..." : link.title || "Add to Apple Wallet"}
+        </span>
+        <ChevronRight className="w-4 h-4 text-white/50 group-hover:text-white/80 group-hover:translate-x-0.5 transition-all" />
+      </button>
+      {error && (
+        <p className="text-[10px] text-red-400 px-2">{error}</p>
+      )}
+    </div>
+  );
 }
 
 function VCardDownloadBlock({

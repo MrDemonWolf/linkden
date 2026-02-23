@@ -2,9 +2,7 @@
 
 import { PublicPage } from "@/components/public/public-page";
 import {
-  placeholderLinks,
   placeholderSettings,
-  placeholderSocialLinks,
 } from "@/lib/placeholder-data";
 import { trpc } from "@/lib/trpc";
 
@@ -43,8 +41,15 @@ export default function HomePage() {
     }
   }
 
-  // Use server links if available, otherwise placeholder
-  const links = linksQuery.data && linksQuery.data.length > 0 ? linksQuery.data : placeholderLinks;
+  // Use server links — show empty state when no blocks exist
+  const links = linksQuery.data ?? [];
 
-  return <PublicPage settings={settingsMap} links={links} socialLinks={placeholderSocialLinks} />;
+  // Parse social links from settings
+  let socialLinks: { platform: string; url: string }[] = [];
+  try {
+    const raw = settingsMap.socialLinks;
+    if (raw) socialLinks = JSON.parse(raw);
+  } catch {}
+
+  return <PublicPage settings={settingsMap} links={links} socialLinks={socialLinks} />;
 }

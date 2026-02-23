@@ -7,6 +7,7 @@
     "dev": "wrangler dev",
     "build": "esbuild src/index.ts --bundle --outfile=dist/index.js --format=esm --platform=browser --conditions=workerd,worker,import --main-fields=module,main --external:cloudflare:* --external:node:*",
     "deploy": "wrangler deploy",
+    "db:reset": "rm -rf .wrangler/state/v3/d1 && echo 'Local D1 database wiped. Run pnpm dev to recreate.'",
     "lint": "biome check ./src",
     "typecheck": "tsc --noEmit"
   },

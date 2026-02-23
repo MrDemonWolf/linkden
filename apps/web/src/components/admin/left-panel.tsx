@@ -7,7 +7,9 @@ import { DragDropContext, Draggable, type DropResult, Droppable } from "@hello-p
 import {
   AlignLeft,
   BarChart3,
-  BookOpen,
+  Check,
+  ChevronLeft,
+  ChevronRight,
   Code,
   Contact,
   Eye,
@@ -24,7 +26,7 @@ import {
   Minus,
   Phone,
   Plus,
-  Settings,
+  Search,
   Share2,
   SplitSquareHorizontal,
   Trash2,
@@ -32,7 +34,7 @@ import {
   Video,
   Wallet,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type LeftSection = "blocks" | "add" | "social" | "pages";
 
@@ -69,57 +71,76 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
   social_button: <Share2 className="w-4 h-4" />,
 };
 
+interface BlockDef {
+  type: LinkType;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+}
+
 interface BlockCategory {
   label: string;
-  blocks: { type: LinkType; label: string; icon: React.ReactNode }[];
+  blocks: BlockDef[];
 }
 
 const BLOCK_CATEGORIES: BlockCategory[] = [
   {
-    label: "Content",
+    label: "Basic",
     blocks: [
-      { type: "link", label: "Link", icon: <Link2 className="w-4.5 h-4.5" /> },
-      { type: "heading", label: "Heading", icon: <Heading className="w-4.5 h-4.5" /> },
-      { type: "text", label: "Text", icon: <Type className="w-4.5 h-4.5" /> },
-      { type: "spacer", label: "Spacer", icon: <Minus className="w-4.5 h-4.5" /> },
-      { type: "divider", label: "Divider", icon: <SplitSquareHorizontal className="w-4.5 h-4.5" /> },
-      { type: "html", label: "HTML", icon: <Code className="w-4.5 h-4.5" /> },
-    ],
-  },
-  {
-    label: "Social",
-    blocks: [
-      { type: "social_button", label: "Social Button", icon: <Share2 className="w-4.5 h-4.5" /> },
+      { type: "link", label: "Link", description: "Add an external URL", icon: <Link2 className="w-4.5 h-4.5" /> },
+      { type: "heading", label: "Heading", description: "Section title text", icon: <Heading className="w-4.5 h-4.5" /> },
+      { type: "text", label: "Text", description: "Rich text content block", icon: <Type className="w-4.5 h-4.5" /> },
+      { type: "spacer", label: "Spacer", description: "Add vertical spacing", icon: <Minus className="w-4.5 h-4.5" /> },
+      { type: "divider", label: "Divider", description: "Horizontal line separator", icon: <SplitSquareHorizontal className="w-4.5 h-4.5" /> },
     ],
   },
   {
     label: "Media",
     blocks: [
-      { type: "image", label: "Image", icon: <Image className="w-4.5 h-4.5" /> },
-      { type: "video", label: "Video", icon: <Video className="w-4.5 h-4.5" /> },
+      { type: "image", label: "Image", description: "Display an image", icon: <Image className="w-4.5 h-4.5" /> },
+      { type: "video", label: "Video", description: "Embed YouTube or Vimeo", icon: <Video className="w-4.5 h-4.5" /> },
+      { type: "html", label: "HTML", description: "Custom HTML embed", icon: <Code className="w-4.5 h-4.5" /> },
     ],
   },
   {
-    label: "Contact",
+    label: "Advanced",
     blocks: [
-      { type: "email", label: "Email", icon: <Mail className="w-4.5 h-4.5" /> },
-      { type: "phone", label: "Phone", icon: <Phone className="w-4.5 h-4.5" /> },
-      { type: "contact_form", label: "Contact Form", icon: <MessageSquare className="w-4.5 h-4.5" /> },
-      { type: "vcard", label: "vCard", icon: <Contact className="w-4.5 h-4.5" /> },
-      { type: "wallet", label: "Wallet Pass", icon: <Wallet className="w-4.5 h-4.5" /> },
+      { type: "email", label: "Email", description: "Mailto link button", icon: <Mail className="w-4.5 h-4.5" /> },
+      { type: "phone", label: "Phone", description: "Click-to-call button", icon: <Phone className="w-4.5 h-4.5" /> },
+      { type: "social_button", label: "Social Button", description: "Branded social link", icon: <Share2 className="w-4.5 h-4.5" /> },
+      { type: "contact_form", label: "Contact Form", description: "Collect visitor messages", icon: <MessageSquare className="w-4.5 h-4.5" /> },
+      { type: "vcard", label: "vCard", description: "Downloadable contact card", icon: <Contact className="w-4.5 h-4.5" /> },
+      { type: "wallet", label: "Wallet Pass", description: "Apple Wallet pass", icon: <Wallet className="w-4.5 h-4.5" /> },
     ],
   },
 ];
 
+const SIDEBAR_COLLAPSED_KEY = "linkden-sidebar-collapsed";
+
 interface LeftPanelProps {
   onOpenDrawer?: (drawer: AdminDrawer) => void;
+  settings?: Record<string, string>;
+  onSettingsChange?: (key: string, value: string) => void;
+  onSettingsClick?: () => void;
 }
 
-export function LeftPanel({ onOpenDrawer }: LeftPanelProps) {
+export function LeftPanel({ onOpenDrawer, settings, onSettingsChange, onSettingsClick }: LeftPanelProps) {
   const [activeSection, setActiveSection] = useState<LeftSection>("blocks");
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+    if (stored === "true") setCollapsed(true);
+  }, []);
+
+  function toggleCollapsed() {
+    const next = !collapsed;
+    setCollapsed(next);
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next));
+  }
 
   const navItems = [
-    { id: "add" as const, icon: <Plus className="w-[18px] h-[18px]" />, label: "Add" },
+    { id: "add" as const, icon: <Plus className="w-[18px] h-[18px]" />, label: "Add Blocks" },
     { id: "blocks" as const, icon: <LayoutGrid className="w-[18px] h-[18px]" />, label: "Blocks" },
     { id: "social" as const, icon: <Share2 className="w-[18px] h-[18px]" />, label: "Social" },
     { id: "pages" as const, icon: <FileText className="w-[18px] h-[18px]" />, label: "Pages" },
@@ -128,54 +149,43 @@ export function LeftPanel({ onOpenDrawer }: LeftPanelProps) {
   return (
     <div className="flex h-full">
       {/* Icon Rail */}
-      <div className="w-[52px] bg-[var(--admin-bg)] border-r border-[var(--admin-border)] flex flex-col items-center py-2.5 gap-0.5 shrink-0">
+      <div className={`${collapsed ? "w-[52px]" : "w-[140px]"} bg-[var(--admin-bg)] border-r border-[var(--admin-border)] flex flex-col items-center py-2.5 gap-0.5 shrink-0 transition-all duration-200`}>
         {navItems.map((item) => (
           <button
             key={item.id}
             type="button"
             onClick={() => setActiveSection(item.id)}
-            className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-150 relative group ${
+            className={`${collapsed ? "w-9 h-9 justify-center" : "w-full h-9 justify-start px-3 gap-2.5"} rounded-lg flex items-center transition-all duration-200 relative group ${
               activeSection === item.id
-                ? "bg-[var(--admin-accent)] text-white shadow-sm"
+                ? "icon-rail-item-active text-white"
                 : "text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-secondary)] hover:bg-[var(--admin-accent-subtle)]"
             }`}
-            title={item.label}
+            title={collapsed ? item.label : undefined}
+            aria-label={item.label}
           >
-            {item.icon}
-            {/* Tooltip */}
-            <span className="absolute left-full ml-2 px-2 py-1 text-[10px] font-medium bg-[var(--admin-text)] text-[var(--admin-surface)] rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-50">
-              {item.label}
-            </span>
+            <span className="shrink-0">{item.icon}</span>
+            {!collapsed && (
+              <span className="text-[11px] font-semibold truncate">{item.label}</span>
+            )}
+            {collapsed && (
+              <span className="absolute left-full ml-2 px-2 py-1 text-[10px] font-medium bg-[var(--admin-text)] text-[var(--admin-surface)] rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-50">
+                {item.label}
+              </span>
+            )}
           </button>
         ))}
 
         <div className="flex-1" />
 
-        <div className="w-6 border-t border-[var(--admin-border)] my-1" />
-
-        <a
-          href="https://mrdemonwolf.github.io/linkden/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-9 h-9 rounded-lg flex items-center justify-center text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-secondary)] hover:bg-[var(--admin-accent-subtle)] transition-all duration-150 relative group"
-          title="Documentation"
-        >
-          <BookOpen className="w-[18px] h-[18px]" />
-          <span className="absolute left-full ml-2 px-2 py-1 text-[10px] font-medium bg-[var(--admin-text)] text-[var(--admin-surface)] rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-50">
-            Docs
-          </span>
-        </a>
-
+        {/* Collapse toggle */}
         <button
           type="button"
-          onClick={() => onOpenDrawer?.("wallet")}
-          className="w-9 h-9 rounded-lg flex items-center justify-center text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-secondary)] hover:bg-[var(--admin-accent-subtle)] transition-all duration-150 relative group"
-          title="Settings"
+          onClick={toggleCollapsed}
+          className="w-9 h-9 rounded-lg flex items-center justify-center text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-secondary)] hover:bg-[var(--admin-accent-subtle)] transition-all duration-150"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          <Settings className="w-[18px] h-[18px]" />
-          <span className="absolute left-full ml-2 px-2 py-1 text-[10px] font-medium bg-[var(--admin-text)] text-[var(--admin-surface)] rounded-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 whitespace-nowrap z-50">
-            Settings
-          </span>
+          {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
       </div>
 
@@ -183,15 +193,21 @@ export function LeftPanel({ onOpenDrawer }: LeftPanelProps) {
       <div className="flex-1 overflow-y-auto bg-[var(--admin-surface)]">
         {activeSection === "add" && <AddBlocksSection />}
         {activeSection === "blocks" && <BlockListSection onOpenDrawer={onOpenDrawer} />}
-        {activeSection === "social" && <SocialSection />}
+        {activeSection === "social" && <SocialSection settings={settings} onSettingsChange={onSettingsChange} />}
         {activeSection === "pages" && <PagesSection onOpenDrawer={onOpenDrawer} />}
       </div>
     </div>
   );
 }
 
+const SINGLE_INSTANCE_TYPES = new Set<LinkType>(["contact_form", "vcard", "wallet"]);
+
 function AddBlocksSection() {
   const utils = trpc.useUtils();
+  const linksQuery = trpc.links.listAll.useQuery();
+  const existingTypes = new Set((linksQuery.data ?? []).map((l) => l.type));
+  const [searchQuery, setSearchQuery] = useState("");
+
   const createMutation = trpc.links.create.useMutation({
     onSuccess: () => {
       utils.links.listAll.invalidate();
@@ -228,28 +244,73 @@ function AddBlocksSection() {
     });
   }
 
+  const lowerSearch = searchQuery.toLowerCase();
+
   return (
     <div className="p-4">
-      <h3 className="text-[13px] font-semibold text-[var(--admin-text)] mb-4 tracking-tight">Add Blocks</h3>
-      {BLOCK_CATEGORIES.map((category) => (
-        <div key={category.label} className="mb-5">
-          <p className="admin-section-label">{category.label}</p>
-          <div className="grid grid-cols-2 gap-1.5">
-            {category.blocks.map((block) => (
-              <button
-                key={block.type}
-                type="button"
-                onClick={() => handleAddBlock(block.type)}
-                disabled={createMutation.isPending}
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-surface)] hover:border-[var(--admin-accent)] hover:bg-[var(--admin-accent-subtle)] transition-all duration-150 text-[var(--admin-text-secondary)] hover:text-[var(--admin-accent)] group"
-              >
-                <span className="shrink-0 transition-transform duration-150 group-hover:scale-110">{block.icon}</span>
-                <span className="text-[11px] font-medium">{block.label}</span>
-              </button>
-            ))}
+      <h3 className="text-[13px] font-semibold text-[var(--admin-text)] mb-3 tracking-tight">Add Blocks</h3>
+
+      {/* Search */}
+      <div className="relative mb-4">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--admin-text-tertiary)]" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search blocks..."
+          className="admin-input pl-8 text-[11px]"
+          aria-label="Search blocks"
+        />
+      </div>
+
+      {BLOCK_CATEGORIES.map((category) => {
+        const filtered = category.blocks.filter(
+          (b) =>
+            !lowerSearch ||
+            b.label.toLowerCase().includes(lowerSearch) ||
+            b.description.toLowerCase().includes(lowerSearch)
+        );
+        if (filtered.length === 0) return null;
+
+        return (
+          <div key={category.label} className="mb-5">
+            <p className="admin-section-label">{category.label}</p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {filtered.map((block) => {
+                const isSingle = SINGLE_INSTANCE_TYPES.has(block.type);
+                const alreadyExists = isSingle && existingTypes.has(block.type);
+                return (
+                  <button
+                    key={block.type}
+                    type="button"
+                    onClick={() => handleAddBlock(block.type)}
+                    disabled={createMutation.isPending || alreadyExists}
+                    className={`block-card flex flex-col items-start gap-1 px-3 py-2.5 rounded-lg border transition-all duration-200 group relative ${
+                      alreadyExists
+                        ? "border-[var(--admin-border)] bg-[var(--admin-bg)] text-[var(--admin-text-tertiary)] cursor-not-allowed opacity-50"
+                        : "border-[var(--admin-border)] bg-[var(--admin-surface)] hover:border-[var(--admin-accent)] hover:bg-[var(--admin-accent-subtle)] text-[var(--admin-text-secondary)] hover:text-[var(--admin-accent)]"
+                    }`}
+                    title={alreadyExists ? "Already added" : `Add ${block.label}`}
+                  >
+                    <div className="flex items-center gap-2 w-full">
+                      <span className="shrink-0 transition-transform duration-150 group-hover:scale-110">{block.icon}</span>
+                      <span className="text-[11px] font-medium truncate">
+                        {block.label}
+                      </span>
+                      {alreadyExists && (
+                        <Check className="w-3.5 h-3.5 text-emerald-500 ml-auto shrink-0" />
+                      )}
+                    </div>
+                    <span className="text-[9px] text-[var(--admin-text-tertiary)] leading-tight line-clamp-1">
+                      {block.description}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -303,7 +364,10 @@ function BlockListSection({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawe
     }
   }
 
-  if (linksQuery.isLoading) {
+  const links = linksQuery.data ?? [];
+  const isInitialLoading = linksQuery.isLoading && links.length === 0;
+
+  if (isInitialLoading) {
     return (
       <div className="p-4 space-y-2">
         {[1, 2, 3].map((i) => (
@@ -312,8 +376,6 @@ function BlockListSection({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawe
       </div>
     );
   }
-
-  const links = linksQuery.data ?? [];
 
   return (
     <div className="p-4">
@@ -326,6 +388,9 @@ function BlockListSection({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawe
             </span>
           )}
         </h3>
+        {linksQuery.isFetching && !isInitialLoading && (
+          <div className="w-3 h-3 border-2 border-[var(--admin-accent)]/30 border-t-[var(--admin-accent)] rounded-full animate-spin" />
+        )}
       </div>
 
       {links.length === 0 ? (
@@ -386,6 +451,7 @@ function BlockListSection({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawe
                             }}
                             className="p-1.5 rounded-md hover:bg-[var(--admin-surface)] text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-secondary)] transition-colors"
                             title={link.isActive ? "Hide" : "Show"}
+                            aria-label={link.isActive ? "Hide block" : "Show block"}
                           >
                             {link.isActive ? (
                               <Eye className="w-3.5 h-3.5" />
@@ -405,6 +471,7 @@ function BlockListSection({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawe
                                 : "hover:bg-[var(--admin-surface)] text-[var(--admin-text-tertiary)] hover:text-[var(--admin-danger)]"
                             }`}
                             title={deletingId === link.id ? "Click again to confirm" : "Delete"}
+                            aria-label={deletingId === link.id ? "Confirm delete" : "Delete block"}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -423,7 +490,44 @@ function BlockListSection({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawe
   );
 }
 
-function SocialSection() {
+const SOCIAL_PLATFORMS = [
+  { key: "facebook", label: "Facebook" },
+  { key: "instagram", label: "Instagram" },
+  { key: "linkedin", label: "LinkedIn" },
+  { key: "youtube", label: "YouTube" },
+  { key: "twitter", label: "Twitter / X" },
+  { key: "github", label: "GitHub" },
+];
+
+function SocialSection({
+  settings,
+  onSettingsChange,
+}: {
+  settings?: Record<string, string>;
+  onSettingsChange?: (key: string, value: string) => void;
+}) {
+  // Parse existing social links from settings JSON
+  let socialLinks: { platform: string; url: string }[] = [];
+  try {
+    const raw = settings?.socialLinks;
+    if (raw) socialLinks = JSON.parse(raw);
+  } catch {}
+
+  // Build a map for quick lookup
+  const linkMap: Record<string, string> = {};
+  for (const link of socialLinks) {
+    linkMap[link.platform] = link.url;
+  }
+
+  function handleChange(platform: string, url: string) {
+    const updated = { ...linkMap, [platform]: url };
+    // Build array, filtering out empty URLs
+    const arr = Object.entries(updated)
+      .filter(([, v]) => v.trim() !== "")
+      .map(([p, u]) => ({ platform: p, url: u }));
+    onSettingsChange?.("socialLinks", JSON.stringify(arr));
+  }
+
   return (
     <div className="p-4">
       <h3 className="text-[13px] font-semibold text-[var(--admin-text)] mb-1 tracking-tight">Social Links</h3>
@@ -431,17 +535,18 @@ function SocialSection() {
         Add your social media profiles. These appear as icons on your page.
       </p>
       <div className="space-y-2">
-        {["Facebook", "Instagram", "LinkedIn", "YouTube", "Twitter / X", "GitHub"].map(
-          (platform) => (
-            <div key={platform} className="flex items-center gap-2">
-              <input
-                type="text"
-                placeholder={`${platform} URL`}
-                className="admin-input text-[11px]"
-              />
-            </div>
-          ),
-        )}
+        {SOCIAL_PLATFORMS.map((platform) => (
+          <div key={platform.key} className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder={`${platform.label} URL`}
+              value={linkMap[platform.key] || ""}
+              onChange={(e) => handleChange(platform.key, e.target.value)}
+              className="admin-input text-[11px]"
+              aria-label={`${platform.label} URL`}
+            />
+          </div>
+        ))}
       </div>
       <p className="text-[10px] text-[var(--admin-text-tertiary)] mt-3 leading-relaxed">
         Social links are stored in settings and will be saved when you publish.
@@ -455,15 +560,16 @@ function PagesSection({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawer) =
 
   return (
     <div className="p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[13px] font-semibold text-[var(--admin-text)] tracking-tight">Custom Pages</h3>
+      <div className="flex items-center justify-between mb-3 gap-2">
+        <h3 className="text-[13px] font-semibold text-[var(--admin-text)] tracking-tight shrink-0">Custom Pages</h3>
         <button
           type="button"
           onClick={() => onOpenDrawer?.("pages-new")}
-          className="text-[11px] text-[var(--admin-accent)] hover:text-[var(--admin-accent-hover)] font-semibold flex items-center gap-0.5 transition-colors"
+          className="text-[11px] text-[var(--admin-accent)] hover:text-[var(--admin-accent-hover)] font-semibold flex items-center gap-0.5 transition-colors shrink-0"
+          aria-label="Create new page"
         >
           <Plus className="w-3.5 h-3.5" />
-          New
+          <span className="hidden sm:inline">New</span>
         </button>
       </div>
 
@@ -490,7 +596,7 @@ function PagesSection({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawer) =
                 <p className="text-[10px] text-[var(--admin-text-tertiary)]">/{page.slug}</p>
               </div>
               <span
-                className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0 ${
                   page.isPublished
                     ? "bg-emerald-50 text-emerald-600"
                     : "bg-[var(--admin-bg)] text-[var(--admin-text-tertiary)]"
@@ -502,8 +608,22 @@ function PagesSection({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawer) =
           ))}
         </div>
       ) : (
-        <div className="text-center py-8">
-          <p className="text-xs text-[var(--admin-text-tertiary)]">No custom pages yet.</p>
+        <div className="text-center py-10 px-4">
+          <div className="w-10 h-10 rounded-xl bg-[var(--admin-accent-subtle)] flex items-center justify-center mx-auto mb-3">
+            <FileText className="w-5 h-5 text-[var(--admin-accent)]" />
+          </div>
+          <p className="text-xs font-medium text-[var(--admin-text-secondary)] mb-1">No custom pages yet</p>
+          <p className="text-[11px] text-[var(--admin-text-tertiary)] mb-3">
+            Create custom pages for your about, portfolio, or more.
+          </p>
+          <button
+            type="button"
+            onClick={() => onOpenDrawer?.("pages-new")}
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--admin-accent)] hover:text-[var(--admin-accent-hover)] transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Create your first page
+          </button>
         </div>
       )}
 

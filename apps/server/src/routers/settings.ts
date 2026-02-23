@@ -25,6 +25,9 @@ const PUBLIC_SETTING_KEYS = [
   "customHead",
   "contactEnabled",
   "captchaSiteKey",
+  "captchaType",
+  "brandEnabled",
+  "verifiedBadge",
 ];
 
 export const settingsRouter = router({
@@ -40,7 +43,10 @@ export const settingsRouter = router({
 
   /** Public: only public-facing settings — returns only live value (ignores draftValue) */
   getPublic: publicProcedure.query(async ({ ctx }) => {
-    return ctx.db.select({ key: settings.key, value: settings.value, updatedAt: settings.updatedAt }).from(settings).where(inArray(settings.key, PUBLIC_SETTING_KEYS));
+    return ctx.db
+      .select({ key: settings.key, value: settings.value, updatedAt: settings.updatedAt })
+      .from(settings)
+      .where(inArray(settings.key, PUBLIC_SETTING_KEYS));
   }),
 
   /** Protected: count of unpublished setting changes */
@@ -59,7 +65,12 @@ export const settingsRouter = router({
     for (const setting of input.settings) {
       await ctx.db
         .insert(settings)
-        .values({ key: setting.key, value: setting.value, draftValue: setting.value, updatedAt: now })
+        .values({
+          key: setting.key,
+          value: setting.value,
+          draftValue: setting.value,
+          updatedAt: now,
+        })
         .onConflictDoUpdate({
           target: settings.key,
           set: { draftValue: setting.value, updatedAt: now },
@@ -71,10 +82,7 @@ export const settingsRouter = router({
 
   /** Protected: publish all drafts — copies draftValue to value, clears draftValue */
   publish: protectedProcedure.mutation(async ({ ctx }) => {
-    const drafts = await ctx.db
-      .select()
-      .from(settings)
-      .where(isNotNull(settings.draftValue));
+    const drafts = await ctx.db.select().from(settings).where(isNotNull(settings.draftValue));
 
     const now = new Date().toISOString();
 

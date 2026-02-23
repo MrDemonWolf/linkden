@@ -1,6 +1,8 @@
 "use client";
 
 import { PublicPage } from "@/components/public/public-page";
+import { toast } from "@/lib/toast";
+import { trpc } from "@/lib/trpc";
 
 interface LinkData {
   id: string;
@@ -39,7 +41,7 @@ const DEVICE_CONFIGS = {
   },
   tablet: {
     viewport: { width: 820, height: 1180 },
-    scale: 0.38,
+    scale: 0.42,
     frameRadius: 24,
     bezel: 6,
     showDynamicIsland: false,
@@ -48,8 +50,8 @@ const DEVICE_CONFIGS = {
     showSideButtons: false,
   },
   desktop: {
-    viewport: { width: 1280, height: 800 },
-    scale: 0.35,
+    viewport: { width: 1440, height: 900 },
+    scale: 0.32,
     frameRadius: 12,
     bezel: 0,
     showDynamicIsland: false,
@@ -62,185 +64,232 @@ const DEVICE_CONFIGS = {
 export function PhonePreview({ settings, links, socialLinks, deviceSize }: PhonePreviewProps) {
   const config = DEVICE_CONFIGS[deviceSize];
   const isDesktop = deviceSize === "desktop";
+  const isPhone = deviceSize === "phone";
+  const utils = trpc.useUtils();
+
+  const reorderMutation = trpc.links.reorder.useMutation({
+    onSuccess: () => {
+      utils.links.listAll.invalidate();
+    },
+    onError: () => toast.error("Failed to reorder"),
+  });
+
+  function handleReorder(sourceIndex: number, destIndex: number) {
+    const activeLinks = links.filter((l) => l.isActive);
+    const items = Array.from(activeLinks);
+    const [moved] = items.splice(sourceIndex, 1);
+    items.splice(destIndex, 0, moved);
+    const reordered = items.map((item, idx) => ({ id: item.id, sortOrder: idx }));
+    reorderMutation.mutate({ items: reordered });
+  }
 
   const scaledWidth = config.viewport.width * config.scale + (config.bezel * 2 * config.scale);
   const scaledHeight = config.viewport.height * config.scale + (config.bezel * 2 * config.scale);
 
+  const frameClass = isDesktop
+    ? "device-frame-desktop"
+    : isPhone
+      ? "device-frame-phone"
+      : "device-frame-tablet";
+
   return (
     <div className="flex flex-col items-center justify-center h-full py-6 overflow-auto">
-      <div
-        className="relative transition-all duration-500 ease-out"
-        style={{
-          width: isDesktop ? scaledWidth + 2 : scaledWidth + (config.showSideButtons ? 16 : 0),
-          height: isDesktop ? scaledHeight + 40 : scaledHeight,
-        }}
-      >
-        {/* Side buttons (phone only) */}
-        {config.showSideButtons && (
-          <>
-            {/* Volume buttons - left */}
-            <div
-              className="absolute bg-zinc-700 rounded-l-sm"
-              style={{
-                left: -3,
-                top: `${90 * config.scale}px`,
-                width: 3,
-                height: `${30 * config.scale}px`,
-              }}
-            />
-            <div
-              className="absolute bg-zinc-700 rounded-l-sm"
-              style={{
-                left: -3,
-                top: `${130 * config.scale}px`,
-                width: 3,
-                height: `${30 * config.scale}px`,
-              }}
-            />
-            {/* Power button - right */}
-            <div
-              className="absolute bg-zinc-700 rounded-r-sm"
-              style={{
-                right: -3,
-                top: `${120 * config.scale}px`,
-                width: 3,
-                height: `${40 * config.scale}px`,
-              }}
-            />
-          </>
-        )}
-
-        {/* Desktop browser chrome */}
-        {isDesktop && (
-          <div
-            className="bg-zinc-800 border border-zinc-700 rounded-t-xl flex items-center px-3 gap-2"
-            style={{ height: 36 }}
-          >
-            {/* Traffic lights */}
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-red-500" />
-              <div className="w-3 h-3 rounded-full bg-yellow-500" />
-              <div className="w-3 h-3 rounded-full bg-green-500" />
-            </div>
-            {/* URL bar */}
-            <div className="flex-1 mx-4">
-              <div className="bg-zinc-900 rounded-md px-3 py-1 text-[10px] text-zinc-400 truncate text-center">
-                {settings.metaTitle || settings.profileName || "linkden.app"}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Device shell */}
+      {/* Ambient glow behind device */}
+      <div className="preview-glow">
         <div
-          className="relative bg-zinc-950 shadow-2xl overflow-hidden transition-all duration-500 ease-out"
+          className="relative transition-all duration-500 ease-out"
           style={{
-            borderRadius: isDesktop
-              ? "0 0 12px 12px"
-              : `${config.frameRadius * config.scale}px`,
-            padding: `${config.bezel * config.scale}px`,
-            width: isDesktop ? scaledWidth + 2 : scaledWidth,
-            border: isDesktop ? "1px solid rgb(63 63 70)" : undefined,
+            width: isDesktop ? scaledWidth + 2 : scaledWidth + (config.showSideButtons ? 16 : 0),
+            height: isDesktop ? scaledHeight + 40 : scaledHeight,
           }}
         >
-          {/* Dynamic Island (phone only) */}
-          {config.showDynamicIsland && (
-            <div
-              className="absolute z-20 left-1/2 -translate-x-1/2 bg-black rounded-full"
-              style={{
-                top: `${6 * config.scale}px`,
-                width: `${126 * config.scale}px`,
-                height: `${37 * config.scale}px`,
-              }}
-            />
-          )}
-
-          {/* Status bar (phone only) */}
-          {config.showStatusBar && (
-            <div
-              className="relative z-10 flex items-center justify-between text-white"
-              style={{
-                padding: `${6 * config.scale}px ${20 * config.scale}px ${2 * config.scale}px`,
-                fontSize: `${12 * config.scale}px`,
-                fontWeight: 600,
-              }}
-            >
-              <span>9:41</span>
-              <div className="flex items-center gap-1">
-                {/* Signal bars */}
-                <svg
-                  width={`${16 * config.scale}`}
-                  height={`${12 * config.scale}`}
-                  viewBox="0 0 16 12"
-                  fill="white"
-                >
-                  <rect x="0" y="8" width="3" height="4" rx="0.5" />
-                  <rect x="4" y="5" width="3" height="7" rx="0.5" />
-                  <rect x="8" y="2" width="3" height="10" rx="0.5" />
-                  <rect x="12" y="0" width="3" height="12" rx="0.5" />
-                </svg>
-                {/* WiFi */}
-                <svg
-                  width={`${14 * config.scale}`}
-                  height={`${10 * config.scale}`}
-                  viewBox="0 0 14 10"
-                  fill="white"
-                >
-                  <path d="M7 8.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM3.5 6.5C4.5 5.5 5.7 5 7 5s2.5.5 3.5 1.5M1 3.5C2.7 1.8 4.8 1 7 1s4.3.8 6 2.5" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-                </svg>
-                {/* Battery */}
-                <svg
-                  width={`${22 * config.scale}`}
-                  height={`${10 * config.scale}`}
-                  viewBox="0 0 22 10"
-                  fill="none"
-                >
-                  <rect x="0.5" y="0.5" width="18" height="9" rx="2" stroke="white" strokeOpacity="0.5" />
-                  <rect x="2" y="2" width="15" height="6" rx="1" fill="white" />
-                  <path d="M20 3.5v3a1.5 1.5 0 000-3z" fill="white" fillOpacity="0.5" />
-                </svg>
-              </div>
-            </div>
-          )}
-
-          {/* Screen content */}
-          <div
-            className="overflow-y-auto overflow-x-hidden transition-all duration-500 ease-out"
-            style={{
-              borderRadius: isDesktop
-                ? 0
-                : `${(config.frameRadius - config.bezel) * config.scale}px`,
-              height: `${config.viewport.height * config.scale - (config.showStatusBar ? 30 * config.scale : 0)}px`,
-              width: `${config.viewport.width * config.scale}px`,
-              background: settings.backgroundColor || "#091533",
-              transform: `scale(1)`,
-              transformOrigin: "top left",
-            }}
-          >
-            <div
-              style={{
-                width: config.viewport.width,
-                transform: `scale(${config.scale})`,
-                transformOrigin: "top left",
-                minHeight: config.viewport.height,
-              }}
-            >
-              <PublicPage settings={settings} links={links} socialLinks={socialLinks} isPreview />
-            </div>
-          </div>
-
-          {/* Home indicator (phone/tablet) */}
-          {config.showHomeIndicator && (
-            <div className="flex justify-center" style={{ padding: `${4 * config.scale}px 0` }}>
+          {/* Side buttons (phone only) — metallic finish */}
+          {config.showSideButtons && (
+            <>
+              {/* Silent switch */}
               <div
-                className="bg-white/30 rounded-full"
+                className="absolute rounded-l-sm"
                 style={{
-                  width: `${134 * config.scale}px`,
-                  height: `${5 * config.scale}px`,
+                  left: -3,
+                  top: `${70 * config.scale}px`,
+                  width: 3,
+                  height: `${16 * config.scale}px`,
+                  background: "linear-gradient(180deg, #52525b, #3f3f46, #52525b)",
                 }}
               />
+              {/* Volume up */}
+              <div
+                className="absolute rounded-l-sm"
+                style={{
+                  left: -3,
+                  top: `${95 * config.scale}px`,
+                  width: 3,
+                  height: `${30 * config.scale}px`,
+                  background: "linear-gradient(180deg, #52525b, #3f3f46, #52525b)",
+                }}
+              />
+              {/* Volume down */}
+              <div
+                className="absolute rounded-l-sm"
+                style={{
+                  left: -3,
+                  top: `${132 * config.scale}px`,
+                  width: 3,
+                  height: `${30 * config.scale}px`,
+                  background: "linear-gradient(180deg, #52525b, #3f3f46, #52525b)",
+                }}
+              />
+              {/* Power button */}
+              <div
+                className="absolute rounded-r-sm"
+                style={{
+                  right: -3,
+                  top: `${120 * config.scale}px`,
+                  width: 3,
+                  height: `${42 * config.scale}px`,
+                  background: "linear-gradient(180deg, #52525b, #3f3f46, #52525b)",
+                }}
+              />
+            </>
+          )}
+
+          {/* Desktop browser chrome */}
+          {isDesktop && (
+            <div
+              className="browser-chrome rounded-t-xl flex items-center px-3.5 gap-2"
+              style={{ height: 36 }}
+            >
+              {/* Traffic lights */}
+              <div className="flex items-center gap-[7px]">
+                <div className="w-[11px] h-[11px] rounded-full bg-[#ff5f57] traffic-light opacity-80" />
+                <div className="w-[11px] h-[11px] rounded-full bg-[#febc2e] traffic-light opacity-80" />
+                <div className="w-[11px] h-[11px] rounded-full bg-[#28c840] traffic-light opacity-80" />
+              </div>
+              {/* URL bar */}
+              <div className="flex-1 mx-6">
+                <div className="bg-black/20 rounded-md px-3 py-[3px] text-[10px] text-zinc-400 truncate text-center border border-white/5">
+                  {settings.metaTitle || settings.profileName || "linkden.app"}
+                </div>
+              </div>
+              {/* Spacer for symmetry */}
+              <div className="w-[60px]" />
             </div>
           )}
+
+          {/* Device shell */}
+          <div
+            className={`relative overflow-hidden transition-all duration-500 ease-out ${frameClass}`}
+            style={{
+              borderRadius: isDesktop
+                ? "0 0 12px 12px"
+                : `${config.frameRadius * config.scale}px`,
+              padding: `${config.bezel * config.scale}px`,
+              width: isDesktop ? scaledWidth + 2 : scaledWidth,
+            }}
+          >
+            {/* Dynamic Island (phone only) */}
+            {config.showDynamicIsland && (
+              <div
+                className="absolute z-20 left-1/2 -translate-x-1/2 bg-black rounded-full"
+                style={{
+                  top: `${6 * config.scale}px`,
+                  width: `${126 * config.scale}px`,
+                  height: `${37 * config.scale}px`,
+                  boxShadow: "inset 0 0 4px rgba(0,0,0,0.5)",
+                }}
+              />
+            )}
+
+            {/* Status bar (phone only) */}
+            {config.showStatusBar && (
+              <div
+                className="relative z-10 flex items-center justify-between text-white"
+                style={{
+                  padding: `${6 * config.scale}px ${20 * config.scale}px ${2 * config.scale}px`,
+                  fontSize: `${12 * config.scale}px`,
+                  fontWeight: 600,
+                }}
+              >
+                <span style={{ fontFeatureSettings: '"tnum"' }}>9:41</span>
+                <div className="flex items-center gap-1">
+                  <svg
+                    width={`${16 * config.scale}`}
+                    height={`${12 * config.scale}`}
+                    viewBox="0 0 16 12"
+                    fill="white"
+                  >
+                    <rect x="0" y="8" width="3" height="4" rx="0.5" />
+                    <rect x="4" y="5" width="3" height="7" rx="0.5" />
+                    <rect x="8" y="2" width="3" height="10" rx="0.5" />
+                    <rect x="12" y="0" width="3" height="12" rx="0.5" />
+                  </svg>
+                  <svg
+                    width={`${14 * config.scale}`}
+                    height={`${10 * config.scale}`}
+                    viewBox="0 0 14 10"
+                    fill="white"
+                  >
+                    <path d="M7 8.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM3.5 6.5C4.5 5.5 5.7 5 7 5s2.5.5 3.5 1.5M1 3.5C2.7 1.8 4.8 1 7 1s4.3.8 6 2.5" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+                  </svg>
+                  <svg
+                    width={`${22 * config.scale}`}
+                    height={`${10 * config.scale}`}
+                    viewBox="0 0 22 10"
+                    fill="none"
+                  >
+                    <rect x="0.5" y="0.5" width="18" height="9" rx="2" stroke="white" strokeOpacity="0.5" />
+                    <rect x="2" y="2" width="15" height="6" rx="1" fill="white" />
+                    <path d="M20 3.5v3a1.5 1.5 0 000-3z" fill="white" fillOpacity="0.5" />
+                  </svg>
+                </div>
+              </div>
+            )}
+
+            {/* Screen content */}
+            <div
+              className="overflow-y-auto overflow-x-hidden transition-all duration-500 ease-out"
+              style={{
+                borderRadius: isDesktop
+                  ? 0
+                  : `${(config.frameRadius - config.bezel) * config.scale}px`,
+                height: `${config.viewport.height * config.scale - (config.showStatusBar ? 30 * config.scale : 0)}px`,
+                width: `${config.viewport.width * config.scale}px`,
+                background: "transparent",
+                transformOrigin: "top left",
+              }}
+            >
+              <div
+                style={{
+                  width: config.viewport.width,
+                  transform: `scale(${config.scale})`,
+                  transformOrigin: "top left",
+                  minHeight: config.viewport.height,
+                }}
+              >
+                <PublicPage
+                  settings={settings}
+                  links={links}
+                  socialLinks={socialLinks}
+                  isPreview
+                  isDraggable
+                  onReorder={handleReorder}
+                />
+              </div>
+            </div>
+
+            {/* Home indicator (phone/tablet) */}
+            {config.showHomeIndicator && (
+              <div className="flex justify-center" style={{ padding: `${4 * config.scale}px 0` }}>
+                <div
+                  className="bg-white/25 rounded-full"
+                  style={{
+                    width: `${134 * config.scale}px`,
+                    height: `${5 * config.scale}px`,
+                  }}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

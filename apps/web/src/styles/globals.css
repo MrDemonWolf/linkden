@@ -18,45 +18,45 @@
   --border-radius: 16px;
 
   /* Admin palette — light (default) */
-  --admin-bg: #f7f7f8;
+  --admin-bg: #f8f8fa;
   --admin-surface: #ffffff;
   --admin-surface-elevated: #ffffff;
-  --admin-border: #e4e4e7;
-  --admin-border-subtle: #f0f0f2;
-  --admin-text: #18181b;
-  --admin-text-secondary: #71717a;
-  --admin-text-tertiary: #a1a1aa;
+  --admin-border: #e5e5ea;
+  --admin-border-subtle: #f0f0f3;
+  --admin-text: #1a1a1e;
+  --admin-text-secondary: #6b6b76;
+  --admin-text-tertiary: #9d9da8;
   --admin-accent: #6366f1;
   --admin-accent-hover: #4f46e5;
-  --admin-accent-subtle: rgba(99, 102, 241, 0.08);
-  --admin-accent-muted: rgba(99, 102, 241, 0.15);
+  --admin-accent-subtle: rgba(99, 102, 241, 0.06);
+  --admin-accent-muted: rgba(99, 102, 241, 0.14);
   --admin-success: #10b981;
   --admin-danger: #ef4444;
-  --admin-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --admin-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06);
-  --admin-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --admin-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
+  --admin-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.03);
+  --admin-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.07), 0 16px 48px rgba(0, 0, 0, 0.04);
   --admin-ring: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
 
 /* Admin dark mode */
 .admin-dark {
-  --admin-bg: #09090b;
-  --admin-surface: #141416;
-  --admin-surface-elevated: #1c1c1f;
-  --admin-border: #27272a;
-  --admin-border-subtle: #1f1f23;
-  --admin-text: #fafafa;
-  --admin-text-secondary: #a1a1aa;
-  --admin-text-tertiary: #71717a;
+  --admin-bg: #0a0a0c;
+  --admin-surface: #131316;
+  --admin-surface-elevated: #1b1b1f;
+  --admin-border: #252529;
+  --admin-border-subtle: #1c1c20;
+  --admin-text: #f4f4f5;
+  --admin-text-secondary: #a0a0ab;
+  --admin-text-tertiary: #636370;
   --admin-accent: #818cf8;
   --admin-accent-hover: #6366f1;
-  --admin-accent-subtle: rgba(129, 140, 248, 0.08);
-  --admin-accent-muted: rgba(129, 140, 248, 0.15);
+  --admin-accent-subtle: rgba(129, 140, 248, 0.07);
+  --admin-accent-muted: rgba(129, 140, 248, 0.14);
   --admin-success: #34d399;
   --admin-danger: #f87171;
-  --admin-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --admin-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --admin-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --admin-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --admin-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --admin-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45), 0 16px 48px rgba(0, 0, 0, 0.2);
   --admin-ring: 0 0 0 2px rgba(129, 140, 248, 0.25);
 }
 
@@ -81,15 +81,16 @@ body {
   padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
   border: 1px solid var(--admin-border);
-  background: var(--admin-surface);
+  background: var(--admin-bg);
   color: var(--admin-text);
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 .admin-input:focus {
   border-color: var(--admin-accent);
   box-shadow: var(--admin-ring);
+  background: var(--admin-surface);
 }
 
 .admin-input::placeholder {
@@ -98,12 +99,140 @@ body {
 
 /* ── Admin section label ── */
 .admin-section-label {
-  font-size: 0.6875rem;
-  font-weight: 600;
+  font-size: 0.625rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   color: var(--admin-text-tertiary);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.625rem;
+}
+
+/* ── Admin slide animations ── */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.animate-slide-up {
+  animation: slide-up 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* ── Phone preview ambient glow ── */
+.preview-glow {
+  position: relative;
+}
+
+.preview-glow::before {
+  content: '';
+  position: absolute;
+  inset: -20px;
+  border-radius: 60px;
+  background: radial-gradient(ellipse at center, var(--admin-accent-subtle) 0%, transparent 70%);
+  opacity: 0.5;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* ── Device frame reflective edge (phone) ── */
+.device-frame-phone {
+  background: linear-gradient(
+    145deg,
+    #27272a 0%,
+    #18181b 20%,
+    #09090b 50%,
+    #18181b 80%,
+    #27272a 100%
+  );
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 25px 60px -12px rgba(0, 0, 0, 0.5),
+    0 0 40px -8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.device-frame-tablet {
+  background: linear-gradient(145deg, #27272a, #18181b, #09090b);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 20px 50px -10px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.device-frame-desktop {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 20px 50px -10px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Desktop browser chrome ── */
+.browser-chrome {
+  background: linear-gradient(180deg, #2a2a2f 0%, #1e1e22 100%);
+  border: 1px solid #3a3a40;
+  border-bottom: 1px solid #252529;
+}
+
+.browser-chrome .traffic-light {
+  transition: opacity 0.15s ease;
+}
+
+.browser-chrome:hover .traffic-light {
+  opacity: 1;
+}
+
+/* ── Icon rail active indicator ── */
+.icon-rail-item-active {
+  background: linear-gradient(135deg, var(--admin-accent), var(--admin-accent-hover));
+  box-shadow:
+    0 2px 8px rgba(99, 102, 241, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* ── Block card hover lift ── */
+.block-card {
+  transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.block-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--admin-shadow-md);
+}
+
+/* ── Subtle noise overlay for admin bg ── */
+[data-admin-panel] {
+  position: relative;
+}
+
+[data-admin-panel]::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.012;
+  pointer-events: none;
+  z-index: 9998;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px;
 }
 
 @layer components {
@@ -262,8 +391,8 @@ body {
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -271,12 +400,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Admin panel scrollbar override */
@@ -301,23 +430,36 @@ body {
 
 .toast {
   padding: 0.75rem 1rem;
-  border-radius: 8px;
+  border-radius: 10px;
   backdrop-filter: blur(20px);
-  animation: fade-in 0.3s ease-out;
-  font-size: 0.875rem;
+  animation: toast-in 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  font-size: 0.8125rem;
+  font-weight: 500;
   max-width: 360px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .toast-success {
-  background: rgba(16, 185, 129, 0.2);
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.35);
   color: #6ee7b7;
 }
 
 .toast-error {
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.35);
   color: #fca5a5;
+}
+
+@keyframes toast-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes fade-in {
@@ -334,4 +476,20 @@ body {
 /* Animate page content in */
 .animate-fade-in {
   animation: fade-in 0.5s ease-out;
+}
+
+/* ── Staggered list animations ── */
+@keyframes list-item-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-list-item {
+  animation: list-item-in 0.25s ease-out both;
 }

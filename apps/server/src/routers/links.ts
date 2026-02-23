@@ -156,7 +156,8 @@ export const linksRouter = router({
 
       // Determine current effective isActive (draft takes precedence)
       const draft = (existing.draft as Record<string, unknown>) || {};
-      const currentActive = draft.isActive !== undefined ? (draft.isActive as boolean) : existing.isActive;
+      const currentActive =
+        draft.isActive !== undefined ? (draft.isActive as boolean) : existing.isActive;
 
       const newDraft = { ...draft, isActive: !currentActive };
 
@@ -174,10 +175,7 @@ export const linksRouter = router({
 
   /** Protected: publish all drafts — merge draft into live columns, clear draft, set publishedAt */
   publish: protectedProcedure.mutation(async ({ ctx }) => {
-    const drafts = await ctx.db
-      .select()
-      .from(links)
-      .where(isNotNull(links.draft));
+    const drafts = await ctx.db.select().from(links).where(isNotNull(links.draft));
 
     const now = Date.now();
     const nowIso = new Date().toISOString();
