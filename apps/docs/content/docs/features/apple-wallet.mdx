@@ -75,9 +75,11 @@ APPLE_SIGNER_KEY=<contents of signer_key_base64.txt>
 APPLE_SIGNER_PASSPHRASE=your-p12-passphrase
 ```
 
+All six variables are required. If any are missing or malformed, the wallet drawer in the admin panel will display a configuration warning listing exactly which variables need attention.
+
 ### 6. Configure the Pass in the Admin Panel
 
-Navigate to `/admin/wallet` to customize the pass appearance:
+Navigate to the **Wallet** section (accessible via the left panel drawer in the admin editor) to customize the pass appearance:
 
 - **Card Title** -- The name shown on the pass.
 - **Header Fields** -- Up to 3 fields shown at the top (e.g., job title, company).
@@ -87,11 +89,31 @@ Navigate to `/admin/wallet` to customize the pass appearance:
 - **Colors** -- Background, foreground, and label colors.
 - **Logo** -- Your logo displayed on the pass.
 
+The drawer includes a **live preview card** that renders your pass design in real time as you edit the fields and colors, so you can see exactly how it will appear in Apple Wallet before generating the file.
+
+## Configuration Warnings
+
+The wallet drawer checks for required environment variables on load and surfaces any issues as a warning banner. The banner lists each missing or empty variable by name so you know exactly what to configure without digging through logs. The pass generation button is disabled until all required variables are present.
+
+## Checking Wallet Status
+
+Use the `wallet.status` API procedure to programmatically check whether the wallet feature is correctly configured:
+
+```typescript
+// Response
+{
+  configured: boolean,       // true if all required env vars are present
+  missingVars: string[]      // names of any missing variables
+}
+```
+
+See [API Endpoints](/docs/api/endpoints) for the full procedure reference.
+
 ## Adding a Wallet Block
 
-1. Go to `/admin/links`.
-2. Click **Add New** and select the **Apple Wallet** block type.
+1. Open the admin panel and select the **Add Blocks** tab in the left panel.
+2. Click the **Apple Wallet** block type. Only one wallet block can exist at a time (single-instance limit).
 3. Set a title (e.g., "Add to Apple Wallet").
-4. Click **Save**.
+4. Publish your changes.
 
-The button appears on your public page. On iOS and macOS, tapping it downloads and prompts the user to add the pass to their wallet. On other platforms, the button is hidden or shows a fallback message.
+The button appears on your public page. On iOS and macOS, tapping it downloads the `.pkpass` file and prompts the user to add it to their wallet. On other platforms, the button is hidden or shows a graceful fallback message.

@@ -76,6 +76,18 @@ For advanced customization, add custom CSS that is injected into your public pag
 
 The CSS editor in the admin panel includes syntax highlighting and live preview.
 
+## Dark / Light Mode Toggle
+
+Visitors to your public page can switch between dark and light mode using the theme toggle button in the page header. The toggle is fully accessible: it has an `aria-label` that describes the current state (e.g., "Switch to light mode") so screen reader users understand what will happen when they activate it.
+
+The initial mode is determined in this order:
+
+1. The visitor's saved preference (stored in `localStorage`).
+2. Your site's default mode as set in the Design tab of the admin panel (`themeMode`: `dark`, `light`, or `system`).
+3. The visitor's OS-level color scheme preference if `system` is selected.
+
+Themes ship with both dark and light variants. Setting `themeMode` to `dark` or `light` locks the starting mode but still allows visitors to switch.
+
 ## Whitelabel
 
 Toggle off all LinkDen branding with a single switch:

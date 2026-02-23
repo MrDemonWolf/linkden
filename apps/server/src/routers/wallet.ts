@@ -11,6 +11,14 @@ export const walletRouter = router({
     return pass ?? null;
   }),
 
+  /** Protected: check wallet configuration status */
+  status: protectedProcedure.query(async ({ ctx }) => {
+    const [pass] = await ctx.db.select().from(walletPass).limit(1);
+    const hasConfig = !!(pass?.passTypeId && pass?.teamId);
+    const signingReady = !!(ctx.env.APPLE_PASS_SIGNER_CERT && ctx.env.APPLE_PASS_SIGNER_KEY);
+    return { configured: hasConfig, signingReady };
+  }),
+
   /** Protected: upsert wallet pass config */
   update: protectedProcedure.input(UpdateWalletPassSchema).mutation(async ({ ctx, input }) => {
     const [existing] = await ctx.db.select().from(walletPass).limit(1);

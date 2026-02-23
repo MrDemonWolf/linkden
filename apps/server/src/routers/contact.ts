@@ -9,28 +9,35 @@ import { protectedProcedure, publicProcedure, router } from "../trpc";
 export const contactRouter = router({
   /** Public: validate CAPTCHA, store submission, send email via Resend */
   submit: publicProcedure.input(ContactSubmissionSchema).mutation(async ({ ctx, input }) => {
-    // Verify Turnstile CAPTCHA
-    const captchaResponse = await fetch(
-      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          secret: await getSettingValue(ctx.db, "captchaSecretKey"),
-          response: input.captchaToken,
-        }),
-      },
-    );
+    // Check CAPTCHA type setting
+    const captchaType = (await getSettingValue(ctx.db, "captchaType")) || "none";
 
-    const captchaResult = (await captchaResponse.json()) as {
-      success: boolean;
-    };
-    if (!captchaResult.success) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "CAPTCHA verification failed",
-      });
+    if (captchaType === "turnstile") {
+      // Verify Turnstile CAPTCHA
+      const captchaResponse = await fetch(
+        "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            secret: await getSettingValue(ctx.db, "captchaSecretKey"),
+            response: input.captchaToken,
+          }),
+        },
+      );
+
+      const captchaResult = (await captchaResponse.json()) as {
+        success: boolean;
+      };
+      if (!captchaResult.success) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "CAPTCHA verification failed",
+        });
+      }
     }
+    // For "math" and "none" types, skip server-side verification
+    // Math CAPTCHA is validated client-side as a simple bot deterrent
 
     // Store submission
     const [submission] = await ctx.db

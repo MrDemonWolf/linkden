@@ -6,9 +6,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 interface ContactFormProps {
   captchaSiteKey?: string;
+  captchaType?: string;
 }
 
-export function ContactForm({ captchaSiteKey }: ContactFormProps) {
+function generateMathChallenge() {
+  const a = Math.floor(Math.random() * 10) + 1;
+  const b = Math.floor(Math.random() * 10) + 1;
+  return { a, b, answer: a + b };
+}
+
+export function ContactForm({ captchaSiteKey, captchaType = "none" }: ContactFormProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -16,6 +23,8 @@ export function ContactForm({ captchaSiteKey }: ContactFormProps) {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
   const captchaRef = useRef<HTMLDivElement>(null);
+  const [mathChallenge, setMathChallenge] = useState(generateMathChallenge);
+  const [mathAnswer, setMathAnswer] = useState("");
 
   const submitMutation = trpc.contact.submit.useMutation({
     onSuccess: () => {
@@ -32,7 +41,7 @@ export function ContactForm({ captchaSiteKey }: ContactFormProps) {
 
   // Load Turnstile widget
   useEffect(() => {
-    if (!captchaSiteKey || !captchaRef.current) return;
+    if (captchaType !== "turnstile" || !captchaSiteKey || !captchaRef.current) return;
 
     const existingScript = document.querySelector('script[src*="turnstile"]');
     if (!existingScript) {
@@ -59,7 +68,7 @@ export function ContactForm({ captchaSiteKey }: ContactFormProps) {
         });
       }
     }
-  }, [captchaSiteKey]);
+  }, [captchaSiteKey, captchaType]);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -71,7 +80,16 @@ export function ContactForm({ captchaSiteKey }: ContactFormProps) {
         return;
       }
 
-      if (captchaSiteKey && !captchaToken) {
+      if (captchaType === "math") {
+        if (Number.parseInt(mathAnswer, 10) !== mathChallenge.answer) {
+          setError("Incorrect answer. Please try again.");
+          setMathChallenge(generateMathChallenge());
+          setMathAnswer("");
+          return;
+        }
+      }
+
+      if (captchaType === "turnstile" && captchaSiteKey && !captchaToken) {
         setError("Please complete the CAPTCHA verification.");
         return;
       }
@@ -80,10 +98,10 @@ export function ContactForm({ captchaSiteKey }: ContactFormProps) {
         name: name.trim(),
         email: email.trim(),
         message: message.trim(),
-        captchaToken: captchaToken || "bypass",
+        captchaToken: captchaType === "turnstile" ? captchaToken || "bypass" : "bypass",
       });
     },
-    [name, email, message, captchaToken, captchaSiteKey, submitMutation],
+    [name, email, message, captchaToken, captchaSiteKey, captchaType, mathAnswer, mathChallenge, submitMutation],
   );
 
   if (submitted) {
@@ -151,7 +169,23 @@ export function ContactForm({ captchaSiteKey }: ContactFormProps) {
         />
       </div>
 
-      {captchaSiteKey && <div ref={captchaRef} className="flex justify-center" />}
+      {captchaType === "turnstile" && captchaSiteKey && <div ref={captchaRef} className="flex justify-center" />}
+
+      {captchaType === "math" && (
+        <div>
+          <label className="block text-sm text-[var(--text-secondary)] mb-1">
+            What is {mathChallenge.a} + {mathChallenge.b}?
+          </label>
+          <input
+            type="number"
+            value={mathAnswer}
+            onChange={(e) => setMathAnswer(e.target.value)}
+            required
+            className="glass-input"
+            placeholder="Your answer"
+          />
+        </div>
+      )}
 
       <button
         type="submit"

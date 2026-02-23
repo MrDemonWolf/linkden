@@ -6,7 +6,6 @@ import { RightPanel } from "@/components/admin/right-panel";
 import { TopBar } from "@/components/admin/top-bar";
 import {
   placeholderSettings,
-  placeholderSocialLinks,
 } from "@/lib/placeholder-data";
 import { toast } from "@/lib/toast";
 import { trpc } from "@/lib/trpc";
@@ -37,6 +36,22 @@ export type AdminDrawer =
   | { type: "contact-detail"; id: string }
   | { type: "link-edit"; id: string };
 
+function getDrawerTitle(drawer: AdminDrawer): string {
+  if (!drawer) return "Drawer";
+  if (drawer === "analytics") return "Analytics";
+  if (drawer === "vcard") return "vCard Editor";
+  if (drawer === "wallet") return "Wallet Pass";
+  if (drawer === "contacts") return "Contacts";
+  if (drawer === "pages") return "Pages";
+  if (drawer === "pages-new") return "New Page";
+  if (typeof drawer === "object") {
+    if (drawer.type === "page-edit") return "Edit Page";
+    if (drawer.type === "contact-detail") return "Contact Details";
+    if (drawer.type === "link-edit") return "Edit Block";
+  }
+  return "Drawer";
+}
+
 export default function AdminEditorPage() {
   const utils = trpc.useUtils();
   const { isDark, toggle: toggleDarkMode } = useThemeMode();
@@ -46,6 +61,7 @@ export default function AdminEditorPage() {
   const [localSettings, setLocalSettings] = useState<Record<string, string>>({
     ...placeholderSettings,
   });
+  const [rightPanelTab, setRightPanelTab] = useState<"design" | "analytics" | "settings">("design");
 
   // Load settings from server
   const settingsQuery = trpc.settings.getAll.useQuery();
@@ -115,10 +131,28 @@ export default function AdminEditorPage() {
     setActiveDrawer(null);
   }
 
+  // Close drawer on Escape key
+  useEffect(() => {
+    if (!activeDrawer) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") handleCloseDrawer();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [activeDrawer]);
+
   const isPublishing = linksPublishMutation.isPending || settingsPublishMutation.isPending;
 
   // Use server links (no placeholder fallback — show empty state when no blocks exist)
   const links = linksQuery.data ?? [];
+
+  // Parse social links from settings
+  let socialLinks: { platform: string; url: string }[] = [];
+  try {
+    const raw = localSettings.socialLinks;
+    if (raw) socialLinks = JSON.parse(raw);
+  } catch {}
+
 
   const mobileTabItems = [
     { id: "blocks" as const, icon: LayoutGrid, label: "Blocks" },
@@ -145,15 +179,15 @@ export default function AdminEditorPage() {
         <div className="flex-1 flex overflow-hidden relative">
           {/* Left Panel - hidden on mobile */}
           <div className="hidden lg:flex w-[300px] border-r border-[var(--admin-border)] shrink-0">
-            <LeftPanel onOpenDrawer={handleOpenDrawer} />
+            <LeftPanel onOpenDrawer={handleOpenDrawer} settings={localSettings} onSettingsChange={handleSettingsChange} onSettingsClick={() => setRightPanelTab("settings")} />
           </div>
 
           {/* Center - Phone Preview */}
-          <div className="hidden lg:flex flex-1 bg-[var(--admin-bg)] items-center justify-center">
+          <div className="hidden lg:flex flex-1 items-center justify-center" style={{ background: "radial-gradient(ellipse at 50% 40%, var(--admin-accent-subtle) 0%, var(--admin-bg) 60%)" }}>
             <PhonePreview
               settings={localSettings}
               links={links}
-              socialLinks={placeholderSocialLinks}
+              socialLinks={socialLinks}
               deviceSize={deviceSize}
             />
           </div>
@@ -164,6 +198,8 @@ export default function AdminEditorPage() {
               settings={localSettings}
               onSettingsChange={handleSettingsChange}
               onOpenDrawer={handleOpenDrawer}
+              activeTab={rightPanelTab}
+              onTabChange={setRightPanelTab}
             />
           </div>
 
@@ -171,15 +207,28 @@ export default function AdminEditorPage() {
           {activeDrawer && (
             <div className="absolute inset-0 z-50 flex lg:justify-end justify-center items-end lg:items-stretch">
               <div
-                className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"
+                className="absolute inset-0 bg-black/25 backdrop-blur-[3px]"
                 onClick={handleCloseDrawer}
+                style={{ transition: "opacity 0.2s ease" }}
               />
               {/* Desktop drawer */}
-              <div className="relative hidden lg:block w-full max-w-2xl bg-[var(--admin-surface)] border-l border-[var(--admin-border)] animate-slide-in-right overflow-y-auto" style={{ boxShadow: "var(--admin-shadow-lg)" }}>
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-label={getDrawerTitle(activeDrawer)}
+                className="relative hidden lg:block w-full max-w-2xl bg-[var(--admin-surface)] border-l border-[var(--admin-border)] animate-slide-in-right overflow-y-auto"
+                style={{ boxShadow: "var(--admin-shadow-lg)" }}
+              >
                 <DrawerContent drawer={activeDrawer} onClose={handleCloseDrawer} onOpenDrawer={handleOpenDrawer} />
               </div>
               {/* Mobile drawer — slides up from bottom */}
-              <div className="relative lg:hidden w-full max-h-[85vh] bg-[var(--admin-surface)] border-t border-[var(--admin-border)] rounded-t-2xl animate-slide-up overflow-y-auto" style={{ boxShadow: "var(--admin-shadow-lg)" }}>
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-label={getDrawerTitle(activeDrawer)}
+                className="relative lg:hidden w-full max-h-[85vh] bg-[var(--admin-surface)] border-t border-[var(--admin-border)] rounded-t-2xl animate-slide-up overflow-y-auto"
+                style={{ boxShadow: "var(--admin-shadow-lg)" }}
+              >
                 {/* Drag handle */}
                 <div className="flex justify-center pt-2 pb-1 sticky top-0 bg-[var(--admin-surface)] z-10">
                   <div className="w-8 h-1 rounded-full bg-[var(--admin-border)]" />
@@ -194,7 +243,7 @@ export default function AdminEditorPage() {
             <div className="flex-1 overflow-y-auto">
               {mobileTab === "blocks" && (
                 <div className="h-full bg-[var(--admin-surface)]">
-                  <LeftPanel onOpenDrawer={handleOpenDrawer} />
+                  <LeftPanel onOpenDrawer={handleOpenDrawer} settings={localSettings} onSettingsChange={handleSettingsChange} onSettingsClick={() => { setMobileTab("design"); setRightPanelTab("settings"); }} />
                 </div>
               )}
               {mobileTab === "preview" && (
@@ -202,7 +251,7 @@ export default function AdminEditorPage() {
                   <PhonePreview
                     settings={localSettings}
                     links={links}
-                    socialLinks={placeholderSocialLinks}
+                    socialLinks={socialLinks}
                     deviceSize="phone"
                   />
                 </div>
@@ -213,6 +262,8 @@ export default function AdminEditorPage() {
                     settings={localSettings}
                     onSettingsChange={handleSettingsChange}
                     onOpenDrawer={handleOpenDrawer}
+                    activeTab={rightPanelTab}
+                    onTabChange={setRightPanelTab}
                   />
                 </div>
               )}

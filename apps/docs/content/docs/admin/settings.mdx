@@ -61,12 +61,23 @@ This action requires typing a confirmation phrase to prevent accidental use.
 
 ### Enable/Disable
 
-Toggle the contact form on or off. When disabled, the form is hidden from the public page and the API endpoint returns a 404.
+Toggle switch for the contact form. The toggle uses `role="switch"` and `aria-checked` so screen reader users understand the current state. When disabled, the form is hidden from the public page and the API endpoint returns a 404.
 
 ### Notification Email
 
 The email address where contact form submissions are sent (requires Resend configuration).
 
-### CAPTCHA
+### CAPTCHA Type
 
-Toggle Cloudflare Turnstile CAPTCHA on or off for the contact form. Requires Turnstile site key and secret key in your environment variables.
+Select the CAPTCHA method used to protect the contact form:
+
+| Option | Description | External Account Required |
+|--------|-------------|--------------------------|
+| **None** | No CAPTCHA. Form works but has no bot protection. | No |
+| **Simple Math** | Server-validated arithmetic question shown inline. | No |
+| **Cloudflare Turnstile** | Privacy-friendly invisible challenge. | Yes (Cloudflare) |
+| **Google reCAPTCHA** | Traditional checkbox challenge. | Yes (Google) |
+
+The Simple Math option requires no API keys and no third-party services. It is suitable for low-traffic sites or situations where external dependencies are not acceptable.
+
+For Turnstile and reCAPTCHA, the relevant site key and secret key fields appear automatically when the matching type is selected. See the [Contact Form feature guide](/docs/features/contact-form) for environment variable setup.

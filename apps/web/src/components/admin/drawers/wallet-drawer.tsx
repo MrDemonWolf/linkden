@@ -2,9 +2,10 @@
 
 import { ColorPicker } from "@/components/admin/color-picker";
 import { ImageUpload } from "@/components/admin/image-upload";
+import { WalletPreviewCard } from "@/components/admin/wallet-preview-card";
 import { toast } from "@/lib/toast";
 import { trpc } from "@/lib/trpc";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle, Info, Plus, Save, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface PassField {
@@ -63,6 +64,7 @@ function FieldList({
               value={field.key}
               onChange={(e) => updateField(i, { key: e.target.value })}
               placeholder="key"
+              aria-label={`${title} field ${i + 1} key`}
               className="w-24 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-bg)] px-2 py-1.5 text-sm text-[var(--admin-text)]"
             />
             <input
@@ -70,6 +72,7 @@ function FieldList({
               value={field.label}
               onChange={(e) => updateField(i, { label: e.target.value })}
               placeholder="Label"
+              aria-label={`${title} field ${i + 1} label`}
               className="flex-1 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-bg)] px-2 py-1.5 text-sm text-[var(--admin-text)]"
             />
             <input
@@ -77,12 +80,14 @@ function FieldList({
               value={field.value}
               onChange={(e) => updateField(i, { value: e.target.value })}
               placeholder="Value"
+              aria-label={`${title} field ${i + 1} value`}
               className="flex-1 rounded-lg border border-[var(--admin-border)] bg-[var(--admin-bg)] px-2 py-1.5 text-sm text-[var(--admin-text)]"
             />
             <button
               type="button"
               onClick={() => removeField(i)}
               className="p-2 rounded-lg hover:bg-red-500/20 text-[var(--admin-text-secondary)] hover:text-red-400 transition-colors"
+              aria-label={`Remove ${title} field ${i + 1}`}
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -93,9 +98,43 @@ function FieldList({
   );
 }
 
+function StatusBanner({ configured, signingReady }: { configured: boolean; signingReady: boolean }) {
+  if (configured && signingReady) {
+    return (
+      <div className="flex items-start gap-2.5 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+        <CheckCircle className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+        <p className="text-xs text-emerald-400 leading-relaxed">
+          Wallet pass is fully configured and ready to generate.
+        </p>
+      </div>
+    );
+  }
+
+  if (configured && !signingReady) {
+    return (
+      <div className="flex items-start gap-2.5 p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
+        <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5 shrink-0" />
+        <p className="text-xs text-orange-400 leading-relaxed">
+          Apple signing certificates not configured on the server. The wallet pass cannot be generated until <code className="font-mono text-[10px] bg-orange-500/10 px-1 rounded">APPLE_PASS_SIGNER_CERT</code> and <code className="font-mono text-[10px] bg-orange-500/10 px-1 rounded">APPLE_PASS_SIGNER_KEY</code> are set.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-start gap-2.5 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+      <AlertTriangle className="w-4 h-4 text-yellow-500 mt-0.5 shrink-0" />
+      <p className="text-xs text-yellow-400 leading-relaxed">
+        Wallet pass not configured. Fill in the Pass Type ID and Team ID to enable Apple Wallet.
+      </p>
+    </div>
+  );
+}
+
 export function WalletDrawer() {
   const utils = trpc.useUtils();
   const walletQuery = trpc.wallet.get.useQuery();
+  const statusQuery = trpc.wallet.status.useQuery();
 
   const [passTypeId, setPassTypeId] = useState("");
   const [teamId, setTeamId] = useState("");
@@ -146,6 +185,7 @@ export function WalletDrawer() {
   const updateMutation = trpc.wallet.update.useMutation({
     onSuccess: () => {
       utils.wallet.get.invalidate();
+      utils.wallet.status.invalidate();
       toast.success("Wallet pass saved");
     },
     onError: (err) => toast.error(err.message || "Failed to save"),
@@ -189,8 +229,46 @@ export function WalletDrawer() {
   const inputCls =
     "w-full rounded-lg border border-[var(--admin-border)] bg-[var(--admin-bg)] px-3 py-2 text-sm text-[var(--admin-text)] placeholder:text-[var(--admin-text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--admin-accent)]/50";
 
+  const isDev = process.env.NODE_ENV === "development";
+
   return (
     <div className="space-y-6">
+      {/* Status Banner */}
+      {statusQuery.data && (
+        <StatusBanner
+          configured={statusQuery.data.configured}
+          signingReady={statusQuery.data.signingReady}
+        />
+      )}
+
+      {/* Dev mode info */}
+      {isDev && (
+        <div className="flex items-start gap-2.5 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+          <Info className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
+          <p className="text-xs text-blue-400 leading-relaxed">
+            Development mode: Wallet pass generation requires Apple Developer certificates. See docs for setup.
+          </p>
+        </div>
+      )}
+
+      {/* Live Preview Card */}
+      <section>
+        <p className="admin-section-label mb-3">Preview</p>
+        <WalletPreviewCard
+          logoText={logoText}
+          organizationName={organizationName}
+          headerFields={headerFields}
+          primaryFields={primaryFields}
+          secondaryFields={secondaryFields}
+          auxiliaryFields={auxiliaryFields}
+          backgroundColor={backgroundColor}
+          foregroundColor={foregroundColor}
+          labelColor={labelColor}
+          logoUrl={logoUrl}
+          barcodeFormat={barcodeFormat}
+        />
+      </section>
+
       {/* Pass Identity */}
       <section className="space-y-4">
         <h2 className="text-base font-semibold text-[var(--admin-text)]">Pass Identity</h2>
@@ -234,7 +312,7 @@ export function WalletDrawer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-[var(--admin-text-secondary)] mb-1.5">Format</label>
-            <select value={barcodeFormat} onChange={(e) => setBarcodeFormat(e.target.value)} className={inputCls}>
+            <select value={barcodeFormat} onChange={(e) => setBarcodeFormat(e.target.value)} className={inputCls} aria-label="Barcode format">
               <option value="PKBarcodeFormatQR">QR Code</option>
               <option value="PKBarcodeFormatPDF417">PDF417</option>
               <option value="PKBarcodeFormatAztec">Aztec</option>

@@ -86,8 +86,9 @@ Manage site-wide configuration.
 | `textColor` | Text color | `"rgba(255,255,255,0.95)"` |
 | `contactEnabled` | Contact form toggle | `"true"` / `"false"` |
 | `contactEmail` | Notification email | `"you@example.com"` |
-| `captchaSiteKey` | Turnstile site key | `"0x4AAAAAAA..."` |
-| `captchaSecretKey` | Turnstile secret | `"0x4AAAAAAA..."` |
+| `captchaType` | CAPTCHA mode | `"none"` / `"math"` / `"turnstile"` / `"recaptcha"` |
+| `captchaSiteKey` | Turnstile or reCAPTCHA site key | `"0x4AAAAAAA..."` |
+| `captchaSecretKey` | Turnstile or reCAPTCHA secret | `"0x4AAAAAAA..."` |
 | `brandName` | Whitelabel name | `"My Brand"` |
 | `brandLogo` | Logo URL | `"https://..."` |
 | `metaTitle` | SEO title | `"My Page"` |
@@ -150,9 +151,12 @@ Handle contact form submissions.
   name: string,
   email: string,
   message: string,
-  captchaToken: string  // Cloudflare Turnstile token
+  captchaToken?: string,  // Turnstile or reCAPTCHA token (omit for Simple Math)
+  mathAnswer?: number     // Answer to the server-side math question (Simple Math mode only)
 }
 ```
+
+The server determines which CAPTCHA mode is active from the `captchaType` setting and validates accordingly. If `captchaType` is `"none"`, neither field is required.
 
 ---
 
@@ -202,6 +206,27 @@ Manage Apple Wallet pass configuration.
 | `wallet.get` | Query | Protected | Get wallet pass config |
 | `wallet.update` | Mutation | Protected | Create or update wallet config |
 | `wallet.generate` | Query | Protected | Generate `.pkpass` file (requires Apple signing) |
+| `wallet.status` | Query | Protected | Check whether all required Apple signing env vars are present |
+
+### wallet.status Response
+
+```typescript
+{
+  configured: boolean,    // true if all 6 required env vars are set and non-empty
+  missingVars: string[]  // list of variable names that are absent or empty
+}
+```
+
+Required variables checked by `wallet.status`:
+
+- `APPLE_PASS_TYPE_ID`
+- `APPLE_TEAM_ID`
+- `APPLE_WWDR_CERT`
+- `APPLE_SIGNER_CERT`
+- `APPLE_SIGNER_KEY`
+- `APPLE_SIGNER_PASSPHRASE`
+
+The wallet drawer in the admin panel calls this endpoint on open and displays a warning banner listing any missing variables.
 
 ---
 

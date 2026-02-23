@@ -37,9 +37,19 @@ RESEND_FROM_EMAIL=contact@yourdomain.com
 
 Without Resend, messages are still saved to the database but no email is sent.
 
-### Configure Turnstile CAPTCHA (Recommended)
+### Configure CAPTCHA (Recommended)
 
-To protect against spam:
+LinkDen supports three CAPTCHA modes. Select the type in **Admin > Settings > Contact Form > CAPTCHA Type**:
+
+#### Simple Math CAPTCHA (No external account required)
+
+The simplest option. The form displays a randomly generated arithmetic question (e.g., "What is 4 + 7?"). The answer is validated server-side. No API keys, no third-party services, no cookies. Ideal for low-traffic sites or when you want zero external dependencies.
+
+To enable: set **CAPTCHA Type** to **Simple Math** in the admin settings. No environment variables are required.
+
+#### Cloudflare Turnstile (Recommended for Cloudflare deployments)
+
+Privacy-friendly, invisible challenge from Cloudflare. Ideal if you are already on the Cloudflare stack.
 
 1. Go to the **Turnstile** section in the Cloudflare dashboard.
 2. Add your site and select the managed challenge type.
@@ -53,7 +63,26 @@ NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAAA...
 TURNSTILE_SECRET_KEY=0x4AAAAAAA...
 ```
 
-Without Turnstile, the form works but has no bot protection.
+Then set **CAPTCHA Type** to **Cloudflare Turnstile** in admin settings.
+
+#### Google reCAPTCHA v2
+
+Traditional checkbox CAPTCHA from Google.
+
+1. Register your site at [google.com/recaptcha](https://www.google.com/recaptcha).
+2. Add to your environment files:
+
+```bash
+# apps/web/.env
+NEXT_PUBLIC_RECAPTCHA_SITE_KEY=6Le...
+
+# apps/server/.env
+RECAPTCHA_SECRET_KEY=6Le...
+```
+
+Then set **CAPTCHA Type** to **Google reCAPTCHA** in admin settings.
+
+Without any CAPTCHA configured, the form works but has no bot protection.
 
 ## Managing Submissions
 
@@ -81,6 +110,6 @@ The contact form includes:
 | Name | Text | Yes |
 | Email | Email | Yes |
 | Message | Textarea | Yes |
-| Turnstile | CAPTCHA | If configured |
+| CAPTCHA | Math question / Turnstile / reCAPTCHA | If configured |
 
 The form validates all fields client-side before submission and shows inline error messages.

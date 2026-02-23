@@ -15,10 +15,14 @@ interface RightPanelProps {
   settings: Record<string, string>;
   onSettingsChange: (key: string, value: string) => void;
   onOpenDrawer?: (drawer: AdminDrawer) => void;
+  activeTab?: RightTab;
+  onTabChange?: (tab: RightTab) => void;
 }
 
-export function RightPanel({ settings, onSettingsChange, onOpenDrawer }: RightPanelProps) {
-  const [activeTab, setActiveTab] = useState<RightTab>("design");
+export function RightPanel({ settings, onSettingsChange, onOpenDrawer, activeTab: externalTab, onTabChange }: RightPanelProps) {
+  const [internalTab, setInternalTab] = useState<RightTab>("design");
+  const activeTab = externalTab ?? internalTab;
+  const setActiveTab = onTabChange ?? setInternalTab;
 
   const tabs = [
     { id: "design" as const, label: "Design", icon: <Palette className="w-3.5 h-3.5" /> },
@@ -29,7 +33,7 @@ export function RightPanel({ settings, onSettingsChange, onOpenDrawer }: RightPa
   return (
     <div className="h-full flex flex-col bg-[var(--admin-surface)]">
       {/* Segmented control tab bar */}
-      <div className="px-4 pt-3 pb-2 shrink-0">
+      <div className="px-5 pt-4 pb-3 shrink-0">
         <div className="flex items-center bg-[var(--admin-bg)] rounded-lg p-0.5 border border-[var(--admin-border-subtle)]">
           {tabs.map((tab) => (
             <button
@@ -41,6 +45,7 @@ export function RightPanel({ settings, onSettingsChange, onOpenDrawer }: RightPa
                   ? "bg-[var(--admin-surface)] text-[var(--admin-text)] shadow-sm"
                   : "text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-secondary)]"
               }`}
+              aria-label={tab.label}
             >
               {tab.icon}
               {tab.label}
@@ -82,7 +87,7 @@ function DesignTab({
   }
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-5 space-y-6">
       {/* Theme Mode Toggle */}
       <section>
         <p className="admin-section-label">Default Mode</p>
@@ -97,12 +102,15 @@ function DesignTab({
                   ? "bg-[var(--admin-surface)] text-[var(--admin-text)] shadow-sm"
                   : "text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-secondary)]"
               }`}
+              aria-label={`Theme mode: ${mode}`}
             >
               {mode}
             </button>
           ))}
         </div>
       </section>
+
+      <div className="border-t border-[var(--admin-border)]" />
 
       {/* Theme Selector */}
       <section>
@@ -118,6 +126,7 @@ function DesignTab({
                   ? "border-[var(--admin-accent)] bg-[var(--admin-accent-subtle)]"
                   : "border-[var(--admin-border)] hover:border-[var(--admin-text-tertiary)]"
               }`}
+              aria-label={`Select ${theme.name} theme`}
             >
               {selectedTheme === theme.id && (
                 <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[var(--admin-accent)] flex items-center justify-center">
@@ -142,6 +151,8 @@ function DesignTab({
         </div>
       </section>
 
+      <div className="border-t border-[var(--admin-border)]" />
+
       {/* Colors */}
       <section>
         <p className="admin-section-label">Colors</p>
@@ -164,10 +175,17 @@ function DesignTab({
         </div>
       </section>
 
+      <div className="border-t border-[var(--admin-border)]" />
+
       {/* Branding */}
       <section>
         <p className="admin-section-label">Branding</p>
         <div className="space-y-3">
+          <ToggleRow
+            label="Show branding"
+            checked={settings.brandEnabled !== "false"}
+            onChange={() => onSettingsChange("brandEnabled", settings.brandEnabled === "false" ? "true" : "false")}
+          />
           <div>
             <label className="block text-[11px] font-medium text-[var(--admin-text-secondary)] mb-1">Brand Name</label>
             <input
@@ -198,7 +216,7 @@ function AnalyticsTab({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawer) =
   const overview = trpc.analytics.overview.useQuery({ period: "30d" });
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-5 space-y-5">
       <p className="admin-section-label">Quick Stats (30 days)</p>
 
       {overview.isLoading ? (
@@ -231,7 +249,7 @@ function AnalyticsTab({ onOpenDrawer }: { onOpenDrawer?: (drawer: AdminDrawer) =
 
 function StatItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--admin-bg)] border border-[var(--admin-border-subtle)]">
+    <div className="flex items-center justify-between p-3.5 rounded-lg bg-[var(--admin-bg)] border border-[var(--admin-border-subtle)]">
       <span className="text-[11px] text-[var(--admin-text-secondary)]">{label}</span>
       <span className="text-[13px] font-bold text-[var(--admin-text)] tabular-nums">{value}</span>
     </div>
@@ -295,7 +313,7 @@ function SettingsTab({
   }
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-5 space-y-6">
       {/* Profile */}
       <section>
         <p className="admin-section-label">Profile</p>
@@ -334,6 +352,8 @@ function SettingsTab({
         </div>
       </section>
 
+      <div className="border-t border-[var(--admin-border)]" />
+
       {/* Contact Form */}
       <section>
         <p className="admin-section-label">Contact Form</p>
@@ -360,6 +380,8 @@ function SettingsTab({
         </div>
       </section>
 
+      <div className="border-t border-[var(--admin-border)]" />
+
       {/* CAPTCHA */}
       <section>
         <p className="admin-section-label flex items-center gap-1.5">
@@ -368,27 +390,58 @@ function SettingsTab({
         </p>
         <div className="space-y-3">
           <div>
-            <label className="block text-[11px] font-medium text-[var(--admin-text-secondary)] mb-1">Site Key</label>
-            <input
-              type="text"
-              value={settings.captchaSiteKey || ""}
-              onChange={(e) => onSettingsChange("captchaSiteKey", e.target.value)}
-              placeholder="0x4AAAAAAA..."
-              className="admin-input font-mono text-[11px]"
-            />
+            <label className="block text-[11px] font-medium text-[var(--admin-text-secondary)] mb-1">Type</label>
+            <div className="flex items-center bg-[var(--admin-bg)] rounded-lg p-0.5 border border-[var(--admin-border-subtle)]">
+              {(["none", "math", "turnstile"] as const).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => onSettingsChange("captchaType", type)}
+                  className={`flex-1 text-[11px] font-semibold py-1.5 px-2 rounded-md transition-all duration-150 capitalize ${
+                    (settings.captchaType || "none") === type
+                      ? "bg-[var(--admin-surface)] text-[var(--admin-text)] shadow-sm"
+                      : "text-[var(--admin-text-tertiary)] hover:text-[var(--admin-text-secondary)]"
+                  }`}
+                  aria-label={`CAPTCHA type: ${type === "math" ? "Simple Math" : type === "turnstile" ? "Turnstile" : "None"}`}
+                >
+                  {type === "math" ? "Simple Math" : type === "turnstile" ? "Turnstile" : "None"}
+                </button>
+              ))}
+            </div>
           </div>
-          <div>
-            <label className="block text-[11px] font-medium text-[var(--admin-text-secondary)] mb-1">Secret Key</label>
-            <input
-              type="password"
-              value={settings.captchaSecretKey || ""}
-              onChange={(e) => onSettingsChange("captchaSecretKey", e.target.value)}
-              placeholder="0x4AAAAAAA..."
-              className="admin-input font-mono text-[11px]"
-            />
-          </div>
+          {(settings.captchaType || "none") === "turnstile" && (
+            <>
+              <div>
+                <label className="block text-[11px] font-medium text-[var(--admin-text-secondary)] mb-1">Site Key</label>
+                <input
+                  type="text"
+                  value={settings.captchaSiteKey || ""}
+                  onChange={(e) => onSettingsChange("captchaSiteKey", e.target.value)}
+                  placeholder="0x4AAAAAAA..."
+                  className="admin-input font-mono text-[11px]"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-[var(--admin-text-secondary)] mb-1">Secret Key</label>
+                <input
+                  type="password"
+                  value={settings.captchaSecretKey || ""}
+                  onChange={(e) => onSettingsChange("captchaSecretKey", e.target.value)}
+                  placeholder="0x4AAAAAAA..."
+                  className="admin-input font-mono text-[11px]"
+                />
+              </div>
+            </>
+          )}
+          {(settings.captchaType || "none") === "math" && (
+            <p className="text-[10px] text-[var(--admin-text-tertiary)] leading-relaxed">
+              A simple math question will be shown before form submission. No API keys needed.
+            </p>
+          )}
         </div>
       </section>
+
+      <div className="border-t border-[var(--admin-border)]" />
 
       {/* SEO */}
       <section>
@@ -423,6 +476,8 @@ function SettingsTab({
         </div>
       </section>
 
+      <div className="border-t border-[var(--admin-border)]" />
+
       {/* Quick Links */}
       <section>
         <p className="admin-section-label">Quick Access</p>
@@ -444,6 +499,8 @@ function SettingsTab({
         </div>
       </section>
 
+      <div className="border-t border-[var(--admin-border)]" />
+
       {/* Export/Import */}
       <section>
         <p className="admin-section-label">Data</p>
@@ -452,6 +509,7 @@ function SettingsTab({
             type="button"
             onClick={handleExport}
             className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--admin-text-secondary)] px-3 py-2 rounded-lg border border-[var(--admin-border)] hover:bg-[var(--admin-bg)] hover:border-[var(--admin-text-tertiary)] transition-all duration-150"
+            aria-label="Export data"
           >
             <Download className="w-3.5 h-3.5" />
             Export
@@ -460,6 +518,7 @@ function SettingsTab({
             type="button"
             onClick={handleImport}
             className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--admin-text-secondary)] px-3 py-2 rounded-lg border border-[var(--admin-border)] hover:bg-[var(--admin-bg)] hover:border-[var(--admin-text-tertiary)] transition-all duration-150"
+            aria-label="Import data"
           >
             <Upload className="w-3.5 h-3.5" />
             Import
@@ -475,6 +534,9 @@ function ToggleRow({ label, checked, onChange }: { label: string; checked: boole
     <div className="flex items-center gap-3">
       <button
         type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
         onClick={onChange}
         className={`relative w-9 h-5 rounded-full transition-colors duration-200 ${
           checked ? "bg-[var(--admin-accent)]" : "bg-[var(--admin-border)]"

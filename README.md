@@ -12,26 +12,37 @@ Your links, your brand, your rules.
 ## Features
 
 - **3-Panel Admin Editor** — SmartBio-style interface with a
-  block picker on the left, live phone preview in the center,
-  and design/settings controls on the right.
+  collapsible block sidebar on the left, live device preview in
+  the center, and design/settings controls on the right.
 - **Themed Public Page** — Glassmorphism-styled profile page
-  with gradient headers, social icons row, verified badge, and
-  animated link blocks. Seven built-in themes with dark and
-  light variants.
+  with gradient headers, social icons row, verified badge inline
+  next to the display name, and animated link blocks. Seven
+  built-in themes with dark and light variants.
+- **Visitor Dark/Light Toggle** — Visitors can switch color
+  mode on your public page. Initial mode follows your site
+  default or the visitor's OS preference.
 - **Multiple Block Types** — Links, headings, spacers, text
-  blocks, email, phone, vCard download, and Apple Wallet pass
-  with drag-and-drop reordering.
+  blocks, email, phone, vCard download, and Apple Wallet pass.
+  Single-instance blocks (vCard, Wallet, Contact Form) are
+  enforced automatically.
+- **Drag-and-Drop Reordering** — Reorder blocks by dragging
+  directly on the phone preview (powered by
+  `@hello-pangea/dnd`). Works on touch devices too.
+- **Block Search** — Filter the block picker by name or
+  description to quickly find the block type you need.
 - **Apple Wallet Business Card** — Generate signed `.pkpass`
-  files so visitors can save your contact info directly to
-  their iPhone wallet.
+  files so visitors can save your contact info to Apple Wallet.
+  Live preview card in the admin drawer, and config warnings
+  for missing environment variables.
 - **vCard Support** — Downloadable `.vcf` digital business
   cards covering personal, professional, and social fields.
 - **Analytics Dashboard** — Track page views, link clicks,
   referrers, and geographic data with time-series charts.
 - **Custom Pages** — Create additional pages (privacy policy,
   terms, etc.) with Markdown content rendered as styled HTML.
-- **Contact Form** — Built-in contact form with CAPTCHA
-  support (Cloudflare Turnstile or Google reCAPTCHA).
+- **Contact Form** — Built-in contact form with three CAPTCHA
+  options: Simple Math (no account required), Cloudflare
+  Turnstile, or Google reCAPTCHA.
 - **Edge Caching** — Cloudflare Cache API integration for
   sub-50ms public page loads with automatic cache purge on
   admin saves.
@@ -41,6 +52,11 @@ Your links, your brand, your rules.
   OpenGraph tags, Twitter Cards, and configurable meta fields.
 - **Full Whitelabel** — Toggle off all LinkDen branding with
   a single setting. Zero attribution required (MIT license).
+- **Accessible UI** — Toggle switches use `role="switch"` and
+  `aria-checked`; drawers use `role="dialog"` and
+  `aria-modal`; theme toggle describes its current state via
+  `aria-label`; public page uses `role="main"` and
+  `aria-label` on interactive elements.
 - **Export / Import** — Back up all settings and links as JSON.
 
 ## Getting Started

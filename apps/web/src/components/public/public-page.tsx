@@ -1,7 +1,9 @@
 "use client";
 
-import { Moon, Sun } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { getTheme, type ThemeVariant } from "@linkden/ui/themes";
+import { DragDropContext, Draggable, type DropResult, Droppable } from "@hello-pangea/dnd";
+import { BadgeCheck, GripVertical, Moon, Sun } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Avatar } from "./avatar";
 import { LinkBlock } from "./link-block";
 import { SocialIconsRow } from "./social-icons-row";
@@ -29,6 +31,8 @@ interface PublicPageProps {
   links: LinkData[];
   socialLinks?: SocialLink[];
   isPreview?: boolean;
+  isDraggable?: boolean;
+  onReorder?: (sourceIndex: number, destIndex: number) => void;
 }
 
 const VISITOR_THEME_KEY = "linkden-visitor-theme";
@@ -38,19 +42,24 @@ export function PublicPage({
   links,
   socialLinks = [],
   isPreview = false,
+  isDraggable = false,
+  onReorder,
 }: PublicPageProps) {
   const profileName = settings.profileName || "LinkDen";
   const profileBio = settings.profileBio || "";
   const profileImage = settings.profileImage || "";
   const captchaSiteKey = settings.captchaSiteKey || "";
+  const captchaType = settings.captchaType || "none";
   const customCss = settings.customCss || "";
   const customHead = settings.customHead || "";
   const brandName = settings.brandName || "";
   const brandLogo = settings.brandLogo || "";
+  const brandEnabled = settings.brandEnabled !== "false";
   const accentColor = settings.accentColor || "#0FACED";
   const backgroundColor = settings.backgroundColor || "#091533";
   const showVerifiedBadge = settings.verifiedBadge === "true";
   const themeMode = settings.themeMode || "dark";
+  const themeId = settings.theme || "midnight-glass";
 
   // Visitor dark/light preference
   const [visitorMode, setVisitorMode] = useState<"dark" | "light" | null>(null);
@@ -70,20 +79,31 @@ export function PublicPage({
     }
   }, [visitorMode, themeMode, isPreview]);
 
+  // Resolve the effective mode and theme variant colors
+  const effectiveMode = (visitorMode || themeMode) as "dark" | "light";
+  const themeVariant: ThemeVariant | null = useMemo(() => {
+    const theme = getTheme(themeId);
+    if (!theme) return null;
+    return theme[effectiveMode === "light" ? "light" : "dark"];
+  }, [themeId, effectiveMode]);
+
+  // Effective colors: use theme variant if available, otherwise fall back to settings
+  const effectiveBg = themeVariant?.background || backgroundColor;
+  const effectiveText = themeVariant?.textPrimary || settings.textColor || "rgba(255,255,255,0.95)";
+  const effectiveAccent = themeVariant?.primary || accentColor;
+  const isLightMode = effectiveMode === "light";
+
   // Apply theme CSS variables from settings
   useEffect(() => {
     if (isPreview) return;
     const root = document.documentElement;
-    const themeSettings: Record<string, string> = {
-      backgroundColor: "--background",
-      textColor: "--text-primary",
-      accentColor: "--primary",
-    };
-
-    for (const [key, cssVar] of Object.entries(themeSettings)) {
-      if (settings[key]) {
-        root.style.setProperty(cssVar, settings[key]);
-      }
+    root.style.setProperty("--background", effectiveBg);
+    root.style.setProperty("--text-primary", effectiveText);
+    root.style.setProperty("--primary", effectiveAccent);
+    if (themeVariant) {
+      root.style.setProperty("--text-secondary", themeVariant.textSecondary);
+      root.style.setProperty("--surface", themeVariant.surface);
+      root.style.setProperty("--surface-border", themeVariant.surfaceBorder);
     }
 
     if (customCss) {
@@ -96,7 +116,7 @@ export function PublicPage({
         if (el) el.remove();
       };
     }
-  }, [settings, customCss, isPreview]);
+  }, [effectiveBg, effectiveText, effectiveAccent, themeVariant, customCss, isPreview]);
 
   // Inject custom head tags
   useEffect(() => {
@@ -167,24 +187,78 @@ export function PublicPage({
 
   const activeLinks = links.filter((l) => l.isActive);
 
+  function handleDragEnd(result: DropResult) {
+    if (!result.destination || !onReorder) return;
+    if (result.source.index === result.destination.index) return;
+    onReorder(result.source.index, result.destination.index);
+  }
+
+  const linkBlocksContent = isDraggable ? (
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <Droppable droppableId="preview-blocks">
+        {(provided) => (
+          <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-3">
+            {activeLinks.map((link, index) => (
+              <Draggable key={link.id} draggableId={link.id} index={index}>
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    className={`relative group ${snapshot.isDragging ? "z-50 opacity-90" : ""}`}
+                  >
+                    <div
+                      {...provided.dragHandleProps}
+                      className="absolute -left-6 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity cursor-grab active:cursor-grabbing z-10"
+                    >
+                      <GripVertical className="w-4 h-4 text-[var(--text-secondary)]" />
+                    </div>
+                    <LinkBlock link={link} captchaSiteKey={captchaSiteKey} captchaType={captchaType} />
+                  </div>
+                )}
+              </Draggable>
+            ))}
+            {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
+    </DragDropContext>
+  ) : (
+    <div className="space-y-3">
+      {activeLinks.map((link) => (
+        <LinkBlock key={link.id} link={link} captchaSiteKey={captchaSiteKey} captchaType={captchaType} />
+      ))}
+    </div>
+  );
+
   return (
     <div
-      className="min-h-screen flex flex-col relative"
-      style={isPreview ? { background: backgroundColor, color: "var(--text-primary)" } : undefined}
+      className={`${isPreview ? "min-h-full" : "min-h-screen"} flex flex-col relative transition-colors duration-300`}
+      style={isPreview ? {
+        background: effectiveBg,
+        color: effectiveText,
+        ["--background" as string]: effectiveBg,
+        ["--text-primary" as string]: effectiveText,
+        ["--text-secondary" as string]: themeVariant?.textSecondary || "rgba(255,255,255,0.55)",
+        ["--primary" as string]: effectiveAccent,
+        ["--surface" as string]: themeVariant?.surface || "rgba(255,255,255,0.08)",
+        ["--surface-border" as string]: themeVariant?.surfaceBorder || "rgba(255,255,255,0.12)",
+      } : undefined}
     >
       {/* Gradient Header Area */}
       <div
         className="relative w-full pt-16 pb-24 px-4"
         style={{
-          background: `linear-gradient(135deg, ${accentColor}22 0%, ${backgroundColor} 50%, ${accentColor}11 100%)`,
+          background: isLightMode
+            ? `linear-gradient(135deg, ${effectiveAccent}30 0%, ${effectiveAccent}18 40%, ${effectiveBg} 100%)`
+            : `linear-gradient(135deg, ${effectiveAccent}22 0%, ${effectiveBg} 50%, ${effectiveAccent}11 100%)`,
         }}
       >
         <div className="absolute inset-0 opacity-30" />
       </div>
 
       {/* Content Area - overlaps header */}
-      <div className="flex flex-col items-center px-4 -mt-16 pb-12">
-        <div className="w-full max-w-md space-y-5 animate-fade-in">
+      <main className="flex flex-col items-center px-4 -mt-16 pb-12" role="main">
+        <div className={`w-full space-y-5 animate-fade-in ${isPreview ? "" : "max-w-md"}`}>
           {/* Avatar */}
           <div className="flex justify-center">
             <div className="rounded-full p-1 bg-[var(--background)] shadow-xl">
@@ -192,14 +266,18 @@ export function PublicPage({
                 src={profileImage}
                 alt={profileName}
                 size={104}
-                verified={showVerifiedBadge}
               />
             </div>
           </div>
 
           {/* Name & Bio */}
           <div className="text-center">
-            <h1 className="text-2xl font-bold tracking-tight">{profileName}</h1>
+            <h1 className="text-2xl font-bold tracking-tight inline-flex items-center justify-center gap-1.5">
+              {profileName}
+              {showVerifiedBadge && (
+                <BadgeCheck className="w-5 h-5 text-blue-500 shrink-0" aria-label="Verified" />
+              )}
+            </h1>
             {profileBio && (
               <p className="text-sm text-[var(--text-secondary)] mt-2 max-w-xs mx-auto leading-relaxed">
                 {profileBio}
@@ -211,32 +289,30 @@ export function PublicPage({
           {socialLinks.length > 0 && <SocialIconsRow links={socialLinks} />}
 
           {/* Link Blocks */}
-          <div className="space-y-3">
-            {activeLinks.map((link) => (
-              <LinkBlock key={link.id} link={link} captchaSiteKey={captchaSiteKey} />
-            ))}
-          </div>
+          {linkBlocksContent}
 
           {/* Footer */}
-          <WhitelabelFooter brandName={brandName} brandLogo={brandLogo} />
+          {brandEnabled && <WhitelabelFooter brandName={brandName} brandLogo={brandLogo} />}
         </div>
-      </div>
+      </main>
 
-      {/* Floating dark/light toggle for visitors */}
-      {!isPreview && (
-        <button
-          type="button"
-          onClick={toggleVisitorMode}
-          className="fixed bottom-4 right-4 w-10 h-10 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm flex items-center justify-center text-white/70 hover:text-white hover:bg-white/20 transition-all z-50"
-          aria-label="Toggle dark/light mode"
-        >
-          {(visitorMode || themeMode) === "dark" ? (
-            <Sun className="w-4 h-4" />
-          ) : (
-            <Moon className="w-4 h-4" />
-          )}
-        </button>
-      )}
+      {/* Floating dark/light toggle for visitors (and preview) */}
+      <button
+        type="button"
+        onClick={toggleVisitorMode}
+        className={`${isPreview ? "absolute" : "fixed"} bottom-4 right-4 w-10 h-10 rounded-full backdrop-blur-sm flex items-center justify-center transition-all z-50 shadow-lg ${
+          isLightMode
+            ? "bg-black/8 border border-black/15 text-black/50 hover:text-black/80 hover:bg-black/15"
+            : "bg-white/10 border border-white/20 text-white/70 hover:text-white hover:bg-white/20"
+        }`}
+        aria-label={isLightMode ? "Switch to dark mode" : "Switch to light mode"}
+      >
+        {effectiveMode === "dark" ? (
+          <Sun className="w-4 h-4" />
+        ) : (
+          <Moon className="w-4 h-4" />
+        )}
+      </button>
     </div>
   );
 }
