@@ -1,284 +1,125 @@
 "use client";
 
-import { useState } from "react";
-import { trpc } from "@/lib/trpc";
-import {
-  ChevronRight,
-  Contact,
-  ExternalLink,
-  Github,
-  Globe,
-  type LucideIcon,
-  Mail,
-  Phone,
-  Twitter,
-  Wallet,
-} from "lucide-react";
-import { ContactFormBlock } from "./blocks/contact-form-block";
-import { DividerBlock } from "./blocks/divider-block";
-import { HtmlBlock } from "./blocks/html-block";
-import { ImageBlock } from "./blocks/image-block";
-import { SocialBrandButton } from "./blocks/social-brand-button";
-import { VideoEmbed } from "./blocks/video-embed";
-
-const ICON_MAP: Record<string, LucideIcon> = {
-  globe: Globe,
-  github: Github,
-  twitter: Twitter,
-  mail: Mail,
-  phone: Phone,
-  contact: Contact,
-};
-
-interface LinkData {
-  id: string;
-  type: string;
-  title: string;
-  url: string | null;
-  icon: string | null;
-  iconType: string | null;
-  isActive: boolean;
-  clickCount: number;
-  metadata: Record<string, unknown> | null;
-}
+import { useMutation } from "@tanstack/react-query";
+import { trpc } from "@/utils/trpc";
+import type { ThemeColors } from "./public-page";
 
 interface LinkBlockProps {
-  link: LinkData;
-  captchaSiteKey?: string;
-  captchaType?: string;
+	block: {
+		id: string;
+		title: string | null;
+		url: string | null;
+		icon: string | null;
+	};
+	config: Record<string, unknown>;
+	colorMode: "light" | "dark";
+	themeColors?: ThemeColors;
 }
 
-function LinkIcon({ icon }: { icon: string | null }) {
-  if (!icon) return <ExternalLink className="w-5 h-5" />;
-  const Icon = ICON_MAP[icon.toLowerCase()];
-  if (Icon) return <Icon className="w-5 h-5" />;
-  return <span className="text-xs font-bold">{icon.slice(0, 2).toUpperCase()}</span>;
-}
+const animationClasses: Record<string, string> = {
+	fade: "animate-[fadeIn_0.5s_ease-in-out]",
+	slide: "animate-[slideIn_0.3s_ease-out]",
+	bounce: "hover:animate-[bounce_0.3s]",
+	pulse: "hover:animate-pulse",
+};
 
-export function LinkBlock({ link, captchaSiteKey, captchaType }: LinkBlockProps) {
-  const trackClick = trpc.links.trackClick.useMutation();
+export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockProps) {
+	const trackClick = useMutation(trpc.public.trackClick.mutationOptions());
 
-  function handleClick() {
-    if (link.id.startsWith("placeholder-")) return;
-    trackClick.mutate({
-      id: link.id,
-      referrer: typeof document !== "undefined" ? document.referrer : "",
-    });
-  }
+	const handleClick = () => {
+		trackClick.mutate({
+			blockId: block.id,
+			referrer: document.referrer || undefined,
+			userAgent: navigator.userAgent || undefined,
+		});
+	};
 
-  const metadata = link.metadata || {};
+	const emoji = config.emoji as string | undefined;
+	const emojiPosition = (config.emojiPosition as string) || "left";
+	const textAlign = (config.textAlign as string) || "center";
+	const isOutlined = config.isOutlined as boolean | undefined;
+	const openInNewTab = config.openInNewTab !== false;
+	const animation = config.animation as string | undefined;
+	const borderRadius = (config.borderRadius as string) || "lg";
+	const shadow = config.shadow as string | undefined;
+	const customBgColor = config.customBgColor as string | undefined;
+	const customTextColor = config.customTextColor as string | undefined;
 
-  switch (link.type) {
-    case "heading":
-      return (
-        <div className="py-2 px-1">
-          <h2 className="text-xs font-semibold uppercase tracking-[0.15em] text-[var(--text-secondary)]">
-            {link.title}
-          </h2>
-        </div>
-      );
+	const radiusClasses: Record<string, string> = {
+		none: "rounded-none",
+		sm: "rounded-sm",
+		md: "rounded-md",
+		lg: "rounded-lg",
+		full: "rounded-full",
+	};
 
-    case "spacer":
-      return <div className="h-4" />;
+	const shadowClasses: Record<string, string> = {
+		none: "",
+		sm: "shadow-sm",
+		md: "shadow-md",
+		lg: "shadow-lg",
+	};
 
-    case "divider":
-      return (
-        <DividerBlock
-          style={(metadata.style as "solid" | "dashed" | "dotted" | "gradient") || "solid"}
-          color={metadata.color as string}
-        />
-      );
+	const textAlignClasses: Record<string, string> = {
+		left: "text-left",
+		center: "text-center",
+		right: "text-right",
+	};
 
-    case "text":
-      return (
-        <div className="rounded-2xl bg-white/8 border border-white/12 backdrop-blur-sm p-4 text-sm leading-relaxed text-[var(--text-secondary)]">
-          {link.title !== "---" && (
-            <h3 className="font-semibold text-[var(--text-primary)] mb-2">{link.title}</h3>
-          )}
-          <p>{link.url ?? ""}</p>
-        </div>
-      );
+	const baseClasses = `block w-full px-6 py-3.5 font-medium transition-all duration-200 ${
+		radiusClasses[borderRadius] || "rounded-lg"
+	} ${shadowClasses[shadow || "none"]} ${
+		textAlignClasses[textAlign] || "text-center"
+	} ${animation && animationClasses[animation] ? animationClasses[animation] : ""}`;
 
-    case "image":
-      return (
-        <ImageBlock
-          url={link.url || ""}
-          alt={(metadata.alt as string) || link.title}
-          caption={metadata.caption as string}
-        />
-      );
+	const style: React.CSSProperties = {
+		transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
+	};
 
-    case "video":
-      return <VideoEmbed url={link.url || ""} title={link.title} />;
+	if (customBgColor) {
+		style.backgroundColor = customBgColor;
+		if (customTextColor) style.color = customTextColor;
+	} else if (themeColors) {
+		if (isOutlined) {
+			style.border = `2px solid ${themeColors.border}`;
+			style.color = themeColors.cardFg;
+			style.backgroundColor = "transparent";
+		} else {
+			style.backgroundColor = themeColors.card;
+			style.color = themeColors.cardFg;
+		}
+	}
 
-    case "html":
-      return <HtmlBlock html={(metadata.html as string) || ""} />;
+	const colorClasses = customBgColor || themeColors
+		? ""
+		: isOutlined
+			? colorMode === "dark"
+				? "border-2 border-gray-600 text-white hover:bg-gray-800"
+				: "border-2 border-gray-300 text-gray-900 hover:bg-gray-50"
+			: colorMode === "dark"
+				? "bg-gray-800 text-white hover:bg-gray-700"
+				: "bg-white text-gray-900 shadow-sm hover:shadow-md";
 
-    case "contact_form":
-      return (
-        <ContactFormBlock
-          captchaSiteKey={captchaSiteKey}
-          captchaType={captchaType}
-          heading={link.title !== "Get in Touch" ? link.title : undefined}
-          buttonText={metadata.buttonText as string}
-        />
-      );
-
-    case "social_button":
-      return (
-        <SocialBrandButton
-          platform={(metadata.platform as string) || "twitter"}
-          url={link.url || "#"}
-          title={link.title}
-          onTrack={handleClick}
-        />
-      );
-
-    case "email":
-      return (
-        <a
-          href={link.url?.startsWith("mailto:") ? link.url : `mailto:${link.url ?? ""}`}
-          onClick={handleClick}
-          aria-label={`Email: ${link.title}`}
-          className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/8 border border-white/12 backdrop-blur-sm hover:bg-white/12 hover:border-white/20 transition-all duration-200 group"
-        >
-          <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/20 flex items-center justify-center shrink-0">
-            <Mail className="w-5 h-5 text-[var(--primary)]" />
-          </div>
-          <span className="flex-1 text-sm font-medium truncate">{link.title}</span>
-          <ChevronRight className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--primary)] group-hover:translate-x-0.5 transition-all" />
-        </a>
-      );
-
-    case "phone":
-      return (
-        <a
-          href={link.url?.startsWith("tel:") ? link.url : `tel:${link.url ?? ""}`}
-          onClick={handleClick}
-          aria-label={`Phone: ${link.title}`}
-          className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/8 border border-white/12 backdrop-blur-sm hover:bg-white/12 hover:border-white/20 transition-all duration-200 group"
-        >
-          <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/20 flex items-center justify-center shrink-0">
-            <Phone className="w-5 h-5 text-[var(--primary)]" />
-          </div>
-          <span className="flex-1 text-sm font-medium truncate">{link.title}</span>
-          <ChevronRight className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--primary)] group-hover:translate-x-0.5 transition-all" />
-        </a>
-      );
-
-    case "wallet":
-      return <WalletBlock link={link} onTrack={handleClick} />;
-
-    case "vcard":
-      return <VCardDownloadBlock link={link} onTrack={handleClick} />;
-
-    default:
-      return (
-        <a
-          href={link.url ?? "#"}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={handleClick}
-          aria-label={link.title}
-          className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/8 border border-white/12 backdrop-blur-sm hover:bg-white/12 hover:border-white/20 transition-all duration-200 group"
-        >
-          <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/20 flex items-center justify-center shrink-0 text-[var(--primary)]">
-            <LinkIcon icon={link.icon} />
-          </div>
-          <span className="flex-1 text-sm font-medium truncate">{link.title}</span>
-          <ChevronRight className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--primary)] group-hover:translate-x-0.5 transition-all" />
-        </a>
-      );
-  }
-}
-
-function WalletBlock({
-  link,
-  onTrack,
-}: {
-  link: LinkData;
-  onTrack: () => void;
-}) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const walletQuery = trpc.wallet.generate.useQuery(undefined, {
-    enabled: false,
-  });
-
-  async function handleAddToWallet() {
-    onTrack();
-    setLoading(true);
-    setError(null);
-    try {
-      await walletQuery.refetch();
-    } catch (err: any) {
-      setError(err?.message || "Failed to generate wallet pass");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="space-y-1">
-      <button
-        type="button"
-        onClick={handleAddToWallet}
-        disabled={loading}
-        aria-label="Add to Apple Wallet"
-        className="flex items-center gap-3 p-3.5 rounded-2xl bg-black/80 border border-white/12 backdrop-blur-sm hover:bg-black/90 hover:border-white/20 transition-all duration-200 group w-full text-left"
-      >
-        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-          <Wallet className="w-5 h-5 text-white" />
-        </div>
-        <span className="flex-1 text-sm font-medium truncate text-white">
-          {loading ? "Generating..." : link.title || "Add to Apple Wallet"}
-        </span>
-        <ChevronRight className="w-4 h-4 text-white/50 group-hover:text-white/80 group-hover:translate-x-0.5 transition-all" />
-      </button>
-      {error && (
-        <p className="text-[10px] text-red-400 px-2">{error}</p>
-      )}
-    </div>
-  );
-}
-
-function VCardDownloadBlock({
-  link,
-  onTrack,
-}: {
-  link: LinkData;
-  onTrack: () => void;
-}) {
-  const vcardQuery = trpc.vcard.download.useQuery(undefined, {
-    enabled: false,
-  });
-
-  async function handleDownload() {
-    onTrack();
-    const result = await vcardQuery.refetch();
-    if (result.data) {
-      const blob = new Blob([result.data.content], { type: "text/vcard" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = result.data.fileName;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={handleDownload}
-      className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/8 border border-white/12 backdrop-blur-sm hover:bg-white/12 hover:border-white/20 transition-all duration-200 group w-full text-left"
-    >
-      <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/20 flex items-center justify-center shrink-0">
-        <Contact className="w-5 h-5 text-[var(--primary)]" />
-      </div>
-      <span className="flex-1 text-sm font-medium truncate">{link.title}</span>
-      <ChevronRight className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--primary)] group-hover:translate-x-0.5 transition-all" />
-    </button>
-  );
+	return (
+		<div role="listitem">
+			<a
+				href={block.url || "#"}
+				target={openInNewTab ? "_blank" : "_self"}
+				rel={openInNewTab ? "noopener noreferrer" : undefined}
+				onClick={handleClick}
+				className={`${baseClasses} ${colorClasses} hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500`}
+				style={style}
+			>
+				<span className="flex items-center justify-center gap-2">
+					{emoji && emojiPosition === "left" && (
+						<span aria-hidden="true">{emoji}</span>
+					)}
+					<span>{block.title || "Untitled Link"}</span>
+					{emoji && emojiPosition === "right" && (
+						<span aria-hidden="true">{emoji}</span>
+					)}
+				</span>
+			</a>
+		</div>
+	);
 }
