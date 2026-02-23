@@ -11,15 +11,14 @@ This guide walks you through setting up LinkDen on your local machine for develo
 
 Before you begin, make sure you have the following installed:
 
-- **Node.js 20+** -- Download from [nodejs.org](https://nodejs.org) or use a version manager like `nvm` or `fnm`.
-- **pnpm 9+** -- LinkDen uses pnpm workspaces. Enable it via Corepack:
+- **Node.js 22+** -- Download from [nodejs.org](https://nodejs.org) or use a version manager like `nvm` or `fnm`.
+- **pnpm 10+** -- LinkDen uses pnpm workspaces. Enable it via Corepack:
 
 ```bash
 corepack enable && corepack prepare pnpm@latest --activate
 ```
 
 - **Cloudflare account** -- A free account at [cloudflare.com](https://cloudflare.com) is sufficient for development.
-- **Clerk account** -- A free account at [clerk.com](https://clerk.com) for authentication.
 
 ## Clone the Repository
 
@@ -41,24 +40,34 @@ This installs dependencies for:
 - `apps/web` -- the Next.js frontend
 - `apps/server` -- the Hono API server
 - `apps/docs` -- this documentation site
+- `packages/api` -- tRPC router definitions
+- `packages/auth` -- Better Auth configuration
 - `packages/db` -- Drizzle ORM schema and migrations
-- `packages/ui` -- shared shadcn/ui components
+- `packages/env` -- shared environment variable validation
+- `packages/ui` -- shared UI components (Radix + Tailwind)
 - `packages/validators` -- shared Zod schemas
 - `packages/infra` -- Alchemy deployment configuration
 
 ## Set Up Environment Variables
 
-Copy the example environment files:
+Copy the example environment file:
 
 ```bash
 cp .env.example .env
-cp apps/web/.env.example apps/web/.env
-cp apps/server/.env.example apps/server/.env
 ```
 
-See the [Configuration](/docs/getting-started/configuration) guide for details on every environment variable.
+Edit `.env` and set the following variables:
 
-## Push Database Migrations
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `BETTER_AUTH_SECRET` | Secret key for session signing | Generate with `openssl rand -base64 32` |
+| `BETTER_AUTH_URL` | Base URL for the auth server | `http://localhost:3000` |
+| `CORS_ORIGIN` | Allowed CORS origin (frontend URL) | `http://localhost:3001` |
+| `NEXT_PUBLIC_SERVER_URL` | Public URL of the API server | `http://localhost:3000` |
+
+See the [Configuration](/docs/getting-started/configuration) guide for details.
+
+## Push Database Schema
 
 LinkDen uses Cloudflare D1 (SQLite) with Drizzle ORM. Push the schema to your database:
 
@@ -75,19 +84,20 @@ pnpm dev
 This starts all apps in development mode via Turborepo:
 
 - **Web app** -- `http://localhost:3001`
-- **API server** -- `http://localhost:8787`
+- **API server** -- `http://localhost:3000`
 - **Docs** -- `http://localhost:3002`
 
-Open `http://localhost:3001` in your browser. The admin panel is accessible at `/admin`.
+Open `http://localhost:3001` in your browser.
 
 ## Verify the Installation
 
 1. Navigate to `http://localhost:3001` -- you should see the public link page (empty by default).
-2. Navigate to `http://localhost:3001/admin` -- you should be redirected to the Clerk sign-in page.
-3. Sign in with the email address you configured in Clerk's allowlist.
-4. You should land on the admin dashboard.
+2. Navigate to `http://localhost:3001/admin/setup` -- you should see the setup wizard.
+3. Complete the 4-step setup wizard (Account, Profile, Theme, Done).
+4. You should land on the block builder at `/admin/builder`.
 
 ## Next Steps
 
-- [Configuration](/docs/getting-started/configuration) -- Configure Clerk, Cloudflare, and all environment variables.
+- [Quick Start](/docs/getting-started/quick-start) -- Walk through the setup wizard and first-time configuration.
+- [Configuration](/docs/getting-started/configuration) -- Configure environment variables.
 - [Deployment](/docs/getting-started/deployment) -- Deploy your instance to Cloudflare.

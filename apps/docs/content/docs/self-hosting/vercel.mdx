@@ -39,7 +39,6 @@ See the respective guides for deploying the API: [Cloudflare](/docs/self-hosting
 1. A [Vercel account](https://vercel.com) (free Hobby plan is sufficient).
 2. The LinkDen repository on GitHub (Vercel connects directly to your GitHub repo).
 3. The API server already deployed and accessible at a public URL.
-4. Clerk API keys from [clerk.com](https://clerk.com).
 
 ## Step 1: Deploy the API First
 
@@ -94,9 +93,7 @@ In the Vercel dashboard, go to your project's **Settings** > **Environment Varia
 
 | Variable | Value | Environment |
 |----------|-------|-------------|
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | `pk_live_...` | Production |
-| `CLERK_SECRET_KEY` | `sk_live_...` | Production |
-| `NEXT_PUBLIC_API_URL` | `https://api.yourdomain.com` | Production |
+| `NEXT_PUBLIC_SERVER_URL` | `https://api.yourdomain.com` | Production |
 | `NEXT_PUBLIC_SITE_URL` | `https://yourdomain.com` | Production |
 
 ### Optional Variables
@@ -105,8 +102,6 @@ In the Vercel dashboard, go to your project's **Settings** > **Environment Varia
 |----------|-------|-------------|
 | `NEXT_PUBLIC_SITE_NAME` | `My Links` | Production |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | `0x...` | Production |
-| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | `/sign-in` | Production |
-| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | `/sign-up` | Production |
 
 ### Development Environment
 
@@ -114,9 +109,7 @@ For preview deployments (pull request previews), add development values:
 
 | Variable | Value | Environment |
 |----------|-------|-------------|
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | `pk_test_...` | Preview |
-| `CLERK_SECRET_KEY` | `sk_test_...` | Preview |
-| `NEXT_PUBLIC_API_URL` | Your staging API URL | Preview |
+| `NEXT_PUBLIC_SERVER_URL` | Your staging API URL | Preview |
 | `NEXT_PUBLIC_SITE_URL` | (Vercel provides this automatically) | Preview |
 
 ## Step 4: Deploy
@@ -159,7 +152,7 @@ Add a CNAME record:
 - Vercel automatically provisions an SSL certificate.
 - Verify by visiting `https://yourdomain.com`.
 - Update `NEXT_PUBLIC_SITE_URL` in Vercel's environment variables to match your custom domain.
-- Update `CORS_ORIGIN` and `APP_URL` on the API server.
+- Update `CORS_ORIGIN` on the API server to match your new frontend URL.
 - Redeploy for the URL change to take effect.
 
 ### Using Both Vercel and Cloudflare DNS
@@ -169,14 +162,6 @@ If your domain uses Cloudflare DNS and you want to point it to Vercel:
 1. Add the CNAME record in Cloudflare DNS.
 2. Set the proxy status to **DNS only** (grey cloud) -- not proxied. Vercel needs direct DNS resolution for SSL provisioning.
 3. Alternatively, if you want Cloudflare's proxy (orange cloud), add your domain in Vercel and follow their guide for Cloudflare integration.
-
-## Step 6: Configure Clerk
-
-Update your Clerk application settings:
-
-1. Go to the [Clerk dashboard](https://dashboard.clerk.com).
-2. Under **Domains**, add your Vercel production domain.
-3. If using preview deployments, add `*.vercel.app` as an allowed domain for development.
 
 ## Automatic Deployments
 
@@ -211,7 +196,6 @@ LinkDen's web app is a **static export** (`output: "export"` in `next.config.ts`
 - **No server-side rendering (SSR)**: All pages are pre-rendered at build time.
 - **No API routes**: The Hono API runs separately.
 - **No Edge Functions needed**: The static export does not use Vercel's Edge or Serverless Functions.
-- **No Middleware**: Clerk middleware runs at build time only.
 
 This makes the Vercel deployment very simple and cost-effective -- it is essentially static file hosting with a global CDN.
 
@@ -258,7 +242,7 @@ For a static LinkDen site, the **Hobby plan** (free) is more than sufficient. Th
 - Ensure the `Install Command` runs from the monorepo root: `cd ../.. && pnpm install --frozen-lockfile`.
 - Check that `pnpm-workspace.yaml` includes the web app and its dependencies.
 
-### "NEXT_PUBLIC_API_URL is undefined"
+### "NEXT_PUBLIC_SERVER_URL is undefined"
 
 - `NEXT_PUBLIC_*` variables must be set **before** the build runs.
 - Verify the variables are added in Vercel's **Environment Variables** settings, not just locally.
@@ -274,12 +258,6 @@ For a static LinkDen site, the **Hobby plan** (free) is more than sufficient. Th
 - Verify DNS records are correct.
 - If using Cloudflare DNS, set the proxy to **DNS only** (grey cloud).
 - Wait for DNS propagation and retry.
-
-### Preview deployments fail on Clerk auth
-
-- Clerk needs the preview deployment URL in its allowed domains.
-- Add `*.vercel.app` as an allowed domain in Clerk for development.
-- Use separate Clerk development keys for preview environments.
 
 ### Static export does not include dynamic pages
 

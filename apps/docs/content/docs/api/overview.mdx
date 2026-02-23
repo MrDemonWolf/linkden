@@ -5,7 +5,7 @@ description: Understand LinkDen's API architecture built on tRPC and Hono runnin
 
 # API Overview
 
-LinkDen's API is built with [tRPC](https://trpc.io/) on top of [Hono](https://hono.dev/), running on Cloudflare Workers. This combination provides end-to-end type safety between the frontend and backend with edge performance.
+LinkDen's API is built with [tRPC](https://trpc.io/) v11 on top of [Hono](https://hono.dev/), running on Cloudflare Workers. This combination provides end-to-end type safety between the frontend and backend with edge performance.
 
 ## Architecture
 
@@ -17,7 +17,8 @@ Next.js Frontend (apps/web)
        v
 Hono Server (apps/server)
        |
-       | tRPC Router
+       |-- Better Auth (session validation)
+       |-- tRPC Router (packages/api)
        |
        v
 Drizzle ORM (packages/db)
@@ -34,74 +35,65 @@ Cloudflare D1 (SQLite)
 
 ### tRPC
 
-[tRPC](https://trpc.io/) provides end-to-end type safety without code generation. The frontend and backend share TypeScript types, so any API changes are caught at compile time. No separate API schema or client generation step is needed.
+[tRPC](https://trpc.io/) v11 provides end-to-end type safety without code generation. The frontend and backend share TypeScript types, so any API changes are caught at compile time. The router definitions live in `packages/api`.
+
+### Better Auth
+
+[Better Auth](https://www.better-auth.com/) handles authentication with email/password. Session cookies are validated on protected tRPC procedures. Public procedures skip authentication.
 
 ### Drizzle ORM
 
-[Drizzle ORM](https://orm.drizzle.team/) provides a type-safe SQL query builder that works with Cloudflare D1 (SQLite). The schema is defined in `packages/db` and shared across the monorepo.
+[Drizzle ORM](https://orm.drizzle.team/) provides a type-safe SQL query builder that works with Cloudflare D1 (SQLite). The schema is defined in `packages/db/src/schema/` and shared across the monorepo.
 
 ## API Routes
 
-The tRPC router is organized into namespaced procedures:
+The tRPC router is organized into 10 sub-routers plus a top-level `healthCheck` query:
 
 ### Public Procedures (No Authentication)
 
 | Procedure | Description |
 |-----------|-------------|
-| `public.getProfile` | Get the public profile (name, bio, image) |
-| `public.getLinks` | Get all visible links in display order |
-| `public.getAppearance` | Get theme and appearance settings |
-| `public.getVCard` | Download the vCard file |
-| `public.getPages` | Get published custom pages |
-| `public.submitContact` | Submit a contact form message |
-| `public.trackView` | Record a page view |
-| `public.trackClick` | Record a link click |
+| `public.getPage` | Get full public page data (profile, blocks, theme, settings) |
+| `public.submitContact` | Submit a contact form message (validates CAPTCHA if configured) |
+| `public.trackView` | Record a page view with referrer, user-agent, country |
+| `public.trackClick` | Record a link click with block ID |
+| `public.getVCard` | Download the vCard file (if enabled) |
+| `public.getSetupStatus` | Check if setup is complete |
+| `version.current` | Get current version |
+| `version.checkUpdate` | Check for updates against GitHub releases |
 
-### Protected Procedures (Clerk Authentication Required)
+### Protected Procedures (Better Auth Session Required)
 
-| Procedure | Description |
-|-----------|-------------|
-| `admin.links.*` | CRUD operations for links and blocks |
-| `admin.appearance.*` | Theme and branding management |
-| `admin.vcard.*` | vCard configuration |
-| `admin.wallet.*` | Apple Wallet pass management |
-| `admin.analytics.*` | Analytics data queries |
-| `admin.settings.*` | General settings management |
-| `admin.pages.*` | Custom pages CRUD |
-| `admin.contacts.*` | Contact form submission management |
-| `admin.export` | Export all data as JSON |
-| `admin.import` | Import data from JSON |
+| Router | Description |
+|--------|-------------|
+| `blocks.*` | CRUD operations for blocks (list, get, create, update, delete, reorder, toggleEnabled) |
+| `settings.*` | Key-value settings management (get, getAll, update, updateBulk) |
+| `contacts.*` | Contact form submissions (list, get, markRead, markUnread, delete, unreadCount) |
+| `analytics.*` | Analytics queries (overview, viewsOverTime, clicksOverTime, topLinks, referrers, countries) |
+| `social.*` | Social network management (list, toggle) |
+| `wallet.*` | Apple Wallet config (getConfig, updateConfig, generatePreview) |
+| `vcard.*` | vCard config (getConfig, updateConfig, preview) |
+| `backup.*` | Data export/import (export, import) |
 
 ## Making API Calls
 
 ### From the Frontend
 
-The tRPC client is configured in the Next.js app and available through React hooks:
+The tRPC client is configured in the Next.js app:
 
 ```typescript
-import { trpc } from "@/lib/trpc";
+import { trpc } from "@/utils/trpc";
 
 // In a React component
-const { data: links } = trpc.public.getLinks.useQuery();
-const { data: profile } = trpc.public.getProfile.useQuery();
-```
-
-### Server-Side
-
-Server components can call tRPC procedures directly:
-
-```typescript
-import { trpc } from "@/lib/trpc-server";
-
-const links = await trpc.public.getLinks();
+const { data } = trpc.public.getPage.useQuery();
+const { data: blocks } = trpc.blocks.list.useQuery();
 ```
 
 ## Error Handling
 
 tRPC errors include:
 
-- `UNAUTHORIZED` -- Missing or invalid authentication.
-- `FORBIDDEN` -- Authenticated but not authorized.
+- `UNAUTHORIZED` -- Missing or invalid session.
 - `NOT_FOUND` -- Resource does not exist.
 - `BAD_REQUEST` -- Invalid input (validated by Zod schemas from `packages/validators`).
 - `INTERNAL_SERVER_ERROR` -- Unexpected server error.

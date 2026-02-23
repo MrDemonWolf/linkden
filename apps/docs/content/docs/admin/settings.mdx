@@ -1,83 +1,97 @@
 ---
 title: Settings
-description: Configure general settings, SEO, branding, export/import, and manage your LinkDen instance.
+description: Configure profile, SEO, contact form, CAPTCHA, email, branding, vCard, wallet, and more.
 ---
 
 # Settings
 
-The settings page at `/admin/settings` contains general configuration options, data management tools, and advanced settings for your LinkDen instance.
+The settings page at `/admin/settings` contains all configuration options for your LinkDen instance, organized into 11 sections. Each section has its own Save button.
 
-## General Settings
+## 1. Profile
 
-### Site Name
+| Field | Description |
+|-------|-------------|
+| Display Name | Your name or brand shown on the public page |
+| Avatar URL | URL to your profile image |
+| Bio | A short tagline or description (textarea) |
+| Show Verified Badge | Toggle to show a checkmark next to your name |
 
-The name of your site used in the browser title bar, meta tags, and anywhere the site name is referenced. Defaults to "LinkDen" but should be set to your name or brand.
+Saves: `profile_name`, `bio`, `avatar_url`, `verified_badge`.
 
-### Site URL
+## 2. SEO
 
-The public URL of your LinkDen instance. Used for generating absolute URLs in vCards, Apple Wallet passes, QR codes, and meta tags.
+| Field | Description |
+|-------|-------------|
+| Page Title | The `<title>` tag for your public page |
+| Meta Description | Meta description for search engines (textarea) |
+| OG Image URL | Open Graph image shown when shared on social media |
 
-### SEO Settings
+Saves: `seo_title`, `seo_description`, `seo_og_image`.
 
-- **Meta Title** -- The title tag for your public page. If not set, uses your display name.
-- **Meta Description** -- The meta description for search engines. If not set, uses your bio.
-- **Social Image** -- The Open Graph image shown when your link is shared on social media. Upload a 1200x630 image for best results.
+## 3. Contact Form
 
-## Branding
+| Field | Description |
+|-------|-------------|
+| Enable Contact Form | Toggle on/off |
+| Delivery Mode | `Database only`, `Email notification`, or `Database + email` |
 
-### Whitelabel Mode
+When disabled, the contact form block is hidden from the public page.
 
-Toggle off all LinkDen branding:
+## 4. CAPTCHA
 
-- Removes "Powered by LinkDen" from the footer.
-- Uses your custom favicon instead of the LinkDen default.
-- No attribution is required (MIT license).
+| Field | Description |
+|-------|-------------|
+| Provider | `None`, `Cloudflare Turnstile`, or `Google reCAPTCHA` |
+| Site Key | Public key (shown when provider is not "none") |
+| Secret Key | Server-side key (shown when provider is not "none") |
 
-This is a single toggle switch. Turn it on and all references to LinkDen are removed from the public-facing page.
+CAPTCHA keys are stored in the database, not in environment variables.
 
-## Data Management
+## 5. Email
 
-### Export
+| Field | Description |
+|-------|-------------|
+| Provider | `Resend` or `Cloudflare Email Workers` |
+| API Key | Provider API key (password input) |
+| From Address | Verified sender email address |
 
-Click **Export Data** to download a complete backup of your LinkDen configuration as JSON. See [Export & Import](/docs/features/export-import) for details on what is included.
+Required for contact form email notifications.
 
-### Import
+## 6. Branding
 
-Click **Import Data** to restore from a backup or migrate from LinkStack. Supports both LinkDen JSON format and LinkStack export format.
+| Field | Description |
+|-------|-------------|
+| Show Whitelabel Footer | Toggle the "Powered by LinkDen" footer |
+| Custom Text | Footer text when whitelabel is enabled |
+| Custom Link | Footer link URL when whitelabel is enabled |
 
-### Clear Analytics
+## 7. vCard
 
-Remove all analytics data (page views, clicks, referrers, countries). This cannot be undone. Export your data first if you want to preserve it.
+| Field | Description |
+|-------|-------------|
+| Enable vCard | Toggle the vCard download button on the public page |
 
-## Danger Zone
+See [vCard](/docs/features/vcard) for configuring vCard data fields.
 
-### Reset All Data
+## 8. Apple Wallet
 
-Removes all links, appearance settings, vCard configuration, custom pages, and analytics. Resets your instance to a fresh state. Your Clerk authentication and environment variables are not affected.
+| Field | Description |
+|-------|-------------|
+| Enable Apple Wallet | Toggle wallet pass generation |
+| Team ID | Apple Developer team identifier |
+| Pass Type ID | Registered pass type identifier |
+| Custom QR URL | Optional custom URL for the QR code on the pass |
 
-This action requires typing a confirmation phrase to prevent accidental use.
+See [Apple Wallet](/docs/features/apple-wallet) for detailed setup.
 
-## Contact Form Settings
+## 9. Export / Import
 
-### Enable/Disable
+- **Export** -- Download a complete backup as JSON. Includes blocks, settings, social networks, and contact submissions.
+- **Import** -- Upload a JSON file to restore data. Supports `merge` mode.
 
-Toggle switch for the contact form. The toggle uses `role="switch"` and `aria-checked` so screen reader users understand the current state. When disabled, the form is hidden from the public page and the API endpoint returns a 404.
+## 10. About
 
-### Notification Email
-
-The email address where contact form submissions are sent (requires Resend configuration).
-
-### CAPTCHA Type
-
-Select the CAPTCHA method used to protect the contact form:
-
-| Option | Description | External Account Required |
-|--------|-------------|--------------------------|
-| **None** | No CAPTCHA. Form works but has no bot protection. | No |
-| **Simple Math** | Server-validated arithmetic question shown inline. | No |
-| **Cloudflare Turnstile** | Privacy-friendly invisible challenge. | Yes (Cloudflare) |
-| **Google reCAPTCHA** | Traditional checkbox challenge. | Yes (Google) |
-
-The Simple Math option requires no API keys and no third-party services. It is suitable for low-traffic sites or situations where external dependencies are not acceptable.
-
-For Turnstile and reCAPTCHA, the relevant site key and secret key fields appear automatically when the matching type is selected. See the [Contact Form feature guide](/docs/features/contact-form) for environment variable setup.
+- Shows the current app version from `version.json`.
+- Checks for updates against GitHub releases.
+- "Update to X.X.X" button with link to the release page when an update is available.
+- Link to the GitHub repository.

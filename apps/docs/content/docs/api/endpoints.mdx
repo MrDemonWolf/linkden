@@ -5,195 +5,128 @@ description: Complete reference for all LinkDen tRPC API procedures.
 
 # API Endpoints
 
-LinkDen exposes **48 tRPC procedures** organized into 8 routers. All endpoints are available at `/trpc/<router>.<procedure>`.
+LinkDen exposes tRPC procedures organized into 10 routers plus a top-level health check. All endpoints are available at `/trpc/<router>.<procedure>`.
 
-Public procedures require no authentication. Protected procedures require either a Clerk JWT token or a valid Cloudflare Access header.
+Public procedures require no authentication. Protected procedures require a valid Better Auth session cookie.
 
 ---
 
-## Links
+## Blocks
 
-Manage link blocks on your page.
+Manage content blocks on your page.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `links.list` | Query | Public | Get all active links in display order (live data only) |
-| `links.listAll` | Query | Protected | Get all links with draft overlays merged |
-| `links.draftCount` | Query | Protected | Count links with unpublished changes |
-| `links.create` | Mutation | Protected | Create a new link block |
-| `links.update` | Mutation | Protected | Update a link (writes to draft, not live) |
-| `links.delete` | Mutation | Protected | Delete a link by ID |
-| `links.reorder` | Mutation | Protected | Batch update sort orders |
-| `links.toggleActive` | Mutation | Protected | Toggle visibility via draft |
-| `links.publish` | Mutation | Protected | Publish all link drafts to live |
-| `links.trackClick` | Mutation | Public | Record a link click for analytics |
+| `blocks.list` | Query | Protected | Get all blocks ordered by position |
+| `blocks.get` | Query | Protected | Get a single block by ID |
+| `blocks.create` | Mutation | Protected | Create a new block with client-generated ID |
+| `blocks.update` | Mutation | Protected | Update block fields by ID |
+| `blocks.delete` | Mutation | Protected | Delete a block by ID |
+| `blocks.reorder` | Mutation | Protected | Batch update block positions |
+| `blocks.toggleEnabled` | Mutation | Protected | Toggle `isEnabled` field |
 
-### Create a Link
+### Block Types
 
 ```typescript
-// Input
-{
-  type: "link" | "heading" | "text" | "spacer" | "divider" | "image" | "video" | "html" | "email" | "phone" | "vcard" | "wallet" | "contact_form" | "social_button",
-  title: string,
-  url?: string,
-  icon?: string,
-  iconType?: "lucide" | "brand" | "url",
-  isActive?: boolean,
-  metadata?: Record<string, unknown>
-}
+type BlockType = "link" | "header" | "social_icons" | "embed" | "contact_form"
 ```
 
-### Update a Link
+### Block Fields
 
-```typescript
-// Input
-{
-  id: string,
-  title?: string,
-  url?: string,
-  icon?: string,
-  iconType?: "lucide" | "brand" | "url",
-  isActive?: boolean,
-  metadata?: Record<string, unknown>
-}
-```
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique block ID |
+| `type` | BlockType | Block type |
+| `title` | string | Display title |
+| `url` | string? | Destination URL (link blocks) |
+| `icon` | string? | Icon identifier |
+| `embedType` | string? | Embed provider (YouTube, Spotify, SoundCloud, Custom) |
+| `embedUrl` | string? | Embed source URL |
+| `socialIcons` | string? | JSON string of social icon data |
+| `isEnabled` | boolean | Visibility on public page |
+| `position` | number | Display order |
+| `scheduledStart` | string? | ISO datetime for scheduled visibility start |
+| `scheduledEnd` | string? | ISO datetime for scheduled visibility end |
+| `config` | string? | JSON string of block configuration |
 
 ---
 
 ## Settings
 
-Manage site-wide configuration.
+Manage site-wide key-value configuration.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `settings.getAll` | Query | Protected | Get all settings (draft values preferred) |
-| `settings.getPublic` | Query | Public | Get live settings only |
-| `settings.draftCount` | Query | Protected | Count settings with unpublished changes |
-| `settings.update` | Mutation | Protected | Update settings (writes to draft) |
-| `settings.publish` | Mutation | Protected | Publish all setting drafts, purge edge cache |
+| `settings.get` | Query | Protected | Get a single setting by key |
+| `settings.getAll` | Query | Protected | Get all settings as key-value map |
+| `settings.update` | Mutation | Protected | Upsert a single key-value pair |
+| `settings.updateBulk` | Mutation | Protected | Upsert an array of key-value pairs |
 
-### Available Settings Keys
+### Common Settings Keys
 
-| Key | Description | Example |
-|-----|-------------|---------|
-| `profileName` | Display name | `"John Doe"` |
-| `profileBio` | Bio text | `"Developer & creator"` |
-| `profileImage` | Avatar URL | `"https://..."` |
-| `theme` | Theme ID | `"midnight-glass"` |
-| `themeMode` | Default mode | `"dark"` / `"light"` / `"system"` |
-| `accentColor` | Primary color | `"#0FACED"` |
-| `backgroundColor` | Page background | `"#091533"` |
-| `textColor` | Text color | `"rgba(255,255,255,0.95)"` |
-| `contactEnabled` | Contact form toggle | `"true"` / `"false"` |
-| `contactEmail` | Notification email | `"you@example.com"` |
-| `captchaType` | CAPTCHA mode | `"none"` / `"math"` / `"turnstile"` / `"recaptcha"` |
-| `captchaSiteKey` | Turnstile or reCAPTCHA site key | `"0x4AAAAAAA..."` |
-| `captchaSecretKey` | Turnstile or reCAPTCHA secret | `"0x4AAAAAAA..."` |
-| `brandName` | Whitelabel name | `"My Brand"` |
-| `brandLogo` | Logo URL | `"https://..."` |
-| `metaTitle` | SEO title | `"My Page"` |
-| `metaDescription` | SEO description | `"My link page"` |
-| `metaImage` | OG image URL | `"https://..."` |
-| `verifiedBadge` | Show badge | `"true"` / `"false"` |
-
----
-
-## Analytics
-
-Track and query page view and click data.
-
-| Procedure | Type | Auth | Description |
-|-----------|------|------|-------------|
-| `analytics.trackPageView` | Mutation | Public | Record a page view with user-agent and country |
-| `analytics.overview` | Query | Protected | Total views, clicks, and CTR for a period |
-| `analytics.timeSeries` | Query | Protected | Daily event counts for charting |
-| `analytics.byLink` | Query | Protected | Click counts per link |
-| `analytics.topReferrers` | Query | Protected | Top 20 referrer domains |
-| `analytics.countries` | Query | Protected | Country breakdown of views |
-| `analytics.clear` | Mutation | Protected | Delete all analytics data |
-
-### Overview Input
-
-```typescript
-{
-  period: "7d" | "30d" | "90d"
-}
-```
-
-### Overview Response
-
-```typescript
-{
-  totalViews: number,
-  totalClicks: number,
-  ctr: string  // e.g. "12.5"
-}
-```
+| Key | Description |
+|-----|-------------|
+| `profile_name` | Display name |
+| `bio` | Bio text |
+| `avatar_url` | Avatar image URL |
+| `verified_badge` | Show verified checkmark |
+| `theme_preset` | Theme ID (e.g., `default`, `hacker-terminal`) |
+| `seo_title` | Page title |
+| `seo_description` | Meta description |
+| `seo_og_image` | Open Graph image URL |
+| `contact_form_enabled` | Contact form toggle |
+| `contact_delivery` | Delivery mode (`database only`, `email notification`, `database + email`) |
+| `captcha_provider` | CAPTCHA mode (`none`, `Cloudflare Turnstile`, `Google reCAPTCHA`) |
+| `captcha_site_key` | CAPTCHA public key |
+| `captcha_secret_key` | CAPTCHA server key |
+| `email_provider` | Email service (`Resend`, `Cloudflare Email Workers`) |
+| `branding_enabled` | Whitelabel footer toggle |
+| `branding_text` | Custom footer text |
+| `branding_link` | Custom footer link |
+| `vcard_enabled` | vCard download toggle |
+| `wallet_enabled` | Apple Wallet toggle |
+| `setup_completed` | Setup wizard completion flag |
 
 ---
 
-## Contact
+## Contacts
 
 Handle contact form submissions.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `contact.submit` | Mutation | Public | Submit a message (validates CAPTCHA) |
-| `contact.list` | Query | Protected | Paginated list with unread count |
-| `contact.getById` | Query | Protected | Get a single submission |
-| `contact.markRead` | Mutation | Protected | Mark submission as read |
-| `contact.delete` | Mutation | Protected | Delete a submission |
-
-### Submit Input
-
-```typescript
-{
-  name: string,
-  email: string,
-  message: string,
-  captchaToken?: string,  // Turnstile or reCAPTCHA token (omit for Simple Math)
-  mathAnswer?: number     // Answer to the server-side math question (Simple Math mode only)
-}
-```
-
-The server determines which CAPTCHA mode is active from the `captchaType` setting and validates accordingly. If `captchaType` is `"none"`, neither field is required.
+| `contacts.list` | Query | Protected | List submissions with optional `isRead` filter, limit/offset pagination |
+| `contacts.get` | Query | Protected | Get a single submission by ID |
+| `contacts.markRead` | Mutation | Protected | Mark submission as read |
+| `contacts.markUnread` | Mutation | Protected | Mark submission as unread |
+| `contacts.delete` | Mutation | Protected | Delete a submission |
+| `contacts.unreadCount` | Query | Protected | Count of unread submissions |
 
 ---
 
-## Pages
+## Analytics
 
-Manage custom content pages (e.g., `/p/about`).
+Track and query page view and click data. All queries accept an optional `{ period: "7d" | "30d" | "90d" }` parameter.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `pages.list` | Query | Protected | Get all pages |
-| `pages.getBySlug` | Query | Public | Get a published page by slug |
-| `pages.create` | Mutation | Protected | Create a page (validates slug uniqueness) |
-| `pages.update` | Mutation | Protected | Update a page |
-| `pages.delete` | Mutation | Protected | Delete a page |
-
-### Create/Update Input
-
-```typescript
-{
-  title: string,
-  slug: string,       // URL-safe, unique
-  content: string,    // Markdown
-  isPublished: boolean
-}
-```
+| `analytics.overview` | Query | Protected | Returns `{ totalViews, totalClicks }` for period |
+| `analytics.viewsOverTime` | Query | Protected | Returns `[{ date, count }]` grouped by day |
+| `analytics.clicksOverTime` | Query | Protected | Returns `[{ date, count }]` grouped by day |
+| `analytics.topLinks` | Query | Protected | Top 10 links by click count |
+| `analytics.referrers` | Query | Protected | Top 10 referrer domains |
+| `analytics.countries` | Query | Protected | Top 20 countries by page view count |
 
 ---
 
-## vCard
+## Social
 
-Manage and download vCard contact files.
+Manage social network entries for use in Social Icons blocks.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `vcard.get` | Query | Protected | Get vCard configuration |
-| `vcard.update` | Mutation | Protected | Create or update vCard data |
-| `vcard.download` | Query | Public | Download generated `.vcf` file |
+| `social.list` | Query | Protected | List all networks with optional `activeOnly` filter |
+| `social.toggle` | Mutation | Protected | Set `isActive` true/false for a network by slug |
 
 ---
 
@@ -203,47 +136,57 @@ Manage Apple Wallet pass configuration.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `wallet.get` | Query | Protected | Get wallet pass config |
-| `wallet.update` | Mutation | Protected | Create or update wallet config |
-| `wallet.generate` | Query | Protected | Generate `.pkpass` file (requires Apple signing) |
-| `wallet.status` | Query | Protected | Check whether all required Apple signing env vars are present |
-
-### wallet.status Response
-
-```typescript
-{
-  configured: boolean,    // true if all 6 required env vars are set and non-empty
-  missingVars: string[]  // list of variable names that are absent or empty
-}
-```
-
-Required variables checked by `wallet.status`:
-
-- `APPLE_PASS_TYPE_ID`
-- `APPLE_TEAM_ID`
-- `APPLE_WWDR_CERT`
-- `APPLE_SIGNER_CERT`
-- `APPLE_SIGNER_KEY`
-- `APPLE_SIGNER_PASSPHRASE`
-
-The wallet drawer in the admin panel calls this endpoint on open and displays a warning banner listing any missing variables.
+| `wallet.getConfig` | Query | Protected | Get wallet settings (enabled, teamId, passTypeId, customQrUrl) |
+| `wallet.updateConfig` | Mutation | Protected | Update wallet settings |
+| `wallet.generatePreview` | Query | Protected | Returns profile + enabled blocks + QR URL for pass preview |
 
 ---
 
-## Export
+## vCard
+
+Manage and generate vCard contact files.
+
+| Procedure | Type | Auth | Description |
+|-----------|------|------|-------------|
+| `vcard.getConfig` | Query | Protected | Get `{ enabled, data }` |
+| `vcard.updateConfig` | Mutation | Protected | Update enabled flag and/or vCard data fields |
+| `vcard.preview` | Query | Protected | Returns generated `.vcf` string |
+
+### vCard Data Fields
+
+`fullName`, `nickname`, `birthday`, `photo`, `org`, `title`, `department`, `workEmail`, `workPhone`, `email`, `phone`, `address`, `urls` (array of `{ label, url }`).
+
+---
+
+## Backup
 
 Import and export all data.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `export.exportAll` | Query | Protected | Export everything as JSON |
-| `export.importAll` | Mutation | Protected | Replace all data from JSON |
-| `export.importFromLinkStack` | Mutation | Protected | Import from LinkStack format |
+| `backup.export` | Query | Protected | Export all data as JSON (blocks, settings, socialNetworks, contactSubmissions) |
+| `backup.import` | Mutation | Protected | Import data with `mode: "merge"` or `"replace"` |
 
 ---
 
-## System
+## Version
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `system.checkUpdate` | Query | Protected | Check for new releases on GitHub |
+| `version.current` | Query | Public | Returns `{ version }` |
+| `version.checkUpdate` | Query | Public | Returns `{ current, latest, hasUpdate, releaseUrl, changelog }` |
+
+---
+
+## Public
+
+Public-facing endpoints (no authentication).
+
+| Procedure | Type | Description |
+|-----------|------|-------------|
+| `public.getPage` | Query | Full page data: profile, schedule-filtered blocks, theme, settings |
+| `public.submitContact` | Mutation | Submit contact form; validates CAPTCHA if configured; stores to DB |
+| `public.trackView` | Mutation | Record page view with referrer, userAgent, country |
+| `public.trackClick` | Mutation | Record link click with blockId, referrer, userAgent, country |
+| `public.getVCard` | Query | Returns VCard string if vcard is enabled |
+| `public.getSetupStatus` | Query | Returns `{ completed: boolean }` |

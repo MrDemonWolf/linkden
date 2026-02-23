@@ -9,39 +9,47 @@ All notable changes to LinkDen are documented here. For the full commit history,
 
 ---
 
-## v0.1.0 — Initial Release
+## v0.1.0 -- Initial Release
 
 **February 2026**
 
 The first public release of LinkDen.
 
 ### Core Platform
-- **3-panel admin editor** with live phone preview, drag-and-drop block ordering
-- **14 block types**: link, heading, text, spacer, divider, image, video, HTML, email, phone, contact form, vCard, wallet pass, social button
-- **35+ social brands** auto-generated from Simple Icons via CI/CD
-- **7 built-in themes** with dark and light variants
-- **Draft/Publish system** — edit freely, publish when ready
+- **Block builder** with drag-and-drop reordering and live phone preview
+- **5 block types**: Link, Header, Social Icons, Embed, Contact Form
+- **100+ social brands** from Simple Icons
+- **7 built-in themes** with dark and light variants (14 total)
+- **Setup wizard** -- 4-step onboarding (Account, Profile, Theme, Done)
 
 ### Admin Panel
-- Real-time phone, tablet, and desktop preview with device frames
-- Drawer-based sub-pages (analytics, contacts, vCard, wallet, pages)
-- Dark/light mode toggle
-- Export/import data (JSON format)
-- LinkStack migration support
+- Dashboard with stat cards (views, clicks, unread contacts) and mini bar chart
+- Block builder with slide-in edit panel (Content, Style, Options, Schedule tabs)
+- Social network management page with search and toggle
+- Full analytics dashboard with period selector, charts, top links, referrers, countries
+- Contact form submissions management with read/unread tracking
+- Settings page with 11 configuration sections
+- Version update checker
 
 ### Features
-- **Apple Wallet** pass generation (`.pkpass`)
-- **vCard** generation and download
-- **Contact form** with Cloudflare Turnstile CAPTCHA and Resend email
-- **Custom pages** with markdown content
-- **Analytics** — page views, link clicks, referrers, country breakdown
-- **Color picker** and custom CSS injection
-- **SEO** — dynamic sitemap, robots.txt, Open Graph meta tags
+- **Better Auth** email/password authentication
+- **Apple Wallet** pass configuration
+- **vCard** generation and download (VCard 3.0)
+- **Contact form** with Cloudflare Turnstile and Google reCAPTCHA support
+- **Email notifications** via Resend or Cloudflare Email Workers
+- **Analytics** -- page views, link clicks, referrers, country breakdown (privacy-friendly)
+- **Block scheduling** with start/end dates
+- **Color customization** with CSS custom properties
+- **Custom CSS** injection
+- **SEO** -- dynamic sitemap, robots.txt, Open Graph meta tags
+- **Export/Import** data as JSON (merge or replace modes)
+- **Whitelabel** branding with custom footer
 
 ### Infrastructure
-- **Cloudflare Workers** API server with Hono + tRPC
+- **Cloudflare Workers** API server with Hono + tRPC v11
 - **Cloudflare D1** (SQLite) database with Drizzle ORM
-- **Next.js 15** frontend with static and dynamic rendering
-- **Turborepo** monorepo with shared packages (db, ui, validators)
-- **Dual auth** — Cloudflare Access and/or Clerk
-- **Edge caching** with automatic purge on publish
+- **Next.js 16** frontend with React 19 and Tailwind CSS v4
+- **Turborepo** monorepo with shared packages (api, auth, db, env, ui, validators, email)
+- **Better Auth** session-based authentication
+- **Alchemy** infrastructure-as-code for Cloudflare deployment
+- **Docker** support for self-hosting

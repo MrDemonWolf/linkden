@@ -1,78 +1,114 @@
 ---
-title: Link Manager
-description: Create, edit, reorder, and manage all links and blocks on your LinkDen page.
+title: Block Builder
+description: Create, edit, reorder, and manage all blocks on your LinkDen page with the drag-and-drop builder.
 ---
 
-# Link Manager
+# Block Builder
 
-The link manager at `/admin/links` is where you create and organize all the content on your public link page. It supports multiple block types and drag-and-drop reordering.
+The block builder at `/admin/builder` is where you create and organize all the content on your public link page. It supports 5 block types and drag-and-drop reordering with a live phone preview.
 
-## Link List View
+## Layout
 
-The main view shows all your links and blocks in their current display order. Each item shows:
+The builder uses a two-panel layout:
 
-- **Drag handle** -- Grab and drag to reorder.
-- **Icon** -- The selected brand icon (if any).
-- **Title** -- The link or block title.
-- **Type badge** -- Shows the block type (Link, Heading, Text, Spacer, etc.).
-- **Visibility toggle** -- Show or hide the item on the public page.
-- **Edit button** -- Open the item editor.
+- **Left panel** -- Block list with all your blocks in display order.
+- **Right panel** -- Live phone preview (visible on `lg` screens and above). On mobile, a floating action button opens the preview in a modal overlay.
 
-## Creating a New Link
+## Block List
 
-1. Click **Add New** in the top right or navigate to `/admin/links/new`.
-2. Select the block type from the type selector.
-3. Fill in the required fields for that type.
-4. Click **Save**.
+Each block row shows:
 
-### Link Fields
+- **Grip handle** -- Drag to reorder.
+- **Block type icon** -- Visual indicator of the block type.
+- **Title** -- The block title.
+- **URL** -- The destination URL (if applicable).
+- **Action buttons** (on hover):
+  - **Toggle visibility** -- Eye icon (green when enabled, toggles `isEnabled`).
+  - **Edit** -- Pencil icon, opens the edit panel.
+  - **Delete** -- Trash icon.
 
-| Field | Description | Required |
-|-------|-------------|----------|
-| Type | Block type (Link, Heading, Text, etc.) | Yes |
-| Title | Display text on the button | Yes (except Spacer) |
-| URL | Destination URL | Yes (Link type only) |
-| Icon | Brand icon from the icon picker | No |
-| New Tab | Open link in new tab | No (default: yes) |
-| Visible | Show on public page | No (default: yes) |
+Disabled blocks render at 60% opacity.
 
-## Editing a Link
+## Adding a Block
 
-Click any item in the list or navigate to `/admin/links/[id]`. The edit form is identical to the creation form with your existing values pre-filled.
+Click the **Add Block** button to open a dropdown menu listing all 5 block types:
 
-Changes are saved immediately when you click **Save**. The public page reflects changes within seconds.
+| Type | Description |
+|------|-------------|
+| **Link** | A clickable button with title and URL |
+| **Header** | A text heading with configurable level (h1-h6), alignment, and optional divider |
+| **Social Icons** | A row of social media icon links with configurable size, style, and spacing |
+| **Embed** | Embed content from YouTube, Spotify, SoundCloud, or a custom URL |
+| **Contact Form** | An inline contact form with customizable button text and success message |
 
-## Reordering Links
+## Block Edit Panel
 
-The link list supports drag-and-drop reordering:
+Clicking edit on any block opens a slide-in panel from the right with 4 tabs:
 
-1. Hover over the drag handle on the left side of any item.
-2. Click and hold to pick it up.
-3. Drag to the desired position.
-4. Release to drop.
+### Content Tab
 
-The new order is saved automatically. No save button is needed for reordering.
+Fields vary by block type:
+
+- **Link**: Title, URL
+- **Embed**: Title, embed type (YouTube, Spotify, SoundCloud, Custom), embed URL
+- **Social Icons**: Title, social icons JSON
+- **Header** / **Contact Form**: Title
+
+### Style Tab
+
+- Icon name input
+- Config JSON textarea for advanced configuration
+
+### Options Tab
+
+Reference text listing common config keys: `noFollow`, `newTab`, `animation`, `thumbnail`.
+
+### Schedule Tab
+
+- Start date/time (`datetime-local` input)
+- End date/time (`datetime-local` input)
+- **Clear schedule** button
+
+Blocks outside their scheduled window are automatically hidden from the public page.
+
+## Block Configuration
+
+All block types share a base configuration with these style options:
+
+| Option | Description |
+|--------|-------------|
+| `colorVariant` | Color preset for the block |
+| `customBgColor` | Custom background color |
+| `customTextColor` | Custom text color |
+| `customBorderColor` | Custom border color |
+| `borderRadius` | Corner rounding |
+| `borderWidth` | Border thickness |
+| `shadow` | Drop shadow |
+| `animation` | Hover/entrance animation |
+| `padding` | Inner spacing |
+
+## Reordering Blocks
+
+Drag any block by its grip handle to reorder. The new order is saved immediately via the `blocks.reorder` mutation.
+
+## Phone Preview
+
+The right panel shows a phone-frame preview (280px wide) with:
+
+- A light/dark mode toggle button.
+- Only `isEnabled: true` blocks rendered.
+- Type-specific preview rendering:
+  - **Link**: Button-style bar
+  - **Header**: Centered bold text
+  - **Social Icons**: Placeholder circles
+  - **Embed**: Gray box with embed type label
+  - **Contact Form**: Stacked input placeholders
+- Empty state message when no enabled blocks exist.
 
 ## Visibility Toggle
 
-Each item has a visibility toggle (eye icon). Toggling an item off hides it from the public page but keeps it in your admin list. This is useful for:
+Each block has a visibility toggle. Toggling a block off hides it from the public page but keeps it in your builder list. This is useful for:
 
-- Temporarily removing a link without deleting it.
-- Preparing links in advance and making them visible later.
-- Seasonal or time-limited content.
-
-## Deleting a Link
-
-1. Open the item editor by clicking on the item.
-2. Scroll to the bottom and click **Delete**.
-3. Confirm the deletion in the dialog.
-
-Deleted items are permanently removed and cannot be recovered. Export your data first if you want a backup.
-
-## Bulk Actions
-
-The link manager supports selecting multiple items for bulk operations:
-
-- **Delete selected** -- Remove multiple items at once.
-- **Hide selected** -- Toggle visibility off for multiple items.
-- **Show selected** -- Toggle visibility on for multiple items.
+- Temporarily removing a block without deleting it.
+- Preparing blocks in advance and enabling them later.
+- Time-limited or seasonal content (or use scheduling instead).

@@ -29,7 +29,6 @@ The Docker deployment runs three components:
 
 - **Docker** 20.10+ and **Docker Compose** v2+ installed on your server.
 - A domain name pointed at your server (for SSL).
-- Clerk API keys from [clerk.com](https://clerk.com).
 
 ## Quick Start
 
@@ -151,23 +150,15 @@ FROM base AS builder
 COPY --from=deps /app/ ./
 COPY . .
 
-ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SERVER_URL
 ARG NEXT_PUBLIC_SITE_URL
 ARG NEXT_PUBLIC_SITE_NAME=LinkDen
 ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
-ARG NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-ARG NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-ARG CLERK_SECRET_KEY
 
-ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_SERVER_URL=$NEXT_PUBLIC_SERVER_URL
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ENV NEXT_PUBLIC_SITE_NAME=$NEXT_PUBLIC_SITE_NAME
 ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
-ENV NEXT_PUBLIC_CLERK_SIGN_IN_URL=$NEXT_PUBLIC_CLERK_SIGN_IN_URL
-ENV NEXT_PUBLIC_CLERK_SIGN_UP_URL=$NEXT_PUBLIC_CLERK_SIGN_UP_URL
-ENV CLERK_SECRET_KEY=$CLERK_SECRET_KEY
 
 RUN pnpm --filter @linkden/web build
 
@@ -216,10 +207,9 @@ services:
     ports:
       - "8787:8787"
     environment:
-      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
-      - CLERK_PUBLISHABLE_KEY=${CLERK_PUBLISHABLE_KEY}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL:-http://localhost:8787}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3001}
-      - APP_URL=${APP_URL:-http://localhost:3001}
       - DATABASE_URL=file:/data/linkden.db
       - RESEND_API_KEY=${RESEND_API_KEY:-}
       - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL:-}
@@ -244,14 +234,10 @@ services:
       context: .
       dockerfile: Dockerfile.web
       args:
-        - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8787}
+        - NEXT_PUBLIC_SERVER_URL=${NEXT_PUBLIC_SERVER_URL:-http://localhost:8787}
         - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-http://localhost:3001}
         - NEXT_PUBLIC_SITE_NAME=${NEXT_PUBLIC_SITE_NAME:-LinkDen}
         - NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
-        - NEXT_PUBLIC_CLERK_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_SIGN_IN_URL:-/sign-in}
-        - NEXT_PUBLIC_CLERK_SIGN_UP_URL=${NEXT_PUBLIC_CLERK_SIGN_UP_URL:-/sign-up}
-        - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
     container_name: linkden-web
     restart: unless-stopped
     ports:
@@ -270,16 +256,14 @@ volumes:
 Create a `.env` file in the project root:
 
 ```bash
-# Required: Clerk Authentication
-CLERK_SECRET_KEY=sk_live_your-secret-key
-CLERK_PUBLISHABLE_KEY=pk_live_your-publishable-key
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_your-publishable-key
+# Required: Better Auth
+BETTER_AUTH_SECRET=your-random-secret-here
+BETTER_AUTH_URL=https://api.yourdomain.com
 
 # Required: URLs (update these for production)
-NEXT_PUBLIC_API_URL=https://api.yourdomain.com
+NEXT_PUBLIC_SERVER_URL=https://api.yourdomain.com
 NEXT_PUBLIC_SITE_URL=https://yourdomain.com
 CORS_ORIGIN=https://yourdomain.com
-APP_URL=https://yourdomain.com
 
 # Optional: Site name
 NEXT_PUBLIC_SITE_NAME=LinkDen
@@ -293,7 +277,19 @@ NEXT_PUBLIC_TURNSTILE_SITE_KEY=
 TURNSTILE_SECRET_KEY=
 ```
 
+Generate a secure `BETTER_AUTH_SECRET` with:
+
+```bash
+openssl rand -base64 32
+```
+
 See the [Environment Variables reference](/docs/self-hosting/environment-variables) for all available options.
+
+## First-Time Setup
+
+After starting the containers for the first time, visit `http://localhost:3001/admin/setup` (or your production URL's `/admin/setup`) to complete the setup wizard. This creates your admin account with your chosen email and password.
+
+After setup, sign in at `/admin/login`.
 
 ## Building and Starting
 
@@ -563,8 +559,10 @@ If the update includes database schema changes, they are applied automatically w
 
 Before going live, verify:
 
+- [ ] `BETTER_AUTH_SECRET` is set to a strong random value
+- [ ] `BETTER_AUTH_URL` matches the API's production URL
 - [ ] `CORS_ORIGIN` matches the web app's production URL exactly (including `https://`, no trailing slash)
-- [ ] `NEXT_PUBLIC_API_URL` points to the API's production URL
+- [ ] `NEXT_PUBLIC_SERVER_URL` points to the API's production URL
 - [ ] `NEXT_PUBLIC_SITE_URL` matches the web app's production URL
 - [ ] SSL is working (lock icon in browser)
 - [ ] Persistent volume is configured for `/data`
@@ -572,7 +570,7 @@ Before going live, verify:
 - [ ] Automatic container restart is enabled (`restart: unless-stopped`)
 - [ ] Database backups are configured
 - [ ] Firewall rules allow only ports 80 and 443 from the internet
-- [ ] Clerk domains are configured for your production URL
+- [ ] Setup wizard completed at `/admin/setup`
 
 ## Troubleshooting
 
@@ -616,5 +614,5 @@ deploy:
 ### Cannot connect to API from web app
 
 - If both containers are on the same Docker network, use the service name (`api`) as the hostname.
-- For `NEXT_PUBLIC_API_URL`, use the **external** URL that the browser can reach (not the internal Docker hostname).
+- For `NEXT_PUBLIC_SERVER_URL`, use the **external** URL that the browser can reach (not the internal Docker hostname).
 - Verify the API container is healthy: `docker compose ps`.
