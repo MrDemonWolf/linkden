@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -272,6 +272,46 @@ export default function SettingsPage() {
 			toast.error("Failed to import. Make sure the file is valid JSON.");
 		}
 		if (fileInputRef.current) fileInputRef.current.value = "";
+	};
+
+	const hasAnyChanges = useMemo(() => {
+		if (!settingsQuery.data) return false;
+		const s = settingsQuery.data;
+		return (
+			profileName !== (s.profile_name ?? "") ||
+			profileBio !== (s.bio ?? "") ||
+			profileAvatar !== (s.avatar_url ?? "") ||
+			seoTitle !== (s.seo_title ?? "") ||
+			seoDescription !== (s.seo_description ?? "") ||
+			seoOgImage !== (s.seo_og_image ?? "") ||
+			contactEnabled !== (s.contact_form_enabled === "true") ||
+			contactDelivery !== (s.contact_delivery ?? "database") ||
+			captchaProvider !== (s.captcha_provider ?? "none") ||
+			captchaSiteKey !== (s.captcha_site_key ?? "") ||
+			captchaSecretKey !== (s.captcha_secret_key ?? "") ||
+			emailProvider !== (s.email_provider ?? "resend") ||
+			emailApiKey !== (s.email_api_key ?? "") ||
+			emailFrom !== (s.email_from ?? "")
+		);
+	}, [settingsQuery.data, profileName, profileBio, profileAvatar, seoTitle, seoDescription, seoOgImage, contactEnabled, contactDelivery, captchaProvider, captchaSiteKey, captchaSecretKey, emailProvider, emailApiKey, emailFrom]);
+
+	const handleSaveAll = async () => {
+		await saveSection([
+			{ key: "profile_name", value: profileName },
+			{ key: "bio", value: profileBio },
+			{ key: "avatar_url", value: profileAvatar },
+			{ key: "seo_title", value: seoTitle },
+			{ key: "seo_description", value: seoDescription },
+			{ key: "seo_og_image", value: seoOgImage },
+			{ key: "contact_form_enabled", value: String(contactEnabled) },
+			{ key: "contact_delivery", value: contactDelivery },
+			{ key: "captcha_provider", value: captchaProvider },
+			{ key: "captcha_site_key", value: captchaSiteKey },
+			{ key: "captcha_secret_key", value: captchaSecretKey },
+			{ key: "email_provider", value: emailProvider },
+			{ key: "email_api_key", value: emailApiKey },
+			{ key: "email_from", value: emailFrom },
+		]);
 	};
 
 	if (settingsQuery.isLoading) {
@@ -718,6 +758,16 @@ export default function SettingsPage() {
 						<ExternalLink className="h-3 w-3" />
 					</a>
 				</Section>
+
+				{/* Save All sticky bar */}
+				{hasAnyChanges && (
+					<div className="sticky bottom-4 flex justify-end">
+						<Button onClick={handleSaveAll} disabled={updateSettings.isPending} className="shadow-lg">
+							<Save className="mr-1.5 h-4 w-4" />
+							{updateSettings.isPending ? "Saving..." : "Save All Changes"}
+						</Button>
+					</div>
+				)}
 			</div>
 		</div>
 	);
