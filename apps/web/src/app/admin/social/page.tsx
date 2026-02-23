@@ -16,6 +16,48 @@ interface NetworkDraft {
 	isActive: boolean;
 }
 
+// --- URL template helpers ---
+
+/** Get the prefix portion before `{}` in a url template */
+function getPrefix(template: string): string {
+	const idx = template.indexOf("{}");
+	if (idx === -1) return "";
+	return template.slice(0, idx);
+}
+
+/** Get the suffix portion after `{}` in a url template */
+function getSuffix(template: string): string {
+	const idx = template.indexOf("{}");
+	if (idx === -1) return "";
+	return template.slice(idx + 2);
+}
+
+/** Whether a template is just `{}` (full URL input, no prefix) */
+function isFullUrlTemplate(template: string): boolean {
+	return template === "{}";
+}
+
+/** Extract the username from a stored full URL using the template */
+function extractUsername(fullUrl: string, template: string): string {
+	if (!fullUrl || isFullUrlTemplate(template)) return fullUrl;
+	const prefix = getPrefix(template);
+	const suffix = getSuffix(template);
+	let username = fullUrl;
+	if (prefix && username.startsWith(prefix)) {
+		username = username.slice(prefix.length);
+	}
+	if (suffix && username.endsWith(suffix)) {
+		username = username.slice(0, -suffix.length);
+	}
+	return username;
+}
+
+/** Construct a full URL from a username and template */
+function buildUrl(username: string, template: string): string {
+	if (!username || isFullUrlTemplate(template)) return username;
+	return template.replace("{}", username);
+}
+
 export default function SocialPage() {
 	const qc = useQueryClient();
 	const [searchQuery, setSearchQuery] = useState("");
@@ -79,7 +121,6 @@ export default function SocialPage() {
 
 	// Detect changes vs DB
 	const hasChanges = useMemo(() => {
-		// Build a map of DB state
 		const dbMap = new Map(dbRows.map((r) => [r.slug, r]));
 
 		for (const brand of socialBrands) {
@@ -87,7 +128,7 @@ export default function SocialPage() {
 			if (!draft) continue;
 			const db = dbMap.get(brand.slug);
 
-			if (draft.isActive && draft.url) {
+			if (draft.url) {
 				// Should have a DB row
 				if (!db || db.url !== draft.url || db.isActive !== draft.isActive) {
 					return true;
@@ -103,10 +144,7 @@ export default function SocialPage() {
 	const handleUrlChange = (slug: string, url: string) => {
 		setDrafts((prev) => ({
 			...prev,
-			[slug]: {
-				url,
-				isActive: url.trim().length > 0,
-			},
+			[slug]: { ...prev[slug], url },
 		}));
 	};
 
@@ -130,9 +168,7 @@ export default function SocialPage() {
 			if (!draft) continue;
 			const db = dbMap.get(brand.slug);
 
-			const shouldExist = draft.isActive && draft.url;
-
-			if (shouldExist) {
+			if (draft.url) {
 				if (!db || db.url !== draft.url || db.isActive !== draft.isActive) {
 					changes.push({
 						slug: brand.slug,
@@ -154,10 +190,10 @@ export default function SocialPage() {
 
 		try {
 			await updateBulk.mutateAsync(changes);
-			setInitialized(false);
-			qc.invalidateQueries({
+			await qc.invalidateQueries({
 				queryKey: trpc.social.list.queryOptions().queryKey,
 			});
+			setInitialized(false);
 			toast.success(
 				`${changes.length} network${changes.length > 1 ? "s" : ""} updated`,
 			);
@@ -172,34 +208,37 @@ export default function SocialPage() {
 
 	return (
 		<div className="space-y-6">
-			{/* Header */}
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-lg font-semibold">Social Networks</h1>
-					<p className="text-xs text-muted-foreground">
-						Add your profile URLs — networks with URLs are automatically shown
-						on your page ({activeCount} active)
-					</p>
+			{/* Sticky header */}
+			<div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b pb-4 space-y-4">
+				<div className="flex items-center justify-between">
+					<div>
+						<h1 className="text-lg font-semibold">Social Networks</h1>
+						<p className="text-xs text-muted-foreground">
+							{activeCount} active
+						</p>
+					</div>
+					{hasChanges && (
+						<Button
+							size="sm"
+							onClick={handleSaveAll}
+							disabled={updateBulk.isPending}
+						>
+							<Save className="mr-1.5 h-3.5 w-3.5" />
+							{updateBulk.isPending ? "Saving..." : "Save All Changes"}
+						</Button>
+					)}
 				</div>
-				<Button
-					size="sm"
-					onClick={handleSaveAll}
-					disabled={!hasChanges || updateBulk.isPending}
-				>
-					<Save className="mr-1.5 h-3.5 w-3.5" />
-					{updateBulk.isPending ? "Saving..." : "Save All Changes"}
-				</Button>
-			</div>
 
-			{/* Search */}
-			<div className="relative">
-				<Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-				<Input
-					placeholder="Search networks..."
-					value={searchQuery}
-					onChange={(e) => setSearchQuery(e.target.value)}
-					className="pl-8"
-				/>
+				{/* Search */}
+				<div className="relative">
+					<Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+					<Input
+						placeholder="Search networks..."
+						value={searchQuery}
+						onChange={(e) => setSearchQuery(e.target.value)}
+						className="pl-8"
+					/>
+				</div>
 			</div>
 
 			{/* Error state */}
@@ -240,6 +279,13 @@ export default function SocialPage() {
 							url: "",
 							isActive: false,
 						};
+						const template = social.urlTemplate;
+						const fullUrlMode = isFullUrlTemplate(template);
+						const prefix = fullUrlMode ? "" : getPrefix(template);
+						const suffix = fullUrlMode ? "" : getSuffix(template);
+						const displayValue = fullUrlMode
+							? draft.url
+							: extractUsername(draft.url, template);
 
 						return (
 							<div
@@ -266,23 +312,52 @@ export default function SocialPage() {
 
 								{/* URL input */}
 								<div className="min-w-0 flex-1">
-									<Input
-										value={draft.url}
-										onChange={(e) =>
-											handleUrlChange(social.slug, e.target.value)
-										}
-										placeholder={`https://${social.slug}.com/username`}
-										className="h-8 text-xs"
-									/>
+									{fullUrlMode ? (
+										<Input
+											value={draft.url}
+											onChange={(e) =>
+												handleUrlChange(social.slug, e.target.value)
+											}
+											placeholder="https://..."
+											className="h-8 text-xs"
+										/>
+									) : (
+										<div className="flex items-center rounded-md border border-input bg-transparent h-8 overflow-hidden focus-within:ring-1 focus-within:ring-ring">
+											{prefix && (
+												<span className="shrink-0 select-none bg-muted px-2 text-[11px] text-muted-foreground border-r border-input h-full flex items-center">
+													{prefix}
+												</span>
+											)}
+											<input
+												value={displayValue}
+												onChange={(e) =>
+													handleUrlChange(
+														social.slug,
+														buildUrl(e.target.value, template),
+													)
+												}
+												placeholder="username"
+												className="min-w-0 flex-1 bg-transparent px-2 text-xs outline-none"
+											/>
+											{suffix && (
+												<span className="shrink-0 select-none bg-muted px-2 text-[11px] text-muted-foreground border-l border-input h-full flex items-center">
+													{suffix}
+												</span>
+											)}
+										</div>
+									)}
 								</div>
 
 								{/* Toggle */}
 								<button
 									type="button"
+									disabled={!draft.url}
+									title={!draft.url ? "Enter a URL to enable" : undefined}
 									onClick={() => handleToggle(social.slug)}
 									className={cn(
 										"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
-										draft.isActive ? "bg-primary" : "bg-muted",
+										draft.isActive ? "bg-blue-600" : "bg-muted",
+										!draft.url && "opacity-50 cursor-not-allowed",
 									)}
 									role="switch"
 									aria-checked={draft.isActive}
@@ -303,19 +378,7 @@ export default function SocialPage() {
 				</div>
 			)}
 
-			{/* Bottom save bar (sticky) */}
-			{hasChanges && (
-				<div className="sticky bottom-4 flex justify-end">
-					<Button
-						onClick={handleSaveAll}
-						disabled={updateBulk.isPending}
-						className="shadow-lg"
-					>
-						<Save className="mr-1.5 h-4 w-4" />
-						{updateBulk.isPending ? "Saving..." : "Save All Changes"}
-					</Button>
-				</div>
-			)}
+
 		</div>
 	);
 }
