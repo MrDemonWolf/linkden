@@ -60,6 +60,7 @@ interface PageData {
 		bannerPreset: string | null;
 		bannerEnabled: boolean;
 		themePreset: string;
+		customCss: string | null;
 	};
 }
 
@@ -127,13 +128,15 @@ export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolea
 
 	return (
 		<div
-			className="min-h-dvh"
+			className="ld-page min-h-dvh"
 			style={{
 				backgroundColor: themeColors.bg,
 				color: themeColors.fg,
 				transition: "background-color 0.5s ease, color 0.5s ease",
 			}}
 		>
+			{data.settings.customCss && <style>{data.settings.customCss}</style>}
+
 			<a
 				href="#main-content"
 				className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
@@ -177,7 +180,7 @@ export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolea
 				role="main"
 			>
 				{/* Profile Section */}
-				<header className={`relative z-10 mb-8 text-center ${hasBanner ? "-mt-20" : ""}`}>
+				<header className={`ld-profile relative z-10 mb-8 text-center ${hasBanner ? "-mt-20" : ""}`}>
 					<Avatar
 						src={data.profile.image}
 						name={data.profile.name}
@@ -203,7 +206,7 @@ export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolea
 					</h1>
 					{data.profile.bio && (
 						<p
-							className="mt-2 text-sm"
+							className="ld-bio mt-2 text-sm"
 							style={{
 								color: themeColors.mutedFg,
 								transition: "color 0.5s ease",
@@ -215,7 +218,7 @@ export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolea
 				</header>
 
 				{/* Blocks */}
-				<div className="space-y-3" role="list" aria-label="Links and content">
+				<div className="ld-blocks space-y-3" role="list" aria-label="Links and content">
 					{data.blocks.map((blockData) => {
 						const config = parseConfig(blockData.config);
 

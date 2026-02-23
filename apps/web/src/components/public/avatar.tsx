@@ -27,7 +27,7 @@ export function Avatar({ src, name, size = "md", className, hasBanner, ringColor
 		: {};
 
 	return (
-		<div className="flex justify-center">
+		<div className="ld-avatar flex justify-center">
 			{src ? (
 				<img
 					src={src}
