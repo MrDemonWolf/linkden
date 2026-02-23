@@ -1,13 +1,9 @@
 {
   "title": "Documentation",
   "pages": [
-    "---Getting Started---",
     "getting-started",
-    "---Using LinkDen---",
     "guide",
-    "---Self-Hosting---",
     "self-hosting",
-    "---Reference---",
     "reference"
   ]
 }
