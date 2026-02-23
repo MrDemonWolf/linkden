@@ -101,7 +101,7 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 				: "bg-white text-gray-900 shadow-sm hover:shadow-md";
 
 	return (
-		<div role="listitem">
+		<div role="listitem" className="ld-link-block">
 			<a
 				href={block.url || "#"}
 				target={openInNewTab ? "_blank" : "_self"}
