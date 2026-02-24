@@ -1,0 +1,15 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/emails/layout,_N_T_/emails/page,_N_T_/emails"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/emails/__PAGE__",
+    "/emails",
+    "/_index",
+    "/_head"
+  ]
+}

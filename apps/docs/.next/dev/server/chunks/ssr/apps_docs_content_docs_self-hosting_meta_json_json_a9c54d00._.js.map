@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 3, "column": 0}, "map": {"version":3,"sources":["turbopack:///[project]/apps/docs/content/docs/self-hosting/meta.json.json"],"sourcesContent":["{\"title\":\"Self-Hosting\",\"pages\":[\"cloudflare\",\"docker\",\"coolify\",\"railway\",\"environment-variables\",\"custom-domain\"]}"],"names":[],"mappings":"AAAA"}},
+    {"offset": {"line": 3, "column": 142}, "map": {"version":3,"sources":[],"names":[],"mappings":"A"}}]
+}

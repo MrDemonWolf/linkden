@@ -1,14 +1,20 @@
 import { z } from "zod";
 
-export const AnalyticsQuerySchema = z.object({
-  period: z.enum(["7d", "30d", "90d"]).default("30d"),
+export const analyticsRangeSchema = z.object({
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  period: z.enum(["7d", "30d", "90d", "custom"]).optional(),
 });
 
-export const TrackEventSchema = z.object({
-  linkId: z.string().uuid().optional(),
-  event: z.enum(["page_view", "link_click"]),
-  referrer: z.string().max(2000).default(""),
+export const trackViewSchema = z.object({
+  referrer: z.string().optional(),
+  userAgent: z.string().optional(),
+  country: z.string().optional(),
 });
 
-export type AnalyticsQueryInput = z.infer<typeof AnalyticsQuerySchema>;
-export type TrackEventInput = z.infer<typeof TrackEventSchema>;
+export const trackClickSchema = z.object({
+  blockId: z.string().min(1),
+  referrer: z.string().optional(),
+  userAgent: z.string().optional(),
+  country: z.string().optional(),
+});

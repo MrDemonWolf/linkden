@@ -1,0 +1,4 @@
+1:"$Sreact.fragment"
+2:I[56620,["/_next/static/chunks/20296bfa55235273.js","/_next/static/chunks/ce707840134a2242.js","/_next/static/chunks/928e56d353cf0b45.js","/_next/static/chunks/37ecd1fc8607543a.js"],"default"]
+3:I[68633,["/_next/static/chunks/20296bfa55235273.js","/_next/static/chunks/ce707840134a2242.js","/_next/static/chunks/928e56d353cf0b45.js","/_next/static/chunks/37ecd1fc8607543a.js"],"default"]
+0:{"buildId":"Topud_ODPXEAPIpr6LOKE","rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"loading":null,"isPartial":false}

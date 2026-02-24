@@ -1,0 +1,24 @@
+{
+  "name": "@linkden/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@linkden/db": "workspace:*",
+    "@linkden/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@linkden/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

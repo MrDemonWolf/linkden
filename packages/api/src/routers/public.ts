@@ -104,6 +104,10 @@ export const publicRouter = router({
 				bannerPreset: settings.banner_preset || null,
 				bannerEnabled: settings.banner_enabled === "true",
 				themePreset: settings.theme_preset || "default",
+				customPrimary: settings.custom_primary || null,
+				customSecondary: settings.custom_secondary || null,
+				customAccent: settings.custom_accent || null,
+				customBackground: settings.custom_background || null,
 				customCss: settings.custom_css || null,
 			},
 		};

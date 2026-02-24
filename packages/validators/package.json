@@ -1,28 +1,15 @@
 {
   "name": "@linkden/validators",
-  "version": "0.1.0",
-  "private": true,
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./links": "./src/links.ts",
-    "./settings": "./src/settings.ts",
-    "./vcard": "./src/vcard.ts",
-    "./wallet": "./src/wallet.ts",
-    "./analytics": "./src/analytics.ts",
-    "./contact": "./src/contact.ts",
-    "./pages": "./src/pages.ts"
-  },
-  "scripts": {
-    "lint": "biome check ./src",
-    "typecheck": "tsc --noEmit"
+    ".": { "default": "./src/index.ts" },
+    "./*": { "default": "./src/*.ts" }
   },
   "dependencies": {
-    "zod": "^3.24.0"
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "typescript": "^5.8.0"
+    "@linkden/config": "workspace:*",
+    "typescript": "catalog:"
   }
 }

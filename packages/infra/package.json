@@ -1,17 +1,19 @@
 {
   "name": "@linkden/infra",
-  "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "deploy": "pnpm exec tsx alchemy.run.ts",
-    "destroy": "pnpm exec tsx alchemy.run.ts --destroy"
+    "dev": "alchemy dev",
+    "deploy": "alchemy deploy",
+    "destroy": "alchemy destroy"
   },
   "dependencies": {
-    "alchemy": "^0.28.0"
+    "dotenv": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "tsx": "^4.19.0",
-    "typescript": "^5.8.0"
+    "@linkden/config": "workspace:*",
+    "alchemy": "catalog:",
+    "typescript": "catalog:"
   }
 }

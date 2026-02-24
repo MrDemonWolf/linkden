@@ -1,0 +1,19 @@
+{
+  "name": "linkden-server",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-01-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "linkden-db",
+      "database_id": "local"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "IMAGES_BUCKET",
+      "bucket_name": "linkden-images"
+    }
+  ]
+}

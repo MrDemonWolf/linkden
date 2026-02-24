@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Search, Globe, Save } from "lucide-react";
 import { trpc } from "@/utils/trpc";
 import { socialBrands, socialBrandMap } from "@linkden/ui/social-brands";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,16 @@ interface NetworkDraft {
 	url: string;
 	isActive: boolean;
 }
+
+const CATEGORY_LABELS: Record<string, string> = {
+	social: "Social Media",
+	messaging: "Messaging",
+	developer: "Developer",
+	business: "Business",
+	content: "Content",
+	music: "Music & Audio",
+	gaming: "Gaming",
+};
 
 // --- URL template helpers ---
 
@@ -58,6 +68,116 @@ function buildUrl(username: string, template: string): string {
 	return template.replace("{}", username);
 }
 
+type SocialBrand = (typeof socialBrands)[number];
+type SocialItem = SocialBrand & NetworkDraft;
+
+function NetworkRow({
+	social,
+	draft,
+	onUrlChange,
+	onToggle,
+}: {
+	social: SocialBrand;
+	draft: NetworkDraft;
+	onUrlChange: (slug: string, url: string) => void;
+	onToggle: (slug: string) => void;
+}) {
+	const template = social.urlTemplate;
+	const fullUrlMode = isFullUrlTemplate(template);
+	const prefix = fullUrlMode ? "" : getPrefix(template);
+	const suffix = fullUrlMode ? "" : getSuffix(template);
+	const displayValue = fullUrlMode
+		? draft.url
+		: extractUsername(draft.url, template);
+
+	return (
+		<div
+			className={cn(
+				"flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors border-b border-white/5 last:border-b-0",
+				draft.isActive && "bg-primary/5",
+			)}
+		>
+			{/* SVG Icon */}
+			<div className="flex h-8 w-8 shrink-0 items-center justify-center">
+				<svg viewBox="0 0 24 24" className="h-5 w-5">
+					<path
+						d={social.svgPath}
+						fill={draft.isActive ? social.hex : "#9ca3af"}
+					/>
+				</svg>
+			</div>
+
+			{/* Name */}
+			<span className="w-28 shrink-0 truncate text-xs font-medium">
+				{social.name}
+			</span>
+
+			{/* URL input */}
+			<div className="min-w-0 flex-1">
+				{fullUrlMode ? (
+					<Input
+						value={draft.url}
+						onChange={(e) =>
+							onUrlChange(social.slug, e.target.value)
+						}
+						placeholder="https://..."
+						className="h-8 text-xs"
+					/>
+				) : (
+					<div className="flex items-center rounded-lg border border-input bg-transparent backdrop-blur-sm h-8 overflow-hidden focus-within:ring-1 focus-within:ring-ring">
+						{prefix && (
+							<span className="shrink-0 select-none bg-muted px-2 text-[11px] text-muted-foreground border-r border-input h-full flex items-center">
+								{prefix}
+							</span>
+						)}
+						<input
+							value={displayValue}
+							onChange={(e) =>
+								onUrlChange(
+									social.slug,
+									buildUrl(e.target.value, template),
+								)
+							}
+							placeholder="username"
+							className="min-w-0 flex-1 bg-transparent px-2 text-xs outline-none"
+						/>
+						{suffix && (
+							<span className="shrink-0 select-none bg-muted px-2 text-[11px] text-muted-foreground border-l border-input h-full flex items-center">
+								{suffix}
+							</span>
+						)}
+					</div>
+				)}
+			</div>
+
+			{/* Toggle */}
+			<button
+				type="button"
+				disabled={!draft.url}
+				title={!draft.url ? "Enter a URL to enable" : undefined}
+				onClick={() => onToggle(social.slug)}
+				className={cn(
+					"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+					draft.isActive ? "bg-blue-600" : "bg-muted",
+					!draft.url && "opacity-50 cursor-not-allowed",
+				)}
+				role="switch"
+				aria-checked={draft.isActive}
+				aria-label={`Toggle ${social.name}`}
+			>
+				<span
+					className={cn(
+						"inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform",
+						draft.isActive
+							? "translate-x-[18px]"
+							: "translate-x-[3px]",
+					)}
+				/>
+			</button>
+		</div>
+	);
+}
+
 export default function SocialPage() {
 	const qc = useQueryClient();
 	const [searchQuery, setSearchQuery] = useState("");
@@ -89,35 +209,55 @@ export default function SocialPage() {
 		}
 	}, [dbRows, socialsQuery.isLoading, initialized]);
 
-	// Build the merged + sorted + filtered list
-	const displayList = useMemo(() => {
-		const list = socialBrands.map((brand) => {
+	// Build the merged list
+	const allItems = useMemo(() => {
+		return socialBrands.map((brand) => {
 			const draft = drafts[brand.slug] ?? { url: "", isActive: false };
 			return { ...brand, ...draft };
 		});
+	}, [drafts]);
 
-		// Sort: active with URL first, then active without URL, then inactive
-		list.sort((a, b) => {
-			const aScore = a.isActive ? (a.url ? 0 : 1) : 2;
-			const bScore = b.isActive ? (b.url ? 0 : 1) : 2;
-			if (aScore !== bScore) return aScore - bScore;
-			return a.name.localeCompare(b.name);
-		});
+	// Active networks (active + has URL)
+	const activeNetworks = useMemo(() => {
+		const list = allItems.filter((s) => s.isActive && s.url);
+		list.sort((a, b) => a.name.localeCompare(b.name));
+		return list;
+	}, [allItems]);
+
+	// Inactive networks grouped by category (filtered by search)
+	const categoryGroups = useMemo(() => {
+		const activeSlugs = new Set(activeNetworks.map((s) => s.slug));
+		let inactive = allItems.filter((s) => !activeSlugs.has(s.slug));
 
 		// Filter by search
 		if (searchQuery) {
 			const q = searchQuery.toLowerCase();
-			return list.filter(
+			inactive = inactive.filter(
 				(s) =>
-					s.isActive ||
 					s.name.toLowerCase().includes(q) ||
 					s.slug.toLowerCase().includes(q) ||
 					s.category.toLowerCase().includes(q),
 			);
 		}
 
-		return list;
-	}, [drafts, searchQuery]);
+		// Group by category
+		const groups: Record<string, SocialItem[]> = {};
+		for (const item of inactive) {
+			if (!groups[item.category]) groups[item.category] = [];
+			groups[item.category].push(item);
+		}
+
+		// Sort items within each group
+		for (const key of Object.keys(groups)) {
+			groups[key].sort((a, b) => a.name.localeCompare(b.name));
+		}
+
+		// Return as ordered entries
+		const categoryOrder = Object.keys(CATEGORY_LABELS);
+		return categoryOrder
+			.filter((cat) => groups[cat]?.length)
+			.map((cat) => ({ category: cat, label: CATEGORY_LABELS[cat] || cat, items: groups[cat] }));
+	}, [allItems, activeNetworks, searchQuery]);
 
 	// Detect changes vs DB
 	const hasChanges = useMemo(() => {
@@ -209,7 +349,7 @@ export default function SocialPage() {
 	return (
 		<div className="space-y-6">
 			{/* Sticky header */}
-			<div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b pb-4 space-y-4">
+			<div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-white/15 dark:border-white/10 pb-4 space-y-4">
 				<div className="flex items-center justify-between">
 					<div>
 						<h1 className="text-lg font-semibold">Social Networks</h1>
@@ -261,8 +401,32 @@ export default function SocialPage() {
 				</Card>
 			)}
 
-			{/* List */}
-			{displayList.length === 0 ? (
+			{/* Active Networks card */}
+			{activeNetworks.length > 0 && (
+				<Card>
+					<CardHeader>
+						<CardTitle className="text-sm">Active Networks</CardTitle>
+					</CardHeader>
+					<CardContent className="p-0 px-3 pb-3">
+						{activeNetworks.map((social) => {
+							const draft = drafts[social.slug] ?? { url: "", isActive: false };
+							const brand = socialBrands.find((b) => b.slug === social.slug)!;
+							return (
+								<NetworkRow
+									key={social.slug}
+									social={brand}
+									draft={draft}
+									onUrlChange={handleUrlChange}
+									onToggle={handleToggle}
+								/>
+							);
+						})}
+					</CardContent>
+				</Card>
+			)}
+
+			{/* Category group cards */}
+			{categoryGroups.length === 0 && activeNetworks.length === 0 ? (
 				<Card>
 					<CardContent className="py-12 text-center">
 						<Globe className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
@@ -273,112 +437,29 @@ export default function SocialPage() {
 					</CardContent>
 				</Card>
 			) : (
-				<div className="space-y-px rounded-lg border overflow-hidden">
-					{displayList.map((social) => {
-						const draft = drafts[social.slug] ?? {
-							url: "",
-							isActive: false,
-						};
-						const template = social.urlTemplate;
-						const fullUrlMode = isFullUrlTemplate(template);
-						const prefix = fullUrlMode ? "" : getPrefix(template);
-						const suffix = fullUrlMode ? "" : getSuffix(template);
-						const displayValue = fullUrlMode
-							? draft.url
-							: extractUsername(draft.url, template);
-
-						return (
-							<div
-								key={social.slug}
-								className={cn(
-									"flex items-center gap-3 bg-card px-3 py-2.5 transition-colors",
-									draft.isActive && "bg-primary/5",
-								)}
-							>
-								{/* SVG Icon */}
-								<div className="flex h-8 w-8 shrink-0 items-center justify-center">
-									<svg viewBox="0 0 24 24" className="h-5 w-5">
-										<path
-											d={social.svgPath}
-											fill={draft.isActive ? social.hex : "#9ca3af"}
-										/>
-									</svg>
-								</div>
-
-								{/* Name */}
-								<span className="w-28 shrink-0 truncate text-xs font-medium">
-									{social.name}
-								</span>
-
-								{/* URL input */}
-								<div className="min-w-0 flex-1">
-									{fullUrlMode ? (
-										<Input
-											value={draft.url}
-											onChange={(e) =>
-												handleUrlChange(social.slug, e.target.value)
-											}
-											placeholder="https://..."
-											className="h-8 text-xs"
-										/>
-									) : (
-										<div className="flex items-center rounded-md border border-input bg-transparent h-8 overflow-hidden focus-within:ring-1 focus-within:ring-ring">
-											{prefix && (
-												<span className="shrink-0 select-none bg-muted px-2 text-[11px] text-muted-foreground border-r border-input h-full flex items-center">
-													{prefix}
-												</span>
-											)}
-											<input
-												value={displayValue}
-												onChange={(e) =>
-													handleUrlChange(
-														social.slug,
-														buildUrl(e.target.value, template),
-													)
-												}
-												placeholder="username"
-												className="min-w-0 flex-1 bg-transparent px-2 text-xs outline-none"
-											/>
-											{suffix && (
-												<span className="shrink-0 select-none bg-muted px-2 text-[11px] text-muted-foreground border-l border-input h-full flex items-center">
-													{suffix}
-												</span>
-											)}
-										</div>
-									)}
-								</div>
-
-								{/* Toggle */}
-								<button
-									type="button"
-									disabled={!draft.url}
-									title={!draft.url ? "Enter a URL to enable" : undefined}
-									onClick={() => handleToggle(social.slug)}
-									className={cn(
-										"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
-										draft.isActive ? "bg-blue-600" : "bg-muted",
-										!draft.url && "opacity-50 cursor-not-allowed",
-									)}
-									role="switch"
-									aria-checked={draft.isActive}
-									aria-label={`Toggle ${social.name}`}
-								>
-									<span
-										className={cn(
-											"inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform",
-											draft.isActive
-												? "translate-x-[18px]"
-												: "translate-x-[3px]",
-										)}
+				categoryGroups.map((group) => (
+					<Card key={group.category}>
+						<CardHeader>
+							<CardTitle className="text-sm">{group.label}</CardTitle>
+						</CardHeader>
+						<CardContent className="p-0 px-3 pb-3">
+							{group.items.map((social) => {
+								const draft = drafts[social.slug] ?? { url: "", isActive: false };
+								const brand = socialBrands.find((b) => b.slug === social.slug)!;
+								return (
+									<NetworkRow
+										key={social.slug}
+										social={brand}
+										draft={draft}
+										onUrlChange={handleUrlChange}
+										onToggle={handleToggle}
 									/>
-								</button>
-							</div>
-						);
-					})}
-				</div>
+								);
+							})}
+						</CardContent>
+					</Card>
+				))
 			)}
-
-
 		</div>
 	);
 }
