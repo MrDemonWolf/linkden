@@ -1,32 +1,32 @@
 {
-  "name": "@linkden/server",
-  "version": "0.1.0",
-  "private": true,
+  "name": "server",
   "type": "module",
+  "main": "src/index.ts",
   "scripts": {
-    "dev": "wrangler dev",
-    "build": "esbuild src/index.ts --bundle --outfile=dist/index.js --format=esm --platform=browser --conditions=workerd,worker,import --main-fields=module,main --external:cloudflare:* --external:node:*",
-    "deploy": "wrangler deploy",
-    "db:reset": "rm -rf .wrangler/state/v3/d1 && echo 'Local D1 database wiped. Run pnpm dev to recreate.'",
-    "lint": "biome check ./src",
-    "typecheck": "tsc --noEmit"
+    "dev:standalone": "wrangler dev --port 3000",
+    "build": "tsdown",
+    "check-types": "tsc -b",
+    "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server"
   },
   "dependencies": {
-    "@clerk/backend": "^1.21.0",
-    "@hono/trpc-server": "^0.3.2",
+    "@hono/trpc-server": "^0.4.0",
+    "@linkden/api": "workspace:*",
+    "@linkden/auth": "workspace:*",
     "@linkden/db": "workspace:*",
-    "@linkden/email": "workspace:*",
-    "@linkden/validators": "workspace:*",
-    "@trpc/server": "^11.1.0",
-    "drizzle-orm": "^0.39.0",
-    "hono": "^4.7.0",
-    "resend": "^4.1.0",
-    "zod": "^3.24.0"
+    "@linkden/env": "workspace:*",
+    "@trpc/server": "catalog:",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "hono": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250214.0",
-    "esbuild": "^0.27.3",
-    "typescript": "^5.8.0",
-    "wrangler": "^4.0.0"
+    "@cloudflare/workers-types": "catalog:",
+    "@linkden/config": "workspace:*",
+    "@types/node": "^22.13.14",
+    "alchemy": "catalog:",
+    "tsdown": "^0.16.5",
+    "typescript": "catalog:",
+    "wrangler": "catalog:"
   }
 }

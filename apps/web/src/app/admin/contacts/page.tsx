@@ -1,160 +1,263 @@
 "use client";
 
-import { toast } from "@/lib/toast";
-import { trpc } from "@/lib/trpc";
-import { CheckCircle2, ChevronLeft, ChevronRight, Circle, Mail, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import {
+	Mail,
+	MailOpen,
+	Trash2,
+	ChevronDown,
+	ChevronUp,
+	Filter,
+} from "lucide-react";
+import { trpc } from "@/utils/trpc";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+
+type FilterMode = "all" | "unread" | "read";
 
 export default function ContactsPage() {
-  const [page, setPage] = useState(1);
-  const limit = 20;
-  const utils = trpc.useUtils();
+	const qc = useQueryClient();
+	const [filter, setFilter] = useState<FilterMode>("all");
+	const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const contactsQuery = trpc.contact.list.useQuery({ page, limit });
+	const filterParam =
+		filter === "all" ? undefined : { isRead: filter === "read" };
+	const contactsQuery = useQuery(
+		trpc.contacts.list.queryOptions(filterParam),
+	);
+	const contacts = contactsQuery.data ?? [];
 
-  const markReadMutation = trpc.contact.markRead.useMutation({
-    onSuccess: () => {
-      utils.contact.list.invalidate();
-      toast.success("Marked as read");
-    },
-    onError: () => toast.error("Failed to update"),
-  });
+	const markRead = useMutation(trpc.contacts.markRead.mutationOptions());
+	const markUnread = useMutation(trpc.contacts.markUnread.mutationOptions());
+	const deleteContact = useMutation(trpc.contacts.delete.mutationOptions());
 
-  const deleteMutation = trpc.contact.delete.useMutation({
-    onSuccess: () => {
-      utils.contact.list.invalidate();
-      toast.success("Message deleted");
-    },
-    onError: () => toast.error("Failed to delete"),
-  });
+	const invalidate = () => {
+		qc.invalidateQueries({
+			queryKey: trpc.contacts.list.queryOptions(filterParam).queryKey,
+		});
+		qc.invalidateQueries({
+			queryKey: trpc.contacts.unreadCount.queryOptions().queryKey,
+		});
+	};
 
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+	const handleMarkRead = async (id: string) => {
+		try {
+			await markRead.mutateAsync({ id });
+			invalidate();
+		} catch {
+			toast.error("Failed to mark as read");
+		}
+	};
 
-  function handleDelete(id: string) {
-    if (deletingId === id) {
-      deleteMutation.mutate({ id });
-      setDeletingId(null);
-    } else {
-      setDeletingId(id);
-      setTimeout(() => setDeletingId(null), 3000);
-    }
-  }
+	const handleMarkUnread = async (id: string) => {
+		try {
+			await markUnread.mutateAsync({ id });
+			invalidate();
+		} catch {
+			toast.error("Failed to mark as unread");
+		}
+	};
 
-  if (contactsQuery.isLoading) {
-    return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Contact Submissions</h1>
-        <div className="space-y-3">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-20 rounded-xl bg-[rgba(255,255,255,0.04)] animate-pulse" />
-          ))}
-        </div>
-      </div>
-    );
-  }
+	const handleDelete = async (id: string) => {
+		try {
+			await deleteContact.mutateAsync({ id });
+			invalidate();
+			toast.success("Contact deleted");
+			if (expandedId === id) setExpandedId(null);
+		} catch {
+			toast.error("Failed to delete contact");
+		}
+	};
 
-  const data = contactsQuery.data;
-  const items = data?.items ?? [];
-  const totalPages = data?.totalPages ?? 1;
-  const unreadCount = data?.unreadCount ?? 0;
+	const filters: { value: FilterMode; label: string }[] = [
+		{ value: "all", label: "All" },
+		{ value: "unread", label: "Unread" },
+		{ value: "read", label: "Read" },
+	];
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Contact Submissions</h1>
-        <p className="text-sm text-[var(--text-secondary)] mt-1">
-          {data?.total ?? 0} total &middot; {unreadCount} unread
-        </p>
-      </div>
+	return (
+		<div className="space-y-6">
+			{/* Header */}
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<div>
+					<h1 className="text-lg font-semibold">Contacts</h1>
+					<p className="text-xs text-muted-foreground">
+						Manage contact form submissions
+					</p>
+				</div>
+				<div className="flex items-center gap-1">
+					<Filter className="mr-1 h-3.5 w-3.5 text-muted-foreground" />
+					{filters.map((f) => (
+						<Button
+							key={f.value}
+							variant={filter === f.value ? "default" : "outline"}
+							size="xs"
+							onClick={() => setFilter(f.value)}
+						>
+							{f.label}
+						</Button>
+					))}
+				</div>
+			</div>
 
-      {items.length === 0 ? (
-        <div className="glass-card text-center py-12">
-          <Mail className="w-12 h-12 text-[var(--text-secondary)] mx-auto mb-3" />
-          <h2 className="text-lg font-semibold mb-1">No messages yet</h2>
-          <p className="text-sm text-[var(--text-secondary)]">
-            Contact form submissions will appear here.
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="space-y-2">
-            {items.map((sub) => (
-              <div
-                key={sub.id}
-                className={`glass-panel flex items-start gap-3 p-4 transition-all ${
-                  !sub.isRead ? "border-brand-cyan/20" : ""
-                }`}
-              >
-                <button
-                  onClick={() => {
-                    if (!sub.isRead) markReadMutation.mutate({ id: sub.id });
-                  }}
-                  className="mt-0.5 shrink-0"
-                  title={sub.isRead ? "Read" : "Mark as read"}
-                >
-                  {sub.isRead ? (
-                    <CheckCircle2 className="w-4 h-4 text-[var(--text-secondary)]" />
-                  ) : (
-                    <Circle className="w-4 h-4 text-brand-cyan fill-brand-cyan" />
-                  )}
-                </button>
+			{/* Contact list */}
+			{contactsQuery.isLoading ? (
+				<div className="space-y-2">
+					{Array.from({ length: 4 }).map((_, i) => (
+						<Skeleton key={`sk-${i}`} className="h-14" />
+					))}
+				</div>
+			) : contacts.length === 0 ? (
+				<Card>
+					<CardContent className="py-12 text-center">
+						<Mail className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
+						<p className="text-sm font-medium">No contacts</p>
+						<p className="mt-1 text-xs text-muted-foreground">
+							{filter !== "all"
+								? `No ${filter} contacts found. Try a different filter.`
+								: "When visitors submit your contact form, they'll appear here."}
+						</p>
+					</CardContent>
+				</Card>
+			) : (
+				<div className="space-y-1.5">
+					{contacts.map((contact) => {
+						const isExpanded = expandedId === contact.id;
 
-                <a href={`/admin/contacts/${sub.id}`} className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span
-                      className={`text-sm font-medium ${!sub.isRead ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}
-                    >
-                      {sub.name}
-                    </span>
-                    <span className="text-xs text-[var(--text-secondary)]">
-                      &lt;{sub.email}&gt;
-                    </span>
-                  </div>
-                  <p className="text-sm text-[var(--text-secondary)] line-clamp-2">{sub.message}</p>
-                  <span className="text-xs text-[var(--text-secondary)] mt-1 block">
-                    {new Date(sub.createdAt).toLocaleString()}
-                  </span>
-                </a>
+						return (
+							<div
+								key={contact.id}
+								className={cn(
+									"border bg-card transition-colors",
+									!contact.isRead && "border-l-2 border-l-primary",
+								)}
+							>
+								{/* Row */}
+								<button
+									type="button"
+									onClick={() =>
+										setExpandedId(isExpanded ? null : contact.id)
+									}
+									className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
+								>
+									<div
+										className={cn(
+											"flex h-7 w-7 shrink-0 items-center justify-center",
+											contact.isRead ? "bg-muted" : "bg-primary/10",
+										)}
+									>
+										{contact.isRead ? (
+											<MailOpen className="h-3.5 w-3.5 text-muted-foreground" />
+										) : (
+											<Mail className="h-3.5 w-3.5 text-primary" />
+										)}
+									</div>
+									<div className="min-w-0 flex-1">
+										<div className="flex items-baseline gap-2">
+											<p
+												className={cn(
+													"truncate text-xs",
+													!contact.isRead && "font-semibold",
+												)}
+											>
+												{contact.name || "Anonymous"}
+											</p>
+											<span className="shrink-0 text-[10px] text-muted-foreground">
+												{contact.email}
+											</span>
+										</div>
+										<p className="truncate text-[10px] text-muted-foreground">
+											{contact.message?.slice(0, 80) ?? "No message"}
+										</p>
+									</div>
+									<span className="shrink-0 text-[10px] text-muted-foreground">
+										{new Date(contact.createdAt).toLocaleDateString()}
+									</span>
+									{isExpanded ? (
+										<ChevronUp className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+									) : (
+										<ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+									)}
+								</button>
 
-                <button
-                  onClick={() => handleDelete(sub.id)}
-                  className={`p-2 rounded-lg transition-colors shrink-0 ${
-                    deletingId === sub.id
-                      ? "bg-red-500/20 text-red-400"
-                      : "text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.08)] hover:text-red-400"
-                  }`}
-                  title={deletingId === sub.id ? "Click again to confirm" : "Delete"}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="glass-button p-2 disabled:opacity-30"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <span className="text-sm text-[var(--text-secondary)] px-3">
-                Page {page} of {totalPages}
-              </span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="glass-button p-2 disabled:opacity-30"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
+								{/* Expanded details */}
+								{isExpanded && (
+									<div className="border-t px-4 py-3 space-y-3">
+										<div className="grid gap-2 sm:grid-cols-2">
+											<div>
+												<p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+													Name
+												</p>
+												<p className="text-xs">
+													{contact.name || "Not provided"}
+												</p>
+											</div>
+											<div>
+												<p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+													Email
+												</p>
+												<p className="text-xs">{contact.email}</p>
+											</div>
+										</div>
+										<div>
+											<p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+												Message
+											</p>
+											<p className="mt-1 whitespace-pre-wrap text-xs leading-relaxed">
+												{contact.message || "No message provided"}
+											</p>
+										</div>
+										<div>
+											<p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+												Submitted
+											</p>
+											<p className="text-xs">
+												{new Date(contact.createdAt).toLocaleString()}
+											</p>
+										</div>
+										<div className="flex gap-2 pt-1">
+											{contact.isRead ? (
+												<Button
+													variant="outline"
+													size="xs"
+													onClick={() => handleMarkUnread(contact.id)}
+													disabled={markUnread.isPending}
+												>
+													<Mail className="mr-1 h-3 w-3" />
+													Mark Unread
+												</Button>
+											) : (
+												<Button
+													variant="outline"
+													size="xs"
+													onClick={() => handleMarkRead(contact.id)}
+													disabled={markRead.isPending}
+												>
+													<MailOpen className="mr-1 h-3 w-3" />
+													Mark Read
+												</Button>
+											)}
+											<Button
+												variant="destructive"
+												size="xs"
+												onClick={() => handleDelete(contact.id)}
+												disabled={deleteContact.isPending}
+											>
+												<Trash2 className="mr-1 h-3 w-3" />
+												Delete
+											</Button>
+										</div>
+									</div>
+								)}
+							</div>
+						);
+					})}
+				</div>
+			)}
+		</div>
+	);
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Palette, Sun, Moon, Monitor, Check, Upload, Undo2, Info, Tag, BadgeCheck } from "lucide-react";
+import { Palette, Sun, Moon, Monitor, Check, Upload, Undo2, Info, Tag, BadgeCheck, User } from "lucide-react";
 import { themePresets } from "@linkden/ui/themes";
 import { getBannerPresetsForTheme } from "@linkden/ui/banner-presets";
 import { trpc } from "@/utils/trpc";
@@ -13,6 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { ImageUploadField } from "@/components/admin/image-upload-field";
+import { PhoneFrame } from "@/components/admin/phone-frame";
+import { PreviewContent } from "@/components/admin/preview-content";
 
 const COLOR_MODE_OPTIONS = [
 	{ value: "light", label: "Light", icon: Sun },
@@ -21,6 +24,9 @@ const COLOR_MODE_OPTIONS = [
 ];
 
 interface SavedState {
+	profileName: string;
+	profileBio: string;
+	profileAvatar: string;
 	theme: string;
 	colorMode: string;
 	primaryColor: string;
@@ -38,6 +44,9 @@ interface SavedState {
 
 function buildSavedState(settings: Record<string, string>): SavedState {
 	return {
+		profileName: settings.profile_name ?? "",
+		profileBio: settings.bio ?? "",
+		profileAvatar: settings.avatar_url ?? "",
 		theme: settings.theme_preset ?? "default",
 		colorMode: settings.default_color_mode ?? "light",
 		primaryColor: settings.custom_primary ?? "#0FACED",
@@ -57,11 +66,16 @@ function buildSavedState(settings: Record<string, string>): SavedState {
 export default function AppearancePage() {
 	const qc = useQueryClient();
 	const settingsQuery = useQuery(trpc.settings.getAll.queryOptions());
+	const blocksQuery = useQuery(trpc.blocks.list.queryOptions());
+	const blocks = (blocksQuery.data ?? []).filter((b: { isEnabled: boolean }) => b.isEnabled);
 	const updateSettings = useMutation(trpc.settings.updateBulk.mutationOptions());
 
 	const settings = settingsQuery.data ?? {};
 
 	const [savedState, setSavedState] = useState<SavedState>({
+		profileName: "",
+		profileBio: "",
+		profileAvatar: "",
 		theme: "default",
 		colorMode: "light",
 		primaryColor: "#0FACED",
@@ -76,6 +90,10 @@ export default function AppearancePage() {
 		brandingText: "",
 		brandingLink: "",
 	});
+
+	const [profileName, setProfileName] = useState("");
+	const [profileBio, setProfileBio] = useState("");
+	const [profileAvatar, setProfileAvatar] = useState("");
 
 	const [selectedTheme, setSelectedTheme] = useState("default");
 	const [colorMode, setColorMode] = useState("light");
@@ -92,11 +110,21 @@ export default function AppearancePage() {
 	const [brandingText, setBrandingText] = useState("");
 	const [brandingLink, setBrandingLink] = useState("");
 
+	// Sync preview dark mode when color mode setting changes
+	useEffect(() => {
+		if (colorMode === "dark") setPreviewDark(true);
+		else if (colorMode === "light") setPreviewDark(false);
+		// "system" leaves the manual toggle as-is
+	}, [colorMode]);
+
 	// Load settings into state
 	useEffect(() => {
 		if (settingsQuery.data) {
 			const s = buildSavedState(settings);
 			setSavedState(s);
+			setProfileName(s.profileName);
+			setProfileBio(s.profileBio);
+			setProfileAvatar(s.profileAvatar);
 			setSelectedTheme(s.theme);
 			setColorMode(s.colorMode);
 			setPrimaryColor(s.primaryColor);
@@ -114,6 +142,9 @@ export default function AppearancePage() {
 	}, [settingsQuery.data]);
 
 	const isDirty =
+		profileName !== savedState.profileName ||
+		profileBio !== savedState.profileBio ||
+		profileAvatar !== savedState.profileAvatar ||
 		selectedTheme !== savedState.theme ||
 		colorMode !== savedState.colorMode ||
 		primaryColor !== savedState.primaryColor ||
@@ -149,8 +180,8 @@ export default function AppearancePage() {
 		setSelectedTheme(name);
 		const preset = themePresets.find((t) => t.name === name);
 		if (preset) {
-			const mode = previewDark ? "dark" : "light";
-			const vars = preset.cssVars[mode];
+			// Always read from light preset — custom colors are stored as light-mode values
+			const vars = preset.cssVars.light;
 			setPrimaryColor(vars["--ld-primary"]);
 			setSecondaryColor(vars["--ld-secondary"]);
 			setAccentColor(vars["--ld-accent"]);
@@ -161,6 +192,9 @@ export default function AppearancePage() {
 	const handlePublish = async () => {
 		try {
 			await updateSettings.mutateAsync([
+				{ key: "profile_name", value: profileName },
+				{ key: "bio", value: profileBio },
+				{ key: "avatar_url", value: profileAvatar },
 				{ key: "theme_preset", value: selectedTheme },
 				{ key: "default_color_mode", value: colorMode },
 				{ key: "custom_primary", value: primaryColor },
@@ -176,6 +210,9 @@ export default function AppearancePage() {
 				{ key: "branding_link", value: brandingLink },
 			]);
 			setSavedState({
+				profileName,
+				profileBio,
+				profileAvatar,
 				theme: selectedTheme,
 				colorMode,
 				primaryColor,
@@ -198,6 +235,9 @@ export default function AppearancePage() {
 	};
 
 	const handleDiscard = () => {
+		setProfileName(savedState.profileName);
+		setProfileBio(savedState.profileBio);
+		setProfileAvatar(savedState.profileAvatar);
 		setSelectedTheme(savedState.theme);
 		setColorMode(savedState.colorMode);
 		setPrimaryColor(savedState.primaryColor);
@@ -218,10 +258,13 @@ export default function AppearancePage() {
 		const preset = themePresets.find((t) => t.name === selectedTheme) ?? themePresets[0];
 		const mode = previewDark ? "dark" : "light";
 		const vars = { ...preset.cssVars[mode] };
-		vars["--ld-primary"] = primaryColor;
-		vars["--ld-secondary"] = secondaryColor;
-		vars["--ld-accent"] = accentColor;
-		vars["--ld-background"] = bgColor;
+		// Only apply custom color overrides in light mode (they're stored as light-mode values)
+		if (!previewDark) {
+			vars["--ld-primary"] = primaryColor;
+			vars["--ld-secondary"] = secondaryColor;
+			vars["--ld-accent"] = accentColor;
+			vars["--ld-background"] = bgColor;
+		}
 		return vars;
 	}, [selectedTheme, previewDark, primaryColor, secondaryColor, accentColor, bgColor]);
 
@@ -233,13 +276,6 @@ export default function AppearancePage() {
 			resolvedThemeVars["--ld-background"],
 		);
 	}, [resolvedThemeVars]);
-
-	// Resolve the active banner style for preview
-	const activeBannerStyle = useMemo(() => {
-		if (!bannerEnabled || !bannerPreset) return null;
-		const preset = themedBannerPresets.find((p: { id: string }) => p.id === bannerPreset);
-		return preset ?? null;
-	}, [bannerEnabled, bannerPreset, themedBannerPresets]);
 
 	if (settingsQuery.isLoading) {
 		return (
@@ -289,6 +325,49 @@ export default function AppearancePage() {
 			<div className="flex gap-6">
 				{/* Settings column */}
 				<div className="flex-1 min-w-0 space-y-6">
+					{/* Profile */}
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center gap-1.5">
+								<User className="h-4 w-4 text-muted-foreground" />
+								Profile
+							</CardTitle>
+						</CardHeader>
+						<CardContent className="space-y-4">
+							<div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+								<ImageUploadField
+									label="Avatar"
+									value={profileAvatar}
+									purpose="avatar"
+									aspectRatio="square"
+									onUploadComplete={(url) => setProfileAvatar(url)}
+								/>
+								<div className="flex-1 space-y-4">
+									<div className="space-y-1.5">
+										<Label htmlFor="a-name">Display Name</Label>
+										<Input
+											id="a-name"
+											value={profileName}
+											onChange={(e) => setProfileName(e.target.value)}
+											placeholder="Your display name"
+										/>
+									</div>
+									<div className="space-y-1.5">
+										<Label htmlFor="a-bio">Bio</Label>
+										<textarea
+											id="a-bio"
+											value={profileBio}
+											onChange={(e) => setProfileBio(e.target.value)}
+											rows={2}
+											placeholder="A short bio about you"
+											className="dark:bg-input/30 border-input w-full rounded-md border bg-transparent px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-ring"
+										/>
+									</div>
+								</div>
+							</div>
+						</CardContent>
+					</Card>
+
 					{/* Theme presets */}
 					<Card>
 						<CardHeader>
@@ -466,7 +545,7 @@ export default function AppearancePage() {
 									onClick={() => setBannerEnabled(!bannerEnabled)}
 									className={cn(
 										"relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
-										bannerEnabled ? "bg-primary" : "bg-muted",
+										bannerEnabled ? "bg-blue-600" : "bg-muted",
 									)}
 								>
 									<span
@@ -539,7 +618,7 @@ export default function AppearancePage() {
 									onClick={() => setVerifiedBadge(!verifiedBadge)}
 									className={cn(
 										"relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
-										verifiedBadge ? "bg-primary" : "bg-muted",
+										verifiedBadge ? "bg-blue-600" : "bg-muted",
 									)}
 								>
 									<span
@@ -582,7 +661,7 @@ export default function AppearancePage() {
 									onClick={() => setBrandingEnabled(!brandingEnabled)}
 									className={cn(
 										"relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
-										brandingEnabled ? "bg-primary" : "bg-muted",
+										brandingEnabled ? "bg-blue-600" : "bg-muted",
 									)}
 								>
 									<span
@@ -698,118 +777,40 @@ export default function AppearancePage() {
 								{previewDark ? "Dark" : "Light"}
 							</button>
 						</div>
-						{/* Phone frame */}
-						<div className="relative w-[280px] mx-auto">
-							<div
-								className={cn(
-									"overflow-hidden rounded-[2rem] border-[6px]",
-									previewDark
-										? "border-gray-700 bg-gray-950"
-										: "border-gray-300 bg-white",
-								)}
-							>
-								<div className="flex justify-center py-2">
-									<div
-										className={cn(
-											"h-5 w-24 rounded-full",
-											previewDark ? "bg-gray-800" : "bg-gray-200",
-										)}
-									/>
-								</div>
-								<div
-									className="h-[480px] overflow-y-auto px-4 pb-6"
-									style={{
-										backgroundColor: resolvedThemeVars["--ld-background"],
-										color: resolvedThemeVars["--ld-foreground"],
-										transition: "background-color 0.3s ease, color 0.3s ease",
-									}}
-								>
-									{customCss && <style>{customCss}</style>}
-									{/* Banner */}
-									{bannerEnabled && activeBannerStyle && (
-										<div
-											className={`h-20 -mx-4 mb-[-2rem] ${activeBannerStyle.className ?? ""}`}
-											style={activeBannerStyle.style}
-										/>
-									)}
-									{/* Avatar */}
-									<div className="ld-profile mb-4 flex flex-col items-center">
-										<div
-											className="ld-avatar h-14 w-14 rounded-full"
-											style={{
-												background: `linear-gradient(135deg, ${resolvedThemeVars["--ld-primary"]}, ${resolvedThemeVars["--ld-accent"]})`,
-												...(bannerEnabled && activeBannerStyle ? { position: "relative", zIndex: 1 } : {}),
-											}}
-										/>
-										<div className="mt-2 flex items-center gap-1">
-											<div
-												className="h-3 w-20 rounded"
-												style={{
-													backgroundColor: resolvedThemeVars["--ld-muted"],
-												}}
-											/>
-											{verifiedBadge && (
-												<BadgeCheck
-													className="h-3.5 w-3.5 shrink-0"
-													style={{ color: resolvedThemeVars["--ld-primary"] }}
-												/>
-											)}
-										</div>
-										<div
-											className="ld-bio mt-1.5 h-2 w-32 rounded"
-											style={{
-												backgroundColor: resolvedThemeVars["--ld-muted"],
-											}}
-										/>
-									</div>
-									{/* Sample blocks */}
-									<div className="ld-blocks space-y-2">
-										{[1, 2, 3].map((i) => (
-											<div
-												key={i}
-												className="ld-link-block flex items-center justify-center py-2.5 text-[10px] font-medium"
-												style={{
-													backgroundColor: resolvedThemeVars["--ld-card"],
-													color: resolvedThemeVars["--ld-card-foreground"],
-													borderRadius: resolvedThemeVars["--ld-radius"],
-													border: `1px solid ${resolvedThemeVars["--ld-border"]}`,
-												}}
-											>
-												Sample Link {i}
-											</div>
-										))}
-										<div
-											className="ld-header-block py-2 text-center text-[10px] font-bold"
-											style={{ color: resolvedThemeVars["--ld-foreground"] }}
-										>
-											Section Header
-										</div>
-										<div
-											className="ld-social-block flex justify-center gap-2 py-2"
-										>
-											{[1, 2, 3].map((i) => (
-												<div
-													key={i}
-													className="h-6 w-6 rounded-full"
-													style={{
-														backgroundColor: resolvedThemeVars["--ld-muted"],
-													}}
-												/>
-											))}
-										</div>
-									</div>
-									{/* Footer */}
-									{brandingEnabled && (
-										<div
-											className="ld-footer mt-4 text-center text-[8px]"
-											style={{ color: resolvedThemeVars["--ld-muted-foreground"] }}
-										>
-											{brandingText || "Powered by LinkDen"}
-										</div>
-									)}
-								</div>
-							</div>
-						</div>
+						<PhoneFrame previewDark={previewDark}>
+							<PreviewContent
+								profile={{
+									name: profileName || "Your Name",
+									email: "",
+									image: profileAvatar || null,
+									bio: profileBio || null,
+									isVerified: verifiedBadge,
+								}}
+								blocks={blocks.map((b: { id: string; type: string; title: string | null }) => ({
+									id: b.id,
+									type: b.type,
+									title: b.title,
+								}))}
+								settings={{
+									brandingEnabled,
+									brandingText: brandingText || "Powered by LinkDen",
+									bannerPreset: bannerEnabled ? bannerPreset : null,
+									bannerEnabled,
+								}}
+								themeColors={{
+									primary: resolvedThemeVars["--ld-primary"],
+									accent: resolvedThemeVars["--ld-accent"],
+									bg: resolvedThemeVars["--ld-background"],
+									fg: resolvedThemeVars["--ld-foreground"],
+									card: resolvedThemeVars["--ld-card"],
+									cardFg: resolvedThemeVars["--ld-card-foreground"],
+									border: resolvedThemeVars["--ld-border"],
+									muted: resolvedThemeVars["--ld-muted"],
+									mutedFg: resolvedThemeVars["--ld-muted-foreground"],
+								}}
+								colorMode={previewDark ? "dark" : "light"}
+							/>
+						</PhoneFrame>
 					</div>
 				</div>
 			</div>

@@ -21,6 +21,8 @@ import {
 	Smartphone,
 	ChevronDown,
 	Blocks,
+	Upload,
+	ExternalLink,
 } from "lucide-react";
 import { trpc, queryClient } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
@@ -29,6 +31,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { themePresets } from "@linkden/ui/themes";
+import { PhoneFrame } from "@/components/admin/phone-frame";
+import { PreviewContent } from "@/components/admin/preview-content";
+import { getThemeColors } from "@/components/public/public-page";
 
 const BLOCK_TYPES = [
 	{ type: "link" as const, label: "Link", icon: LinkIcon, description: "A clickable link button" },
@@ -51,6 +57,7 @@ interface Block {
 	socialIcons: string | null;
 	isEnabled: boolean;
 	position: number;
+	status: "published" | "draft";
 	scheduledStart: Date | null;
 	scheduledEnd: Date | null;
 	config: string | null;
@@ -62,178 +69,21 @@ function generateId() {
 	return `blk_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-// ---- Phone Preview Component ----
-function PhonePreview({
-	blocks,
-	previewMode,
-	onToggleMode,
-}: {
-	blocks: Block[];
-	previewMode: "light" | "dark";
-	onToggleMode: () => void;
-}) {
-	const enabledBlocks = blocks.filter((b) => b.isEnabled);
-	const isDark = previewMode === "dark";
-
-	return (
-		<div className="flex flex-col items-center">
-			<div className="mb-3 flex items-center gap-2">
-				<button
-					type="button"
-					onClick={onToggleMode}
-					className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-				>
-					{isDark ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}
-					{isDark ? "Dark" : "Light"}
-				</button>
-			</div>
-			{/* Phone frame */}
-			<div className="relative w-[280px]">
-				<div
-					className={`overflow-hidden rounded-[2rem] border-[6px] ${
-						isDark ? "border-gray-700 bg-gray-950" : "border-gray-300 bg-white"
-					}`}
-				>
-					{/* Notch */}
-					<div className="flex justify-center py-2">
-						<div
-							className={`h-5 w-24 rounded-full ${
-								isDark ? "bg-gray-800" : "bg-gray-200"
-							}`}
-						/>
-					</div>
-
-					{/* Content */}
-					<div className="h-[480px] overflow-y-auto px-4 pb-6">
-						{/* Avatar placeholder */}
-						<div className="mb-4 flex flex-col items-center">
-							<div
-								className={`h-14 w-14 rounded-full ${
-									isDark ? "bg-gray-800" : "bg-gray-100"
-								}`}
-							/>
-							<div
-								className={`mt-2 h-3 w-20 ${
-									isDark ? "bg-gray-800" : "bg-gray-200"
-								}`}
-							/>
-							<div
-								className={`mt-1.5 h-2 w-32 ${
-									isDark ? "bg-gray-800/60" : "bg-gray-100"
-								}`}
-							/>
-						</div>
-
-						{/* Blocks */}
-						<div className="space-y-2">
-							{enabledBlocks.map((block) => {
-								switch (block.type) {
-									case "link":
-										return (
-											<div
-												key={block.id}
-												className={`flex items-center justify-center px-3 py-2.5 text-center text-[10px] font-medium transition-colors ${
-													isDark
-														? "bg-gray-800 text-white hover:bg-gray-700"
-														: "bg-gray-100 text-gray-900 hover:bg-gray-200"
-												}`}
-											>
-												{block.title || "Untitled Link"}
-											</div>
-										);
-									case "header":
-										return (
-											<div
-												key={block.id}
-												className={`py-2 text-center text-[11px] font-semibold ${
-													isDark ? "text-gray-300" : "text-gray-700"
-												}`}
-											>
-												{block.title || "Header"}
-											</div>
-										);
-									case "social_icons":
-										return (
-											<div
-												key={block.id}
-												className="flex justify-center gap-2 py-2"
-											>
-												{[1, 2, 3].map((i) => (
-													<div
-														key={i}
-														className={`h-7 w-7 rounded-full ${
-															isDark ? "bg-gray-800" : "bg-gray-200"
-														}`}
-													/>
-												))}
-											</div>
-										);
-									case "embed":
-										return (
-											<div
-												key={block.id}
-												className={`flex h-24 items-center justify-center text-[10px] ${
-													isDark
-														? "bg-gray-800 text-gray-500"
-														: "bg-gray-100 text-gray-400"
-												}`}
-											>
-												Embed: {block.embedType || "video"}
-											</div>
-										);
-									case "contact_form":
-										return (
-											<div
-												key={block.id}
-												className={`space-y-1.5 p-2 text-[9px] ${
-													isDark ? "bg-gray-800/50" : "bg-gray-50"
-												}`}
-											>
-												<div
-													className={`h-5 w-full ${
-														isDark ? "bg-gray-700" : "bg-gray-200"
-													}`}
-												/>
-												<div
-													className={`h-5 w-full ${
-														isDark ? "bg-gray-700" : "bg-gray-200"
-													}`}
-												/>
-												<div
-													className={`h-10 w-full ${
-														isDark ? "bg-gray-700" : "bg-gray-200"
-													}`}
-												/>
-											</div>
-										);
-									default:
-										return null;
-								}
-							})}
-							{enabledBlocks.length === 0 && (
-								<div className="py-12 text-center text-[10px] text-muted-foreground">
-									No blocks yet
-								</div>
-							)}
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	);
-}
-
 // ---- Edit Panel Component ----
 function BlockEditPanel({
 	block,
 	onClose,
 	onSave,
 	isSaving,
+	contactDelivery,
+	onDeliveryChange,
 }: {
 	block: Block;
 	onClose: () => void;
 	onSave: (data: Partial<Block>) => void;
 	isSaving: boolean;
+	contactDelivery: string;
+	onDeliveryChange: (value: string) => void;
 }) {
 	const [title, setTitle] = useState(block.title ?? "");
 	const [url, setUrl] = useState(block.url ?? "");
@@ -268,7 +118,7 @@ function BlockEditPanel({
 	const tabs = ["content", "style", "options", "schedule"] as const;
 
 	return (
-		<div className="fixed inset-y-0 right-0 z-50 w-full max-w-md border-l bg-card shadow-lg sm:w-96">
+		<div className="fixed inset-y-0 right-0 z-50 w-full max-w-md border-l border-white/15 dark:border-white/10 bg-white/80 dark:bg-black/60 backdrop-blur-2xl shadow-lg sm:w-96">
 			<div className="flex h-full flex-col">
 				{/* Header */}
 				<div className="flex items-center justify-between border-b px-4 py-3">
@@ -399,18 +249,41 @@ function BlockEditPanel({
 					)}
 
 					{activeTab === "options" && (
-						<div className="space-y-3">
-							<p className="text-xs text-muted-foreground">
-								Additional options for this block can be configured in the
-								config JSON on the Style tab. Common options:
-							</p>
-							<ul className="space-y-1 text-xs text-muted-foreground">
-								<li>- <code>noFollow</code>: Adds rel="nofollow" to links</li>
-								<li>- <code>newTab</code>: Opens link in new tab</li>
-								<li>- <code>animation</code>: "none" | "pulse" | "shake"</li>
-								<li>- <code>thumbnail</code>: URL for link thumbnail</li>
-							</ul>
-						</div>
+						<>
+							{block.type === "contact_form" ? (
+								<div className="space-y-3">
+									<div className="space-y-1.5">
+										<Label htmlFor="edit-delivery">Delivery mode</Label>
+										<p className="text-[11px] text-muted-foreground">
+											How contact form submissions are handled
+										</p>
+										<select
+											id="edit-delivery"
+											value={contactDelivery}
+											onChange={(e) => onDeliveryChange(e.target.value)}
+											className="dark:bg-input/30 border-input h-8 w-full rounded-md border bg-transparent px-2.5 text-xs outline-none"
+										>
+											<option value="database">Database only</option>
+											<option value="email">Email notification</option>
+											<option value="both">Database + Email</option>
+										</select>
+									</div>
+								</div>
+							) : (
+								<div className="space-y-3">
+									<p className="text-xs text-muted-foreground">
+										Additional options for this block can be configured in the
+										config JSON on the Style tab. Common options:
+									</p>
+									<ul className="space-y-1 text-xs text-muted-foreground">
+										<li>- <code>noFollow</code>: Adds rel="nofollow" to links</li>
+										<li>- <code>newTab</code>: Opens link in new tab</li>
+										<li>- <code>animation</code>: "none" | "pulse" | "shake"</li>
+										<li>- <code>thumbnail</code>: URL for link thumbnail</li>
+									</ul>
+								</div>
+							)}
+						</>
 					)}
 
 					{activeTab === "schedule" && (
@@ -475,15 +348,51 @@ export default function BuilderPage() {
 
 	const blocksQuery = useQuery(trpc.blocks.list.queryOptions());
 	const blocks: Block[] = (blocksQuery.data as Block[] | undefined) ?? [];
+	const hasDraftQuery = useQuery(trpc.blocks.hasDraft.queryOptions());
+	const hasDrafts = hasDraftQuery.data?.hasDraft ?? false;
+	const settingsQuery = useQuery(trpc.settings.getAll.queryOptions());
+
+	// Resolve theme colors for phone preview
+	const previewThemeColors = (() => {
+		const settings = settingsQuery.data ?? {};
+		const themePresetName = settings.theme_preset || "default";
+		return getThemeColors(themePresetName, previewMode);
+	})();
+
+	const previewProfile = (() => {
+		const settings = settingsQuery.data ?? {};
+		return {
+			name: settings.profile_name || "Your Name",
+			email: "",
+			image: settings.avatar_url || null,
+			bio: settings.bio || null,
+			isVerified: settings.verified_badge === "true",
+		};
+	})();
+
+	const previewSettings = (() => {
+		const settings = settingsQuery.data ?? {};
+		return {
+			brandingEnabled: settings.branding_enabled !== "false",
+			brandingText: settings.branding_text || "Powered by LinkDen",
+			bannerPreset: settings.banner_enabled === "true" ? (settings.banner_preset || null) : null,
+			bannerEnabled: settings.banner_enabled === "true",
+		};
+	})();
+
+	const updateSettings = useMutation(trpc.settings.updateBulk.mutationOptions());
+	const contactDelivery = settingsQuery.data?.contact_delivery ?? "database";
 
 	const createBlock = useMutation(trpc.blocks.create.mutationOptions());
 	const updateBlock = useMutation(trpc.blocks.update.mutationOptions());
 	const deleteBlock = useMutation(trpc.blocks.delete.mutationOptions());
 	const toggleEnabled = useMutation(trpc.blocks.toggleEnabled.mutationOptions());
 	const reorderBlocks = useMutation(trpc.blocks.reorder.mutationOptions());
+	const publishAll = useMutation(trpc.blocks.publishAll.mutationOptions());
 
 	const invalidate = useCallback(() => {
 		qc.invalidateQueries({ queryKey: trpc.blocks.list.queryOptions().queryKey });
+		qc.invalidateQueries({ queryKey: trpc.blocks.hasDraft.queryOptions().queryKey });
 	}, [qc]);
 
 	const handleAddBlock = async (type: BlockType) => {
@@ -603,9 +512,38 @@ export default function BuilderPage() {
 				<div>
 					<h1 className="text-lg font-semibold">Builder</h1>
 					<p className="text-xs text-muted-foreground">
-						Drag, drop, and customize your page blocks
+						{hasDrafts
+							? "You have unpublished changes"
+							: "All changes are live"}
 					</p>
 				</div>
+				<div className="flex items-center gap-2">
+					<a
+						href="/"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+					>
+						<ExternalLink className="h-3.5 w-3.5" />
+						View Live
+					</a>
+					<Button
+						size="sm"
+						variant={hasDrafts ? "default" : "outline"}
+						disabled={!hasDrafts || publishAll.isPending}
+						onClick={async () => {
+							try {
+								await publishAll.mutateAsync();
+								invalidate();
+								toast.success("All changes published");
+							} catch {
+								toast.error("Failed to publish");
+							}
+						}}
+					>
+						<Upload className="mr-1.5 h-3.5 w-3.5" />
+						{publishAll.isPending ? "Publishing..." : "Publish"}
+					</Button>
 				<div className="relative">
 					<Button size="sm" onClick={() => setShowAddMenu(!showAddMenu)}>
 						<Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -619,7 +557,7 @@ export default function BuilderPage() {
 								onClick={() => setShowAddMenu(false)}
 								onKeyDown={() => {}}
 							/>
-							<div className="absolute right-0 top-full z-40 mt-1 w-56 border bg-card shadow-lg">
+							<div className="absolute right-0 top-full z-40 mt-1 w-56 rounded-xl bg-card backdrop-blur-2xl border border-white/15 dark:border-white/10 shadow-lg overflow-hidden">
 								{BLOCK_TYPES.map((bt) => {
 									const Icon = bt.icon;
 									return (
@@ -627,7 +565,7 @@ export default function BuilderPage() {
 											key={bt.type}
 											type="button"
 											onClick={() => handleAddBlock(bt.type)}
-											className="flex w-full items-center gap-2.5 px-3 py-2 text-xs hover:bg-muted transition-colors"
+											className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs hover:bg-muted transition-colors"
 										>
 											<Icon className="h-3.5 w-3.5 text-muted-foreground" />
 											<div className="text-left">
@@ -643,12 +581,13 @@ export default function BuilderPage() {
 						</>
 					)}
 				</div>
+				</div>
 			</div>
 
 			{/* Two panel layout */}
 			<div className="flex gap-6">
 				{/* Left panel: block list */}
-				<div className="flex-1 min-w-0 space-y-1.5">
+				<div className="flex-1 min-w-0 space-y-2">
 					{blocksQuery.isLoading ? (
 						<div className="space-y-2">
 							{Array.from({ length: 3 }).map((_, i) => (
@@ -676,7 +615,7 @@ export default function BuilderPage() {
 									onDragOver={handleDragOver}
 									onDrop={(e) => handleDrop(e, block.id)}
 									className={cn(
-										"group flex items-center gap-2 border bg-card px-3 py-2.5 transition-all",
+										"group flex items-center gap-2 rounded-xl bg-card backdrop-blur-xl border border-white/15 dark:border-white/10 shadow-sm px-3 py-2.5 transition-all",
 										draggedId === block.id && "opacity-50",
 										!block.isEnabled && "opacity-60",
 									)}
@@ -689,14 +628,22 @@ export default function BuilderPage() {
 										<GripVertical className="h-4 w-4" />
 									</button>
 
-									<div className="flex h-7 w-7 shrink-0 items-center justify-center bg-muted">
+									<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted">
 										<Icon className="h-3.5 w-3.5 text-muted-foreground" />
 									</div>
 
 									<div className="min-w-0 flex-1">
-										<p className="truncate text-xs font-medium">
-											{block.title || "Untitled"}
-										</p>
+										<div className="flex items-center gap-1.5">
+											<p className="truncate text-xs font-medium">
+												{block.title || "Untitled"}
+											</p>
+											{block.status === "draft" && (
+												<span
+													className="inline-block h-2 w-2 shrink-0 rounded-full bg-amber-500"
+													title="Unpublished changes"
+												/>
+											)}
+										</div>
 										{block.url && (
 											<p className="truncate text-[10px] text-muted-foreground">
 												{block.url}
@@ -748,13 +695,30 @@ export default function BuilderPage() {
 				{/* Right panel: phone preview (desktop) */}
 				<div className="hidden w-[320px] shrink-0 lg:block">
 					<div className="sticky top-6">
-						<PhonePreview
-							blocks={blocks}
-							previewMode={previewMode}
-							onToggleMode={() =>
-								setPreviewMode((m) => (m === "light" ? "dark" : "light"))
-							}
-						/>
+						<div className="mb-3 flex items-center justify-between">
+							<span className="text-xs font-medium">Preview</span>
+							<button
+								type="button"
+								onClick={() => setPreviewMode((m) => (m === "light" ? "dark" : "light"))}
+								className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+							>
+								{previewMode === "dark" ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}
+								{previewMode === "dark" ? "Dark" : "Light"}
+							</button>
+						</div>
+						<PhoneFrame previewDark={previewMode === "dark"}>
+							<PreviewContent
+								profile={previewProfile}
+								blocks={blocks.filter((b) => b.isEnabled).map((b) => ({
+									id: b.id,
+									type: b.type,
+									title: b.title,
+								}))}
+								settings={previewSettings}
+								themeColors={previewThemeColors}
+								colorMode={previewMode}
+							/>
+						</PhoneFrame>
 					</div>
 				</div>
 			</div>
@@ -763,7 +727,7 @@ export default function BuilderPage() {
 			<button
 				type="button"
 				onClick={() => setShowMobilePreview(true)}
-				className="fixed bottom-20 right-4 z-30 flex h-12 w-12 items-center justify-center bg-primary text-primary-foreground shadow-lg lg:hidden"
+				className="fixed bottom-20 right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg lg:hidden"
 			>
 				<Smartphone className="h-5 w-5" />
 			</button>
@@ -775,17 +739,23 @@ export default function BuilderPage() {
 						<button
 							type="button"
 							onClick={() => setShowMobilePreview(false)}
-							className="absolute -right-2 -top-2 z-10 flex h-7 w-7 items-center justify-center bg-card text-foreground shadow"
+							className="absolute -right-2 -top-2 z-10 flex h-7 w-7 items-center justify-center rounded-lg bg-card backdrop-blur-xl text-foreground shadow"
 						>
 							<X className="h-4 w-4" />
 						</button>
-						<PhonePreview
-							blocks={blocks}
-							previewMode={previewMode}
-							onToggleMode={() =>
-								setPreviewMode((m) => (m === "light" ? "dark" : "light"))
-							}
-						/>
+						<PhoneFrame previewDark={previewMode === "dark"}>
+							<PreviewContent
+								profile={previewProfile}
+								blocks={blocks.filter((b) => b.isEnabled).map((b) => ({
+									id: b.id,
+									type: b.type,
+									title: b.title,
+								}))}
+								settings={previewSettings}
+								themeColors={previewThemeColors}
+								colorMode={previewMode}
+							/>
+						</PhoneFrame>
 					</div>
 				</div>
 			)}
@@ -803,6 +773,18 @@ export default function BuilderPage() {
 						onClose={() => setEditingBlock(null)}
 						onSave={handleSaveEdit}
 						isSaving={updateBlock.isPending}
+						contactDelivery={contactDelivery}
+						onDeliveryChange={async (value) => {
+							try {
+								await updateSettings.mutateAsync([
+									{ key: "contact_delivery", value },
+								]);
+								qc.invalidateQueries({ queryKey: trpc.settings.getAll.queryOptions().queryKey });
+								toast.success("Delivery mode updated");
+							} catch {
+								toast.error("Failed to update delivery mode");
+							}
+						}}
 					/>
 				</>
 			)}

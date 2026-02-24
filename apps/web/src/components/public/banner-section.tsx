@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { getPresetById } from "@linkden/ui/banner-presets";
+import { usePreview } from "./preview-context";
 
 interface BannerSectionProps {
 	bannerPreset: string;
@@ -16,9 +17,11 @@ export function BannerSection({
 	bgColor,
 	themeColors,
 }: BannerSectionProps) {
+	const { isPreview } = usePreview();
 	const bannerRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
+		if (isPreview) return;
 		const handleScroll = () => {
 			if (!bannerRef.current) return;
 			const scrollY = window.scrollY;
@@ -27,7 +30,7 @@ export function BannerSection({
 
 		window.addEventListener("scroll", handleScroll, { passive: true });
 		return () => window.removeEventListener("scroll", handleScroll);
-	}, []);
+	}, [isPreview]);
 
 	const preset = getPresetById(bannerPreset, themeColors);
 	if (!preset) return null;

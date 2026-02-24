@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
+import { usePreview } from "./preview-context";
 
 interface ContactFormBlockProps {
 	block: {
@@ -128,6 +129,7 @@ export function ContactFormBlock({
 	config,
 	colorMode,
 }: ContactFormBlockProps) {
+	const { isPreview } = usePreview();
 	const buttonText = (config.buttonText as string) || "Send Message";
 	const buttonEmoji = config.buttonEmoji as string | undefined;
 	const buttonEmojiPosition = (config.buttonEmojiPosition as string) || "left";
@@ -174,6 +176,7 @@ export function ContactFormBlock({
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
+		if (isPreview) return;
 		const errs = validate();
 		setErrors(errs);
 		if (Object.keys(errs).length > 0) return;

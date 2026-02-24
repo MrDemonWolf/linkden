@@ -1,55 +1,51 @@
 "use client";
 
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { trpc } from "@/utils/trpc";
+import { useEffect } from "react";
+import { authClient } from "@/lib/auth-client";
 import { PublicPage } from "@/components/public/public-page";
-import {
-  placeholderSettings,
-} from "@/lib/placeholder-data";
-import { trpc } from "@/lib/trpc";
 
-const FIVE_MINUTES = 1000 * 60 * 5;
-const ONE_HOUR = 1000 * 60 * 60;
+export default function Home() {
+	const pageData = useQuery(trpc.public.getPage.queryOptions());
+	const trackView = useMutation(trpc.public.trackView.mutationOptions());
+	const { data: session } = authClient.useSession();
 
-export default function HomePage() {
-  const settingsQuery = trpc.settings.getPublic.useQuery(undefined, {
-    retry: 1,
-    staleTime: FIVE_MINUTES,
-    gcTime: ONE_HOUR,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  });
-  const linksQuery = trpc.links.list.useQuery(undefined, {
-    retry: 1,
-    staleTime: FIVE_MINUTES,
-    gcTime: ONE_HOUR,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  });
+	useEffect(() => {
+		trackView.mutate({
+			referrer: document.referrer || undefined,
+			userAgent: navigator.userAgent || undefined,
+		});
+	}, []);
 
-  if (settingsQuery.isLoading || linksQuery.isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+	if (pageData.isLoading) {
+		return (
+			<div className="flex min-h-screen items-center justify-center">
+				<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+			</div>
+		);
+	}
 
-  // Build settings map from server data, falling back to placeholder
-  const settingsMap: Record<string, string> = { ...placeholderSettings };
-  if (settingsQuery.data) {
-    for (const s of settingsQuery.data) {
-      settingsMap[s.key] = s.value;
-    }
-  }
+	if (!pageData.data?.profile) {
+		return (
+			<div className="flex min-h-screen items-center justify-center">
+				<div className="text-center">
+					<h1 className="text-2xl font-bold">Welcome to LinkDen</h1>
+					<p className="mt-2 text-muted-foreground">
+						Set up your page by visiting{" "}
+						<a href="/admin/setup" className="text-primary underline">
+							the setup wizard
+						</a>
+					</p>
+				</div>
+			</div>
+		);
+	}
 
-  // Use server links — show empty state when no blocks exist
-  const links = linksQuery.data ?? [];
-
-  // Parse social links from settings
-  let socialLinks: { platform: string; url: string }[] = [];
-  try {
-    const raw = settingsMap.socialLinks;
-    if (raw) socialLinks = JSON.parse(raw);
-  } catch {}
-
-  return <PublicPage settings={settingsMap} links={links} socialLinks={socialLinks} />;
+	return (
+		<PublicPage
+			data={pageData.data as Parameters<typeof PublicPage>[0]["data"]}
+			isAdmin={!!session?.user}
+		/>
+	);
 }

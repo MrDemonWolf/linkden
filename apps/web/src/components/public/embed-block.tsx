@@ -1,3 +1,7 @@
+"use client";
+
+import { usePreview } from "./preview-context";
+
 interface EmbedBlockProps {
 	block: {
 		id: string;
@@ -50,6 +54,7 @@ const maxWidthClasses: Record<string, string> = {
 };
 
 export function EmbedBlock({ block, config, colorMode }: EmbedBlockProps) {
+	const { isPreview } = usePreview();
 	const aspectRatio = (config.aspectRatio as string) || "16:9";
 	const maxWidth = (config.maxWidth as string) || "full";
 	const showTitle = config.showTitle !== false;
@@ -77,14 +82,26 @@ export function EmbedBlock({ block, config, colorMode }: EmbedBlockProps) {
 					aspectRatioClasses[aspectRatio] || "aspect-video"
 				}`}
 			>
-				<iframe
-					src={src}
-					className="h-full w-full"
-					allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-					allowFullScreen
-					loading="lazy"
-					title={block.title || "Embedded content"}
-				/>
+				{isPreview ? (
+					<div
+						className="flex h-full w-full items-center justify-center text-xs"
+						style={{
+							backgroundColor: colorMode === "dark" ? "#1f2937" : "#f3f4f6",
+							color: colorMode === "dark" ? "#9ca3af" : "#6b7280",
+						}}
+					>
+						{block.embedType ? `${block.embedType} embed` : "Embed"}
+					</div>
+				) : (
+					<iframe
+						src={src}
+						className="h-full w-full"
+						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+						allowFullScreen
+						loading="lazy"
+						title={block.title || "Embedded content"}
+					/>
+				)}
 			</div>
 		</div>
 	);

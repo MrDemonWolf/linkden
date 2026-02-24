@@ -1,0 +1,50 @@
+name: Check Social Icons Updates
+
+on:
+  schedule:
+    - cron: "0 8 * * 1" # Every Monday at 08:00 UTC
+  workflow_dispatch:
+
+jobs:
+  check-icons:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check for new social icons
+        run: node scripts/check-social-icons.mjs
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet data/social-networks.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create PR
+        if: steps.changes.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          title: "chore: update social network icons"
+          body: |
+            Automated check found new social network icons from simple-icons.
+
+            Please review the additions in `data/social-networks.json`.
+          branch: chore/update-social-icons
+          commit-message: "chore: update social network icons"

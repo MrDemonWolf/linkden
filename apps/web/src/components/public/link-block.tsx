@@ -3,6 +3,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import type { ThemeColors } from "./public-page";
+import { usePreview } from "./preview-context";
 
 interface LinkBlockProps {
 	block: {
@@ -24,9 +25,14 @@ const animationClasses: Record<string, string> = {
 };
 
 export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockProps) {
+	const { isPreview } = usePreview();
 	const trackClick = useMutation(trpc.public.trackClick.mutationOptions());
 
-	const handleClick = () => {
+	const handleClick = (e: React.MouseEvent) => {
+		if (isPreview) {
+			e.preventDefault();
+			return;
+		}
 		trackClick.mutate({
 			blockId: block.id,
 			referrer: document.referrer || undefined,

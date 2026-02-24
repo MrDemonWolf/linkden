@@ -1,43 +1,56 @@
 import alchemy from "alchemy";
-import { D1Database, Worker } from "alchemy/cloudflare";
+import { Nextjs } from "alchemy/cloudflare";
+import { Worker } from "alchemy/cloudflare";
+import { D1Database } from "alchemy/cloudflare";
+import { R2Bucket } from "alchemy/cloudflare";
+import { config } from "dotenv";
 
-const destroy = process.argv.includes("--destroy");
+config({ path: "./.env" });
+config({ path: "../../apps/web/.env" });
+config({ path: "../../apps/server/.env" });
 
-const app = await alchemy("linkden", {
-  phase: destroy ? "destroy" : "up",
+const app = await alchemy("linkden");
+
+const db = await D1Database("database", {
+  migrationsDir: "../../packages/db/src/migrations",
 });
 
-const db = await D1Database("linkden-db", {
-  adopt: true,
+const imagesBucket = await R2Bucket("images");
+
+export const web = await Nextjs("web", {
+  cwd: "../../apps/web",
+  bindings: {
+    NEXT_PUBLIC_SERVER_URL: alchemy.env.NEXT_PUBLIC_SERVER_URL!,
+    DB: db,
+    IMAGES_BUCKET: imagesBucket,
+    CORS_ORIGIN: alchemy.env.CORS_ORIGIN!,
+    BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
+    BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
+  },
+  dev: {
+    env: {
+      PORT: "3001",
+    },
+  },
 });
 
-const api = await Worker("linkden-api", {
-  name: "linkden-api",
-  script: new URL("../../apps/server/dist/index.js", import.meta.url),
+export const server = await Worker("server", {
+  cwd: "../../apps/server",
+  entrypoint: "src/index.ts",
+  compatibility: "node",
   bindings: {
     DB: db,
+    IMAGES_BUCKET: imagesBucket,
+    CORS_ORIGIN: alchemy.env.CORS_ORIGIN!,
+    BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
+    BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
   },
-  env: {
-    CORS_ORIGIN: process.env.CORS_ORIGIN ?? "http://localhost:3000",
-    APP_URL: process.env.APP_URL ?? "http://localhost:3000",
-    CF_ACCESS_TEAM_DOMAIN: process.env.CF_ACCESS_TEAM_DOMAIN ?? "",
-    CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY ?? "",
-    RESEND_API_KEY: process.env.RESEND_API_KEY ?? "",
-    APPLE_PASS_SIGNER_CERT: process.env.APPLE_PASS_SIGNER_CERT ?? "",
-    APPLE_PASS_SIGNER_KEY: process.env.APPLE_PASS_SIGNER_KEY ?? "",
-    APPLE_PASS_TYPE_ID: process.env.APPLE_PASS_TYPE_ID ?? "",
-    APPLE_TEAM_ID: process.env.APPLE_TEAM_ID ?? "",
+  dev: {
+    port: 3000,
   },
-  compatibilityFlags: ["nodejs_compat"],
 });
 
-// Web frontend is deployed as a Cloudflare Worker via @opennextjs/cloudflare.
-// Run `pnpm cf:deploy` from the root to deploy both API + Web workers.
-//
-// API:  linkden-api.<account>.workers.dev  (or custom domain via CF dashboard)
-// Web:  linkden-web.<account>.workers.dev  (or custom domain via CF dashboard)
-//
-// To add custom domains, go to your Cloudflare dashboard > Workers & Pages >
-// select the worker > Settings > Domains & Routes.
+console.log(`Web    -> ${web.url}`);
+console.log(`Server -> ${server.url}`);
 
 await app.finalize();

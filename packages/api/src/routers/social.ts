@@ -40,8 +40,8 @@ export const socialRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			for (const item of input) {
-				if (item.isActive && item.url) {
-					// Upsert: insert or update
+				if (item.url) {
+					// Upsert: insert or update (persist row even if inactive, so URL isn't lost)
 					await db
 						.insert(socialNetwork)
 						.values({
@@ -57,7 +57,7 @@ export const socialRouter = router({
 							},
 						});
 				} else {
-					// Deactivating or clearing — delete the row if it exists
+					// No URL — delete the row if it exists
 					await db
 						.delete(socialNetwork)
 						.where(eq(socialNetwork.slug, item.slug));

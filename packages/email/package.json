@@ -1,23 +1,18 @@
 {
   "name": "@linkden/email",
-  "version": "0.1.0",
-  "private": true,
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
-  },
-  "scripts": {
-    "lint": "biome check ./src",
-    "typecheck": "tsc --noEmit"
+    ".": { "default": "./src/index.ts" },
+    "./*": { "default": "./src/*.ts" }
   },
   "dependencies": {
     "@react-email/components": "^0.0.36",
-    "react": "^19.1.0"
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
   },
   "devDependencies": {
-    "@types/react": "^19.1.0",
-    "typescript": "^5.8.0"
+    "@linkden/config": "workspace:*",
+    "@types/react": "^19.2.7",
+    "typescript": "catalog:"
   }
 }
