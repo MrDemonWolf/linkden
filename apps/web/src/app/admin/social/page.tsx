@@ -3,205 +3,41 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Search, Globe, Save } from "lucide-react";
+import {
+	Search,
+	Globe,
+	Save,
+	Sparkles,
+	ExternalLink,
+	CircleDot,
+	Filter,
+} from "lucide-react";
 import { useTheme } from "next-themes";
 import { trpc } from "@/utils/trpc";
 import { socialBrands, socialBrandMap } from "@linkden/ui/social-brands";
 import { getAccessibleIconFill, isLowLuminance } from "@linkden/ui/color-contrast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+	DropdownMenu,
+	DropdownMenuTrigger,
+	DropdownMenuContent,
+	DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-
-interface NetworkDraft {
-	url: string;
-	isActive: boolean;
-}
-
-const CATEGORY_LABELS: Record<string, string> = {
-	social: "Social Media",
-	messaging: "Messaging",
-	developer: "Developer",
-	business: "Business",
-	content: "Content",
-	music: "Music & Audio",
-	gaming: "Gaming",
-};
-
-const ALL_CATEGORIES = ["all", ...Object.keys(CATEGORY_LABELS)];
-
-// --- URL template helpers ---
-
-function getPrefix(template: string): string {
-	const idx = template.indexOf("{}");
-	if (idx === -1) return "";
-	return template.slice(0, idx);
-}
-
-function getSuffix(template: string): string {
-	const idx = template.indexOf("{}");
-	if (idx === -1) return "";
-	return template.slice(idx + 2);
-}
-
-function isFullUrlTemplate(template: string): boolean {
-	return template === "{}";
-}
-
-function extractUsername(fullUrl: string, template: string): string {
-	if (!fullUrl || isFullUrlTemplate(template)) return fullUrl;
-	const prefix = getPrefix(template);
-	const suffix = getSuffix(template);
-	let username = fullUrl;
-	if (prefix && username.startsWith(prefix)) {
-		username = username.slice(prefix.length);
-	}
-	if (suffix && username.endsWith(suffix)) {
-		username = username.slice(0, -suffix.length);
-	}
-	return username;
-}
-
-function buildUrl(username: string, template: string): string {
-	if (!username || isFullUrlTemplate(template)) return username;
-	return template.replace("{}", username);
-}
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+import { NetworkRow } from "@/components/admin/social/network-row";
+import {
+	type NetworkDraft,
+	CATEGORY_LABELS,
+	ALL_CATEGORIES,
+	CATEGORY_ICONS,
+} from "@/components/admin/social/social-constants";
 
 type SocialBrand = (typeof socialBrands)[number];
 type SocialItem = SocialBrand & NetworkDraft;
-
-function NetworkRow({
-	social,
-	draft,
-	onUrlChange,
-	onToggle,
-}: {
-	social: SocialBrand;
-	draft: NetworkDraft;
-	onUrlChange: (slug: string, url: string) => void;
-	onToggle: (slug: string) => void;
-}) {
-	const { resolvedTheme } = useTheme();
-	const template = social.urlTemplate;
-	const fullUrlMode = isFullUrlTemplate(template);
-	const prefix = fullUrlMode ? "" : getPrefix(template);
-	const suffix = fullUrlMode ? "" : getSuffix(template);
-	const displayValue = fullUrlMode
-		? draft.url
-		: extractUsername(draft.url, template);
-
-	const adminBg = resolvedTheme === "dark" ? "#09090b" : "#ffffff";
-	const adminFg = resolvedTheme === "dark" ? "#fafafa" : "#09090b";
-	const fillColor = draft.isActive
-		? getAccessibleIconFill(social.hex, adminBg, adminFg)
-		: "#9ca3af";
-	const needsRing = isLowLuminance(social.hex);
-
-	const toggleDescriptionId = `toggle-desc-${social.slug}`;
-
-	return (
-		<div
-			role="listitem"
-			className={cn(
-				"flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors",
-				draft.isActive
-					? "border-l-2 border-l-primary bg-primary/5"
-					: "border-l-2 border-l-transparent hover:bg-muted/50",
-			)}
-		>
-			{/* SVG Icon */}
-			<div
-				className={cn(
-					"flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
-					needsRing && draft.isActive && "ring-1 ring-border dark:ring-white/20 bg-white/5",
-				)}
-			>
-				<svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-					<path
-						d={social.svgPath}
-						fill={fillColor}
-					/>
-				</svg>
-			</div>
-
-			{/* Name */}
-			<label htmlFor={`input-${social.slug}`} className="w-28 shrink-0 truncate text-xs font-medium text-foreground cursor-pointer">
-				{social.name}
-			</label>
-
-			{/* URL input */}
-			<div className="min-w-0 flex-1">
-				{fullUrlMode ? (
-					<Input
-						id={`input-${social.slug}`}
-						value={draft.url}
-						onChange={(e) =>
-							onUrlChange(social.slug, e.target.value)
-						}
-						placeholder="https://..."
-						className="h-8 text-xs"
-						aria-label={`URL for ${social.name}`}
-					/>
-				) : (
-					<div className="flex items-center rounded-lg border border-input bg-transparent backdrop-blur-sm h-8 overflow-hidden focus-within:ring-1 focus-within:ring-ring">
-						{prefix && (
-							<span className="shrink-0 select-none bg-muted px-2 text-[11px] text-muted-foreground border-r border-input h-full flex items-center">
-								{prefix}
-							</span>
-						)}
-						<input
-							id={`input-${social.slug}`}
-							value={displayValue}
-							onChange={(e) =>
-								onUrlChange(
-									social.slug,
-									buildUrl(e.target.value, template),
-								)
-							}
-							placeholder="username"
-							className="min-w-0 flex-1 bg-transparent px-2 text-xs outline-none"
-							aria-label={`URL for ${social.name}`}
-						/>
-						{suffix && (
-							<span className="shrink-0 select-none bg-muted px-2 text-[11px] text-muted-foreground border-l border-input h-full flex items-center">
-								{suffix}
-							</span>
-						)}
-					</div>
-				)}
-			</div>
-
-			{/* Toggle */}
-			<button
-				type="button"
-				disabled={!draft.url}
-				onClick={() => onToggle(social.slug)}
-				className={cn(
-					"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-					draft.isActive ? "bg-primary" : "bg-muted",
-					!draft.url && "opacity-50 cursor-not-allowed",
-				)}
-				role="switch"
-				aria-checked={draft.isActive}
-				aria-label={`Toggle ${social.name}`}
-				aria-describedby={!draft.url ? toggleDescriptionId : undefined}
-			>
-				<span
-					className={cn(
-						"inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform",
-						draft.isActive
-							? "translate-x-[18px]"
-							: "translate-x-[3px]",
-					)}
-				/>
-			</button>
-			{!draft.url && (
-				<span id={toggleDescriptionId} className="sr-only">Enter a URL to enable</span>
-			)}
-		</div>
-	);
-}
 
 export default function SocialPage() {
 	const qc = useQueryClient();
@@ -212,9 +48,9 @@ export default function SocialPage() {
 	const [drafts, setDrafts] = useState<Record<string, NetworkDraft>>({});
 	const [initialized, setInitialized] = useState(false);
 	const [highlightedIndex, setHighlightedIndex] = useState(-1);
+	const [hasAnimated, setHasAnimated] = useState(false);
 	const searchRef = useRef<HTMLDivElement>(null);
 
-	// DB query only returns configured rows (slug + url + isActive)
 	const socialsQuery = useQuery(trpc.social.list.queryOptions());
 	const updateBulk = useMutation(trpc.social.updateBulk.mutationOptions());
 
@@ -236,6 +72,14 @@ export default function SocialPage() {
 			setInitialized(true);
 		}
 	}, [dbRows, socialsQuery.isLoading, initialized]);
+
+	// Mark animations as done after initial render
+	useEffect(() => {
+		if (initialized && !hasAnimated) {
+			const timer = setTimeout(() => setHasAnimated(true), 1200);
+			return () => clearTimeout(timer);
+		}
+	}, [initialized, hasAnimated]);
 
 	// Close suggestions when clicking outside
 	useEffect(() => {
@@ -277,12 +121,20 @@ export default function SocialPage() {
 			.slice(0, 8);
 	}, [searchQuery]);
 
+	// Category counts for tab badges
+	const categoryCounts = useMemo(() => {
+		const counts: Record<string, number> = { all: socialBrands.length };
+		for (const brand of socialBrands) {
+			counts[brand.category] = (counts[brand.category] || 0) + 1;
+		}
+		return counts;
+	}, []);
+
 	// Inactive networks grouped by category (filtered by search and category tab)
 	const categoryGroups = useMemo(() => {
 		const activeSlugs = new Set(activeNetworks.map((s) => s.slug));
 		let inactive = allItems.filter((s) => !activeSlugs.has(s.slug));
 
-		// Filter by search
 		if (searchQuery) {
 			const q = searchQuery.toLowerCase();
 			inactive = inactive.filter(
@@ -293,12 +145,10 @@ export default function SocialPage() {
 			);
 		}
 
-		// Filter by category tab
 		if (activeCategory !== "all") {
 			inactive = inactive.filter((s) => s.category === activeCategory);
 		}
 
-		// Group by category
 		const groups: Record<string, SocialItem[]> = {};
 		for (const item of inactive) {
 			if (!groups[item.category]) groups[item.category] = [];
@@ -439,121 +289,165 @@ export default function SocialPage() {
 		}
 	}, [showSuggestions, searchSuggestions, highlightedIndex, handleSuggestionClick]);
 
+	useUnsavedChanges(hasChanges);
+
 	const activeCount = Object.values(drafts).filter(
 		(d) => d.isActive && d.url,
 	).length;
 
 	const suggestionsListboxId = "social-search-suggestions";
 
+	// Track running row index for staggered animations
+	let rowAnimIndex = 0;
+
 	return (
 		<div className="space-y-6">
 			{/* Sticky header */}
 			<div
-				className="sticky top-0 z-10 mt-1 rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-lg shadow-black/5 dark:shadow-black/20 px-4 py-3 space-y-3"
+				className={cn(
+					"sticky top-0 z-10 mt-1 rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-lg shadow-black/5 dark:shadow-black/20 px-4 py-3 space-y-3",
+					!hasAnimated && "animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both",
+				)}
+				style={!hasAnimated ? { animationDelay: "100ms" } : undefined}
 				role="banner"
 				aria-label="Social Networks"
 			>
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-2.5">
 						<h1 className="text-lg font-semibold text-foreground">Social Networks</h1>
-						<span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+						<Badge variant="outline" className="gap-1 border-primary/30 text-primary">
+							<CircleDot className="h-3 w-3" aria-hidden="true" />
 							{activeCount} active
-						</span>
+						</Badge>
 					</div>
 					<Button
 						size="sm"
+						variant={hasChanges ? "default" : "outline"}
 						onClick={handleSaveAll}
 						disabled={!hasChanges || updateBulk.isPending}
+						className={cn(
+							"transition-all duration-300",
+							hasChanges && !updateBulk.isPending && "shadow-lg shadow-primary/25 ring-2 ring-primary/20",
+						)}
 					>
 						<Save className="mr-1.5 h-3.5 w-3.5" />
-						{updateBulk.isPending ? "Saving..." : "Save All Changes"}
+						<span className="hidden sm:inline">{updateBulk.isPending ? "Saving..." : "Save All Changes"}</span>
+						<span className="sm:hidden">{updateBulk.isPending ? "..." : "Save"}</span>
 					</Button>
 				</div>
 
-				{/* Search combobox */}
-				<div className="relative" ref={searchRef}>
-					<Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-					<Input
-						placeholder="Search networks..."
-						value={searchQuery}
-						onChange={(e) => {
-							setSearchQuery(e.target.value);
-							setShowSuggestions(true);
-							setHighlightedIndex(-1);
-						}}
-						onFocus={() => searchQuery && setShowSuggestions(true)}
-						onKeyDown={handleSearchKeyDown}
-						className="pl-8"
-						role="combobox"
-						aria-label="Search social networks"
-						aria-expanded={showSuggestions && searchSuggestions.length > 0}
-						aria-haspopup="listbox"
-						aria-controls={suggestionsListboxId}
-						aria-activedescendant={highlightedIndex >= 0 ? `suggestion-${searchSuggestions[highlightedIndex]?.slug}` : undefined}
-					/>
-					{/* Live region for suggestion count */}
-					<div className="sr-only" aria-live="polite" aria-atomic="true">
-						{showSuggestions && searchSuggestions.length > 0
-							? `${searchSuggestions.length} suggestion${searchSuggestions.length !== 1 ? "s" : ""} available`
-							: searchQuery && showSuggestions
-								? "No suggestions"
-								: ""}
-					</div>
-					{/* Suggestions dropdown */}
-					{showSuggestions && searchSuggestions.length > 0 && (
-						<div id={suggestionsListboxId} className="absolute inset-x-0 top-full mt-1 z-20 rounded-lg border border-border bg-card shadow-xl overflow-hidden" role="listbox">
-							{searchSuggestions.map((brand, index) => {
-								const needsRing = isLowLuminance(brand.hex);
-								const sugBg = resolvedTheme === "dark" ? "#09090b" : "#ffffff";
-								const sugFg = resolvedTheme === "dark" ? "#fafafa" : "#09090b";
-								const sugFill = getAccessibleIconFill(brand.hex, sugBg, sugFg);
-								return (
-									<button
-										key={brand.slug}
-										id={`suggestion-${brand.slug}`}
-										type="button"
-										role="option"
-										aria-selected={index === highlightedIndex}
-										onClick={() => handleSuggestionClick(brand.slug)}
-										onMouseEnter={() => setHighlightedIndex(index)}
-										className={cn(
-											"flex w-full items-center gap-3 px-3 py-2.5 text-xs transition-colors",
-											index === highlightedIndex
-												? "bg-accent text-accent-foreground"
-												: "hover:bg-accent/50",
-										)}
-									>
-										<div
+				{/* Search + Filter row */}
+				<div className="flex items-center gap-2">
+					<div className="relative flex-1" ref={searchRef}>
+						<Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+						<Input
+							placeholder="Search networks..."
+							value={searchQuery}
+							onChange={(e) => {
+								setSearchQuery(e.target.value);
+								setShowSuggestions(true);
+								setHighlightedIndex(-1);
+							}}
+							onFocus={() => searchQuery && setShowSuggestions(true)}
+							onKeyDown={handleSearchKeyDown}
+							className="pl-8"
+							role="combobox"
+							aria-label="Search social networks"
+							aria-expanded={showSuggestions && searchSuggestions.length > 0}
+							aria-haspopup="listbox"
+							aria-controls={suggestionsListboxId}
+							aria-activedescendant={highlightedIndex >= 0 ? `suggestion-${searchSuggestions[highlightedIndex]?.slug}` : undefined}
+						/>
+						{/* Live region for suggestion count */}
+						<div className="sr-only" aria-live="polite" aria-atomic="true">
+							{showSuggestions && searchSuggestions.length > 0
+								? `${searchSuggestions.length} suggestion${searchSuggestions.length !== 1 ? "s" : ""} available`
+								: searchQuery && showSuggestions
+									? "No suggestions"
+									: ""}
+						</div>
+						{/* Suggestions dropdown */}
+						{showSuggestions && searchSuggestions.length > 0 && (
+							<div
+								id={suggestionsListboxId}
+								className="absolute inset-x-0 top-full mt-1 z-20 rounded-xl border border-white/20 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur-2xl shadow-xl overflow-hidden"
+								role="listbox"
+							>
+								{searchSuggestions.map((brand, index) => {
+									const needsRing = isLowLuminance(brand.hex);
+									const sugBg = resolvedTheme === "dark" ? "#09090b" : "#ffffff";
+									const sugFg = resolvedTheme === "dark" ? "#fafafa" : "#09090b";
+									const sugFill = getAccessibleIconFill(brand.hex, sugBg, sugFg);
+									return (
+										<button
+											key={brand.slug}
+											id={`suggestion-${brand.slug}`}
+											type="button"
+											role="option"
+											aria-selected={index === highlightedIndex}
+											onClick={() => handleSuggestionClick(brand.slug)}
+											onMouseEnter={() => setHighlightedIndex(index)}
 											className={cn(
-												"flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
-												needsRing && "ring-1 ring-border dark:ring-white/20",
+												"flex w-full items-center gap-3 px-3 py-2.5 text-xs transition-colors border-l-2",
+												index === highlightedIndex
+													? "bg-accent text-accent-foreground border-l-primary"
+													: "border-l-transparent hover:bg-accent/50",
 											)}
 										>
-											<svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-												<path d={brand.svgPath} fill={sugFill} />
-											</svg>
-										</div>
-										<span className="font-medium text-foreground">{brand.name}</span>
-										<span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-											{CATEGORY_LABELS[brand.category] || brand.category}
-										</span>
-									</button>
+											<div
+												className={cn(
+													"flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
+													needsRing && "ring-1 ring-border dark:ring-white/20",
+												)}
+												style={{ backgroundColor: `${brand.hex}15` }}
+											>
+												<svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+													<path d={brand.svgPath} fill={sugFill} />
+												</svg>
+											</div>
+											<span className="font-medium text-foreground">{brand.name}</span>
+											<span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+												{CATEGORY_LABELS[brand.category] || brand.category}
+											</span>
+										</button>
+									);
+								})}
+							</div>
+						)}
+					</div>
+
+					{/* Category filter dropdown */}
+					<DropdownMenu>
+						<DropdownMenuTrigger
+							className={cn(
+								"inline-flex items-center gap-1.5 rounded-lg border px-3 h-9 text-xs font-medium transition-colors",
+								activeCategory !== "all"
+									? "border-primary/30 bg-primary/10 text-primary"
+									: "border-input bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+							)}
+						>
+							<Filter className="h-3.5 w-3.5" />
+							{activeCategory === "all" ? "Filter" : CATEGORY_LABELS[activeCategory] || activeCategory}
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end" className="min-w-[180px]">
+							{ALL_CATEGORIES.map((cat) => {
+								const CatIcon = cat !== "all" ? CATEGORY_ICONS[cat] : Globe;
+								const isActive = activeCategory === cat;
+								return (
+									<DropdownMenuItem
+										key={cat}
+										onClick={() => setActiveCategory(cat)}
+										className={cn(isActive && "bg-accent text-accent-foreground")}
+									>
+										{CatIcon && <CatIcon className="h-3.5 w-3.5" aria-hidden="true" />}
+										{cat === "all" ? "All Categories" : CATEGORY_LABELS[cat] || cat}
+										<span className="ml-auto text-[10px] opacity-60">{categoryCounts[cat] ?? 0}</span>
+									</DropdownMenuItem>
 								);
 							})}
-						</div>
-					)}
+						</DropdownMenuContent>
+					</DropdownMenu>
 				</div>
-
-				{/* Horizontal pill category tabs */}
-				<Tabs value={activeCategory} onValueChange={setActiveCategory}>
-					<TabsList variant="pills" aria-label="Filter by category">
-						{ALL_CATEGORIES.map((cat) => (
-							<TabsTrigger key={cat} value={cat}>
-								{cat === "all" ? "All" : CATEGORY_LABELS[cat] || cat}
-							</TabsTrigger>
-						))}
-					</TabsList>
-				</Tabs>
 			</div>
 
 			{/* Error state */}
@@ -578,25 +472,40 @@ export default function SocialPage() {
 
 			{/* Active Networks card */}
 			{activeNetworks.length > 0 && (
-				<Card>
+				<Card
+					className={cn(
+						"border-t-2 border-t-primary bg-gradient-to-b from-primary/5 to-transparent",
+						!hasAnimated && "animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both",
+					)}
+					style={!hasAnimated ? { animationDelay: "175ms" } : undefined}
+				>
 					<CardHeader>
-						<CardTitle className="flex items-center gap-2 text-sm text-foreground">
-							<Globe className="h-4 w-4 text-primary" />
-							<h2 className="text-sm font-semibold">Active Networks</h2>
-						</CardTitle>
+						<h2>
+							<CardTitle className="flex items-center gap-2 text-sm text-foreground">
+								<span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
+									<Globe className="h-4 w-4 text-primary" />
+								</span>
+								Active Networks
+								<Badge variant="outline" className="ml-1 text-[10px] border-primary/30 text-primary">
+									{activeNetworks.length}
+								</Badge>
+							</CardTitle>
+						</h2>
 					</CardHeader>
 					<CardContent className="p-0 px-3 pb-3" role="list" aria-label="Active social networks">
-						<div className="space-y-1">
+						<div className="space-y-2.5">
 							{activeNetworks.map((social) => {
 								const draft = drafts[social.slug] ?? { url: "", isActive: false };
 								const brand = socialBrands.find((b) => b.slug === social.slug)!;
+								const delay = !hasAnimated ? rowAnimIndex++ * 40 + 250 : undefined;
 								return (
-									<div key={social.slug} id={`network-${social.slug}`} className="rounded-lg transition-all">
+									<div key={social.slug} id={`network-${social.slug}`} className="rounded-xl transition-all">
 										<NetworkRow
 											social={brand}
 											draft={draft}
 											onUrlChange={handleUrlChange}
 											onToggle={handleToggle}
+											animationDelay={delay}
 										/>
 									</div>
 								);
@@ -608,50 +517,71 @@ export default function SocialPage() {
 
 			{/* Category group cards */}
 			{categoryGroups.length === 0 && activeNetworks.length === 0 ? (
-				<Card>
-					<CardContent className="py-12 text-center">
-						<div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-							<Globe className="h-6 w-6 text-muted-foreground" />
+				<Card className="border-dashed">
+					<CardContent className="py-16 text-center">
+						<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/10">
+							<Sparkles className="h-7 w-7 text-primary" />
 						</div>
 						<p className="text-sm font-medium text-foreground">No networks found</p>
-						<p className="mt-1 text-xs text-muted-foreground">
-							Try a different search term or category
+						<p className="mx-auto mt-1.5 max-w-[240px] text-xs text-muted-foreground">
+							Try a different search term or category filter to discover social networks
 						</p>
 					</CardContent>
 				</Card>
 			) : (
-				categoryGroups.map((group) => (
-					<Card key={group.category}>
-						<CardHeader>
-							<CardTitle className="flex items-center gap-2 text-sm text-foreground">
-								<span className="h-2 w-2 rounded-full bg-primary/60" aria-hidden="true" />
-								<h2 className="text-sm font-semibold">{group.label}</h2>
-							</CardTitle>
-						</CardHeader>
-						<CardContent
-							className="p-0 px-3 pb-3"
-							role="list"
-							aria-label={`${group.label} networks`}
+				categoryGroups.map((group, groupIdx) => {
+					const CategoryIcon = CATEGORY_ICONS[group.category];
+					const cardDelay = !hasAnimated ? (groupIdx + 1) * 75 + 250 : undefined;
+					return (
+						<Card
+							key={group.category}
+							className={cn(
+								!hasAnimated && "animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both",
+							)}
+							style={cardDelay !== undefined ? { animationDelay: `${cardDelay}ms` } : undefined}
 						>
-							<div className="space-y-1">
-								{group.items.map((social) => {
-									const draft = drafts[social.slug] ?? { url: "", isActive: false };
-									const brand = socialBrands.find((b) => b.slug === social.slug)!;
-									return (
-										<div key={social.slug} id={`network-${social.slug}`} className="rounded-lg transition-all">
-											<NetworkRow
-												social={brand}
-												draft={draft}
-												onUrlChange={handleUrlChange}
-												onToggle={handleToggle}
-											/>
-										</div>
-									);
-								})}
-							</div>
-						</CardContent>
-					</Card>
-				))
+							<CardHeader>
+								<h2>
+									<CardTitle className="flex items-center gap-2 text-sm text-foreground">
+										{CategoryIcon && (
+											<span className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted/80">
+												<CategoryIcon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+											</span>
+										)}
+										{group.label}
+										<span className="text-xs font-normal text-muted-foreground">
+											({group.items.length})
+										</span>
+									</CardTitle>
+								</h2>
+							</CardHeader>
+							<CardContent
+								className="p-0 px-3 pb-3"
+								role="list"
+								aria-label={`${group.label} networks`}
+							>
+								<div className="space-y-2">
+									{group.items.map((social) => {
+										const draft = drafts[social.slug] ?? { url: "", isActive: false };
+										const brand = socialBrands.find((b) => b.slug === social.slug)!;
+										const delay = !hasAnimated ? rowAnimIndex++ * 40 + 300 : undefined;
+										return (
+											<div key={social.slug} id={`network-${social.slug}`} className="rounded-xl transition-all">
+												<NetworkRow
+													social={brand}
+													draft={draft}
+													onUrlChange={handleUrlChange}
+													onToggle={handleToggle}
+													animationDelay={delay}
+												/>
+											</div>
+										);
+									})}
+								</div>
+							</CardContent>
+						</Card>
+					);
+				})
 			)}
 		</div>
 	);

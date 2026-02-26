@@ -22,42 +22,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-
-// ---- Section Component ----
-function Section({
-	id,
-	icon: Icon,
-	title,
-	description,
-	children,
-}: {
-	id: string;
-	icon: React.ComponentType<{ className?: string }>;
-	title: string;
-	description?: string;
-	children: React.ReactNode;
-}) {
-	return (
-		<section id={id} className="scroll-mt-6">
-			<div className="mb-4">
-				<div className="flex items-center gap-2">
-					<div className="flex h-7 w-7 items-center justify-center rounded-md bg-muted">
-						<Icon className="h-3.5 w-3.5 text-muted-foreground" />
-					</div>
-					<h2 className="text-sm font-semibold tracking-tight">{title}</h2>
-				</div>
-				{description && (
-					<p className="mt-1 ml-9 text-xs text-muted-foreground">
-						{description}
-					</p>
-				)}
-			</div>
-			<Card className="overflow-hidden">
-				<CardContent className="space-y-4 p-5">{children}</CardContent>
-			</Card>
-		</section>
-	);
-}
+import { PageHeader } from "@/components/admin/page-header";
+import { PageSection } from "@/components/admin/page-section";
 
 // ---- Field Group ----
 function FieldGroup({
@@ -186,15 +152,10 @@ export default function SettingsPage() {
 
 	return (
 		<div className="space-y-8">
-			<div className="sticky top-0 z-20 mt-1 rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-lg shadow-black/5 dark:shadow-black/20 px-4 py-3">
-				<h1 className="text-lg font-semibold">Settings</h1>
-				<p className="text-xs text-muted-foreground">
-					Configure your LinkDen instance
-				</p>
-			</div>
+			<PageHeader title="Settings" description="Configure your LinkDen instance" />
 
 			{/* SEO */}
-			<Section
+			<PageSection
 				id="seo"
 				icon={SearchIcon}
 				title="SEO"
@@ -250,10 +211,10 @@ export default function SettingsPage() {
 					<Save className="mr-1.5 h-3 w-3" />
 					Save SEO
 				</Button>
-			</Section>
+			</PageSection>
 
 			{/* Integrations (CAPTCHA + Email) */}
-			<Section
+			<PageSection
 				id="integrations"
 				icon={Plug}
 				title="Integrations"
@@ -363,10 +324,10 @@ export default function SettingsPage() {
 					<Save className="mr-1.5 h-3 w-3" />
 					Save Integrations
 				</Button>
-			</Section>
+			</PageSection>
 
 			{/* Data & Info (Export/Import + About) */}
-			<Section
+			<PageSection
 				id="data"
 				icon={Database}
 				title="Data & Info"
@@ -397,6 +358,7 @@ export default function SettingsPage() {
 						accept=".json"
 						onChange={handleImport}
 						className="hidden"
+						aria-label="Import backup file"
 					/>
 				</div>
 
@@ -447,7 +409,7 @@ export default function SettingsPage() {
 					GitHub Repository
 					<ExternalLink className="h-3 w-3" />
 				</a>
-			</Section>
+			</PageSection>
 		</div>
 	);
 }

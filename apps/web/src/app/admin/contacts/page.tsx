@@ -16,6 +16,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/admin/page-header";
+import { EmptyState } from "@/components/admin/empty-state";
+import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 
 type FilterMode = "all" | "unread" | "read";
 
@@ -23,6 +26,7 @@ export default function ContactsPage() {
 	const qc = useQueryClient();
 	const [filter, setFilter] = useState<FilterMode>("all");
 	const [expandedId, setExpandedId] = useState<string | null>(null);
+	const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
 	const filterParam =
 		filter === "all" ? undefined : { isRead: filter === "read" };
@@ -81,28 +85,26 @@ export default function ContactsPage() {
 
 	return (
 		<div className="space-y-6">
-			{/* Header */}
-			<div className="sticky top-0 z-20 mt-1 rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-lg shadow-black/5 dark:shadow-black/20 px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<div>
-					<h1 className="text-lg font-semibold">Contacts</h1>
-					<p className="text-xs text-muted-foreground">
-						Manage contact form submissions
-					</p>
-				</div>
-				<div className="flex items-center gap-1">
-					<Filter className="mr-1 h-3.5 w-3.5 text-muted-foreground" />
-					{filters.map((f) => (
-						<Button
-							key={f.value}
-							variant={filter === f.value ? "default" : "outline"}
-							size="xs"
-							onClick={() => setFilter(f.value)}
-						>
-							{f.label}
-						</Button>
-					))}
-				</div>
-			</div>
+			<PageHeader
+				title="Contacts"
+				description="Manage contact form submissions"
+				actions={
+					<div className="flex items-center gap-1">
+						<Filter className="mr-1 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+						{filters.map((f) => (
+							<Button
+								key={f.value}
+								variant={filter === f.value ? "default" : "outline"}
+								size="xs"
+								onClick={() => setFilter(f.value)}
+								aria-pressed={filter === f.value}
+							>
+								{f.label}
+							</Button>
+						))}
+					</div>
+				}
+			/>
 
 			{/* Contact list */}
 			{contactsQuery.isLoading ? (
@@ -112,25 +114,26 @@ export default function ContactsPage() {
 					))}
 				</div>
 			) : contacts.length === 0 ? (
-				<Card>
-					<CardContent className="py-12 text-center">
-						<Mail className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
-						<p className="text-sm font-medium">No contacts</p>
-						<p className="mt-1 text-xs text-muted-foreground">
-							{filter !== "all"
-								? `No ${filter} contacts found. Try a different filter.`
-								: "When visitors submit your contact form, they'll appear here."}
-						</p>
-					</CardContent>
-				</Card>
+				<EmptyState
+					icon={Mail}
+					title="No contacts"
+					description={
+						filter !== "all"
+							? `No ${filter} contacts found. Try a different filter.`
+							: "When visitors submit your contact form, they'll appear here."
+					}
+				/>
 			) : (
-				<div className="space-y-1.5">
+				<>
+				<div className="space-y-1.5" role="list" aria-label="Contact submissions">
 					{contacts.map((contact) => {
 						const isExpanded = expandedId === contact.id;
+						const detailsId = `contact-details-${contact.id}`;
 
 						return (
 							<div
 								key={contact.id}
+								role="listitem"
 								className={cn(
 									"border bg-card transition-colors",
 									!contact.isRead && "border-l-2 border-l-primary",
@@ -143,6 +146,7 @@ export default function ContactsPage() {
 										setExpandedId(isExpanded ? null : contact.id)
 									}
 									aria-expanded={isExpanded}
+									aria-controls={detailsId}
 									className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
 								>
 									<span className="sr-only">{contact.isRead ? "Read" : "Unread"}</span>
@@ -159,7 +163,7 @@ export default function ContactsPage() {
 										)}
 									</div>
 									<div className="min-w-0 flex-1">
-										<div className="flex items-baseline gap-2">
+										<div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-2">
 											<p
 												className={cn(
 													"truncate text-xs",
@@ -176,7 +180,7 @@ export default function ContactsPage() {
 											{contact.message?.slice(0, 80) ?? "No message"}
 										</p>
 									</div>
-									<span className="shrink-0 text-[11px] text-muted-foreground">
+									<span className="hidden shrink-0 text-[11px] text-muted-foreground sm:inline">
 										{new Date(contact.createdAt).toLocaleDateString()}
 									</span>
 									{isExpanded ? (
@@ -188,7 +192,7 @@ export default function ContactsPage() {
 
 								{/* Expanded details */}
 								{isExpanded && (
-									<div className="border-t px-4 py-3 space-y-3">
+									<div id={detailsId} className="border-t px-4 py-3 space-y-3">
 										<div className="grid gap-2 sm:grid-cols-2">
 											<div>
 												<p className="text-[11px] uppercase tracking-wider text-muted-foreground">
@@ -246,7 +250,7 @@ export default function ContactsPage() {
 											<Button
 												variant="destructive"
 												size="xs"
-												onClick={() => handleDelete(contact.id)}
+												onClick={() => setDeleteConfirmId(contact.id)}
 												disabled={deleteContact.isPending}
 											>
 												<Trash2 className="mr-1 h-3 w-3" />
@@ -259,6 +263,22 @@ export default function ContactsPage() {
 						);
 					})}
 				</div>
+
+				<ConfirmDialog
+					open={!!deleteConfirmId}
+					onOpenChange={(open) => !open && setDeleteConfirmId(null)}
+					title="Delete contact"
+					description="Are you sure you want to delete this contact submission? This action cannot be undone."
+					confirmLabel="Delete"
+					onConfirm={() => {
+						if (deleteConfirmId) {
+							handleDelete(deleteConfirmId);
+							setDeleteConfirmId(null);
+						}
+					}}
+					isPending={deleteContact.isPending}
+				/>
+				</>
 			)}
 		</div>
 	);

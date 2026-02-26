@@ -5,6 +5,9 @@
     ".": { "default": "./src/index.ts" },
     "./*": { "default": "./src/*.ts" },
     "./components/tabs": { "default": "./src/components/tabs.tsx" },
+    "./components/switch": { "default": "./src/components/switch.tsx" },
+    "./components/badge": { "default": "./src/components/badge.tsx" },
+    "./components/tooltip": { "default": "./src/components/tooltip.tsx" },
     "./themes": { "default": "./src/themes.ts" },
     "./banner-presets": { "default": "./src/banner-presets.ts" }
   },

@@ -22,6 +22,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import { PageHeader } from "@/components/admin/page-header";
+import { StatCard } from "@/components/admin/stat-card";
 
 type Period = "7d" | "30d" | "90d";
 
@@ -59,74 +61,53 @@ export default function AnalyticsPage() {
 
 	return (
 		<div className="space-y-6">
-			{/* Header */}
-			<div className="sticky top-0 z-20 mt-1 rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-lg shadow-black/5 dark:shadow-black/20 px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<div>
-					<h1 className="text-lg font-semibold">Analytics</h1>
-					<p className="text-xs text-muted-foreground">
-						Track your page performance
-					</p>
-				</div>
-				<div className="flex gap-1">
-					{periods.map((p) => (
-						<Button
-							key={p.value}
-							variant={period === p.value ? "default" : "outline"}
-							size="xs"
-							onClick={() => setPeriod(p.value)}
-							aria-pressed={period === p.value}
-						>
-							{p.label}
-						</Button>
-					))}
-				</div>
-			</div>
+			<PageHeader
+				title="Analytics"
+				description="Track your page performance"
+				actions={
+					<div className="flex gap-1">
+						{periods.map((p) => (
+							<Button
+								key={p.value}
+								variant={period === p.value ? "default" : "outline"}
+								size="xs"
+								onClick={() => setPeriod(p.value)}
+								aria-pressed={period === p.value}
+							>
+								{p.label}
+							</Button>
+						))}
+					</div>
+				}
+			/>
 
 			{/* Stat cards */}
 			<div className="grid gap-3 sm:grid-cols-2">
-				<Card size="sm">
-					<CardContent className="flex items-center gap-3">
-						<div className="flex h-9 w-9 shrink-0 items-center justify-center bg-primary/10">
-							<Eye className="h-4 w-4 text-primary" />
-						</div>
-						<div>
-							<p className="text-xs text-muted-foreground">Total Views</p>
-							{overview.isLoading ? (
-								<Skeleton className="mt-1 h-5 w-16" />
-							) : (
-								<p className="text-lg font-semibold">
-									{(overview.data?.totalViews ?? 0).toLocaleString()}
-								</p>
-							)}
-						</div>
-					</CardContent>
-				</Card>
-				<Card size="sm">
-					<CardContent className="flex items-center gap-3">
-						<div className="flex h-9 w-9 shrink-0 items-center justify-center bg-green-500/10">
-							<MousePointerClick className="h-4 w-4 text-green-500" />
-						</div>
-						<div>
-							<p className="text-xs text-muted-foreground">Total Clicks</p>
-							{overview.isLoading ? (
-								<Skeleton className="mt-1 h-5 w-16" />
-							) : (
-								<p className="text-lg font-semibold">
-									{(overview.data?.totalClicks ?? 0).toLocaleString()}
-								</p>
-							)}
-						</div>
-					</CardContent>
-				</Card>
+				<StatCard
+					icon={Eye}
+					label="Total Views"
+					value={overview.data?.totalViews ?? 0}
+					isLoading={overview.isLoading}
+				/>
+				<StatCard
+					icon={MousePointerClick}
+					label="Total Clicks"
+					value={overview.data?.totalClicks ?? 0}
+					iconColor="text-green-500"
+					iconBg="bg-green-500/10"
+					isLoading={overview.isLoading}
+				/>
 			</div>
 
 			{/* Views over time chart */}
 			<Card>
 				<CardHeader>
-					<CardTitle className="flex items-center gap-1.5">
-						<Eye className="h-4 w-4 text-muted-foreground" />
-						Views over time
-					</CardTitle>
+					<h2>
+						<CardTitle className="flex items-center gap-1.5">
+							<Eye className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+							Views over time
+						</CardTitle>
+					</h2>
 				</CardHeader>
 				<CardContent>
 					{viewsOverTime.isLoading ? (
@@ -144,7 +125,7 @@ export default function AnalyticsPage() {
 							No data for this period
 						</div>
 					) : (
-						<ChartContainer config={chartConfig} className="h-40 w-full">
+						<ChartContainer config={chartConfig} className="h-40 w-full" aria-label="Views over time chart" role="img">
 							<ResponsiveContainer width="100%" height="100%">
 								<AreaChart data={viewsData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
 									<defs>
@@ -193,10 +174,12 @@ export default function AnalyticsPage() {
 				{/* Top Links */}
 				<Card>
 					<CardHeader>
-						<CardTitle className="flex items-center gap-1.5">
-							<LinkIcon className="h-4 w-4 text-muted-foreground" />
-							Top Links
-						</CardTitle>
+						<h2>
+							<CardTitle className="flex items-center gap-1.5">
+								<LinkIcon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+								Top Links
+							</CardTitle>
+						</h2>
 					</CardHeader>
 					<CardContent>
 						{topLinks.isLoading ? (
@@ -230,10 +213,12 @@ export default function AnalyticsPage() {
 				{/* Referrers */}
 				<Card>
 					<CardHeader>
-						<CardTitle className="flex items-center gap-1.5">
-							<ArrowUpRight className="h-4 w-4 text-muted-foreground" />
-							Referrers
-						</CardTitle>
+						<h2>
+							<CardTitle className="flex items-center gap-1.5">
+								<ArrowUpRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+								Referrers
+							</CardTitle>
+						</h2>
 					</CardHeader>
 					<CardContent>
 						{referrers.isLoading ? (
@@ -269,10 +254,12 @@ export default function AnalyticsPage() {
 				{/* Countries */}
 				<Card>
 					<CardHeader>
-						<CardTitle className="flex items-center gap-1.5">
-							<Globe className="h-4 w-4 text-muted-foreground" />
-							Countries
-						</CardTitle>
+						<h2>
+							<CardTitle className="flex items-center gap-1.5">
+								<Globe className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+								Countries
+							</CardTitle>
+						</h2>
 					</CardHeader>
 					<CardContent>
 						{countries.isLoading ? (
