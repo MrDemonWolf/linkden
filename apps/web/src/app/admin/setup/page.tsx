@@ -214,7 +214,7 @@ export default function SetupPage() {
 				</div>
 
 				{/* Step indicator */}
-				<div className="mb-8 flex items-center justify-center gap-1">
+				<div className="mb-8 flex items-center justify-center gap-1" aria-label={`Setup progress, step ${step + 1} of ${STEPS.length}`} role="navigation">
 					{STEPS.map((s, i) => {
 						const Icon = s.icon;
 						return (
@@ -346,11 +346,13 @@ export default function SetupPage() {
 							<p className="text-xs text-muted-foreground">
 								Pick a starting theme for your public page. You can customize it later.
 							</p>
-							<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+							<div className="grid grid-cols-2 gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Theme selection">
 								{THEME_PRESETS.map((theme) => (
 									<button
 										key={theme.name}
 										type="button"
+										role="radio"
+										aria-checked={selectedTheme === theme.name}
 										onClick={() => setSelectedTheme(theme.name)}
 										className={`flex flex-col items-center gap-2 border p-3 text-xs transition-colors ${
 											selectedTheme === theme.name

@@ -8,6 +8,7 @@ import { SocialIconsBlock } from "./social-icons-block";
 import { EmbedBlock } from "./embed-block";
 import { ContactFormBlock } from "./contact-form-block";
 import { WhitelabelFooter } from "./whitelabel-footer";
+import { usePreview } from "./preview-context";
 import type { ThemeColors } from "./public-page";
 
 interface SocialNetwork {
@@ -18,7 +19,7 @@ interface SocialNetwork {
 	svgPath: string;
 }
 
-export interface PublicPageContentProps {
+export interface PageContentProps {
 	profile: {
 		name: string;
 		email: string;
@@ -42,21 +43,24 @@ export interface PublicPageContentProps {
 	settings: {
 		brandingEnabled: boolean;
 		brandingText: string;
-		walletPassEnabled: boolean;
-		vcardEnabled: boolean;
-		contactFormEnabled: boolean;
-		captchaProvider: string;
-		captchaSiteKey: string | null;
+		walletPassEnabled?: boolean;
+		vcardEnabled?: boolean;
+		contactFormEnabled?: boolean;
+		captchaProvider?: string;
+		captchaSiteKey?: string | null;
 		bannerPreset: string | null;
 		bannerEnabled: boolean;
 		bannerMode?: "preset" | "custom";
 		bannerCustomUrl?: string | null;
-		customCss: string | null;
-		socialIconShape: "circle" | "rounded-square" | null;
+		customCss?: string | null;
+		socialIconShape?: "circle" | "rounded-square" | null;
 	};
 	themeColors: ThemeColors;
 	colorMode: "light" | "dark";
 }
+
+/** @deprecated Use PageContentProps instead */
+export type PublicPageContentProps = PageContentProps;
 
 function parseConfig(config: string | null): Record<string, unknown> {
 	if (!config) return {};
@@ -67,15 +71,19 @@ function parseConfig(config: string | null): Record<string, unknown> {
 	}
 }
 
-export function PublicPageContent({
+export function PageContent({
 	profile,
 	blocks,
 	socialNetworks,
 	settings,
 	themeColors,
 	colorMode,
-}: PublicPageContentProps) {
+}: PageContentProps) {
+	const { isPreview } = usePreview();
 	const hasBanner = settings.bannerEnabled && (settings.bannerPreset || (settings.bannerMode === "custom" && settings.bannerCustomUrl));
+
+	const Wrapper = isPreview ? "div" : "main";
+	const ProfileWrapper = isPreview ? "div" : "header";
 
 	return (
 		<div
@@ -99,13 +107,12 @@ export function PublicPageContent({
 				/>
 			)}
 
-			<main
-				id="main-content"
-				role="main"
+			<Wrapper
+				{...(!isPreview ? { id: "main-content", role: "main" } : {})}
 				className={`mx-auto max-w-lg px-4 ${hasBanner ? "py-0" : "py-8 md:py-12"}`}
 			>
 				{/* Profile Section */}
-				<header className={`ld-profile relative z-10 mb-8 text-center ${hasBanner ? "-mt-20" : ""}`}>
+				<ProfileWrapper className={`ld-profile relative z-10 mb-8 text-center ${hasBanner ? "-mt-20" : ""}`}>
 					<Avatar
 						src={profile.image}
 						name={profile.name}
@@ -141,7 +148,7 @@ export function PublicPageContent({
 							{profile.bio}
 						</p>
 					)}
-				</header>
+				</ProfileWrapper>
 
 				{/* Blocks */}
 				<div className="ld-blocks space-y-3" role="list" aria-label="Links and content">
@@ -198,8 +205,8 @@ export function PublicPageContent({
 										block={blockData}
 										config={config}
 										colorMode={colorMode}
-										captchaProvider={settings.captchaProvider}
-										captchaSiteKey={settings.captchaSiteKey}
+										captchaProvider={settings.captchaProvider ?? "none"}
+										captchaSiteKey={settings.captchaSiteKey ?? null}
 										themeColors={themeColors}
 									/>
 								);
@@ -209,67 +216,69 @@ export function PublicPageContent({
 					})}
 				</div>
 
-				{/* VCard / Wallet Buttons */}
-				<div className="mt-8 flex justify-center gap-3">
-					{settings.vcardEnabled && (
-						<a
-							href="/api/vcard"
-							className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300"
-							style={{
-								backgroundColor: themeColors.card,
-								color: themeColors.cardFg,
-								border: `1px solid ${themeColors.border}`,
-								transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
-							}}
-							download="contact.vcf"
-						>
-							<svg
-								className="h-4 w-4"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-								strokeWidth={2}
-								aria-hidden="true"
+				{/* VCard / Wallet Buttons — only on public page */}
+				{!isPreview && (
+					<div className="mt-8 flex justify-center gap-3">
+						{settings.vcardEnabled && (
+							<a
+								href="/api/vcard"
+								className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300"
+								style={{
+									backgroundColor: themeColors.card,
+									color: themeColors.cardFg,
+									border: `1px solid ${themeColors.border}`,
+									transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
+								}}
+								download="contact.vcf"
 							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-								/>
-							</svg>
-							Download Contact
-						</a>
-					)}
-					{settings.walletPassEnabled && (
-						<a
-							href="/api/wallet-pass"
-							className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300"
-							style={{
-								backgroundColor: themeColors.card,
-								color: themeColors.cardFg,
-								border: `1px solid ${themeColors.border}`,
-								transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
-							}}
-						>
-							<svg
-								className="h-4 w-4"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-								strokeWidth={2}
-								aria-hidden="true"
+								<svg
+									className="h-4 w-4"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+									strokeWidth={2}
+									aria-hidden="true"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+									/>
+								</svg>
+								Download Contact
+							</a>
+						)}
+						{settings.walletPassEnabled && (
+							<a
+								href="/api/wallet-pass"
+								className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300"
+								style={{
+									backgroundColor: themeColors.card,
+									color: themeColors.cardFg,
+									border: `1px solid ${themeColors.border}`,
+									transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
+								}}
 							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-								/>
-							</svg>
-							Add to Wallet
-						</a>
-					)}
-				</div>
-			</main>
+								<svg
+									className="h-4 w-4"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+									strokeWidth={2}
+									aria-hidden="true"
+								>
+									<path
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+									/>
+								</svg>
+								Add to Wallet
+							</a>
+						)}
+					</div>
+				)}
+			</Wrapper>
 
 			{settings.brandingEnabled && (
 				<WhitelabelFooter
@@ -281,3 +290,6 @@ export function PublicPageContent({
 		</div>
 	);
 }
+
+/** @deprecated Use PageContent instead */
+export const PublicPageContent = PageContent;

@@ -23,6 +23,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import { PageHeader } from "@/components/admin/page-header";
+import { StatCard } from "@/components/admin/stat-card";
 
 const chartConfig: ChartConfig = {
 	count: {
@@ -73,67 +75,52 @@ export default function AdminDashboardPage() {
 
 	return (
 		<div className="space-y-6">
-			{/* Page header */}
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-lg font-semibold">Dashboard</h1>
-					<p className="text-xs text-muted-foreground">
-						Overview of your LinkDen page
-					</p>
-				</div>
-				<div className="flex gap-2">
-					<Link href="/admin/builder">
-						<Button variant="outline" size="sm">
-							<Blocks className="mr-1.5 h-3.5 w-3.5" />
-							Builder
-						</Button>
-					</Link>
-					<a href="/" target="_blank" rel="noopener noreferrer">
-						<Button size="sm">
-							<ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-							View Page
-						</Button>
-					</a>
-				</div>
-			</div>
+			<PageHeader
+				title="Dashboard"
+				description="Overview of your LinkDen page"
+				actions={
+					<>
+						<Link href="/admin/builder">
+							<Button variant="outline" size="sm">
+								<Blocks className="mr-1.5 h-3.5 w-3.5" />
+								Builder
+							</Button>
+						</Link>
+						<a href="/" target="_blank" rel="noopener noreferrer">
+							<Button size="sm">
+								<ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+								View Page
+							</Button>
+						</a>
+					</>
+				}
+			/>
 
 			{/* Stat cards */}
 			<div className="grid gap-3 sm:grid-cols-3">
 				{stats.map((stat) => (
-					<Card key={stat.label} size="sm">
-						<CardContent className="flex items-center gap-3">
-							<div
-								className={`flex h-9 w-9 shrink-0 items-center justify-center ${stat.bg}`}
-							>
-								<stat.icon className={`h-4 w-4 ${stat.color}`} />
-							</div>
-							<div className="min-w-0">
-								<p className="text-xs text-muted-foreground">{stat.label}</p>
-								{overview.isLoading ? (
-									<Skeleton className="mt-1 h-5 w-12" />
-								) : (
-									<p className="text-lg font-semibold leading-tight">
-										{stat.value.toLocaleString()}
-									</p>
-								)}
-							</div>
-							{stat.href && (
-								<Link href={stat.href} className="ml-auto" aria-label={`Go to ${stat.label}`}>
-									<ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground" />
-								</Link>
-							)}
-						</CardContent>
-					</Card>
+					<StatCard
+						key={stat.label}
+						icon={stat.icon}
+						label={stat.label}
+						value={stat.value}
+						iconColor={stat.color}
+						iconBg={stat.bg}
+						href={stat.href}
+						isLoading={overview.isLoading}
+					/>
 				))}
 			</div>
 
 			{/* Views chart */}
 			<Card>
 				<CardHeader className="flex-row items-center justify-between">
-					<CardTitle className="flex items-center gap-1.5">
-						<BarChart3 className="h-4 w-4 text-muted-foreground" />
-						Views last 7 days
-					</CardTitle>
+					<h2>
+						<CardTitle className="flex items-center gap-1.5">
+							<BarChart3 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+							Views last 7 days
+						</CardTitle>
+					</h2>
 					<Link href="/admin/analytics">
 						<Button variant="ghost" size="xs">
 							View all
@@ -143,7 +130,7 @@ export default function AdminDashboardPage() {
 				</CardHeader>
 				<CardContent>
 					{viewsOverTime.isLoading ? (
-						<div className="flex h-32 items-end gap-1">
+						<div className="flex h-32 items-end gap-1" aria-busy="true" role="status" aria-label="Loading chart data">
 							{Array.from({ length: 7 }).map((_, i) => (
 								<Skeleton
 									key={`skeleton-${i}`}
@@ -157,7 +144,7 @@ export default function AdminDashboardPage() {
 							No views data yet
 						</div>
 					) : (
-						<ChartContainer config={chartConfig} className="h-32 w-full">
+						<ChartContainer config={chartConfig} className="h-32 w-full" aria-label="Views over the last 7 days" role="img">
 							<ResponsiveContainer width="100%" height="100%">
 								<AreaChart data={viewsData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
 									<defs>

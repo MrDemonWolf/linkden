@@ -18,13 +18,15 @@ export default function AdminLoginPage() {
 	const [password, setPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [formError, setFormError] = useState("");
 
 	const setupStatus = useQuery(trpc.public.getSetupStatus.queryOptions());
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+		setFormError("");
 		if (!email || !password) {
-			toast.error("Please fill in all fields");
+			setFormError("Please fill in all fields");
 			return;
 		}
 
@@ -38,7 +40,9 @@ export default function AdminLoginPage() {
 						router.push("/admin");
 					},
 					onError: (error) => {
-						toast.error(error.error.message || "Invalid credentials");
+						const msg = error.error.message || "Invalid credentials";
+						setFormError(msg);
+						toast.error(msg);
 					},
 				},
 			);
@@ -62,7 +66,14 @@ export default function AdminLoginPage() {
 				</div>
 
 				<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl">
-					<form onSubmit={handleSubmit} className="space-y-4">
+					<form onSubmit={handleSubmit} className="space-y-4" aria-describedby={formError ? "login-error" : undefined}>
+						<div aria-live="polite" aria-atomic="true">
+							{formError && (
+								<p id="login-error" className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+									{formError}
+								</p>
+							)}
+						</div>
 						<div className="space-y-1.5">
 							<Label htmlFor="email">Email</Label>
 							<Input
@@ -93,7 +104,7 @@ export default function AdminLoginPage() {
 								<button
 									type="button"
 									onClick={() => setShowPassword(!showPassword)}
-									className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+									className="absolute right-1 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground"
 									aria-label={showPassword ? "Hide password" : "Show password"}
 									aria-pressed={showPassword}
 								>

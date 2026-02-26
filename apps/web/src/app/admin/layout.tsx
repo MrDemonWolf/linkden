@@ -63,7 +63,7 @@ function SidebarContent({
 			</div>
 
 			{/* Nav */}
-			<nav className="flex-1 space-y-0.5 px-2">
+			<nav aria-label="Main navigation" className="flex-1 space-y-0.5 px-2">
 				{NAV_ITEMS.map((item) => {
 					const isActive =
 						item.href === "/admin"
@@ -207,8 +207,16 @@ export default function AdminLayout({
 
 	return (
 		<div className="admin-glass-bg flex min-h-screen">
+			{/* Skip to content */}
+			<a
+				href="#main-content"
+				className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg"
+			>
+				Skip to main content
+			</a>
+
 			{/* Desktop sidebar */}
-			<aside className="hidden w-56 shrink-0 border-r border-white/20 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-2xl md:block">
+			<aside aria-label="Sidebar" className="hidden w-56 shrink-0 border-r border-white/20 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-2xl md:block">
 				<div className="sticky top-0 h-screen overflow-y-auto">
 					<SidebarContent pathname={pathname} unreadCount={unreadCount} />
 				</div>
@@ -225,7 +233,7 @@ export default function AdminLayout({
 				<button
 					type="button"
 					onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-					className="flex h-8 w-8 items-center justify-center text-muted-foreground"
+					className="flex h-11 w-11 items-center justify-center text-muted-foreground"
 					aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
 					aria-expanded={mobileMenuOpen}
 				>
@@ -262,7 +270,7 @@ export default function AdminLayout({
 			)}
 
 			{/* Mobile bottom nav */}
-			<nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-white/20 dark:border-white/10 backdrop-blur-2xl bg-white/70 dark:bg-black/40 md:hidden">
+			<nav aria-label="Quick navigation" className="fixed inset-x-0 bottom-0 z-40 flex border-t border-white/20 dark:border-white/10 backdrop-blur-2xl bg-white/70 dark:bg-black/40 md:hidden">
 				{NAV_ITEMS.slice(0, 5).map((item) => {
 					const isActive =
 						item.href === "/admin"
@@ -276,7 +284,7 @@ export default function AdminLayout({
 							href={item.href}
 							aria-current={isActive ? "page" : undefined}
 							className={cn(
-								"flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px]",
+								"flex flex-1 flex-col items-center gap-0.5 py-2 min-h-[44px] text-[10px]",
 								isActive
 									? "text-foreground border-t-2 border-primary"
 									: "text-muted-foreground",
@@ -297,7 +305,7 @@ export default function AdminLayout({
 			</nav>
 
 			{/* Main content */}
-			<main className="flex-1 pt-12 pb-16 md:pt-0 md:pb-0">
+			<main id="main-content" className="flex-1 pt-12 pb-16 md:pt-0 md:pb-0">
 				<div className="mx-auto max-w-6xl p-4 md:p-6">{children}</div>
 			</main>
 		</div>
