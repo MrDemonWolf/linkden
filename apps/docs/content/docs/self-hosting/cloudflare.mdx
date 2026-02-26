@@ -184,10 +184,19 @@ LinkDen uses **Better Auth** with email/password authentication. On first run, a
 
 ### First-Time Setup
 
-1. Deploy the application (Steps 5–6 above).
-2. Visit `https://linkden-web.<your-subdomain>.workers.dev/admin/setup`.
-3. Complete the setup wizard to create your admin account (name, email, and password).
-4. After setup is complete, sign in at `/admin/login`.
+1. Deploy the application (Steps 5--6 above).
+2. Check the API Worker logs for the setup URL:
+   ```bash
+   wrangler tail linkden-api
+   ```
+   Look for a line like:
+   ```
+   Setup URL: https://linkden-web.<your-subdomain>.workers.dev/admin/setup?token=<unique-token>
+   ```
+   The server generates a one-time secure token on first startup.
+3. Open this URL in your browser. The token is required -- navigating to `/admin/setup` without it will show an error.
+4. Complete the setup wizard to create your admin account (name, email, and password). The token is invalidated once setup completes.
+5. After setup is complete, sign in at `/admin/login`.
 
 ### Set Auth Secrets on the API Worker
 

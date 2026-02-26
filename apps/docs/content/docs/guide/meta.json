@@ -3,9 +3,11 @@
   "pages": [
     "blocks",
     "appearance",
+    "theming",
     "analytics",
     "contact-form",
     "social-networks",
+    "security",
     "vcard",
     "apple-wallet",
     "export-import"

@@ -49,7 +49,10 @@ export interface PublicPageContentProps {
 		captchaSiteKey: string | null;
 		bannerPreset: string | null;
 		bannerEnabled: boolean;
+		bannerMode?: "preset" | "custom";
+		bannerCustomUrl?: string | null;
 		customCss: string | null;
+		socialIconShape: "circle" | "rounded-square" | null;
 	};
 	themeColors: ThemeColors;
 	colorMode: "light" | "dark";
@@ -72,7 +75,7 @@ export function PublicPageContent({
 	themeColors,
 	colorMode,
 }: PublicPageContentProps) {
-	const hasBanner = settings.bannerEnabled && settings.bannerPreset;
+	const hasBanner = settings.bannerEnabled && (settings.bannerPreset || (settings.bannerMode === "custom" && settings.bannerCustomUrl));
 
 	return (
 		<div
@@ -87,10 +90,12 @@ export function PublicPageContent({
 
 			{hasBanner && (
 				<BannerSection
-					bannerPreset={settings.bannerPreset!}
+					bannerPreset={settings.bannerPreset || ""}
 					colorMode={colorMode}
 					bgColor={themeColors.bg}
 					themeColors={themeColors}
+					bannerMode={settings.bannerMode}
+					bannerCustomUrl={settings.bannerCustomUrl || undefined}
 				/>
 			)}
 
@@ -113,7 +118,8 @@ export function PublicPageContent({
 						{profile.name}
 						{profile.isVerified && (
 							<svg
-								className="h-6 w-6 text-blue-500 shrink-0"
+								className="h-6 w-6 shrink-0"
+								style={{ color: themeColors.primary }}
 								viewBox="0 0 24 24"
 								fill="currentColor"
 								aria-hidden="true"
@@ -160,6 +166,7 @@ export function PublicPageContent({
 										block={blockData}
 										config={config}
 										colorMode={colorMode}
+										themeColors={themeColors}
 									/>
 								);
 							case "social_icons":
@@ -170,6 +177,8 @@ export function PublicPageContent({
 										config={config}
 										colorMode={colorMode}
 										networks={socialNetworks}
+										themeColors={themeColors}
+										globalIconShape={settings.socialIconShape ?? undefined}
 									/>
 								);
 							case "embed":
@@ -179,6 +188,7 @@ export function PublicPageContent({
 										block={blockData}
 										config={config}
 										colorMode={colorMode}
+										themeColors={themeColors}
 									/>
 								);
 							case "contact_form":
@@ -190,6 +200,7 @@ export function PublicPageContent({
 										colorMode={colorMode}
 										captchaProvider={settings.captchaProvider}
 										captchaSiteKey={settings.captchaSiteKey}
+										themeColors={themeColors}
 									/>
 								);
 							default:
@@ -264,6 +275,7 @@ export function PublicPageContent({
 				<WhitelabelFooter
 					text={settings.brandingText}
 					mutedFg={themeColors.mutedFg}
+					profileName={profile.name}
 				/>
 			)}
 		</div>

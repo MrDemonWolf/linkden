@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
 	User,
@@ -11,6 +11,7 @@ import {
 	CheckCircle2,
 	ArrowRight,
 	ArrowLeft,
+	ShieldX,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
@@ -35,8 +36,12 @@ const STEPS = [
 	{ label: "Done", icon: CheckCircle2 },
 ];
 
+const BIO_MAX_LENGTH = 300;
+
 export default function SetupPage() {
 	const router = useRouter();
+	const searchParams = useSearchParams();
+	const token = searchParams.get("token") ?? "";
 	const [step, setStep] = useState(0);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -53,6 +58,69 @@ export default function SetupPage() {
 	const [selectedTheme, setSelectedTheme] = useState("default");
 
 	const updateSettings = useMutation(trpc.settings.updateBulk.mutationOptions());
+
+	// Validate token
+	const tokenValidation = useQuery({
+		...trpc.public.validateSetupToken.queryOptions({ token }),
+		enabled: !!token,
+	});
+
+	// If no token or invalid token, show error
+	if (!token) {
+		return (
+			<div className="admin-glass-bg flex min-h-screen items-center justify-center px-4">
+				<div className="w-full max-w-sm text-center">
+					<ShieldX className="mx-auto h-12 w-12 text-destructive/60" />
+					<h1 className="mt-4 text-lg font-semibold">Setup Token Required</h1>
+					<p className="mt-2 text-xs text-muted-foreground">
+						A setup token is required to run the setup wizard. Check your server console for the setup URL.
+					</p>
+					<Button
+						variant="outline"
+						className="mt-4"
+						onClick={() => router.push("/admin/login")}
+					>
+						Go to Login
+					</Button>
+				</div>
+			</div>
+		);
+	}
+
+	if (tokenValidation.isLoading) {
+		return (
+			<div className="flex min-h-screen items-center justify-center">
+				<div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+			</div>
+		);
+	}
+
+	if (tokenValidation.data && !tokenValidation.data.valid) {
+		return (
+			<div className="admin-glass-bg flex min-h-screen items-center justify-center px-4">
+				<div className="w-full max-w-sm text-center">
+					<ShieldX className="mx-auto h-12 w-12 text-destructive/60" />
+					<h1 className="mt-4 text-lg font-semibold">
+						{tokenValidation.data.reason === "setup_completed"
+							? "Setup Already Completed"
+							: "Invalid Setup Token"}
+					</h1>
+					<p className="mt-2 text-xs text-muted-foreground">
+						{tokenValidation.data.reason === "setup_completed"
+							? "This instance has already been set up. Please log in instead."
+							: "The setup token is invalid or expired. Check your server console for a new setup URL."}
+					</p>
+					<Button
+						variant="outline"
+						className="mt-4"
+						onClick={() => router.push("/admin/login")}
+					>
+						Go to Login
+					</Button>
+				</div>
+			</div>
+		);
+	}
 
 	const handleStep1 = async () => {
 		if (!name || !email || !password) {
@@ -132,11 +200,11 @@ export default function SetupPage() {
 	};
 
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-background px-4">
-			<div className="w-full max-w-lg">
+		<div className="admin-glass-bg flex min-h-screen items-center justify-center px-4">
+			<div className="w-full max-w-lg animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both">
 				{/* Header */}
 				<div className="mb-8 text-center">
-					<div className="mx-auto flex h-12 w-12 items-center justify-center bg-primary text-primary-foreground text-lg font-bold">
+					<div className="mx-auto flex h-12 w-12 items-center justify-center bg-primary/90 backdrop-blur-sm text-primary-foreground text-lg font-bold rounded-2xl">
 						LD
 					</div>
 					<h1 className="mt-4 text-xl font-semibold">Setup LinkDen</h1>
@@ -176,7 +244,7 @@ export default function SetupPage() {
 				</div>
 
 				{/* Step content */}
-				<div className="border bg-card p-6">
+				<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl">
 					{step === 0 && (
 						<div className="space-y-4">
 							<h2 className="text-sm font-medium">Create your account</h2>
@@ -227,14 +295,20 @@ export default function SetupPage() {
 								These are optional. You can always change them later.
 							</p>
 							<div className="space-y-1.5">
-								<Label htmlFor="setup-bio">Bio</Label>
+								<div className="flex items-center justify-between">
+									<Label htmlFor="setup-bio">Bio</Label>
+									<span className="text-[10px] text-muted-foreground">
+										{bio.length}/{BIO_MAX_LENGTH}
+									</span>
+								</div>
 								<textarea
 									id="setup-bio"
 									value={bio}
-									onChange={(e) => setBio(e.target.value)}
+									onChange={(e) => setBio(e.target.value.slice(0, BIO_MAX_LENGTH))}
+									maxLength={BIO_MAX_LENGTH}
 									placeholder="A short description about you"
-									rows={3}
-									className="dark:bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full border bg-transparent px-2.5 py-1.5 text-xs outline-none focus-visible:ring-1"
+									rows={4}
+									className="dark:bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full border bg-transparent backdrop-blur-sm px-2.5 py-1.5 text-xs outline-none focus-visible:ring-1"
 								/>
 							</div>
 							<div className="space-y-1.5">

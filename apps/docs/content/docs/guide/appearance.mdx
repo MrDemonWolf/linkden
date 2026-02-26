@@ -19,6 +19,28 @@ The subtitle shows "Unsaved changes -- publish to go live" when you have pending
 
 ---
 
+## Admin Theme
+
+The admin panel has its own theme toggle, separate from the public page. Choose between:
+
+- **Light** -- Light admin panel.
+- **Dark** -- Dark admin panel.
+- **System** -- Follows your OS preference.
+
+This setting uses `next-themes` and only affects the admin panel. Public page theme presets do not leak into the admin UI, and vice versa. See [Theming](/docs/guide/theming) for details on the separation between admin and public themes.
+
+---
+
+## Profile Section
+
+The profile section uses a centered layout with the avatar above full-width name and bio fields:
+
+- **Avatar** -- Upload an image or provide a URL. The avatar is displayed centered above the name and bio.
+- **Display Name** -- Up to 50 characters.
+- **Bio** -- A short description, up to 300 characters. A character counter is shown in the top-right corner of the field.
+
+---
+
 ## Theme Presets
 
 Choose from 7 built-in themes, each available in dark and light variants (14 total). An auto mode follows the visitor's system preference.
@@ -46,23 +68,35 @@ Override individual theme colors:
 - **Accent color** -- Highlight color for emphasis.
 - **Background color** -- Override the page background.
 
-Colors are set via CSS custom properties (`--ld-primary`, `--ld-secondary`, etc.) and apply on top of the selected theme preset.
+Colors are set via CSS custom properties (`--ld-primary`, `--ld-secondary`, etc.) and apply on top of the selected theme preset. Custom color overrides are stored as light-mode values and apply only in light mode; dark mode uses the full theme-defined palette.
 
 ## Default Color Mode
 
-Set the default color mode for visitors:
+Set the default color mode for visitors on the **public page**:
 
 - **Light** -- Forces the light variant.
 - **Dark** -- Forces the dark variant.
 - **System** -- Follows the visitor's OS preference.
 
-Visitors can always toggle between light and dark mode using the theme toggle button on the public page.
+When "System" is selected, the preview panel correctly detects your current OS preference to show an accurate preview. Visitors can always toggle between light and dark mode using the theme toggle button on the public page.
 
 ## Banner
 
-Toggle a gradient banner that displays behind your avatar on the public page. When enabled, choose from themed banner presets that automatically adapt to your selected theme colors.
+The banner system supports two modes, toggled with Presets / Custom Image tabs:
 
-The banner appears as a gradient strip at the top of your page, giving your profile a more distinctive look.
+### Preset Gradients
+
+Choose from gradient presets that automatically adapt to your current theme colors. The presets use your primary, accent, and background colors to generate themed gradients, so they update when you change themes or custom colors.
+
+### Custom Image Upload
+
+Upload a custom banner image. The image upload field accepts standard image formats and displays a preview of your uploaded banner.
+
+### Banner Settings
+
+- **Enable/disable** -- Toggle the banner on or off with a switch.
+- **Mode toggle** -- Switch between "Presets" and "Custom Image" tabs.
+- The banner appears behind your avatar on the public page.
 
 ## Verified Badge
 
@@ -80,7 +114,7 @@ When disabled, no footer is shown at all. LinkDen is MIT licensed, so no attribu
 
 ## Custom CSS
 
-For advanced customization, add custom CSS that is injected into your public page. This lets you override any theme variable or style, add animations, or implement completely unique designs.
+For advanced customization, add custom CSS that is injected into your public page. This lets you override any theme variable or style, add animations, or implement completely unique designs. Custom CSS is sanitized server-side to prevent XSS injection (script tags, `expression()`, `javascript:` URLs, and other vectors are stripped).
 
 ### Available CSS Classes
 

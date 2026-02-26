@@ -11,10 +11,25 @@ import {
 	BarChart3,
 	Blocks,
 } from "lucide-react";
+import {
+	AreaChart,
+	Area,
+	XAxis,
+	Tooltip,
+	ResponsiveContainer,
+} from "recharts";
 import { trpc } from "@/utils/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+
+const chartConfig: ChartConfig = {
+	count: {
+		label: "Views",
+		color: "var(--primary, #0FACED)",
+	},
+};
 
 export default function AdminDashboardPage() {
 	const overview = useQuery(trpc.analytics.overview.queryOptions({ period: "7d" }));
@@ -29,8 +44,8 @@ export default function AdminDashboardPage() {
 			label: "Total Views",
 			value: overview.data?.totalViews ?? 0,
 			icon: Eye,
-			color: "text-blue-500",
-			bg: "bg-blue-500/10",
+			color: "text-primary",
+			bg: "bg-primary/10",
 		},
 		{
 			label: "Total Clicks",
@@ -49,9 +64,12 @@ export default function AdminDashboardPage() {
 		},
 	];
 
-	// Calculate max for bar chart
-	const viewsData = viewsOverTime.data ?? [];
-	const maxViews = Math.max(...viewsData.map((d) => d.count), 1);
+	const viewsData = (viewsOverTime.data ?? []).map((d) => ({
+		...d,
+		label: new Date(d.date).toLocaleDateString(undefined, {
+			weekday: "short",
+		}),
+	}));
 
 	return (
 		<div className="space-y-6">
@@ -100,7 +118,7 @@ export default function AdminDashboardPage() {
 								)}
 							</div>
 							{stat.href && (
-								<Link href={stat.href} className="ml-auto">
+								<Link href={stat.href} className="ml-auto" aria-label={`Go to ${stat.label}`}>
 									<ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground" />
 								</Link>
 							)}
@@ -139,30 +157,40 @@ export default function AdminDashboardPage() {
 							No views data yet
 						</div>
 					) : (
-						<div className="flex h-32 items-end gap-1">
-							{viewsData.map((d) => {
-								const height = Math.max((d.count / maxViews) * 100, 4);
-								return (
-									<div
-										key={d.date}
-										className="group relative flex flex-1 flex-col items-center"
-									>
-										<div className="absolute -top-5 hidden text-[10px] font-medium text-foreground group-hover:block">
-											{d.count}
-										</div>
-										<div
-											className="w-full bg-primary/80 transition-colors hover:bg-primary"
-											style={{ height: `${height}%` }}
-										/>
-										<span className="mt-1 text-[9px] text-muted-foreground">
-											{new Date(d.date).toLocaleDateString(undefined, {
-												weekday: "short",
-											})}
-										</span>
-									</div>
-								);
-							})}
-						</div>
+						<ChartContainer config={chartConfig} className="h-32 w-full">
+							<ResponsiveContainer width="100%" height="100%">
+								<AreaChart data={viewsData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+									<defs>
+										<linearGradient id="dashboardViewsGradient" x1="0" y1="0" x2="0" y2="1">
+											<stop offset="0%" stopColor="var(--color-count)" stopOpacity={0.3} />
+											<stop offset="100%" stopColor="var(--color-count)" stopOpacity={0.02} />
+										</linearGradient>
+									</defs>
+									<XAxis
+										dataKey="label"
+										tickLine={false}
+										axisLine={false}
+										tick={{ fontSize: 10 }}
+									/>
+									<Tooltip
+										content={
+											<ChartTooltipContent
+												labelFormatter={(label) => label}
+											/>
+										}
+									/>
+									<Area
+										type="monotone"
+										dataKey="count"
+										stroke="var(--color-count)"
+										strokeWidth={2}
+										fill="url(#dashboardViewsGradient)"
+										dot={false}
+										activeDot={{ r: 4, strokeWidth: 2 }}
+									/>
+								</AreaChart>
+							</ResponsiveContainer>
+						</ChartContainer>
 					)}
 				</CardContent>
 			</Card>

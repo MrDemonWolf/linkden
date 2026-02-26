@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -32,6 +32,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { themePresets } from "@linkden/ui/themes";
+import { socialBrandMap } from "@linkden/ui/social-brands";
 import { PhoneFrame } from "@/components/admin/phone-frame";
 import { PreviewContent } from "@/components/admin/preview-content";
 import { getThemeColors } from "@/components/public/public-page";
@@ -69,6 +70,65 @@ function generateId() {
 	return `blk_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+// ---- Embed URL Validation ----
+const EMBED_URL_PATTERNS: Record<string, { pattern: RegExp; placeholder: string; label: string }> = {
+	youtube: {
+		pattern: /(?:youtube\.com\/(?:watch|embed)|youtu\.be\/)/i,
+		placeholder: "https://youtube.com/watch?v=dQw4w9WgXcQ",
+		label: "YouTube",
+	},
+	spotify: {
+		pattern: /open\.spotify\.com\//i,
+		placeholder: "https://open.spotify.com/track/...",
+		label: "Spotify",
+	},
+	soundcloud: {
+		pattern: /soundcloud\.com\//i,
+		placeholder: "https://soundcloud.com/artist/track",
+		label: "SoundCloud",
+	},
+	custom: {
+		pattern: /^https?:\/\//i,
+		placeholder: "https://example.com/embed",
+		label: "Custom",
+	},
+};
+
+function validateEmbedUrl(type: string, url: string): string | null {
+	if (!url || !type) return null;
+	const config = EMBED_URL_PATTERNS[type];
+	if (!config) return null;
+	if (type === "custom") return null; // any valid URL for custom
+	if (!config.pattern.test(url)) {
+		return `This doesn't look like a ${config.label} URL`;
+	}
+	return null;
+}
+
+// Styled select component for glass theme
+function GlassSelect({
+	id,
+	value,
+	onChange,
+	children,
+}: {
+	id?: string;
+	value: string;
+	onChange: (value: string) => void;
+	children: React.ReactNode;
+}) {
+	return (
+		<select
+			id={id}
+			value={value}
+			onChange={(e) => onChange(e.target.value)}
+			className="dark:bg-input/30 border-white/15 h-8 w-full rounded-lg border bg-transparent px-2.5 text-xs outline-none focus:ring-1 focus:ring-ring appearance-none cursor-pointer"
+		>
+			{children}
+		</select>
+	);
+}
+
 // ---- Edit Panel Component ----
 function BlockEditPanel({
 	block,
@@ -99,6 +159,23 @@ function BlockEditPanel({
 	const [scheduledEnd, setScheduledEnd] = useState(
 		block.scheduledEnd ? new Date(block.scheduledEnd).toISOString().slice(0, 16) : "",
 	);
+	const [showAdvancedJson, setShowAdvancedJson] = useState(false);
+
+	// Parse config JSON for structured fields
+	const parsedConfig = (() => {
+		try {
+			return JSON.parse(config);
+		} catch {
+			return {};
+		}
+	})();
+
+	const updateConfigField = (key: string, value: unknown) => {
+		const updated = { ...parsedConfig, [key]: value };
+		setConfig(JSON.stringify(updated, null, 2));
+	};
+
+	const embedUrlError = validateEmbedUrl(embedType, embedUrl);
 
 	const handleSave = () => {
 		onSave({
@@ -121,7 +198,7 @@ function BlockEditPanel({
 		<div className="fixed inset-y-0 right-0 z-50 w-full max-w-md border-l border-white/15 dark:border-white/10 bg-white/80 dark:bg-black/60 backdrop-blur-2xl shadow-lg sm:w-96">
 			<div className="flex h-full flex-col">
 				{/* Header */}
-				<div className="flex items-center justify-between border-b px-4 py-3">
+				<div className="flex items-center justify-between border-b border-white/15 px-4 py-3">
 					<h3 className="text-sm font-medium">
 						Edit {block.type.replace("_", " ")}
 					</h3>
@@ -135,7 +212,7 @@ function BlockEditPanel({
 				</div>
 
 				{/* Tabs */}
-				<div className="flex border-b">
+				<div className="flex border-b border-white/15">
 					{tabs.map((tab) => (
 						<button
 							key={tab}
@@ -164,6 +241,7 @@ function BlockEditPanel({
 									value={title}
 									onChange={(e) => setTitle(e.target.value)}
 									placeholder="Block title"
+									className="dark:bg-input/30 border-white/15"
 								/>
 							</div>
 							{(block.type === "link") && (
@@ -174,6 +252,7 @@ function BlockEditPanel({
 										value={url}
 										onChange={(e) => setUrl(e.target.value)}
 										placeholder="https://example.com"
+										className="dark:bg-input/30 border-white/15"
 									/>
 								</div>
 							)}
@@ -181,18 +260,17 @@ function BlockEditPanel({
 								<>
 									<div className="space-y-1.5">
 										<Label htmlFor="edit-embed-type">Embed Type</Label>
-										<select
+										<GlassSelect
 											id="edit-embed-type"
 											value={embedType}
-											onChange={(e) => setEmbedType(e.target.value)}
-											className="dark:bg-input/30 border-input h-8 w-full border bg-transparent px-2.5 text-xs outline-none"
+											onChange={setEmbedType}
 										>
 											<option value="">Select type</option>
 											<option value="youtube">YouTube</option>
 											<option value="spotify">Spotify</option>
 											<option value="soundcloud">SoundCloud</option>
 											<option value="custom">Custom</option>
-										</select>
+										</GlassSelect>
 									</div>
 									<div className="space-y-1.5">
 										<Label htmlFor="edit-embed-url">Embed URL</Label>
@@ -200,8 +278,12 @@ function BlockEditPanel({
 											id="edit-embed-url"
 											value={embedUrl}
 											onChange={(e) => setEmbedUrl(e.target.value)}
-											placeholder="https://youtube.com/watch?v=..."
+											placeholder={EMBED_URL_PATTERNS[embedType]?.placeholder ?? "https://..."}
+											className={cn("dark:bg-input/30 border-white/15", embedUrlError && "border-destructive")}
 										/>
+										{embedUrlError && (
+											<p className="text-[11px] text-destructive">{embedUrlError}</p>
+										)}
 									</div>
 								</>
 							)}
@@ -214,7 +296,7 @@ function BlockEditPanel({
 										onChange={(e) => setSocialIcons(e.target.value)}
 										placeholder='[{"platform":"twitter","url":"https://twitter.com/you"}]'
 										rows={4}
-										className="dark:bg-input/30 border-input w-full border bg-transparent px-2.5 py-1.5 text-xs font-mono outline-none"
+										className="dark:bg-input/30 border-white/15 w-full rounded-lg border bg-transparent backdrop-blur-sm px-2.5 py-1.5 text-xs font-mono outline-none focus:ring-1 focus:ring-ring"
 									/>
 								</div>
 							)}
@@ -230,21 +312,116 @@ function BlockEditPanel({
 									value={icon}
 									onChange={(e) => setIcon(e.target.value)}
 									placeholder="e.g. globe, github, twitter"
+									className="dark:bg-input/30 border-white/15"
 								/>
 							</div>
-							<div className="space-y-1.5">
-								<Label htmlFor="edit-config">
-									Config (JSON)
-								</Label>
-								<textarea
-									id="edit-config"
-									value={config}
-									onChange={(e) => setConfig(e.target.value)}
-									rows={6}
-									placeholder='{"style":"outline","animation":"none"}'
-									className="dark:bg-input/30 border-input w-full border bg-transparent px-2.5 py-1.5 text-xs font-mono outline-none"
-								/>
-							</div>
+
+							{/* Structured config fields based on block type */}
+							{block.type === "link" && (
+								<div className="space-y-3">
+									<div className="flex items-center justify-between">
+										<Label>No Follow</Label>
+										<button
+											type="button"
+											role="switch"
+											aria-checked={!!parsedConfig.noFollow}
+											onClick={() => updateConfigField("noFollow", !parsedConfig.noFollow)}
+											className={cn(
+												"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+												parsedConfig.noFollow ? "bg-primary" : "bg-muted",
+											)}
+										>
+											<span className={cn("inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform", parsedConfig.noFollow ? "translate-x-[18px]" : "translate-x-[3px]")} />
+										</button>
+									</div>
+									<div className="flex items-center justify-between">
+										<Label>Open in New Tab</Label>
+										<button
+											type="button"
+											role="switch"
+											aria-checked={!!parsedConfig.newTab}
+											onClick={() => updateConfigField("newTab", !parsedConfig.newTab)}
+											className={cn(
+												"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+												parsedConfig.newTab ? "bg-primary" : "bg-muted",
+											)}
+										>
+											<span className={cn("inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform", parsedConfig.newTab ? "translate-x-[18px]" : "translate-x-[3px]")} />
+										</button>
+									</div>
+									<div className="space-y-1.5">
+										<Label>Animation</Label>
+										<GlassSelect value={parsedConfig.animation ?? "none"} onChange={(v) => updateConfigField("animation", v)}>
+											<option value="none">None</option>
+											<option value="pulse">Pulse</option>
+											<option value="shake">Shake</option>
+										</GlassSelect>
+									</div>
+									<div className="space-y-1.5">
+										<Label>Thumbnail URL</Label>
+										<Input
+											value={parsedConfig.thumbnail ?? ""}
+											onChange={(e) => updateConfigField("thumbnail", e.target.value)}
+											placeholder="https://example.com/thumb.jpg"
+											className="dark:bg-input/30 border-white/15"
+										/>
+									</div>
+								</div>
+							)}
+
+							{block.type === "embed" && (
+								<div className="space-y-3">
+									<div className="space-y-1.5">
+										<Label>Aspect Ratio</Label>
+										<GlassSelect value={parsedConfig.aspectRatio ?? "16:9"} onChange={(v) => updateConfigField("aspectRatio", v)}>
+											<option value="16:9">16:9</option>
+											<option value="4:3">4:3</option>
+											<option value="1:1">1:1</option>
+										</GlassSelect>
+									</div>
+									<div className="space-y-1.5">
+										<Label>Max Width</Label>
+										<GlassSelect value={parsedConfig.maxWidth ?? "full"} onChange={(v) => updateConfigField("maxWidth", v)}>
+											<option value="sm">Small</option>
+											<option value="md">Medium</option>
+											<option value="lg">Large</option>
+											<option value="full">Full</option>
+										</GlassSelect>
+									</div>
+									<div className="flex items-center justify-between">
+										<Label>Show Title</Label>
+										<button
+											type="button"
+											role="switch"
+											aria-checked={parsedConfig.showTitle !== false}
+											onClick={() => updateConfigField("showTitle", parsedConfig.showTitle === false)}
+											className={cn(
+												"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+												parsedConfig.showTitle !== false ? "bg-primary" : "bg-muted",
+											)}
+										>
+											<span className={cn("inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform", parsedConfig.showTitle !== false ? "translate-x-[18px]" : "translate-x-[3px]")} />
+										</button>
+									</div>
+								</div>
+							)}
+
+							{/* Advanced JSON fallback */}
+							<details className="pt-2">
+								<summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
+									Advanced JSON
+								</summary>
+								<div className="mt-2 space-y-1.5">
+									<textarea
+										id="edit-config"
+										value={config}
+										onChange={(e) => setConfig(e.target.value)}
+										rows={6}
+										placeholder='{"style":"outline","animation":"none"}'
+										className="dark:bg-input/30 border-white/15 w-full rounded-lg border bg-transparent backdrop-blur-sm px-2.5 py-1.5 text-xs font-mono outline-none focus:ring-1 focus:ring-ring"
+									/>
+								</div>
+							</details>
 						</>
 					)}
 
@@ -257,30 +434,35 @@ function BlockEditPanel({
 										<p className="text-[11px] text-muted-foreground">
 											How contact form submissions are handled
 										</p>
-										<select
-											id="edit-delivery"
-											value={contactDelivery}
-											onChange={(e) => onDeliveryChange(e.target.value)}
-											className="dark:bg-input/30 border-input h-8 w-full rounded-md border bg-transparent px-2.5 text-xs outline-none"
-										>
-											<option value="database">Database only</option>
-											<option value="email">Email notification</option>
-											<option value="both">Database + Email</option>
-										</select>
+										<div className="flex rounded-lg border border-white/15 overflow-hidden">
+											{[
+												{ value: "database", label: "Database" },
+												{ value: "email", label: "Email" },
+												{ value: "both", label: "Both" },
+											].map((opt) => (
+												<button
+													key={opt.value}
+													type="button"
+													onClick={() => onDeliveryChange(opt.value)}
+													className={cn(
+														"flex-1 py-1.5 text-xs font-medium transition-colors",
+														contactDelivery === opt.value
+															? "bg-primary/15 text-primary"
+															: "text-muted-foreground hover:text-foreground",
+													)}
+												>
+													{opt.label}
+												</button>
+											))}
+										</div>
 									</div>
 								</div>
 							) : (
 								<div className="space-y-3">
 									<p className="text-xs text-muted-foreground">
 										Additional options for this block can be configured in the
-										config JSON on the Style tab. Common options:
+										Style tab.
 									</p>
-									<ul className="space-y-1 text-xs text-muted-foreground">
-										<li>- <code>noFollow</code>: Adds rel="nofollow" to links</li>
-										<li>- <code>newTab</code>: Opens link in new tab</li>
-										<li>- <code>animation</code>: "none" | "pulse" | "shake"</li>
-										<li>- <code>thumbnail</code>: URL for link thumbnail</li>
-									</ul>
 								</div>
 							)}
 						</>
@@ -299,6 +481,7 @@ function BlockEditPanel({
 									type="datetime-local"
 									value={scheduledStart}
 									onChange={(e) => setScheduledStart(e.target.value)}
+									className="dark:bg-input/30 border-white/15"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -308,6 +491,7 @@ function BlockEditPanel({
 									type="datetime-local"
 									value={scheduledEnd}
 									onChange={(e) => setScheduledEnd(e.target.value)}
+									className="dark:bg-input/30 border-white/15"
 								/>
 							</div>
 							{(scheduledStart || scheduledEnd) && (
@@ -327,7 +511,7 @@ function BlockEditPanel({
 				</div>
 
 				{/* Footer */}
-				<div className="border-t px-4 py-3">
+				<div className="border-t border-white/15 px-4 py-3">
 					<Button className="w-full" onClick={handleSave} disabled={isSaving}>
 						{isSaving ? "Saving..." : "Save Changes"}
 					</Button>
@@ -351,6 +535,18 @@ export default function BuilderPage() {
 	const hasDraftQuery = useQuery(trpc.blocks.hasDraft.queryOptions());
 	const hasDrafts = hasDraftQuery.data?.hasDraft ?? false;
 	const settingsQuery = useQuery(trpc.settings.getAll.queryOptions());
+	const socialsQuery = useQuery(trpc.social.list.queryOptions({ activeOnly: true }));
+
+	const previewSocialNetworks = useMemo(() => {
+		return (socialsQuery.data ?? [])
+			.filter((s: { isActive: boolean; url: string }) => s.isActive && s.url)
+			.map((s: { slug: string; url: string }) => {
+				const brand = socialBrandMap.get(s.slug);
+				if (!brand) return null;
+				return { slug: s.slug, name: brand.name, url: s.url, hex: brand.hex, svgPath: brand.svgPath };
+			})
+			.filter(Boolean) as Array<{ slug: string; name: string; url: string; hex: string; svgPath: string }>;
+	}, [socialsQuery.data]);
 
 	// Resolve theme colors for phone preview
 	const previewThemeColors = (() => {
@@ -377,6 +573,7 @@ export default function BuilderPage() {
 			brandingText: settings.branding_text || "Powered by LinkDen",
 			bannerPreset: settings.banner_enabled === "true" ? (settings.banner_preset || null) : null,
 			bannerEnabled: settings.banner_enabled === "true",
+			socialIconShape: (settings.social_icon_shape as "circle" | "rounded-square") || "circle",
 		};
 	})();
 
@@ -508,7 +705,7 @@ export default function BuilderPage() {
 	return (
 		<div className="space-y-4">
 			{/* Header */}
-			<div className="flex items-center justify-between">
+			<div className="sticky top-0 z-20 mt-1 rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-lg shadow-black/5 dark:shadow-black/20 px-4 py-3 flex items-center justify-between">
 				<div>
 					<h1 className="text-lg font-semibold">Builder</h1>
 					<p className="text-xs text-muted-foreground">
@@ -557,7 +754,7 @@ export default function BuilderPage() {
 								onClick={() => setShowAddMenu(false)}
 								onKeyDown={() => {}}
 							/>
-							<div className="absolute right-0 top-full z-40 mt-1 w-56 rounded-xl bg-card backdrop-blur-2xl border border-white/15 dark:border-white/10 shadow-lg overflow-hidden">
+							<div className="absolute right-0 top-full z-40 mt-1 w-56 rounded-xl bg-white dark:bg-zinc-900 border border-border shadow-xl overflow-hidden">
 								{BLOCK_TYPES.map((bt) => {
 									const Icon = bt.icon;
 									return (
@@ -713,7 +910,15 @@ export default function BuilderPage() {
 									id: b.id,
 									type: b.type,
 									title: b.title,
+									url: b.url,
+									icon: b.icon,
+									embedType: b.embedType,
+									embedUrl: b.embedUrl,
+									socialIcons: b.socialIcons,
+									config: b.config,
+									position: b.position,
 								}))}
+								socialNetworks={previewSocialNetworks}
 								settings={previewSettings}
 								themeColors={previewThemeColors}
 								colorMode={previewMode}
@@ -727,7 +932,7 @@ export default function BuilderPage() {
 			<button
 				type="button"
 				onClick={() => setShowMobilePreview(true)}
-				className="fixed bottom-20 right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg lg:hidden"
+				className="fixed bottom-20 right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-foreground text-background border border-black/10 dark:border-white/20 shadow-lg lg:hidden"
 			>
 				<Smartphone className="h-5 w-5" />
 			</button>
@@ -750,7 +955,15 @@ export default function BuilderPage() {
 									id: b.id,
 									type: b.type,
 									title: b.title,
+									url: b.url,
+									icon: b.icon,
+									embedType: b.embedType,
+									embedUrl: b.embedUrl,
+									socialIcons: b.socialIcons,
+									config: b.config,
+									position: b.position,
 								}))}
+								socialNetworks={previewSocialNetworks}
 								settings={previewSettings}
 								themeColors={previewThemeColors}
 								colorMode={previewMode}

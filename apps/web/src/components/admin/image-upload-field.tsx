@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface ImageUploadFieldProps {
-	label: string;
+	label?: string;
 	value: string;
 	purpose: "avatar" | "banner" | "og_image";
 	onUploadComplete: (url: string) => void;
@@ -96,8 +96,8 @@ export function ImageUploadField({
 	const isBanner = aspectRatio === "banner";
 
 	return (
-		<div className="space-y-1.5">
-			<label className="text-sm font-medium">{label}</label>
+		<div className={cn("space-y-1.5", !isBanner && "flex flex-col items-center")}>
+			{label && <label className="text-sm font-medium">{label}</label>}
 			<div
 				onDragOver={(e) => {
 					e.preventDefault();
@@ -123,7 +123,7 @@ export function ImageUploadField({
 					<>
 						<img
 							src={displayUrl}
-							alt={label}
+							alt={label || "Upload"}
 							className={cn(
 								"object-cover",
 								isBanner ? "h-full w-full rounded-lg" : "h-full w-full rounded-full",
@@ -160,7 +160,7 @@ export function ImageUploadField({
 			</div>
 
 			{displayUrl && !uploading && (
-				<div className="flex items-center gap-1">
+				<div className="flex items-center justify-center gap-1">
 					<Button
 						type="button"
 						variant="ghost"

@@ -2,6 +2,7 @@
   "name": "web",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "next build",
     "start": "next start",
@@ -15,6 +16,7 @@
     "@linkden/env": "workspace:*",
     "@linkden/ui": "workspace:*",
     "@opennextjs/cloudflare": "^1.14.6",
+    "@paper-design/shaders-react": "^0.0.71",
     "@tanstack/react-form": "^1.28.0",
     "@tanstack/react-query": "^5.90.12",
     "@trpc/client": "catalog:",
@@ -31,6 +33,7 @@
     "next-themes": "^0.4.6",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
+    "recharts": "^3.7.0",
     "shadcn": "^3.6.2",
     "sonner": "^2.0.5",
     "tailwind-merge": "^3.3.1",

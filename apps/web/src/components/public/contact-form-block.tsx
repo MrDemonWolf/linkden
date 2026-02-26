@@ -14,6 +14,12 @@ interface ContactFormBlockProps {
 	colorMode: "light" | "dark";
 	captchaProvider: string;
 	captchaSiteKey: string | null;
+	themeColors?: {
+		primary?: string;
+		muted?: string;
+		mutedFg?: string;
+		border?: string;
+	};
 }
 
 function FloatingField({
@@ -124,10 +130,20 @@ function FloatingField({
 	);
 }
 
+function getContrastColor(hex: string): string {
+	const r = parseInt(hex.slice(1, 3), 16) / 255;
+	const g = parseInt(hex.slice(3, 5), 16) / 255;
+	const b = parseInt(hex.slice(5, 7), 16) / 255;
+	const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+	const L = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+	return L > 0.179 ? "#000000" : "#FFFFFF";
+}
+
 export function ContactFormBlock({
 	block,
 	config,
 	colorMode,
+	themeColors,
 }: ContactFormBlockProps) {
 	const { isPreview } = usePreview();
 	const buttonText = (config.buttonText as string) || "Send Message";
@@ -304,11 +320,12 @@ export function ContactFormBlock({
 				<button
 					type="submit"
 					disabled={submitContact.isPending}
-					className={`w-full rounded-xl px-4 py-3 text-sm font-semibold text-white transition-all duration-200 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 ${
-						isDark
-							? "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 focus-visible:outline-blue-400"
-							: "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 focus-visible:outline-blue-500"
-					}`}
+					className="w-full rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 hover:brightness-110"
+					style={{
+						backgroundColor: themeColors?.primary || (isDark ? "#3b82f6" : "#2563eb"),
+						color: getContrastColor(themeColors?.primary || (isDark ? "#3b82f6" : "#2563eb")),
+						outlineColor: themeColors?.primary || (isDark ? "#60a5fa" : "#3b82f6"),
+					}}
 				>
 					{submitContact.isPending ? (
 						<span className="inline-flex items-center gap-2">

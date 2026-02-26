@@ -82,7 +82,7 @@ export default function ContactsPage() {
 	return (
 		<div className="space-y-6">
 			{/* Header */}
-			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+			<div className="sticky top-0 z-20 mt-1 rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-lg shadow-black/5 dark:shadow-black/20 px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div>
 					<h1 className="text-lg font-semibold">Contacts</h1>
 					<p className="text-xs text-muted-foreground">
@@ -142,8 +142,10 @@ export default function ContactsPage() {
 									onClick={() =>
 										setExpandedId(isExpanded ? null : contact.id)
 									}
+									aria-expanded={isExpanded}
 									className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
 								>
+									<span className="sr-only">{contact.isRead ? "Read" : "Unread"}</span>
 									<div
 										className={cn(
 											"flex h-7 w-7 shrink-0 items-center justify-center",
@@ -166,15 +168,15 @@ export default function ContactsPage() {
 											>
 												{contact.name || "Anonymous"}
 											</p>
-											<span className="shrink-0 text-[10px] text-muted-foreground">
+											<span className="shrink-0 text-[11px] text-muted-foreground">
 												{contact.email}
 											</span>
 										</div>
-										<p className="truncate text-[10px] text-muted-foreground">
+										<p className="truncate text-[11px] text-muted-foreground">
 											{contact.message?.slice(0, 80) ?? "No message"}
 										</p>
 									</div>
-									<span className="shrink-0 text-[10px] text-muted-foreground">
+									<span className="shrink-0 text-[11px] text-muted-foreground">
 										{new Date(contact.createdAt).toLocaleDateString()}
 									</span>
 									{isExpanded ? (
@@ -189,7 +191,7 @@ export default function ContactsPage() {
 									<div className="border-t px-4 py-3 space-y-3">
 										<div className="grid gap-2 sm:grid-cols-2">
 											<div>
-												<p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+												<p className="text-[11px] uppercase tracking-wider text-muted-foreground">
 													Name
 												</p>
 												<p className="text-xs">
@@ -197,14 +199,14 @@ export default function ContactsPage() {
 												</p>
 											</div>
 											<div>
-												<p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+												<p className="text-[11px] uppercase tracking-wider text-muted-foreground">
 													Email
 												</p>
 												<p className="text-xs">{contact.email}</p>
 											</div>
 										</div>
 										<div>
-											<p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+											<p className="text-[11px] uppercase tracking-wider text-muted-foreground">
 												Message
 											</p>
 											<p className="mt-1 whitespace-pre-wrap text-xs leading-relaxed">
@@ -212,7 +214,7 @@ export default function ContactsPage() {
 											</p>
 										</div>
 										<div>
-											<p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+											<p className="text-[11px] uppercase tracking-wider text-muted-foreground">
 												Submitted
 											</p>
 											<p className="text-xs">

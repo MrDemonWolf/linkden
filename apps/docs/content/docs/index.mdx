@@ -15,14 +15,16 @@ LinkDen gives you a single-user link page at your root URL. Visitors land direct
 
 ## Key Highlights
 
-- **Edge Performance** -- Static pages served from Cloudflare Pages with API on Workers and D1 SQLite for sub-second load times worldwide.
-- **Full Admin Panel** -- Manage blocks, appearance, analytics, vCard, and Apple Wallet passes from a polished dashboard.
-- **7 Built-in Themes** -- Each theme ships with dark and light variants (14 total) plus auto mode.
-- **5 Block Types** -- Link, Header, Social Icons, Embed, and Contact Form blocks with rich configuration options.
-- **100+ Social Brands** -- Predefined icons for GitHub, Twitter/X, Instagram, YouTube, Discord, and dozens more.
-- **Apple Wallet** -- Generate signed `.pkpass` files for iPhone contact cards.
-- **Whitelabel** -- Toggle off all LinkDen branding with a single setting. MIT license, no attribution required.
-- **Export/Import** -- Back up all data as JSON.
+- **Edge Performance** — Static pages served from Cloudflare Pages with API on Workers and D1 SQLite for sub-second load times worldwide.
+- **Full Admin Panel** — Manage blocks, appearance, analytics, vCard, and Apple Wallet passes from a polished dashboard with its own Light/Dark/System theme toggle.
+- **7 Built-in Themes** — Each theme ships with dark and light variants (14 total) plus auto mode. Admin and public page themes are independent.
+- **5 Block Types** — Link, Header, Social Icons, Embed, and Contact Form blocks with rich configuration options and structured Zod-validated config.
+- **Banner System** — Choose from preset gradients that adapt to your theme colors, or upload a custom banner image.
+- **100+ Social Brands** — Predefined icons with combobox search, horizontal category filters, and automatic contrast-aware ring borders for dark icons.
+- **Security First** — XSS protection via server-side HTML stripping, URL validation, CSS sanitization, and a secure one-time setup token.
+- **Apple Wallet** — Generate signed `.pkpass` files for iPhone contact cards.
+- **Whitelabel** — Toggle off all LinkDen branding with a single setting. MIT license, no attribution required.
+- **Export/Import** — Back up all data as JSON.
 
 ## Tech Stack
 
@@ -35,12 +37,14 @@ LinkDen gives you a single-user link page at your root URL. Visitors land direct
 | Auth      | Better Auth (email/password)         |
 | Styling   | Tailwind CSS + Radix UI              |
 | Monorepo  | Turborepo + pnpm workspaces          |
-| Deploy    | Alchemy -> Cloudflare Workers/Pages  |
+| Deploy    | Alchemy → Cloudflare Workers/Pages   |
 
 ## Next Steps
 
-- [Quick Start](/docs/getting-started/quick-start) -- Set up your first instance in minutes.
-- [Installation](/docs/getting-started/installation) -- Get LinkDen running locally.
-- [Configuration](/docs/getting-started/configuration) -- Set up authentication and environment variables.
-- [Blocks](/docs/guide/blocks) -- Explore the 5 block types and builder.
-- [Appearance](/docs/guide/appearance) -- Customize themes, colors, and branding.
+- [Quick Start](/docs/getting-started/quick-start) — Set up your first instance in minutes.
+- [Installation](/docs/getting-started/installation) — Get LinkDen running locally.
+- [Configuration](/docs/getting-started/configuration) — Set up authentication and environment variables.
+- [Blocks](/docs/guide/blocks) — Explore the 5 block types and builder.
+- [Appearance](/docs/guide/appearance) — Customize themes, colors, banners, and branding.
+- [Theming](/docs/guide/theming) — Understand admin vs. public theming, presets, and CSS variables.
+- [Security](/docs/guide/security) — Learn about XSS protections, setup token, and input sanitization.
