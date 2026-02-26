@@ -15,11 +15,14 @@ import {
 	ExternalLink,
 	Menu,
 	X,
+	Sun,
+	Moon,
+	Monitor,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
 import { cn } from "@/lib/utils";
-import { themePresets } from "@linkden/ui/themes";
 
 const NAV_ITEMS = [
 	{ href: "/admin" as const, label: "Dashboard", icon: LayoutDashboard },
@@ -31,6 +34,12 @@ const NAV_ITEMS = [
 	{ href: "/admin/social" as const, label: "Social", icon: Share2 },
 ];
 
+const THEME_OPTIONS = [
+	{ value: "light", icon: Sun, label: "Light" },
+	{ value: "dark", icon: Moon, label: "Dark" },
+	{ value: "system", icon: Monitor, label: "System" },
+] as const;
+
 function SidebarContent({
 	pathname,
 	unreadCount,
@@ -41,6 +50,7 @@ function SidebarContent({
 	onNavClick?: () => void;
 }) {
 	const isDev = process.env.NODE_ENV === "development";
+	const { setTheme, theme: adminTheme } = useTheme();
 
 	return (
 		<div className="flex h-full flex-col">
@@ -66,17 +76,19 @@ function SidebarContent({
 							key={item.href}
 							href={item.href}
 							onClick={onNavClick}
+							aria-current={isActive ? "page" : undefined}
+							aria-label={item.label === "Contacts" && unreadCount > 0 ? `Contacts, ${unreadCount} unread` : undefined}
 							className={cn(
-								"flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors",
+								"flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium transition-all",
 								isActive
-									? "bg-white/20 dark:bg-white/10 backdrop-blur-sm text-primary"
-									: "text-muted-foreground hover:bg-muted hover:text-foreground",
+									? "bg-white/15 dark:bg-white/10 backdrop-blur-sm text-foreground border-l-2 border-primary"
+									: "text-muted-foreground hover:bg-white/10 hover:backdrop-blur-sm hover:text-foreground",
 							)}
 						>
 							<Icon className="h-4 w-4 shrink-0" />
 							<span>{item.label}</span>
 							{item.label === "Contacts" && unreadCount > 0 && (
-								<span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-white">
+								<span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[11px] font-semibold text-white">
 									{unreadCount > 99 ? "99+" : unreadCount}
 								</span>
 							)}
@@ -85,17 +97,52 @@ function SidebarContent({
 				})}
 			</nav>
 
-			{/* Public page link */}
-			<div className="px-2 pb-2">
+			{/* External links */}
+			<div className="px-2 pb-2 space-y-0.5">
+				<a
+					href={isDev ? "http://localhost:3002" : "https://mrdemonwolf.github.io/linkden/"}
+					target="_blank"
+					rel="noopener noreferrer"
+					className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-muted-foreground hover:bg-white/10 hover:backdrop-blur-sm hover:text-foreground transition-all"
+				>
+					<ExternalLink className="h-3.5 w-3.5" />
+					<span>View Docs</span>
+				</a>
 				<a
 					href="/"
 					target="_blank"
 					rel="noopener noreferrer"
-					className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+					className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-muted-foreground hover:bg-white/10 hover:backdrop-blur-sm hover:text-foreground transition-all"
 				>
 					<ExternalLink className="h-3.5 w-3.5" />
 					<span>View Public Page</span>
 				</a>
+			</div>
+
+			{/* Theme toggle */}
+			<div className="px-2 pb-2">
+				<div className="flex w-full rounded-lg border border-border/50 p-0.5 bg-muted/30">
+					{THEME_OPTIONS.map((opt) => {
+						const Icon = opt.icon;
+						return (
+							<button
+								key={opt.value}
+								type="button"
+								onClick={() => setTheme(opt.value)}
+								className={cn(
+									"flex flex-1 items-center justify-center rounded-md p-1.5 transition-all",
+									adminTheme === opt.value
+										? "bg-white/20 text-foreground shadow-sm"
+										: "text-muted-foreground hover:text-foreground",
+								)}
+								title={opt.label}
+								aria-label={`Switch to ${opt.label} theme`}
+							>
+								<Icon className="h-3.5 w-3.5" />
+							</button>
+						);
+					})}
+				</div>
 			</div>
 
 			{/* Version */}
@@ -131,22 +178,6 @@ export default function AdminLayout({
 
 	const unreadCount = unreadQuery.data?.count ?? 0;
 
-	const settingsQuery = useQuery({
-		...trpc.settings.getAll.queryOptions(),
-		enabled: !!session?.user,
-	});
-
-	// Resolve glass tint colors from theme preset
-	const glassTints = (() => {
-		const themePresetName = settingsQuery.data?.theme_preset || "default";
-		const preset = themePresets.find((t) => t.name === themePresetName) ?? themePresets[0];
-		return {
-			tint1: preset.cssVars.light["--ld-primary"],
-			tint2: preset.cssVars.light["--ld-accent"],
-			primary: preset.cssVars.light["--ld-primary"],
-		};
-	})();
-
 	// Allow login and setup pages without auth
 	const isPublicRoute =
 		pathname === "/admin/login" || pathname === "/admin/setup";
@@ -164,7 +195,7 @@ export default function AdminLayout({
 
 	if (isPending) {
 		return (
-			<div className="flex min-h-screen items-center justify-center">
+			<div className="flex min-h-screen items-center justify-center" role="status" aria-label="Loading">
 				<div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
 			</div>
 		);
@@ -175,15 +206,7 @@ export default function AdminLayout({
 	}
 
 	return (
-		<div
-			className="admin-glass-bg flex min-h-screen"
-			style={{
-				"--glass-tint-1": glassTints.tint1,
-				"--glass-tint-2": glassTints.tint2,
-				"--primary": glassTints.primary,
-				"--primary-foreground": "#ffffff",
-			} as React.CSSProperties}
-		>
+		<div className="admin-glass-bg flex min-h-screen">
 			{/* Desktop sidebar */}
 			<aside className="hidden w-56 shrink-0 border-r border-white/20 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-2xl md:block">
 				<div className="sticky top-0 h-screen overflow-y-auto">
@@ -203,6 +226,8 @@ export default function AdminLayout({
 					type="button"
 					onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
 					className="flex h-8 w-8 items-center justify-center text-muted-foreground"
+					aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+					aria-expanded={mobileMenuOpen}
 				>
 					{mobileMenuOpen ? (
 						<X className="h-4 w-4" />
@@ -218,11 +243,15 @@ export default function AdminLayout({
 					<div
 						className="fixed inset-0 z-40 bg-black/40 md:hidden"
 						onClick={() => setMobileMenuOpen(false)}
+					/>
+					<div
+						className="fixed inset-y-0 left-0 z-50 w-56 bg-white/80 dark:bg-black/60 backdrop-blur-2xl shadow-lg md:hidden"
+						role="dialog"
+						aria-modal="true"
 						onKeyDown={(e) => {
 							if (e.key === "Escape") setMobileMenuOpen(false);
 						}}
-					/>
-					<div className="fixed inset-y-0 left-0 z-50 w-56 bg-white/80 dark:bg-black/60 backdrop-blur-2xl shadow-lg md:hidden">
+					>
 						<SidebarContent
 							pathname={pathname}
 							unreadCount={unreadCount}
@@ -245,17 +274,18 @@ export default function AdminLayout({
 						<Link
 							key={item.href}
 							href={item.href}
+							aria-current={isActive ? "page" : undefined}
 							className={cn(
 								"flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px]",
 								isActive
-									? "text-primary"
+									? "text-foreground border-t-2 border-primary"
 									: "text-muted-foreground",
 							)}
 						>
 							<div className="relative">
 								<Icon className="h-4 w-4" />
 								{item.label === "Contacts" && unreadCount > 0 && (
-									<span className="absolute -right-2 -top-1 flex h-3 min-w-3 items-center justify-center rounded-full bg-destructive px-0.5 text-[8px] font-bold text-white">
+									<span className="absolute -right-2 -top-1 flex h-3 min-w-3 items-center justify-center rounded-full bg-destructive px-0.5 text-[10px] font-bold text-white">
 										{unreadCount > 9 ? "9+" : unreadCount}
 									</span>
 								)}
