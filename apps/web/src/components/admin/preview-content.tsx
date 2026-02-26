@@ -2,8 +2,21 @@
 
 import { Avatar } from "@/components/public/avatar";
 import { BannerSection } from "@/components/public/banner-section";
+import { LinkBlock } from "@/components/public/link-block";
+import { HeaderBlock } from "@/components/public/header-block";
+import { SocialIconsBlock } from "@/components/public/social-icons-block";
+import { EmbedBlock } from "@/components/public/embed-block";
+import { ContactFormBlock } from "@/components/public/contact-form-block";
 import { WhitelabelFooter } from "@/components/public/whitelabel-footer";
 import type { ThemeColors } from "@/components/public/public-page";
+
+interface SocialNetwork {
+	slug: string;
+	name: string;
+	url: string;
+	hex: string;
+	svgPath: string;
+}
 
 export interface PreviewContentProps {
 	profile: {
@@ -17,25 +30,49 @@ export interface PreviewContentProps {
 		id: string;
 		type: string;
 		title: string | null;
+		url: string | null;
+		icon: string | null;
+		embedType: string | null;
+		embedUrl: string | null;
+		socialIcons: string | null;
+		config: string | null;
+		position: number;
 	}>;
+	socialNetworks?: SocialNetwork[];
 	settings: {
 		brandingEnabled: boolean;
 		brandingText: string;
 		bannerPreset: string | null;
 		bannerEnabled: boolean;
+		bannerMode?: "preset" | "custom";
+		bannerCustomUrl?: string;
+		socialIconShape?: "circle" | "rounded-square" | null;
+		contactFormEnabled?: boolean;
+		captchaProvider?: string;
+		captchaSiteKey?: string | null;
 	};
 	themeColors: ThemeColors;
 	colorMode: "light" | "dark";
 }
 
+function parseConfig(config: string | null): Record<string, unknown> {
+	if (!config) return {};
+	try {
+		return JSON.parse(config);
+	} catch {
+		return {};
+	}
+}
+
 export function PreviewContent({
 	profile,
 	blocks,
+	socialNetworks,
 	settings,
 	themeColors,
 	colorMode,
 }: PreviewContentProps) {
-	const hasBanner = settings.bannerEnabled && settings.bannerPreset;
+	const hasBanner = settings.bannerEnabled && (settings.bannerPreset || (settings.bannerMode === "custom" && settings.bannerCustomUrl));
 
 	return (
 		<div
@@ -48,10 +85,12 @@ export function PreviewContent({
 		>
 			{hasBanner && (
 				<BannerSection
-					bannerPreset={settings.bannerPreset!}
+					bannerPreset={settings.bannerPreset || ""}
 					colorMode={colorMode}
 					bgColor={themeColors.bg}
 					themeColors={themeColors}
+					bannerMode={settings.bannerMode}
+					bannerCustomUrl={settings.bannerCustomUrl}
 				/>
 			)}
 
@@ -72,7 +111,8 @@ export function PreviewContent({
 						{profile.name}
 						{profile.isVerified && (
 							<svg
-								className="h-6 w-6 text-blue-500 shrink-0"
+								className="h-6 w-6 shrink-0"
+								style={{ color: themeColors.primary }}
 								viewBox="0 0 24 24"
 								fill="currentColor"
 								aria-hidden="true"
@@ -91,124 +131,65 @@ export function PreviewContent({
 					)}
 				</div>
 
-				{/* Placeholder Blocks */}
-				<div className="space-y-3">
-					{blocks.map((block) => {
-						switch (block.type) {
+				{/* Blocks */}
+				<div className="ld-blocks space-y-3">
+					{blocks.map((blockData) => {
+						const config = parseConfig(blockData.config);
+
+						switch (blockData.type) {
 							case "link":
 								return (
-									<div
-										key={block.id}
-										className="flex items-center gap-3 rounded-lg px-4 py-3"
-										style={{
-											backgroundColor: themeColors.card,
-											border: `1px solid ${themeColors.border}`,
-										}}
-									>
-										<div
-											className="h-4 w-4 shrink-0 rounded"
-											style={{ backgroundColor: themeColors.primary, opacity: 0.5 }}
-										/>
-										<span
-											className="truncate text-sm font-medium"
-											style={{ color: themeColors.cardFg }}
-										>
-											{block.title || "Link"}
-										</span>
-									</div>
+									<LinkBlock
+										key={blockData.id}
+										block={blockData}
+										config={config}
+										colorMode={colorMode}
+										themeColors={themeColors}
+									/>
 								);
 							case "header":
 								return (
-									<div
-										key={block.id}
-										className="py-2 text-center"
-									>
-										<span
-											className="text-xs font-semibold uppercase tracking-wider"
-											style={{ color: themeColors.mutedFg }}
-										>
-											{block.title || "Header"}
-										</span>
-									</div>
+									<HeaderBlock
+										key={blockData.id}
+										block={blockData}
+										config={config}
+										colorMode={colorMode}
+										themeColors={themeColors}
+									/>
 								);
 							case "social_icons":
 								return (
-									<div
-										key={block.id}
-										className="flex items-center justify-center gap-2 py-2"
-									>
-										{[1, 2, 3, 4].map((i) => (
-											<div
-												key={i}
-												className="h-8 w-8 rounded-full"
-												style={{
-													backgroundColor: themeColors.muted,
-													border: `1px solid ${themeColors.border}`,
-												}}
-											/>
-										))}
-									</div>
+									<SocialIconsBlock
+										key={blockData.id}
+										block={blockData}
+										config={config}
+										colorMode={colorMode}
+										networks={socialNetworks}
+										themeColors={themeColors}
+										globalIconShape={settings.socialIconShape ?? undefined}
+									/>
 								);
 							case "embed":
 								return (
-									<div
-										key={block.id}
-										className="flex items-center justify-center rounded-lg"
-										style={{
-											backgroundColor: themeColors.muted,
-											border: `1px solid ${themeColors.border}`,
-											height: 80,
-										}}
-									>
-										<svg
-											className="h-6 w-6"
-											style={{ color: themeColors.mutedFg, opacity: 0.5 }}
-											fill="none"
-											viewBox="0 0 24 24"
-											stroke="currentColor"
-											strokeWidth={1.5}
-										>
-											<path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
-										</svg>
-									</div>
+									<EmbedBlock
+										key={blockData.id}
+										block={blockData}
+										config={config}
+										colorMode={colorMode}
+										themeColors={themeColors}
+									/>
 								);
 							case "contact_form":
 								return (
-									<div
-										key={block.id}
-										className="space-y-2 rounded-lg p-4"
-										style={{
-											backgroundColor: themeColors.card,
-											border: `1px solid ${themeColors.border}`,
-										}}
-									>
-										<div
-											className="h-3 w-20 rounded"
-											style={{ backgroundColor: themeColors.muted }}
-										/>
-										<div
-											className="h-8 rounded"
-											style={{
-												backgroundColor: themeColors.muted,
-												border: `1px solid ${themeColors.border}`,
-											}}
-										/>
-										<div
-											className="h-3 w-16 rounded"
-											style={{ backgroundColor: themeColors.muted }}
-										/>
-										<div
-											className="h-8 rounded"
-											style={{
-												backgroundColor: themeColors.muted,
-												border: `1px solid ${themeColors.border}`,
-											}}
-										/>
-										<div
-											className="mt-2 h-8 rounded"
-											style={{ backgroundColor: themeColors.primary, opacity: 0.7 }}
-										/>
-									</div>
+									<ContactFormBlock
+										key={blockData.id}
+										block={blockData}
+										config={config}
+										colorMode={colorMode}
+										captchaProvider={settings.captchaProvider ?? "none"}
+										captchaSiteKey={settings.captchaSiteKey ?? null}
+										themeColors={themeColors}
+									/>
 								);
 							default:
 								return null;
@@ -221,6 +202,7 @@ export function PreviewContent({
 				<WhitelabelFooter
 					text={settings.brandingText}
 					mutedFg={themeColors.mutedFg}
+					profileName={profile.name}
 				/>
 			)}
 		</div>

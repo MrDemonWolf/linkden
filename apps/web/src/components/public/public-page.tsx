@@ -52,12 +52,15 @@ interface PageData {
 		captchaSiteKey: string | null;
 		bannerPreset: string | null;
 		bannerEnabled: boolean;
+		bannerMode?: "preset" | "custom";
+		bannerCustomUrl?: string | null;
 		themePreset: string;
 		customPrimary: string | null;
 		customSecondary: string | null;
 		customAccent: string | null;
 		customBackground: string | null;
 		customCss: string | null;
+		socialIconShape: "circle" | "rounded-square" | null;
 	};
 }
 
@@ -179,7 +182,10 @@ export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolea
 					captchaSiteKey: data.settings.captchaSiteKey,
 					bannerPreset: data.settings.bannerPreset,
 					bannerEnabled: data.settings.bannerEnabled,
+					bannerMode: data.settings.bannerMode,
+					bannerCustomUrl: data.settings.bannerCustomUrl,
 					customCss: data.settings.customCss,
+					socialIconShape: data.settings.socialIconShape,
 				}}
 				themeColors={themeColors}
 				colorMode={colorMode}

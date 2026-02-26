@@ -4,6 +4,51 @@ import { block } from "@linkden/db/schema/index";
 import { eq, asc, sql } from "drizzle-orm";
 import { z } from "zod";
 
+// Sanitize user-entered block content
+function stripHtml(str: string): string {
+	return str.replace(/<[^>]*>/g, "");
+}
+
+function sanitizeUrl(url: string): string {
+	if (!url) return url;
+	try {
+		const parsed = new URL(url);
+		if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+			return "";
+		}
+		return url;
+	} catch {
+		return url; // might be a relative URL or partial during editing
+	}
+}
+
+function sanitizeBlockInput<T extends Record<string, unknown>>(input: T): T {
+	const sanitized = { ...input };
+	if (typeof sanitized.title === "string") {
+		(sanitized as Record<string, unknown>).title = stripHtml(sanitized.title as string);
+	}
+	if (typeof sanitized.url === "string") {
+		(sanitized as Record<string, unknown>).url = sanitizeUrl(sanitized.url as string);
+	}
+	if (typeof sanitized.embedUrl === "string") {
+		(sanitized as Record<string, unknown>).embedUrl = sanitizeUrl(sanitized.embedUrl as string);
+	}
+	if (typeof sanitized.socialIcons === "string") {
+		try {
+			const icons = JSON.parse(sanitized.socialIcons as string) as Array<{ platform: string; url: string }>;
+			const sanitizedIcons = icons.map((icon) => ({
+				platform: stripHtml(icon.platform || ""),
+				url: sanitizeUrl(icon.url || ""),
+			}));
+			(sanitized as Record<string, unknown>).socialIcons = JSON.stringify(sanitizedIcons);
+		} catch {
+			// Invalid JSON — clear it
+			(sanitized as Record<string, unknown>).socialIcons = "[]";
+		}
+	}
+	return sanitized;
+}
+
 export const blocksRouter = router({
 	list: protectedProcedure.query(async () => {
 		return db.select().from(block).orderBy(asc(block.position));
@@ -44,10 +89,11 @@ export const blocksRouter = router({
 			}),
 		)
 		.mutation(async ({ input }) => {
+			const sanitized = sanitizeBlockInput(input);
 			const [result] = await db
 				.insert(block)
 				.values({
-					...input,
+					...sanitized,
 					status: "draft",
 					scheduledStart: input.scheduledStart ?? null,
 					scheduledEnd: input.scheduledEnd ?? null,
@@ -76,9 +122,10 @@ export const blocksRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			const { id, ...data } = input;
+			const sanitized = sanitizeBlockInput(data);
 			const [result] = await db
 				.update(block)
-				.set({ ...data, status: "draft", updatedAt: new Date() })
+				.set({ ...sanitized, status: "draft", updatedAt: new Date() })
 				.where(eq(block.id, id))
 				.returning();
 			return result;

@@ -341,7 +341,16 @@ If SSL provisioning fails:
 
 ## Step 9: First-Time Auth Setup
 
-After deploying, visit `https://yourdomain.com/admin/setup` to complete the setup wizard. This creates your admin account with your chosen email and password.
+After deploying:
+
+1. Check the API container logs in Coolify (click on the API service, then **Logs**) for the setup URL:
+   ```
+   Setup URL: https://yourdomain.com/admin/setup?token=<unique-token>
+   ```
+   The server generates a one-time secure token on first startup and prints the full URL to the console.
+2. Open this URL in your browser to access the setup wizard. The token is required -- navigating to `/admin/setup` without it will show an error.
+3. Complete the wizard to create your admin account (name, email, and password).
+4. The setup token is automatically invalidated once setup completes.
 
 After setup is complete, sign in at `/admin/login`.
 

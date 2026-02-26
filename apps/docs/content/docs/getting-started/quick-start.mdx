@@ -11,7 +11,13 @@ This guide walks you through the first-time setup of a LinkDen instance. If you 
 
 ## 1. Run the Setup Wizard
 
-Navigate to `/admin/setup` on your LinkDen instance (e.g., `http://localhost:3001/admin/setup`).
+The setup wizard is protected by a one-time security token. When your LinkDen server starts for the first time, it prints a setup URL to the **server console**:
+
+```
+Setup URL: http://localhost:3001/admin/setup?token=<unique-token>
+```
+
+Open this URL in your browser. If you navigate to `/admin/setup` without the token, you will see a "Setup Token Required" message directing you to check the server console.
 
 The setup wizard walks you through 4 steps:
 
@@ -27,7 +33,7 @@ Create your admin account with Better Auth (email/password):
 
 Set up your public profile:
 
-- **Bio** -- A short tagline or description (optional).
+- **Bio** -- A short tagline or description (up to 300 characters, optional).
 - **Avatar URL** -- URL to your profile image (optional).
 
 Both fields can be skipped and configured later in settings.
@@ -38,7 +44,7 @@ Choose a theme preset from the 7 available themes. Each theme is shown as a card
 
 ### Step 4: Done
 
-A confirmation screen with a "Go to Builder" button that redirects to `/admin/builder`.
+A confirmation screen with a "Go to Builder" button that redirects to `/admin/builder`. The setup token is automatically invalidated once setup completes.
 
 ---
 
@@ -77,7 +83,13 @@ Drag any block in the list using the grip handle to reorder. The order updates i
 
 ## 3. Manage Social Icons
 
-Navigate to `/admin/social` to toggle which social networks are active. Active networks become available for use in **Social Icons** blocks. Search by name or filter to see only active networks.
+Navigate to `/admin/social` to manage social networks. The page features:
+
+- **Combobox search** -- A searchable dropdown to quickly find networks by name.
+- **Category filter tabs** -- Horizontal pill-style tabs (Social, Video, Music, Development, etc.) to browse by category.
+- **Auto-invert icons** -- Brand icons that are too dark automatically invert in dark mode for visibility.
+
+Toggle networks on/off and enter URLs. Active networks become available for use in **Social Icons** blocks.
 
 ---
 

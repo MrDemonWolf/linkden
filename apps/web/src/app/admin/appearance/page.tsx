@@ -3,9 +3,10 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Palette, Sun, Moon, Monitor, Check, Upload, Undo2, Info, Tag, BadgeCheck, User } from "lucide-react";
+import { Palette, Sun, Moon, Monitor, Check, Upload, Undo2, Info, Tag, BadgeCheck, User, Image as ImageIcon, Share2 } from "lucide-react";
 import { themePresets } from "@linkden/ui/themes";
-import { getBannerPresetsForTheme } from "@linkden/ui/banner-presets";
+import { getBannerPresetsForTheme, type BannerPreset } from "@linkden/ui/banner-presets";
+import { socialBrandMap } from "@linkden/ui/social-brands";
 import { trpc } from "@/utils/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { PhoneFrame } from "@/components/admin/phone-frame";
 import { PreviewContent } from "@/components/admin/preview-content";
+import { ShaderBanner } from "@/components/public/shader-banner";
 
 const COLOR_MODE_OPTIONS = [
 	{ value: "light", label: "Light", icon: Sun },
@@ -36,10 +38,13 @@ interface SavedState {
 	customCss: string;
 	bannerEnabled: boolean;
 	bannerPreset: string;
+	bannerMode: "preset" | "custom";
+	bannerCustomUrl: string;
 	verifiedBadge: boolean;
 	brandingEnabled: boolean;
 	brandingText: string;
 	brandingLink: string;
+	socialIconShape: "circle" | "rounded-square";
 }
 
 function buildSavedState(settings: Record<string, string>): SavedState {
@@ -56,10 +61,13 @@ function buildSavedState(settings: Record<string, string>): SavedState {
 		customCss: settings.custom_css ?? "",
 		bannerEnabled: settings.banner_enabled === "true",
 		bannerPreset: settings.banner_preset ?? "",
+		bannerMode: (settings.banner_mode as "preset" | "custom") || "preset",
+		bannerCustomUrl: settings.banner_custom_url ?? "",
 		verifiedBadge: settings.verified_badge === "true",
 		brandingEnabled: settings.branding_enabled !== "false",
 		brandingText: settings.branding_text ?? "",
 		brandingLink: settings.branding_link ?? "",
+		socialIconShape: (settings.social_icon_shape as "circle" | "rounded-square") || "circle",
 	};
 }
 
@@ -68,7 +76,19 @@ export default function AppearancePage() {
 	const settingsQuery = useQuery(trpc.settings.getAll.queryOptions());
 	const blocksQuery = useQuery(trpc.blocks.list.queryOptions());
 	const blocks = (blocksQuery.data ?? []).filter((b: { isEnabled: boolean }) => b.isEnabled);
+	const socialsQuery = useQuery(trpc.social.list.queryOptions({ activeOnly: true }));
 	const updateSettings = useMutation(trpc.settings.updateBulk.mutationOptions());
+
+	const previewSocialNetworks = useMemo(() => {
+		return (socialsQuery.data ?? [])
+			.filter((s: { isActive: boolean; url: string }) => s.isActive && s.url)
+			.map((s: { slug: string; url: string }) => {
+				const brand = socialBrandMap.get(s.slug);
+				if (!brand) return null;
+				return { slug: s.slug, name: brand.name, url: s.url, hex: brand.hex, svgPath: brand.svgPath };
+			})
+			.filter(Boolean) as Array<{ slug: string; name: string; url: string; hex: string; svgPath: string }>;
+	}, [socialsQuery.data]);
 
 	const settings = settingsQuery.data ?? {};
 
@@ -85,10 +105,13 @@ export default function AppearancePage() {
 		customCss: "",
 		bannerEnabled: false,
 		bannerPreset: "",
+		bannerMode: "preset",
+		bannerCustomUrl: "",
 		verifiedBadge: false,
 		brandingEnabled: true,
 		brandingText: "",
 		brandingLink: "",
+		socialIconShape: "circle",
 	});
 
 	const [profileName, setProfileName] = useState("");
@@ -105,17 +128,30 @@ export default function AppearancePage() {
 	const [previewDark, setPreviewDark] = useState(false);
 	const [bannerEnabled, setBannerEnabled] = useState(false);
 	const [bannerPreset, setBannerPreset] = useState("");
+	const [bannerMode, setBannerMode] = useState<"preset" | "custom">("preset");
+	const [bannerCustomUrl, setBannerCustomUrl] = useState("");
 	const [verifiedBadge, setVerifiedBadge] = useState(false);
 	const [brandingEnabled, setBrandingEnabled] = useState(true);
 	const [brandingText, setBrandingText] = useState("");
 	const [brandingLink, setBrandingLink] = useState("");
+	const [socialIconShape, setSocialIconShape] = useState<"circle" | "rounded-square">("circle");
+
+	// Detect system color preference for preview when "system" is selected
+	const [systemPrefersDark, setSystemPrefersDark] = useState(false);
+	useEffect(() => {
+		const mq = window.matchMedia("(prefers-color-scheme: dark)");
+		setSystemPrefersDark(mq.matches);
+		const handler = (e: MediaQueryListEvent) => setSystemPrefersDark(e.matches);
+		mq.addEventListener("change", handler);
+		return () => mq.removeEventListener("change", handler);
+	}, []);
 
 	// Sync preview dark mode when color mode setting changes
 	useEffect(() => {
 		if (colorMode === "dark") setPreviewDark(true);
 		else if (colorMode === "light") setPreviewDark(false);
-		// "system" leaves the manual toggle as-is
-	}, [colorMode]);
+		else if (colorMode === "system") setPreviewDark(systemPrefersDark);
+	}, [colorMode, systemPrefersDark]);
 
 	// Load settings into state
 	useEffect(() => {
@@ -134,10 +170,13 @@ export default function AppearancePage() {
 			setCustomCss(s.customCss);
 			setBannerEnabled(s.bannerEnabled);
 			setBannerPreset(s.bannerPreset);
+			setBannerMode(s.bannerMode);
+			setBannerCustomUrl(s.bannerCustomUrl);
 			setVerifiedBadge(s.verifiedBadge);
 			setBrandingEnabled(s.brandingEnabled);
 			setBrandingText(s.brandingText);
 			setBrandingLink(s.brandingLink);
+			setSocialIconShape(s.socialIconShape);
 		}
 	}, [settingsQuery.data]);
 
@@ -154,10 +193,13 @@ export default function AppearancePage() {
 		customCss !== savedState.customCss ||
 		bannerEnabled !== savedState.bannerEnabled ||
 		bannerPreset !== savedState.bannerPreset ||
+		bannerMode !== savedState.bannerMode ||
+		bannerCustomUrl !== savedState.bannerCustomUrl ||
 		verifiedBadge !== savedState.verifiedBadge ||
 		brandingEnabled !== savedState.brandingEnabled ||
 		brandingText !== savedState.brandingText ||
-		brandingLink !== savedState.brandingLink;
+		brandingLink !== savedState.brandingLink ||
+		socialIconShape !== savedState.socialIconShape;
 
 	// Warn on navigation with unsaved changes
 	useEffect(() => {
@@ -180,7 +222,6 @@ export default function AppearancePage() {
 		setSelectedTheme(name);
 		const preset = themePresets.find((t) => t.name === name);
 		if (preset) {
-			// Always read from light preset — custom colors are stored as light-mode values
 			const vars = preset.cssVars.light;
 			setPrimaryColor(vars["--ld-primary"]);
 			setSecondaryColor(vars["--ld-secondary"]);
@@ -204,10 +245,13 @@ export default function AppearancePage() {
 				{ key: "custom_css", value: customCss },
 				{ key: "banner_enabled", value: String(bannerEnabled) },
 				{ key: "banner_preset", value: bannerPreset },
+				{ key: "banner_mode", value: bannerMode },
+				{ key: "banner_custom_url", value: bannerCustomUrl },
 				{ key: "verified_badge", value: String(verifiedBadge) },
 				{ key: "branding_enabled", value: String(brandingEnabled) },
 				{ key: "branding_text", value: brandingText },
 				{ key: "branding_link", value: brandingLink },
+				{ key: "social_icon_shape", value: socialIconShape },
 			]);
 			setSavedState({
 				profileName,
@@ -222,10 +266,13 @@ export default function AppearancePage() {
 				customCss,
 				bannerEnabled,
 				bannerPreset,
+				bannerMode,
+				bannerCustomUrl,
 				verifiedBadge,
 				brandingEnabled,
 				brandingText,
 				brandingLink,
+				socialIconShape,
 			});
 			invalidate();
 			toast.success("Appearance published");
@@ -247,10 +294,13 @@ export default function AppearancePage() {
 		setCustomCss(savedState.customCss);
 		setBannerEnabled(savedState.bannerEnabled);
 		setBannerPreset(savedState.bannerPreset);
+		setBannerMode(savedState.bannerMode);
+		setBannerCustomUrl(savedState.bannerCustomUrl);
 		setVerifiedBadge(savedState.verifiedBadge);
 		setBrandingEnabled(savedState.brandingEnabled);
 		setBrandingText(savedState.brandingText);
 		setBrandingLink(savedState.brandingLink);
+		setSocialIconShape(savedState.socialIconShape);
 	};
 
 	// Resolve full theme CSS vars for preview
@@ -258,7 +308,6 @@ export default function AppearancePage() {
 		const preset = themePresets.find((t) => t.name === selectedTheme) ?? themePresets[0];
 		const mode = previewDark ? "dark" : "light";
 		const vars = { ...preset.cssVars[mode] };
-		// Only apply custom color overrides in light mode (they're stored as light-mode values)
 		if (!previewDark) {
 			vars["--ld-primary"] = primaryColor;
 			vars["--ld-secondary"] = secondaryColor;
@@ -292,32 +341,34 @@ export default function AppearancePage() {
 
 	return (
 		<div className="space-y-4">
-			{/* Header row */}
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-lg font-semibold">Appearance</h1>
-					<p className="text-xs text-muted-foreground">
-						{isDirty
-							? "Unsaved changes \u2014 publish to go live"
-							: "Your page is up to date"}
-					</p>
-				</div>
-				<div className="flex gap-2">
-					{isDirty && (
-						<Button variant="ghost" size="sm" onClick={handleDiscard}>
-							<Undo2 className="mr-1.5 h-3.5 w-3.5" />
-							Discard
+			{/* Sticky header */}
+			<div className="sticky top-0 z-20 mt-1 rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-lg shadow-black/5 dark:shadow-black/20 px-4 py-3">
+				<div className="flex items-center justify-between">
+					<div>
+						<h1 className="text-lg font-semibold">Appearance</h1>
+						<p className="text-xs text-muted-foreground">
+							{isDirty
+								? "You have unpublished changes"
+								: "All changes are live"}
+						</p>
+					</div>
+					<div className="flex gap-2">
+						{isDirty && (
+							<Button variant="ghost" size="sm" onClick={handleDiscard}>
+								<Undo2 className="mr-1.5 h-3.5 w-3.5" />
+								Discard
+							</Button>
+						)}
+						<Button
+							size="sm"
+							variant={isDirty ? "default" : "outline"}
+							disabled={!isDirty || updateSettings.isPending}
+							onClick={handlePublish}
+						>
+							<Upload className="mr-1.5 h-3.5 w-3.5" />
+							{updateSettings.isPending ? "Publishing..." : "Publish"}
 						</Button>
-					)}
-					<Button
-						variant={isDirty ? "default" : "outline"}
-						size="sm"
-						disabled={!isDirty || updateSettings.isPending}
-						onClick={handlePublish}
-					>
-						<Upload className="mr-1.5 h-3.5 w-3.5" />
-						{updateSettings.isPending ? "Publishing..." : "Publish"}
-					</Button>
+					</div>
 				</div>
 			</div>
 
@@ -325,7 +376,7 @@ export default function AppearancePage() {
 			<div className="flex gap-6">
 				{/* Settings column */}
 				<div className="flex-1 min-w-0 space-y-6">
-					{/* Profile */}
+					{/* Profile — Centered avatar above fields */}
 					<Card>
 						<CardHeader>
 							<CardTitle className="flex items-center gap-1.5">
@@ -334,36 +385,41 @@ export default function AppearancePage() {
 							</CardTitle>
 						</CardHeader>
 						<CardContent className="space-y-4">
-							<div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+							<div className="flex flex-col items-center gap-2">
 								<ImageUploadField
-									label="Avatar"
 									value={profileAvatar}
 									purpose="avatar"
 									aspectRatio="square"
 									onUploadComplete={(url) => setProfileAvatar(url)}
 								/>
-								<div className="flex-1 space-y-4">
-									<div className="space-y-1.5">
-										<Label htmlFor="a-name">Display Name</Label>
-										<Input
-											id="a-name"
-											value={profileName}
-											onChange={(e) => setProfileName(e.target.value)}
-											placeholder="Your display name"
-										/>
-									</div>
-									<div className="space-y-1.5">
-										<Label htmlFor="a-bio">Bio</Label>
-										<textarea
-											id="a-bio"
-											value={profileBio}
-											onChange={(e) => setProfileBio(e.target.value)}
-											rows={2}
-											placeholder="A short bio about you"
-											className="dark:bg-input/30 border-input w-full rounded-md border bg-transparent px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-ring"
-										/>
-									</div>
+							</div>
+							<div className="space-y-1.5">
+								<div className="flex items-center justify-between">
+									<Label htmlFor="a-name">Display Name</Label>
+									<span className="text-[10px] text-muted-foreground">{profileName.length}/50</span>
 								</div>
+								<Input
+									id="a-name"
+									value={profileName}
+									onChange={(e) => setProfileName(e.target.value.slice(0, 50))}
+									maxLength={50}
+									placeholder="Your display name"
+								/>
+							</div>
+							<div className="space-y-1.5">
+								<div className="flex items-center justify-between">
+									<Label htmlFor="a-bio">Bio</Label>
+									<span className="text-[10px] text-muted-foreground">{profileBio.length}/300</span>
+								</div>
+								<textarea
+									id="a-bio"
+									value={profileBio}
+									onChange={(e) => setProfileBio(e.target.value.slice(0, 300))}
+									rows={4}
+									maxLength={300}
+									placeholder="A short bio about you"
+									className="dark:bg-input/30 border-input w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
+								/>
 							</div>
 						</CardContent>
 					</Card>
@@ -384,7 +440,7 @@ export default function AppearancePage() {
 										type="button"
 										onClick={() => handleThemeSelect(theme.name)}
 										className={cn(
-											"relative flex flex-col items-center gap-2 border p-3 text-xs transition-colors",
+											"relative flex flex-col items-center gap-2 rounded-lg border p-3 text-xs transition-colors",
 											selectedTheme === theme.name
 												? "border-primary bg-primary/5"
 												: "border-border hover:border-muted-foreground/30",
@@ -418,42 +474,40 @@ export default function AppearancePage() {
 						</CardContent>
 					</Card>
 
-					{/* Color mode */}
+					{/* Colors */}
 					<Card>
 						<CardHeader>
-							<CardTitle>Default Color Mode</CardTitle>
+							<CardTitle className="flex items-center gap-1.5">
+								<Palette className="h-4 w-4 text-muted-foreground" />
+								Colors
+							</CardTitle>
 						</CardHeader>
-						<CardContent>
-							<div className="flex gap-2">
-								{COLOR_MODE_OPTIONS.map((opt) => {
-									const Icon = opt.icon;
-									return (
-										<button
-											key={opt.value}
-											type="button"
-											onClick={() => setColorMode(opt.value)}
-											className={cn(
-												"flex items-center gap-1.5 border px-3 py-2 text-xs font-medium transition-colors",
-												colorMode === opt.value
-													? "border-primary bg-primary/5 text-primary"
-													: "border-border text-muted-foreground hover:text-foreground",
-											)}
-										>
-											<Icon className="h-3.5 w-3.5" />
-											{opt.label}
-										</button>
-									);
-								})}
+						<CardContent className="space-y-4">
+							<div>
+								<Label className="mb-2 block">Default Color Mode</Label>
+								<div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/30">
+									{COLOR_MODE_OPTIONS.map((opt) => {
+										const Icon = opt.icon;
+										return (
+											<button
+												key={opt.value}
+												type="button"
+												onClick={() => setColorMode(opt.value)}
+												className={cn(
+													"flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
+													colorMode === opt.value
+														? "bg-background text-foreground shadow-sm"
+														: "text-muted-foreground hover:text-foreground",
+												)}
+											>
+												<Icon className="h-3.5 w-3.5" />
+												{opt.label}
+											</button>
+										);
+									})}
+								</div>
 							</div>
-						</CardContent>
-					</Card>
-
-					{/* Custom colors */}
-					<Card>
-						<CardHeader>
-							<CardTitle>Custom Colors</CardTitle>
-						</CardHeader>
-						<CardContent>
+							<div className="border-t border-border" />
 							<div className="grid gap-3 sm:grid-cols-2">
 								<div className="space-y-1.5">
 									<Label htmlFor="color-primary">Primary</Label>
@@ -463,7 +517,7 @@ export default function AppearancePage() {
 											id="color-primary"
 											value={primaryColor}
 											onChange={(e) => setPrimaryColor(e.target.value)}
-											className="h-8 w-10 cursor-pointer border bg-transparent p-0.5"
+											className="h-8 w-10 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
 										/>
 										<Input
 											value={primaryColor}
@@ -480,7 +534,7 @@ export default function AppearancePage() {
 											id="color-secondary"
 											value={secondaryColor}
 											onChange={(e) => setSecondaryColor(e.target.value)}
-											className="h-8 w-10 cursor-pointer border bg-transparent p-0.5"
+											className="h-8 w-10 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
 										/>
 										<Input
 											value={secondaryColor}
@@ -497,7 +551,7 @@ export default function AppearancePage() {
 											id="color-accent"
 											value={accentColor}
 											onChange={(e) => setAccentColor(e.target.value)}
-											className="h-8 w-10 cursor-pointer border bg-transparent p-0.5"
+											className="h-8 w-10 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
 										/>
 										<Input
 											value={accentColor}
@@ -514,7 +568,7 @@ export default function AppearancePage() {
 											id="color-bg"
 											value={bgColor}
 											onChange={(e) => setBgColor(e.target.value)}
-											className="h-8 w-10 cursor-pointer border bg-transparent p-0.5"
+											className="h-8 w-10 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
 										/>
 										<Input
 											value={bgColor}
@@ -527,10 +581,14 @@ export default function AppearancePage() {
 						</CardContent>
 					</Card>
 
+
 					{/* Banner */}
 					<Card>
 						<CardHeader>
-							<CardTitle>Banner</CardTitle>
+							<CardTitle className="flex items-center gap-1.5">
+								<ImageIcon className="h-4 w-4 text-muted-foreground" />
+								Banner
+							</CardTitle>
 						</CardHeader>
 						<CardContent className="space-y-3">
 							<label
@@ -542,10 +600,11 @@ export default function AppearancePage() {
 									type="button"
 									role="switch"
 									aria-checked={bannerEnabled}
+									aria-label="Show banner on public page"
 									onClick={() => setBannerEnabled(!bannerEnabled)}
 									className={cn(
 										"relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
-										bannerEnabled ? "bg-blue-600" : "bg-muted",
+										bannerEnabled ? "bg-primary" : "bg-muted",
 									)}
 								>
 									<span
@@ -560,39 +619,91 @@ export default function AppearancePage() {
 										Show banner on public page
 									</span>
 									<p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
-										Displays a gradient banner behind your avatar
+										Displays a banner behind your avatar
 									</p>
 								</div>
 							</label>
 							{bannerEnabled && (
-								<div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-									{themedBannerPresets.map((preset: { id: string; name: string; style: React.CSSProperties; className?: string }) => (
+								<>
+									{/* Banner mode tabs */}
+									<div className="flex gap-2" role="tablist">
 										<button
-											key={preset.id}
 											type="button"
-											onClick={() => setBannerPreset(preset.id)}
+											role="tab"
+											id="tab-banner-preset"
+											aria-selected={bannerMode === "preset"}
+											onClick={() => setBannerMode("preset")}
 											className={cn(
-												"group relative h-12 overflow-hidden rounded-md border-2 transition-all",
-												bannerPreset === preset.id
-													? "border-primary ring-2 ring-primary/30"
-													: "border-transparent hover:border-muted-foreground/30",
+												"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+												bannerMode === "preset"
+													? "border-primary bg-primary/5 text-primary"
+													: "border-border text-muted-foreground hover:text-foreground",
 											)}
 										>
-											<div
-												className={`absolute inset-0 ${preset.className ?? ""}`}
-												style={preset.style}
-											/>
-											{bannerPreset === preset.id && (
-												<div className="absolute inset-0 flex items-center justify-center bg-black/20">
-													<Check className="h-4 w-4 text-white drop-shadow" />
-												</div>
-											)}
-											<span className="absolute inset-x-0 bottom-0 bg-black/40 px-1 py-0.5 text-[8px] text-white truncate">
-												{preset.name}
-											</span>
+											<Palette className="h-3 w-3" />
+											Presets
 										</button>
-									))}
-								</div>
+										<button
+											type="button"
+											role="tab"
+											id="tab-banner-custom"
+											aria-selected={bannerMode === "custom"}
+											onClick={() => setBannerMode("custom")}
+											className={cn(
+												"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+												bannerMode === "custom"
+													? "border-primary bg-primary/5 text-primary"
+													: "border-border text-muted-foreground hover:text-foreground",
+											)}
+										>
+											<Upload className="h-3 w-3" />
+											Custom Image
+										</button>
+									</div>
+
+									{bannerMode === "preset" ? (
+										<div className="grid grid-cols-3 gap-2 sm:grid-cols-5" role="tabpanel" aria-labelledby="tab-banner-preset">
+											{themedBannerPresets.map((preset: BannerPreset) => (
+												<button
+													key={preset.id}
+													type="button"
+													onClick={() => setBannerPreset(preset.id)}
+													className={cn(
+														"group relative h-12 overflow-hidden rounded-md border-2 transition-all",
+														bannerPreset === preset.id
+															? "border-primary ring-2 ring-primary/30"
+															: "border-transparent hover:border-muted-foreground/30",
+													)}
+												>
+												{preset.type === "css" ? (
+													<div
+														className={`absolute inset-0 ${preset.className ?? ""}`}
+														style={preset.style}
+													/>
+												) : (
+													<ShaderBanner preset={preset} staticPreview />
+												)}
+												{bannerPreset === preset.id && (
+														<div className="absolute inset-0 flex items-center justify-center bg-black/20">
+															<Check className="h-4 w-4 text-white drop-shadow" />
+														</div>
+													)}
+													<span className="absolute inset-x-0 bottom-0 bg-black/60 px-1 py-0.5 text-[10px] text-white truncate">
+														{preset.name}
+													</span>
+												</button>
+											))}
+										</div>
+									) : (
+										<ImageUploadField
+											label="Banner Image"
+											value={bannerCustomUrl}
+											purpose="banner"
+											aspectRatio="banner"
+											onUploadComplete={(url) => setBannerCustomUrl(url)}
+										/>
+									)}
+								</>
 							)}
 						</CardContent>
 					</Card>
@@ -615,10 +726,11 @@ export default function AppearancePage() {
 									type="button"
 									role="switch"
 									aria-checked={verifiedBadge}
+									aria-label="Show verified badge"
 									onClick={() => setVerifiedBadge(!verifiedBadge)}
 									className={cn(
 										"relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
-										verifiedBadge ? "bg-blue-600" : "bg-muted",
+										verifiedBadge ? "bg-primary" : "bg-muted",
 									)}
 								>
 									<span
@@ -640,6 +752,49 @@ export default function AppearancePage() {
 						</CardContent>
 					</Card>
 
+					{/* Social Icon Shape */}
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center gap-1.5">
+								<Share2 className="h-4 w-4 text-muted-foreground" />
+								Social Icon Shape
+							</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/30">
+								<button
+									type="button"
+									onClick={() => setSocialIconShape("circle")}
+									className={cn(
+										"flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
+										socialIconShape === "circle"
+											? "bg-background text-foreground shadow-sm"
+											: "text-muted-foreground hover:text-foreground",
+									)}
+								>
+									<svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" /></svg>
+									Circle
+								</button>
+								<button
+									type="button"
+									onClick={() => setSocialIconShape("rounded-square")}
+									className={cn(
+										"flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
+										socialIconShape === "rounded-square"
+											? "bg-background text-foreground shadow-sm"
+											: "text-muted-foreground hover:text-foreground",
+									)}
+								>
+									<svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="6" /></svg>
+									Rounded
+								</button>
+							</div>
+							<p className="mt-2 text-[11px] text-muted-foreground">
+								Sets the shape of social network icons on your public page
+							</p>
+						</CardContent>
+					</Card>
+
 					{/* Branding */}
 					<Card>
 						<CardHeader>
@@ -658,10 +813,11 @@ export default function AppearancePage() {
 									type="button"
 									role="switch"
 									aria-checked={brandingEnabled}
+									aria-label="Show whitelabel footer"
 									onClick={() => setBrandingEnabled(!brandingEnabled)}
 									className={cn(
 										"relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
-										brandingEnabled ? "bg-blue-600" : "bg-muted",
+										brandingEnabled ? "bg-primary" : "bg-muted",
 									)}
 								>
 									<span
@@ -681,24 +837,42 @@ export default function AppearancePage() {
 								</div>
 							</label>
 							{brandingEnabled && (
-								<div className="grid gap-3 sm:grid-cols-2">
-									<div className="space-y-1.5">
-										<Label htmlFor="a-branding-text">Custom Text</Label>
-										<Input
-											id="a-branding-text"
-											value={brandingText}
-											onChange={(e) => setBrandingText(e.target.value)}
-											placeholder="Powered by LinkDen"
-										/>
-									</div>
-									<div className="space-y-1.5">
-										<Label htmlFor="a-branding-link">Custom Link</Label>
-										<Input
-											id="a-branding-link"
-											value={brandingLink}
-											onChange={(e) => setBrandingLink(e.target.value)}
-											placeholder="https://linkden.io"
-										/>
+								<div className="space-y-3">
+									<div className="grid gap-3 sm:grid-cols-2">
+										<div className="space-y-1.5">
+											<Label htmlFor="a-branding-text">Custom Text</Label>
+											<Input
+												id="a-branding-text"
+												value={brandingText}
+												onChange={(e) => setBrandingText(e.target.value)}
+												placeholder="Powered by LinkDen"
+											/>
+											<p className="text-[10px] text-muted-foreground leading-tight">
+												Variables: <code className="rounded bg-muted px-1">{"{{year}}"}</code>{" "}
+												<code className="rounded bg-muted px-1">{"{{copyright}}"}</code>{" "}
+												<code className="rounded bg-muted px-1">{"{{name}}"}</code>
+											</p>
+											{brandingText && /\{\{(year|copyright|name)\}\}/.test(brandingText) && (
+												<p className="text-[10px] text-muted-foreground">
+													Preview:{" "}
+													<span className="font-medium text-foreground">
+														{brandingText
+															.replace(/\{\{year\}\}/g, new Date().getFullYear().toString())
+															.replace(/\{\{copyright\}\}/g, "\u00A9")
+															.replace(/\{\{name\}\}/g, profileName || "Your Name")}
+													</span>
+												</p>
+											)}
+										</div>
+										<div className="space-y-1.5">
+											<Label htmlFor="a-branding-link">Custom Link</Label>
+											<Input
+												id="a-branding-link"
+												value={brandingLink}
+												onChange={(e) => setBrandingLink(e.target.value)}
+												placeholder="https://linkden.io"
+											/>
+										</div>
 									</div>
 								</div>
 							)}
@@ -716,14 +890,14 @@ export default function AppearancePage() {
 								onChange={(e) => setCustomCss(e.target.value)}
 								rows={8}
 								placeholder={"/* Add custom CSS for your public page */\n.ld-link-block {\n  border-radius: 20px;\n}"}
-								className="dark:bg-input/30 border-input w-full border bg-transparent px-3 py-2 font-mono text-xs outline-none"
+								className="dark:bg-input/30 border-input w-full rounded-lg border bg-transparent backdrop-blur-sm px-3 py-2 font-mono text-xs outline-none"
 							/>
 							<details className="text-xs text-muted-foreground">
 								<summary className="flex cursor-pointer items-center gap-1.5 font-medium hover:text-foreground">
 									<Info className="h-3.5 w-3.5" />
 									Available CSS classes & variables
 								</summary>
-								<div className="mt-2 space-y-3 rounded border p-3">
+								<div className="mt-2 space-y-3 rounded-lg border p-3">
 									<div>
 										<p className="mb-1 font-medium text-foreground">CSS Classes</p>
 										<div className="grid grid-cols-2 gap-x-4 gap-y-0.5 font-mono">
@@ -761,21 +935,37 @@ export default function AppearancePage() {
 
 				{/* Preview column (desktop) */}
 				<div className="hidden w-[320px] shrink-0 lg:block">
-					<div className="sticky top-6">
+					<div className="sticky top-16">
 						<div className="mb-3 flex items-center justify-between">
-							<span className="text-xs font-medium">Preview</span>
-							<button
-								type="button"
-								onClick={() => setPreviewDark(!previewDark)}
-								className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-							>
-								{previewDark ? (
-									<Moon className="h-3 w-3" />
-								) : (
+							<span className="text-xs font-medium text-muted-foreground">Live Preview</span>
+							<div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/30">
+								<button
+									type="button"
+									onClick={() => setPreviewDark(false)}
+									className={cn(
+										"flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-all",
+										!previewDark
+											? "bg-background text-foreground shadow-sm"
+											: "text-muted-foreground hover:text-foreground",
+									)}
+								>
 									<Sun className="h-3 w-3" />
-								)}
-								{previewDark ? "Dark" : "Light"}
-							</button>
+									Light
+								</button>
+								<button
+									type="button"
+									onClick={() => setPreviewDark(true)}
+									className={cn(
+										"flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-all",
+										previewDark
+											? "bg-background text-foreground shadow-sm"
+											: "text-muted-foreground hover:text-foreground",
+									)}
+								>
+									<Moon className="h-3 w-3" />
+									Dark
+								</button>
+							</div>
 						</div>
 						<PhoneFrame previewDark={previewDark}>
 							<PreviewContent
@@ -786,16 +976,27 @@ export default function AppearancePage() {
 									bio: profileBio || null,
 									isVerified: verifiedBadge,
 								}}
-								blocks={blocks.map((b: { id: string; type: string; title: string | null }) => ({
+								blocks={blocks.map((b: { id: string; type: string; title: string | null; url: string | null; icon: string | null; embedType: string | null; embedUrl: string | null; socialIcons: string | null; config: string | null; position: number }) => ({
 									id: b.id,
 									type: b.type,
 									title: b.title,
+									url: b.url,
+									icon: b.icon,
+									embedType: b.embedType,
+									embedUrl: b.embedUrl,
+									socialIcons: b.socialIcons,
+									config: b.config,
+									position: b.position,
 								}))}
+								socialNetworks={previewSocialNetworks}
 								settings={{
 									brandingEnabled,
 									brandingText: brandingText || "Powered by LinkDen",
-									bannerPreset: bannerEnabled ? bannerPreset : null,
+									bannerPreset: bannerEnabled && bannerMode === "preset" ? bannerPreset : null,
 									bannerEnabled,
+									bannerMode,
+									bannerCustomUrl: bannerEnabled && bannerMode === "custom" ? bannerCustomUrl : undefined,
+									socialIconShape,
 								}}
 								themeColors={{
 									primary: resolvedThemeVars["--ld-primary"],

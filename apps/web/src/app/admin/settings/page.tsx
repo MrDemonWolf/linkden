@@ -93,9 +93,9 @@ export default function SettingsPage() {
 	const [seoOgImage, setSeoOgImage] = useState("");
 
 	// CAPTCHA
-	const [captchaProvider, setCaptchaProvider] = useState("none");
-	const [captchaSiteKey, setCaptchaSiteKey] = useState("");
-	const [captchaSecretKey, setCaptchaSecretKey] = useState("");
+	const [captchaProvider, setCaptchaProvider] = useState("recaptcha");
+	const [captchaSiteKey, setCaptchaSiteKey] = useState("6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI");
+	const [captchaSecretKey, setCaptchaSecretKey] = useState("6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe");
 
 	// Email
 	const [emailProvider, setEmailProvider] = useState("resend");
@@ -186,7 +186,7 @@ export default function SettingsPage() {
 
 	return (
 		<div className="space-y-8">
-			<div>
+			<div className="sticky top-0 z-20 mt-1 rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-lg shadow-black/5 dark:shadow-black/20 px-4 py-3">
 				<h1 className="text-lg font-semibold">Settings</h1>
 				<p className="text-xs text-muted-foreground">
 					Configure your LinkDen instance
@@ -221,7 +221,7 @@ export default function SettingsPage() {
 						}
 						rows={2}
 						placeholder="Check out all my links"
-						className="dark:bg-input/30 border-input w-full rounded-md border bg-transparent px-3 py-2 text-xs outline-none focus:ring-1 focus:ring-ring"
+						className="dark:bg-input/30 border-input w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
 					/>
 				</div>
 				<div className="space-y-1.5">
@@ -270,7 +270,7 @@ export default function SettingsPage() {
 						id="s-captcha-provider"
 						value={captchaProvider}
 						onChange={(e) => setCaptchaProvider(e.target.value)}
-						className="dark:bg-input/30 border-input h-8 w-full rounded-md border bg-transparent px-2.5 text-xs outline-none"
+						className="dark:bg-input/30 border-input h-8 w-full rounded-md border bg-transparent px-2.5 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
 					>
 						<option value="none">None</option>
 						<option value="turnstile">Cloudflare Turnstile</option>
@@ -316,7 +316,7 @@ export default function SettingsPage() {
 						id="s-email-provider"
 						value={emailProvider}
 						onChange={(e) => setEmailProvider(e.target.value)}
-						className="dark:bg-input/30 border-input h-8 w-full rounded-md border bg-transparent px-2.5 text-xs outline-none"
+						className="dark:bg-input/30 border-input h-8 w-full rounded-md border bg-transparent px-2.5 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
 					>
 						<option value="resend">Resend</option>
 						<option value="cloudflare">
@@ -417,7 +417,7 @@ export default function SettingsPage() {
 							target="_blank"
 							rel="noopener noreferrer"
 						>
-							<Button size="sm" variant="outline">
+							<Button size="sm">
 								Update to {versionCheck.data.latest}
 								<ExternalLink className="ml-1.5 h-3 w-3" />
 							</Button>

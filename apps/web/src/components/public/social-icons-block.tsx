@@ -1,3 +1,5 @@
+import { getAccessibleIconFill } from "@linkden/ui/color-contrast";
+
 interface SocialNetwork {
 	slug: string;
 	name: string;
@@ -14,6 +16,15 @@ interface SocialIconsBlockProps {
 	config: Record<string, unknown>;
 	colorMode: "light" | "dark";
 	networks?: SocialNetwork[];
+	themeColors?: {
+		bg?: string;
+		muted?: string;
+		mutedFg?: string;
+		fg?: string;
+		border?: string;
+		primary?: string;
+	};
+	globalIconShape?: "circle" | "rounded-square";
 }
 
 export function SocialIconsBlock({
@@ -21,11 +32,18 @@ export function SocialIconsBlock({
 	config,
 	colorMode,
 	networks,
+	themeColors,
+	globalIconShape,
 }: SocialIconsBlockProps) {
 	const iconSize = (config.iconSize as string) || "md";
 	const iconStyle = (config.iconStyle as string) || "circle";
 	const showLabels = config.showLabels as boolean | undefined;
 	const spacing = (config.spacing as string) || "default";
+
+	// Global shape override
+	const effectiveShape = globalIconShape === "rounded-square" ? "rounded"
+		: globalIconShape === "circle" ? "circle"
+		: iconStyle;
 
 	// Use real social networks from API if available
 	const items: { platform: string; url: string; hex?: string; svgPath?: string }[] = [];
@@ -78,39 +96,53 @@ export function SocialIconsBlock({
 			<div
 				className={`flex flex-wrap items-center justify-center ${gapClasses[spacing] || "gap-3"}`}
 			>
-				{items.map((item) => (
-					<a
-						key={item.platform}
-						href={item.url}
-						target="_blank"
-						rel="noopener noreferrer"
-						className={`inline-flex items-center justify-center transition-transform hover:scale-110 ${
-							sizeClasses[iconSize] || "h-10 w-10"
-						} ${
-							iconStyle !== "bare"
-								? `${shapeClasses[iconStyle] || "rounded-full"} ${
-										colorMode === "dark"
-											? "bg-gray-800 text-white hover:bg-gray-700"
-											: "bg-gray-100 text-gray-700 hover:bg-gray-200"
-									}`
-								: colorMode === "dark"
-									? "text-gray-300 hover:text-white"
-									: "text-gray-600 hover:text-gray-900"
-						} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500`}
-						aria-label={item.platform}
-						title={item.platform}
-					>
-						{item.svgPath ? (
-							<svg viewBox="0 0 24 24" className={svgSizeClasses[iconSize] || "h-5 w-5"}>
-								<path d={item.svgPath} fill={item.hex || "currentColor"} />
-							</svg>
-						) : (
-							<span className="text-xs font-medium uppercase">
-								{item.platform.slice(0, 2)}
-							</span>
-						)}
-					</a>
-				))}
+				{items.map((item) => {
+					// Adaptive fill: pick brand color only if it has sufficient contrast
+					const contrastBg = effectiveShape === "bare" ? themeColors?.bg : themeColors?.muted;
+					const fill = item.hex && contrastBg && themeColors?.fg
+						? getAccessibleIconFill(item.hex, contrastBg, themeColors.fg)
+						: item.hex || "currentColor";
+
+					return (
+						<a
+							key={item.platform}
+							href={item.url}
+							target="_blank"
+							rel="noopener noreferrer"
+							className={`inline-flex items-center justify-center transition-transform hover:scale-110 ${
+								sizeClasses[iconSize] || "h-10 w-10"
+							} ${
+								effectiveShape !== "bare"
+									? shapeClasses[effectiveShape] || "rounded-full"
+									: ""
+							} focus-visible:outline-2 focus-visible:outline-offset-2`}
+							style={
+								effectiveShape !== "bare"
+									? {
+											backgroundColor: themeColors?.muted || (colorMode === "dark" ? "#1f2937" : "#f3f4f6"),
+											color: themeColors?.fg || (colorMode === "dark" ? "#fff" : "#374151"),
+											outlineColor: themeColors?.primary,
+										}
+									: {
+											color: themeColors?.mutedFg || (colorMode === "dark" ? "#d1d5db" : "#4b5563"),
+											outlineColor: themeColors?.primary,
+										}
+							}
+							aria-label={item.platform}
+							title={item.platform}
+						>
+							{item.svgPath ? (
+								<svg viewBox="0 0 24 24" className={svgSizeClasses[iconSize] || "h-5 w-5"}>
+									<path d={item.svgPath} fill={fill} />
+								</svg>
+							) : (
+								<span className="text-xs font-medium uppercase">
+									{item.platform.slice(0, 2)}
+								</span>
+							)}
+						</a>
+					);
+				})}
 			</div>
 			{showLabels && (
 				<div className="mt-2 flex flex-wrap justify-center gap-2">
@@ -120,11 +152,8 @@ export function SocialIconsBlock({
 							href={item.url}
 							target="_blank"
 							rel="noopener noreferrer"
-							className={`text-xs ${
-								colorMode === "dark"
-									? "text-gray-400 hover:text-white"
-									: "text-gray-500 hover:text-gray-900"
-							}`}
+							className="text-xs transition-opacity hover:opacity-80"
+							style={{ color: themeColors?.mutedFg || (colorMode === "dark" ? "#9ca3af" : "#6b7280") }}
 						>
 							{item.platform}
 						</a>

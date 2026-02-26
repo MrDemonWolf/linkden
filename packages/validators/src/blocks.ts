@@ -44,7 +44,7 @@ export const headerConfigSchema = blockConfigBaseSchema.extend({
 
 export const socialIconsConfigSchema = blockConfigBaseSchema.extend({
   iconSize: z.number().optional(),
-  iconStyle: z.enum(["filled", "outlined", "rounded"]).optional(),
+  iconStyle: z.enum(["circle", "square", "rounded", "bare"]).optional(),
   showLabels: z.boolean().optional(),
   spacing: z.number().optional(),
   useBrandColors: z.boolean().optional(),
@@ -55,6 +55,21 @@ export const embedConfigSchema = blockConfigBaseSchema.extend({
   maxWidth: z.string().optional(),
   showTitle: z.boolean().optional(),
 });
+
+// Platform-specific URL validation for embeds
+export const EMBED_URL_PATTERNS: Record<string, RegExp> = {
+  youtube: /(?:youtube\.com\/(?:watch|embed)|youtu\.be\/)/i,
+  spotify: /open\.spotify\.com\//i,
+  soundcloud: /soundcloud\.com\//i,
+  custom: /^https?:\/\//i,
+};
+
+export function validateEmbedUrl(embedType: string, url: string): boolean {
+  const pattern = EMBED_URL_PATTERNS[embedType];
+  if (!pattern) return true;
+  if (embedType === "custom") return pattern.test(url);
+  return pattern.test(url);
+}
 
 export const contactFormConfigSchema = blockConfigBaseSchema.extend({
   buttonText: z.string().optional(),

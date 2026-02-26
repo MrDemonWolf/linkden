@@ -113,8 +113,8 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 				target={openInNewTab ? "_blank" : "_self"}
 				rel={openInNewTab ? "noopener noreferrer" : undefined}
 				onClick={handleClick}
-				className={`${baseClasses} ${colorClasses} hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500`}
-				style={style}
+				className={`${baseClasses} ${colorClasses} hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2`}
+				style={{ ...style, outlineColor: themeColors?.primary || "#3b82f6" }}
 			>
 				<span className="flex items-center justify-center gap-2">
 					{emoji && emojiPosition === "left" && (

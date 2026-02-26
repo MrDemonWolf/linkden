@@ -11,6 +11,10 @@ interface EmbedBlockProps {
 	};
 	config: Record<string, unknown>;
 	colorMode: "light" | "dark";
+	themeColors?: {
+		muted?: string;
+		mutedFg?: string;
+	};
 }
 
 function getEmbedUrl(embedType: string | null, embedUrl: string | null): string | null {
@@ -53,7 +57,7 @@ const maxWidthClasses: Record<string, string> = {
 	full: "max-w-full",
 };
 
-export function EmbedBlock({ block, config, colorMode }: EmbedBlockProps) {
+export function EmbedBlock({ block, config, colorMode, themeColors }: EmbedBlockProps) {
 	const { isPreview } = usePreview();
 	const aspectRatio = (config.aspectRatio as string) || "16:9";
 	const maxWidth = (config.maxWidth as string) || "full";
@@ -70,9 +74,8 @@ export function EmbedBlock({ block, config, colorMode }: EmbedBlockProps) {
 		>
 			{showTitle && block.title && (
 				<h3
-					className={`mb-2 text-sm font-medium ${
-						colorMode === "dark" ? "text-gray-300" : "text-gray-700"
-					}`}
+					className="mb-2 text-sm font-medium"
+					style={{ color: themeColors?.mutedFg || (colorMode === "dark" ? "#d1d5db" : "#374151") }}
 				>
 					{block.title}
 				</h3>
@@ -86,8 +89,8 @@ export function EmbedBlock({ block, config, colorMode }: EmbedBlockProps) {
 					<div
 						className="flex h-full w-full items-center justify-center text-xs"
 						style={{
-							backgroundColor: colorMode === "dark" ? "#1f2937" : "#f3f4f6",
-							color: colorMode === "dark" ? "#9ca3af" : "#6b7280",
+							backgroundColor: themeColors?.muted || (colorMode === "dark" ? "#1f2937" : "#f3f4f6"),
+							color: themeColors?.mutedFg || (colorMode === "dark" ? "#9ca3af" : "#6b7280"),
 						}}
 					>
 						{block.embedType ? `${block.embedType} embed` : "Embed"}

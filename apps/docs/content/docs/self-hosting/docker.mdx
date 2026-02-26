@@ -287,7 +287,19 @@ See the [Environment Variables reference](/docs/self-hosting/environment-variabl
 
 ## First-Time Setup
 
-After starting the containers for the first time, visit `http://localhost:3001/admin/setup` (or your production URL's `/admin/setup`) to complete the setup wizard. This creates your admin account with your chosen email and password.
+After starting the containers for the first time:
+
+1. Check the API container logs for the setup URL:
+   ```bash
+   docker compose logs api | grep "Setup URL"
+   ```
+   The server prints a one-time setup URL with a secure token, e.g.:
+   ```
+   Setup URL: http://localhost:3001/admin/setup?token=<unique-token>
+   ```
+2. Open this URL in your browser to access the setup wizard. The token is required -- navigating to `/admin/setup` without it will show an error.
+3. Complete the wizard to create your admin account (name, email, and password).
+4. The setup token is automatically invalidated once setup completes.
 
 After setup, sign in at `/admin/login`.
 

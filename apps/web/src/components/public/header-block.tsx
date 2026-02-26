@@ -5,9 +5,12 @@ interface HeaderBlockProps {
 	};
 	config: Record<string, unknown>;
 	colorMode: "light" | "dark";
+	themeColors?: {
+		border?: string;
+	};
 }
 
-export function HeaderBlock({ block, config, colorMode }: HeaderBlockProps) {
+export function HeaderBlock({ block, config, colorMode, themeColors }: HeaderBlockProps) {
 	const headingLevel = (config.headingLevel as string) || "h2";
 	const textAlign = (config.textAlign as string) || "center";
 	const fontWeight = (config.fontWeight as string) || "bold";
@@ -56,11 +59,8 @@ export function HeaderBlock({ block, config, colorMode }: HeaderBlockProps) {
 			</HeadingTag>
 			{showDivider && (
 				<hr
-					className={`mt-2 ${
-						colorMode === "dark"
-							? "border-gray-700"
-							: "border-gray-200"
-					}`}
+					className="mt-2"
+					style={{ borderColor: themeColors?.border || (colorMode === "dark" ? "#374151" : "#e5e7eb") }}
 				/>
 			)}
 		</div>

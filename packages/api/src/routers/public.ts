@@ -14,6 +14,35 @@ import { eq, asc, and } from "drizzle-orm";
 import { z } from "zod";
 import { generateVCardString, vcardDataSchema } from "./vcard";
 
+// In-memory one-time setup token
+let setupToken: string | null = null;
+let setupTokenInitialized = false;
+
+async function getOrCreateSetupToken(): Promise<string | null> {
+	// Check if setup is already completed
+	const [setting] = await db
+		.select()
+		.from(siteSettings)
+		.where(eq(siteSettings.key, "setup_completed"));
+	if (setting?.value === "true") {
+		setupToken = null;
+		return null;
+	}
+
+	if (!setupTokenInitialized) {
+		setupToken = crypto.randomUUID();
+		setupTokenInitialized = true;
+		console.log(`\n  Setup URL: http://localhost:3001/admin/setup?token=${setupToken}\n`);
+	}
+
+	return setupToken;
+}
+
+export function invalidateSetupToken() {
+	setupToken = null;
+	setupTokenInitialized = false;
+}
+
 export const publicRouter = router({
 	getPage: publicProcedure.query(async () => {
 		const [profile] = await db.select().from(user).limit(1);
@@ -103,12 +132,15 @@ export const publicRouter = router({
 				captchaSiteKey: settings.captcha_site_key || null,
 				bannerPreset: settings.banner_preset || null,
 				bannerEnabled: settings.banner_enabled === "true",
+				bannerMode: (settings.banner_mode as "preset" | "custom") || "preset",
+				bannerCustomUrl: settings.banner_custom_url || null,
 				themePreset: settings.theme_preset || "default",
 				customPrimary: settings.custom_primary || null,
 				customSecondary: settings.custom_secondary || null,
 				customAccent: settings.custom_accent || null,
 				customBackground: settings.custom_background || null,
 				customCss: settings.custom_css || null,
+				socialIconShape: (settings.social_icon_shape as "circle" | "rounded-square") || null,
 			},
 		};
 	}),
@@ -166,15 +198,18 @@ export const publicRouter = router({
 				}
 			}
 
+			// Sanitize user content to prevent stored XSS
+			const stripTags = (s: string) => s.replace(/<[^>]*>/g, "");
+
 			const id = crypto.randomUUID();
 			await db.insert(contactSubmission).values({
 				id,
-				name: input.name,
+				name: stripTags(input.name),
 				email: input.email,
-				message: input.message,
-				phone: input.phone ?? null,
-				subject: input.subject ?? null,
-				company: input.company ?? null,
+				message: stripTags(input.message),
+				phone: input.phone ? stripTags(input.phone) : null,
+				subject: input.subject ? stripTags(input.subject) : null,
+				company: input.company ? stripTags(input.company) : null,
 			});
 
 			return { success: true };
@@ -250,4 +285,17 @@ export const publicRouter = router({
 			.where(eq(siteSettings.key, "setup_completed"));
 		return { completed: setting?.value === "true" };
 	}),
+
+	validateSetupToken: publicProcedure
+		.input(z.object({ token: z.string() }))
+		.query(async ({ input }) => {
+			const currentToken = await getOrCreateSetupToken();
+			if (!currentToken) {
+				return { valid: false, reason: "setup_completed" as const };
+			}
+			if (input.token !== currentToken) {
+				return { valid: false, reason: "invalid_token" as const };
+			}
+			return { valid: true, reason: null };
+		}),
 });

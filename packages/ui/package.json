@@ -4,6 +4,7 @@
   "exports": {
     ".": { "default": "./src/index.ts" },
     "./*": { "default": "./src/*.ts" },
+    "./components/tabs": { "default": "./src/components/tabs.tsx" },
     "./themes": { "default": "./src/themes.ts" },
     "./banner-presets": { "default": "./src/banner-presets.ts" }
   },

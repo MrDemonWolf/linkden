@@ -9,13 +9,28 @@ import {
 	Link as LinkIcon,
 	ArrowUpRight,
 } from "lucide-react";
+import {
+	AreaChart,
+	Area,
+	XAxis,
+	YAxis,
+	Tooltip,
+	ResponsiveContainer,
+} from "recharts";
 import { trpc } from "@/utils/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 
 type Period = "7d" | "30d" | "90d";
+
+const chartConfig: ChartConfig = {
+	count: {
+		label: "Views",
+		color: "var(--primary, #0FACED)",
+	},
+};
 
 export default function AnalyticsPage() {
 	const [period, setPeriod] = useState<Period>("7d");
@@ -28,8 +43,13 @@ export default function AnalyticsPage() {
 	const referrers = useQuery(trpc.analytics.referrers.queryOptions({ period }));
 	const countries = useQuery(trpc.analytics.countries.queryOptions({ period }));
 
-	const viewsData = viewsOverTime.data ?? [];
-	const maxViews = Math.max(...viewsData.map((d) => d.count), 1);
+	const viewsData = (viewsOverTime.data ?? []).map((d) => ({
+		...d,
+		label: new Date(d.date).toLocaleDateString(undefined, {
+			month: "short",
+			day: "numeric",
+		}),
+	}));
 
 	const periods: { value: Period; label: string }[] = [
 		{ value: "7d", label: "7 days" },
@@ -40,7 +60,7 @@ export default function AnalyticsPage() {
 	return (
 		<div className="space-y-6">
 			{/* Header */}
-			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+			<div className="sticky top-0 z-20 mt-1 rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-lg shadow-black/5 dark:shadow-black/20 px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div>
 					<h1 className="text-lg font-semibold">Analytics</h1>
 					<p className="text-xs text-muted-foreground">
@@ -54,6 +74,7 @@ export default function AnalyticsPage() {
 							variant={period === p.value ? "default" : "outline"}
 							size="xs"
 							onClick={() => setPeriod(p.value)}
+							aria-pressed={period === p.value}
 						>
 							{p.label}
 						</Button>
@@ -65,8 +86,8 @@ export default function AnalyticsPage() {
 			<div className="grid gap-3 sm:grid-cols-2">
 				<Card size="sm">
 					<CardContent className="flex items-center gap-3">
-						<div className="flex h-9 w-9 shrink-0 items-center justify-center bg-blue-500/10">
-							<Eye className="h-4 w-4 text-blue-500" />
+						<div className="flex h-9 w-9 shrink-0 items-center justify-center bg-primary/10">
+							<Eye className="h-4 w-4 text-primary" />
 						</div>
 						<div>
 							<p className="text-xs text-muted-foreground">Total Views</p>
@@ -123,31 +144,46 @@ export default function AnalyticsPage() {
 							No data for this period
 						</div>
 					) : (
-						<div className="flex h-40 items-end gap-1">
-							{viewsData.map((d) => {
-								const height = Math.max((d.count / maxViews) * 100, 4);
-								return (
-									<div
-										key={d.date}
-										className="group relative flex flex-1 flex-col items-center"
-									>
-										<div className="absolute -top-5 hidden text-[10px] font-medium group-hover:block">
-											{d.count}
-										</div>
-										<div
-											className="w-full bg-primary/80 transition-colors hover:bg-primary"
-											style={{ height: `${height}%` }}
-										/>
-										<span className="mt-1 text-[9px] text-muted-foreground truncate w-full text-center">
-											{new Date(d.date).toLocaleDateString(undefined, {
-												month: "short",
-												day: "numeric",
-											})}
-										</span>
-									</div>
-								);
-							})}
-						</div>
+						<ChartContainer config={chartConfig} className="h-40 w-full">
+							<ResponsiveContainer width="100%" height="100%">
+								<AreaChart data={viewsData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+									<defs>
+										<linearGradient id="viewsGradient" x1="0" y1="0" x2="0" y2="1">
+											<stop offset="0%" stopColor="var(--color-count)" stopOpacity={0.3} />
+											<stop offset="100%" stopColor="var(--color-count)" stopOpacity={0.02} />
+										</linearGradient>
+									</defs>
+									<XAxis
+										dataKey="label"
+										tickLine={false}
+										axisLine={false}
+										tick={{ fontSize: 10 }}
+									/>
+									<YAxis
+										tickLine={false}
+										axisLine={false}
+										tick={{ fontSize: 10 }}
+										allowDecimals={false}
+									/>
+									<Tooltip
+										content={
+											<ChartTooltipContent
+												labelFormatter={(label) => label}
+											/>
+										}
+									/>
+									<Area
+										type="monotone"
+										dataKey="count"
+										stroke="var(--color-count)"
+										strokeWidth={2}
+										fill="url(#viewsGradient)"
+										dot={false}
+										activeDot={{ r: 4, strokeWidth: 2 }}
+									/>
+								</AreaChart>
+							</ResponsiveContainer>
+						</ChartContainer>
 					)}
 				</CardContent>
 			</Card>

@@ -43,7 +43,7 @@ A row of social media icon links. Uses the social networks you have activated in
 Embed content from external platforms directly on your page.
 
 - **Embed Type** -- YouTube, Spotify, SoundCloud, or Custom.
-- **Embed URL** -- The source URL to embed.
+- **Embed URL** -- The source URL to embed. URLs are validated against platform-specific patterns (e.g., YouTube URLs must match `youtube.com/watch`, `youtube.com/embed`, or `youtu.be/`; Spotify must match `open.spotify.com/`). Custom embeds require a valid `http://` or `https://` URL.
 - **Config options**: aspect ratio, max width, show title.
 
 ### Contact Form
@@ -92,6 +92,8 @@ Reference text listing common config keys: `noFollow`, `newTab`, `animation`, `t
 Blocks outside their scheduled window are automatically hidden from the public page.
 
 ## Block Configuration
+
+Block configuration uses structured Zod schemas defined in `@linkden/validators`. Each block type has a typed config schema that extends a shared base, ensuring all configuration values are validated before being saved. The config is stored as a JSON string in the database.
 
 All block types share a base configuration with these style options:
 
