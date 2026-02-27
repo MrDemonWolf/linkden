@@ -80,7 +80,7 @@ export function MobilePreviewSheet({
 								<X className="h-3.5 w-3.5" />
 							</Button>
 						</div>
-						<div className="flex justify-center">{children}</div>
+						<div className="flex justify-center overflow-x-hidden">{children}</div>
 					</div>
 				</div>
 			)}

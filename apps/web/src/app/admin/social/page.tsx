@@ -433,8 +433,8 @@ export default function SocialPage() {
 									: "border-input bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground",
 							)}
 						>
-							<Filter className="h-3.5 w-3.5" />
-							{activeCategory === "all" ? "Filter" : CATEGORY_LABELS[activeCategory] || activeCategory}
+							<Filter className="h-3.5 w-3.5 shrink-0" />
+							<span className="hidden sm:inline truncate max-w-[100px]">{activeCategory === "all" ? "Filter" : CATEGORY_LABELS[activeCategory] || activeCategory}</span>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent className="min-w-[180px]">
 							{ALL_CATEGORIES.map((cat) => {
