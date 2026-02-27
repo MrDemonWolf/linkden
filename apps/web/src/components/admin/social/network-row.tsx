@@ -12,7 +12,7 @@ import {
 	TooltipContent,
 	TooltipProvider,
 } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn, getAdminThemeColors } from "@/lib/utils";
 import {
 	isFullUrlTemplate,
 	getPrefix,
@@ -47,8 +47,7 @@ export function NetworkRow({
 		? draft.url
 		: extractUsername(draft.url, template);
 
-	const adminBg = resolvedTheme === "dark" ? "#09090b" : "#ffffff";
-	const adminFg = resolvedTheme === "dark" ? "#fafafa" : "#09090b";
+	const { bg: adminBg, fg: adminFg } = getAdminThemeColors(resolvedTheme);
 	const fillColor = draft.isActive
 		? getAccessibleIconFill(social.hex, adminBg, adminFg)
 		: "#9ca3af";
@@ -173,7 +172,7 @@ export function NetworkRow({
 
 			{/* Resolved URL preview for active templated rows */}
 			{resolvedUrl && (
-				<div className="ml-12 flex items-center gap-1.5 text-[10px] text-muted-foreground/70">
+				<div className="ml-12 flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
 					<ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" />
 					<span className="truncate">{resolvedUrl}</span>
 				</div>

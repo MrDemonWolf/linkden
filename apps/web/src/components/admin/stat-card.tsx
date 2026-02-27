@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 interface StatCardProps {
 	icon: LucideIcon;
@@ -29,10 +30,10 @@ export function StatCard({
 		<Card size="sm">
 			<CardContent className="flex items-center gap-3">
 				<div
-					className={`flex h-9 w-9 shrink-0 items-center justify-center ${iconBg}`}
+					className={cn("flex h-9 w-9 shrink-0 items-center justify-center", iconBg)}
 					aria-hidden="true"
 				>
-					<Icon className={`h-4 w-4 ${iconColor}`} />
+					<Icon className={cn("h-4 w-4", iconColor)} />
 				</div>
 				<div className="min-w-0">
 					<p className="text-xs text-muted-foreground">{label}</p>

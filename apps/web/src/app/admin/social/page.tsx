@@ -16,7 +16,7 @@ import { useTheme } from "next-themes";
 import { trpc } from "@/utils/trpc";
 import { socialBrands, socialBrandMap } from "@linkden/ui/social-brands";
 import { getAccessibleIconFill, isLowLuminance } from "@linkden/ui/color-contrast";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,9 +26,10 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
+import { cn, getAdminThemeColors } from "@/lib/utils";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { NetworkRow } from "@/components/admin/social/network-row";
+import { SectionHeader } from "@/components/admin/section-header";
 import {
 	type NetworkDraft,
 	CATEGORY_LABELS,
@@ -49,6 +50,7 @@ export default function SocialPage() {
 	const [initialized, setInitialized] = useState(false);
 	const [highlightedIndex, setHighlightedIndex] = useState(-1);
 	const [hasAnimated, setHasAnimated] = useState(false);
+	const [selectedAnnouncement, setSelectedAnnouncement] = useState("");
 	const searchRef = useRef<HTMLDivElement>(null);
 
 	const socialsQuery = useQuery(trpc.social.list.queryOptions());
@@ -246,9 +248,11 @@ export default function SocialPage() {
 	};
 
 	const handleSuggestionClick = useCallback((slug: string) => {
+		const brand = socialBrands.find((b) => b.slug === slug);
 		setSearchQuery("");
 		setShowSuggestions(false);
 		setHighlightedIndex(-1);
+		setSelectedAnnouncement(brand ? `Scrolled to ${brand.name}` : "");
 		setTimeout(() => {
 			const el = document.getElementById(`network-${slug}`);
 			if (el) {
@@ -366,6 +370,10 @@ export default function SocialPage() {
 									? "No suggestions"
 									: ""}
 						</div>
+						{/* Live region for suggestion selection */}
+						<div className="sr-only" aria-live="assertive" aria-atomic="true">
+							{selectedAnnouncement}
+						</div>
 						{/* Suggestions dropdown */}
 						{showSuggestions && searchSuggestions.length > 0 && (
 							<div
@@ -375,8 +383,7 @@ export default function SocialPage() {
 							>
 								{searchSuggestions.map((brand, index) => {
 									const needsRing = isLowLuminance(brand.hex);
-									const sugBg = resolvedTheme === "dark" ? "#09090b" : "#ffffff";
-									const sugFg = resolvedTheme === "dark" ? "#fafafa" : "#09090b";
+									const { bg: sugBg, fg: sugFg } = getAdminThemeColors(resolvedTheme);
 									const sugFill = getAccessibleIconFill(brand.hex, sugBg, sugFg);
 									return (
 										<button
@@ -429,7 +436,7 @@ export default function SocialPage() {
 							<Filter className="h-3.5 w-3.5" />
 							{activeCategory === "all" ? "Filter" : CATEGORY_LABELS[activeCategory] || activeCategory}
 						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end" className="min-w-[180px]">
+						<DropdownMenuContent className="min-w-[180px]">
 							{ALL_CATEGORIES.map((cat) => {
 								const CatIcon = cat !== "all" ? CATEGORY_ICONS[cat] : Globe;
 								const isActive = activeCategory === cat;
@@ -479,19 +486,12 @@ export default function SocialPage() {
 					)}
 					style={!hasAnimated ? { animationDelay: "175ms" } : undefined}
 				>
-					<CardHeader>
-						<h2>
-							<CardTitle className="flex items-center gap-2 text-sm text-foreground">
-								<span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
-									<Globe className="h-4 w-4 text-primary" />
-								</span>
-								Active Networks
-								<Badge variant="outline" className="ml-1 text-[10px] border-primary/30 text-primary">
-									{activeNetworks.length}
-								</Badge>
-							</CardTitle>
-						</h2>
-					</CardHeader>
+					<SectionHeader
+						icon={Globe}
+						title="Active Networks"
+						count={activeNetworks.length}
+						variant="primary"
+					/>
 					<CardContent className="p-0 px-3 pb-3" role="list" aria-label="Active social networks">
 						<div className="space-y-2.5">
 							{activeNetworks.map((social) => {
@@ -540,21 +540,14 @@ export default function SocialPage() {
 							)}
 							style={cardDelay !== undefined ? { animationDelay: `${cardDelay}ms` } : undefined}
 						>
-							<CardHeader>
-								<h2>
-									<CardTitle className="flex items-center gap-2 text-sm text-foreground">
-										{CategoryIcon && (
-											<span className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted/80">
-												<CategoryIcon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-											</span>
-										)}
-										{group.label}
-										<span className="text-xs font-normal text-muted-foreground">
-											({group.items.length})
-										</span>
-									</CardTitle>
-								</h2>
-							</CardHeader>
+							{CategoryIcon && (
+								<SectionHeader
+									icon={CategoryIcon}
+									title={group.label}
+									count={group.items.length}
+									variant="muted"
+								/>
+							)}
 							<CardContent
 								className="p-0 px-3 pb-3"
 								role="list"

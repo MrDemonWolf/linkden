@@ -44,6 +44,7 @@ export default function SetupPage() {
 	const token = searchParams.get("token") ?? "";
 	const [step, setStep] = useState(0);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
 	// Step 1: Account
 	const [name, setName] = useState("");
@@ -123,14 +124,13 @@ export default function SetupPage() {
 	}
 
 	const handleStep1 = async () => {
-		if (!name || !email || !password) {
-			toast.error("Please fill in all fields");
-			return;
-		}
-		if (password.length < 8) {
-			toast.error("Password must be at least 8 characters");
-			return;
-		}
+		const errors: Record<string, string> = {};
+		if (!name) errors.name = "Name is required";
+		if (!email) errors.email = "Email is required";
+		if (!password) errors.password = "Password is required";
+		else if (password.length < 8) errors.password = "Password must be at least 8 characters";
+		setFormErrors(errors);
+		if (Object.keys(errors).length > 0) return;
 
 		setIsSubmitting(true);
 		try {
@@ -139,10 +139,13 @@ export default function SetupPage() {
 				{
 					onSuccess: () => {
 						toast.success("Account created");
+						setFormErrors({});
 						setStep(1);
 					},
 					onError: (error) => {
-						toast.error(error.error.message || "Failed to create account");
+						const msg = error.error.message || "Failed to create account";
+						setFormErrors({ form: msg });
+						toast.error(msg);
 					},
 				},
 			);
@@ -248,14 +251,24 @@ export default function SetupPage() {
 					{step === 0 && (
 						<div className="space-y-4">
 							<h2 className="text-sm font-medium">Create your account</h2>
+							{formErrors.form && (
+								<p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive" role="alert">
+									{formErrors.form}
+								</p>
+							)}
 							<div className="space-y-1.5">
 								<Label htmlFor="setup-name">Name</Label>
 								<Input
 									id="setup-name"
 									value={name}
-									onChange={(e) => setName(e.target.value)}
+									onChange={(e) => { setName(e.target.value); setFormErrors((prev) => { const { name: _, ...rest } = prev; return rest; }); }}
 									placeholder="Your name"
+									aria-describedby={formErrors.name ? "setup-name-error" : undefined}
+									aria-invalid={!!formErrors.name}
 								/>
+								{formErrors.name && (
+									<p id="setup-name-error" className="text-[11px] text-destructive">{formErrors.name}</p>
+								)}
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="setup-email">Email</Label>
@@ -263,9 +276,14 @@ export default function SetupPage() {
 									id="setup-email"
 									type="email"
 									value={email}
-									onChange={(e) => setEmail(e.target.value)}
+									onChange={(e) => { setEmail(e.target.value); setFormErrors((prev) => { const { email: _, ...rest } = prev; return rest; }); }}
 									placeholder="you@example.com"
+									aria-describedby={formErrors.email ? "setup-email-error" : undefined}
+									aria-invalid={!!formErrors.email}
 								/>
+								{formErrors.email && (
+									<p id="setup-email-error" className="text-[11px] text-destructive">{formErrors.email}</p>
+								)}
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="setup-password">Password</Label>
@@ -273,9 +291,14 @@ export default function SetupPage() {
 									id="setup-password"
 									type="password"
 									value={password}
-									onChange={(e) => setPassword(e.target.value)}
+									onChange={(e) => { setPassword(e.target.value); setFormErrors((prev) => { const { password: _, ...rest } = prev; return rest; }); }}
 									placeholder="At least 8 characters"
+									aria-describedby={formErrors.password ? "setup-password-error" : undefined}
+									aria-invalid={!!formErrors.password}
 								/>
+								{formErrors.password && (
+									<p id="setup-password-error" className="text-[11px] text-destructive">{formErrors.password}</p>
+								)}
 							</div>
 							<Button
 								className="w-full"

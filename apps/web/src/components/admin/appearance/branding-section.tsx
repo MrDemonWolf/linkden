@@ -190,13 +190,13 @@ export function BrandingSection({
 									onChange={(e) => onBrandingTextChange(e.target.value)}
 									placeholder="Powered by LinkDen"
 								/>
-								<p className="text-[10px] text-muted-foreground leading-tight">
+								<p className="text-[11px] text-muted-foreground leading-tight">
 									Variables: <code className="rounded bg-muted px-1">{"{{year}}"}</code>{" "}
 									<code className="rounded bg-muted px-1">{"{{copyright}}"}</code>{" "}
 									<code className="rounded bg-muted px-1">{"{{name}}"}</code>
 								</p>
 								{brandingText && /\{\{(year|copyright|name)\}\}/.test(brandingText) && (
-									<p className="text-[10px] text-muted-foreground">
+									<p className="text-[11px] text-muted-foreground">
 										Preview:{" "}
 										<span className="font-medium text-foreground">
 											{brandingText

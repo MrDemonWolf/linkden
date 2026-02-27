@@ -69,7 +69,7 @@ export function BlockRow({
 					)}
 				</div>
 				{block.url && (
-					<p className="truncate text-[10px] text-muted-foreground">
+					<p className="truncate text-[11px] text-muted-foreground">
 						{block.url}
 					</p>
 				)}
