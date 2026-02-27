@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -14,10 +14,10 @@ import {
 import { trpc } from "@/utils/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
+import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 
 type FilterMode = "all" | "unread" | "read";
@@ -27,6 +27,16 @@ export default function ContactsPage() {
 	const [filter, setFilter] = useState<FilterMode>("all");
 	const [expandedId, setExpandedId] = useState<string | null>(null);
 	const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+	// Focus expanded details when a contact is expanded
+	useEffect(() => {
+		if (expandedId) {
+			const el = document.getElementById(`contact-details-${expandedId}`);
+			if (el) {
+				el.focus();
+			}
+		}
+	}, [expandedId]);
 
 	const filterParam =
 		filter === "all" ? undefined : { isRead: filter === "read" };
@@ -108,11 +118,7 @@ export default function ContactsPage() {
 
 			{/* Contact list */}
 			{contactsQuery.isLoading ? (
-				<div className="space-y-2">
-					{Array.from({ length: 4 }).map((_, i) => (
-						<Skeleton key={`sk-${i}`} className="h-14" />
-					))}
-				</div>
+				<SkeletonRows count={4} />
 			) : contacts.length === 0 ? (
 				<EmptyState
 					icon={Mail}
@@ -192,7 +198,7 @@ export default function ContactsPage() {
 
 								{/* Expanded details */}
 								{isExpanded && (
-									<div id={detailsId} className="border-t px-4 py-3 space-y-3">
+									<div id={detailsId} tabIndex={-1} className="border-t px-4 py-3 space-y-3 outline-none">
 										<div className="grid gap-2 sm:grid-cols-2">
 											<div>
 												<p className="text-[11px] uppercase tracking-wider text-muted-foreground">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { socialBrandMap } from "@linkden/ui/social-brands";
 import { PhoneFrame } from "@/components/admin/phone-frame";
@@ -22,6 +21,7 @@ import { PreviewContent } from "@/components/admin/preview-content";
 import { getThemeColors } from "@/components/public/public-page";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
+import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { BlockEditPanel } from "@/components/admin/builder/block-edit-panel";
@@ -35,6 +35,7 @@ export default function BuilderPage() {
 	const [previewMode, setPreviewMode] = useState<"light" | "dark">("light");
 	const [showMobilePreview, setShowMobilePreview] = useState(false);
 	const [draggedId, setDraggedId] = useState<string | null>(null);
+	const [newlyAddedId, setNewlyAddedId] = useState<string | null>(null);
 
 	const blocksQuery = useQuery(trpc.blocks.list.queryOptions());
 	const blocks: Block[] = (blocksQuery.data as Block[] | undefined) ?? [];
@@ -44,6 +45,19 @@ export default function BuilderPage() {
 	const socialsQuery = useQuery(trpc.social.list.queryOptions({ activeOnly: true }));
 
 	useUnsavedChanges(hasDrafts);
+
+	// Focus newly added block row after data re-renders
+	useEffect(() => {
+		if (newlyAddedId && blocks.some((b) => b.id === newlyAddedId)) {
+			const el = document.querySelector(`[data-block-id="${newlyAddedId}"]`);
+			if (el instanceof HTMLElement) {
+				el.scrollIntoView({ behavior: "smooth", block: "center" });
+				const focusable = el.querySelector<HTMLElement>("button");
+				focusable?.focus();
+			}
+			setNewlyAddedId(null);
+		}
+	}, [newlyAddedId, blocks]);
 
 	const previewSocialNetworks = useMemo(() => {
 		return (socialsQuery.data ?? [])
@@ -119,6 +133,7 @@ export default function BuilderPage() {
 				isEnabled: true,
 			});
 			invalidate();
+			setNewlyAddedId(id);
 			toast.success("Block added");
 		} catch {
 			toast.error("Failed to add block");
@@ -289,7 +304,7 @@ export default function BuilderPage() {
 													<BIcon className="h-3.5 w-3.5 text-muted-foreground" />
 													<div className="text-left">
 														<div className="font-medium">{bt.label}</div>
-														<div className="text-[10px] text-muted-foreground">
+														<div className="text-[11px] text-muted-foreground">
 															{bt.description}
 														</div>
 													</div>
@@ -309,11 +324,7 @@ export default function BuilderPage() {
 				{/* Left panel: block list */}
 				<div className="flex-1 min-w-0 space-y-2">
 					{blocksQuery.isLoading ? (
-						<div className="space-y-2" aria-busy="true" role="status" aria-label="Loading blocks">
-							{Array.from({ length: 3 }).map((_, i) => (
-								<Skeleton key={`skel-${i}`} className="h-14" />
-							))}
-						</div>
+						<SkeletonRows count={3} />
 					) : blocks.length === 0 ? (
 						<EmptyState
 							icon={Blocks}
@@ -323,7 +334,7 @@ export default function BuilderPage() {
 					) : (
 						<div role="list" aria-label="Page blocks">
 							{blocks.map((block) => (
-								<div key={block.id} role="listitem" className="mb-2">
+								<div key={block.id} role="listitem" className="mb-2" data-block-id={block.id}>
 									<BlockRow
 										block={block}
 										isDragged={draggedId === block.id}

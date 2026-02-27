@@ -150,7 +150,7 @@ function SidebarContent({
 				<div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
 					<span>v0.1.0</span>
 					{isDev && (
-						<span className="bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1 py-0.5 text-[9px] font-semibold uppercase leading-none">
+						<span className="bg-amber-500/15 text-amber-600 dark:text-amber-400 px-1 py-0.5 text-[10px] font-semibold uppercase leading-none">
 							DEV
 						</span>
 					)}
