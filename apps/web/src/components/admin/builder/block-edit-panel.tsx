@@ -264,16 +264,141 @@ export function BlockEditPanel({
 
 					{activeTab === "style" && (
 						<>
-							<div className="space-y-1.5">
-								<Label htmlFor="edit-icon">Icon name</Label>
-								<Input
-									id="edit-icon"
-									value={icon}
-									onChange={(e) => setIcon(e.target.value)}
-									placeholder="e.g. globe, github, twitter"
-									className="dark:bg-input/30 border-white/15"
-								/>
-							</div>
+							{block.type !== "social_icons" && (
+								<div className="space-y-1.5">
+									<Label htmlFor="edit-icon">Icon name</Label>
+									<Input
+										id="edit-icon"
+										value={icon}
+										onChange={(e) => setIcon(e.target.value)}
+										placeholder="e.g. globe, github, twitter"
+										className="dark:bg-input/30 border-white/15"
+									/>
+								</div>
+							)}
+
+							{block.type === "social_icons" && (
+								<div className="space-y-4">
+									{/* Icon Size */}
+									<div className="space-y-1.5">
+										<Label>Icon Size</Label>
+										<div className="flex rounded-lg border border-white/15 overflow-hidden">
+											{[
+												{ value: "sm", label: "Small" },
+												{ value: "md", label: "Medium" },
+												{ value: "lg", label: "Large" },
+											].map((opt) => (
+												<button
+													key={opt.value}
+													type="button"
+													onClick={() => updateConfigField("iconSize", opt.value)}
+													className={cn(
+														"flex-1 py-1.5 text-xs font-medium transition-colors",
+														(parsedConfig.iconSize ?? "md") === opt.value
+															? "bg-primary/15 text-primary"
+															: "text-muted-foreground hover:text-foreground",
+													)}
+												>
+													{opt.label}
+												</button>
+											))}
+										</div>
+									</div>
+
+									{/* Icon Shape */}
+									<div className="space-y-1.5">
+										<Label>Icon Shape</Label>
+										<div className="flex rounded-lg border border-white/15 overflow-hidden">
+											{[
+												{
+													value: "circle",
+													label: "Circle",
+													svg: <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" fill="none" />,
+												},
+												{
+													value: "rounded",
+													label: "Rounded",
+													svg: <rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" strokeWidth="1.5" fill="none" />,
+												},
+												{
+													value: "square",
+													label: "Square",
+													svg: <rect x="3" y="3" width="18" height="18" rx="1" stroke="currentColor" strokeWidth="1.5" fill="none" />,
+												},
+												{
+													value: "bare",
+													label: "Bare",
+													svg: <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" fill="none" />,
+												},
+											].map((opt) => (
+												<button
+													key={opt.value}
+													type="button"
+													onClick={() => updateConfigField("iconStyle", opt.value)}
+													className={cn(
+														"flex-1 flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors",
+														(parsedConfig.iconStyle ?? "circle") === opt.value
+															? "bg-primary/15 text-primary"
+															: "text-muted-foreground hover:text-foreground",
+													)}
+												>
+													<svg viewBox="0 0 24 24" className="h-5 w-5">{opt.svg}</svg>
+													{opt.label}
+												</button>
+											))}
+										</div>
+										<p className="text-[11px] text-muted-foreground">
+											The global icon shape in Appearance may override this setting.
+										</p>
+									</div>
+
+									{/* Spacing */}
+									<div className="space-y-1.5">
+										<Label>Spacing</Label>
+										<div className="flex rounded-lg border border-white/15 overflow-hidden">
+											{[
+												{ value: "compact", label: "Compact" },
+												{ value: "default", label: "Default" },
+												{ value: "spacious", label: "Spacious" },
+											].map((opt) => (
+												<button
+													key={opt.value}
+													type="button"
+													onClick={() => updateConfigField("spacing", opt.value)}
+													className={cn(
+														"flex-1 py-1.5 text-xs font-medium transition-colors",
+														(parsedConfig.spacing ?? "default") === opt.value
+															? "bg-primary/15 text-primary"
+															: "text-muted-foreground hover:text-foreground",
+													)}
+												>
+													{opt.label}
+												</button>
+											))}
+										</div>
+									</div>
+
+									{/* Show Labels */}
+									<div className="flex items-center justify-between">
+										<div className="space-y-0.5">
+											<Label>Show Labels</Label>
+											<p className="text-[11px] text-muted-foreground">Display platform names below icons</p>
+										</div>
+										<button
+											type="button"
+											role="switch"
+											aria-checked={!!parsedConfig.showLabels}
+											onClick={() => updateConfigField("showLabels", !parsedConfig.showLabels)}
+											className={cn(
+												"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+												parsedConfig.showLabels ? "bg-primary" : "bg-muted",
+											)}
+										>
+											<span className={cn("inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform", parsedConfig.showLabels ? "translate-x-[18px]" : "translate-x-[3px]")} />
+										</button>
+									</div>
+								</div>
+							)}
 
 							{block.type === "link" && (
 								<div className="space-y-3">
