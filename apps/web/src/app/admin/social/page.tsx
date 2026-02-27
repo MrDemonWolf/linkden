@@ -309,7 +309,7 @@ export default function SocialPage() {
 			{/* Sticky header */}
 			<div
 				className={cn(
-					"sticky top-0 z-10 mt-1 rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-lg shadow-black/5 dark:shadow-black/20 px-4 py-3 space-y-3",
+					"sticky top-12 md:top-0 z-10 md:rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-lg shadow-black/5 dark:shadow-black/20 px-3 sm:px-4 py-3 space-y-3",
 					!hasAnimated && "animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both",
 				)}
 				style={!hasAnimated ? { animationDelay: "100ms" } : undefined}
@@ -317,8 +317,8 @@ export default function SocialPage() {
 				aria-label="Social Networks"
 			>
 				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-2.5">
-						<h1 className="text-lg font-semibold text-foreground">Social Networks</h1>
+					<div className="flex items-center gap-2 min-w-0">
+						<h1 className="text-base sm:text-lg font-semibold text-foreground truncate">Social Networks</h1>
 						<Badge variant="outline" className="gap-1 border-primary/30 text-primary">
 							<CircleDot className="h-3 w-3" aria-hidden="true" />
 							{activeCount} active
@@ -436,7 +436,7 @@ export default function SocialPage() {
 							<Filter className="h-3.5 w-3.5 shrink-0" />
 							<span className="hidden sm:inline truncate max-w-[100px]">{activeCategory === "all" ? "Filter" : CATEGORY_LABELS[activeCategory] || activeCategory}</span>
 						</DropdownMenuTrigger>
-						<DropdownMenuContent className="min-w-[180px]">
+						<DropdownMenuContent className="min-w-[160px] sm:min-w-[180px]">
 							{ALL_CATEGORIES.map((cat) => {
 								const CatIcon = cat !== "all" ? CATEGORY_ICONS[cat] : Globe;
 								const isActive = activeCategory === cat;
@@ -492,7 +492,7 @@ export default function SocialPage() {
 						count={activeNetworks.length}
 						variant="primary"
 					/>
-					<CardContent className="p-0 px-3 pb-3" role="list" aria-label="Active social networks">
+					<CardContent className="p-0 px-1.5 sm:px-3 pb-3" role="list" aria-label="Active social networks">
 						<div className="space-y-2.5">
 							{activeNetworks.map((social) => {
 								const draft = drafts[social.slug] ?? { url: "", isActive: false };
@@ -549,7 +549,7 @@ export default function SocialPage() {
 								/>
 							)}
 							<CardContent
-								className="p-0 px-3 pb-3"
+								className="p-0 px-1.5 sm:px-3 pb-3"
 								role="list"
 								aria-label={`${group.label} networks`}
 							>
