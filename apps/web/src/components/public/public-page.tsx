@@ -60,7 +60,6 @@ interface PageData {
 		customAccent: string | null;
 		customBackground: string | null;
 		customCss: string | null;
-		socialIconShape: "circle" | "rounded-square" | null;
 	};
 }
 
@@ -185,7 +184,6 @@ export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolea
 					bannerMode: data.settings.bannerMode,
 					bannerCustomUrl: data.settings.bannerCustomUrl,
 					customCss: data.settings.customCss,
-					socialIconShape: data.settings.socialIconShape,
 				}}
 				themeColors={themeColors}
 				colorMode={colorMode}

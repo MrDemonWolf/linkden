@@ -24,7 +24,6 @@ interface SocialIconsBlockProps {
 		border?: string;
 		primary?: string;
 	};
-	globalIconShape?: "circle" | "rounded-square";
 }
 
 export function SocialIconsBlock({
@@ -33,17 +32,11 @@ export function SocialIconsBlock({
 	colorMode,
 	networks,
 	themeColors,
-	globalIconShape,
 }: SocialIconsBlockProps) {
 	const iconSize = (config.iconSize as string) || "md";
 	const iconStyle = (config.iconStyle as string) || "circle";
 	const showLabels = config.showLabels as boolean | undefined;
 	const spacing = (config.spacing as string) || "default";
-
-	// Global shape override
-	const effectiveShape = globalIconShape === "rounded-square" ? "rounded"
-		: globalIconShape === "circle" ? "circle"
-		: iconStyle;
 
 	// Use real social networks from API if available
 	const items: { platform: string; url: string; hex?: string; svgPath?: string }[] = [];
@@ -98,7 +91,7 @@ export function SocialIconsBlock({
 			>
 				{items.map((item) => {
 					// Adaptive fill: pick brand color only if it has sufficient contrast
-					const contrastBg = effectiveShape === "bare" ? themeColors?.bg : themeColors?.muted;
+					const contrastBg = iconStyle === "bare" ? themeColors?.bg : themeColors?.muted;
 					const fill = item.hex && contrastBg && themeColors?.fg
 						? getAccessibleIconFill(item.hex, contrastBg, themeColors.fg)
 						: item.hex || "currentColor";
@@ -112,12 +105,12 @@ export function SocialIconsBlock({
 							className={`inline-flex items-center justify-center transition-transform hover:scale-110 ${
 								sizeClasses[iconSize] || "h-10 w-10"
 							} ${
-								effectiveShape !== "bare"
-									? shapeClasses[effectiveShape] || "rounded-full"
+								iconStyle !== "bare"
+									? shapeClasses[iconStyle] || "rounded-full"
 									: ""
 							} focus-visible:outline-2 focus-visible:outline-offset-2`}
 							style={
-								effectiveShape !== "bare"
+								iconStyle !== "bare"
 									? {
 											backgroundColor: themeColors?.muted || (colorMode === "dark" ? "#1f2937" : "#f3f4f6"),
 											color: themeColors?.fg || (colorMode === "dark" ? "#fff" : "#374151"),

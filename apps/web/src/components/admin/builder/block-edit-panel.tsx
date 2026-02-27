@@ -42,6 +42,7 @@ export function BlockEditPanel({
 	contactDelivery,
 	onDeliveryChange,
 	socialNetworks = [],
+	onChange,
 }: {
 	block: Block;
 	onClose: () => void;
@@ -50,6 +51,7 @@ export function BlockEditPanel({
 	contactDelivery: string;
 	onDeliveryChange: (value: string) => void;
 	socialNetworks?: Array<{ slug: string; name: string; url: string; hex: string; svgPath: string }>;
+	onChange?: (data: Partial<Block>) => void;
 }) {
 	const { resolvedTheme } = useTheme();
 	const panelRef = useRef<HTMLDivElement>(null);
@@ -67,6 +69,22 @@ export function BlockEditPanel({
 	const [scheduledEnd, setScheduledEnd] = useState(
 		block.scheduledEnd ? new Date(block.scheduledEnd).toISOString().slice(0, 16) : "",
 	);
+
+	// Emit changes for real-time preview
+	useEffect(() => {
+		onChange?.({
+			id: block.id,
+			title: title || null,
+			url: url || null,
+			icon: icon || null,
+			embedType: embedType || null,
+			embedUrl: embedUrl || null,
+			socialIcons: socialIcons || null,
+			config: config || null,
+			scheduledStart: scheduledStart ? new Date(scheduledStart) : null,
+			scheduledEnd: scheduledEnd ? new Date(scheduledEnd) : null,
+		});
+	}, [title, url, icon, config, embedType, embedUrl, socialIcons, scheduledStart, scheduledEnd]);
 
 	// Auto-focus first input when panel opens
 	useEffect(() => {
@@ -347,9 +365,6 @@ export function BlockEditPanel({
 												</button>
 											))}
 										</div>
-										<p className="text-[11px] text-muted-foreground">
-											The global icon shape in Appearance may override this setting.
-										</p>
 									</div>
 
 									{/* Spacing */}
