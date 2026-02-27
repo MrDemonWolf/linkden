@@ -7,6 +7,7 @@ import {
 	Search,
 	Globe,
 	Save,
+	Undo2,
 	Sparkles,
 	ExternalLink,
 	CircleDot,
@@ -30,6 +31,7 @@ import { cn, getAdminThemeColors } from "@/lib/utils";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { NetworkRow } from "@/components/admin/social/network-row";
 import { SectionHeader } from "@/components/admin/section-header";
+import { PageHeader } from "@/components/admin/page-header";
 import {
 	type NetworkDraft,
 	CATEGORY_LABELS,
@@ -205,6 +207,19 @@ export default function SocialPage() {
 		});
 	};
 
+	const handleDiscard = () => {
+		const initial: Record<string, NetworkDraft> = {};
+		for (const brand of socialBrands) {
+			initial[brand.slug] = { url: "", isActive: false };
+		}
+		for (const row of dbRows) {
+			if (initial[row.slug] !== undefined) {
+				initial[row.slug] = { url: row.url, isActive: row.isActive };
+			}
+		}
+		setDrafts(initial);
+	};
+
 	const handleSaveAll = async () => {
 		const dbMap = new Map(dbRows.map((r) => [r.slug, r]));
 		const changes: Array<{ slug: string; url: string; isActive: boolean }> = [];
@@ -306,40 +321,43 @@ export default function SocialPage() {
 
 	return (
 		<div className="space-y-6">
-			{/* Sticky header */}
-			<div
+			<PageHeader
+				title="Social Networks"
+				badge={
+					<Badge variant="outline" className="gap-1 border-primary/30 text-primary">
+						<CircleDot className="h-3 w-3" aria-hidden="true" />
+						{activeCount} active
+					</Badge>
+				}
+				actions={
+					<>
+						{hasChanges && (
+							<Button variant="ghost" size="sm" onClick={handleDiscard}>
+								<Undo2 className="mr-1.5 h-3.5 w-3.5" />
+								Discard
+							</Button>
+						)}
+						<Button
+							size="sm"
+							variant={hasChanges ? "default" : "outline"}
+							onClick={handleSaveAll}
+							disabled={!hasChanges || updateBulk.isPending}
+							className={cn(
+								"transition-all duration-300",
+								hasChanges && !updateBulk.isPending && "shadow-lg shadow-primary/25 ring-2 ring-primary/20",
+							)}
+						>
+							<Save className="mr-1.5 h-3.5 w-3.5" />
+							<span className="hidden sm:inline">{updateBulk.isPending ? "Saving..." : "Save All Changes"}</span>
+							<span className="sm:hidden">{updateBulk.isPending ? "..." : "Save"}</span>
+						</Button>
+					</>
+				}
 				className={cn(
-					"sticky top-12 md:top-0 z-10 md:rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-lg shadow-black/5 dark:shadow-black/20 px-3 sm:px-4 py-3 space-y-3",
+					"z-10",
 					!hasAnimated && "animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both",
 				)}
-				style={!hasAnimated ? { animationDelay: "100ms" } : undefined}
-				role="banner"
-				aria-label="Social Networks"
 			>
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-2 min-w-0">
-						<h1 className="text-base sm:text-lg font-semibold text-foreground truncate">Social Networks</h1>
-						<Badge variant="outline" className="gap-1 border-primary/30 text-primary">
-							<CircleDot className="h-3 w-3" aria-hidden="true" />
-							{activeCount} active
-						</Badge>
-					</div>
-					<Button
-						size="sm"
-						variant={hasChanges ? "default" : "outline"}
-						onClick={handleSaveAll}
-						disabled={!hasChanges || updateBulk.isPending}
-						className={cn(
-							"transition-all duration-300",
-							hasChanges && !updateBulk.isPending && "shadow-lg shadow-primary/25 ring-2 ring-primary/20",
-						)}
-					>
-						<Save className="mr-1.5 h-3.5 w-3.5" />
-						<span className="hidden sm:inline">{updateBulk.isPending ? "Saving..." : "Save All Changes"}</span>
-						<span className="sm:hidden">{updateBulk.isPending ? "..." : "Save"}</span>
-					</Button>
-				</div>
-
 				{/* Search + Filter row */}
 				<div className="flex items-center gap-2">
 					<div className="relative flex-1" ref={searchRef}>
@@ -455,7 +473,7 @@ export default function SocialPage() {
 						</DropdownMenuContent>
 					</DropdownMenu>
 				</div>
-			</div>
+			</PageHeader>
 
 			{/* Error state */}
 			{socialsQuery.isError && (

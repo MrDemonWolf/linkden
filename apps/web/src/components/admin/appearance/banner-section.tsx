@@ -43,6 +43,14 @@ export function BannerSection({
 					htmlFor="a-banner-enabled"
 					className="flex items-start gap-3 cursor-pointer group"
 				>
+					<div className="min-w-0 flex-1">
+						<span className="text-xs font-medium group-hover:text-foreground transition-colors">
+							Show banner on public page
+						</span>
+						<p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+							Displays a banner behind your avatar
+						</p>
+					</div>
 					<button
 						id="a-banner-enabled"
 						type="button"
@@ -51,7 +59,7 @@ export function BannerSection({
 						aria-label="Show banner on public page"
 						onClick={() => onBannerEnabledChange(!bannerEnabled)}
 						className={cn(
-							"relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+							"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
 							bannerEnabled ? "bg-primary" : "bg-muted",
 						)}
 					>
@@ -62,14 +70,6 @@ export function BannerSection({
 							)}
 						/>
 					</button>
-					<div className="min-w-0 flex-1">
-						<span className="text-xs font-medium group-hover:text-foreground transition-colors">
-							Show banner on public page
-						</span>
-						<p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
-							Displays a banner behind your avatar
-						</p>
-					</div>
 				</label>
 				{bannerEnabled && (
 					<>

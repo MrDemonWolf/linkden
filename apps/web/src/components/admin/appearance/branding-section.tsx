@@ -28,6 +28,14 @@ export function VerifiedBadgeSection({
 					htmlFor="a-verified"
 					className="flex items-start gap-3 cursor-pointer group"
 				>
+					<div className="min-w-0 flex-1">
+						<span className="text-xs font-medium group-hover:text-foreground transition-colors">
+							Show verified badge
+						</span>
+						<p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+							Displays a blue checkmark next to your name
+						</p>
+					</div>
 					<button
 						id="a-verified"
 						type="button"
@@ -36,7 +44,7 @@ export function VerifiedBadgeSection({
 						aria-label="Show verified badge"
 						onClick={() => onVerifiedBadgeChange(!verifiedBadge)}
 						className={cn(
-							"relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+							"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
 							verifiedBadge ? "bg-primary" : "bg-muted",
 						)}
 					>
@@ -47,14 +55,6 @@ export function VerifiedBadgeSection({
 							)}
 						/>
 					</button>
-					<div className="min-w-0 flex-1">
-						<span className="text-xs font-medium group-hover:text-foreground transition-colors">
-							Show verified badge
-						</span>
-						<p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
-							Displays a blue checkmark next to your name
-						</p>
-					</div>
 				</label>
 			</CardContent>
 		</Card>
@@ -151,6 +151,14 @@ export function BrandingSection({
 					htmlFor="a-branding-enabled"
 					className="flex items-start gap-3 cursor-pointer group"
 				>
+					<div className="min-w-0 flex-1">
+						<span className="text-xs font-medium group-hover:text-foreground transition-colors">
+							Show whitelabel footer
+						</span>
+						<p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+							Display a footer with custom text and link
+						</p>
+					</div>
 					<button
 						id="a-branding-enabled"
 						type="button"
@@ -159,7 +167,7 @@ export function BrandingSection({
 						aria-label="Show whitelabel footer"
 						onClick={() => onBrandingEnabledChange(!brandingEnabled)}
 						className={cn(
-							"relative mt-0.5 inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+							"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
 							brandingEnabled ? "bg-primary" : "bg-muted",
 						)}
 					>
@@ -170,14 +178,6 @@ export function BrandingSection({
 							)}
 						/>
 					</button>
-					<div className="min-w-0 flex-1">
-						<span className="text-xs font-medium group-hover:text-foreground transition-colors">
-							Show whitelabel footer
-						</span>
-						<p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
-							Display a footer with custom text and link
-						</p>
-					</div>
 				</label>
 				{brandingEnabled && (
 					<div className="space-y-3">
