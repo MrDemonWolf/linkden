@@ -9,11 +9,10 @@ import {
 	Mail,
 	Download,
 	Upload,
-	Info,
 	ExternalLink,
 	Save,
-	Plug,
 	Database,
+	Undo2,
 } from "lucide-react";
 import { trpc } from "@/utils/trpc";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,9 +20,37 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/admin/page-header";
-import { PageSection } from "@/components/admin/page-section";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+
+// ---- Saved State ----
+interface SavedState {
+	seoTitle: string;
+	seoDescription: string;
+	seoOgImage: string;
+	captchaProvider: string;
+	captchaSiteKey: string;
+	captchaSecretKey: string;
+	emailProvider: string;
+	emailApiKey: string;
+	emailFrom: string;
+}
+
+function buildSavedState(s: Record<string, string>): SavedState {
+	return {
+		seoTitle: s.seo_title ?? "",
+		seoDescription: s.seo_description ?? "",
+		seoOgImage: s.seo_og_image ?? "",
+		captchaProvider: s.captcha_provider ?? "none",
+		captchaSiteKey: s.captcha_site_key ?? "",
+		captchaSecretKey: s.captcha_secret_key ?? "",
+		emailProvider: s.email_provider ?? "resend",
+		emailApiKey: s.email_api_key ?? "",
+		emailFrom: s.email_from ?? "",
+	};
+}
 
 // ---- Field Group ----
 function FieldGroup({
@@ -40,6 +67,9 @@ function FieldGroup({
 	);
 }
 
+const selectClassName =
+	"dark:bg-input/30 border-input h-8 w-full rounded-md border bg-transparent px-2.5 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring";
+
 export default function SettingsPage() {
 	const qc = useQueryClient();
 	const settingsQuery = useQuery(trpc.settings.getAll.queryOptions());
@@ -53,15 +83,28 @@ export default function SettingsPage() {
 
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
+	// Saved state for dirty tracking
+	const [savedState, setSavedState] = useState<SavedState>({
+		seoTitle: "",
+		seoDescription: "",
+		seoOgImage: "",
+		captchaProvider: "none",
+		captchaSiteKey: "",
+		captchaSecretKey: "",
+		emailProvider: "resend",
+		emailApiKey: "",
+		emailFrom: "",
+	});
+
 	// SEO
 	const [seoTitle, setSeoTitle] = useState("");
 	const [seoDescription, setSeoDescription] = useState("");
 	const [seoOgImage, setSeoOgImage] = useState("");
 
 	// CAPTCHA
-	const [captchaProvider, setCaptchaProvider] = useState("recaptcha");
-	const [captchaSiteKey, setCaptchaSiteKey] = useState("6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI");
-	const [captchaSecretKey, setCaptchaSecretKey] = useState("6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe");
+	const [captchaProvider, setCaptchaProvider] = useState("none");
+	const [captchaSiteKey, setCaptchaSiteKey] = useState("");
+	const [captchaSecretKey, setCaptchaSecretKey] = useState("");
 
 	// Email
 	const [emailProvider, setEmailProvider] = useState("resend");
@@ -71,18 +114,32 @@ export default function SettingsPage() {
 	// Load settings
 	useEffect(() => {
 		if (settingsQuery.data) {
-			const s = settingsQuery.data;
-			setSeoTitle(s.seo_title ?? "");
-			setSeoDescription(s.seo_description ?? "");
-			setSeoOgImage(s.seo_og_image ?? "");
-			setCaptchaProvider(s.captcha_provider ?? "none");
-			setCaptchaSiteKey(s.captcha_site_key ?? "");
-			setCaptchaSecretKey(s.captcha_secret_key ?? "");
-			setEmailProvider(s.email_provider ?? "resend");
-			setEmailApiKey(s.email_api_key ?? "");
-			setEmailFrom(s.email_from ?? "");
+			const s = buildSavedState(settingsQuery.data);
+			setSavedState(s);
+			setSeoTitle(s.seoTitle);
+			setSeoDescription(s.seoDescription);
+			setSeoOgImage(s.seoOgImage);
+			setCaptchaProvider(s.captchaProvider);
+			setCaptchaSiteKey(s.captchaSiteKey);
+			setCaptchaSecretKey(s.captchaSecretKey);
+			setEmailProvider(s.emailProvider);
+			setEmailApiKey(s.emailApiKey);
+			setEmailFrom(s.emailFrom);
 		}
 	}, [settingsQuery.data]);
+
+	const isDirty =
+		seoTitle !== savedState.seoTitle ||
+		seoDescription !== savedState.seoDescription ||
+		seoOgImage !== savedState.seoOgImage ||
+		captchaProvider !== savedState.captchaProvider ||
+		captchaSiteKey !== savedState.captchaSiteKey ||
+		captchaSecretKey !== savedState.captchaSecretKey ||
+		emailProvider !== savedState.emailProvider ||
+		emailApiKey !== savedState.emailApiKey ||
+		emailFrom !== savedState.emailFrom;
+
+	useUnsavedChanges(isDirty);
 
 	const invalidate = useCallback(() => {
 		qc.invalidateQueries({
@@ -90,9 +147,42 @@ export default function SettingsPage() {
 		});
 	}, [qc]);
 
-	const saveSection = async (pairs: { key: string; value: string }[]) => {
+	const handleDiscard = () => {
+		setSeoTitle(savedState.seoTitle);
+		setSeoDescription(savedState.seoDescription);
+		setSeoOgImage(savedState.seoOgImage);
+		setCaptchaProvider(savedState.captchaProvider);
+		setCaptchaSiteKey(savedState.captchaSiteKey);
+		setCaptchaSecretKey(savedState.captchaSecretKey);
+		setEmailProvider(savedState.emailProvider);
+		setEmailApiKey(savedState.emailApiKey);
+		setEmailFrom(savedState.emailFrom);
+	};
+
+	const handleSave = async () => {
 		try {
-			await updateSettings.mutateAsync(pairs);
+			await updateSettings.mutateAsync([
+				{ key: "seo_title", value: seoTitle },
+				{ key: "seo_description", value: seoDescription },
+				{ key: "seo_og_image", value: seoOgImage },
+				{ key: "captcha_provider", value: captchaProvider },
+				{ key: "captcha_site_key", value: captchaSiteKey },
+				{ key: "captcha_secret_key", value: captchaSecretKey },
+				{ key: "email_provider", value: emailProvider },
+				{ key: "email_api_key", value: emailApiKey },
+				{ key: "email_from", value: emailFrom },
+			]);
+			setSavedState({
+				seoTitle,
+				seoDescription,
+				seoOgImage,
+				captchaProvider,
+				captchaSiteKey,
+				captchaSecretKey,
+				emailProvider,
+				emailApiKey,
+				emailFrom,
+			});
 			invalidate();
 			toast.success("Settings saved");
 		} catch {
@@ -151,265 +241,252 @@ export default function SettingsPage() {
 	}
 
 	return (
-		<div className="space-y-8">
-			<PageHeader title="Settings" description="Configure your LinkDen instance" />
-
-			{/* SEO */}
-			<PageSection
-				id="seo"
-				icon={SearchIcon}
-				title="SEO"
-				description="Search engine optimization and social sharing previews"
-			>
-				<FieldGroup>
-					<div className="space-y-1.5">
-						<Label htmlFor="s-seo-title">Page Title</Label>
-						<Input
-							id="s-seo-title"
-							value={seoTitle}
-							onChange={(e) => setSeoTitle(e.target.value)}
-							placeholder="My Links"
-						/>
-					</div>
-				</FieldGroup>
-				<div className="space-y-1.5">
-					<Label htmlFor="s-seo-desc">Description</Label>
-					<textarea
-						id="s-seo-desc"
-						value={seoDescription}
-						onChange={(e) =>
-							setSeoDescription(e.target.value)
-						}
-						rows={2}
-						placeholder="Check out all my links"
-						className="dark:bg-input/30 border-input w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
-					/>
-				</div>
-				<div className="space-y-1.5">
-					<Label htmlFor="s-seo-og">OG Image URL</Label>
-					<Input
-						id="s-seo-og"
-						value={seoOgImage}
-						onChange={(e) => setSeoOgImage(e.target.value)}
-						placeholder="https://..."
-					/>
-					<p className="text-[11px] text-muted-foreground">
-						Preview image shown when your page is shared on social media
-					</p>
-				</div>
-				<Button
-					size="sm"
-					onClick={() =>
-						saveSection([
-							{ key: "seo_title", value: seoTitle },
-							{ key: "seo_description", value: seoDescription },
-							{ key: "seo_og_image", value: seoOgImage },
-						])
-					}
-					disabled={updateSettings.isPending}
-				>
-					<Save className="mr-1.5 h-3 w-3" />
-					Save SEO
-				</Button>
-			</PageSection>
-
-			{/* Integrations (CAPTCHA + Email) */}
-			<PageSection
-				id="integrations"
-				icon={Plug}
-				title="Integrations"
-				description="Configure external service providers"
-			>
-				{/* CAPTCHA */}
-				<div className="flex items-center gap-2 mb-1">
-					<Shield className="h-3.5 w-3.5 text-muted-foreground" />
-					<span className="text-xs font-medium">CAPTCHA</span>
-				</div>
-				<div className="space-y-1.5">
-					<Label htmlFor="s-captcha-provider">Provider</Label>
-					<select
-						id="s-captcha-provider"
-						value={captchaProvider}
-						onChange={(e) => setCaptchaProvider(e.target.value)}
-						className="dark:bg-input/30 border-input h-8 w-full rounded-md border bg-transparent px-2.5 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
-					>
-						<option value="none">None</option>
-						<option value="turnstile">Cloudflare Turnstile</option>
-						<option value="recaptcha">Google reCAPTCHA</option>
-					</select>
-				</div>
-				{captchaProvider !== "none" && (
-					<FieldGroup columns={2}>
-						<div className="space-y-1.5">
-							<Label htmlFor="s-captcha-site">Site Key</Label>
-							<Input
-								id="s-captcha-site"
-								value={captchaSiteKey}
-								onChange={(e) =>
-									setCaptchaSiteKey(e.target.value)
-								}
-							/>
-						</div>
-						<div className="space-y-1.5">
-							<Label htmlFor="s-captcha-secret">Secret Key</Label>
-							<Input
-								id="s-captcha-secret"
-								type="password"
-								value={captchaSecretKey}
-								onChange={(e) =>
-									setCaptchaSecretKey(e.target.value)
-								}
-							/>
-						</div>
-					</FieldGroup>
-				)}
-
-				<div className="border-t my-2" />
-
-				{/* Email */}
-				<div className="flex items-center gap-2 mb-1">
-					<Mail className="h-3.5 w-3.5 text-muted-foreground" />
-					<span className="text-xs font-medium">Email</span>
-				</div>
-				<div className="space-y-1.5">
-					<Label htmlFor="s-email-provider">Provider</Label>
-					<select
-						id="s-email-provider"
-						value={emailProvider}
-						onChange={(e) => setEmailProvider(e.target.value)}
-						className="dark:bg-input/30 border-input h-8 w-full rounded-md border bg-transparent px-2.5 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
-					>
-						<option value="resend">Resend</option>
-						<option value="cloudflare">
-							Cloudflare Email Workers
-						</option>
-					</select>
-				</div>
-				<FieldGroup columns={2}>
-					<div className="space-y-1.5">
-						<Label htmlFor="s-email-key">API Key</Label>
-						<Input
-							id="s-email-key"
-							type="password"
-							value={emailApiKey}
-							onChange={(e) => setEmailApiKey(e.target.value)}
-							placeholder="re_..."
-						/>
-					</div>
-					<div className="space-y-1.5">
-						<Label htmlFor="s-email-from">From Address</Label>
-						<Input
-							id="s-email-from"
-							value={emailFrom}
-							onChange={(e) => setEmailFrom(e.target.value)}
-							placeholder="noreply@yourdomain.com"
-						/>
-					</div>
-				</FieldGroup>
-
-				<Button
-					size="sm"
-					onClick={() =>
-						saveSection([
-							{ key: "captcha_provider", value: captchaProvider },
-							{ key: "captcha_site_key", value: captchaSiteKey },
-							{ key: "captcha_secret_key", value: captchaSecretKey },
-							{ key: "email_provider", value: emailProvider },
-							{ key: "email_api_key", value: emailApiKey },
-							{ key: "email_from", value: emailFrom },
-						])
-					}
-					disabled={updateSettings.isPending}
-				>
-					<Save className="mr-1.5 h-3 w-3" />
-					Save Integrations
-				</Button>
-			</PageSection>
-
-			{/* Data & Info (Export/Import + About) */}
-			<PageSection
-				id="data"
-				icon={Database}
-				title="Data & Info"
-				description="Backup, restore, and version information"
-			>
-				<div className="flex gap-2">
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={handleExport}
-						disabled={exportData.isFetching}
-					>
-						<Download className="mr-1.5 h-3 w-3" />
-						{exportData.isFetching ? "Exporting..." : "Export"}
-					</Button>
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => fileInputRef.current?.click()}
-						disabled={importData.isPending}
-					>
-						<Upload className="mr-1.5 h-3 w-3" />
-						{importData.isPending ? "Importing..." : "Import"}
-					</Button>
-					<input
-						ref={fileInputRef}
-						type="file"
-						accept=".json"
-						onChange={handleImport}
-						className="hidden"
-						aria-label="Import backup file"
-					/>
-				</div>
-
-				<div className="border-t my-2" />
-
-				<div className="flex items-center justify-between">
-					<div>
-						<p className="text-[11px] text-muted-foreground">
-							Current Version
-						</p>
-						<p className="text-sm font-semibold tabular-nums">
-							{versionCheck.data?.current ?? "0.1.0"}
-						</p>
-					</div>
-					{versionCheck.data?.hasUpdate ? (
-						<a
-							href={versionCheck.data.releaseUrl ?? "#"}
-							target="_blank"
-							rel="noopener noreferrer"
-						>
-							<Button size="sm">
-								Update to {versionCheck.data.latest}
-								<ExternalLink className="ml-1.5 h-3 w-3" />
+		<Tabs defaultValue="seo" className="space-y-4">
+			<PageHeader
+				title="Settings"
+				description={isDirty ? "You have unsaved changes" : "Configure your LinkDen instance"}
+				actions={
+					<>
+						{isDirty && (
+							<Button variant="ghost" size="sm" onClick={handleDiscard}>
+								<Undo2 className="mr-1.5 h-3.5 w-3.5" />
+								Discard
 							</Button>
-						</a>
-					) : (
+						)}
 						<Button
 							size="sm"
-							variant="outline"
-							onClick={() =>
-								qc.invalidateQueries({
-									queryKey:
-										trpc.version.checkUpdate.queryOptions()
-											.queryKey,
-								})
-							}
+							variant={isDirty ? "default" : "outline"}
+							disabled={!isDirty || updateSettings.isPending}
+							onClick={handleSave}
 						>
-							Check for updates
+							<Save className="mr-1.5 h-3.5 w-3.5" />
+							{updateSettings.isPending ? "Saving..." : "Save"}
 						</Button>
-					)}
-				</div>
-				<a
-					href="https://github.com/mrdemonwolf/LinkDen"
-					target="_blank"
-					rel="noopener noreferrer"
-					className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-				>
-					GitHub Repository
-					<ExternalLink className="h-3 w-3" />
-				</a>
-			</PageSection>
-		</div>
+					</>
+				}
+			>
+				<TabsList variant="pills">
+					<TabsTrigger value="seo">
+						<SearchIcon className="mr-1.5 h-3 w-3" /> SEO
+					</TabsTrigger>
+					<TabsTrigger value="captcha">
+						<Shield className="mr-1.5 h-3 w-3" /> CAPTCHA
+					</TabsTrigger>
+					<TabsTrigger value="email">
+						<Mail className="mr-1.5 h-3 w-3" /> Email
+					</TabsTrigger>
+					<TabsTrigger value="data">
+						<Database className="mr-1.5 h-3 w-3" /> Data & Info
+					</TabsTrigger>
+				</TabsList>
+			</PageHeader>
+
+			{/* SEO */}
+			<TabsContent value="seo">
+				<Card>
+					<CardContent className="space-y-4 pt-2">
+						<FieldGroup>
+							<div className="space-y-1.5">
+								<Label htmlFor="s-seo-title">Page Title</Label>
+								<Input
+									id="s-seo-title"
+									value={seoTitle}
+									onChange={(e) => setSeoTitle(e.target.value)}
+									placeholder="My Links"
+								/>
+							</div>
+						</FieldGroup>
+						<div className="space-y-1.5">
+							<Label htmlFor="s-seo-desc">Description</Label>
+							<textarea
+								id="s-seo-desc"
+								value={seoDescription}
+								onChange={(e) => setSeoDescription(e.target.value)}
+								rows={2}
+								placeholder="Check out all my links"
+								className="dark:bg-input/30 border-input w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
+							/>
+						</div>
+						<div className="space-y-1.5">
+							<Label htmlFor="s-seo-og">OG Image URL</Label>
+							<Input
+								id="s-seo-og"
+								value={seoOgImage}
+								onChange={(e) => setSeoOgImage(e.target.value)}
+								placeholder="https://..."
+							/>
+							<p className="text-[11px] text-muted-foreground">
+								Preview image shown when your page is shared on social media
+							</p>
+						</div>
+					</CardContent>
+				</Card>
+			</TabsContent>
+
+			{/* CAPTCHA */}
+			<TabsContent value="captcha">
+				<Card>
+					<CardContent className="space-y-4 pt-2">
+						<div className="space-y-1.5">
+							<Label htmlFor="s-captcha-provider">Provider</Label>
+							<select
+								id="s-captcha-provider"
+								value={captchaProvider}
+								onChange={(e) => setCaptchaProvider(e.target.value)}
+								className={selectClassName}
+							>
+								<option value="none">None</option>
+								<option value="turnstile">Cloudflare Turnstile</option>
+								<option value="recaptcha">Google reCAPTCHA</option>
+							</select>
+						</div>
+						{captchaProvider !== "none" && (
+							<FieldGroup columns={2}>
+								<div className="space-y-1.5">
+									<Label htmlFor="s-captcha-site">Site Key</Label>
+									<Input
+										id="s-captcha-site"
+										value={captchaSiteKey}
+										onChange={(e) => setCaptchaSiteKey(e.target.value)}
+									/>
+								</div>
+								<div className="space-y-1.5">
+									<Label htmlFor="s-captcha-secret">Secret Key</Label>
+									<Input
+										id="s-captcha-secret"
+										type="password"
+										value={captchaSecretKey}
+										onChange={(e) => setCaptchaSecretKey(e.target.value)}
+									/>
+								</div>
+							</FieldGroup>
+						)}
+					</CardContent>
+				</Card>
+			</TabsContent>
+
+			{/* Email */}
+			<TabsContent value="email">
+				<Card>
+					<CardContent className="space-y-4 pt-2">
+						<div className="space-y-1.5">
+							<Label htmlFor="s-email-provider">Provider</Label>
+							<select
+								id="s-email-provider"
+								value={emailProvider}
+								onChange={(e) => setEmailProvider(e.target.value)}
+								className={selectClassName}
+							>
+								<option value="resend">Resend</option>
+								<option value="cloudflare">Cloudflare Email Workers</option>
+							</select>
+						</div>
+						<FieldGroup columns={2}>
+							<div className="space-y-1.5">
+								<Label htmlFor="s-email-key">API Key</Label>
+								<Input
+									id="s-email-key"
+									type="password"
+									value={emailApiKey}
+									onChange={(e) => setEmailApiKey(e.target.value)}
+									placeholder="re_..."
+								/>
+							</div>
+							<div className="space-y-1.5">
+								<Label htmlFor="s-email-from">From Address</Label>
+								<Input
+									id="s-email-from"
+									value={emailFrom}
+									onChange={(e) => setEmailFrom(e.target.value)}
+									placeholder="noreply@yourdomain.com"
+								/>
+							</div>
+						</FieldGroup>
+					</CardContent>
+				</Card>
+			</TabsContent>
+
+			{/* Data & Info */}
+			<TabsContent value="data">
+				<Card>
+					<CardContent className="space-y-4 pt-2">
+						<div className="flex gap-2">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={handleExport}
+								disabled={exportData.isFetching}
+							>
+								<Download className="mr-1.5 h-3 w-3" />
+								{exportData.isFetching ? "Exporting..." : "Export"}
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => fileInputRef.current?.click()}
+								disabled={importData.isPending}
+							>
+								<Upload className="mr-1.5 h-3 w-3" />
+								{importData.isPending ? "Importing..." : "Import"}
+							</Button>
+							<input
+								ref={fileInputRef}
+								type="file"
+								accept=".json"
+								onChange={handleImport}
+								className="hidden"
+								aria-label="Import backup file"
+							/>
+						</div>
+
+						<div className="flex items-center justify-between">
+							<div>
+								<p className="text-[11px] text-muted-foreground">
+									Current Version
+								</p>
+								<p className="text-sm font-semibold tabular-nums">
+									{versionCheck.data?.current ?? "0.1.0"}
+								</p>
+							</div>
+							{versionCheck.data?.hasUpdate ? (
+								<a
+									href={versionCheck.data.releaseUrl ?? "#"}
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									<Button size="sm">
+										Update to {versionCheck.data.latest}
+										<ExternalLink className="ml-1.5 h-3 w-3" />
+									</Button>
+								</a>
+							) : (
+								<Button
+									size="sm"
+									variant="outline"
+									onClick={() =>
+										qc.invalidateQueries({
+											queryKey:
+												trpc.version.checkUpdate.queryOptions()
+													.queryKey,
+										})
+									}
+								>
+									Check for updates
+								</Button>
+							)}
+						</div>
+						<a
+							href="https://github.com/mrdemonwolf/LinkDen"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+						>
+							GitHub Repository
+							<ExternalLink className="h-3 w-3" />
+						</a>
+					</CardContent>
+				</Card>
+			</TabsContent>
+		</Tabs>
 	);
 }
