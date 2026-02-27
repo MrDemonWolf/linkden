@@ -1,17 +1,10 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { ExternalLink } from "lucide-react";
 import type { socialBrands } from "@linkden/ui/social-brands";
 import { getAccessibleIconFill, isLowLuminance } from "@linkden/ui/color-contrast";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import {
-	Tooltip,
-	TooltipTrigger,
-	TooltipContent,
-	TooltipProvider,
-} from "@/components/ui/tooltip";
 import { cn, getAdminThemeColors } from "@/lib/utils";
 import {
 	isFullUrlTemplate,
@@ -19,7 +12,6 @@ import {
 	getSuffix,
 	extractUsername,
 	buildUrl,
-	resolveUrl,
 } from "@/lib/social-url-utils";
 import type { NetworkDraft } from "./social-constants";
 
@@ -54,16 +46,13 @@ export function NetworkRow({
 	const needsRing = isLowLuminance(social.hex);
 
 	const toggleDescriptionId = `toggle-desc-${social.slug}`;
-	const resolvedUrl = draft.isActive && draft.url && !fullUrlMode
-		? resolveUrl(draft.url, template)
-		: null;
 
 	return (
 		<div
 			role="listitem"
 			className={cn(
 				"animate-in fade-in duration-300 fill-mode-both",
-				"flex flex-col gap-1 rounded-xl px-4 py-3.5 transition-all",
+				"flex rounded-xl px-4 py-3.5 transition-all",
 				draft.isActive
 					? "border border-primary/20 bg-white/[0.03] backdrop-blur-sm shadow-sm"
 					: "group border border-transparent hover:bg-accent/60",
@@ -72,43 +61,32 @@ export function NetworkRow({
 				...(animationDelay !== undefined ? { animationDelay: `${animationDelay}ms` } : {}),
 			}}
 		>
-			<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+			<div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
 				{/* Icon + Name row */}
 				<div className="flex items-center gap-3">
-					<TooltipProvider>
-						<Tooltip>
-							<TooltipTrigger>
-								<div
-									className={cn(
-										"flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform",
-										draft.isActive
-											? ""
-											: "bg-muted/50 group-hover:scale-105",
-										needsRing && draft.isActive && "ring-1 ring-border dark:ring-white/20",
-									)}
-									style={
-										draft.isActive
-											? { backgroundColor: `${social.hex}15` }
-											: undefined
-									}
-								>
-									<svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-										<path
-											d={social.svgPath}
-											fill={fillColor}
-										/>
-									</svg>
-								</div>
-							</TooltipTrigger>
-							{draft.isActive && resolvedUrl && (
-								<TooltipContent side="top" className="max-w-xs text-xs">
-									{resolvedUrl}
-								</TooltipContent>
-							)}
-						</Tooltip>
-					</TooltipProvider>
+					<div
+						className={cn(
+							"flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform",
+							draft.isActive
+								? ""
+								: "bg-muted/50 group-hover:scale-105",
+							needsRing && draft.isActive && "ring-1 ring-border dark:ring-white/20",
+						)}
+						style={
+							draft.isActive
+								? { backgroundColor: `${social.hex}15` }
+								: undefined
+						}
+					>
+						<svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+							<path
+								d={social.svgPath}
+								fill={fillColor}
+							/>
+						</svg>
+					</div>
 
-					<label htmlFor={`input-${social.slug}`} className="w-28 shrink-0 truncate text-xs font-medium text-foreground cursor-pointer">
+					<label htmlFor={`input-${social.slug}`} className="w-20 sm:w-28 shrink-0 truncate text-xs font-medium text-foreground cursor-pointer">
 						{social.name}
 					</label>
 				</div>
@@ -128,9 +106,9 @@ export function NetworkRow({
 							aria-label={`URL for ${social.name}`}
 						/>
 					) : (
-						<div className="flex items-center rounded-lg border border-input bg-transparent backdrop-blur-sm h-8 overflow-hidden focus-within:ring-1 focus-within:ring-ring">
+						<div className="flex items-center rounded-lg border border-input bg-transparent h-8 overflow-hidden focus-within:ring-1 focus-within:ring-ring">
 							{prefix && (
-								<span className="shrink-0 select-none bg-muted px-2 text-xs text-foreground/60 border-r border-input h-full flex items-center">
+								<span className="shrink-0 select-none pl-2.5 text-xs text-muted-foreground">
 									{prefix}
 								</span>
 							)}
@@ -144,11 +122,11 @@ export function NetworkRow({
 									)
 								}
 								placeholder="username"
-								className="min-w-0 flex-1 bg-transparent px-2 text-xs outline-none placeholder:text-muted-foreground/70"
+								className="min-w-0 flex-1 bg-transparent px-1.5 text-xs outline-none placeholder:text-muted-foreground/50"
 								aria-label={`URL for ${social.name}`}
 							/>
 							{suffix && (
-								<span className="shrink-0 select-none bg-muted px-2 text-xs text-foreground/60 border-l border-input h-full flex items-center">
+								<span className="shrink-0 select-none pr-2.5 text-xs text-muted-foreground">
 									{suffix}
 								</span>
 							)}
@@ -170,13 +148,6 @@ export function NetworkRow({
 				</div>
 			</div>
 
-			{/* Resolved URL preview for active templated rows */}
-			{resolvedUrl && (
-				<div className="ml-12 flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
-					<ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" />
-					<span className="truncate">{resolvedUrl}</span>
-				</div>
-			)}
 		</div>
 	);
 }

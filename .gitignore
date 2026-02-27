@@ -45,6 +45,9 @@ lerna-debug.log*
 coverage
 .nyc_output
 
+# Claude Code
+.claude
+
 # Misc
 *.tgz
 .cache

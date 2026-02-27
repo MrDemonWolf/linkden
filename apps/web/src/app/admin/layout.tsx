@@ -271,7 +271,7 @@ export default function AdminLayout({
 
 			{/* Mobile bottom nav */}
 			<nav aria-label="Quick navigation" className="fixed inset-x-0 bottom-0 z-40 flex border-t border-white/20 dark:border-white/10 backdrop-blur-2xl bg-white/70 dark:bg-black/40 md:hidden">
-				{NAV_ITEMS.slice(0, 5).map((item) => {
+				{NAV_ITEMS.map((item) => {
 					const isActive =
 						item.href === "/admin"
 							? pathname === "/admin"
