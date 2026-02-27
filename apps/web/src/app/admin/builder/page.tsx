@@ -352,7 +352,7 @@ export default function BuilderPage() {
 				</div>
 
 				{/* Right panel: phone preview (desktop) */}
-				<div className="hidden w-[320px] shrink-0 lg:block">
+				<div className="hidden w-[380px] shrink-0 lg:block">
 					<div className="sticky top-6">
 						<div className="mb-3 flex items-center justify-between">
 							<span className="text-xs font-medium">Preview</span>
@@ -393,6 +393,7 @@ export default function BuilderPage() {
 						onSave={handleSaveEdit}
 						isSaving={updateBlock.isPending}
 						contactDelivery={contactDelivery}
+						socialNetworks={previewSocialNetworks}
 						onDeliveryChange={async (value) => {
 							try {
 								await updateSettings.mutateAsync([

@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import Link from "next/link";
+import { useTheme } from "next-themes";
+import { X, ExternalLink } from "lucide-react";
+import { getAccessibleIconFill, isLowLuminance } from "@linkden/ui/color-contrast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import { cn, getAdminThemeColors } from "@/lib/utils";
 import { type Block, EMBED_URL_PATTERNS, validateEmbedUrl } from "./builder-constants";
 
 function GlassSelect({
@@ -38,6 +41,7 @@ export function BlockEditPanel({
 	isSaving,
 	contactDelivery,
 	onDeliveryChange,
+	socialNetworks = [],
 }: {
 	block: Block;
 	onClose: () => void;
@@ -45,7 +49,9 @@ export function BlockEditPanel({
 	isSaving: boolean;
 	contactDelivery: string;
 	onDeliveryChange: (value: string) => void;
+	socialNetworks?: Array<{ slug: string; name: string; url: string; hex: string; svgPath: string }>;
 }) {
+	const { resolvedTheme } = useTheme();
 	const panelRef = useRef<HTMLDivElement>(null);
 	const [title, setTitle] = useState(block.title ?? "");
 	const [url, setUrl] = useState(block.url ?? "");
@@ -200,16 +206,57 @@ export function BlockEditPanel({
 								</>
 							)}
 							{block.type === "social_icons" && (
-								<div className="space-y-1.5">
-									<Label htmlFor="edit-social">Social Icons (JSON)</Label>
-									<textarea
-										id="edit-social"
-										value={socialIcons}
-										onChange={(e) => setSocialIcons(e.target.value)}
-										placeholder='[{"platform":"twitter","url":"https://twitter.com/you"}]'
-										rows={4}
-										className="dark:bg-input/30 border-white/15 w-full rounded-lg border bg-transparent backdrop-blur-sm px-2.5 py-1.5 text-xs font-mono outline-none focus:ring-1 focus:ring-ring"
-									/>
+								<div className="space-y-3">
+									<Label>Active Networks</Label>
+									{socialNetworks.length > 0 ? (
+										<div className="flex flex-wrap gap-1.5">
+											{socialNetworks.map((network) => {
+												const { bg: adminBg, fg: adminFg } = getAdminThemeColors(resolvedTheme);
+												const fillColor = getAccessibleIconFill(network.hex, adminBg, adminFg);
+												const needsRing = isLowLuminance(network.hex);
+												return (
+													<span
+														key={network.slug}
+														className={cn(
+															"inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-xs",
+															needsRing && "ring-1 ring-white/10",
+														)}
+													>
+														<svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill={fillColor}>
+															<path d={network.svgPath} />
+														</svg>
+														{network.name}
+													</span>
+												);
+											})}
+										</div>
+									) : (
+										<div className="flex items-center justify-center rounded-lg border-2 border-dashed border-white/15 px-4 py-6">
+											<p className="text-xs text-muted-foreground">No active networks</p>
+										</div>
+									)}
+									<Link
+										href="/admin/social"
+										className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-white/15 dark:bg-input/30 px-3 py-2 text-xs font-medium transition-colors hover:bg-accent"
+									>
+										Manage Social Networks
+										<ExternalLink className="h-3 w-3" />
+									</Link>
+									<details>
+										<summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
+											Advanced: Override JSON
+										</summary>
+										<div className="mt-2 space-y-1.5">
+											<textarea
+												id="edit-social"
+												value={socialIcons}
+												onChange={(e) => setSocialIcons(e.target.value)}
+												placeholder='[{"platform":"twitter","url":"https://twitter.com/you"}]'
+												rows={4}
+												className="dark:bg-input/30 border-white/15 w-full rounded-lg border bg-transparent backdrop-blur-sm px-2.5 py-1.5 text-xs font-mono outline-none focus:ring-1 focus:ring-ring"
+											/>
+										</div>
+									</details>
 								</div>
 							)}
 						</>
