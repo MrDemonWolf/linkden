@@ -53,7 +53,6 @@ export interface PageContentProps {
 		bannerMode?: "preset" | "custom";
 		bannerCustomUrl?: string | null;
 		customCss?: string | null;
-		socialIconShape?: "circle" | "rounded-square" | null;
 	};
 	themeColors: ThemeColors;
 	colorMode: "light" | "dark";
@@ -185,8 +184,8 @@ export function PageContent({
 										colorMode={colorMode}
 										networks={socialNetworks}
 										themeColors={themeColors}
-										globalIconShape={settings.socialIconShape ?? undefined}
-									/>
+										
+	/>
 								);
 							case "embed":
 								return (

@@ -31,6 +31,7 @@ import { BLOCK_TYPES, type BlockType, type Block, generateId } from "@/component
 export default function BuilderPage() {
 	const qc = useQueryClient();
 	const [editingBlock, setEditingBlock] = useState<Block | null>(null);
+	const [editingOverrides, setEditingOverrides] = useState<Partial<Block> | null>(null);
 	const [showAddMenu, setShowAddMenu] = useState(false);
 	const [previewMode, setPreviewMode] = useState<"light" | "dark">("light");
 	const [showMobilePreview, setShowMobilePreview] = useState(false);
@@ -94,8 +95,7 @@ export default function BuilderPage() {
 			brandingText: settings.branding_text || "Powered by LinkDen",
 			bannerPreset: settings.banner_enabled === "true" ? (settings.banner_preset || null) : null,
 			bannerEnabled: settings.banner_enabled === "true",
-			socialIconShape: (settings.social_icon_shape as "circle" | "rounded-square") || "circle",
-		};
+			};
 	})();
 
 	const updateSettings = useMutation(trpc.settings.updateBulk.mutationOptions());
@@ -175,6 +175,7 @@ export default function BuilderPage() {
 			});
 			invalidate();
 			setEditingBlock(null);
+			setEditingOverrides(null);
 			toast.success("Block updated");
 		} catch {
 			toast.error("Failed to update block");
@@ -218,18 +219,24 @@ export default function BuilderPage() {
 		}
 	};
 
-	const previewBlocksData = blocks.filter((b) => b.isEnabled).map((b) => ({
-		id: b.id,
-		type: b.type,
-		title: b.title,
-		url: b.url,
-		icon: b.icon,
-		embedType: b.embedType,
-		embedUrl: b.embedUrl,
-		socialIcons: b.socialIcons,
-		config: b.config,
-		position: b.position,
-	}));
+	const previewBlocksData = blocks.filter((b) => b.isEnabled).map((b) => {
+		const base = {
+			id: b.id,
+			type: b.type,
+			title: b.title,
+			url: b.url,
+			icon: b.icon,
+			embedType: b.embedType,
+			embedUrl: b.embedUrl,
+			socialIcons: b.socialIcons,
+			config: b.config,
+			position: b.position,
+		};
+		if (editingOverrides && editingOverrides.id === b.id) {
+			return { ...base, ...editingOverrides, position: base.position, type: base.type };
+		}
+		return base;
+	});
 
 	const previewElement = (
 		<PhoneFrame previewDark={previewMode === "dark"}>
@@ -384,12 +391,13 @@ export default function BuilderPage() {
 				<>
 					<div
 						className="fixed inset-0 z-40 bg-black/30"
-						onClick={() => setEditingBlock(null)}
+						onClick={() => { setEditingBlock(null); setEditingOverrides(null); }}
 						aria-hidden="true"
 					/>
 					<BlockEditPanel
 						block={editingBlock}
-						onClose={() => setEditingBlock(null)}
+						onClose={() => { setEditingBlock(null); setEditingOverrides(null); }}
+						onChange={setEditingOverrides}
 						onSave={handleSaveEdit}
 						isSaving={updateBlock.isPending}
 						contactDelivery={contactDelivery}

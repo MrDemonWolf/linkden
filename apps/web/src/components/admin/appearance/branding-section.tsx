@@ -1,6 +1,6 @@
 "use client";
 
-import { Tag, BadgeCheck, Share2 } from "lucide-react";
+import { Tag, BadgeCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,64 +56,6 @@ export function VerifiedBadgeSection({
 						/>
 					</button>
 				</label>
-			</CardContent>
-		</Card>
-	);
-}
-
-export function SocialIconShapeSection({
-	socialIconShape,
-	onSocialIconShapeChange,
-}: {
-	socialIconShape: "circle" | "rounded-square";
-	onSocialIconShapeChange: (value: "circle" | "rounded-square") => void;
-}) {
-	return (
-		<Card>
-			<CardHeader>
-				<h2>
-					<CardTitle className="flex items-center gap-1.5">
-						<Share2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-						Social Icon Shape
-					</CardTitle>
-				</h2>
-			</CardHeader>
-			<CardContent>
-				<div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/30" role="radiogroup" aria-label="Social icon shape">
-					<button
-						type="button"
-						role="radio"
-						aria-checked={socialIconShape === "circle"}
-						onClick={() => onSocialIconShapeChange("circle")}
-						className={cn(
-							"flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
-							socialIconShape === "circle"
-								? "bg-background text-foreground shadow-sm"
-								: "text-muted-foreground hover:text-foreground",
-						)}
-					>
-						<svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" /></svg>
-						Circle
-					</button>
-					<button
-						type="button"
-						role="radio"
-						aria-checked={socialIconShape === "rounded-square"}
-						onClick={() => onSocialIconShapeChange("rounded-square")}
-						className={cn(
-							"flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
-							socialIconShape === "rounded-square"
-								? "bg-background text-foreground shadow-sm"
-								: "text-muted-foreground hover:text-foreground",
-						)}
-					>
-						<svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="6" /></svg>
-						Rounded
-					</button>
-				</div>
-				<p className="mt-2 text-[11px] text-muted-foreground">
-					Sets the shape of social network icons on your public page
-				</p>
 			</CardContent>
 		</Card>
 	);

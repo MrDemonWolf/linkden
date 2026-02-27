@@ -20,7 +20,7 @@ import { ProfileSection } from "@/components/admin/appearance/profile-section";
 import { ThemePresetsSection } from "@/components/admin/appearance/theme-presets-section";
 import { ColorsSection } from "@/components/admin/appearance/colors-section";
 import { BannerSection } from "@/components/admin/appearance/banner-section";
-import { VerifiedBadgeSection, SocialIconShapeSection, BrandingSection } from "@/components/admin/appearance/branding-section";
+import { VerifiedBadgeSection, BrandingSection } from "@/components/admin/appearance/branding-section";
 import { CustomCssSection } from "@/components/admin/appearance/custom-css-section";
 
 interface SavedState {
@@ -42,7 +42,6 @@ interface SavedState {
 	brandingEnabled: boolean;
 	brandingText: string;
 	brandingLink: string;
-	socialIconShape: "circle" | "rounded-square";
 }
 
 function buildSavedState(settings: Record<string, string>): SavedState {
@@ -65,7 +64,6 @@ function buildSavedState(settings: Record<string, string>): SavedState {
 		brandingEnabled: settings.branding_enabled !== "false",
 		brandingText: settings.branding_text ?? "",
 		brandingLink: settings.branding_link ?? "",
-		socialIconShape: (settings.social_icon_shape as "circle" | "rounded-square") || "circle",
 	};
 }
 
@@ -98,7 +96,7 @@ export default function AppearancePage() {
 		customCss: "", bannerEnabled: false, bannerPreset: "",
 		bannerMode: "preset", bannerCustomUrl: "",
 		verifiedBadge: false, brandingEnabled: true,
-		brandingText: "", brandingLink: "", socialIconShape: "circle",
+		brandingText: "", brandingLink: "",
 	});
 
 	const [profileName, setProfileName] = useState("");
@@ -120,7 +118,6 @@ export default function AppearancePage() {
 	const [brandingEnabled, setBrandingEnabled] = useState(true);
 	const [brandingText, setBrandingText] = useState("");
 	const [brandingLink, setBrandingLink] = useState("");
-	const [socialIconShape, setSocialIconShape] = useState<"circle" | "rounded-square">("circle");
 	const [showMobilePreview, setShowMobilePreview] = useState(false);
 
 	const [systemPrefersDark, setSystemPrefersDark] = useState(false);
@@ -160,7 +157,6 @@ export default function AppearancePage() {
 			setBrandingEnabled(s.brandingEnabled);
 			setBrandingText(s.brandingText);
 			setBrandingLink(s.brandingLink);
-			setSocialIconShape(s.socialIconShape);
 		}
 	}, [settingsQuery.data]);
 
@@ -182,8 +178,7 @@ export default function AppearancePage() {
 		verifiedBadge !== savedState.verifiedBadge ||
 		brandingEnabled !== savedState.brandingEnabled ||
 		brandingText !== savedState.brandingText ||
-		brandingLink !== savedState.brandingLink ||
-		socialIconShape !== savedState.socialIconShape;
+		brandingLink !== savedState.brandingLink;
 
 	useUnsavedChanges(isDirty);
 
@@ -226,14 +221,13 @@ export default function AppearancePage() {
 				{ key: "branding_enabled", value: String(brandingEnabled) },
 				{ key: "branding_text", value: brandingText },
 				{ key: "branding_link", value: brandingLink },
-				{ key: "social_icon_shape", value: socialIconShape },
-			]);
+				]);
 			setSavedState({
 				profileName, profileBio, profileAvatar,
 				theme: selectedTheme, colorMode,
 				primaryColor, secondaryColor, accentColor, bgColor,
 				customCss, bannerEnabled, bannerPreset, bannerMode, bannerCustomUrl,
-				verifiedBadge, brandingEnabled, brandingText, brandingLink, socialIconShape,
+				verifiedBadge, brandingEnabled, brandingText, brandingLink,
 			});
 			invalidate();
 			toast.success("Appearance published");
@@ -261,7 +255,6 @@ export default function AppearancePage() {
 		setBrandingEnabled(savedState.brandingEnabled);
 		setBrandingText(savedState.brandingText);
 		setBrandingLink(savedState.brandingLink);
-		setSocialIconShape(savedState.socialIconShape);
 	};
 
 	const resolvedThemeVars = useMemo(() => {
@@ -321,8 +314,7 @@ export default function AppearancePage() {
 					bannerEnabled,
 					bannerMode,
 					bannerCustomUrl: bannerEnabled && bannerMode === "custom" ? bannerCustomUrl : undefined,
-					socialIconShape,
-				}}
+					}}
 				themeColors={{
 					primary: resolvedThemeVars["--ld-primary"],
 					accent: resolvedThemeVars["--ld-accent"],
@@ -407,10 +399,6 @@ export default function AppearancePage() {
 					<VerifiedBadgeSection
 						verifiedBadge={verifiedBadge}
 						onVerifiedBadgeChange={setVerifiedBadge}
-					/>
-					<SocialIconShapeSection
-						socialIconShape={socialIconShape}
-						onSocialIconShapeChange={setSocialIconShape}
 					/>
 					<BrandingSection
 						brandingEnabled={brandingEnabled}
