@@ -14,6 +14,12 @@ import {
 } from "lucide-react";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuTrigger,
+	DropdownMenuContent,
+	DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { socialBrandMap } from "@linkden/ui/social-brands";
 import { PhoneFrame } from "@/components/admin/phone-frame";
@@ -33,7 +39,6 @@ export default function BuilderPage() {
 	const qc = useQueryClient();
 	const [editingBlock, setEditingBlock] = useState<Block | null>(null);
 	const [editingOverrides, setEditingOverrides] = useState<Partial<Block> | null>(null);
-	const [showAddMenu, setShowAddMenu] = useState(false);
 	const [previewMode, setPreviewMode] = useState<"light" | "dark">("light");
 	const [showMobilePreview, setShowMobilePreview] = useState(false);
 	const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -116,7 +121,6 @@ export default function BuilderPage() {
 	}, [qc]);
 
 	const handleAddBlock = async (type: BlockType) => {
-		setShowAddMenu(false);
 		const id = generateId();
 		const position = blocks.length;
 		const defaults: Record<string, string> = {
@@ -292,44 +296,25 @@ export default function BuilderPage() {
 							<Upload className="mr-1.5 h-3.5 w-3.5" />
 							{publishAll.isPending ? "Publishing..." : "Publish"}
 						</Button>
-						<div className="relative">
-							<Button size="sm" onClick={() => setShowAddMenu(!showAddMenu)}>
+						<DropdownMenu>
+							<DropdownMenuTrigger className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-all cursor-pointer disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-8 rounded-lg px-3 text-xs">
 								<Plus className="mr-1.5 h-3.5 w-3.5" />
 								<span className="hidden sm:inline">Add Block</span>
 								<span className="sm:hidden">Add</span>
 								<ChevronDown className="ml-1 h-3 w-3" />
-							</Button>
-							{showAddMenu && (
-								<>
-									<div
-										className="fixed inset-0 z-30"
-										onClick={() => setShowAddMenu(false)}
-										aria-hidden="true"
-									/>
-									<div className="absolute right-0 top-full z-40 mt-1 w-56 rounded-xl bg-white dark:bg-zinc-900 border border-border shadow-xl overflow-hidden">
-										{BLOCK_TYPES.map((bt) => {
-											const BIcon = bt.icon;
-											return (
-												<button
-													key={bt.type}
-													type="button"
-													onClick={() => handleAddBlock(bt.type)}
-													className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs hover:bg-muted transition-colors"
-												>
-													<BIcon className="h-3.5 w-3.5 text-muted-foreground" />
-													<div className="text-left">
-														<div className="font-medium">{bt.label}</div>
-														<div className="text-[11px] text-muted-foreground">
-															{bt.description}
-														</div>
-													</div>
-												</button>
-											);
-										})}
-									</div>
-								</>
-							)}
-						</div>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent className="w-56">
+								{BLOCK_TYPES.map((item) => (
+									<DropdownMenuItem key={item.type} onClick={() => handleAddBlock(item.type)}>
+										<item.icon className="h-3.5 w-3.5 text-muted-foreground" />
+										<div>
+											<div className="font-medium">{item.label}</div>
+											<div className="text-[11px] text-muted-foreground">{item.description}</div>
+										</div>
+									</DropdownMenuItem>
+								))}
+							</DropdownMenuContent>
+						</DropdownMenu>
 					</>
 				}
 			/>
