@@ -10,7 +10,6 @@ import {
 	Save,
 	Database,
 	Undo2,
-	Wallet,
 	ArrowRightLeft,
 	type LucideIcon,
 } from "lucide-react";
@@ -26,7 +25,6 @@ import { SeoSection } from "@/components/admin/settings/seo-section";
 import { CaptchaSection } from "@/components/admin/settings/captcha-section";
 import { EmailSection } from "@/components/admin/settings/email-section";
 import { DataSection } from "@/components/admin/settings/data-section";
-import { WalletSection } from "@/components/admin/settings/wallet-section";
 import { MigrationSection } from "@/components/admin/settings/migration-section";
 
 // ---- Section definitions ----
@@ -34,7 +32,6 @@ type SectionId =
 	| "seo"
 	| "captcha"
 	| "email"
-	| "wallet"
 	| "data"
 	| "migration";
 
@@ -48,7 +45,6 @@ const SECTIONS: SectionDef[] = [
 	{ id: "seo", label: "SEO", icon: SearchIcon },
 	{ id: "captcha", label: "CAPTCHA", icon: Shield },
 	{ id: "email", label: "Email", icon: Mail },
-	{ id: "wallet", label: "Wallet Pass", icon: Wallet },
 	{ id: "data", label: "Data & Info", icon: Database },
 	{ id: "migration", label: "Migration", icon: ArrowRightLeft },
 ];
@@ -74,7 +70,7 @@ function buildSavedState(s: Record<string, string>): SavedState {
 		seoTitle: s.seo_title ?? "",
 		seoDescription: s.seo_description ?? "",
 		seoOgImage: s.seo_og_image ?? "",
-		seoOgMode: s.seo_og_mode ?? "custom",
+		seoOgMode: s.seo_og_mode ?? "template",
 		seoOgTemplate: s.seo_og_template ?? "minimal",
 		captchaProvider: s.captcha_provider ?? "none",
 		captchaSiteKey: s.captcha_site_key ?? "",
@@ -118,7 +114,7 @@ export default function SettingsPage() {
 		emailApiKey: "",
 		emailFrom: "",
 		adminBrandingEnabled: true,
-		seoOgMode: "custom",
+		seoOgMode: "template",
 		seoOgTemplate: "minimal",
 	});
 
@@ -126,7 +122,7 @@ export default function SettingsPage() {
 	const [seoTitle, setSeoTitle] = useState("");
 	const [seoDescription, setSeoDescription] = useState("");
 	const [seoOgImage, setSeoOgImage] = useState("");
-	const [seoOgMode, setSeoOgMode] = useState("custom");
+	const [seoOgMode, setSeoOgMode] = useState("template");
 	const [seoOgTemplate, setSeoOgTemplate] = useState("minimal");
 
 	// CAPTCHA
@@ -340,7 +336,6 @@ export default function SettingsPage() {
 				onEmailFromChange={setEmailFrom}
 			/>
 		),
-		wallet: <WalletSection />,
 		data: (
 			<DataSection
 				onExport={handleExport}
