@@ -19,9 +19,9 @@ interface WalletPassPreviewProps {
 	showQrCode?: boolean;
 }
 
-const DEFAULT_BG = "#0FACED";
-const DEFAULT_FG = "#091533";
-const DEFAULT_LABEL = "#FFFFFF";
+const DEFAULT_BG = "#091533";
+const DEFAULT_FG = "#FFFFFF";
+const DEFAULT_LABEL = "#0FACED";
 
 export function WalletPassPreview({
 	backgroundColor,

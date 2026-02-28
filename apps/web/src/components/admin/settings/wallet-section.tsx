@@ -283,12 +283,12 @@ export function WalletSection({
 									id="s-wallet-bg-color"
 									value={backgroundColor}
 									onChange={(e) => setBackgroundColor(e.target.value)}
-									placeholder="#0FACED"
+									placeholder="#091533"
 									className="flex-1"
 								/>
 								<input
 									type="color"
-									value={backgroundColor || "#0FACED"}
+									value={backgroundColor || "#091533"}
 									onChange={(e) =>
 										setBackgroundColor(e.target.value.toUpperCase())
 									}
@@ -303,12 +303,12 @@ export function WalletSection({
 									id="s-wallet-fg-color"
 									value={foregroundColor}
 									onChange={(e) => setForegroundColor(e.target.value)}
-									placeholder="#091533"
+									placeholder="#FFFFFF"
 									className="flex-1"
 								/>
 								<input
 									type="color"
-									value={foregroundColor || "#091533"}
+									value={foregroundColor || "#FFFFFF"}
 									onChange={(e) =>
 										setForegroundColor(e.target.value.toUpperCase())
 									}
@@ -323,12 +323,12 @@ export function WalletSection({
 									id="s-wallet-label-color"
 									value={labelColor}
 									onChange={(e) => setLabelColor(e.target.value)}
-									placeholder="#FFFFFF"
+									placeholder="#0FACED"
 									className="flex-1"
 								/>
 								<input
 									type="color"
-									value={labelColor || "#FFFFFF"}
+									value={labelColor || "#0FACED"}
 									onChange={(e) =>
 										setLabelColor(e.target.value.toUpperCase())
 									}
