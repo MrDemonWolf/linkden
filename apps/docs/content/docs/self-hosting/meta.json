@@ -2,11 +2,10 @@
   "title": "Self-Hosting",
   "pages": [
     "cloudflare",
-    "vercel",
-    "railway",
-    "coolify",
     "docker",
-    "custom-domain",
-    "environment-variables"
+    "coolify",
+    "railway",
+    "environment-variables",
+    "custom-domain"
   ]
 }

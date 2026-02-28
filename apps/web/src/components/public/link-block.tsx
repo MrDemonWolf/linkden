@@ -3,6 +3,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import type { ThemeColors } from "./public-page";
+import { usePreview } from "./preview-context";
 
 interface LinkBlockProps {
 	block: {
@@ -24,9 +25,14 @@ const animationClasses: Record<string, string> = {
 };
 
 export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockProps) {
+	const { isPreview } = usePreview();
 	const trackClick = useMutation(trpc.public.trackClick.mutationOptions());
 
-	const handleClick = () => {
+	const handleClick = (e: React.MouseEvent) => {
+		if (isPreview) {
+			e.preventDefault();
+			return;
+		}
 		trackClick.mutate({
 			blockId: block.id,
 			referrer: document.referrer || undefined,
@@ -107,8 +113,8 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 				target={openInNewTab ? "_blank" : "_self"}
 				rel={openInNewTab ? "noopener noreferrer" : undefined}
 				onClick={handleClick}
-				className={`${baseClasses} ${colorClasses} hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500`}
-				style={style}
+				className={`${baseClasses} ${colorClasses} hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2`}
+				style={{ ...style, outlineColor: themeColors?.primary || "#3b82f6" }}
 			>
 				<span className="flex items-center justify-center gap-2">
 					{emoji && emojiPosition === "left" && (

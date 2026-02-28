@@ -92,9 +92,14 @@ Open `http://localhost:3001` in your browser.
 ## Verify the Installation
 
 1. Navigate to `http://localhost:3001` -- you should see the public link page (empty by default).
-2. Navigate to `http://localhost:3001/admin/setup` -- you should see the setup wizard.
-3. Complete the 4-step setup wizard (Account, Profile, Theme, Done).
-4. You should land on the block builder at `/admin/builder`.
+2. Check your **server console** (the terminal running `pnpm dev`) for a setup URL. It looks like:
+   ```
+   Setup URL: http://localhost:3001/admin/setup?token=<unique-token>
+   ```
+   The setup wizard requires this one-time security token. It is generated automatically on first run and printed to the server console.
+3. Open the setup URL in your browser to access the setup wizard.
+4. Complete the 4-step setup wizard (Account, Profile, Theme, Done).
+5. You should land on the block builder at `/admin/builder`.
 
 ## Next Steps
 

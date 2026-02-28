@@ -28,7 +28,7 @@
     "@cloudflare/workers-types": "catalog:",
     "@linkden/config": "workspace:*",
     "@types/node": "^22.13.14",
-    "turbo": "^2.6.3",
+"turbo": "^2.6.3",
     "typescript": "catalog:"
   },
   "packageManager": "pnpm@10.29.3",

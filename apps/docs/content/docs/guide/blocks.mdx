@@ -1,0 +1,144 @@
+---
+title: Blocks
+description: Create, configure, and manage the 5 block types on your LinkDen page with the drag-and-drop builder.
+---
+
+# Blocks
+
+LinkDen supports 5 block types that appear on your public page in the order you arrange them. All blocks are managed from the block builder at `/admin/builder`.
+
+## Block Builder Layout
+
+The builder uses a two-panel layout:
+
+- **Left panel** -- Your block list with an "Add Block" dropdown button.
+- **Right panel** -- A live phone preview (visible on `lg` screens and above). On mobile, a floating action button opens the preview in a modal overlay.
+
+## Block Types
+
+### Link
+
+The most common block type. A clickable button that takes visitors to an external URL.
+
+- **Title** -- The text displayed on the button.
+- **URL** -- The destination URL.
+- **Icon** -- Optional icon identifier.
+- **Config options**: emoji, emoji position, icon slug, icon position, text alignment, font weight, outlined style, open in new tab.
+
+### Header
+
+A text heading that visually separates groups of blocks. Useful for organizing content into categories.
+
+- **Title** -- The heading text.
+- **Config options**: heading level (h1-h6), text alignment, font weight, emoji, emoji position, show divider line.
+
+### Social Icons
+
+A row of social media icon links. Uses the social networks you have activated in `/admin/social`. See [Social Networks](/docs/guide/social-networks) for setup.
+
+- **Config options**: icon size, icon style (filled, outlined, rounded), show labels, spacing, use brand colors.
+
+### Embed
+
+Embed content from external platforms directly on your page.
+
+- **Embed Type** -- YouTube, Spotify, SoundCloud, or Custom.
+- **Embed URL** -- The source URL to embed. URLs are validated against platform-specific patterns (e.g., YouTube URLs must match `youtube.com/watch`, `youtube.com/embed`, or `youtu.be/`; Spotify must match `open.spotify.com/`). Custom embeds require a valid `http://` or `https://` URL.
+- **Config options**: aspect ratio, max width, show title.
+
+### Contact Form
+
+An inline contact form for visitors to send you messages.
+
+- **Config options**: button text, button emoji, button emoji position, success message.
+
+The contact form requires configuration in `/admin/settings` (Contact Form and optionally CAPTCHA sections). See [Contact Form](/docs/guide/contact-form) for details.
+
+## Adding a Block
+
+1. Open the block builder at `/admin/builder`.
+2. Click **Add Block** to open the dropdown menu.
+3. Select a block type.
+4. The block is added and the edit panel opens.
+
+## Block Edit Panel
+
+Clicking edit on any block opens a slide-in panel from the right with 4 tabs:
+
+### Content Tab
+
+Fields vary by block type:
+
+- **Link**: Title, URL
+- **Embed**: Title, embed type (YouTube, Spotify, SoundCloud, Custom), embed URL
+- **Social Icons**: Title, social icons JSON
+- **Header** / **Contact Form**: Title
+
+### Style Tab
+
+- Icon name input
+- Config JSON textarea for advanced configuration
+
+### Options Tab
+
+Reference text listing common config keys: `noFollow`, `newTab`, `animation`, `thumbnail`.
+
+### Schedule Tab
+
+- Start date/time (`datetime-local` input)
+- End date/time (`datetime-local` input)
+- **Clear schedule** button
+
+Blocks outside their scheduled window are automatically hidden from the public page.
+
+## Block Configuration
+
+Block configuration uses structured Zod schemas defined in `@linkden/validators`. Each block type has a typed config schema that extends a shared base, ensuring all configuration values are validated before being saved. The config is stored as a JSON string in the database.
+
+All block types share a base configuration with these style options:
+
+| Option | Description |
+|--------|-------------|
+| Color variant | Preset color scheme for the block |
+| Custom background color | Override background color |
+| Custom text color | Override text color |
+| Custom border color | Override border color |
+| Border radius | Corner rounding |
+| Border width | Border thickness |
+| Shadow | Drop shadow effect |
+| Animation | Hover or entrance animation |
+| Padding | Inner spacing |
+
+## Reordering Blocks
+
+Drag any block by its grip handle in the block list. The new order is saved immediately via the `blocks.reorder` mutation.
+
+## Toggling Visibility
+
+Click the eye icon to toggle a block's visibility. Hidden blocks remain in your list but are not shown on the public page. This is useful for:
+
+- Temporarily removing a block without deleting it.
+- Preparing blocks in advance and enabling them later.
+- Time-limited or seasonal content (or use scheduling instead).
+
+## Deleting a Block
+
+Click the trash icon on any block to delete it. Deletions are permanent.
+
+## Scheduling
+
+Blocks support scheduled visibility with start and end dates. A block outside its scheduled window is automatically hidden from the public page. Configure scheduling in the **Schedule** tab of the block edit panel.
+
+## Phone Preview
+
+The right panel shows a phone-frame preview (280px wide) with:
+
+- A light/dark mode toggle button.
+- Only `isEnabled: true` blocks rendered.
+- Type-specific preview rendering:
+  - **Link**: Button-style bar
+  - **Header**: Centered bold text
+  - **Social Icons**: Placeholder circles
+  - **Embed**: Gray box with embed type label
+  - **Contact Form**: Stacked input placeholders
+- Empty state message when no enabled blocks exist.

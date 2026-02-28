@@ -1,15 +1,14 @@
+import "@linkden/env/web";
 import type { NextConfig } from "next";
 
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+
 const nextConfig: NextConfig = {
-  images: {
-    unoptimized: true,
-  },
-  env: {
-    NEXT_PUBLIC_API_URL:
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
-    NEXT_PUBLIC_SITE_URL:
-      process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001",
-  },
+  typedRoutes: true,
+  reactCompiler: true,
+  transpilePackages: ["@linkden/ui"],
 };
 
 export default nextConfig;
+
+initOpenNextCloudflareForDev();

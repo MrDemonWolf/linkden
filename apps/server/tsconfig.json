@@ -1,10 +1,13 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@linkden/config/tsconfig.base.json",
   "compilerOptions": {
+    "composite": true,
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "jsx": "react-jsx",
-    "types": ["@cloudflare/workers-types"],
-    "noEmit": true
-  },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["node_modules"]
+    "jsxImportSource": "hono/jsx"
+  }
 }

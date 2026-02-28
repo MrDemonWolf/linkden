@@ -1,60 +1,35 @@
-import "@/styles/globals.css";
-import { Providers } from "@/providers";
-import type { Metadata, Viewport } from "next";
-import { Sora } from "next/font/google";
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "../index.css";
+import Providers from "@/components/providers";
 
-const sora = Sora({
-  subsets: ["latin"],
-  variable: "--font-sora",
-  display: "swap",
+const geistSans = Geist({
+	variable: "--font-geist-sans",
+	subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+	variable: "--font-geist-mono",
+	subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: {
-    default: "LinkDen",
-    template: "%s | LinkDen",
-  },
-  description:
-    "Your personal link-in-bio page. Share all your links, social profiles, and contact info in one place.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3001"),
-  openGraph: {
-    type: "website",
-    siteName: "LinkDen",
-    title: "LinkDen",
-    description:
-      "Your personal link-in-bio page. Share all your links, social profiles, and contact info in one place.",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "LinkDen",
-    description:
-      "Your personal link-in-bio page. Share all your links, social profiles, and contact info in one place.",
-  },
-  icons: {
-    icon: "/favicon.svg",
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  themeColor: "#091533",
+	title: "LinkDen",
+	description: "Your personal link-in-bio page",
 };
 
 export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html lang="en" className={sora.variable}>
-      <body className="font-sans">
-        <Providers>{children}</Providers>
-      </body>
-    </html>
-  );
+	children,
+}: Readonly<{
+	children: React.ReactNode;
+}>) {
+	return (
+		<html lang="en" suppressHydrationWarning>
+			<body
+				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+			>
+				<Providers>{children}</Providers>
+			</body>
+		</html>
+	);
 }
