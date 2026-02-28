@@ -1,41 +1,28 @@
 ---
 title: Coolify Deployment
-description: Deploy LinkDen on Coolify, an open-source self-hosted PaaS alternative to Heroku and Vercel.
+description: Deploy LinkDen on Coolify — a self-hosted PaaS with automatic SSL and a web dashboard.
 ---
 
 # Coolify Deployment
 
-[Coolify](https://coolify.io) is an open-source, self-hosted Platform as a Service (PaaS). It provides a Heroku/Vercel-like experience on your own infrastructure -- automatic deployments, SSL certificates, and a web dashboard for managing services, all running on a server you control.
-
-This guide covers deploying both the LinkDen API server and web app on Coolify using Docker.
-
-## Why Coolify?
-
-- **Self-hosted**: Runs entirely on your own server with no vendor lock-in.
-- **Free and open-source**: No per-app fees or usage-based billing.
-- **Automatic SSL**: Let's Encrypt certificates are provisioned and renewed automatically.
-- **Git-based deployments**: Push to a branch and Coolify rebuilds automatically.
-- **Docker-native**: Full control over your build and runtime environment.
-- **Built-in database management**: SQLite volumes, PostgreSQL, MySQL, and more.
+Deploy LinkDen on [Coolify](https://coolify.io), an open-source, self-hosted platform that gives you a Heroku-like experience on your own server. You get automatic SSL, git-based deployments, and a web dashboard — all without vendor lock-in.
 
 ## Prerequisites
 
-1. **A Coolify instance** running on a server. If you do not have one:
-   - Minimum server: 2 CPU cores, 2 GB RAM, 30 GB disk (a $12/month VPS from Hetzner, DigitalOcean, or similar).
-   - Install Coolify with the one-line installer:
-
+1. **A Coolify instance** running on a server. If you don't have one:
+   - Minimum: 2 CPU cores, 2 GB RAM, 30 GB disk
+   - Install with:
    ```bash
    curl -fsSL https://cdn.coollabs.io/coolify/install.sh | bash
    ```
+   - Access the dashboard at `http://your-server-ip:8000`
 
-   - Access the Coolify dashboard at `http://your-server-ip:8000`.
+2. **A domain name** (optional but recommended for SSL)
+3. The LinkDen repository accessible from Coolify (public GitHub repo or connected private repo)
 
-2. **A domain name** (optional but recommended for SSL).
-3. The LinkDen repository accessible from your Coolify instance (public GitHub repo or a connected private repo).
+## Architecture
 
-## Architecture on Coolify
-
-Since Coolify does not have Cloudflare D1, LinkDen uses a **SQLite file** instead of D1 for the database. The architecture looks like this:
+Coolify runs LinkDen as two Docker containers with a SQLite database on a persistent volume:
 
 ```
 ┌──────────────────────┐     ┌──────────────────────┐     ┌──────────────┐
@@ -45,226 +32,38 @@ Since Coolify does not have Cloudflare D1, LinkDen uses a **SQLite file** instea
 └──────────────────────┘     └──────────────────────┘     └──────────────┘
 ```
 
-Both services run as Docker containers managed by Coolify, with SQLite stored on a persistent Docker volume.
-
 ## Step 1: Prepare the Dockerfiles
 
-Coolify deploys using Docker, so you need Dockerfiles for both services. Create them in the project root.
+Coolify deploys using Docker. You'll need `Dockerfile.api` and `Dockerfile.web` in the repository root, plus a Node.js entry point for the API.
 
-### API Server Dockerfile
+> **Tip:** The complete Dockerfiles, `node-entry.ts`, and dependency install instructions are in the [Docker guide](/docs/self-hosting/docker). Follow the Dockerfile sections there, then come back here for the Coolify-specific setup.
 
-Create `Dockerfile.api` in the repository root:
-
-```dockerfile
-FROM node:20-alpine AS base
-RUN corepack enable && corepack prepare pnpm@10.29.3 --activate
-
-# Install dependencies
-FROM base AS deps
-WORKDIR /app
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/server/package.json apps/server/
-COPY packages/db/package.json packages/db/
-COPY packages/email/package.json packages/email/
-COPY packages/validators/package.json packages/validators/
-RUN pnpm install --frozen-lockfile
-
-# Build
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/server/node_modules ./apps/server/node_modules
-COPY --from=deps /app/packages/ ./packages/
-COPY . .
-RUN pnpm --filter @linkden/server build 2>/dev/null || true
-
-# Runtime
-FROM base AS runner
-WORKDIR /app
-RUN apk add --no-cache sqlite
-
-COPY --from=builder /app/ ./
-
-# Create data directory for SQLite
-RUN mkdir -p /data
-
-ENV NODE_ENV=production
-ENV DATABASE_URL=file:/data/linkden.db
-EXPOSE 8787
-
-CMD ["node", "apps/server/dist/index.js"]
-```
-
-Note: Since the Hono server is designed for Cloudflare Workers, you may need to adapt the entry point to run on Node.js. A practical approach is to use `@hono/node-server`:
-
-```dockerfile
-# Alternative CMD using tsx for direct TypeScript execution
-CMD ["npx", "tsx", "apps/server/src/node-entry.ts"]
-```
-
-Create `apps/server/src/node-entry.ts` for Node.js compatibility:
-
-```typescript
-import { serve } from "@hono/node-server";
-import app from "./index";
-
-const port = Number(process.env.PORT) || 8787;
-
-console.log(`Starting LinkDen API server on port ${port}`);
-
-serve({
-  fetch: app.fetch,
-  port,
-});
-```
-
-You will also need to add `@hono/node-server` and a SQLite driver to the server dependencies:
-
-```bash
-cd apps/server
-pnpm add @hono/node-server
-cd ../..
-cd packages/db
-pnpm add better-sqlite3 @libsql/client
-pnpm add -D @types/better-sqlite3
-```
-
-### Web App Dockerfile
-
-Create `Dockerfile.web` in the repository root:
-
-```dockerfile
-FROM node:20-alpine AS base
-RUN corepack enable && corepack prepare pnpm@10.29.3 --activate
-
-# Install dependencies
-FROM base AS deps
-WORKDIR /app
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/web/package.json apps/web/
-COPY packages/ui/package.json packages/ui/
-COPY packages/validators/package.json packages/validators/
-RUN pnpm install --frozen-lockfile
-
-# Build
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
-COPY --from=deps /app/packages/ ./packages/
-COPY . .
-
-# Build-time environment variables (NEXT_PUBLIC_* must be set at build time)
-ARG NEXT_PUBLIC_SERVER_URL
-ARG NEXT_PUBLIC_SITE_URL
-ARG NEXT_PUBLIC_SITE_NAME=LinkDen
-ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
-
-ENV NEXT_PUBLIC_SERVER_URL=$NEXT_PUBLIC_SERVER_URL
-ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
-ENV NEXT_PUBLIC_SITE_NAME=$NEXT_PUBLIC_SITE_NAME
-ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
-
-RUN pnpm --filter @linkden/web build
-
-# Serve with Caddy
-FROM caddy:2-alpine AS runner
-COPY --from=builder /app/apps/web/out /srv
-COPY <<'EOF' /etc/caddy/Caddyfile
-:3001 {
-    root * /srv
-    file_server
-    try_files {path} {path}.html /index.html
-    header {
-        X-Frame-Options "DENY"
-        X-Content-Type-Options "nosniff"
-        Referrer-Policy "strict-origin-when-cross-origin"
-    }
-}
-EOF
-
-EXPOSE 3001
-```
-
-## Step 2: Create a Docker Compose File (Optional)
-
-For local testing before deploying to Coolify, create `docker-compose.yml`:
-
-```yaml
-services:
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile.api
-    ports:
-      - "8787:8787"
-    environment:
-      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
-      - BETTER_AUTH_URL=${BETTER_AUTH_URL:-http://localhost:8787}
-      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3001}
-      - DATABASE_URL=file:/data/linkden.db
-      - RESEND_API_KEY=${RESEND_API_KEY:-}
-      - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL:-}
-      - TURNSTILE_SECRET_KEY=${TURNSTILE_SECRET_KEY:-}
-    volumes:
-      - linkden-data:/data
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8787/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile.web
-      args:
-        - NEXT_PUBLIC_SERVER_URL=${NEXT_PUBLIC_SERVER_URL:-http://localhost:8787}
-        - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-http://localhost:3001}
-        - NEXT_PUBLIC_SITE_NAME=${NEXT_PUBLIC_SITE_NAME:-LinkDen}
-        - NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
-    ports:
-      - "3001:3001"
-    depends_on:
-      api:
-        condition: service_healthy
-
-volumes:
-  linkden-data:
-```
-
-## Step 3: Set Up the Project in Coolify
+## Step 2: Create the Project in Coolify
 
 1. Open your Coolify dashboard.
-2. Navigate to **Projects** and click **New Project**.
+2. Go to **Projects** and click **New Project**.
 3. Name it `LinkDen` and click **Create**.
 4. Click into the project and create a new **Environment** (e.g., `production`).
 
-## Step 4: Deploy the API Service
+## Step 3: Deploy the API Service
 
 1. In your project environment, click **New Resource**.
-2. Select **Docker** (or **Docker Compose** if you want to deploy both services together).
+2. Select **Docker**.
 3. Choose your source:
-   - **GitHub**: Connect your GitHub account and select the LinkDen repository.
-   - **Public repository**: Enter the repository URL.
-4. Configure the service:
+   - **GitHub**: Connect your account and select the LinkDen repository
+   - **Public repository**: Enter the repository URL
+4. Configure:
    - **Name**: `linkden-api`
    - **Dockerfile path**: `Dockerfile.api`
    - **Build context**: `.` (repository root)
    - **Port**: `8787`
 5. Click **Deploy**.
 
-### Using Docker Compose in Coolify
+> **Tip:** You can also deploy both services at once. Click **New Resource > Docker Compose** and point to the `docker-compose.yml` in the repository. Coolify detects both services automatically.
 
-Alternatively, deploy both services at once with Docker Compose:
+## Step 4: Deploy the Web App
 
-1. Click **New Resource** > **Docker Compose**.
-2. Point to the `docker-compose.yml` in the repository.
-3. Coolify detects both services and creates them together.
-
-## Step 5: Deploy the Web App Service
-
-If deploying services separately (not via Docker Compose):
+If deploying services separately:
 
 1. Click **New Resource** > **Docker**.
 2. Configure:
@@ -272,28 +71,28 @@ If deploying services separately (not via Docker Compose):
    - **Dockerfile path**: `Dockerfile.web`
    - **Build context**: `.` (repository root)
    - **Port**: `3001`
-3. Add the build arguments (see Step 6).
+3. Add the build arguments (see Step 5).
 4. Click **Deploy**.
 
-## Step 6: Configure Environment Variables
+## Step 5: Configure Environment Variables
 
-In each service's settings in the Coolify dashboard, add the required environment variables.
+In the Coolify dashboard, add variables to each service.
 
-### API Service Variables
+### API Service
 
 | Variable | Value | Notes |
 |----------|-------|-------|
 | `BETTER_AUTH_SECRET` | `your-random-secret` | Mark as secret; generate with `openssl rand -base64 32` |
 | `BETTER_AUTH_URL` | `https://api.yourdomain.com` | Base URL of the API server |
-| `CORS_ORIGIN` | `https://yourdomain.com` | Must match web app URL |
+| `CORS_ORIGIN` | `https://yourdomain.com` | Must match web app URL exactly |
 | `DATABASE_URL` | `file:/data/linkden.db` | SQLite file path |
 | `RESEND_API_KEY` | `re_...` | Optional, mark as secret |
 | `RESEND_FROM_EMAIL` | `contact@yourdomain.com` | Optional |
 | `TURNSTILE_SECRET_KEY` | `0x...` | Optional, mark as secret |
 
-### Web App Build Arguments
+### Web App (Build Arguments)
 
-Since `NEXT_PUBLIC_*` variables must be available at build time, add them as **Build Arguments** in Coolify:
+`NEXT_PUBLIC_*` variables must be set at **build time**. Add them as Build Arguments in Coolify:
 
 | Argument | Value |
 |----------|-------|
@@ -302,191 +101,100 @@ Since `NEXT_PUBLIC_*` variables must be available at build time, add them as **B
 | `NEXT_PUBLIC_SITE_NAME` | `LinkDen` |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | `0x...` (optional) |
 
-## Step 7: Set Up Custom Domains
+## Step 6: Set Up Custom Domains
 
 In the Coolify dashboard for each service:
 
-1. Click on the service.
-2. Go to **Settings** (or the **Domain** section).
-3. Add your custom domain:
+1. Click the service > **Settings** (or **Domain** section).
+2. Add your custom domain:
    - Web app: `yourdomain.com` or `links.yourdomain.com`
    - API: `api.yourdomain.com`
 
-At your DNS provider, add A records pointing to your Coolify server's IP address:
+At your DNS provider, add A records pointing to your server:
 
 | Type | Name | Target | TTL |
 |------|------|--------|-----|
 | A | `@` or `links` | `your-server-ip` | 300 |
 | A | `api` | `your-server-ip` | 300 |
 
-If your server has an IPv6 address, add AAAA records as well.
+Coolify automatically provisions Let's Encrypt certificates once DNS propagates. No manual SSL configuration needed.
 
-## Step 8: SSL with Let's Encrypt
+## Step 7: Persistent Storage for SQLite
 
-Coolify automatically provisions Let's Encrypt SSL certificates for your custom domains. No manual configuration is required.
+If deploying via Docker Compose, the `linkden-data` volume is already defined. Coolify manages it automatically.
 
-After adding a custom domain in Step 7:
+If deploying services separately:
 
-1. Coolify detects the domain and requests a certificate from Let's Encrypt.
-2. The certificate is provisioned within a few minutes (DNS must be propagated first).
-3. Coolify automatically renews certificates before they expire.
-4. HTTP traffic is automatically redirected to HTTPS.
+1. Click the API service > **Storages** (or **Volumes**).
+2. Add a persistent volume:
+   - **Mount path**: `/data`
+   - **Name**: `linkden-data`
+3. Redeploy.
 
-To verify SSL is working, visit your domain with `https://` and check for the lock icon in the browser address bar.
+## Step 8: First-Time Setup
 
-If SSL provisioning fails:
-- Verify your DNS records are correct and propagated (use `dig yourdomain.com A`).
-- Ensure ports 80 and 443 are open on your server's firewall.
-- Check the Coolify logs for Let's Encrypt errors.
-
-## Step 9: First-Time Auth Setup
-
-After deploying:
-
-1. Check the API container logs in Coolify (click on the API service, then **Logs**) for the setup URL:
+1. Check the API logs in Coolify (click the API service > **Logs**) for the setup URL:
    ```
    Setup URL: https://yourdomain.com/admin/setup?token=<unique-token>
    ```
-   The server generates a one-time secure token on first startup and prints the full URL to the console.
-2. Open this URL in your browser to access the setup wizard. The token is required -- navigating to `/admin/setup` without it will show an error.
-3. Complete the wizard to create your admin account (name, email, and password).
-4. The setup token is automatically invalidated once setup completes.
+2. Open the URL and create your admin account.
+3. The token is invalidated after setup completes.
+4. Sign in at `/admin/login`.
 
-After setup is complete, sign in at `/admin/login`.
+## Updating
 
-## Step 10: Persistent Storage for SQLite
+### Automatic Deployments
 
-The SQLite database must be stored on a persistent volume so data survives container restarts and redeployments.
+1. Go to your service settings.
+2. Enable **Automatic deployments**.
+3. Select the branch to watch (e.g., `main`).
 
-### If Using Docker Compose
+Coolify rebuilds and redeploys whenever you push to that branch.
 
-The `docker-compose.yml` already defines a `linkden-data` volume mounted at `/data`. Coolify manages this volume automatically.
+### Manual Redeployment
 
-### If Using Separate Services
+Click **Redeploy** on the service page in the Coolify dashboard.
 
-1. In the Coolify dashboard, click on the API service.
-2. Go to **Storages** (or **Volumes**).
-3. Add a new persistent volume:
-   - **Mount path**: `/data`
-   - **Name**: `linkden-data`
-4. Redeploy the service.
-
-Verify the database persists across restarts:
-
-```bash
-# SSH into your server
-docker exec -it <api-container-id> ls -la /data/
-# You should see linkden.db
-```
-
-### Backup Strategy
+## Backups
 
 Back up the SQLite database regularly:
 
 ```bash
-# From the host server
 docker exec <api-container-id> sqlite3 /data/linkden.db ".backup /data/backup.db"
 docker cp <api-container-id>:/data/backup.db ./linkden-backup-$(date +%Y%m%d).db
 ```
 
-Or set up a cron job on the host:
+Or set up a cron job on the host for daily backups:
 
 ```bash
 # Add to crontab: daily backup at 2 AM
 0 2 * * * docker exec linkden-api sqlite3 /data/linkden.db ".backup /data/backup.db" && cp /var/lib/docker/volumes/linkden-data/_data/backup.db /backups/linkden-$(date +\%Y\%m\%d).db
 ```
 
-## Step 11: Updating and Redeploying
-
-### Automatic Deployments
-
-If you connected a GitHub repository, Coolify can automatically redeploy when you push to a branch:
-
-1. Go to your service settings.
-2. Enable **Automatic deployments**.
-3. Select the branch to watch (e.g., `main`).
-
-### Manual Redeployments
-
-1. Go to the service in the Coolify dashboard.
-2. Click **Redeploy**.
-
-Or via the Coolify CLI:
-
-```bash
-coolify deploy --service linkden-api
-coolify deploy --service linkden-web
-```
-
-### Updating LinkDen
-
-```bash
-git pull origin main
-# Push to your deployment branch, or manually redeploy in Coolify
-```
-
-## Database: D1 vs. SQLite File
-
-When running outside Cloudflare, **Cloudflare D1 is not available**. LinkDen uses Drizzle ORM with SQLite, which means you can use any SQLite-compatible driver:
-
-| Environment | Database | Driver |
-|-------------|----------|--------|
-| Cloudflare Workers | D1 | `drizzle-orm/d1` (built-in) |
-| Docker / Coolify / Railway | SQLite file | `better-sqlite3` or `@libsql/client` |
-| Turso (managed libSQL) | Remote SQLite | `@libsql/client` |
-
-To switch from D1 to a file-based SQLite driver, update the database initialization in `packages/db/src/index.ts`:
-
-```typescript
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import Database from "better-sqlite3";
-
-const sqlite = new Database(process.env.DATABASE_URL?.replace("file:", "") || "./data/linkden.db");
-export const db = drizzle(sqlite);
-```
-
-Or for libSQL (compatible with Turso for remote databases):
-
-```typescript
-import { drizzle } from "drizzle-orm/libsql";
-import { createClient } from "@libsql/client";
-
-const client = createClient({
-  url: process.env.DATABASE_URL || "file:./data/linkden.db",
-});
-export const db = drizzle(client);
-```
-
 ## Troubleshooting
 
 ### Container exits immediately
 
-Check the container logs in Coolify (click on the service, then **Logs**). Common causes:
-- Missing required environment variables
-- Port already in use
-- Syntax error in Dockerfile
+Check the logs in Coolify (service > **Logs**). Common causes: missing environment variables, port conflict, Dockerfile syntax error.
 
 ### API cannot connect to the database
 
-- Verify the `/data` directory exists inside the container.
-- Check that the persistent volume is mounted correctly.
-- Ensure `DATABASE_URL` is set to `file:/data/linkden.db`.
+- Verify the persistent volume is mounted at `/data`
+- Ensure `DATABASE_URL=file:/data/linkden.db`
 
 ### Web app shows "Failed to fetch" or API errors
 
-- Verify `NEXT_PUBLIC_SERVER_URL` was set correctly at **build time**.
-- Check that `CORS_ORIGIN` on the API matches the web app's domain.
-- Ensure the API service is running and healthy.
+- `NEXT_PUBLIC_SERVER_URL` must be set at **build time** — changing it requires a rebuild
+- `CORS_ORIGIN` must exactly match the web app's domain
 
 ### SSL certificate not provisioning
 
-- DNS records must point to the Coolify server IP.
-- Ports 80 and 443 must be open.
-- Wait a few minutes for DNS propagation.
-- Check Coolify logs for Let's Encrypt errors.
+- DNS records must point to your Coolify server IP
+- Ports 80 and 443 must be open
+- Wait a few minutes for DNS propagation
 
 ### "Database is locked" errors
 
-SQLite allows only one write at a time. Under heavy load:
+SQLite allows only one write at a time. If you see this under load:
 - Enable WAL mode: `PRAGMA journal_mode=WAL;`
-- Consider using Turso (managed libSQL) for better concurrency.
+- Consider using Turso (managed libSQL) for better concurrency

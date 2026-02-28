@@ -1,144 +1,108 @@
 ---
 title: Blocks
-description: Create, configure, and manage the 5 block types on your LinkDen page with the drag-and-drop builder.
+description: Add links, headers, embeds, social icons, and contact forms to your page with the drag-and-drop builder.
 ---
 
 # Blocks
 
-LinkDen supports 5 block types that appear on your public page in the order you arrange them. All blocks are managed from the block builder at `/admin/builder`.
-
-## Block Builder Layout
-
-The builder uses a two-panel layout:
-
-- **Left panel** -- Your block list with an "Add Block" dropdown button.
-- **Right panel** -- A live phone preview (visible on `lg` screens and above). On mobile, a floating action button opens the preview in a modal overlay.
+Build your page by adding blocks in the builder at `/admin/builder`. LinkDen supports 5 block types that you can mix, match, and reorder however you like.
 
 ## Block Types
 
 ### Link
 
-The most common block type. A clickable button that takes visitors to an external URL.
+A clickable button that sends visitors to any URL. This is the most common block type.
 
-- **Title** -- The text displayed on the button.
-- **URL** -- The destination URL.
-- **Icon** -- Optional icon identifier.
-- **Config options**: emoji, emoji position, icon slug, icon position, text alignment, font weight, outlined style, open in new tab.
+- **Title** -- The button text visitors see.
+- **URL** -- Where the button links to.
+- **Icon** -- Optional icon displayed alongside the title.
+- **Style options** -- emoji, text alignment, font weight, outlined style, open in new tab.
 
 ### Header
 
-A text heading that visually separates groups of blocks. Useful for organizing content into categories.
+A text heading to visually separate groups of blocks.
 
 - **Title** -- The heading text.
-- **Config options**: heading level (h1-h6), text alignment, font weight, emoji, emoji position, show divider line.
+- **Style options** -- heading level (h1--h6), text alignment, font weight, emoji, show divider line.
 
 ### Social Icons
 
-A row of social media icon links. Uses the social networks you have activated in `/admin/social`. See [Social Networks](/docs/guide/social-networks) for setup.
+A row of social media icons linking to your profiles. Uses the networks you've activated in `/admin/social`. See [Social Networks](/docs/guide/social-networks) for setup.
 
-- **Config options**: icon size, icon style (filled, outlined, rounded), show labels, spacing, use brand colors.
+- **Style options** -- icon size, icon style (filled, outlined, rounded), show labels, spacing, use brand colors.
 
 ### Embed
 
-Embed content from external platforms directly on your page.
+Embed content from YouTube, Spotify, SoundCloud, or any custom URL directly on your page.
 
 - **Embed Type** -- YouTube, Spotify, SoundCloud, or Custom.
-- **Embed URL** -- The source URL to embed. URLs are validated against platform-specific patterns (e.g., YouTube URLs must match `youtube.com/watch`, `youtube.com/embed`, or `youtu.be/`; Spotify must match `open.spotify.com/`). Custom embeds require a valid `http://` or `https://` URL.
-- **Config options**: aspect ratio, max width, show title.
+- **Embed URL** -- The content URL to embed.
+- **Style options** -- aspect ratio, max width, show title.
 
 ### Contact Form
 
-An inline contact form for visitors to send you messages.
+An inline contact form so visitors can message you without leaving your page.
 
-- **Config options**: button text, button emoji, button emoji position, success message.
+- **Style options** -- button text, button emoji, success message.
 
-The contact form requires configuration in `/admin/settings` (Contact Form and optionally CAPTCHA sections). See [Contact Form](/docs/guide/contact-form) for details.
+> **Tip:** The contact form requires setup in `/admin/settings` first. See [Contact Form](/docs/guide/contact-form) for details.
 
 ## Adding a Block
 
-1. Open the block builder at `/admin/builder`.
-2. Click **Add Block** to open the dropdown menu.
+1. Open the builder at `/admin/builder`.
+2. Click **Add Block** to open the dropdown.
 3. Select a block type.
-4. The block is added and the edit panel opens.
+4. The block appears and its edit panel opens automatically.
 
-## Block Edit Panel
+## Editing a Block
 
-Clicking edit on any block opens a slide-in panel from the right with 4 tabs:
+Click edit on any block to open a slide-in panel with 4 tabs:
 
 ### Content Tab
 
-Fields vary by block type:
-
-- **Link**: Title, URL
-- **Embed**: Title, embed type (YouTube, Spotify, SoundCloud, Custom), embed URL
-- **Social Icons**: Title, social icons JSON
-- **Header** / **Contact Form**: Title
+Set the block's core fields -- title, URL, embed type, and embed URL vary depending on the block type.
 
 ### Style Tab
 
-- Icon name input
-- Config JSON textarea for advanced configuration
+Customize the block's appearance with an icon and advanced style settings.
 
 ### Options Tab
 
-Reference text listing common config keys: `noFollow`, `newTab`, `animation`, `thumbnail`.
+Quick reference for common options like `noFollow`, `newTab`, `animation`, and `thumbnail`.
 
 ### Schedule Tab
 
-- Start date/time (`datetime-local` input)
-- End date/time (`datetime-local` input)
-- **Clear schedule** button
+Set a start and end date to control when the block is visible. Blocks outside their scheduled window are automatically hidden from visitors.
 
-Blocks outside their scheduled window are automatically hidden from the public page.
+Use the **Clear schedule** button to remove scheduling and keep the block always visible.
 
-## Block Configuration
+## Shared Style Options
 
-Block configuration uses structured Zod schemas defined in `@linkden/validators`. Each block type has a typed config schema that extends a shared base, ensuring all configuration values are validated before being saved. The config is stored as a JSON string in the database.
+Every block type supports these visual settings:
 
-All block types share a base configuration with these style options:
-
-| Option | Description |
-|--------|-------------|
-| Color variant | Preset color scheme for the block |
-| Custom background color | Override background color |
-| Custom text color | Override text color |
-| Custom border color | Override border color |
-| Border radius | Corner rounding |
-| Border width | Border thickness |
-| Shadow | Drop shadow effect |
-| Animation | Hover or entrance animation |
-| Padding | Inner spacing |
+- Color variant (preset color scheme)
+- Custom background, text, and border colors
+- Border radius and width
+- Shadow
+- Hover or entrance animation
+- Padding
 
 ## Reordering Blocks
 
-Drag any block by its grip handle in the block list. The new order is saved immediately via the `blocks.reorder` mutation.
+Drag any block by its grip handle to rearrange the order. Changes save automatically.
 
 ## Toggling Visibility
 
-Click the eye icon to toggle a block's visibility. Hidden blocks remain in your list but are not shown on the public page. This is useful for:
+Click the eye icon to show or hide a block. Hidden blocks stay in your list but don't appear on the public page. This is handy for:
 
-- Temporarily removing a block without deleting it.
-- Preparing blocks in advance and enabling them later.
-- Time-limited or seasonal content (or use scheduling instead).
+- Temporarily removing content without deleting it.
+- Preparing blocks ahead of time and enabling them later.
+- Seasonal or time-limited content.
 
 ## Deleting a Block
 
-Click the trash icon on any block to delete it. Deletions are permanent.
-
-## Scheduling
-
-Blocks support scheduled visibility with start and end dates. A block outside its scheduled window is automatically hidden from the public page. Configure scheduling in the **Schedule** tab of the block edit panel.
+Click the trash icon to permanently delete a block.
 
 ## Phone Preview
 
-The right panel shows a phone-frame preview (280px wide) with:
-
-- A light/dark mode toggle button.
-- Only `isEnabled: true` blocks rendered.
-- Type-specific preview rendering:
-  - **Link**: Button-style bar
-  - **Header**: Centered bold text
-  - **Social Icons**: Placeholder circles
-  - **Embed**: Gray box with embed type label
-  - **Contact Form**: Stacked input placeholders
-- Empty state message when no enabled blocks exist.
+The right side of the builder shows a live phone preview of your page. On smaller screens, tap the floating button to open the preview in a modal. Use the light/dark toggle to see how your page looks in both modes.

@@ -1,55 +1,40 @@
 ---
 title: Configuration
-description: Configure Better Auth, Cloudflare services, and environment variables for your LinkDen instance.
+description: Set up environment variables and authentication for your LinkDen instance.
 ---
 
 # Configuration
 
-LinkDen uses a minimal set of environment variables. Most configuration (email, CAPTCHA, branding, etc.) is managed through the admin settings UI and stored in the database.
+LinkDen keeps its `.env` file minimal on purpose. You only need four environment variables to get running. Everything else -- email, CAPTCHA, branding, and more -- is configured through the admin panel and stored in the database.
 
 ## Environment Variables
 
-The root `.env` file contains all required variables:
-
-| Variable | Description | Example | Required |
-|----------|-------------|---------|----------|
-| `BETTER_AUTH_SECRET` | Secret key for session signing | `your-secret-key-here` | Yes |
-| `BETTER_AUTH_URL` | Base URL for the auth server | `http://localhost:3000` | Yes |
-| `CORS_ORIGIN` | Allowed CORS origin (frontend URL) | `http://localhost:3001` | Yes |
-| `NEXT_PUBLIC_SERVER_URL` | Public URL of the API server | `http://localhost:3000` | Yes |
-
-Copy the example file to get started:
+Create your `.env` file from the example:
 
 ```bash
 cp .env.example .env
 ```
 
-## Better Auth Setup
+Then set these values:
 
-LinkDen uses [Better Auth](https://www.better-auth.com/) for authentication with email/password sign-in. No external auth service is needed.
-
-### How It Works
-
-1. During the setup wizard at `/admin/setup`, you create an admin account with email and password.
-2. Better Auth creates a session with secure cookies (`sameSite: none`, `secure: true`, `httpOnly: true`).
-3. All admin API routes are protected by Better Auth session validation.
-4. The session cookie is sent cross-origin between the Next.js frontend and the Hono API server.
+| Variable | What it does | Example |
+|----------|-------------|---------|
+| `BETTER_AUTH_SECRET` | Signs session cookies (keep this private!) | `openssl rand -base64 32` |
+| `BETTER_AUTH_URL` | URL where the API server runs | `http://localhost:3000` |
+| `CORS_ORIGIN` | URL where the web frontend runs | `http://localhost:3001` |
+| `NEXT_PUBLIC_SERVER_URL` | Public API URL (usually same as `BETTER_AUTH_URL`) | `http://localhost:3000` |
 
 ### Generating a Secret
 
-Generate a strong secret for `BETTER_AUTH_SECRET`:
+Run this to generate a strong, random secret:
 
 ```bash
 openssl rand -base64 32
 ```
 
-### Setting the URLs
+Paste the output as your `BETTER_AUTH_SECRET`. Use a different secret for production.
 
-- `BETTER_AUTH_URL` should point to your API server (where Better Auth runs).
-- `CORS_ORIGIN` should point to your web frontend.
-- `NEXT_PUBLIC_SERVER_URL` should match `BETTER_AUTH_URL` (the API server URL).
-
-For local development:
+### Local Development
 
 ```bash
 BETTER_AUTH_SECRET=your-generated-secret
@@ -58,7 +43,7 @@ CORS_ORIGIN=http://localhost:3001
 NEXT_PUBLIC_SERVER_URL=http://localhost:3000
 ```
 
-For production:
+### Production
 
 ```bash
 BETTER_AUTH_SECRET=your-production-secret
@@ -67,30 +52,26 @@ CORS_ORIGIN=https://yourdomain.com
 NEXT_PUBLIC_SERVER_URL=https://api.yourdomain.com
 ```
 
-## Runtime Configuration (Admin Settings)
+> **Tip:** `BETTER_AUTH_URL` and `NEXT_PUBLIC_SERVER_URL` should point to the same server. `CORS_ORIGIN` points to your frontend.
 
-Most configuration is managed through the admin settings page (`/admin/settings`) and stored in the database. This includes:
+## Authentication
 
-- **Email provider** -- Resend or Cloudflare Email Workers (API key, from address).
-- **CAPTCHA** -- Cloudflare Turnstile or Google reCAPTCHA (site key, secret key).
+LinkDen uses email and password authentication. No external auth service or OAuth setup is needed.
+
+During the [setup wizard](/docs/getting-started/quick-start), you create your admin account. After that, sign in at `/admin/login` with the same email and password. All admin pages are protected -- unauthenticated visitors only see your public link page.
+
+## Admin Settings (Runtime Config)
+
+Most configuration lives in the admin panel at `/admin/settings`, not in environment variables. This means you can change settings without redeploying:
+
+- **Email provider** -- Resend or Cloudflare Email Workers.
+- **CAPTCHA** -- Cloudflare Turnstile or Google reCAPTCHA.
 - **Branding** -- Whitelabel footer text and link.
-- **vCard** -- Contact card enable/disable.
-- **Apple Wallet** -- Team ID, Pass Type ID, custom QR URL.
-- **SEO** -- Page title, meta description, OG image.
-
-This approach keeps the `.env` file minimal and makes it easy to change settings without redeploying.
-
-## Cloudflare Setup
-
-For deployment to Cloudflare, you need:
-
-1. A free account at [cloudflare.com](https://cloudflare.com).
-2. A **Cloudflare API Token** with permissions for Workers, Pages, and D1.
-3. Your **Cloudflare Account ID** (found on the right sidebar of the dashboard overview).
-
-These are used by the Alchemy deployment tool. See [Deployment](/docs/getting-started/deployment) for details.
+- **vCard** -- Enable or disable the downloadable contact card.
+- **Apple Wallet** -- Team ID, Pass Type ID, and custom QR URL.
+- **SEO** -- Page title, meta description, and OG image.
 
 ## Next Steps
 
-- [Cloudflare Deployment](/docs/self-hosting/cloudflare) -- Deploy your configured instance to Cloudflare.
-- [Quick Start](/docs/getting-started/quick-start) -- Configure all runtime settings through the admin panel.
+- [Quick Start](/docs/getting-started/quick-start) -- Walk through the setup wizard and start building your page.
+- [Self-Hosting](/docs/self-hosting/cloudflare) -- Deploy your configured instance to Cloudflare.

@@ -1,56 +1,27 @@
 ---
 title: Apple Wallet
-description: Configure Apple Wallet pass settings so visitors can save your contact information.
+description: Let visitors save your contact information as an Apple Wallet pass.
 ---
 
 # Apple Wallet
 
-LinkDen supports Apple Wallet pass configuration. When enabled, visitors can download a pass containing your contact information to their iPhone or Mac wallet.
-
-## Enabling Apple Wallet
-
-Toggle the Apple Wallet feature in `/admin/wallet` under the **Configuration** section. Configure:
-
-| Field | Description |
-|-------|-------------|
-| Enable Apple Wallet | Toggle the feature on/off |
-| Team ID | Your Apple Developer team identifier |
-| Pass Type ID | Registered pass type identifier |
-| Organization Name | Name shown on the pass (e.g., your company) |
-| Pass Description | Brief description of the pass |
-| Background Color | Hex color for the pass background (e.g., `#FFFFFF`) |
-| Foreground Color | Hex color for the pass text (e.g., `#000000`) |
-| Label Color | Hex color for the pass labels (e.g., `#666666`) |
-| Logo URL | URL to a logo image displayed on the pass |
-| Custom QR URL | Optional custom URL for the QR code on the pass |
-
-## Environment Variables
-
-Signing certificates are stored as environment variables for security and are **not** saved in the database. Set these on your deployment platform:
-
-| Variable | Description |
-|----------|-------------|
-| `WALLET_SIGNER_CERT` | Base64-encoded signer certificate PEM |
-| `WALLET_SIGNER_KEY` | Base64-encoded signer private key PEM |
-| `WALLET_WWDR_CERT` | Base64-encoded Apple WWDR certificate |
-
-The **Signing Status** banner in the admin UI shows whether each certificate is configured.
+Let visitors save a pass with your contact info to their iPhone or Mac wallet. When enabled, a download button appears on your public page.
 
 ## Prerequisites
 
-To generate Apple Wallet passes, you need:
+Before you start, make sure you have:
 
-1. **Apple Developer Account** -- A paid Apple Developer Program membership ($99/year) at [developer.apple.com](https://developer.apple.com).
-2. **Pass Type Identifier** -- A unique identifier registered in the Apple Developer portal.
-3. **Signing Certificates** -- A pass signing certificate and the Apple WWDR intermediate certificate.
+- A paid **Apple Developer Program** membership ($99/year) at [developer.apple.com](https://developer.apple.com)
+- A registered **Pass Type Identifier**
+- A **signing certificate** and the **Apple WWDR** intermediate certificate
 
 ## Setup Guide
 
 ### 1. Register a Pass Type ID
 
 1. Log in to [developer.apple.com](https://developer.apple.com).
-2. Navigate to **Certificates, Identifiers & Profiles > Identifiers**.
-3. Click the **+** button and select **Pass Type IDs**.
+2. Go to **Certificates, Identifiers & Profiles > Identifiers**.
+3. Click **+** and select **Pass Type IDs**.
 4. Enter a description (e.g., "LinkDen Business Card") and an identifier (e.g., `pass.com.yourdomain.linkden`).
 5. Click **Register**.
 
@@ -59,21 +30,21 @@ To generate Apple Wallet passes, you need:
 1. In the Apple Developer portal, go to **Certificates**.
 2. Click **+** and select **Pass Type ID Certificate**.
 3. Choose the Pass Type ID you just created.
-4. Follow the instructions to generate a Certificate Signing Request (CSR) using Keychain Access on macOS.
+4. Follow the instructions to generate a CSR using Keychain Access on macOS.
 5. Upload the CSR and download the certificate.
-6. Double-click the downloaded `.cer` file to install it in Keychain Access.
+6. Double-click the `.cer` file to install it in Keychain Access.
 
 ### 3. Export the Certificate and Key
 
 1. Open **Keychain Access** on macOS.
-2. Find the pass certificate (it shows the Pass Type ID).
+2. Find the pass certificate (it shows your Pass Type ID).
 3. Expand it to see the private key.
-4. Select both the certificate and key, right-click, and choose **Export 2 items**.
-5. Save as `.p12` format with a passphrase.
+4. Select both, right-click, and choose **Export 2 items**.
+5. Save as `.p12` with a passphrase.
 
 ### 4. Convert to Base64
 
-Convert the certificates to base64 strings and set them as environment variables:
+Run these commands to prepare your certificates for deployment:
 
 ```bash
 # Download the Apple WWDR certificate
@@ -91,42 +62,37 @@ openssl pkcs12 -in pass.p12 -nocerts -out signer_key.pem
 base64 -i signer_key.pem | tr -d '\n' > signer_key_base64.txt
 ```
 
-Then set the environment variables on your deployment:
+### 5. Set Environment Variables
 
-```bash
-WALLET_SIGNER_CERT=<contents of signer_cert_base64.txt>
-WALLET_SIGNER_KEY=<contents of signer_key_base64.txt>
-WALLET_WWDR_CERT=<contents of wwdr_base64.txt>
-```
+Add these to your deployment platform (not in the database -- they're kept as environment variables for security):
 
-### 5. Configure in Admin Settings
+| Variable | Description |
+|----------|-------------|
+| `WALLET_SIGNER_CERT` | Contents of `signer_cert_base64.txt` |
+| `WALLET_SIGNER_KEY` | Contents of `signer_key_base64.txt` |
+| `WALLET_WWDR_CERT` | Contents of `wwdr_base64.txt` |
 
-Navigate to `/admin/wallet` and fill in the **Configuration** section:
+> **Tip:** The **Signing Status** banner in the admin UI shows whether each certificate is detected.
+
+### 6. Configure in Admin
+
+Go to `/admin/wallet` and fill in the settings:
 
 **Identity:**
+
 - **Team ID** -- Your Apple Developer team identifier.
 - **Pass Type ID** -- The identifier you registered (e.g., `pass.com.yourdomain.linkden`).
-- **Organization Name** -- The name shown on the pass.
-- **Pass Description** -- A brief description of the pass.
+- **Organization Name** -- Name shown on the pass.
+- **Pass Description** -- Brief description of the pass.
 
 **Appearance:**
+
 - **Background Color** -- Hex color for the pass background.
 - **Foreground Color** -- Hex color for the pass text.
-- **Label Color** -- Hex color for the pass field labels.
-- **Logo URL** -- URL to a logo image for the pass.
-- **Custom QR URL** -- Optional URL for the QR code on the pass.
+- **Label Color** -- Hex color for field labels.
+- **Logo URL** -- Logo image displayed on the pass.
+- **Custom QR URL** -- Optional custom URL for the QR code.
 
 ## Pass Preview
 
-The `wallet.generatePreview` API procedure returns your profile data, enabled link blocks, and QR URL for previewing how the pass will appear.
-
-## API Reference
-
-| Procedure | Description |
-|-----------|-------------|
-| `wallet.getConfig` | Get current wallet settings |
-| `wallet.updateConfig` | Update wallet settings |
-| `wallet.getSigningStatus` | Check if signing certificates are configured |
-| `wallet.generatePreview` | Generate pass preview data |
-
-See [API Reference](/docs/reference/api) for the full procedure reference.
+The admin page includes a live preview showing how your pass will look with your current colors, logo, and content.

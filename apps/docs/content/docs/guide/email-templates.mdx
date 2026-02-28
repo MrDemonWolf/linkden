@@ -1,0 +1,35 @@
+---
+title: Email Templates
+description: Preview the email template used by LinkDen's contact form notifications.
+---
+
+# Email Templates
+
+LinkDen uses a single email template for contact form notifications. It's built with [React Email](https://react.email) so it renders consistently across all major email clients.
+
+## Contact Notification
+
+When a visitor submits your contact form, you receive a **Contact Notification** email with the full submission details:
+
+- Sender name and email address
+- Message content
+- Optional fields: subject line, phone number, and company name
+
+The email uses a clean, branded layout with your LinkDen logo in the header and a light footer.
+
+## Live Preview
+
+Edit the fields below to see how the email renders with different content.
+
+<EmailPreview />
+
+## Setting Up Email Delivery
+
+To receive contact form emails, configure an email provider in **Settings > Email**:
+
+1. Choose **Resend** or **Cloudflare Email Workers** as your provider.
+2. Enter your API key.
+3. Set your "From" email address (must be verified with the provider).
+4. Under **Contact Form**, set the delivery mode to include email notifications.
+
+See the [Contact Form guide](/docs/guide/contact-form) for full setup instructions.

@@ -1,108 +1,84 @@
 ---
 title: Installation
-description: Clone the LinkDen repository and install dependencies to get your local development environment running.
+description: Clone the repository, install dependencies, and get LinkDen running locally.
 ---
 
 # Installation
 
-This guide walks you through setting up LinkDen on your local machine for development or preview before deploying to Cloudflare.
+You'll clone the repo, install dependencies, set a few environment variables, and start the dev servers. The whole process takes about five minutes.
 
 ## Prerequisites
 
-Before you begin, make sure you have the following installed:
-
-- **Node.js 22+** -- Download from [nodejs.org](https://nodejs.org) or use a version manager like `nvm` or `fnm`.
-- **pnpm 10+** -- LinkDen uses pnpm workspaces. Enable it via Corepack:
+- **Node.js 22+** -- Grab it from [nodejs.org](https://nodejs.org), or use a version manager like `nvm` or `fnm`.
+- **pnpm 10+** -- Enable it with Corepack:
 
 ```bash
 corepack enable && corepack prepare pnpm@latest --activate
 ```
 
-- **Cloudflare account** -- A free account at [cloudflare.com](https://cloudflare.com) is sufficient for development.
+- **Cloudflare account** -- A free account at [cloudflare.com](https://cloudflare.com) is enough for development.
 
-## Clone the Repository
+## Clone and Install
 
 ```bash
 git clone https://github.com/mrdemonwolf/linkden.git
 cd linkden
-```
-
-## Install Dependencies
-
-Run pnpm install from the root of the monorepo. Turborepo and pnpm workspaces will handle installing dependencies for all apps and packages:
-
-```bash
 pnpm install
 ```
 
-This installs dependencies for:
-
-- `apps/web` -- the Next.js frontend
-- `apps/server` -- the Hono API server
-- `apps/docs` -- this documentation site
-- `packages/api` -- tRPC router definitions
-- `packages/auth` -- Better Auth configuration
-- `packages/db` -- Drizzle ORM schema and migrations
-- `packages/env` -- shared environment variable validation
-- `packages/ui` -- shared UI components (Radix + Tailwind)
-- `packages/validators` -- shared Zod schemas
-- `packages/infra` -- Alchemy deployment configuration
+> **Tip:** `pnpm install` handles all apps and packages in the monorepo automatically.
 
 ## Set Up Environment Variables
 
-Copy the example environment file:
+Copy the example file and fill in your values:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and set the following variables:
+At minimum, set these four variables:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `BETTER_AUTH_SECRET` | Secret key for session signing | Generate with `openssl rand -base64 32` |
-| `BETTER_AUTH_URL` | Base URL for the auth server | `http://localhost:3000` |
-| `CORS_ORIGIN` | Allowed CORS origin (frontend URL) | `http://localhost:3001` |
+| `BETTER_AUTH_URL` | URL of the API server | `http://localhost:3000` |
+| `CORS_ORIGIN` | URL of the web frontend | `http://localhost:3001` |
 | `NEXT_PUBLIC_SERVER_URL` | Public URL of the API server | `http://localhost:3000` |
 
-See the [Configuration](/docs/getting-started/configuration) guide for details.
+See [Configuration](/docs/getting-started/configuration) for a full explanation of each variable.
 
-## Push Database Schema
-
-LinkDen uses Cloudflare D1 (SQLite) with Drizzle ORM. Push the schema to your database:
+## Push the Database Schema
 
 ```bash
 pnpm db:push
 ```
 
-## Start the Development Servers
+This creates the database tables LinkDen needs to run.
+
+## Start the Dev Servers
 
 ```bash
 pnpm dev
 ```
 
-This starts all apps in development mode via Turborepo:
+This launches everything:
 
 - **Web app** -- `http://localhost:3001`
 - **API server** -- `http://localhost:3000`
 - **Docs** -- `http://localhost:3002`
 
-Open `http://localhost:3001` in your browser.
+## Verify It Works
 
-## Verify the Installation
-
-1. Navigate to `http://localhost:3001` -- you should see the public link page (empty by default).
-2. Check your **server console** (the terminal running `pnpm dev`) for a setup URL. It looks like:
+1. Open `http://localhost:3001` -- you should see an empty public page.
+2. Check your **server console** for a setup URL that looks like this:
    ```
    Setup URL: http://localhost:3001/admin/setup?token=<unique-token>
    ```
-   The setup wizard requires this one-time security token. It is generated automatically on first run and printed to the server console.
-3. Open the setup URL in your browser to access the setup wizard.
-4. Complete the 4-step setup wizard (Account, Profile, Theme, Done).
-5. You should land on the block builder at `/admin/builder`.
+3. Open that URL and complete the 4-step setup wizard (Account, Profile, Theme, Done).
+4. You'll land on the block builder -- you're all set!
 
 ## Next Steps
 
-- [Quick Start](/docs/getting-started/quick-start) -- Walk through the setup wizard and first-time configuration.
-- [Configuration](/docs/getting-started/configuration) -- Configure environment variables.
-- [Deployment](/docs/getting-started/deployment) -- Deploy your instance to Cloudflare.
+- [Quick Start](/docs/getting-started/quick-start) -- Walk through the setup wizard and start adding content.
+- [Configuration](/docs/getting-started/configuration) -- Learn more about environment variables and auth setup.
+- [Self-Hosting](/docs/self-hosting/cloudflare) -- Deploy your instance to Cloudflare.

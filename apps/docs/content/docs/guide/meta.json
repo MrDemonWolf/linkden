@@ -3,9 +3,9 @@
   "pages": [
     "blocks",
     "appearance",
-    "theming",
     "analytics",
     "contact-form",
+    "email-templates",
     "social-networks",
     "security",
     "vcard",
