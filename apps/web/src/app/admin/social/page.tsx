@@ -19,7 +19,7 @@ import { socialBrands, socialBrandMap } from "@linkden/ui/social-brands";
 import { getAccessibleIconFill, isLowLuminance } from "@linkden/ui/color-contrast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
 	DropdownMenu,
@@ -445,10 +445,8 @@ export default function SocialPage() {
 					<DropdownMenu>
 						<DropdownMenuTrigger
 							className={cn(
-								"inline-flex items-center gap-1.5 rounded-lg border px-3 h-9 text-xs font-medium transition-colors",
-								activeCategory !== "all"
-									? "border-primary/30 bg-primary/10 text-primary"
-									: "border-input bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+								buttonVariants({ variant: "outline", size: "default" }),
+								activeCategory !== "all" && "border-primary/30 bg-primary/10 text-primary",
 							)}
 						>
 							<Filter className="h-3.5 w-3.5 shrink-0" />

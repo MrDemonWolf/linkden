@@ -44,7 +44,7 @@ function DropdownMenuContent({
       transition
       className={cn(
         "absolute right-0 mt-1 z-50 min-w-32 rounded-xl p-1 flex flex-col gap-1 shadow-lg",
-        "bg-popover text-popover-foreground backdrop-blur-2xl border border-white/20 dark:border-white/15",
+        "bg-popover text-popover-foreground backdrop-blur-2xl border border-white/25 dark:border-white/20",
         "transition duration-100 ease-out",
         "data-closed:scale-95 data-closed:opacity-0",
         "origin-top-right",
