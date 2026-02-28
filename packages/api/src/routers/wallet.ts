@@ -9,9 +9,9 @@ const hexColorRegex = /^#[0-9a-fA-F]{6}$/;
 
 const walletKeys = [
 	"wallet_pass_enabled",
-	"wallet_team_id",
-	"wallet_pass_type_id",
-	"wallet_custom_qr_url",
+	"wallet_show_email",
+	"wallet_show_name",
+	"wallet_show_qr_code",
 	"wallet_organization_name",
 	"wallet_pass_description",
 	"wallet_background_color",
@@ -40,9 +40,9 @@ export const walletRouter = router({
 		.input(
 			z.object({
 				enabled: z.boolean().optional(),
-				teamId: z.string().optional(),
-				passTypeId: z.string().optional(),
-				customQrUrl: z.string().optional(),
+				showEmail: z.boolean().optional(),
+				showName: z.boolean().optional(),
+				showQrCode: z.boolean().optional(),
 				organizationName: z.string().max(100).optional(),
 				passDescription: z.string().max(200).optional(),
 				backgroundColor: z
@@ -70,17 +70,20 @@ export const walletRouter = router({
 					key: "wallet_pass_enabled",
 					value: JSON.stringify(input.enabled),
 				});
-			if (input.teamId !== undefined)
-				updates.push({ key: "wallet_team_id", value: input.teamId });
-			if (input.passTypeId !== undefined)
+			if (input.showEmail !== undefined)
 				updates.push({
-					key: "wallet_pass_type_id",
-					value: input.passTypeId,
+					key: "wallet_show_email",
+					value: JSON.stringify(input.showEmail),
 				});
-			if (input.customQrUrl !== undefined)
+			if (input.showName !== undefined)
 				updates.push({
-					key: "wallet_custom_qr_url",
-					value: input.customQrUrl,
+					key: "wallet_show_name",
+					value: JSON.stringify(input.showName),
+				});
+			if (input.showQrCode !== undefined)
+				updates.push({
+					key: "wallet_show_qr_code",
+					value: JSON.stringify(input.showQrCode),
 				});
 			if (input.organizationName !== undefined)
 				updates.push({
@@ -135,6 +138,8 @@ export const walletRouter = router({
 			signerCert: !!env.WALLET_SIGNER_CERT,
 			signerKey: !!env.WALLET_SIGNER_KEY,
 			wwdrCert: !!env.WALLET_WWDR_CERT,
+			teamId: !!env.WALLET_TEAM_ID,
+			passTypeId: !!env.WALLET_PASS_TYPE_ID,
 		};
 	}),
 
@@ -163,7 +168,16 @@ export const walletRouter = router({
 			links: blocks
 				.filter((b) => b.type === "link")
 				.map((b) => ({ title: b.title, url: b.url })),
-			qrUrl: settingsMap.wallet_custom_qr_url || null,
+			qrUrl: null,
+			organizationName: settingsMap.wallet_organization_name || "",
+			passDescription: settingsMap.wallet_pass_description || "",
+			backgroundColor: settingsMap.wallet_background_color || "#0FACED",
+			foregroundColor: settingsMap.wallet_foreground_color || "#091533",
+			labelColor: settingsMap.wallet_label_color || "#FFFFFF",
+			logoUrl: settingsMap.wallet_logo_url || null,
+			showEmail: settingsMap.wallet_show_email !== "false",
+			showName: settingsMap.wallet_show_name !== "false",
+			showQrCode: settingsMap.wallet_show_qr_code !== "false",
 		};
 	}),
 });

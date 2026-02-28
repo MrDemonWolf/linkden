@@ -2,19 +2,12 @@
 
 import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-	Wallet,
-	CheckCircle2,
-	XCircle,
-	Download,
-	Settings2,
-} from "lucide-react";
+import { Wallet, Settings2 } from "lucide-react";
 import { trpc } from "@/utils/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatCard } from "@/components/admin/stat-card";
-import { EmptyState } from "@/components/admin/empty-state";
 import {
 	WalletSection,
 	type WalletLivePreview,
@@ -25,6 +18,7 @@ import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 export default function WalletPage() {
 	const configQuery = useQuery(trpc.wallet.getConfig.queryOptions());
 	const previewQuery = useQuery(trpc.wallet.generatePreview.queryOptions());
+	const signingQuery = useQuery(trpc.wallet.getSigningStatus.queryOptions());
 	const { getAnimationProps } = useEntranceAnimation(!configQuery.isLoading);
 
 	const [livePreview, setLivePreview] = useState<WalletLivePreview | null>(
@@ -34,11 +28,15 @@ export default function WalletPage() {
 		setLivePreview(state);
 	}, []);
 
-	const isEnabled = configQuery.data?.wallet_pass_enabled === "true";
-	const teamId = configQuery.data?.wallet_team_id ?? "";
-	const passTypeId = configQuery.data?.wallet_pass_type_id ?? "";
 	const organizationName = configQuery.data?.wallet_organization_name ?? "";
-	const isConfigured = !!(teamId && passTypeId && organizationName);
+	const isConfigured = !!(
+		organizationName &&
+		signingQuery.data?.signerCert &&
+		signingQuery.data?.signerKey &&
+		signingQuery.data?.wwdrCert &&
+		signingQuery.data?.teamId &&
+		signingQuery.data?.passTypeId
+	);
 
 	const headerAnim = getAnimationProps(0);
 	const statsAnim = getAnimationProps(1);
@@ -50,47 +48,18 @@ export default function WalletPage() {
 				title="Wallet Pass"
 				className={cn(headerAnim.className)}
 				style={headerAnim.style}
-				badge={
-					<span
-						className={cn(
-							"inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
-							isEnabled
-								? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-								: "bg-muted text-muted-foreground",
-						)}
-					>
-						{isEnabled ? (
-							<>
-								<CheckCircle2 className="h-3 w-3" />
-								Enabled
-							</>
-						) : (
-							<>
-								<XCircle className="h-3 w-3" />
-								Disabled
-							</>
-						)}
-					</span>
-				}
-				description="Generate Apple/Google Wallet passes for your page"
+				description="Generate Apple Wallet passes for your page"
 			/>
 
-			{/* Status cards */}
+			{/* Status card */}
 			<div
-				className={cn("grid gap-3 sm:grid-cols-2", statsAnim.className)}
+				className={cn("grid gap-3 sm:grid-cols-1", statsAnim.className)}
 				style={statsAnim.style}
 			>
 				<StatCard
-					icon={Wallet}
-					label="Wallet Status"
-					value={isEnabled ? "Enabled" : "Disabled"}
-					iconColor={isEnabled ? "text-emerald-500" : "text-muted-foreground"}
-					iconBg={isEnabled ? "bg-emerald-500/10" : "bg-muted"}
-				/>
-				<StatCard
 					icon={Settings2}
-					label="Configuration"
-					value={isConfigured ? "Complete" : "Incomplete"}
+					label="Config Status"
+					value={isConfigured ? "Ready" : "Incomplete"}
 					iconColor={isConfigured ? "text-emerald-500" : "text-amber-500"}
 					iconBg={isConfigured ? "bg-emerald-500/10" : "bg-amber-500/10"}
 				/>
@@ -104,42 +73,30 @@ export default function WalletPage() {
 				)}
 				style={contentAnim.style}
 			>
-				{/* Left: Configuration + Download */}
+				{/* Left: General Settings + Download */}
 				<Card>
-					<CardContent className="space-y-4 pt-2">
-						<h2 className="text-sm font-semibold">Configuration</h2>
+					<CardContent className="space-y-6 pt-2">
 						<WalletSection onPreviewChange={handlePreviewChange} />
 
 						{/* Download */}
-						<div className="space-y-3 border-t pt-4">
-							<p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-								Download
-							</p>
-							{isEnabled && isConfigured ? (
-								<div className="space-y-3">
-									<a
-										href="/api/wallet-pass"
-										className="inline-flex items-center gap-2 rounded-lg border border-border bg-primary/5 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-primary/10"
-									>
-										<Download className="h-4 w-4" />
-										Download Wallet Pass
-									</a>
-									{configQuery.data?.wallet_custom_qr_url && (
-										<p className="text-xs text-muted-foreground">
-											QR URL: {configQuery.data.wallet_custom_qr_url}
-										</p>
-									)}
-								</div>
+						<div>
+							{isConfigured ? (
+								<a
+									href="/api/wallet-pass"
+									className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-80 dark:bg-white dark:text-black"
+								>
+									<Wallet className="h-4 w-4" />
+									Add to Apple Wallet
+								</a>
 							) : (
-								<EmptyState
-									icon={Wallet}
-									title="Not ready"
-									description={
-										!isEnabled
-											? "Enable Wallet Pass to make it available to visitors"
-											: "Configure your Team ID and Pass Type ID above"
-									}
-								/>
+								<button
+									type="button"
+									disabled
+									className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-black/40 px-5 py-2.5 text-sm font-medium text-white/60 cursor-not-allowed dark:bg-white/20 dark:text-white/40"
+								>
+									<Wallet className="h-4 w-4" />
+									Add to Apple Wallet
+								</button>
 							)}
 						</div>
 					</CardContent>
@@ -185,10 +142,17 @@ export default function WalletPage() {
 										livePreview?.passDescription ??
 										previewQuery.data?.passDescription
 									}
-									qrUrl={
-										livePreview?.qrUrl ??
-										previewQuery.data?.qrUrl ??
-										undefined
+									showEmail={
+										livePreview?.showEmail ??
+										previewQuery.data?.showEmail
+									}
+									showName={
+										livePreview?.showName ??
+										previewQuery.data?.showName
+									}
+									showQrCode={
+										livePreview?.showQrCode ??
+										previewQuery.data?.showQrCode
 									}
 								/>
 							</div>

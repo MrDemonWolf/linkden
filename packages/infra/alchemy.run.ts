@@ -26,9 +26,21 @@ export const web = await Nextjs("web", {
     CORS_ORIGIN: alchemy.env.CORS_ORIGIN!,
     BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
     BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
-    WALLET_SIGNER_CERT: alchemy.secret.env.WALLET_SIGNER_CERT ?? "",
-    WALLET_SIGNER_KEY: alchemy.secret.env.WALLET_SIGNER_KEY ?? "",
-    WALLET_WWDR_CERT: alchemy.secret.env.WALLET_WWDR_CERT ?? "",
+    ...(process.env.WALLET_SIGNER_CERT && {
+      WALLET_SIGNER_CERT: alchemy.secret.env.WALLET_SIGNER_CERT!,
+    }),
+    ...(process.env.WALLET_SIGNER_KEY && {
+      WALLET_SIGNER_KEY: alchemy.secret.env.WALLET_SIGNER_KEY!,
+    }),
+    ...(process.env.WALLET_WWDR_CERT && {
+      WALLET_WWDR_CERT: alchemy.secret.env.WALLET_WWDR_CERT!,
+    }),
+    ...(process.env.WALLET_TEAM_ID && {
+      WALLET_TEAM_ID: alchemy.env.WALLET_TEAM_ID!,
+    }),
+    ...(process.env.WALLET_PASS_TYPE_ID && {
+      WALLET_PASS_TYPE_ID: alchemy.env.WALLET_PASS_TYPE_ID!,
+    }),
   },
   dev: {
     env: {
@@ -47,9 +59,21 @@ export const server = await Worker("server", {
     CORS_ORIGIN: alchemy.env.CORS_ORIGIN!,
     BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
     BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
-    WALLET_SIGNER_CERT: alchemy.secret.env.WALLET_SIGNER_CERT ?? "",
-    WALLET_SIGNER_KEY: alchemy.secret.env.WALLET_SIGNER_KEY ?? "",
-    WALLET_WWDR_CERT: alchemy.secret.env.WALLET_WWDR_CERT ?? "",
+    ...(process.env.WALLET_SIGNER_CERT && {
+      WALLET_SIGNER_CERT: alchemy.secret.env.WALLET_SIGNER_CERT!,
+    }),
+    ...(process.env.WALLET_SIGNER_KEY && {
+      WALLET_SIGNER_KEY: alchemy.secret.env.WALLET_SIGNER_KEY!,
+    }),
+    ...(process.env.WALLET_WWDR_CERT && {
+      WALLET_WWDR_CERT: alchemy.secret.env.WALLET_WWDR_CERT!,
+    }),
+    ...(process.env.WALLET_TEAM_ID && {
+      WALLET_TEAM_ID: alchemy.env.WALLET_TEAM_ID!,
+    }),
+    ...(process.env.WALLET_PASS_TYPE_ID && {
+      WALLET_PASS_TYPE_ID: alchemy.env.WALLET_PASS_TYPE_ID!,
+    }),
   },
   dev: {
     port: 3000,

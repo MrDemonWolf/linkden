@@ -4,9 +4,9 @@ const hexColorRegex = /^#[0-9a-fA-F]{6}$/;
 
 export const walletConfigSchema = z.object({
 	enabled: z.boolean().optional(),
-	teamId: z.string().optional(),
-	passTypeId: z.string().optional(),
-	customQrUrl: z.string().optional(),
+	showEmail: z.boolean().optional(),
+	showName: z.boolean().optional(),
+	showQrCode: z.boolean().optional(),
 	organizationName: z.string().max(100).optional(),
 	passDescription: z.string().max(200).optional(),
 	backgroundColor: z.string().regex(hexColorRegex).optional(),
