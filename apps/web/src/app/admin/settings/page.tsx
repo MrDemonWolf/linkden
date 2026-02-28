@@ -10,9 +10,7 @@ import {
 	Save,
 	Database,
 	Undo2,
-	MessageSquare,
 	Wallet,
-	UserCircle,
 	ArrowRightLeft,
 	type LucideIcon,
 } from "lucide-react";
@@ -28,9 +26,7 @@ import { SeoSection } from "@/components/admin/settings/seo-section";
 import { CaptchaSection } from "@/components/admin/settings/captcha-section";
 import { EmailSection } from "@/components/admin/settings/email-section";
 import { DataSection } from "@/components/admin/settings/data-section";
-import { ContactFormSection } from "@/components/admin/settings/contact-form-section";
 import { WalletSection } from "@/components/admin/settings/wallet-section";
-import { VCardSection } from "@/components/admin/settings/vcard-section";
 import { MigrationSection } from "@/components/admin/settings/migration-section";
 
 // ---- Section definitions ----
@@ -38,9 +34,7 @@ type SectionId =
 	| "seo"
 	| "captcha"
 	| "email"
-	| "contact"
 	| "wallet"
-	| "vcard"
 	| "data"
 	| "migration";
 
@@ -54,9 +48,7 @@ const SECTIONS: SectionDef[] = [
 	{ id: "seo", label: "SEO", icon: SearchIcon },
 	{ id: "captcha", label: "CAPTCHA", icon: Shield },
 	{ id: "email", label: "Email", icon: Mail },
-	{ id: "contact", label: "Contact Form", icon: MessageSquare },
 	{ id: "wallet", label: "Wallet Pass", icon: Wallet },
-	{ id: "vcard", label: "vCard", icon: UserCircle },
 	{ id: "data", label: "Data & Info", icon: Database },
 	{ id: "migration", label: "Migration", icon: ArrowRightLeft },
 ];
@@ -72,7 +64,6 @@ interface SavedState {
 	emailProvider: string;
 	emailApiKey: string;
 	emailFrom: string;
-	contactFormEnabled: boolean;
 	adminBrandingEnabled: boolean;
 	seoOgMode: string;
 	seoOgTemplate: string;
@@ -91,7 +82,6 @@ function buildSavedState(s: Record<string, string>): SavedState {
 		emailProvider: s.email_provider ?? "resend",
 		emailApiKey: s.email_api_key ?? "",
 		emailFrom: s.email_from ?? "",
-		contactFormEnabled: s.contact_form_enabled === "true",
 		adminBrandingEnabled: s.admin_branding_enabled !== "false",
 	};
 }
@@ -127,7 +117,6 @@ export default function SettingsPage() {
 		emailProvider: "resend",
 		emailApiKey: "",
 		emailFrom: "",
-		contactFormEnabled: false,
 		adminBrandingEnabled: true,
 		seoOgMode: "custom",
 		seoOgTemplate: "minimal",
@@ -150,9 +139,6 @@ export default function SettingsPage() {
 	const [emailApiKey, setEmailApiKey] = useState("");
 	const [emailFrom, setEmailFrom] = useState("");
 
-	// Contact Form
-	const [contactFormEnabled, setContactFormEnabled] = useState(false);
-
 	// Admin Branding
 	const [adminBrandingEnabled, setAdminBrandingEnabled] = useState(true);
 
@@ -172,7 +158,6 @@ export default function SettingsPage() {
 			setEmailProvider(s.emailProvider);
 			setEmailApiKey(s.emailApiKey);
 			setEmailFrom(s.emailFrom);
-			setContactFormEnabled(s.contactFormEnabled);
 			setAdminBrandingEnabled(s.adminBrandingEnabled);
 		}
 	}, [settingsQuery.data]);
@@ -189,7 +174,6 @@ export default function SettingsPage() {
 		emailProvider !== savedState.emailProvider ||
 		emailApiKey !== savedState.emailApiKey ||
 		emailFrom !== savedState.emailFrom ||
-		contactFormEnabled !== savedState.contactFormEnabled ||
 		adminBrandingEnabled !== savedState.adminBrandingEnabled;
 
 	useUnsavedChanges(isDirty);
@@ -212,7 +196,6 @@ export default function SettingsPage() {
 		setEmailProvider(savedState.emailProvider);
 		setEmailApiKey(savedState.emailApiKey);
 		setEmailFrom(savedState.emailFrom);
-		setContactFormEnabled(savedState.contactFormEnabled);
 		setAdminBrandingEnabled(savedState.adminBrandingEnabled);
 	};
 
@@ -231,10 +214,6 @@ export default function SettingsPage() {
 				{ key: "email_api_key", value: emailApiKey },
 				{ key: "email_from", value: emailFrom },
 				{
-					key: "contact_form_enabled",
-					value: String(contactFormEnabled),
-				},
-				{
 					key: "admin_branding_enabled",
 					value: String(adminBrandingEnabled),
 				},
@@ -251,7 +230,6 @@ export default function SettingsPage() {
 				emailProvider,
 				emailApiKey,
 				emailFrom,
-				contactFormEnabled,
 				adminBrandingEnabled,
 			});
 			invalidate();
@@ -362,14 +340,7 @@ export default function SettingsPage() {
 				onEmailFromChange={setEmailFrom}
 			/>
 		),
-		contact: (
-			<ContactFormSection
-				contactFormEnabled={contactFormEnabled}
-				onContactFormEnabledChange={setContactFormEnabled}
-			/>
-		),
 		wallet: <WalletSection />,
-		vcard: <VCardSection />,
 		data: (
 			<DataSection
 				onExport={handleExport}
