@@ -37,7 +37,7 @@ function sanitizeCss(css: string): string {
 }
 
 // Keys that should be sanitized as plain text (no HTML)
-const TEXT_KEYS = ["profile_name", "bio", "branding_text", "seo_title", "seo_description"];
+const TEXT_KEYS = ["profile_name", "bio", "branding_text", "seo_title", "seo_description", "seo_og_mode", "seo_og_template"];
 // Keys that should be validated as URLs
 const URL_KEYS = ["branding_link", "seo_og_image", "avatar_url", "banner_custom_url"];
 // Keys that should be validated as hex colors

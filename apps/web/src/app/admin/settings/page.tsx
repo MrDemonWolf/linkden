@@ -74,6 +74,8 @@ interface SavedState {
 	emailFrom: string;
 	contactFormEnabled: boolean;
 	adminBrandingEnabled: boolean;
+	seoOgMode: string;
+	seoOgTemplate: string;
 }
 
 function buildSavedState(s: Record<string, string>): SavedState {
@@ -81,6 +83,8 @@ function buildSavedState(s: Record<string, string>): SavedState {
 		seoTitle: s.seo_title ?? "",
 		seoDescription: s.seo_description ?? "",
 		seoOgImage: s.seo_og_image ?? "",
+		seoOgMode: s.seo_og_mode ?? "custom",
+		seoOgTemplate: s.seo_og_template ?? "minimal",
 		captchaProvider: s.captcha_provider ?? "none",
 		captchaSiteKey: s.captcha_site_key ?? "",
 		captchaSecretKey: s.captcha_secret_key ?? "",
@@ -125,12 +129,16 @@ export default function SettingsPage() {
 		emailFrom: "",
 		contactFormEnabled: false,
 		adminBrandingEnabled: true,
+		seoOgMode: "custom",
+		seoOgTemplate: "minimal",
 	});
 
 	// SEO
 	const [seoTitle, setSeoTitle] = useState("");
 	const [seoDescription, setSeoDescription] = useState("");
 	const [seoOgImage, setSeoOgImage] = useState("");
+	const [seoOgMode, setSeoOgMode] = useState("custom");
+	const [seoOgTemplate, setSeoOgTemplate] = useState("minimal");
 
 	// CAPTCHA
 	const [captchaProvider, setCaptchaProvider] = useState("none");
@@ -156,6 +164,8 @@ export default function SettingsPage() {
 			setSeoTitle(s.seoTitle);
 			setSeoDescription(s.seoDescription);
 			setSeoOgImage(s.seoOgImage);
+			setSeoOgMode(s.seoOgMode);
+			setSeoOgTemplate(s.seoOgTemplate);
 			setCaptchaProvider(s.captchaProvider);
 			setCaptchaSiteKey(s.captchaSiteKey);
 			setCaptchaSecretKey(s.captchaSecretKey);
@@ -171,6 +181,8 @@ export default function SettingsPage() {
 		seoTitle !== savedState.seoTitle ||
 		seoDescription !== savedState.seoDescription ||
 		seoOgImage !== savedState.seoOgImage ||
+		seoOgMode !== savedState.seoOgMode ||
+		seoOgTemplate !== savedState.seoOgTemplate ||
 		captchaProvider !== savedState.captchaProvider ||
 		captchaSiteKey !== savedState.captchaSiteKey ||
 		captchaSecretKey !== savedState.captchaSecretKey ||
@@ -192,6 +204,8 @@ export default function SettingsPage() {
 		setSeoTitle(savedState.seoTitle);
 		setSeoDescription(savedState.seoDescription);
 		setSeoOgImage(savedState.seoOgImage);
+		setSeoOgMode(savedState.seoOgMode);
+		setSeoOgTemplate(savedState.seoOgTemplate);
 		setCaptchaProvider(savedState.captchaProvider);
 		setCaptchaSiteKey(savedState.captchaSiteKey);
 		setCaptchaSecretKey(savedState.captchaSecretKey);
@@ -208,6 +222,8 @@ export default function SettingsPage() {
 				{ key: "seo_title", value: seoTitle },
 				{ key: "seo_description", value: seoDescription },
 				{ key: "seo_og_image", value: seoOgImage },
+				{ key: "seo_og_mode", value: seoOgMode },
+				{ key: "seo_og_template", value: seoOgTemplate },
 				{ key: "captcha_provider", value: captchaProvider },
 				{ key: "captcha_site_key", value: captchaSiteKey },
 				{ key: "captcha_secret_key", value: captchaSecretKey },
@@ -227,6 +243,8 @@ export default function SettingsPage() {
 				seoTitle,
 				seoDescription,
 				seoOgImage,
+				seoOgMode,
+				seoOgTemplate,
 				captchaProvider,
 				captchaSiteKey,
 				captchaSecretKey,
@@ -311,9 +329,15 @@ export default function SettingsPage() {
 				seoTitle={seoTitle}
 				seoDescription={seoDescription}
 				seoOgImage={seoOgImage}
+				seoOgMode={seoOgMode}
+				seoOgTemplate={seoOgTemplate}
+				profileName={settingsQuery.data?.profile_name ?? ""}
+				bio={settingsQuery.data?.bio ?? ""}
 				onSeoTitleChange={setSeoTitle}
 				onSeoDescriptionChange={setSeoDescription}
 				onSeoOgImageChange={setSeoOgImage}
+				onSeoOgModeChange={setSeoOgMode}
+				onSeoOgTemplateChange={setSeoOgTemplate}
 			/>
 		),
 		captcha: (
