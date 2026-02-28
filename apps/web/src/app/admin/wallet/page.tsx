@@ -15,10 +15,12 @@ import { PageHeader } from "@/components/admin/page-header";
 import { StatCard } from "@/components/admin/stat-card";
 import { EmptyState } from "@/components/admin/empty-state";
 import { WalletSection } from "@/components/admin/settings/wallet-section";
+import { WalletPassPreview } from "@/components/admin/wallet-pass-preview";
 import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 
 export default function WalletPage() {
 	const configQuery = useQuery(trpc.wallet.getConfig.queryOptions());
+	const previewQuery = useQuery(trpc.wallet.generatePreview.queryOptions());
 	const { getAnimationProps } = useEntranceAnimation(!configQuery.isLoading);
 
 	const isEnabled = configQuery.data?.wallet_pass_enabled === "true";
@@ -96,6 +98,32 @@ export default function WalletPage() {
 				</Card>
 			</div>
 
+			{/* Preview */}
+			<div
+				className={cn(contentAnim.className)}
+				style={contentAnim.style}
+			>
+				<Card>
+					<CardContent className="space-y-4 pt-2">
+						<h2 className="text-sm font-semibold">Preview</h2>
+						<div className="flex justify-center py-4">
+							<WalletPassPreview
+								backgroundColor={previewQuery.data?.backgroundColor}
+								foregroundColor={previewQuery.data?.foregroundColor}
+								labelColor={previewQuery.data?.labelColor}
+								logoUrl={previewQuery.data?.logoUrl ?? undefined}
+								organizationName={previewQuery.data?.organizationName}
+								profileName={previewQuery.data?.profile?.name ?? undefined}
+								profileEmail={previewQuery.data?.profile?.email ?? undefined}
+								profileImage={previewQuery.data?.profile?.image ?? undefined}
+								passDescription={previewQuery.data?.passDescription}
+								qrUrl={previewQuery.data?.qrUrl ?? undefined}
+							/>
+						</div>
+					</CardContent>
+				</Card>
+			</div>
+
 			{/* Download section */}
 			<div
 				className={cn(contentAnim.className)}
@@ -125,7 +153,7 @@ export default function WalletPage() {
 								title="Not ready"
 								description={
 									!isEnabled
-										? "Enable Wallet Pass above to get started"
+										? "Enable Wallet Pass to make it available to visitors"
 										: "Configure your Team ID and Pass Type ID above"
 								}
 							/>

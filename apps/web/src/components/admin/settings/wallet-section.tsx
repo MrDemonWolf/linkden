@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FieldGroup } from "./field-group";
+import { ImageUploadField } from "../image-upload-field";
 
 function SigningStatusBanner() {
 	const statusQuery = useQuery(trpc.wallet.getSigningStatus.queryOptions());
@@ -186,7 +187,7 @@ export function WalletSection() {
 				<div className="space-y-0.5">
 					<Label>Enable Wallet Pass</Label>
 					<p className="text-[11px] text-muted-foreground">
-						Generate Apple/Google Wallet passes for your page
+						Make wallet pass publicly available to visitors
 					</p>
 				</div>
 				<Switch
@@ -196,144 +197,140 @@ export function WalletSection() {
 				/>
 			</div>
 
-			{enabled && (
-				<>
-					{/* Signing Status */}
-					<SigningStatusBanner />
+			{/* Signing Status */}
+			<SigningStatusBanner />
 
-					{/* Identity */}
+			{/* Identity */}
+			<div className="space-y-1.5">
+				<p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+					Identity
+				</p>
+				<FieldGroup columns={2}>
 					<div className="space-y-1.5">
-						<Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-							Identity
-						</Label>
-						<FieldGroup columns={2}>
-							<div className="space-y-1.5">
-								<Label htmlFor="s-wallet-team">Team ID</Label>
-								<Input
-									id="s-wallet-team"
-									value={teamId}
-									onChange={(e) => setTeamId(e.target.value)}
-									placeholder="ABCDEF1234"
-								/>
-							</div>
-							<div className="space-y-1.5">
-								<Label htmlFor="s-wallet-pass-type">Pass Type ID</Label>
-								<Input
-									id="s-wallet-pass-type"
-									value={passTypeId}
-									onChange={(e) => setPassTypeId(e.target.value)}
-									placeholder="pass.com.example.linkden"
-								/>
-							</div>
-							<div className="space-y-1.5">
-								<Label htmlFor="s-wallet-org-name">Organization Name</Label>
-								<Input
-									id="s-wallet-org-name"
-									value={organizationName}
-									onChange={(e) => setOrganizationName(e.target.value)}
-									placeholder="Your Company"
-									maxLength={100}
-								/>
-							</div>
-							<div className="space-y-1.5">
-								<Label htmlFor="s-wallet-pass-desc">Pass Description</Label>
-								<Input
-									id="s-wallet-pass-desc"
-									value={passDescription}
-									onChange={(e) => setPassDescription(e.target.value)}
-									placeholder="Contact card for John Doe"
-									maxLength={200}
-								/>
-							</div>
-						</FieldGroup>
+						<Label htmlFor="s-wallet-team">Team ID</Label>
+						<Input
+							id="s-wallet-team"
+							value={teamId}
+							onChange={(e) => setTeamId(e.target.value)}
+							placeholder="ABCDEF1234"
+						/>
 					</div>
-
-					{/* Appearance */}
 					<div className="space-y-1.5">
-						<Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-							Appearance
-						</Label>
-						<FieldGroup columns={2}>
-							<div className="space-y-1.5">
-								<Label htmlFor="s-wallet-bg-color">Background Color</Label>
-								<div className="flex gap-2">
-									<Input
-										id="s-wallet-bg-color"
-										value={backgroundColor}
-										onChange={(e) => setBackgroundColor(e.target.value)}
-										placeholder="#FFFFFF"
-										className="flex-1"
-									/>
-									<input
-										type="color"
-										value={backgroundColor || "#ffffff"}
-										onChange={(e) => setBackgroundColor(e.target.value.toUpperCase())}
-										className="h-8 w-8 shrink-0 cursor-pointer rounded border border-input bg-transparent p-0.5"
-									/>
-								</div>
-							</div>
-							<div className="space-y-1.5">
-								<Label htmlFor="s-wallet-fg-color">Foreground Color</Label>
-								<div className="flex gap-2">
-									<Input
-										id="s-wallet-fg-color"
-										value={foregroundColor}
-										onChange={(e) => setForegroundColor(e.target.value)}
-										placeholder="#000000"
-										className="flex-1"
-									/>
-									<input
-										type="color"
-										value={foregroundColor || "#000000"}
-										onChange={(e) => setForegroundColor(e.target.value.toUpperCase())}
-										className="h-8 w-8 shrink-0 cursor-pointer rounded border border-input bg-transparent p-0.5"
-									/>
-								</div>
-							</div>
-							<div className="space-y-1.5">
-								<Label htmlFor="s-wallet-label-color">Label Color</Label>
-								<div className="flex gap-2">
-									<Input
-										id="s-wallet-label-color"
-										value={labelColor}
-										onChange={(e) => setLabelColor(e.target.value)}
-										placeholder="#666666"
-										className="flex-1"
-									/>
-									<input
-										type="color"
-										value={labelColor || "#666666"}
-										onChange={(e) => setLabelColor(e.target.value.toUpperCase())}
-										className="h-8 w-8 shrink-0 cursor-pointer rounded border border-input bg-transparent p-0.5"
-									/>
-								</div>
-							</div>
-							<div className="space-y-1.5">
-								<Label htmlFor="s-wallet-logo-url">Logo URL</Label>
-								<Input
-									id="s-wallet-logo-url"
-									value={logoUrl}
-									onChange={(e) => setLogoUrl(e.target.value)}
-									placeholder="https://example.com/logo.png"
-								/>
-							</div>
-						</FieldGroup>
-						<div className="mt-3 space-y-1.5">
-							<Label htmlFor="s-wallet-qr">Custom QR URL</Label>
+						<Label htmlFor="s-wallet-pass-type">Pass Type ID</Label>
+						<Input
+							id="s-wallet-pass-type"
+							value={passTypeId}
+							onChange={(e) => setPassTypeId(e.target.value)}
+							placeholder="pass.com.example.linkden"
+						/>
+					</div>
+					<div className="space-y-1.5">
+						<Label htmlFor="s-wallet-org-name">Organization Name</Label>
+						<Input
+							id="s-wallet-org-name"
+							value={organizationName}
+							onChange={(e) => setOrganizationName(e.target.value)}
+							placeholder="Your Company"
+							maxLength={100}
+						/>
+					</div>
+					<div className="space-y-1.5">
+						<Label htmlFor="s-wallet-pass-desc">Pass Description</Label>
+						<Input
+							id="s-wallet-pass-desc"
+							value={passDescription}
+							onChange={(e) => setPassDescription(e.target.value)}
+							placeholder="Contact card for John Doe"
+							maxLength={200}
+						/>
+					</div>
+				</FieldGroup>
+			</div>
+
+			{/* Appearance */}
+			<div className="space-y-1.5">
+				<p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+					Appearance
+				</p>
+				<FieldGroup columns={2}>
+					<div className="space-y-1.5">
+						<Label htmlFor="s-wallet-bg-color">Background Color</Label>
+						<div className="flex gap-2">
 							<Input
-								id="s-wallet-qr"
-								value={customQrUrl}
-								onChange={(e) => setCustomQrUrl(e.target.value)}
-								placeholder="https://yoursite.com"
+								id="s-wallet-bg-color"
+								value={backgroundColor}
+								onChange={(e) => setBackgroundColor(e.target.value)}
+								placeholder="#0FACED"
+								className="flex-1"
 							/>
-							<p className="text-[11px] text-muted-foreground">
-								URL encoded in the pass QR code. Leave empty to use your page
-								URL.
-							</p>
+							<input
+								type="color"
+								value={backgroundColor || "#0FACED"}
+								onChange={(e) => setBackgroundColor(e.target.value.toUpperCase())}
+								className="h-8 w-10 shrink-0 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
+							/>
 						</div>
 					</div>
-				</>
-			)}
+					<div className="space-y-1.5">
+						<Label htmlFor="s-wallet-fg-color">Foreground Color</Label>
+						<div className="flex gap-2">
+							<Input
+								id="s-wallet-fg-color"
+								value={foregroundColor}
+								onChange={(e) => setForegroundColor(e.target.value)}
+								placeholder="#091533"
+								className="flex-1"
+							/>
+							<input
+								type="color"
+								value={foregroundColor || "#091533"}
+								onChange={(e) => setForegroundColor(e.target.value.toUpperCase())}
+								className="h-8 w-10 shrink-0 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
+							/>
+						</div>
+					</div>
+					<div className="space-y-1.5">
+						<Label htmlFor="s-wallet-label-color">Label Color</Label>
+						<div className="flex gap-2">
+							<Input
+								id="s-wallet-label-color"
+								value={labelColor}
+								onChange={(e) => setLabelColor(e.target.value)}
+								placeholder="#FFFFFF"
+								className="flex-1"
+							/>
+							<input
+								type="color"
+								value={labelColor || "#FFFFFF"}
+								onChange={(e) => setLabelColor(e.target.value.toUpperCase())}
+								className="h-8 w-10 shrink-0 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
+							/>
+						</div>
+					</div>
+					<div className="space-y-1.5">
+						<ImageUploadField
+							label="Logo Image"
+							purpose="wallet_logo"
+							value={logoUrl}
+							onUploadComplete={setLogoUrl}
+							aspectRatio="banner"
+						/>
+					</div>
+				</FieldGroup>
+				<div className="mt-3 space-y-1.5">
+					<Label htmlFor="s-wallet-qr">Custom QR URL</Label>
+					<Input
+						id="s-wallet-qr"
+						value={customQrUrl}
+						onChange={(e) => setCustomQrUrl(e.target.value)}
+						placeholder="https://yoursite.com"
+					/>
+					<p className="text-[11px] text-muted-foreground">
+						URL encoded in the pass QR code. Leave empty to use your page
+						URL.
+					</p>
+				</div>
+			</div>
 
 			{isDirty && (
 				<Button
