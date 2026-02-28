@@ -16,6 +16,7 @@ import { PreviewContent } from "@/components/admin/preview-content";
 import { PageHeader } from "@/components/admin/page-header";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 import { ProfileSection } from "@/components/admin/appearance/profile-section";
 import { ThemePresetsSection } from "@/components/admin/appearance/theme-presets-section";
 import { ColorsSection } from "@/components/admin/appearance/colors-section";
@@ -119,6 +120,8 @@ export default function AppearancePage() {
 	const [brandingText, setBrandingText] = useState("");
 	const [brandingLink, setBrandingLink] = useState("");
 	const [showMobilePreview, setShowMobilePreview] = useState(false);
+
+	const { getAnimationProps } = useEntranceAnimation(!settingsQuery.isLoading);
 
 	const [systemPrefersDark, setSystemPrefersDark] = useState(false);
 	useEffect(() => {
@@ -331,11 +334,15 @@ export default function AppearancePage() {
 		</PhoneFrame>
 	);
 
+	const headerAnim = getAnimationProps(0);
+
 	return (
 		<div className="space-y-4">
 			<PageHeader
 				title="Appearance"
 				description={isDirty ? "You have unpublished changes" : "All changes are live"}
+				className={cn(headerAnim.className)}
+				style={headerAnim.style}
 				actions={
 					<>
 						{isDirty && (
@@ -360,7 +367,7 @@ export default function AppearancePage() {
 			{/* Two-column layout */}
 			<div className="flex gap-6">
 				{/* Settings column */}
-				<div className="flex-1 min-w-0 space-y-6">
+				<div className={cn("flex-1 min-w-0 space-y-6", getAnimationProps(1).className)} style={getAnimationProps(1).style}>
 					<ProfileSection
 						profileName={profileName}
 						profileBio={profileBio}
@@ -416,7 +423,7 @@ export default function AppearancePage() {
 				</div>
 
 				{/* Preview column (desktop) */}
-				<div className="hidden w-[320px] shrink-0 lg:block">
+				<div className={cn("hidden w-[320px] shrink-0 lg:block", getAnimationProps(2).className)} style={getAnimationProps(2).style}>
 					<div className="sticky top-16">
 						<div className="mb-3 flex items-center justify-between">
 							<span className="text-xs font-medium text-muted-foreground">Live Preview</span>

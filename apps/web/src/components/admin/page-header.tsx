@@ -9,6 +9,7 @@ interface PageHeaderProps {
 	badge?: React.ReactNode;
 	children?: React.ReactNode;
 	className?: string;
+	style?: React.CSSProperties;
 }
 
 export function PageHeader({
@@ -18,11 +19,13 @@ export function PageHeader({
 	badge,
 	children,
 	className,
+	style,
 }: PageHeaderProps) {
 	return (
 		<div
 			role="banner"
 			aria-label={title}
+			style={style}
 			className={cn(
 				"sticky top-12 md:top-0 z-20 -mx-2 sm:mx-0 md:rounded-2xl border-x-0 sm:border-x bg-white/50 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-lg shadow-black/5 dark:shadow-black/20 px-4 py-2 md:py-3",
 				children

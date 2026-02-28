@@ -24,6 +24,7 @@ import { EmptyState } from "@/components/admin/empty-state";
 import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 import { BlockEditPanel } from "@/components/admin/builder/block-edit-panel";
 import { BlockRow } from "@/components/admin/builder/block-row";
 import { BLOCK_TYPES, type BlockType, type Block, generateId } from "@/components/admin/builder/builder-constants";
@@ -39,6 +40,7 @@ export default function BuilderPage() {
 	const [newlyAddedId, setNewlyAddedId] = useState<string | null>(null);
 
 	const blocksQuery = useQuery(trpc.blocks.list.queryOptions());
+	const { getAnimationProps } = useEntranceAnimation(!blocksQuery.isLoading);
 	const blocks: Block[] = (blocksQuery.data as Block[] | undefined) ?? [];
 	const hasDraftQuery = useQuery(trpc.blocks.hasDraft.queryOptions());
 	const hasDrafts = hasDraftQuery.data?.hasDraft ?? false;
@@ -251,10 +253,16 @@ export default function BuilderPage() {
 		</PhoneFrame>
 	);
 
+	const headerAnim = getAnimationProps(0);
+	const listAnim = getAnimationProps(1);
+	const previewAnim = getAnimationProps(2);
+
 	return (
 		<div className="space-y-4">
 			<PageHeader
 				title="Builder"
+				className={cn(headerAnim.className)}
+				style={headerAnim.style}
 				description={hasDrafts ? "You have unpublished changes" : "All changes are live"}
 				actions={
 					<>
@@ -329,7 +337,7 @@ export default function BuilderPage() {
 			{/* Two panel layout */}
 			<div className="flex gap-6">
 				{/* Left panel: block list */}
-				<div className="flex-1 min-w-0 space-y-2">
+				<div className={cn("flex-1 min-w-0 space-y-2", listAnim.className)} style={listAnim.style}>
 					{blocksQuery.isLoading ? (
 						<SkeletonRows count={3} />
 					) : blocks.length === 0 ? (
@@ -359,7 +367,7 @@ export default function BuilderPage() {
 				</div>
 
 				{/* Right panel: phone preview (desktop) */}
-				<div className="hidden w-[380px] shrink-0 lg:block">
+				<div className={cn("hidden w-[380px] shrink-0 lg:block", previewAnim.className)} style={previewAnim.style}>
 					<div className="sticky top-6">
 						<div className="mb-3 flex items-center justify-between">
 							<span className="text-xs font-medium">Preview</span>
