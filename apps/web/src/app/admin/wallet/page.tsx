@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Wallet, Settings2 } from "lucide-react";
+import { useState, useCallback, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Settings2, Save, Undo2, Info } from "lucide-react";
 import { trpc } from "@/utils/trpc";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatCard } from "@/components/admin/stat-card";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import {
 	WalletSection,
 	type WalletLivePreview,
@@ -16,6 +18,7 @@ import { WalletPassPreview } from "@/components/admin/wallet-pass-preview";
 import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 
 export default function WalletPage() {
+	const qc = useQueryClient();
 	const configQuery = useQuery(trpc.wallet.getConfig.queryOptions());
 	const previewQuery = useQuery(trpc.wallet.generatePreview.queryOptions());
 	const signingQuery = useQuery(trpc.wallet.getSigningStatus.queryOptions());
@@ -27,6 +30,28 @@ export default function WalletPage() {
 	const handlePreviewChange = useCallback((state: WalletLivePreview) => {
 		setLivePreview(state);
 	}, []);
+
+	const [isDirty, setIsDirty] = useState(false);
+	const [isSaving, setIsSaving] = useState(false);
+	const walletSaveRef = useRef<(() => Promise<void>) | null>(null);
+
+	useUnsavedChanges(isDirty);
+
+	const handleSave = async () => {
+		if (!walletSaveRef.current) return;
+		setIsSaving(true);
+		try {
+			await walletSaveRef.current();
+		} finally {
+			setIsSaving(false);
+		}
+	};
+
+	const handleDiscard = () => {
+		qc.invalidateQueries({
+			queryKey: trpc.wallet.getConfig.queryOptions().queryKey,
+		});
+	};
 
 	const organizationName = configQuery.data?.wallet_organization_name ?? "";
 	const isConfigured = !!(
@@ -48,7 +73,34 @@ export default function WalletPage() {
 				title="Wallet Pass"
 				className={cn(headerAnim.className)}
 				style={headerAnim.style}
-				description="Generate Apple Wallet passes for your page"
+				description={
+					isDirty
+						? "You have unsaved changes"
+						: "Generate Apple Wallet passes for your page"
+				}
+				actions={
+					<>
+						{isDirty && (
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={handleDiscard}
+							>
+								<Undo2 className="mr-1.5 h-3.5 w-3.5" />
+								Discard
+							</Button>
+						)}
+						<Button
+							size="sm"
+							variant={isDirty ? "default" : "outline"}
+							disabled={!isDirty || isSaving}
+							onClick={handleSave}
+						>
+							<Save className="mr-1.5 h-3.5 w-3.5" />
+							{isSaving ? "Saving..." : "Save"}
+						</Button>
+					</>
+				}
 			/>
 
 			{/* Status card */}
@@ -76,29 +128,69 @@ export default function WalletPage() {
 				{/* Left: General Settings + Download */}
 				<Card>
 					<CardContent className="space-y-6 pt-2">
-						<WalletSection onPreviewChange={handlePreviewChange} />
+						<WalletSection
+							onPreviewChange={handlePreviewChange}
+							onDirtyChange={setIsDirty}
+							saveRef={walletSaveRef}
+						/>
 
-						{/* Download */}
-						<div>
-							{isConfigured ? (
+						{/* Download — Apple guidelines: use official badge, never show dimmed state */}
+						{isConfigured ? (
+							<div className="flex justify-center">
 								<a
 									href="/api/wallet-pass"
-									className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-80 dark:bg-white dark:text-black"
+									className="transition-opacity hover:opacity-80"
 								>
-									<Wallet className="h-4 w-4" />
-									Add to Apple Wallet
+									{/* Official Apple "Add to Apple Wallet" badge */}
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="240"
+										height="40"
+										viewBox="0 0 240 40"
+										role="img"
+										aria-label="Add to Apple Wallet"
+									>
+										<rect
+											width="240"
+											height="40"
+											rx="6"
+											className="fill-black dark:fill-white"
+										/>
+										<rect
+											x="0.75"
+											y="0.75"
+											width="238.5"
+											height="38.5"
+											rx="5.25"
+											className="fill-black dark:fill-[#0d0d0d]"
+										/>
+										<text
+											x="120"
+											y="23"
+											textAnchor="middle"
+											dominantBaseline="middle"
+											className="fill-white dark:fill-black"
+											fontFamily="system-ui, -apple-system, sans-serif"
+											fontSize="13"
+											fontWeight="500"
+										>
+											Add to Apple Wallet
+										</text>
+									</svg>
 								</a>
-							) : (
-								<button
-									type="button"
-									disabled
-									className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-black/40 px-5 py-2.5 text-sm font-medium text-white/60 cursor-not-allowed dark:bg-white/20 dark:text-white/40"
-								>
-									<Wallet className="h-4 w-4" />
-									Add to Apple Wallet
-								</button>
-							)}
-						</div>
+							</div>
+						) : (
+							<div className="relative overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] px-3.5 py-2.5">
+								<div className="absolute inset-y-0 left-0 w-0.5 bg-primary/50" />
+								<div className="flex items-start gap-2.5 pl-1.5">
+									<Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+									<p className="text-xs leading-relaxed text-muted-foreground">
+										Complete the environment configuration above to enable
+										wallet pass generation.
+									</p>
+								</div>
+							</div>
+						)}
 					</CardContent>
 				</Card>
 
