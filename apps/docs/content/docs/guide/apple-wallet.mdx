@@ -9,14 +9,32 @@ LinkDen supports Apple Wallet pass configuration. When enabled, visitors can dow
 
 ## Enabling Apple Wallet
 
-Toggle the Apple Wallet feature in `/admin/settings` under the **Apple Wallet** section. Configure:
+Toggle the Apple Wallet feature in `/admin/wallet` under the **Configuration** section. Configure:
 
 | Field | Description |
 |-------|-------------|
 | Enable Apple Wallet | Toggle the feature on/off |
 | Team ID | Your Apple Developer team identifier |
 | Pass Type ID | Registered pass type identifier |
+| Organization Name | Name shown on the pass (e.g., your company) |
+| Pass Description | Brief description of the pass |
+| Background Color | Hex color for the pass background (e.g., `#FFFFFF`) |
+| Foreground Color | Hex color for the pass text (e.g., `#000000`) |
+| Label Color | Hex color for the pass labels (e.g., `#666666`) |
+| Logo URL | URL to a logo image displayed on the pass |
 | Custom QR URL | Optional custom URL for the QR code on the pass |
+
+## Environment Variables
+
+Signing certificates are stored as environment variables for security and are **not** saved in the database. Set these on your deployment platform:
+
+| Variable | Description |
+|----------|-------------|
+| `WALLET_SIGNER_CERT` | Base64-encoded signer certificate PEM |
+| `WALLET_SIGNER_KEY` | Base64-encoded signer private key PEM |
+| `WALLET_WWDR_CERT` | Base64-encoded Apple WWDR certificate |
+
+The **Signing Status** banner in the admin UI shows whether each certificate is configured.
 
 ## Prerequisites
 
@@ -55,7 +73,7 @@ To generate Apple Wallet passes, you need:
 
 ### 4. Convert to Base64
 
-Convert the certificates to base64 strings:
+Convert the certificates to base64 strings and set them as environment variables:
 
 ```bash
 # Download the Apple WWDR certificate
@@ -73,12 +91,29 @@ openssl pkcs12 -in pass.p12 -nocerts -out signer_key.pem
 base64 -i signer_key.pem | tr -d '\n' > signer_key_base64.txt
 ```
 
+Then set the environment variables on your deployment:
+
+```bash
+WALLET_SIGNER_CERT=<contents of signer_cert_base64.txt>
+WALLET_SIGNER_KEY=<contents of signer_key_base64.txt>
+WALLET_WWDR_CERT=<contents of wwdr_base64.txt>
+```
+
 ### 5. Configure in Admin Settings
 
-Navigate to `/admin/settings` and fill in the **Apple Wallet** section:
+Navigate to `/admin/wallet` and fill in the **Configuration** section:
 
+**Identity:**
 - **Team ID** -- Your Apple Developer team identifier.
 - **Pass Type ID** -- The identifier you registered (e.g., `pass.com.yourdomain.linkden`).
+- **Organization Name** -- The name shown on the pass.
+- **Pass Description** -- A brief description of the pass.
+
+**Appearance:**
+- **Background Color** -- Hex color for the pass background.
+- **Foreground Color** -- Hex color for the pass text.
+- **Label Color** -- Hex color for the pass field labels.
+- **Logo URL** -- URL to a logo image for the pass.
 - **Custom QR URL** -- Optional URL for the QR code on the pass.
 
 ## Pass Preview
@@ -91,6 +126,7 @@ The `wallet.generatePreview` API procedure returns your profile data, enabled li
 |-----------|-------------|
 | `wallet.getConfig` | Get current wallet settings |
 | `wallet.updateConfig` | Update wallet settings |
+| `wallet.getSigningStatus` | Check if signing certificates are configured |
 | `wallet.generatePreview` | Generate pass preview data |
 
 See [API Reference](/docs/reference/api) for the full procedure reference.

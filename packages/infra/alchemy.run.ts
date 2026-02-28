@@ -26,6 +26,9 @@ export const web = await Nextjs("web", {
     CORS_ORIGIN: alchemy.env.CORS_ORIGIN!,
     BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
     BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
+    WALLET_SIGNER_CERT: alchemy.secret.env.WALLET_SIGNER_CERT ?? "",
+    WALLET_SIGNER_KEY: alchemy.secret.env.WALLET_SIGNER_KEY ?? "",
+    WALLET_WWDR_CERT: alchemy.secret.env.WALLET_WWDR_CERT ?? "",
   },
   dev: {
     env: {
@@ -44,6 +47,9 @@ export const server = await Worker("server", {
     CORS_ORIGIN: alchemy.env.CORS_ORIGIN!,
     BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
     BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
+    WALLET_SIGNER_CERT: alchemy.secret.env.WALLET_SIGNER_CERT ?? "",
+    WALLET_SIGNER_KEY: alchemy.secret.env.WALLET_SIGNER_KEY ?? "",
+    WALLET_WWDR_CERT: alchemy.secret.env.WALLET_WWDR_CERT ?? "",
   },
   dev: {
     port: 3000,
