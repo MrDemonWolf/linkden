@@ -73,6 +73,7 @@ interface SavedState {
 	emailApiKey: string;
 	emailFrom: string;
 	contactFormEnabled: boolean;
+	adminBrandingEnabled: boolean;
 }
 
 function buildSavedState(s: Record<string, string>): SavedState {
@@ -87,6 +88,7 @@ function buildSavedState(s: Record<string, string>): SavedState {
 		emailApiKey: s.email_api_key ?? "",
 		emailFrom: s.email_from ?? "",
 		contactFormEnabled: s.contact_form_enabled === "true",
+		adminBrandingEnabled: s.admin_branding_enabled !== "false",
 	};
 }
 
@@ -122,6 +124,7 @@ export default function SettingsPage() {
 		emailApiKey: "",
 		emailFrom: "",
 		contactFormEnabled: false,
+		adminBrandingEnabled: true,
 	});
 
 	// SEO
@@ -142,6 +145,9 @@ export default function SettingsPage() {
 	// Contact Form
 	const [contactFormEnabled, setContactFormEnabled] = useState(false);
 
+	// Admin Branding
+	const [adminBrandingEnabled, setAdminBrandingEnabled] = useState(true);
+
 	// Load settings
 	useEffect(() => {
 		if (settingsQuery.data) {
@@ -157,6 +163,7 @@ export default function SettingsPage() {
 			setEmailApiKey(s.emailApiKey);
 			setEmailFrom(s.emailFrom);
 			setContactFormEnabled(s.contactFormEnabled);
+			setAdminBrandingEnabled(s.adminBrandingEnabled);
 		}
 	}, [settingsQuery.data]);
 
@@ -170,7 +177,8 @@ export default function SettingsPage() {
 		emailProvider !== savedState.emailProvider ||
 		emailApiKey !== savedState.emailApiKey ||
 		emailFrom !== savedState.emailFrom ||
-		contactFormEnabled !== savedState.contactFormEnabled;
+		contactFormEnabled !== savedState.contactFormEnabled ||
+		adminBrandingEnabled !== savedState.adminBrandingEnabled;
 
 	useUnsavedChanges(isDirty);
 
@@ -191,6 +199,7 @@ export default function SettingsPage() {
 		setEmailApiKey(savedState.emailApiKey);
 		setEmailFrom(savedState.emailFrom);
 		setContactFormEnabled(savedState.contactFormEnabled);
+		setAdminBrandingEnabled(savedState.adminBrandingEnabled);
 	};
 
 	const handleSave = async () => {
@@ -209,6 +218,10 @@ export default function SettingsPage() {
 					key: "contact_form_enabled",
 					value: String(contactFormEnabled),
 				},
+				{
+					key: "admin_branding_enabled",
+					value: String(adminBrandingEnabled),
+				},
 			]);
 			setSavedState({
 				seoTitle,
@@ -221,8 +234,12 @@ export default function SettingsPage() {
 				emailApiKey,
 				emailFrom,
 				contactFormEnabled,
+				adminBrandingEnabled,
 			});
 			invalidate();
+			qc.invalidateQueries({
+				queryKey: trpc.settings.get.queryOptions({ key: "admin_branding_enabled" }).queryKey,
+			});
 			toast.success("Settings saved");
 		} catch {
 			toast.error("Failed to save settings");
@@ -341,6 +358,8 @@ export default function SettingsPage() {
 							trpc.version.checkUpdate.queryOptions().queryKey,
 					})
 				}
+				adminBrandingEnabled={adminBrandingEnabled}
+				onAdminBrandingEnabledChange={setAdminBrandingEnabled}
 			/>
 		),
 		migration: <MigrationSection onImportComplete={invalidate} />,
