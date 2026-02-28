@@ -2,20 +2,34 @@ import { router, protectedProcedure } from "../index";
 import { db } from "@linkden/db";
 import { siteSettings, block, user } from "@linkden/db/schema/index";
 import { eq, asc } from "drizzle-orm";
+import { env } from "@linkden/env/server";
 import { z } from "zod";
+
+const hexColorRegex = /^#[0-9a-fA-F]{6}$/;
+
+const walletKeys = [
+	"wallet_pass_enabled",
+	"wallet_team_id",
+	"wallet_pass_type_id",
+	"wallet_custom_qr_url",
+	"wallet_organization_name",
+	"wallet_pass_description",
+	"wallet_background_color",
+	"wallet_foreground_color",
+	"wallet_label_color",
+	"wallet_logo_url",
+];
+
+function stripHtml(str: string): string {
+	return str.replace(/<[^>]*>/g, "");
+}
 
 export const walletRouter = router({
 	getConfig: protectedProcedure.query(async () => {
-		const keys = [
-			"wallet_pass_enabled",
-			"wallet_team_id",
-			"wallet_pass_type_id",
-			"wallet_custom_qr_url",
-		];
 		const results = await db.select().from(siteSettings);
 		const config: Record<string, string> = {};
 		for (const row of results) {
-			if (keys.includes(row.key)) {
+			if (walletKeys.includes(row.key)) {
 				config[row.key] = row.value;
 			}
 		}
@@ -29,6 +43,24 @@ export const walletRouter = router({
 				teamId: z.string().optional(),
 				passTypeId: z.string().optional(),
 				customQrUrl: z.string().optional(),
+				organizationName: z.string().max(100).optional(),
+				passDescription: z.string().max(200).optional(),
+				backgroundColor: z
+					.string()
+					.regex(hexColorRegex)
+					.optional()
+					.or(z.literal("")),
+				foregroundColor: z
+					.string()
+					.regex(hexColorRegex)
+					.optional()
+					.or(z.literal("")),
+				labelColor: z
+					.string()
+					.regex(hexColorRegex)
+					.optional()
+					.or(z.literal("")),
+				logoUrl: z.string().url().optional().or(z.literal("")),
 			}),
 		)
 		.mutation(async ({ input }) => {
@@ -50,6 +82,36 @@ export const walletRouter = router({
 					key: "wallet_custom_qr_url",
 					value: input.customQrUrl,
 				});
+			if (input.organizationName !== undefined)
+				updates.push({
+					key: "wallet_organization_name",
+					value: stripHtml(input.organizationName),
+				});
+			if (input.passDescription !== undefined)
+				updates.push({
+					key: "wallet_pass_description",
+					value: stripHtml(input.passDescription),
+				});
+			if (input.backgroundColor !== undefined)
+				updates.push({
+					key: "wallet_background_color",
+					value: input.backgroundColor,
+				});
+			if (input.foregroundColor !== undefined)
+				updates.push({
+					key: "wallet_foreground_color",
+					value: input.foregroundColor,
+				});
+			if (input.labelColor !== undefined)
+				updates.push({
+					key: "wallet_label_color",
+					value: input.labelColor,
+				});
+			if (input.logoUrl !== undefined)
+				updates.push({
+					key: "wallet_logo_url",
+					value: input.logoUrl,
+				});
 
 			for (const { key, value } of updates) {
 				const [existing] = await db
@@ -67,6 +129,14 @@ export const walletRouter = router({
 			}
 			return { success: true };
 		}),
+
+	getSigningStatus: protectedProcedure.query(() => {
+		return {
+			signerCert: !!env.WALLET_SIGNER_CERT,
+			signerKey: !!env.WALLET_SIGNER_KEY,
+			wwdrCert: !!env.WALLET_WWDR_CERT,
+		};
+	}),
 
 	generatePreview: protectedProcedure.query(async () => {
 		const [profile] = await db.select().from(user).limit(1);
