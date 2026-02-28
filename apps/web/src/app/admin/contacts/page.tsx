@@ -19,6 +19,7 @@ import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 
 type FilterMode = "all" | "unread" | "read";
 
@@ -44,6 +45,7 @@ export default function ContactsPage() {
 		trpc.contacts.list.queryOptions(filterParam),
 	);
 	const contacts = contactsQuery.data ?? [];
+	const { getAnimationProps } = useEntranceAnimation(!contactsQuery.isLoading);
 
 	const markRead = useMutation(trpc.contacts.markRead.mutationOptions());
 	const markUnread = useMutation(trpc.contacts.markUnread.mutationOptions());
@@ -93,11 +95,16 @@ export default function ContactsPage() {
 		{ value: "read", label: "Read" },
 	];
 
+	const headerAnim = getAnimationProps(0);
+	const listAnim = getAnimationProps(1);
+
 	return (
 		<div className="space-y-6">
 			<PageHeader
 				title="Contacts"
 				description="Manage contact form submissions"
+				className={cn(headerAnim.className)}
+				style={headerAnim.style}
 				actions={
 					<div className="flex items-center gap-1">
 						<Filter className="mr-1 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
@@ -117,6 +124,7 @@ export default function ContactsPage() {
 			/>
 
 			{/* Contact list */}
+			<div className={cn(listAnim.className)} style={listAnim.style}>
 			{contactsQuery.isLoading ? (
 				<SkeletonRows count={4} />
 			) : contacts.length === 0 ? (
@@ -286,6 +294,7 @@ export default function ContactsPage() {
 				/>
 				</>
 			)}
+			</div>
 		</div>
 	);
 }

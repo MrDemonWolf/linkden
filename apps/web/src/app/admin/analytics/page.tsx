@@ -22,8 +22,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatCard } from "@/components/admin/stat-card";
+import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 
 type Period = "7d" | "30d" | "90d";
 
@@ -36,6 +38,7 @@ const chartConfig: ChartConfig = {
 
 export default function AnalyticsPage() {
 	const [period, setPeriod] = useState<Period>("7d");
+	const { getAnimationProps } = useEntranceAnimation(true);
 
 	const overview = useQuery(trpc.analytics.overview.queryOptions({ period }));
 	const viewsOverTime = useQuery(
@@ -59,11 +62,18 @@ export default function AnalyticsPage() {
 		{ value: "90d", label: "90 days" },
 	];
 
+	const headerAnim = getAnimationProps(0);
+	const statsAnim = getAnimationProps(1);
+	const chartAnim = getAnimationProps(2);
+	const gridAnim = getAnimationProps(3);
+
 	return (
 		<div className="space-y-6">
 			<PageHeader
 				title="Analytics"
 				description="Track your page performance"
+				className={cn(headerAnim.className)}
+				style={headerAnim.style}
 				actions={
 					<div className="flex gap-1">
 						{periods.map((p) => (
@@ -82,7 +92,7 @@ export default function AnalyticsPage() {
 			/>
 
 			{/* Stat cards */}
-			<div className="grid gap-3 sm:grid-cols-2">
+			<div className={cn("grid gap-3 sm:grid-cols-2", statsAnim.className)} style={statsAnim.style}>
 				<StatCard
 					icon={Eye}
 					label="Total Views"
@@ -100,7 +110,7 @@ export default function AnalyticsPage() {
 			</div>
 
 			{/* Views over time chart */}
-			<Card>
+			<Card className={cn(chartAnim.className)} style={chartAnim.style}>
 				<CardHeader>
 					<h2>
 						<CardTitle className="flex items-center gap-1.5">
@@ -170,7 +180,7 @@ export default function AnalyticsPage() {
 			</Card>
 
 			{/* Bottom grid */}
-			<div className="grid gap-4 md:grid-cols-3">
+			<div className={cn("grid gap-4 md:grid-cols-3", gridAnim.className)} style={gridAnim.style}>
 				{/* Top Links */}
 				<Card>
 					<CardHeader>
