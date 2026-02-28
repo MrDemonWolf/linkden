@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { ThemeColors } from "./public-page";
 import { usePreview } from "./preview-context";
-import { ContactFormModal } from "./contact-form-modal";
+import { ContactFormModal, getContrastColor } from "./contact-form-modal";
 
 interface ContactFormBlockProps {
 	block: {
@@ -84,8 +84,8 @@ export function ContactFormBlock({
 			style.color = themeColors.cardFg;
 			style.backgroundColor = "transparent";
 		} else {
-			style.backgroundColor = themeColors.card;
-			style.color = themeColors.cardFg;
+			style.backgroundColor = themeColors.primary;
+			style.color = getContrastColor(themeColors.primary);
 		}
 	}
 
@@ -98,7 +98,7 @@ export function ContactFormBlock({
 					: "border-2 border-gray-300 text-gray-900 hover:bg-gray-50"
 				: colorMode === "dark"
 					? "bg-gray-800 text-white hover:bg-gray-700"
-					: "bg-white text-gray-900 shadow-sm hover:shadow-md";
+					: "bg-white text-gray-900 border border-gray-200 shadow-sm hover:shadow-md";
 
 	return (
 		<div role="listitem" className="ld-contact-block">

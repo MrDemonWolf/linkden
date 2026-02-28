@@ -122,7 +122,7 @@ function FloatingField({
 	);
 }
 
-function getContrastColor(hex: string): string {
+export function getContrastColor(hex: string): string {
 	const r = parseInt(hex.slice(1, 3), 16) / 255;
 	const g = parseInt(hex.slice(3, 5), 16) / 255;
 	const b = parseInt(hex.slice(5, 7), 16) / 255;
@@ -142,7 +142,21 @@ export function ContactFormModal({
 	onClose,
 }: ContactFormModalProps) {
 	const modalRef = useRef<HTMLDivElement>(null);
-	const successMessage = (config.successMessage as string) || "Thanks for reaching out!";
+	const preset = config.preset as string | undefined;
+	const presetTitles: Record<string, string> = {
+		contact: "Contact Me",
+		connect: "Connect with Me",
+		feedback: "Feedback",
+		rsvp: "RSVP",
+	};
+	const presetSuccessMessages: Record<string, string> = {
+		contact: "Thanks for reaching out!",
+		connect: "Thanks for connecting!",
+		feedback: "Thanks for your feedback!",
+		rsvp: "Your RSVP has been received!",
+	};
+	const modalTitle = blockTitle || presetTitles[preset || ""] || "Contact Me";
+	const successMessage = (config.successMessage as string) || presetSuccessMessages[preset || ""] || "Thanks for reaching out!";
 	const showPhone = config.showPhone as boolean | undefined;
 	const showSubject = config.showSubject as boolean | undefined;
 	const showCompany = config.showCompany as boolean | undefined;
@@ -281,13 +295,13 @@ export function ContactFormModal({
 				ref={modalRef}
 				role="dialog"
 				aria-modal="true"
-				aria-label={blockTitle || "Contact Me"}
+				aria-label={modalTitle}
 				className="w-full max-w-md rounded-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
 				style={cardStyle}
 			>
 				{/* Header */}
 				<div className="mb-5 flex items-center justify-between">
-					<h3 className="text-lg font-semibold">{blockTitle || "Contact Me"}</h3>
+					<h3 className="text-lg font-semibold">{modalTitle}</h3>
 					<button
 						type="button"
 						onClick={onClose}
