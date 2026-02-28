@@ -297,11 +297,11 @@ export default function BuilderPage() {
 							{publishAll.isPending ? "Publishing..." : "Publish"}
 						</Button>
 						<DropdownMenu>
-							<DropdownMenuTrigger className={buttonVariants({ size: "sm" })}>
-								<Plus className="mr-1.5 h-3.5 w-3.5" />
+							<DropdownMenuTrigger className={buttonVariants({ size: "default" })}>
+								<Plus className="h-3.5 w-3.5" />
 								<span className="hidden sm:inline">Add Block</span>
 								<span className="sm:hidden">Add</span>
-								<ChevronDown className="ml-1 h-3 w-3" />
+								<ChevronDown className="h-3 w-3" />
 							</DropdownMenuTrigger>
 							<DropdownMenuContent className="w-56">
 								{BLOCK_TYPES.map((item) => (
