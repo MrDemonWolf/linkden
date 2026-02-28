@@ -40,7 +40,8 @@ export async function generateMetadata(): Promise<Metadata> {
 		const name = encodeURIComponent(settings.profile_name || "My Links");
 		const bio = encodeURIComponent(settings.bio || "");
 		const theme = encodeURIComponent(settings.custom_primary || "#6366f1");
-		ogImageUrl = `/api/og?template=${template}&name=${name}&bio=${bio}&theme=${theme}`;
+		const avatar = settings.avatar_url ? `&avatar=${encodeURIComponent(settings.avatar_url)}` : "";
+		ogImageUrl = `/api/og?template=${template}&name=${name}&bio=${bio}&theme=${theme}${avatar}`;
 	} else if (settings.seo_og_image) {
 		ogImageUrl = settings.seo_og_image;
 	}
