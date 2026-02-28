@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Save, CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, CircleAlert } from "lucide-react";
 import { trpc } from "@/utils/trpc";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FieldGroup } from "./field-group";
@@ -37,27 +36,24 @@ function EnvironmentCheckBanner() {
 	return (
 		<div className="space-y-1.5">
 			<h2 className="text-sm font-semibold">Environment Check</h2>
-			<div
-				className={`rounded-md border px-3 py-2.5 text-xs ${
-					allSet
-						? "border-emerald-500/30 bg-emerald-500/5"
-						: "border-amber-500/30 bg-amber-500/5"
-				}`}
-			>
-				<div className="flex flex-wrap gap-x-4 gap-y-1">
+			<div className="relative overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-xs">
+				<div
+					className={`absolute inset-y-0 left-0 w-0.5 ${allSet ? "bg-emerald-500" : "bg-amber-400"}`}
+				/>
+				<div className="flex flex-wrap gap-x-4 gap-y-1 pl-1.5">
 					{items.map((item) => (
 						<span key={item.label} className="inline-flex items-center gap-1">
 							{item.ok ? (
 								<CheckCircle2 className="h-3 w-3 text-emerald-500" />
 							) : (
-								<XCircle className="h-3 w-3 text-red-500" />
+								<CircleAlert className="h-3 w-3 text-amber-400" />
 							)}
 							<span className="text-muted-foreground">{item.label}</span>
 						</span>
 					))}
 				</div>
 				{!allSet && (
-					<p className="mt-1.5 text-[11px] text-muted-foreground">
+					<p className="mt-1.5 pl-1.5 text-[11px] leading-relaxed text-muted-foreground">
 						Set missing values as environment variables to enable the Add to
 						Apple Wallet button. See the docs for setup instructions.
 					</p>
@@ -81,9 +77,15 @@ export interface WalletLivePreview {
 
 interface WalletSectionProps {
 	onPreviewChange?: (state: WalletLivePreview) => void;
+	onDirtyChange?: (dirty: boolean) => void;
+	saveRef?: React.MutableRefObject<(() => Promise<void>) | null>;
 }
 
-export function WalletSection({ onPreviewChange }: WalletSectionProps) {
+export function WalletSection({
+	onPreviewChange,
+	onDirtyChange,
+	saveRef,
+}: WalletSectionProps) {
 	const qc = useQueryClient();
 	const configQuery = useQuery(trpc.wallet.getConfig.queryOptions());
 	const updateConfig = useMutation(trpc.wallet.updateConfig.mutationOptions());
@@ -177,7 +179,11 @@ export function WalletSection({ onPreviewChange }: WalletSectionProps) {
 		onPreviewChange,
 	]);
 
-	const handleSave = async () => {
+	useEffect(() => {
+		onDirtyChange?.(isDirty);
+	}, [isDirty, onDirtyChange]);
+
+	const handleSave = useCallback(async () => {
 		try {
 			await updateConfig.mutateAsync({
 				showEmail,
@@ -206,7 +212,23 @@ export function WalletSection({ onPreviewChange }: WalletSectionProps) {
 		} catch {
 			toast.error("Failed to save Wallet Pass settings");
 		}
-	};
+	}, [
+		updateConfig,
+		showEmail,
+		showName,
+		showQrCode,
+		organizationName,
+		passDescription,
+		backgroundColor,
+		foregroundColor,
+		labelColor,
+		logoUrl,
+		qc,
+	]);
+
+	useEffect(() => {
+		if (saveRef) saveRef.current = handleSave;
+	}, [saveRef, handleSave]);
 
 	if (configQuery.isLoading) {
 		return (
@@ -373,21 +395,6 @@ export function WalletSection({ onPreviewChange }: WalletSectionProps) {
 				</div>
 			</div>
 
-			{isDirty && (
-				<div className="flex items-center justify-between rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2">
-					<span className="text-xs text-amber-600 dark:text-amber-400">
-						Unsaved changes
-					</span>
-					<Button
-						size="sm"
-						onClick={handleSave}
-						disabled={updateConfig.isPending}
-					>
-						<Save className="mr-1.5 h-3.5 w-3.5" />
-						{updateConfig.isPending ? "Saving..." : "Save Changes"}
-					</Button>
-				</div>
-			)}
 		</div>
 	);
 }
