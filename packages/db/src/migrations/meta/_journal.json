@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1771865956451,
+      "tag": "0000_public_yellow_claw",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1771870814801,
+      "tag": "0001_misty_synch",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1771881167080,
+      "tag": "0002_busy_wallflower",
+      "breakpoints": true
+    }
+  ]
+}

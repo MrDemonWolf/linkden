@@ -1,20 +1,9 @@
 {
   "title": "Documentation",
   "pages": [
-    "---Getting Started---",
     "getting-started",
-    "---Features---",
-    "features",
-    "---Admin Panel---",
-    "admin",
-    "---API---",
-    "api",
-    "---Self-Hosting---",
+    "guide",
     "self-hosting",
-    "---Resources---",
-    "faq",
-    "changelog",
-    "privacy-policy",
-    "terms-of-service"
+    "reference"
   ]
 }

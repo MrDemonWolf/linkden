@@ -1,60 +1,55 @@
 # Dependencies
-node_modules/
-.pnpm-store/
+node_modules
+.pnp
+.pnp.js
 
 # Build outputs
-dist/
-.next/
-.output/
-.turbo/
-out/
-.source/
-.open-next/
-
-# Environment — .env is committed (production URLs, no secrets)
-# Use .env.local for local dev overrides (gitignored)
-.env.local
-.env.*.local
-.dev.vars
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-npm-debug.log*
-pnpm-debug.log*
-
-# Testing
-test-results/
-playwright-report/
-coverage/
-
-# Cloudflare
-.wrangler/
-.alchemy/
-
-# Drizzle
-packages/db/drizzle/*.sql
-
-# TypeScript
+dist
+build
+.next
+.source
 *.tsbuildinfo
 
-# Clerk
-.clerk/
+# Environment variables
+.env
+.env*.local
 
-# Local files (not committed)
-TODO.local.md
-*.local.md
-
-# Backup files
-*.bak
-
-# OS files
+# IDEs and editors
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
+*~
 .DS_Store
-Thumbs.db
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Turbo
+.turbo
+
+# Better-T-Stack
+.alchemy
+
+# Testing
+coverage
+.nyc_output
+
+# Claude Code
+.claude
+
+# Misc
+*.tgz
+.cache
+tmp
+temp

@@ -1,0 +1,136 @@
+---
+title: Theming
+description: Understand the theming system including admin vs. public page themes, presets, custom colors, and CSS variables.
+---
+
+# Theming
+
+LinkDen has two independent theming systems: one for the **admin panel** and one for the **public page**. This separation ensures that customizing your public page appearance never affects the admin experience, and vice versa.
+
+## Admin Theme vs. Public Page Theme
+
+### Admin Panel Theme
+
+The admin panel uses `next-themes` to manage its Light/Dark/System toggle. This is a standard Next.js theme that:
+
+- Persists across sessions via `localStorage`.
+- Supports "System" mode that follows your OS preference.
+- Uses Tailwind CSS dark mode classes (`dark:` variants).
+- Is configured in the **Admin Theme** card on the Appearance page.
+
+The admin theme has no connection to the public page theme presets. Selecting "Neon Cyber" for your public page does not turn your admin panel purple.
+
+### Public Page Theme
+
+The public page theme is controlled by:
+
+1. A **theme preset** (one of 7 built-in presets).
+2. **Custom color overrides** (primary, secondary, accent, background).
+3. A **default color mode** (light, dark, or system).
+4. Optional **custom CSS**.
+
+These settings are stored in the database and applied to the public page via CSS custom properties.
+
+---
+
+## Theme Presets
+
+Each preset defines a complete set of CSS variables for both light and dark modes. The presets are defined in `@linkden/ui/themes` and include:
+
+| Preset | Primary | Style Notes |
+|--------|---------|-------------|
+| **Default** | `#0FACED` (Cyan) | Clean, modern |
+| **Corporate Classic** | `#1E3A5F` (Navy) | Professional, subtle |
+| **Corporate Modern** | `#0D9488` (Teal) | Contemporary |
+| **Hacker Terminal** | `#16A34A` (Green) | Monospace-inspired, square corners |
+| **Neon Cyber** | `#7C3AED` (Purple) | Vibrant, large border radius |
+| **Furry Pastel** | `#EC4899` (Pink) | Warm, fully rounded |
+| **Furry Bold** | `#EA580C` (Orange) | High energy |
+
+When you select a preset, the color pickers automatically update to reflect the preset's light-mode palette. You can then override individual colors.
+
+---
+
+## Custom Color Overrides
+
+Four colors can be overridden independently:
+
+| Color | CSS Variable | Purpose |
+|-------|-------------|---------|
+| Primary | `--ld-primary` | Main accent, buttons, links |
+| Secondary | `--ld-secondary` | Supporting elements |
+| Accent | `--ld-accent` | Highlights, emphasis |
+| Background | `--ld-background` | Page background |
+
+Custom overrides are stored as **light-mode values**. They apply only when the public page is in light mode. In dark mode, the full preset-defined dark palette is used instead. This prevents color contrast issues that would arise from applying light-mode colors on a dark background.
+
+---
+
+## Color Mode
+
+The public page supports three color modes:
+
+| Mode | Behavior |
+|------|----------|
+| **Light** | Always uses the light variant |
+| **Dark** | Always uses the dark variant |
+| **System** | Matches the visitor's OS preference (`prefers-color-scheme`) |
+
+### System Mode Detection
+
+When "System" is selected:
+
+- The **preview** in the admin panel detects your current OS preference using `window.matchMedia("(prefers-color-scheme: dark)")` and updates in real-time if you change your OS setting.
+- The **public page** uses the visitor's browser-reported preference.
+- Visitors can still manually toggle between light and dark with the on-page theme button.
+
+### Mode Priority
+
+The initial mode on the public page is resolved in this order:
+
+1. Visitor's saved preference (from `localStorage`).
+2. The default color mode set by the admin.
+3. The visitor's OS preference (if mode is "system").
+
+---
+
+## CSS Variables Reference
+
+Theme presets define the following CSS custom properties. All are available for use in custom CSS.
+
+| Variable | Description |
+|----------|-------------|
+| `--ld-primary` | Primary accent color |
+| `--ld-secondary` | Secondary color |
+| `--ld-accent` | Accent/highlight color |
+| `--ld-action` | Action/button color |
+| `--ld-background` | Page background |
+| `--ld-foreground` | Main text color |
+| `--ld-card` | Card background |
+| `--ld-card-foreground` | Card text color |
+| `--ld-border` | Border color |
+| `--ld-muted` | Muted background |
+| `--ld-muted-foreground` | Muted text color |
+| `--ld-radius` | Border radius |
+
+Each preset defines values for all of these in both `.light` and `.dark` variants. The resolved values are computed at render time based on the active color mode.
+
+---
+
+## Banner Theming
+
+Banner presets are **theme-aware**. The `getBannerPresetsForTheme()` function generates gradient presets using the current theme's resolved primary, accent, and background colors. This means:
+
+- Changing your theme preset changes the banner gradient colors.
+- Overriding custom colors also updates the banner presets.
+- Custom image banners are not affected by theme changes.
+
+---
+
+## How Theme Data Flows
+
+1. Admin selects a preset and/or custom colors on the Appearance page.
+2. Settings are saved to the database as key-value pairs (e.g., `theme_preset: "neon-cyber"`, `custom_primary: "#7C3AED"`).
+3. The `public.getPage` endpoint returns the theme settings to the public page.
+4. The public page resolves the full CSS variable set from the preset, applies custom overrides for light mode, and injects the variables as inline styles.
+5. The visitor's color mode preference determines which variant (light/dark) of the CSS variables is active.

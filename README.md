@@ -1,70 +1,53 @@
 # LinkDen - Self-Hosted Link-in-Bio Platform
 
-LinkDen is an open-source, self-hosted link-in-bio platform built
-on the Cloudflare stack. Designed as a single-user platform with
-a modern 3-panel admin editor and a polished public profile page,
-it replaces heavy PHP frameworks with TypeScript tooling for
-blazing-fast edge performance. Fully whitelabel-capable out of
-the box.
+LinkDen is a self-hosted, single-user link-in-bio application
+built for Cloudflare-first deployment with Docker/Coolify as
+a secondary target. It gives you full control over your
+personal link page with a drag-and-drop builder, real-time
+analytics, Apple Wallet integration, and full theming.
 
-Your links, your brand, your rules.
+Own your links. Own your data.
 
 ## Features
 
-- **3-Panel Admin Editor** — SmartBio-style interface with a
-  collapsible block sidebar on the left, live device preview in
-  the center, and design/settings controls on the right.
-- **Themed Public Page** — Glassmorphism-styled profile page
-  with gradient headers, social icons row, verified badge inline
-  next to the display name, and animated link blocks. Seven
-  built-in themes with dark and light variants.
-- **Visitor Dark/Light Toggle** — Visitors can switch color
-  mode on your public page. Initial mode follows your site
-  default or the visitor's OS preference.
-- **Multiple Block Types** — Links, headings, spacers, text
-  blocks, email, phone, vCard download, and Apple Wallet pass.
-  Single-instance blocks (vCard, Wallet, Contact Form) are
-  enforced automatically.
-- **Drag-and-Drop Reordering** — Reorder blocks by dragging
-  directly on the phone preview (powered by
-  `@hello-pangea/dnd`). Works on touch devices too.
-- **Block Search** — Filter the block picker by name or
-  description to quickly find the block type you need.
-- **Apple Wallet Business Card** — Generate signed `.pkpass`
-  files so visitors can save your contact info to Apple Wallet.
-  Live preview card in the admin drawer, and config warnings
-  for missing environment variables.
-- **vCard Support** — Downloadable `.vcf` digital business
-  cards covering personal, professional, and social fields.
-- **Analytics Dashboard** — Track page views, link clicks,
-  referrers, and geographic data with time-series charts.
-- **Custom Pages** — Create additional pages (privacy policy,
-  terms, etc.) with Markdown content rendered as styled HTML.
-- **Contact Form** — Built-in contact form with three CAPTCHA
-  options: Simple Math (no account required), Cloudflare
-  Turnstile, or Google reCAPTCHA.
-- **Edge Caching** — Cloudflare Cache API integration for
-  sub-50ms public page loads with automatic cache purge on
-  admin saves.
-- **Dual Auth** — Supports Cloudflare Access or Clerk for
-  admin authentication.
-- **SEO Ready** — Auto-generated `sitemap.xml`, `robots.txt`,
-  OpenGraph tags, Twitter Cards, and configurable meta fields.
-- **Full Whitelabel** — Toggle off all LinkDen branding with
-  a single setting. Zero attribution required (MIT license).
-- **Accessible UI** — Toggle switches use `role="switch"` and
-  `aria-checked`; drawers use `role="dialog"` and
-  `aria-modal`; theme toggle describes its current state via
-  `aria-label`; public page uses `role="main"` and
-  `aria-label` on interactive elements.
-- **Export / Import** — Back up all settings and links as JSON.
+- **Drag-and-Drop Builder** -- Visual block editor with live
+  phone-frame preview, supporting link buttons, headers,
+  social icon rows, embeds, and contact forms.
+- **7 Theme Presets** -- Default, Corporate Classic, Corporate
+  Modern, Hacker Terminal, Neon Cyber, Furry Pastel, and Furry
+  Bold with full light/dark mode support and custom color
+  overrides.
+- **Analytics Dashboard** -- Privacy-friendly page view and
+  link click tracking with time-series charts, top links,
+  referrer breakdown, and country stats.
+- **Contact Form** -- Built-in contact form with CAPTCHA
+  support (Cloudflare Turnstile or Google reCAPTCHA), email
+  notifications via Resend, and submission management.
+- **Apple Wallet Pass** -- Generate .pkpass business cards
+  with your profile, links, and QR code.
+- **vCard Support** -- Downloadable .vcf digital business
+  cards with personal, professional, and social fields.
+- **Export/Import** -- Full data backup and restore as JSON
+  with merge or replace modes.
+- **Whitelabel** -- Toggle off all LinkDen branding for a
+  completely clean public page.
+- **Edge Caching** -- Cloudflare Cache API integration for
+  near-zero-cost hosting on Workers + D1.
+- **50+ Social Networks** -- Curated registry of social
+  platforms with brand colors and icons.
+- **SEO Optimized** -- Auto-generated sitemap.xml, robots.txt,
+  Open Graph tags, and Twitter Cards.
+- **Accessible** -- WCAG 2.1 AA compliant with keyboard
+  navigation, screen reader support, focus indicators, and
+  reduced motion support via Radix UI primitives.
+- **PWA Ready** -- Installable admin panel with web app
+  manifest.
+- **Docker Support** -- Run anywhere with Docker Compose and
+  local SQLite persistence.
+- **Version Management** -- Automatic update checking against
+  GitHub releases with admin banner notifications.
 
 ## Getting Started
-
-Full documentation is available at the
-[LinkDen Docs](https://mrdemonwolf.github.io/linkden/) site, including
-guides for self-hosting on Cloudflare, Vercel, Railway, Coolify,
-and Docker.
 
 1. Clone the repository:
 
@@ -73,162 +56,142 @@ and Docker.
    cd LinkDen
    ```
 
-2. Install dependencies:
-
-   ```bash
-   pnpm install
-   ```
-
-3. Copy the example environment file and fill in your values:
+2. Copy the environment file and fill in your values:
 
    ```bash
    cp .env.example .env
    ```
 
-4. Generate and push the database schema:
+3. Install dependencies:
+
+   ```bash
+   pnpm install
+   ```
+
+4. Generate database migrations:
 
    ```bash
    pnpm db:generate
-   pnpm db:push
    ```
 
-5. Start all apps in development mode:
+5. Start the development server:
 
    ```bash
    pnpm dev
    ```
 
-6. Open `http://localhost:3001` for the public page and
-   `http://localhost:3001/admin` for the admin panel.
+6. Open the admin setup wizard at `http://localhost:3001/admin/setup`
+   to create your account and configure your page.
 
-## Usage
+### Docker Quickstart
 
-| URL                           | Purpose                        |
-| ----------------------------- | ------------------------------ |
-| `http://localhost:3001`       | Public link-in-bio page        |
-| `http://localhost:3001/admin` | Admin panel (3-panel editor)   |
-| `http://localhost:3000`       | API server (tRPC over Hono)    |
-| `http://localhost:3002`       | Documentation site             |
+```bash
+docker compose up -d
+```
 
-### Admin Panel Sections
-
-| Section    | Description                                      |
-| ---------- | ------------------------------------------------ |
-| Blocks     | Add, reorder, and manage link blocks             |
-| Social     | Configure social media icon links                |
-| Design     | Choose themes, customize colors and branding     |
-| Analytics  | View page views, clicks, and referrer stats      |
-| Settings   | Profile info, SEO, contact form, vCard, export   |
-| Pages      | Create custom Markdown pages at `/p/{slug}`      |
+The app will be available at `http://localhost:3000`. Set
+`BETTER_AUTH_SECRET` in your environment before starting.
 
 ## Tech Stack
 
-| Layer          | Technology                                    |
-| -------------- | --------------------------------------------- |
-| Frontend       | Next.js 15, React 19, Tailwind CSS 3          |
-| UI Components  | Radix UI, Lucide Icons, Recharts              |
-| State / Data   | tRPC 11, TanStack React Query 5               |
-| Backend        | Hono, Cloudflare Workers                      |
-| Database       | Cloudflare D1 (SQLite), Drizzle ORM           |
-| Auth           | Cloudflare Access / Clerk                     |
-| Email          | Resend                                        |
-| Docs           | Fumadocs (MDX), Next.js 16                    |
-| Deployment     | OpenNext (Cloudflare adapter), Alchemy (IaC)  |
-| Monorepo       | pnpm Workspaces, Turborepo                    |
-| Linting        | Biome                                         |
-| Testing        | Playwright (E2E)                              |
+| Layer          | Technology                                     |
+| -------------- | ---------------------------------------------- |
+| Frontend       | Next.js 16, React 19, Tailwind CSS v4          |
+| UI Components  | Radix UI, CVA, Lucide Icons                    |
+| Backend        | Hono, tRPC v11                                 |
+| Runtime        | Cloudflare Workers                             |
+| Database       | Drizzle ORM, Cloudflare D1 (SQLite)            |
+| Auth           | Better Auth (email/password)                   |
+| Email          | React Email, Resend API                        |
+| Validation     | Zod v4                                         |
+| Build          | Turborepo, tsdown                              |
+| Deployment     | Alchemy IaC, OpenNext for Cloudflare           |
+| Package Manager| pnpm 10                                        |
 
 ## Development
 
 ### Prerequisites
 
-- Node.js >= 20
-- pnpm 10.x (`corepack enable`)
-- Wrangler CLI (for local D1 and Workers dev)
+- Node.js 22 or later
+- pnpm 10 (`corepack enable && corepack prepare pnpm@10`)
+- A Cloudflare account (for D1 and Workers deployment)
 
 ### Setup
 
-1. Enable corepack and install pnpm:
-
-   ```bash
-   corepack enable
-   ```
-
-2. Install all dependencies:
+1. Install dependencies:
 
    ```bash
    pnpm install
    ```
 
-3. Copy and configure environment variables:
+2. Copy and configure environment variables:
 
    ```bash
    cp .env.example .env
+   cp .env.example apps/server/.env
+   cp .env.example apps/web/.env
    ```
 
-4. Generate the database schema:
+3. Generate database migrations:
 
    ```bash
    pnpm db:generate
    ```
 
-5. Push the schema to your local D1 database:
-
-   ```bash
-   pnpm db:push
-   ```
-
-6. Start the development environment:
+4. Start all apps in development mode:
 
    ```bash
    pnpm dev
    ```
 
+   The frontend runs on `http://localhost:3001` and the
+   API server on `http://localhost:3000`.
+
 ### Development Scripts
 
-- `pnpm dev` — Start all apps (web :3001, server :3000,
-  docs :3002) via Turborepo.
-- `pnpm build` — Production build for all packages.
-- `pnpm lint` — Run Biome linter across all packages.
-- `pnpm typecheck` — Run TypeScript type checking.
-- `pnpm db:generate` — Generate Drizzle ORM migrations.
-- `pnpm db:push` — Push schema changes to D1 (requires
-  `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`).
-- `pnpm db:studio` — Open Drizzle Studio for database
-  inspection.
-- `pnpm cf:deploy` — Deploy API + web to Cloudflare Workers.
-- `pnpm cf:deploy:api` — Deploy only the API worker.
-- `pnpm cf:deploy:web` — Deploy only the web frontend.
-- `pnpm cf:destroy` — Tear down Cloudflare resources.
-- `pnpm test:e2e` — Run Playwright end-to-end tests.
+- `pnpm dev` -- Start all apps in development mode
+- `pnpm build` -- Build all apps and packages
+- `pnpm check-types` -- Run TypeScript type checking
+- `pnpm dev:web` -- Start only the web frontend
+- `pnpm dev:server` -- Start only the API server
+- `pnpm db:generate` -- Generate Drizzle migrations
+- `pnpm db:push` -- Push schema to database
+- `pnpm deploy` -- Deploy to Cloudflare via Alchemy
+- `pnpm destroy` -- Tear down Cloudflare resources
 
 ### Code Quality
 
-- **Biome** for linting and formatting (replaces ESLint
-  and Prettier).
-- **TypeScript** strict mode across all packages.
-- **Zod** schemas shared between client and server via
-  `@linkden/validators`.
-- **tRPC** for end-to-end type safety between frontend
-  and API.
+- TypeScript strict mode across all packages
+- Biome for linting and formatting
+- Zod schemas for runtime validation at all boundaries
 
 ## Project Structure
 
 ```
 LinkDen/
-  apps/
-    web/            # Next.js 15 frontend (public page + admin)
-    server/         # Cloudflare Worker API (Hono + tRPC)
-    docs/           # Fumadocs documentation site
-  packages/
-    db/             # Drizzle ORM schema and D1 client
-    ui/             # Shared UI components and theme configs
-    validators/     # Zod schemas shared across apps
-    email/          # Resend email templates
-    infra/          # Alchemy IaC for Cloudflare deployment
-  turbo.json        # Turborepo pipeline config
-  pnpm-workspace.yaml
-  .env.example      # Environment variable template
+├── apps/
+│   ├── web/               # Next.js frontend (public page + admin)
+│   └── server/            # Hono API on Cloudflare Workers
+├── packages/
+│   ├── api/               # tRPC router definitions
+│   ├── auth/              # Better Auth configuration
+│   ├── config/            # Shared TypeScript configuration
+│   ├── db/                # Drizzle ORM schema + migrations
+│   ├── email/             # React Email templates
+│   ├── env/               # Environment variable validation
+│   ├── infra/             # Alchemy IaC for Cloudflare
+│   ├── ui/                # Custom UI component library
+│   └── validators/        # Shared Zod validation schemas
+├── data/
+│   └── social-networks.json  # Curated social platform registry
+├── scripts/
+│   └── check-social-icons.mjs  # Social icon update checker
+├── .github/workflows/     # CI, docs deploy, social icon check
+├── biome.json             # Linting and formatting config
+├── docker-compose.yml     # Docker deployment
+├── Dockerfile             # Multi-stage Docker build
+├── turbo.json             # Turborepo pipeline config
+└── version.json           # App version for update checks
 ```
 
 ## License
@@ -236,14 +199,14 @@ LinkDen/
 ![GitHub license](https://img.shields.io/github/license/mrdemonwolf/LinkDen.svg?style=for-the-badge&logo=github)
 
 This project is licensed under the MIT License. See the
-[LICENSE](LICENSE) file for details. Fully whitelabel-friendly
-with no attribution required.
+[LICENSE](LICENSE) file for details.
 
 ## Contact
 
-Have questions or feedback?
+Have questions or feedback? Reach out:
 
 - Discord: [Join my server](https://mrdwolf.net/discord)
+- GitHub Issues: [Open an issue](https://github.com/mrdemonwolf/LinkDen/issues)
 
 ---
 

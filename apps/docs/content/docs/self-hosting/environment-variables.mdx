@@ -87,6 +87,10 @@ NEXT_PUBLIC_SERVER_URL=http://localhost:3000
 | **Coolify** | Coolify UI > Service > Environment Variables |
 | **Railway** | Railway dashboard > Service > Variables |
 
+## Setup Token
+
+LinkDen does not use an environment variable for the setup token. Instead, a **one-time secure token** is generated automatically by the API server on first startup and printed to the server console. The setup wizard at `/admin/setup` requires this token as a query parameter. Once setup is completed, the token is automatically invalidated. See the [Security](/docs/guide/security) page for details.
+
 ## Security Best Practices
 
 - **Never commit `.env` files** to version control. They are included in `.gitignore`.

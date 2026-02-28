@@ -1,309 +1,460 @@
 "use client";
 
-import { toast } from "@/lib/toast";
-import { trpc } from "@/lib/trpc";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
-  AlertTriangle,
-  Download,
-  Mail,
-  RefreshCw,
-  Save,
-  Settings,
-  Shield,
-  Upload,
+	Search as SearchIcon,
+	Shield,
+	Mail,
+	Save,
+	Database,
+	Undo2,
+	MessageSquare,
+	Wallet,
+	UserCircle,
+	type LucideIcon,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { trpc } from "@/utils/trpc";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/admin/page-header";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
+import { SeoSection } from "@/components/admin/settings/seo-section";
+import { CaptchaSection } from "@/components/admin/settings/captcha-section";
+import { EmailSection } from "@/components/admin/settings/email-section";
+import { DataSection } from "@/components/admin/settings/data-section";
+import { ContactFormSection } from "@/components/admin/settings/contact-form-section";
+import { WalletSection } from "@/components/admin/settings/wallet-section";
+import { VCardSection } from "@/components/admin/settings/vcard-section";
+
+// ---- Section definitions ----
+type SectionId =
+	| "seo"
+	| "captcha"
+	| "email"
+	| "contact"
+	| "wallet"
+	| "vcard"
+	| "data";
+
+interface SectionDef {
+	id: SectionId;
+	label: string;
+	icon: LucideIcon;
+}
+
+const SECTIONS: SectionDef[] = [
+	{ id: "seo", label: "SEO", icon: SearchIcon },
+	{ id: "captcha", label: "CAPTCHA", icon: Shield },
+	{ id: "email", label: "Email", icon: Mail },
+	{ id: "contact", label: "Contact Form", icon: MessageSquare },
+	{ id: "wallet", label: "Wallet Pass", icon: Wallet },
+	{ id: "vcard", label: "vCard", icon: UserCircle },
+	{ id: "data", label: "Data & Info", icon: Database },
+];
+
+// ---- Saved State (global settings only) ----
+interface SavedState {
+	seoTitle: string;
+	seoDescription: string;
+	seoOgImage: string;
+	captchaProvider: string;
+	captchaSiteKey: string;
+	captchaSecretKey: string;
+	emailProvider: string;
+	emailApiKey: string;
+	emailFrom: string;
+	contactFormEnabled: boolean;
+}
+
+function buildSavedState(s: Record<string, string>): SavedState {
+	return {
+		seoTitle: s.seo_title ?? "",
+		seoDescription: s.seo_description ?? "",
+		seoOgImage: s.seo_og_image ?? "",
+		captchaProvider: s.captcha_provider ?? "none",
+		captchaSiteKey: s.captcha_site_key ?? "",
+		captchaSecretKey: s.captcha_secret_key ?? "",
+		emailProvider: s.email_provider ?? "resend",
+		emailApiKey: s.email_api_key ?? "",
+		emailFrom: s.email_from ?? "",
+		contactFormEnabled: s.contact_form_enabled === "true",
+	};
+}
 
 export default function SettingsPage() {
-  const utils = trpc.useUtils();
-  const settingsQuery = trpc.settings.getAll.useQuery();
-  const updateCheck = trpc.system.checkUpdate.useQuery(undefined, {
-    retry: false,
-  });
+	const qc = useQueryClient();
+	const settingsQuery = useQuery(trpc.settings.getAll.queryOptions());
+	const updateSettings = useMutation(
+		trpc.settings.updateBulk.mutationOptions(),
+	);
+	const versionCheck = useQuery(trpc.version.checkUpdate.queryOptions());
+	const exportData = useQuery({
+		...trpc.backup.export.queryOptions(),
+		enabled: false,
+	});
+	const importData = useMutation(trpc.backup.import.mutationOptions());
 
-  const [contactEnabled, setContactEnabled] = useState(false);
-  const [contactEmail, setContactEmail] = useState("");
-  const [captchaSiteKey, setCaptchaSiteKey] = useState("");
-  const [captchaSecretKey, setCaptchaSecretKey] = useState("");
+	const fileInputRef = useRef<HTMLInputElement>(null);
+	const [activeSection, setActiveSection] = useState<SectionId>("seo");
 
-  useEffect(() => {
-    if (settingsQuery.data) {
-      const map: Record<string, string> = {};
-      settingsQuery.data.forEach((s) => {
-        map[s.key] = s.value;
-      });
-      setContactEnabled(map.contactEnabled === "true");
-      setContactEmail(map.contactEmail || "");
-      setCaptchaSiteKey(map.captchaSiteKey || "");
-      setCaptchaSecretKey(map.captchaSecretKey || "");
-    }
-  }, [settingsQuery.data]);
+	const { getAnimationProps } = useEntranceAnimation(
+		!settingsQuery.isLoading,
+	);
 
-  const updateMutation = trpc.settings.update.useMutation({
-    onSuccess: () => {
-      utils.settings.getAll.invalidate();
-      utils.settings.getPublic.invalidate();
-      toast.success("Settings saved");
-    },
-    onError: () => toast.error("Failed to save settings"),
-  });
+	// Saved state for dirty tracking
+	const [savedState, setSavedState] = useState<SavedState>({
+		seoTitle: "",
+		seoDescription: "",
+		seoOgImage: "",
+		captchaProvider: "none",
+		captchaSiteKey: "",
+		captchaSecretKey: "",
+		emailProvider: "resend",
+		emailApiKey: "",
+		emailFrom: "",
+		contactFormEnabled: false,
+	});
 
-  const exportQuery = trpc.export.exportAll.useQuery(undefined, {
-    enabled: false,
-  });
+	// SEO
+	const [seoTitle, setSeoTitle] = useState("");
+	const [seoDescription, setSeoDescription] = useState("");
+	const [seoOgImage, setSeoOgImage] = useState("");
 
-  const importMutation = trpc.export.importAll.useMutation({
-    onSuccess: () => {
-      utils.links.listAll.invalidate();
-      utils.settings.getAll.invalidate();
-      utils.vcard.get.invalidate();
-      utils.wallet.get.invalidate();
-      utils.pages.list.invalidate();
-      toast.success("Data imported successfully");
-    },
-    onError: (err) => toast.error(err.message || "Import failed"),
-  });
+	// CAPTCHA
+	const [captchaProvider, setCaptchaProvider] = useState("none");
+	const [captchaSiteKey, setCaptchaSiteKey] = useState("");
+	const [captchaSecretKey, setCaptchaSecretKey] = useState("");
 
-  function handleSave() {
-    updateMutation.mutate({
-      settings: [
-        { key: "contactEnabled", value: contactEnabled ? "true" : "false" },
-        { key: "contactEmail", value: contactEmail },
-        { key: "captchaSiteKey", value: captchaSiteKey },
-        { key: "captchaSecretKey", value: captchaSecretKey },
-      ],
-    });
-  }
+	// Email
+	const [emailProvider, setEmailProvider] = useState("resend");
+	const [emailApiKey, setEmailApiKey] = useState("");
+	const [emailFrom, setEmailFrom] = useState("");
 
-  async function handleExport() {
-    const result = await exportQuery.refetch();
-    if (result.data) {
-      const blob = new Blob([JSON.stringify(result.data, null, 2)], {
-        type: "application/json",
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `linkden-export-${new Date().toISOString().split("T")[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success("Export downloaded");
-    }
-  }
+	// Contact Form
+	const [contactFormEnabled, setContactFormEnabled] = useState(false);
 
-  function handleImport() {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = ".json";
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
+	// Load settings
+	useEffect(() => {
+		if (settingsQuery.data) {
+			const s = buildSavedState(settingsQuery.data);
+			setSavedState(s);
+			setSeoTitle(s.seoTitle);
+			setSeoDescription(s.seoDescription);
+			setSeoOgImage(s.seoOgImage);
+			setCaptchaProvider(s.captchaProvider);
+			setCaptchaSiteKey(s.captchaSiteKey);
+			setCaptchaSecretKey(s.captchaSecretKey);
+			setEmailProvider(s.emailProvider);
+			setEmailApiKey(s.emailApiKey);
+			setEmailFrom(s.emailFrom);
+			setContactFormEnabled(s.contactFormEnabled);
+		}
+	}, [settingsQuery.data]);
 
-      try {
-        const text = await file.text();
-        const parsed = JSON.parse(text);
-        if (!parsed.data) {
-          toast.error("Invalid export file format");
-          return;
-        }
-        importMutation.mutate({ data: parsed.data });
-      } catch {
-        toast.error("Failed to parse import file");
-      }
-    };
-    input.click();
-  }
+	const isDirty =
+		seoTitle !== savedState.seoTitle ||
+		seoDescription !== savedState.seoDescription ||
+		seoOgImage !== savedState.seoOgImage ||
+		captchaProvider !== savedState.captchaProvider ||
+		captchaSiteKey !== savedState.captchaSiteKey ||
+		captchaSecretKey !== savedState.captchaSecretKey ||
+		emailProvider !== savedState.emailProvider ||
+		emailApiKey !== savedState.emailApiKey ||
+		emailFrom !== savedState.emailFrom ||
+		contactFormEnabled !== savedState.contactFormEnabled;
 
-  if (settingsQuery.isLoading) {
-    return (
-      <div className="space-y-6 max-w-2xl">
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 rounded-xl bg-[rgba(255,255,255,0.04)] animate-pulse" />
-          ))}
-        </div>
-      </div>
-    );
-  }
+	useUnsavedChanges(isDirty);
 
-  return (
-    <div className="space-y-6 max-w-2xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Settings className="w-6 h-6 text-brand-cyan" />
-            Settings
-          </h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">
-            Manage your LinkDen configuration
-          </p>
-        </div>
-        <button
-          onClick={handleSave}
-          disabled={updateMutation.isPending}
-          className="glass-button-primary flex items-center gap-2 px-6 py-2.5 disabled:opacity-50"
-        >
-          <Save className="w-4 h-4" />
-          {updateMutation.isPending ? "Saving..." : "Save"}
-        </button>
-      </div>
+	const invalidate = useCallback(() => {
+		qc.invalidateQueries({
+			queryKey: trpc.settings.getAll.queryOptions().queryKey,
+		});
+	}, [qc]);
 
-      {/* Contact Form Settings */}
-      <section className="glass-card space-y-4">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <Mail className="w-5 h-5 text-brand-cyan" />
-          Contact Form
-        </h2>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setContactEnabled(!contactEnabled)}
-            className={`relative w-10 h-5 rounded-full transition-colors ${
-              contactEnabled ? "bg-brand-cyan" : "bg-[rgba(255,255,255,0.15)]"
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
-                contactEnabled ? "translate-x-5" : "translate-x-0.5"
-              }`}
-            />
-          </button>
-          <span className="text-sm">
-            {contactEnabled ? "Contact form enabled" : "Contact form disabled"}
-          </span>
-        </div>
-        {contactEnabled && (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">
-                Notification Email
-              </label>
-              <input
-                type="email"
-                value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)}
-                placeholder="your@email.com"
-                className="glass-input"
-              />
-              <p className="text-xs text-[var(--text-secondary)] mt-1">
-                Where contact form submissions will be sent
-              </p>
-            </div>
-          </div>
-        )}
-      </section>
+	const handleDiscard = () => {
+		setSeoTitle(savedState.seoTitle);
+		setSeoDescription(savedState.seoDescription);
+		setSeoOgImage(savedState.seoOgImage);
+		setCaptchaProvider(savedState.captchaProvider);
+		setCaptchaSiteKey(savedState.captchaSiteKey);
+		setCaptchaSecretKey(savedState.captchaSecretKey);
+		setEmailProvider(savedState.emailProvider);
+		setEmailApiKey(savedState.emailApiKey);
+		setEmailFrom(savedState.emailFrom);
+		setContactFormEnabled(savedState.contactFormEnabled);
+	};
 
-      {/* CAPTCHA Settings */}
-      <section className="glass-card space-y-4">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <Shield className="w-5 h-5 text-brand-cyan" />
-          CAPTCHA (Cloudflare Turnstile)
-        </h2>
-        <div className="grid gap-4">
-          <div>
-            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">
-              Site Key
-            </label>
-            <input
-              type="text"
-              value={captchaSiteKey}
-              onChange={(e) => setCaptchaSiteKey(e.target.value)}
-              placeholder="0x4AAAAAAA..."
-              className="glass-input font-mono text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">
-              Secret Key
-            </label>
-            <input
-              type="password"
-              value={captchaSecretKey}
-              onChange={(e) => setCaptchaSecretKey(e.target.value)}
-              placeholder="0x4AAAAAAA..."
-              className="glass-input font-mono text-sm"
-            />
-          </div>
-        </div>
-      </section>
+	const handleSave = async () => {
+		try {
+			await updateSettings.mutateAsync([
+				{ key: "seo_title", value: seoTitle },
+				{ key: "seo_description", value: seoDescription },
+				{ key: "seo_og_image", value: seoOgImage },
+				{ key: "captcha_provider", value: captchaProvider },
+				{ key: "captcha_site_key", value: captchaSiteKey },
+				{ key: "captcha_secret_key", value: captchaSecretKey },
+				{ key: "email_provider", value: emailProvider },
+				{ key: "email_api_key", value: emailApiKey },
+				{ key: "email_from", value: emailFrom },
+				{
+					key: "contact_form_enabled",
+					value: String(contactFormEnabled),
+				},
+			]);
+			setSavedState({
+				seoTitle,
+				seoDescription,
+				seoOgImage,
+				captchaProvider,
+				captchaSiteKey,
+				captchaSecretKey,
+				emailProvider,
+				emailApiKey,
+				emailFrom,
+				contactFormEnabled,
+			});
+			invalidate();
+			toast.success("Settings saved");
+		} catch {
+			toast.error("Failed to save settings");
+		}
+	};
 
-      {/* Data Management */}
-      <section className="glass-card space-y-4">
-        <h2 className="text-lg font-semibold">Data Management</h2>
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={handleExport}
-            disabled={exportQuery.isFetching}
-            className="glass-button flex items-center gap-2 disabled:opacity-50"
-          >
-            <Download className="w-4 h-4" />
-            {exportQuery.isFetching ? "Exporting..." : "Export All Data"}
-          </button>
-          <button
-            onClick={handleImport}
-            disabled={importMutation.isPending}
-            className="glass-button flex items-center gap-2 disabled:opacity-50"
-          >
-            <Upload className="w-4 h-4" />
-            {importMutation.isPending ? "Importing..." : "Import Data"}
-          </button>
-        </div>
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
-          <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
-          <p className="text-xs text-yellow-300">
-            Importing data will replace ALL existing data. Make sure to export a backup first.
-          </p>
-        </div>
-      </section>
+	const handleExport = async () => {
+		try {
+			const result = await exportData.refetch();
+			if (result.data) {
+				const blob = new Blob([JSON.stringify(result.data, null, 2)], {
+					type: "application/json",
+				});
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement("a");
+				a.href = url;
+				a.download = `linkden-backup-${new Date().toISOString().slice(0, 10)}.json`;
+				a.click();
+				URL.revokeObjectURL(url);
+				toast.success("Export downloaded");
+			}
+		} catch {
+			toast.error("Failed to export");
+		}
+	};
 
-      {/* System Info */}
-      <section className="glass-card space-y-4">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <RefreshCw className="w-5 h-5 text-brand-cyan" />
-          System
-        </h2>
-        {updateCheck.isLoading ? (
-          <div className="h-16 rounded bg-[rgba(255,255,255,0.04)] animate-pulse" />
-        ) : updateCheck.data ? (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-[var(--text-secondary)]">Current Version</span>
-              <span className="font-mono">v{updateCheck.data.currentVersion}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-[var(--text-secondary)]">Latest Version</span>
-              <span className="font-mono">v{updateCheck.data.latestVersion}</span>
-            </div>
-            {updateCheck.data.isUpdateAvailable && (
-              <a
-                href={updateCheck.data.releaseUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="glass-button-primary inline-flex items-center gap-2 text-sm mt-2"
-              >
-                Update Available
-              </a>
-            )}
-            {!updateCheck.data.isUpdateAvailable && (
-              <p className="text-sm text-emerald-400">You are running the latest version</p>
-            )}
-          </div>
-        ) : updateCheck.error ? (
-          <p className="text-sm text-[var(--text-secondary)]">Unable to check for updates</p>
-        ) : null}
-      </section>
+	const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
 
-      <div className="flex justify-end pb-4">
-        <button
-          onClick={handleSave}
-          disabled={updateMutation.isPending}
-          className="glass-button-primary flex items-center gap-2 px-8 py-2.5 disabled:opacity-50"
-        >
-          <Save className="w-4 h-4" />
-          {updateMutation.isPending ? "Saving..." : "Save Settings"}
-        </button>
-      </div>
-    </div>
-  );
+		try {
+			const text = await file.text();
+			const parsed = JSON.parse(text);
+			await importData.mutateAsync({
+				mode: "merge",
+				data: parsed.data ?? parsed,
+			});
+			invalidate();
+			toast.success("Import successful");
+		} catch {
+			toast.error("Failed to import. Make sure the file is valid JSON.");
+		}
+		if (fileInputRef.current) fileInputRef.current.value = "";
+	};
+
+	if (settingsQuery.isLoading) {
+		return (
+			<div className="space-y-6">
+				<Skeleton className="h-8 w-48" />
+				{Array.from({ length: 3 }).map((_, i) => (
+					<Skeleton key={`sk-${i}`} className="h-40" />
+				))}
+			</div>
+		);
+	}
+
+	const headerAnim = getAnimationProps(0);
+	const sidebarAnim = getAnimationProps(1);
+	const contentAnim = getAnimationProps(2);
+
+	const sectionContent: Record<SectionId, React.ReactNode> = {
+		seo: (
+			<SeoSection
+				seoTitle={seoTitle}
+				seoDescription={seoDescription}
+				seoOgImage={seoOgImage}
+				onSeoTitleChange={setSeoTitle}
+				onSeoDescriptionChange={setSeoDescription}
+				onSeoOgImageChange={setSeoOgImage}
+			/>
+		),
+		captcha: (
+			<CaptchaSection
+				captchaProvider={captchaProvider}
+				captchaSiteKey={captchaSiteKey}
+				captchaSecretKey={captchaSecretKey}
+				onCaptchaProviderChange={setCaptchaProvider}
+				onCaptchaSiteKeyChange={setCaptchaSiteKey}
+				onCaptchaSecretKeyChange={setCaptchaSecretKey}
+			/>
+		),
+		email: (
+			<EmailSection
+				emailProvider={emailProvider}
+				emailApiKey={emailApiKey}
+				emailFrom={emailFrom}
+				onEmailProviderChange={setEmailProvider}
+				onEmailApiKeyChange={setEmailApiKey}
+				onEmailFromChange={setEmailFrom}
+			/>
+		),
+		contact: (
+			<ContactFormSection
+				contactFormEnabled={contactFormEnabled}
+				onContactFormEnabledChange={setContactFormEnabled}
+			/>
+		),
+		wallet: <WalletSection />,
+		vcard: <VCardSection />,
+		data: (
+			<DataSection
+				onExport={handleExport}
+				onImport={handleImport}
+				isExporting={exportData.isFetching}
+				isImporting={importData.isPending}
+				fileInputRef={fileInputRef}
+				versionCheck={versionCheck.data ?? null}
+				onCheckUpdates={() =>
+					qc.invalidateQueries({
+						queryKey:
+							trpc.version.checkUpdate.queryOptions().queryKey,
+					})
+				}
+			/>
+		),
+	};
+
+	const activeLabel =
+		SECTIONS.find((s) => s.id === activeSection)?.label ?? "";
+
+	return (
+		<div className="space-y-4">
+			<PageHeader
+				title="Settings"
+				description={
+					isDirty
+						? "You have unsaved changes"
+						: "Configure your LinkDen instance"
+				}
+				actions={
+					<>
+						{isDirty && (
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={handleDiscard}
+							>
+								<Undo2 className="mr-1.5 h-3.5 w-3.5" />
+								Discard
+							</Button>
+						)}
+						<Button
+							size="sm"
+							variant={isDirty ? "default" : "outline"}
+							disabled={!isDirty || updateSettings.isPending}
+							onClick={handleSave}
+						>
+							<Save className="mr-1.5 h-3.5 w-3.5" />
+							{updateSettings.isPending ? "Saving..." : "Save"}
+						</Button>
+					</>
+				}
+				className={cn(headerAnim.className)}
+				style={headerAnim.style}
+			/>
+
+			{/* Mobile pills */}
+			<div
+				className={cn(
+					"flex gap-2 overflow-x-auto scrollbar-none md:hidden",
+					sidebarAnim.className,
+				)}
+				style={sidebarAnim.style}
+			>
+				{SECTIONS.map((section) => {
+					const Icon = section.icon;
+					const isActive = activeSection === section.id;
+					return (
+						<button
+							key={section.id}
+							type="button"
+							onClick={() => setActiveSection(section.id)}
+							className={cn(
+								"inline-flex items-center shrink-0 rounded-full px-4 py-2 text-xs font-medium transition-all duration-200",
+								isActive
+									? "border-transparent bg-primary text-primary-foreground shadow-sm ring-1 ring-primary/30"
+									: "border border-border/50 bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground",
+							)}
+						>
+							<Icon className="mr-1.5 h-3 w-3" />
+							{section.label}
+						</button>
+					);
+				})}
+			</div>
+
+			{/* Desktop sidebar + content */}
+			<div className="flex gap-6">
+				{/* Sidebar (desktop) */}
+				<nav
+					aria-label="Settings sections"
+					className={cn(
+						"hidden md:block w-48 shrink-0",
+						sidebarAnim.className,
+					)}
+					style={sidebarAnim.style}
+				>
+					<div className="sticky top-20 rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 p-1.5 space-y-0.5">
+						{SECTIONS.map((section) => {
+							const Icon = section.icon;
+							const isActive = activeSection === section.id;
+							return (
+								<button
+									key={section.id}
+									type="button"
+									onClick={() => setActiveSection(section.id)}
+									className={cn(
+										"flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium transition-all",
+										isActive
+											? "bg-primary/10 text-primary border-l-2 border-primary"
+											: "text-muted-foreground hover:bg-white/10 hover:text-foreground",
+									)}
+								>
+									<Icon className="h-4 w-4 shrink-0" />
+									{section.label}
+								</button>
+							);
+						})}
+					</div>
+				</nav>
+
+				{/* Content */}
+				<div
+					className={cn("flex-1 min-w-0", contentAnim.className)}
+					style={contentAnim.style}
+				>
+					<Card>
+						<CardContent className="space-y-4 pt-2">
+							<h2 className="text-sm font-semibold">
+								{activeLabel}
+							</h2>
+							{sectionContent[activeSection]}
+						</CardContent>
+					</Card>
+				</div>
+			</div>
+		</div>
+	);
 }

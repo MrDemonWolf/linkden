@@ -1,112 +1,101 @@
 import { trpcServer } from "@hono/trpc-server";
+import { createContext } from "@linkden/api/context";
+import { appRouter } from "@linkden/api/routers/index";
+import { auth } from "@linkden/auth";
+import { env } from "@linkden/env/server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { createContext } from "./context";
-import type { Env } from "./env";
-import { appRouter } from "./router";
+import { logger } from "hono/logger";
 
-type HonoEnv = { Bindings: Env };
+type Bindings = {
+  IMAGES_BUCKET?: R2Bucket;
+};
 
-const app = new Hono<HonoEnv>();
+const app = new Hono();
 
+app.use(logger());
 app.use(
   "/*",
   cors({
-    origin: (origin, c) => {
-      const allowed = c.env.CORS_ORIGIN || "http://localhost:3001";
-      if (origin === allowed) return origin;
-      const origins = allowed.split(",").map((o) => o.trim());
-      if (origins.includes(origin)) return origin;
-      return origins[0];
-    },
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    origin: env.CORS_ORIGIN,
+    allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   }),
 );
 
-/**
- * Cloudflare Cache API middleware for public tRPC queries.
- * Caches unauthenticated GET requests at the edge for 10 minutes
- * with stale-while-revalidate for an additional hour.
- */
-app.use("/trpc/*", async (c, next) => {
-  if (c.req.method !== "GET") {
-    await next();
-    return;
-  }
-
-  // Skip cache for authenticated requests
-  const authHeader = c.req.header("Authorization");
-  if (authHeader) {
-    await next();
-    return;
-  }
-
-  const cfCaches = globalThis.caches as unknown as { default: Cache };
-  if (!cfCaches?.default) {
-    await next();
-    return;
-  }
-
-  const cache = cfCaches.default;
-  const cacheKey = new Request(c.req.url, { method: "GET" });
-
-  const cached = await cache.match(cacheKey);
-  if (cached) {
-    // Serve from edge cache
-    return new Response(cached.body, {
-      status: cached.status,
-      headers: {
-        ...Object.fromEntries(cached.headers.entries()),
-        "X-Cache": "HIT",
-      },
-    });
-  }
-
-  await next();
-
-  // Cache successful public responses
-  if (c.res.status === 200) {
-    const response = c.res.clone();
-    const headers = new Headers(response.headers);
-    headers.set("Cache-Control", "public, s-maxage=600, stale-while-revalidate=3600");
-    headers.set("X-Cache", "MISS");
-
-    const cachedResponse = new Response(response.body, {
-      status: response.status,
-      headers,
-    });
-    c.executionCtx.waitUntil(cache.put(cacheKey, cachedResponse));
-  }
-});
+app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
 app.use(
   "/trpc/*",
   trpcServer({
     router: appRouter,
-    createContext: ({ req }, c) => createContext(req, c.env),
+    createContext: (_opts, context) => {
+      return createContext({ context });
+    },
   }),
 );
 
-app.get("/", (c) => {
-  return c.text("OK");
-});
+// Image upload endpoint (requires auth)
+app.post("/api/upload", async (c) => {
+  // Verify auth
+  const session = await auth.api.getSession({
+    headers: c.req.raw.headers,
+  });
+  if (!session) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
 
-app.post("/analytics/ping", async (c) => {
-  const body = await c.req.json();
-  const db = (await import("@linkden/db")).createDb(c.env.DB);
-  const { analytics } = await import("@linkden/db/schema");
+  const bucket = (env as unknown as Bindings).IMAGES_BUCKET;
+  if (!bucket) {
+    return c.json({ error: "Image storage not configured" }, 500);
+  }
 
-  await db.insert(analytics).values({
-    event: body.event ?? "page_view",
-    linkId: body.linkId ?? null,
-    referrer: body.referrer ?? "",
-    userAgent: c.req.header("User-Agent") ?? "",
-    country: c.req.header("CF-IPCountry") ?? "",
+  const formData = await c.req.formData();
+  const file = formData.get("file") as File | null;
+  const purpose = formData.get("purpose") as string | null;
+
+  if (!file) {
+    return c.json({ error: "No file provided" }, 400);
+  }
+
+  const validPurposes = ["avatar", "banner", "og_image"];
+  const filePurpose = validPurposes.includes(purpose ?? "") ? purpose : "misc";
+  const ext = file.name.split(".").pop() || "bin";
+  const key = `${filePurpose}/${Date.now()}.${ext}`;
+
+  await bucket.put(key, file.stream(), {
+    httpMetadata: { contentType: file.type },
   });
 
-  return c.json({ ok: true });
+  const publicUrl = `/api/images/${key}`;
+
+  return c.json({ publicUrl });
+});
+
+// Serve images from R2
+app.get("/api/images/*", async (c) => {
+  const bucket = (env as unknown as Bindings).IMAGES_BUCKET;
+  if (!bucket) {
+    return c.json({ error: "Image storage not configured" }, 500);
+  }
+
+  const key = c.req.path.replace("/api/images/", "");
+  const object = await bucket.get(key);
+
+  if (!object) {
+    return c.notFound();
+  }
+
+  const headers = new Headers();
+  headers.set("Content-Type", object.httpMetadata?.contentType || "application/octet-stream");
+  headers.set("Cache-Control", "public, max-age=31536000, immutable");
+
+  return new Response(object.body, { headers });
+});
+
+app.get("/", (c) => {
+  return c.text("OK");
 });
 
 export default app;

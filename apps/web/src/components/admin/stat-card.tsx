@@ -1,39 +1,56 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 interface StatCardProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string | number;
-  delta?: string;
-  deltaType?: "positive" | "negative" | "neutral";
+	icon: LucideIcon;
+	label: string;
+	value: number | string;
+	iconColor?: string;
+	iconBg?: string;
+	href?: string;
+	isLoading?: boolean;
 }
 
-export function StatCard({ icon, label, value, delta, deltaType = "neutral" }: StatCardProps) {
-  return (
-    <div className="glass-card flex items-start gap-4">
-      <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[var(--button-bg)] text-brand-cyan shrink-0">
-        {icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs text-[var(--text-secondary)] font-medium uppercase tracking-wider">
-          {label}
-        </p>
-        <p className="text-2xl font-bold mt-0.5 truncate">{value}</p>
-        {delta && (
-          <p
-            className={cn(
-              "text-xs font-medium mt-1",
-              deltaType === "positive" && "text-emerald-400",
-              deltaType === "negative" && "text-red-400",
-              deltaType === "neutral" && "text-[var(--text-secondary)]",
-            )}
-          >
-            {delta}
-          </p>
-        )}
-      </div>
-    </div>
-  );
+export function StatCard({
+	icon: Icon,
+	label,
+	value,
+	iconColor = "text-primary",
+	iconBg = "bg-primary/10",
+	href,
+	isLoading,
+}: StatCardProps) {
+	return (
+		<Card size="sm">
+			<CardContent className="flex items-center gap-3">
+				<div
+					className={cn("flex h-9 w-9 shrink-0 items-center justify-center", iconBg)}
+					aria-hidden="true"
+				>
+					<Icon className={cn("h-4 w-4", iconColor)} />
+				</div>
+				<div className="min-w-0">
+					<p className="text-xs text-muted-foreground">{label}</p>
+					{isLoading ? (
+						<Skeleton className="mt-1 h-5 w-12" />
+					) : (
+						<p className="text-lg font-semibold leading-tight">
+							{typeof value === "number" ? value.toLocaleString() : value}
+						</p>
+					)}
+				</div>
+				{href && (
+					<Link href={href as "/admin/contacts"} className="ml-auto" aria-label={`Go to ${label}`}>
+						<ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground" />
+					</Link>
+				)}
+			</CardContent>
+		</Card>
+	);
 }

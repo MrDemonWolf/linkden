@@ -226,12 +226,17 @@ This requires modifying `packages/db` to use the Drizzle PostgreSQL driver inste
 
 After both services are deployed:
 
-1. Visit your web app URL (e.g., `https://yourdomain.com/admin/setup`).
-2. Complete the setup wizard to create your admin account (name, email, and password).
-3. After setup is complete, sign in at `/admin/login`.
-4. Create a test link in the admin panel.
-5. Visit the public page and verify the link appears.
-6. Check analytics data is being recorded.
+1. Check the API service logs in Railway (click on the `linkden-api` service > **Deployments** > latest deployment > **Logs**) for the setup URL:
+   ```
+   Setup URL: https://yourdomain.com/admin/setup?token=<unique-token>
+   ```
+   The server generates a one-time secure token on first startup.
+2. Open the setup URL in your browser. The token is required -- navigating to `/admin/setup` without it will show an error.
+3. Complete the wizard to create your admin account (name, email, and password). The token is invalidated once setup completes.
+4. After setup is complete, sign in at `/admin/login`.
+5. Create a test link in the admin panel.
+6. Visit the public page and verify the link appears.
+7. Check analytics data is being recorded.
 
 ## Monitoring
 
