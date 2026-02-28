@@ -13,6 +13,7 @@ import {
 	MessageSquare,
 	Wallet,
 	UserCircle,
+	ArrowRightLeft,
 	type LucideIcon,
 } from "lucide-react";
 import { trpc } from "@/utils/trpc";
@@ -30,6 +31,7 @@ import { DataSection } from "@/components/admin/settings/data-section";
 import { ContactFormSection } from "@/components/admin/settings/contact-form-section";
 import { WalletSection } from "@/components/admin/settings/wallet-section";
 import { VCardSection } from "@/components/admin/settings/vcard-section";
+import { MigrationSection } from "@/components/admin/settings/migration-section";
 
 // ---- Section definitions ----
 type SectionId =
@@ -39,7 +41,8 @@ type SectionId =
 	| "contact"
 	| "wallet"
 	| "vcard"
-	| "data";
+	| "data"
+	| "migration";
 
 interface SectionDef {
 	id: SectionId;
@@ -55,6 +58,7 @@ const SECTIONS: SectionDef[] = [
 	{ id: "wallet", label: "Wallet Pass", icon: Wallet },
 	{ id: "vcard", label: "vCard", icon: UserCircle },
 	{ id: "data", label: "Data & Info", icon: Database },
+	{ id: "migration", label: "Migration", icon: ArrowRightLeft },
 ];
 
 // ---- Saved State (global settings only) ----
@@ -252,9 +256,14 @@ export default function SettingsPage() {
 		try {
 			const text = await file.text();
 			const parsed = JSON.parse(text);
+			if (!parsed.data) {
+				toast.error("Invalid LinkDen export file.");
+				if (fileInputRef.current) fileInputRef.current.value = "";
+				return;
+			}
 			await importData.mutateAsync({
 				mode: "merge",
-				data: parsed.data ?? parsed,
+				data: parsed.data,
 			});
 			invalidate();
 			toast.success("Import successful");
@@ -334,6 +343,7 @@ export default function SettingsPage() {
 				}
 			/>
 		),
+		migration: <MigrationSection onImportComplete={invalidate} />,
 	};
 
 	const activeLabel =

@@ -8,6 +8,7 @@ import {
 } from "@linkden/db/schema/index";
 import { eq, asc, sql } from "drizzle-orm";
 import { z } from "zod";
+import { transformLinkStackData } from "../utils/linkstack-transformer";
 
 export const backupRouter = router({
 	export: protectedProcedure.query(async () => {
@@ -141,5 +142,72 @@ export const backupRouter = router({
 			}
 
 			return { success: true };
+		}),
+
+	importLinkStack: protectedProcedure
+		.input(
+			z.object({
+				data: z.any(),
+				options: z.object({
+					importLinks: z.boolean(),
+					importProfile: z.boolean(),
+					importTheme: z.boolean(),
+				}),
+			}),
+		)
+		.mutation(async ({ input }) => {
+			const { data, options } = input;
+			const transformed = transformLinkStackData(data);
+
+			let linksImported = 0;
+			let settingsUpdated = false;
+
+			if (options.importLinks && transformed.blocks.length > 0) {
+				for (const b of transformed.blocks) {
+					await db.insert(block).values(b);
+				}
+				linksImported = transformed.blocks.length;
+			}
+
+			if (options.importProfile || options.importTheme) {
+				const settingsToImport: Record<string, string> = {};
+
+				if (options.importProfile) {
+					if (transformed.settings.display_name) {
+						settingsToImport.display_name = transformed.settings.display_name;
+					}
+					if (transformed.settings.bio) {
+						settingsToImport.bio = transformed.settings.bio;
+					}
+				}
+
+				if (options.importTheme && transformed.settings.theme) {
+					settingsToImport.theme = transformed.settings.theme;
+				}
+
+				for (const [key, value] of Object.entries(settingsToImport)) {
+					const [existing] = await db
+						.select()
+						.from(siteSettings)
+						.where(eq(siteSettings.key, key));
+					if (existing) {
+						await db
+							.update(siteSettings)
+							.set({ value })
+							.where(eq(siteSettings.key, key));
+					} else {
+						await db.insert(siteSettings).values({ key, value });
+					}
+				}
+
+				if (Object.keys(settingsToImport).length > 0) {
+					settingsUpdated = true;
+				}
+			}
+
+			return {
+				success: true,
+				stats: { linksImported, settingsUpdated },
+			};
 		}),
 });
