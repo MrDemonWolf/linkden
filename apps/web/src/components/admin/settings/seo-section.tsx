@@ -14,6 +14,8 @@ interface SeoSectionProps {
 	seoOgTemplate: string;
 	profileName: string;
 	bio: string;
+	primaryColor: string;
+	avatarUrl: string;
 	onSeoTitleChange: (v: string) => void;
 	onSeoDescriptionChange: (v: string) => void;
 	onSeoOgImageChange: (v: string) => void;
@@ -29,13 +31,15 @@ export function SeoSection({
 	seoOgTemplate,
 	profileName,
 	bio,
+	primaryColor,
+	avatarUrl,
 	onSeoTitleChange,
 	onSeoDescriptionChange,
 	onSeoOgImageChange,
 	onSeoOgModeChange,
 	onSeoOgTemplateChange,
 }: SeoSectionProps) {
-	const previewUrl = `/api/og?template=${encodeURIComponent(seoOgTemplate || "minimal")}&name=${encodeURIComponent(profileName || "My Links")}&bio=${encodeURIComponent(bio || "")}&_preview=1`;
+	const previewUrl = `/api/og?template=${encodeURIComponent(seoOgTemplate || "minimal")}&name=${encodeURIComponent(profileName || "My Links")}&bio=${encodeURIComponent(bio || "")}&theme=${encodeURIComponent(primaryColor || "#6366f1")}${avatarUrl ? `&avatar=${encodeURIComponent(avatarUrl)}` : ""}&_preview=1`;
 
 	return (
 		<div className="space-y-4">

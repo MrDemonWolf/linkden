@@ -38,7 +38,7 @@ export function BlockRow({
 			onDragOver={onDragOver}
 			onDrop={onDrop}
 			className={cn(
-				"group flex items-center gap-2 rounded-xl bg-card backdrop-blur-xl border border-white/15 dark:border-white/10 shadow-sm px-3 py-2.5 transition-all",
+				"group flex items-center gap-2 rounded-xl bg-card backdrop-blur-xl border border-white/15 dark:border-white/10 shadow-sm px-3 py-2.5 transition-all hover:shadow-md hover:border-white/25 dark:hover:border-white/15",
 				isDragged && "opacity-50",
 				!block.isEnabled && "opacity-60",
 			)}

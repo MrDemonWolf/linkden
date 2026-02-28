@@ -201,16 +201,19 @@ export default function AnalyticsPage() {
 						) : !topLinks.data?.length ? (
 							<p className="text-xs text-muted-foreground">No click data yet</p>
 						) : (
-							<div className="space-y-2">
+							<div className="space-y-0.5">
 								{topLinks.data.map((link, i) => (
 									<div
 										key={link.blockId ?? i}
-										className="flex items-center justify-between text-xs"
+										className="flex items-center justify-between text-xs rounded-md px-2 py-1.5 -mx-2 transition-colors hover:bg-muted/50"
 									>
-										<span className="min-w-0 truncate">
-											{link.blockTitle || link.blockUrl || "Unknown"}
-										</span>
-										<span className="ml-2 shrink-0 font-medium">
+										<div className="flex items-center gap-2 min-w-0">
+											<div className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+											<span className="truncate">
+												{link.blockTitle || link.blockUrl || "Unknown"}
+											</span>
+										</div>
+										<span className="ml-2 shrink-0 font-semibold tabular-nums">
 											{link.count}
 										</span>
 									</div>
@@ -242,16 +245,19 @@ export default function AnalyticsPage() {
 								No referrer data yet
 							</p>
 						) : (
-							<div className="space-y-2">
+							<div className="space-y-0.5">
 								{referrers.data.map((ref, i) => (
 									<div
 										key={ref.referrer ?? i}
-										className="flex items-center justify-between text-xs"
+										className="flex items-center justify-between text-xs rounded-md px-2 py-1.5 -mx-2 transition-colors hover:bg-muted/50"
 									>
-										<span className="min-w-0 truncate">
-											{ref.referrer || "Direct"}
-										</span>
-										<span className="ml-2 shrink-0 font-medium">
+										<div className="flex items-center gap-2 min-w-0">
+											<div className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
+											<span className="truncate">
+												{ref.referrer || "Direct"}
+											</span>
+										</div>
+										<span className="ml-2 shrink-0 font-semibold tabular-nums">
 											{ref.count}
 										</span>
 									</div>
@@ -283,14 +289,17 @@ export default function AnalyticsPage() {
 								No country data yet
 							</p>
 						) : (
-							<div className="space-y-2">
+							<div className="space-y-0.5">
 								{countries.data.map((c, i) => (
 									<div
 										key={c.country ?? i}
-										className="flex items-center justify-between text-xs"
+										className="flex items-center justify-between text-xs rounded-md px-2 py-1.5 -mx-2 transition-colors hover:bg-muted/50"
 									>
-										<span>{c.country || "Unknown"}</span>
-										<span className="font-medium">{c.count}</span>
+										<div className="flex items-center gap-2 min-w-0">
+											<div className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+											<span>{c.country || "Unknown"}</span>
+										</div>
+										<span className="font-semibold tabular-nums">{c.count}</span>
 									</div>
 								))}
 							</div>

@@ -333,6 +333,8 @@ export default function SettingsPage() {
 				seoOgTemplate={seoOgTemplate}
 				profileName={settingsQuery.data?.profile_name ?? ""}
 				bio={settingsQuery.data?.bio ?? ""}
+				primaryColor={settingsQuery.data?.custom_primary ?? "#6366f1"}
+				avatarUrl={settingsQuery.data?.avatar_url ?? ""}
 				onSeoTitleChange={setSeoTitle}
 				onSeoDescriptionChange={setSeoDescription}
 				onSeoOgImageChange={setSeoOgImage}
@@ -481,7 +483,7 @@ export default function SettingsPage() {
 									className={cn(
 										"flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium transition-all",
 										isActive
-											? "bg-primary/10 text-primary border-l-2 border-primary"
+											? "bg-primary/10 text-primary border-l-2 border-primary shadow-[inset_0_0_12px_rgba(var(--primary-rgb,99,102,241),0.08)]"
 											: "text-muted-foreground hover:bg-white/10 hover:text-foreground",
 									)}
 								>
