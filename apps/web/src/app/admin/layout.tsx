@@ -12,6 +12,7 @@ import {
 	Palette,
 	Settings,
 	Share2,
+	Wallet,
 	ExternalLink,
 	Menu,
 	X,
@@ -32,6 +33,7 @@ const NAV_ITEMS = [
 	{ href: "/admin/appearance" as const, label: "Appearance", icon: Palette },
 	{ href: "/admin/settings" as const, label: "Settings", icon: Settings },
 	{ href: "/admin/social" as const, label: "Social", icon: Share2 },
+	{ href: "/admin/wallet" as const, label: "Wallet", icon: Wallet },
 ];
 
 const BOTTOM_NAV_ITEMS = NAV_ITEMS.filter((item) =>
@@ -87,7 +89,7 @@ function SidebarContent({
 							className={cn(
 								"flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium transition-all",
 								isActive
-									? "bg-white/15 dark:bg-white/10 backdrop-blur-sm text-foreground border-l-2 border-primary"
+									? "bg-primary/10 text-primary border-l-2 border-primary shadow-[inset_0_0_12px_rgba(var(--primary-rgb,99,102,241),0.08)]"
 									: "text-muted-foreground hover:bg-white/10 hover:backdrop-blur-sm hover:text-foreground",
 							)}
 						>
