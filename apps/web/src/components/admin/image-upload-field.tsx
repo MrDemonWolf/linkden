@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 interface ImageUploadFieldProps {
 	label?: string;
 	value: string;
-	purpose: "avatar" | "banner" | "og_image";
+	purpose: "avatar" | "banner" | "og_image" | "wallet_logo";
 	onUploadComplete: (url: string) => void;
 	aspectRatio?: "square" | "banner";
 }

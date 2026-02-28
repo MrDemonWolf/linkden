@@ -59,7 +59,7 @@ app.post("/api/upload", async (c) => {
     return c.json({ error: "No file provided" }, 400);
   }
 
-  const validPurposes = ["avatar", "banner", "og_image"];
+  const validPurposes = ["avatar", "banner", "og_image", "wallet_logo"];
   const filePurpose = validPurposes.includes(purpose ?? "") ? purpose : "misc";
   const ext = file.name.split(".").pop() || "bin";
   const key = `${filePurpose}/${Date.now()}.${ext}`;
