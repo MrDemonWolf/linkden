@@ -5,7 +5,7 @@ export const blockTypeSchema = z.enum([
   "header",
   "social_icons",
   "embed",
-  "contact_form",
+  "form",
 ]);
 
 export type BlockType = z.infer<typeof blockTypeSchema>;
@@ -71,7 +71,8 @@ export function validateEmbedUrl(embedType: string, url: string): boolean {
   return pattern.test(url);
 }
 
-export const contactFormConfigSchema = blockConfigBaseSchema.extend({
+export const formConfigSchema = blockConfigBaseSchema.extend({
+  preset: z.enum(["contact", "connect", "feedback", "rsvp"]).optional(),
   buttonText: z.string().optional(),
   buttonEmoji: z.string().optional(),
   buttonEmojiPosition: z.enum(["left", "right"]).optional(),
@@ -79,6 +80,10 @@ export const contactFormConfigSchema = blockConfigBaseSchema.extend({
   showPhone: z.boolean().optional(),
   showSubject: z.boolean().optional(),
   showCompany: z.boolean().optional(),
+  showWhereMet: z.boolean().optional(),
+  showRating: z.boolean().optional(),
+  showAttending: z.boolean().optional(),
+  showGuests: z.boolean().optional(),
   isOutlined: z.boolean().optional(),
   textAlign: z.enum(["left", "center", "right"]).optional(),
 });
@@ -106,7 +111,7 @@ export const createBlockSchema = z.object({
       headerConfigSchema,
       socialIconsConfigSchema,
       embedConfigSchema,
-      contactFormConfigSchema,
+      formConfigSchema,
       blockConfigBaseSchema,
     ])
     .optional(),
@@ -131,7 +136,7 @@ export const updateBlockSchema = z.object({
       headerConfigSchema,
       socialIconsConfigSchema,
       embedConfigSchema,
-      contactFormConfigSchema,
+      formConfigSchema,
       blockConfigBaseSchema,
     ])
     .optional(),

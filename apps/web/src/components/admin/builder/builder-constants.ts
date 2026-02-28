@@ -11,7 +11,7 @@ export const BLOCK_TYPES = [
 	{ type: "header" as const, label: "Header", icon: Type, description: "A text header/divider" },
 	{ type: "social_icons" as const, label: "Social Icons", icon: Share2, description: "Row of social media icons" },
 	{ type: "embed" as const, label: "Embed", icon: Code, description: "YouTube, Spotify, or other embed" },
-	{ type: "contact_form" as const, label: "Contact Form", icon: MessageSquare, description: "Inline contact form" },
+	{ type: "form" as const, label: "Form", icon: MessageSquare, description: "Customizable form with presets" },
 ] as const;
 
 export type BlockType = (typeof BLOCK_TYPES)[number]["type"];

@@ -223,8 +223,34 @@ export function BlockEditPanel({
 									</div>
 								</>
 							)}
-							{block.type === "contact_form" && (
+							{block.type === "form" && (
 								<div className="space-y-3">
+									<div className="space-y-1.5">
+										<Label htmlFor="edit-preset">Preset</Label>
+										<GlassSelect
+											id="edit-preset"
+											value={parsedConfig.preset ?? "contact"}
+											onChange={(v) => {
+												updateConfigField("preset", v);
+												const presetDefaults: Record<string, { buttonText: string; showPhone?: boolean; showCompany?: boolean; showWhereMet?: boolean; showRating?: boolean; showAttending?: boolean; showGuests?: boolean }> = {
+													contact: { buttonText: "Contact Me" },
+													connect: { buttonText: "Connect with Me", showPhone: true, showCompany: true, showWhereMet: true },
+													feedback: { buttonText: "Feedback", showRating: true },
+													rsvp: { buttonText: "RSVP", showAttending: true, showGuests: true },
+												};
+												const defaults = presetDefaults[v];
+												if (defaults) {
+													const updated = { ...parsedConfig, preset: v, ...defaults };
+													setConfig(JSON.stringify(updated, null, 2));
+												}
+											}}
+										>
+											<option value="contact">Contact Form</option>
+											<option value="connect">Connect with Me</option>
+											<option value="feedback">Feedback</option>
+											<option value="rsvp">RSVP</option>
+										</GlassSelect>
+									</div>
 									<div className="space-y-1.5">
 										<Label htmlFor="edit-button-text">Button Text</Label>
 										<Input
@@ -524,7 +550,7 @@ export function BlockEditPanel({
 								</div>
 							)}
 
-							{block.type === "contact_form" && (
+							{block.type === "form" && (
 								<div className="space-y-3">
 									<div className="flex items-center justify-between">
 										<Label>Outlined Style</Label>
@@ -609,7 +635,7 @@ export function BlockEditPanel({
 
 					{activeTab === "options" && (
 						<>
-							{block.type === "contact_form" ? (
+							{block.type === "form" ? (
 								<div className="space-y-3">
 									<div className="space-y-1.5">
 										<Label htmlFor="edit-delivery">Delivery mode</Label>
@@ -692,6 +718,78 @@ export function BlockEditPanel({
 												)}
 											>
 												<span className={cn("inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform", parsedConfig.showCompany ? "translate-x-[18px]" : "translate-x-[3px]")} />
+											</button>
+										</div>
+										<div className="flex items-center justify-between">
+											<div className="space-y-0.5">
+												<Label>Where Met Field</Label>
+												<p className="text-[11px] text-muted-foreground">Ask where you met (Connect preset)</p>
+											</div>
+											<button
+												type="button"
+												role="switch"
+												aria-checked={!!parsedConfig.showWhereMet}
+												onClick={() => updateConfigField("showWhereMet", !parsedConfig.showWhereMet)}
+												className={cn(
+													"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+													parsedConfig.showWhereMet ? "bg-primary" : "bg-muted",
+												)}
+											>
+												<span className={cn("inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform", parsedConfig.showWhereMet ? "translate-x-[18px]" : "translate-x-[3px]")} />
+											</button>
+										</div>
+										<div className="flex items-center justify-between">
+											<div className="space-y-0.5">
+												<Label>Rating Field</Label>
+												<p className="text-[11px] text-muted-foreground">Show 1-5 star rating (Feedback preset)</p>
+											</div>
+											<button
+												type="button"
+												role="switch"
+												aria-checked={!!parsedConfig.showRating}
+												onClick={() => updateConfigField("showRating", !parsedConfig.showRating)}
+												className={cn(
+													"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+													parsedConfig.showRating ? "bg-primary" : "bg-muted",
+												)}
+											>
+												<span className={cn("inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform", parsedConfig.showRating ? "translate-x-[18px]" : "translate-x-[3px]")} />
+											</button>
+										</div>
+										<div className="flex items-center justify-between">
+											<div className="space-y-0.5">
+												<Label>Attending Field</Label>
+												<p className="text-[11px] text-muted-foreground">Yes/No/Maybe selector (RSVP preset)</p>
+											</div>
+											<button
+												type="button"
+												role="switch"
+												aria-checked={!!parsedConfig.showAttending}
+												onClick={() => updateConfigField("showAttending", !parsedConfig.showAttending)}
+												className={cn(
+													"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+													parsedConfig.showAttending ? "bg-primary" : "bg-muted",
+												)}
+											>
+												<span className={cn("inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform", parsedConfig.showAttending ? "translate-x-[18px]" : "translate-x-[3px]")} />
+											</button>
+										</div>
+										<div className="flex items-center justify-between">
+											<div className="space-y-0.5">
+												<Label>Guests Field</Label>
+												<p className="text-[11px] text-muted-foreground">Number of guests input (RSVP preset)</p>
+											</div>
+											<button
+												type="button"
+												role="switch"
+												aria-checked={!!parsedConfig.showGuests}
+												onClick={() => updateConfigField("showGuests", !parsedConfig.showGuests)}
+												className={cn(
+													"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+													parsedConfig.showGuests ? "bg-primary" : "bg-muted",
+												)}
+											>
+												<span className={cn("inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform", parsedConfig.showGuests ? "translate-x-[18px]" : "translate-x-[3px]")} />
 											</button>
 										</div>
 									</div>

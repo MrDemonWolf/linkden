@@ -90,7 +90,7 @@ export const publicRouter = router({
 
 		// Hide blocks for disabled features
 		const visibleBlocks = scheduledBlocks.filter((b) => {
-			if (b.type === "contact_form" && settings.contact_form_enabled !== "true") return false;
+			if (b.type === "form" && settings.contact_form_enabled !== "true") return false;
 			if (b.type === "social_icons" && socialNetworks.length === 0) return false;
 			return true;
 		});
@@ -154,6 +154,10 @@ export const publicRouter = router({
 				phone: z.string().optional(),
 				subject: z.string().optional(),
 				company: z.string().optional(),
+				whereMet: z.string().optional(),
+				rating: z.number().min(1).max(5).optional(),
+				attending: z.enum(["yes", "no", "maybe"]).optional(),
+				guests: z.number().min(0).optional(),
 				captchaToken: z.string().optional(),
 			}),
 		)
@@ -210,6 +214,10 @@ export const publicRouter = router({
 				phone: input.phone ? stripTags(input.phone) : null,
 				subject: input.subject ? stripTags(input.subject) : null,
 				company: input.company ? stripTags(input.company) : null,
+				whereMet: input.whereMet ? stripTags(input.whereMet) : null,
+				rating: input.rating ?? null,
+				attending: input.attending ?? null,
+				guests: input.guests ?? null,
 			});
 
 			return { success: true };

@@ -146,6 +146,10 @@ export function ContactFormModal({
 	const showPhone = config.showPhone as boolean | undefined;
 	const showSubject = config.showSubject as boolean | undefined;
 	const showCompany = config.showCompany as boolean | undefined;
+	const showWhereMet = config.showWhereMet as boolean | undefined;
+	const showRating = config.showRating as boolean | undefined;
+	const showAttending = config.showAttending as boolean | undefined;
+	const showGuests = config.showGuests as boolean | undefined;
 
 	const [formData, setFormData] = useState({
 		name: "",
@@ -154,6 +158,10 @@ export function ContactFormModal({
 		phone: "",
 		subject: "",
 		company: "",
+		whereMet: "",
+		rating: 0,
+		attending: "" as "" | "yes" | "no" | "maybe",
+		guests: "",
 	});
 	const [submitted, setSubmitted] = useState(false);
 	const [errors, setErrors] = useState<Record<string, string>>({});
@@ -162,7 +170,7 @@ export function ContactFormModal({
 		...trpc.public.submitContact.mutationOptions(),
 		onSuccess: () => {
 			setSubmitted(true);
-			setFormData({ name: "", email: "", message: "", phone: "", subject: "", company: "" });
+			setFormData({ name: "", email: "", message: "", phone: "", subject: "", company: "", whereMet: "", rating: 0, attending: "", guests: "" });
 		},
 	});
 
@@ -175,8 +183,10 @@ export function ContactFormModal({
 			errs.email = "Invalid email address";
 		}
 		if (!formData.message.trim()) errs.message = "Message is required";
+		if (showWhereMet && !formData.whereMet.trim()) errs.whereMet = "This field is required";
+		if (showAttending && !formData.attending) errs.attending = "Please select an option";
 		return errs;
-	}, [formData]);
+	}, [formData, showWhereMet, showAttending]);
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -192,6 +202,10 @@ export function ContactFormModal({
 			phone: formData.phone || undefined,
 			subject: formData.subject || undefined,
 			company: formData.company || undefined,
+			whereMet: formData.whereMet || undefined,
+			rating: formData.rating > 0 ? formData.rating : undefined,
+			attending: formData.attending || undefined,
+			guests: formData.guests ? Number(formData.guests) : undefined,
 		});
 	};
 
@@ -376,6 +390,90 @@ export function ContactFormModal({
 								label="Company"
 								value={formData.company}
 								onChange={updateField("company")}
+								themeColors={themeColors}
+							/>
+						)}
+
+						{showWhereMet && (
+							<FloatingField
+								id={`contact-wheremet-${blockId}`}
+								label="Where did we meet?"
+								required
+								value={formData.whereMet}
+								onChange={updateField("whereMet")}
+								error={errors.whereMet}
+								themeColors={themeColors}
+							/>
+						)}
+
+						{showRating && (
+							<div className="space-y-1.5">
+								<label className="text-sm" style={themeColors ? { color: themeColors.mutedFg } : {}}>
+									Rating
+								</label>
+								<div className="flex gap-1">
+									{[1, 2, 3, 4, 5].map((star) => (
+										<button
+											key={star}
+											type="button"
+											onClick={() => setFormData((prev) => ({ ...prev, rating: prev.rating === star ? 0 : star }))}
+											className="p-0.5 transition-transform hover:scale-110"
+											aria-label={`${star} star${star > 1 ? "s" : ""}`}
+										>
+											<svg
+												className="h-7 w-7"
+												viewBox="0 0 24 24"
+												fill={formData.rating >= star ? (themeColors?.primary || "#eab308") : "none"}
+												stroke={formData.rating >= star ? (themeColors?.primary || "#eab308") : (themeColors?.mutedFg || "#9ca3af")}
+												strokeWidth={1.5}
+											>
+												<path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+											</svg>
+										</button>
+									))}
+								</div>
+							</div>
+						)}
+
+						{showAttending && (
+							<div className="space-y-1.5">
+								<label className="text-sm" style={themeColors ? { color: themeColors.mutedFg } : {}}>
+									Attending <span className="text-red-400">*</span>
+								</label>
+								<div
+									className="flex rounded-xl border overflow-hidden"
+									style={themeColors ? { borderColor: themeColors.border } : {}}
+								>
+									{(["yes", "no", "maybe"] as const).map((opt) => (
+										<button
+											key={opt}
+											type="button"
+											onClick={() => setFormData((prev) => ({ ...prev, attending: opt }))}
+											className="flex-1 py-2.5 text-sm font-medium transition-colors capitalize"
+											style={{
+												backgroundColor: formData.attending === opt ? (themeColors?.primary || "#2563eb") : "transparent",
+												color: formData.attending === opt ? getContrastColor(themeColors?.primary || "#2563eb") : (themeColors?.cardFg || "inherit"),
+											}}
+										>
+											{opt}
+										</button>
+									))}
+								</div>
+								{errors.attending && (
+									<span className="mt-1 block text-xs text-red-400" role="alert">
+										{errors.attending}
+									</span>
+								)}
+							</div>
+						)}
+
+						{showGuests && (
+							<FloatingField
+								id={`contact-guests-${blockId}`}
+								label="Number of Guests"
+								type="number"
+								value={formData.guests}
+								onChange={updateField("guests")}
 								themeColors={themeColors}
 							/>
 						)}
