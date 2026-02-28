@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { FieldGroup } from "./field-group";
 import { OG_TEMPLATES } from "@/lib/og-templates";
-import { Check } from "lucide-react";
+import { Check, Layout, Link } from "lucide-react";
 
 interface SeoSectionProps {
 	seoTitle: string;
@@ -69,29 +69,35 @@ export function SeoSection({
 			{/* OG Image mode toggle */}
 			<div className="space-y-3">
 				<Label>OG Image</Label>
-				<div className="flex rounded-lg border border-border/50 p-0.5 bg-muted/30">
+				<div className="flex gap-2" role="tablist">
 					<button
 						type="button"
+						role="tab"
+						aria-selected={seoOgMode === "template"}
 						onClick={() => onSeoOgModeChange("template")}
 						className={cn(
-							"flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
+							"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
 							seoOgMode === "template"
-								? "bg-background text-foreground shadow-sm"
-								: "text-muted-foreground hover:text-foreground",
+								? "border-primary bg-primary/5 text-primary"
+								: "border-border text-muted-foreground hover:text-foreground",
 						)}
 					>
+						<Layout className="h-3 w-3" />
 						Use Template
 					</button>
 					<button
 						type="button"
+						role="tab"
+						aria-selected={seoOgMode === "custom"}
 						onClick={() => onSeoOgModeChange("custom")}
 						className={cn(
-							"flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
+							"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
 							seoOgMode === "custom"
-								? "bg-background text-foreground shadow-sm"
-								: "text-muted-foreground hover:text-foreground",
+								? "border-primary bg-primary/5 text-primary"
+								: "border-border text-muted-foreground hover:text-foreground",
 						)}
 					>
+						<Link className="h-3 w-3" />
 						Custom URL
 					</button>
 				</div>

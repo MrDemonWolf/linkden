@@ -27,7 +27,7 @@ export function StatCard({
 	isLoading,
 }: StatCardProps) {
 	return (
-		<Card size="sm" className="group relative overflow-hidden transition-all duration-200 hover:scale-[1.01] hover:shadow-md">
+		<Card size="sm" className="group relative overflow-hidden">
 			{/* Gradient accent bar */}
 			<div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
 			<CardContent className="flex items-center gap-3">
