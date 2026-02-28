@@ -1,132 +1,109 @@
 ---
-title: Appearance
-description: Customize your LinkDen page with themes, colors, banners, verified badge, branding, and custom CSS.
+title: Appearance & Themes
+description: Customize your page's look with theme presets, custom colors, banners, dark mode, and more.
 ---
 
-# Appearance
+# Appearance & Themes
 
-The appearance page at `/admin/appearance` controls everything visual about your public link page. All changes use a preview-first workflow -- you can see the effect of each change in the live phone preview before publishing.
-
-## Preview-First Workflow
-
-The Appearance page uses a **Publish / Discard** model:
-
-1. Make changes to any setting (theme, colors, banner, etc.).
-2. See changes reflected instantly in the phone preview on the right.
-3. Click **Publish** to save all changes at once, or **Discard** to revert.
-
-The subtitle shows "Unsaved changes -- publish to go live" when you have pending changes, and "Your page is up to date" when everything is saved.
-
----
-
-## Admin Theme
-
-The admin panel has its own theme toggle, separate from the public page. Choose between:
-
-- **Light** -- Light admin panel.
-- **Dark** -- Dark admin panel.
-- **System** -- Follows your OS preference.
-
-This setting uses `next-themes` and only affects the admin panel. Public page theme presets do not leak into the admin UI, and vice versa. See [Theming](/docs/guide/theming) for details on the separation between admin and public themes.
-
----
-
-## Profile Section
-
-The profile section uses a centered layout with the avatar above full-width name and bio fields:
-
-- **Avatar** -- Upload an image or provide a URL. The avatar is displayed centered above the name and bio.
-- **Display Name** -- Up to 50 characters.
-- **Bio** -- A short description, up to 300 characters. A character counter is shown in the top-right corner of the field.
-
----
+Everything visual about your public page lives at `/admin/appearance`. Changes preview instantly in the phone preview on the right — click **Publish** when you're happy, or **Discard** to revert.
 
 ## Theme Presets
 
-Choose from 7 built-in themes, each available in dark and light variants (14 total). An auto mode follows the visitor's system preference.
+Pick from 7 built-in themes. Each has a dark and light variant (14 total), plus an auto mode that follows the visitor's device preference.
 
-### Available Themes
+| Theme | Primary Color | Vibe |
+|-------|--------------|------|
+| **Default** | Cyan `#0FACED` | Clean, modern |
+| **Corporate Classic** | Navy `#1E3A5F` | Professional, subtle |
+| **Corporate Modern** | Teal `#0D9488` | Contemporary, balanced |
+| **Hacker Terminal** | Green `#16A34A` | Monospace, sharp corners |
+| **Neon Cyber** | Purple `#7C3AED` | Vibrant, large radius |
+| **Furry Pastel** | Pink `#EC4899` | Warm, fully rounded |
+| **Furry Bold** | Orange `#EA580C` | High energy, bold |
 
-| Theme | Color | Style |
-|-------|-------|-------|
-| **Default** | Cyan (`#0FACED`) | Clean, modern, medium border radius |
-| **Corporate Classic** | Navy (`#1E3A5F`) | Professional, subtle border radius |
-| **Corporate Modern** | Teal (`#0D9488`) | Contemporary, balanced border radius |
-| **Hacker Terminal** | Green (`#16A34A`) | Monospace-inspired, no border radius |
-| **Neon Cyber** | Purple (`#7C3AED`) | Eye-catching, large border radius |
-| **Furry Pastel** | Pink (`#EC4899`) | Warm, fully rounded corners |
-| **Furry Bold** | Orange (`#EA580C`) | High energy, large border radius |
+Click any theme card to apply it. The color pickers update to match the theme's palette.
 
-Click any theme to select it. The color pickers update automatically to match the theme's palette.
+## Custom Colors
 
-## Color Customization
+Override individual colors on top of any preset:
 
-Override individual theme colors:
+- **Primary** — Main accent for buttons and links
+- **Secondary** — Supporting elements
+- **Accent** — Highlights and emphasis
+- **Background** — Page background
 
-- **Primary color** -- The main accent color used for buttons and interactive elements.
-- **Secondary color** -- Supporting color for secondary elements.
-- **Accent color** -- Highlight color for emphasis.
-- **Background color** -- Override the page background.
+Each color has a hex input and a native color swatch side by side. Custom overrides apply in light mode only — dark mode uses the full preset-defined palette to avoid contrast issues.
 
-Colors are set via CSS custom properties (`--ld-primary`, `--ld-secondary`, etc.) and apply on top of the selected theme preset. Custom color overrides are stored as light-mode values and apply only in light mode; dark mode uses the full theme-defined palette.
+## Color Mode
 
-## Default Color Mode
+Set the default mode visitors see:
 
-Set the default color mode for visitors on the **public page**:
+| Mode | Behavior |
+|------|----------|
+| **Light** | Always shows the light variant |
+| **Dark** | Always shows the dark variant |
+| **System** | Matches the visitor's OS preference |
 
-- **Light** -- Forces the light variant.
-- **Dark** -- Forces the dark variant.
-- **System** -- Follows the visitor's OS preference.
+Visitors can always toggle between light and dark using the button on your page. Their preference is saved in the browser for return visits.
 
-When "System" is selected, the preview panel correctly detects your current OS preference to show an accurate preview. Visitors can always toggle between light and dark mode using the theme toggle button on the public page.
+## Admin vs. Public Themes
 
-## Banner
+The admin panel and public page have **separate** theming systems. Choosing "Neon Cyber" for your public page won't turn your admin panel purple.
 
-The banner system supports two modes, toggled with Presets / Custom Image tabs:
+- **Admin theme** — Light / Dark / System toggle in the appearance page. Uses standard Tailwind dark mode.
+- **Public theme** — Preset + custom colors + color mode, stored in the database and applied via CSS custom properties.
+
+## Profile
+
+Customize what visitors see at the top of your page:
+
+- **Avatar** — Upload an image or provide a URL
+- **Display Name** — Up to 50 characters
+- **Bio** — Short description, up to 300 characters (character counter shown)
+
+## Banners
+
+Add a banner behind your avatar. Two modes:
 
 ### Preset Gradients
 
-Choose from gradient presets that automatically adapt to your current theme colors. The presets use your primary, accent, and background colors to generate themed gradients, so they update when you change themes or custom colors.
+Gradient presets that adapt to your current theme colors. Change your theme or custom colors and the gradients update automatically.
 
-### Custom Image Upload
+### Custom Image
 
-Upload a custom banner image. The image upload field accepts standard image formats and displays a preview of your uploaded banner.
+Upload any image as a custom banner. Not affected by theme changes.
 
-### Banner Settings
-
-- **Enable/disable** -- Toggle the banner on or off with a switch.
-- **Mode toggle** -- Switch between "Presets" and "Custom Image" tabs.
-- The banner appears behind your avatar on the public page.
+Toggle the banner on or off with the switch.
 
 ## Verified Badge
 
-Toggle a blue checkmark badge that appears next to your display name on the public page. This is purely cosmetic and does not require any external verification.
+Toggle a blue checkmark next to your display name. Purely cosmetic — no external verification needed.
 
-## Branding
+## Branding / Whitelabel
 
-Control the whitelabel footer on your public page:
+Control the footer on your public page:
 
-- **Show whitelabel footer** -- Toggle the footer on/off.
-- **Custom Text** -- Replace the default "Powered by LinkDen" text.
-- **Custom Link** -- Set a custom URL for the footer link.
+- **Show footer** — Toggle on or off
+- **Custom Text** — Replace the default "Powered by LinkDen" text
+- **Custom Link** — Set a URL for the footer link
 
-When disabled, no footer is shown at all. LinkDen is MIT licensed, so no attribution is required.
+LinkDen is MIT licensed. No attribution required.
 
 ## Custom CSS
 
-For advanced customization, add custom CSS that is injected into your public page. This lets you override any theme variable or style, add animations, or implement completely unique designs. Custom CSS is sanitized server-side to prevent XSS injection (script tags, `expression()`, `javascript:` URLs, and other vectors are stripped).
+Add your own CSS to the public page for advanced customization. The CSS is sanitized server-side to prevent XSS (script tags, `expression()`, `javascript:` URLs are stripped).
 
-### Available CSS Classes
+### Useful CSS Classes
 
 | Class | Element |
 |-------|---------|
 | `.ld-page` | Page container |
-| `.ld-profile` | Profile/header section |
+| `.ld-profile` | Header/profile section |
 | `.ld-avatar` | Profile avatar |
 | `.ld-bio` | Bio text |
 | `.ld-blocks` | Blocks container |
 | `.ld-link-block` | Link buttons |
-| `.ld-header-block` | Header/divider blocks |
+| `.ld-header-block` | Header blocks |
 | `.ld-social-block` | Social icons row |
 | `.ld-embed-block` | Embed blocks |
 | `.ld-contact-block` | Contact form |
@@ -134,39 +111,31 @@ For advanced customization, add custom CSS that is injected into your public pag
 
 ### CSS Variables
 
+All theme colors are available as CSS custom properties:
+
 | Variable | Description |
 |----------|-------------|
-| `--ld-primary` | Primary accent color |
+| `--ld-primary` | Primary accent |
 | `--ld-secondary` | Secondary color |
-| `--ld-accent` | Accent color for highlights |
-| `--ld-action` | Action/button color |
+| `--ld-accent` | Accent / highlight |
+| `--ld-action` | Action / button color |
 | `--ld-background` | Page background |
 | `--ld-foreground` | Main text color |
 | `--ld-card` | Card background |
-| `--ld-card-foreground` | Card text color |
+| `--ld-card-foreground` | Card text |
 | `--ld-border` | Border color |
 | `--ld-muted` | Muted background |
-| `--ld-muted-foreground` | Muted text color |
+| `--ld-muted-foreground` | Muted text |
 | `--ld-radius` | Border radius |
 
 ### Example
 
 ```css
-/* Round all link blocks */
 .ld-link-block {
   border-radius: 20px;
 }
 
-/* Custom gradient background */
 .ld-page {
   background: linear-gradient(135deg, var(--ld-primary), var(--ld-accent));
 }
 ```
-
-## Dark / Light Mode Toggle
-
-Visitors to your public page can switch between dark and light mode using the theme toggle button. The initial mode is determined by:
-
-1. The visitor's saved preference (stored in `localStorage`).
-2. Your site's default color mode setting.
-3. The visitor's OS-level color scheme preference if "system" is selected.

@@ -9,15 +9,15 @@ description: Frequently asked questions about LinkDen.
 
 ### What is LinkDen?
 
-LinkDen is a self-hosted, open-source link-in-bio platform. It's a modern alternative to Linktree, built on the Cloudflare stack with a full admin panel and edge performance.
+A self-hosted, open-source link-in-bio platform. Think Linktree, but you own everything and it runs on the edge.
 
 ### Is LinkDen free?
 
-Yes. LinkDen is MIT licensed and completely free. Cloudflare's free tier covers Workers, D1, and Pages -- so you can deploy at zero cost.
+Yes. MIT licensed, zero cost. Cloudflare's free tier covers Workers, D1, and Pages -- so hosting is free too.
 
 ### Can I use LinkDen commercially?
 
-Absolutely. The MIT license allows unrestricted commercial use. You can remove all LinkDen branding and use it for clients, businesses, or any purpose.
+Absolutely. The MIT license allows unrestricted commercial use. Remove all branding, use it for clients -- no strings attached.
 
 ### How is LinkDen different from Linktree?
 
@@ -38,19 +38,19 @@ Absolutely. The MIT license allows unrestricted commercial use. You can remove a
 
 ### Do I need a Cloudflare account?
 
-Yes for the primary deployment path. LinkDen runs on Cloudflare Workers (API) and can deploy the frontend to Cloudflare Pages. However, Docker self-hosting is also supported.
+For the primary deployment path, yes. LinkDen runs on Cloudflare Workers and Pages. But Docker self-hosting works too if you'd rather skip Cloudflare entirely.
 
 ### Can I deploy without Cloudflare?
 
-Yes. LinkDen includes a Docker setup for self-hosting outside Cloudflare. See the [Docker](/docs/self-hosting/docker) and [Coolify](/docs/self-hosting/coolify) guides.
+Yes. See the [Docker](/docs/self-hosting/docker) and [Coolify](/docs/self-hosting/coolify) guides.
 
 ### Does LinkDen support multiple users?
 
-LinkDen is designed as a **single-user** platform. One instance = one link page. If you need multiple users, deploy separate instances.
+LinkDen is a **single-user** platform. One instance = one link page. Need multiple pages? Deploy separate instances.
 
 ### How does authentication work?
 
-LinkDen uses Better Auth with email/password authentication. During first-time setup, you create an admin account through the setup wizard. No external auth service (Clerk, Auth0, etc.) is needed. See the [API Reference](/docs/reference/api) for details.
+LinkDen uses Better Auth for email/password login. You create an admin account during the setup wizard at `/admin/setup` -- no external auth service needed. Everything runs on your own server.
 
 ---
 
@@ -58,15 +58,15 @@ LinkDen uses Better Auth with email/password authentication. During first-time s
 
 ### What block types are available?
 
-LinkDen supports 5 block types: **Link**, **Header**, **Social Icons**, **Embed** (YouTube, Spotify, SoundCloud, Custom), and **Contact Form**. Each block type has its own configuration options for styling, scheduling, and behavior.
+Five types: **Link**, **Header**, **Social Icons**, **Embed** (YouTube, Spotify, SoundCloud, Custom), and **Contact Form**. Each has its own styling, scheduling, and behavior options.
 
 ### How many themes are there?
 
-7 built-in themes, each with both dark and light variants (14 total): Default, Corporate Classic, Corporate Modern, Hacker Terminal, Neon Cyber, Furry Pastel, and Furry Bold. You can also customize colors and add custom CSS.
+Seven built-in themes, each with dark and light variants (14 total): Default, Corporate Classic, Corporate Modern, Hacker Terminal, Neon Cyber, Furry Pastel, and Furry Bold. You can also customize colors and add custom CSS.
 
 ### Can I use my own domain?
 
-Yes. See the [custom domain guide](/docs/self-hosting/custom-domain) for DNS configuration instructions.
+Yes. See the [custom domain guide](/docs/self-hosting/custom-domain) for setup instructions.
 
 ---
 
@@ -74,52 +74,62 @@ Yes. See the [custom domain guide](/docs/self-hosting/custom-domain) for DNS con
 
 ### The admin panel shows "Failed to..." errors
 
-This usually means the API server isn't running or isn't reachable. Check:
+This usually means the API server isn't reachable.
 
-1. Is the server running? Run `pnpm dev` from the project root to start all apps.
-2. Is `NEXT_PUBLIC_SERVER_URL` set correctly in `.env`? It should be `http://localhost:3000` for local development.
-3. Check the server logs for errors.
+1. Is the server running? Start everything with `pnpm dev`.
+2. Is `NEXT_PUBLIC_SERVER_URL` set correctly? Use `http://localhost:3000` for local dev.
+3. Check the server terminal for error output.
 
 ### I get CORS errors in the browser
 
-The `CORS_ORIGIN` environment variable must match your frontend URL exactly. For local development, set it to `http://localhost:3001` in `.env`.
+Set `CORS_ORIGIN` to your exact frontend URL. For local dev, that's `http://localhost:3001`.
+
+> **Tip:** No trailing slash, and include the protocol (`http://` or `https://`).
 
 ### Database migrations fail
 
-Run `pnpm db:push` from the project root. For a fresh start, you can reset the D1 database in the Cloudflare dashboard.
+Run `pnpm db:push` from the project root. For a clean slate, reset the D1 database in the Cloudflare dashboard.
 
 ### The build fails with type errors
 
-Run `pnpm check-types` to see all type errors across the monorepo. Common causes:
-- Missing environment variables
-- Out-of-date dependencies -- run `pnpm install` to refresh
+Run `pnpm check-types` to see all errors across the monorepo. Common fixes:
+
+- Add missing environment variables
+- Run `pnpm install` to refresh dependencies
 
 ### Styles look broken after updating
 
-Clear the Next.js cache: `rm -rf apps/web/.next` and restart the dev server.
+Clear the Next.js cache and restart:
+
+```bash
+rm -rf apps/web/.next
+pnpm dev
+```
 
 ---
 
 ## Updating LinkDen
 
-LinkDen follows semantic versioning. The current version is tracked in `version.json` at the root of the repository. The admin settings page shows a notification when a new version is available.
+The admin settings page shows a notification when a new version is available. Versions follow semver and are tracked in `version.json` at the project root.
 
 ### Update Process
 
-1. Pull the latest changes: `git pull origin main`
-2. Install updated dependencies: `pnpm install`
-3. Run database migrations if needed: `pnpm db:generate && pnpm db:push`
-4. Rebuild and deploy: `pnpm cf:deploy`
+```bash
+git pull origin main
+pnpm install
+pnpm db:generate && pnpm db:push   # if there are schema changes
+pnpm deploy
+```
 
 ### Rolling Back
 
-If an update causes issues, roll back to a previous version:
+If something goes wrong, check out a previous commit and redeploy:
 
 ```bash
-git log --oneline -10  # Find the commit to roll back to
+git log --oneline -10
 git checkout <commit-hash>
 pnpm install
-pnpm cf:deploy
+pnpm deploy
 ```
 
-For database rollbacks, restore from your most recent export (see [Export & Import](/docs/guide/export-import)).
+For database rollbacks, restore from your most recent export. See [Export & Import](/docs/guide/export-import).

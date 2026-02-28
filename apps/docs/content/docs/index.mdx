@@ -1,50 +1,32 @@
 ---
 title: Welcome to LinkDen
-description: LinkDen is a self-hosted Linktree alternative built on the Cloudflare stack with a full admin panel, edge performance, and complete whitelabel support.
+description: A self-hosted link-in-bio platform with a full admin panel, edge performance, and complete whitelabel support.
 ---
 
 # Welcome to LinkDen
 
-LinkDen is a self-hosted link-in-bio platform that replaces heavy PHP frameworks with modern TypeScript tooling. Built on the Cloudflare stack, it delivers blazing-fast page loads and full customization through a polished admin panel.
-
-## What is LinkDen?
-
-LinkDen gives you a single-user link page at your root URL. Visitors land directly on your links with no registration or multi-user overhead. Behind the scenes, a full admin panel lets you manage every aspect of your page.
+Create a fast, beautiful link-in-bio page that you fully own and control. LinkDen runs on your own infrastructure, gives you a polished admin panel, and loads instantly for visitors worldwide.
 
 **Your links, your brand, your rules.**
 
-## Key Highlights
+## Why LinkDen?
 
-- **Edge Performance** — Static pages served from Cloudflare Pages with API on Workers and D1 SQLite for sub-second load times worldwide.
-- **Full Admin Panel** — Manage blocks, appearance, analytics, vCard, and Apple Wallet passes from a polished dashboard with its own Light/Dark/System theme toggle.
-- **7 Built-in Themes** — Each theme ships with dark and light variants (14 total) plus auto mode. Admin and public page themes are independent.
-- **5 Block Types** — Link, Header, Social Icons, Embed, and Contact Form blocks with rich configuration options and structured Zod-validated config.
-- **Banner System** — Choose from preset gradients that adapt to your theme colors, or upload a custom banner image.
-- **100+ Social Brands** — Predefined icons with combobox search, horizontal category filters, and automatic contrast-aware ring borders for dark icons.
-- **Security First** — XSS protection via server-side HTML stripping, URL validation, CSS sanitization, and a secure one-time setup token.
-- **Apple Wallet** — Generate signed `.pkpass` files for iPhone contact cards.
-- **Whitelabel** — Toggle off all LinkDen branding with a single setting. MIT license, no attribution required.
-- **Export/Import** — Back up all data as JSON.
-
-## Tech Stack
-
-| Layer     | Technology                           |
-|-----------|--------------------------------------|
-| Frontend  | Next.js 16, React 19, Tailwind CSS v4 |
-| Backend   | Hono on Cloudflare Workers           |
-| API       | tRPC v11                             |
-| Database  | Drizzle ORM + Cloudflare D1 (SQLite) |
-| Auth      | Better Auth (email/password)         |
-| Styling   | Tailwind CSS + Radix UI              |
-| Monorepo  | Turborepo + pnpm workspaces          |
-| Deploy    | Alchemy → Cloudflare Workers/Pages   |
+- **Blazing fast** -- Pages load in under a second, served from the edge.
+- **Full admin panel** -- Manage blocks, appearance, analytics, vCard, and Apple Wallet passes from one dashboard.
+- **7 built-in themes** -- Each with dark and light variants (14 total) plus auto mode.
+- **5 block types** -- Links, headers, social icons, embeds, and contact forms.
+- **100+ social brands** -- Searchable icon library with automatic dark-mode support.
+- **Banner system** -- Pick from preset gradients or upload your own image.
+- **Apple Wallet** -- Generate signed `.pkpass` files for iPhone contact cards.
+- **Whitelabel** -- Remove all LinkDen branding with a single toggle. MIT licensed.
+- **Export/Import** -- Back up and restore all your data as JSON.
+- **Secure by default** -- XSS protection, URL validation, CSS sanitization, and a one-time setup token.
 
 ## Next Steps
 
-- [Quick Start](/docs/getting-started/quick-start) — Set up your first instance in minutes.
-- [Installation](/docs/getting-started/installation) — Get LinkDen running locally.
-- [Configuration](/docs/getting-started/configuration) — Set up authentication and environment variables.
-- [Blocks](/docs/guide/blocks) — Explore the 5 block types and builder.
-- [Appearance](/docs/guide/appearance) — Customize themes, colors, banners, and branding.
-- [Theming](/docs/guide/theming) — Understand admin vs. public theming, presets, and CSS variables.
-- [Security](/docs/guide/security) — Learn about XSS protections, setup token, and input sanitization.
+- [Quick Start](/docs/getting-started/quick-start) -- Set up your first instance in minutes.
+- [Installation](/docs/getting-started/installation) -- Get LinkDen running locally.
+- [Configuration](/docs/getting-started/configuration) -- Set up authentication and environment variables.
+- [Blocks](/docs/guide/blocks) -- Explore the block types and builder.
+- [Appearance](/docs/guide/appearance) -- Customize themes, colors, banners, and branding.
+- [Security](/docs/guide/security) -- Learn about protections and input sanitization.

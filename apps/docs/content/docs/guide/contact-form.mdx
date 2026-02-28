@@ -1,94 +1,76 @@
 ---
 title: Contact Form
-description: Enable a built-in contact form with CAPTCHA protection and email delivery via Resend.
+description: Enable a built-in contact form with CAPTCHA protection and email notifications via Resend.
 ---
 
 # Contact Form
 
-LinkDen includes an optional contact form that lets visitors send you messages without exposing your email address. Messages are stored in the database and optionally delivered to your inbox via email.
+Let visitors send you messages without exposing your email address. Messages are stored in your database and optionally forwarded to your inbox.
 
 ## How It Works
 
-1. A visitor fills out the contact form on your public page (name, email, message).
-2. CAPTCHA validates the submission is from a real person (if configured).
-3. The message is saved to your D1 database.
-4. If email is configured, a notification is sent to your address and a confirmation is sent to the visitor.
-5. You can view and manage all submissions in the admin panel at `/admin/contacts`.
+1. A visitor fills out the form on your public page (name, email, message).
+2. If CAPTCHA is configured, it verifies the submission is from a real person.
+3. The message is saved to your database.
+4. If email is configured, you receive a notification with the full submission details.
+5. You can view and manage all submissions at `/admin/contacts`.
 
-## Email Templates
+## Setting Up
 
-LinkDen includes two email templates built with React Email:
+### 1. Enable the Form
 
-- **Contact Notification** -- Sent to you (the admin) with the full submission details: name, email, message, and optional fields (subject, phone, company).
-- **Contact Confirmation** -- Sent to the visitor confirming their message was received.
+Go to `/admin/settings` and find the **Contact Form** section. Toggle it on and choose a delivery mode:
 
-You can preview these templates in the [Email Templates](/emails) section of this documentation.
+- **Database only** -- Messages are stored but no emails are sent.
+- **Email notification** -- Messages are stored and you receive an email.
+- **Database + email** -- Both storage and email notification.
 
-## Setting Up the Contact Form
+### 2. Configure Email (Optional)
 
-### Enable the Form
-
-Toggle the contact form on or off in `/admin/settings` under the **Contact Form** section. Choose the delivery mode:
-
-| Mode | Description |
-|------|-------------|
-| Database only | Messages are stored but no emails are sent |
-| Email notification | Messages are stored and you receive an email notification |
-| Database + email | Both storage and email notification |
-
-### Configure Email (for notifications)
-
-In `/admin/settings` under the **Email** section:
+Under the **Email** section in `/admin/settings`:
 
 1. Select a provider: **Resend** or **Cloudflare Email Workers**.
 2. Enter your API key.
 3. Set the "From" email address (must be verified with your provider).
 
-### Configure CAPTCHA (Recommended)
+When email is enabled, LinkDen sends a **Contact Notification** email to you with the full submission details (name, email, message, and any optional fields). You can preview this template in the [Email Templates](/docs/guide/email-templates) section.
 
-In `/admin/settings` under the **CAPTCHA** section, select a provider:
+### 3. Configure CAPTCHA (Recommended)
 
-#### Cloudflare Turnstile
+Under the **CAPTCHA** section in `/admin/settings`, choose a provider:
 
-Privacy-friendly, invisible challenge from Cloudflare.
+**Cloudflare Turnstile** -- A privacy-friendly, invisible challenge.
 
 1. Go to **Turnstile** in the Cloudflare dashboard.
 2. Add your site and get the site key and secret key.
 3. Enter both keys in the CAPTCHA settings.
 
-#### Google reCAPTCHA
-
-Traditional checkbox CAPTCHA from Google.
+**Google reCAPTCHA** -- A traditional checkbox challenge.
 
 1. Register your site at [google.com/recaptcha](https://www.google.com/recaptcha).
 2. Get the site key and secret key.
 3. Enter both keys in the CAPTCHA settings.
 
-Without any CAPTCHA configured, the form works but has no bot protection.
+> **Tip:** Without CAPTCHA, the form still works but has no bot protection. Turnstile is recommended for a frictionless visitor experience.
 
 ## Managing Submissions
 
-Navigate to `/admin/contacts` to view all form submissions. Each submission shows:
+Navigate to `/admin/contacts` to view all submissions. Each one shows:
 
-- Sender name and email.
-- Message content.
-- Submission date and time.
-- Read/unread status.
+- Sender name and email
+- Message content
+- Date and time
+- Read/unread status
 
-Available actions:
+You can **mark as read**, **mark as unread**, or **delete** any submission.
 
-- **Mark as read** / **Mark as unread** -- Toggle the read status.
-- **Delete** -- Permanently remove a submission.
-
-The dashboard at `/admin` shows an **Unread Contacts** stat card with a direct link to the contacts page.
+The dashboard at `/admin` shows an **Unread Contacts** stat card with a quick link to your messages.
 
 ## Form Fields
 
-The contact form includes:
-
-| Field | Type | Required |
-|-------|------|----------|
-| Name | Text | Yes |
-| Email | Email | Yes |
-| Message | Textarea | Yes |
-| CAPTCHA | Turnstile / reCAPTCHA | If configured |
+| Field | Required |
+|-------|----------|
+| Name | Yes |
+| Email | Yes |
+| Message | Yes |
+| CAPTCHA | Only if configured |
