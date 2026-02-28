@@ -34,6 +34,10 @@ const NAV_ITEMS = [
 	{ href: "/admin/social" as const, label: "Social", icon: Share2 },
 ];
 
+const BOTTOM_NAV_ITEMS = NAV_ITEMS.filter((item) =>
+	["/admin", "/admin/builder", "/admin/social", "/admin/settings"].includes(item.href),
+);
+
 const THEME_OPTIONS = [
 	{ value: "light", icon: Sun, label: "Light" },
 	{ value: "dark", icon: Moon, label: "Dark" },
@@ -43,10 +47,12 @@ const THEME_OPTIONS = [
 function SidebarContent({
 	pathname,
 	unreadCount,
+	adminBrandingEnabled,
 	onNavClick,
 }: {
 	pathname: string;
 	unreadCount: number;
+	adminBrandingEnabled: boolean;
 	onNavClick?: () => void;
 }) {
 	const isDev = process.env.NODE_ENV === "development";
@@ -145,8 +151,21 @@ function SidebarContent({
 				</div>
 			</div>
 
-			{/* Version */}
-			<div className="border-t px-4 py-3">
+			{/* Branding + Version */}
+			<div className="border-t px-4 py-3 space-y-1">
+				{adminBrandingEnabled && (
+					<p className="text-[10px] text-muted-foreground/70">
+						Powered by{" "}
+						<a
+							href="https://github.com/mrdemonwolf/LinkDen"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="font-medium text-muted-foreground hover:text-foreground transition-colors"
+						>
+							LinkDen
+						</a>
+					</p>
+				)}
 				<div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
 					<span>v0.1.0</span>
 					{isDev && (
@@ -176,7 +195,13 @@ export default function AdminLayout({
 		refetchInterval: 30000,
 	});
 
+	const brandingQuery = useQuery({
+		...trpc.settings.get.queryOptions({ key: "admin_branding_enabled" }),
+		enabled: !!session?.user,
+	});
+
 	const unreadCount = unreadQuery.data?.count ?? 0;
+	const adminBrandingEnabled = brandingQuery.data?.value !== "false";
 
 	// Allow login and setup pages without auth
 	const isPublicRoute =
@@ -218,7 +243,7 @@ export default function AdminLayout({
 			{/* Desktop sidebar */}
 			<aside aria-label="Sidebar" className="hidden w-56 shrink-0 border-r border-white/20 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-2xl md:block">
 				<div className="sticky top-0 h-screen overflow-y-auto">
-					<SidebarContent pathname={pathname} unreadCount={unreadCount} />
+					<SidebarContent pathname={pathname} unreadCount={unreadCount} adminBrandingEnabled={adminBrandingEnabled} />
 				</div>
 			</aside>
 
@@ -263,6 +288,7 @@ export default function AdminLayout({
 						<SidebarContent
 							pathname={pathname}
 							unreadCount={unreadCount}
+							adminBrandingEnabled={adminBrandingEnabled}
 							onNavClick={() => setMobileMenuOpen(false)}
 						/>
 					</div>
@@ -271,7 +297,7 @@ export default function AdminLayout({
 
 			{/* Mobile bottom nav */}
 			<nav aria-label="Quick navigation" className="fixed inset-x-0 bottom-0 z-40 flex border-t border-white/20 dark:border-white/10 backdrop-blur-2xl bg-white/70 dark:bg-black/40 md:hidden">
-				{NAV_ITEMS.map((item) => {
+				{BOTTOM_NAV_ITEMS.map((item) => {
 					const isActive =
 						item.href === "/admin"
 							? pathname === "/admin"
@@ -290,14 +316,7 @@ export default function AdminLayout({
 									: "text-muted-foreground",
 							)}
 						>
-							<div className="relative">
-								<Icon className="h-4 w-4" />
-								{item.label === "Contacts" && unreadCount > 0 && (
-									<span className="absolute -right-2 -top-1 flex h-3 min-w-3 items-center justify-center rounded-full bg-destructive px-0.5 text-[10px] font-bold text-white">
-										{unreadCount > 9 ? "9+" : unreadCount}
-									</span>
-								)}
-							</div>
+						<Icon className="h-4 w-4" />
 							<span>{item.label}</span>
 						</Link>
 					);
@@ -306,7 +325,7 @@ export default function AdminLayout({
 
 			{/* Main content */}
 			<main id="main-content" className="flex-1 pt-12 pb-16 md:pt-0 md:pb-0">
-				<div className="mx-auto max-w-6xl p-4 md:p-6">{children}</div>
+				<div className="mx-auto max-w-6xl px-2 py-4 sm:px-4 md:p-6">{children}</div>
 			</main>
 		</div>
 	);
