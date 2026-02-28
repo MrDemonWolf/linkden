@@ -232,11 +232,11 @@ export function BlockEditPanel({
 											value={parsedConfig.preset ?? "contact"}
 											onChange={(v) => {
 												updateConfigField("preset", v);
-												const presetDefaults: Record<string, { buttonText: string; showPhone?: boolean; showCompany?: boolean; showWhereMet?: boolean; showRating?: boolean; showAttending?: boolean; showGuests?: boolean }> = {
-													contact: { buttonText: "Contact Me" },
-													connect: { buttonText: "Connect with Me", showPhone: true, showCompany: true, showWhereMet: true },
-													feedback: { buttonText: "Feedback", showRating: true },
-													rsvp: { buttonText: "RSVP", showAttending: true, showGuests: true },
+												const presetDefaults: Record<string, { buttonText: string; buttonEmoji?: string; successMessage?: string; showPhone?: boolean; showCompany?: boolean; showWhereMet?: boolean; showRating?: boolean; showAttending?: boolean; showGuests?: boolean }> = {
+													contact: { buttonText: "Contact Me", buttonEmoji: "✉️", successMessage: "Thanks for reaching out!" },
+													connect: { buttonText: "Connect with Me", buttonEmoji: "🤝", successMessage: "Thanks for connecting!", showPhone: true, showCompany: true, showWhereMet: true },
+													feedback: { buttonText: "Leave Feedback", buttonEmoji: "💬", successMessage: "Thanks for your feedback!", showRating: true },
+													rsvp: { buttonText: "RSVP", buttonEmoji: "🎉", successMessage: "Your RSVP has been received!", showAttending: true, showGuests: true },
 												};
 												const defaults = presetDefaults[v];
 												if (defaults) {
