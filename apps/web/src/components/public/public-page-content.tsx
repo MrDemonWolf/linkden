@@ -197,7 +197,7 @@ export function PageContent({
 										themeColors={themeColors}
 									/>
 								);
-							case "contact_form":
+							case "form":
 								return (
 									<ContactFormBlock
 										key={blockData.id}

@@ -128,7 +128,7 @@ export default function BuilderPage() {
 			header: "Section Header",
 			social_icons: "Social Icons",
 			embed: "Embed",
-			contact_form: "Contact Form",
+			form: "Form",
 		};
 		try {
 			await createBlock.mutateAsync({

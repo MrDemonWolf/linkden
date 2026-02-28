@@ -11,6 +11,10 @@ export const contactSubmission = sqliteTable(
     phone: text("phone"),
     subject: text("subject"),
     company: text("company"),
+    whereMet: text("where_met"),
+    rating: integer("rating"),
+    attending: text("attending"),
+    guests: integer("guests"),
     isRead: integer("is_read", { mode: "boolean" }).default(false).notNull(),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)

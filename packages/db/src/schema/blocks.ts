@@ -6,7 +6,7 @@ export const block = sqliteTable(
   {
     id: text("id").primaryKey(),
     type: text("type", {
-      enum: ["link", "header", "social_icons", "embed", "contact_form"],
+      enum: ["link", "header", "social_icons", "embed", "form"],
     }).notNull(),
     title: text("title"),
     url: text("url"),

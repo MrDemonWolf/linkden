@@ -73,7 +73,7 @@ export const blocksRouter = router({
 					"header",
 					"social_icons",
 					"embed",
-					"contact_form",
+					"form",
 				]),
 				title: z.string().optional(),
 				url: z.string().optional(),
