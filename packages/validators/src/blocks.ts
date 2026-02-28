@@ -76,6 +76,11 @@ export const contactFormConfigSchema = blockConfigBaseSchema.extend({
   buttonEmoji: z.string().optional(),
   buttonEmojiPosition: z.enum(["left", "right"]).optional(),
   successMessage: z.string().optional(),
+  showPhone: z.boolean().optional(),
+  showSubject: z.boolean().optional(),
+  showCompany: z.boolean().optional(),
+  isOutlined: z.boolean().optional(),
+  textAlign: z.enum(["left", "center", "right"]).optional(),
 });
 
 export const socialIconItemSchema = z.object({
