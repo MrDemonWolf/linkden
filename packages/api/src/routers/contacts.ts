@@ -1,7 +1,7 @@
 import { router, protectedProcedure } from "../index";
 import { db } from "@linkden/db";
 import { contactSubmission } from "@linkden/db/schema/index";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, inArray } from "drizzle-orm";
 import { z } from "zod";
 
 export const contactsRouter = router({
@@ -68,6 +68,23 @@ export const contactsRouter = router({
 			await db
 				.delete(contactSubmission)
 				.where(eq(contactSubmission.id, input.id));
+			return { success: true };
+		}),
+
+	markAllRead: protectedProcedure.mutation(async () => {
+		await db
+			.update(contactSubmission)
+			.set({ isRead: true, updatedAt: new Date() })
+			.where(eq(contactSubmission.isRead, false));
+		return { success: true };
+	}),
+
+	deleteMultiple: protectedProcedure
+		.input(z.object({ ids: z.array(z.string()).min(1).max(100) }))
+		.mutation(async ({ input }) => {
+			await db
+				.delete(contactSubmission)
+				.where(inArray(contactSubmission.id, input.ids));
 			return { success: true };
 		}),
 
