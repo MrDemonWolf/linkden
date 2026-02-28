@@ -223,6 +223,63 @@ export function BlockEditPanel({
 									</div>
 								</>
 							)}
+							{block.type === "contact_form" && (
+								<div className="space-y-3">
+									<div className="space-y-1.5">
+										<Label htmlFor="edit-button-text">Button Text</Label>
+										<Input
+											id="edit-button-text"
+											value={parsedConfig.buttonText ?? "Contact Me"}
+											onChange={(e) => updateConfigField("buttonText", e.target.value)}
+											placeholder="Contact Me"
+											className="dark:bg-input/30 border-white/15"
+										/>
+									</div>
+									<div className="space-y-1.5">
+										<Label htmlFor="edit-button-emoji">Button Emoji</Label>
+										<Input
+											id="edit-button-emoji"
+											value={parsedConfig.buttonEmoji ?? ""}
+											onChange={(e) => updateConfigField("buttonEmoji", e.target.value)}
+											placeholder="e.g. ✉️"
+											className="dark:bg-input/30 border-white/15"
+										/>
+									</div>
+									<div className="space-y-1.5">
+										<Label>Emoji Position</Label>
+										<div className="flex rounded-lg border border-white/15 overflow-hidden">
+											{[
+												{ value: "left", label: "Left" },
+												{ value: "right", label: "Right" },
+											].map((opt) => (
+												<button
+													key={opt.value}
+													type="button"
+													onClick={() => updateConfigField("buttonEmojiPosition", opt.value)}
+													className={cn(
+														"flex-1 py-1.5 text-xs font-medium transition-colors",
+														(parsedConfig.buttonEmojiPosition ?? "left") === opt.value
+															? "bg-primary/15 text-primary"
+															: "text-muted-foreground hover:text-foreground",
+													)}
+												>
+													{opt.label}
+												</button>
+											))}
+										</div>
+									</div>
+									<div className="space-y-1.5">
+										<Label htmlFor="edit-success-msg">Success Message</Label>
+										<Input
+											id="edit-success-msg"
+											value={parsedConfig.successMessage ?? "Thanks for reaching out!"}
+											onChange={(e) => updateConfigField("successMessage", e.target.value)}
+											placeholder="Thanks for reaching out!"
+											className="dark:bg-input/30 border-white/15"
+										/>
+									</div>
+								</div>
+							)}
 							{block.type === "social_icons" && (
 								<div className="space-y-3">
 									<Label>Active Networks</Label>
@@ -467,6 +524,34 @@ export function BlockEditPanel({
 								</div>
 							)}
 
+							{block.type === "contact_form" && (
+								<div className="space-y-3">
+									<div className="flex items-center justify-between">
+										<Label>Outlined Style</Label>
+										<button
+											type="button"
+											role="switch"
+											aria-checked={!!parsedConfig.isOutlined}
+											onClick={() => updateConfigField("isOutlined", !parsedConfig.isOutlined)}
+											className={cn(
+												"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+												parsedConfig.isOutlined ? "bg-primary" : "bg-muted",
+											)}
+										>
+											<span className={cn("inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform", parsedConfig.isOutlined ? "translate-x-[18px]" : "translate-x-[3px]")} />
+										</button>
+									</div>
+									<div className="space-y-1.5">
+										<Label>Animation</Label>
+										<GlassSelect value={parsedConfig.animation ?? "none"} onChange={(v) => updateConfigField("animation", v)}>
+											<option value="none">None</option>
+											<option value="pulse">Pulse</option>
+											<option value="shake">Shake</option>
+										</GlassSelect>
+									</div>
+								</div>
+							)}
+
 							{block.type === "embed" && (
 								<div className="space-y-3">
 									<div className="space-y-1.5">
@@ -551,6 +636,63 @@ export function BlockEditPanel({
 													{opt.label}
 												</button>
 											))}
+										</div>
+									</div>
+									<div className="mt-4 space-y-3">
+										<Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Optional Fields</Label>
+										<div className="flex items-center justify-between">
+											<div className="space-y-0.5">
+												<Label>Phone Field</Label>
+												<p className="text-[11px] text-muted-foreground">Show phone number input</p>
+											</div>
+											<button
+												type="button"
+												role="switch"
+												aria-checked={!!parsedConfig.showPhone}
+												onClick={() => updateConfigField("showPhone", !parsedConfig.showPhone)}
+												className={cn(
+													"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+													parsedConfig.showPhone ? "bg-primary" : "bg-muted",
+												)}
+											>
+												<span className={cn("inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform", parsedConfig.showPhone ? "translate-x-[18px]" : "translate-x-[3px]")} />
+											</button>
+										</div>
+										<div className="flex items-center justify-between">
+											<div className="space-y-0.5">
+												<Label>Subject Field</Label>
+												<p className="text-[11px] text-muted-foreground">Show subject line input</p>
+											</div>
+											<button
+												type="button"
+												role="switch"
+												aria-checked={!!parsedConfig.showSubject}
+												onClick={() => updateConfigField("showSubject", !parsedConfig.showSubject)}
+												className={cn(
+													"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+													parsedConfig.showSubject ? "bg-primary" : "bg-muted",
+												)}
+											>
+												<span className={cn("inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform", parsedConfig.showSubject ? "translate-x-[18px]" : "translate-x-[3px]")} />
+											</button>
+										</div>
+										<div className="flex items-center justify-between">
+											<div className="space-y-0.5">
+												<Label>Company Field</Label>
+												<p className="text-[11px] text-muted-foreground">Show company name input</p>
+											</div>
+											<button
+												type="button"
+												role="switch"
+												aria-checked={!!parsedConfig.showCompany}
+												onClick={() => updateConfigField("showCompany", !parsedConfig.showCompany)}
+												className={cn(
+													"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+													parsedConfig.showCompany ? "bg-primary" : "bg-muted",
+												)}
+											>
+												<span className={cn("inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform", parsedConfig.showCompany ? "translate-x-[18px]" : "translate-x-[3px]")} />
+											</button>
 										</div>
 									</div>
 								</div>
