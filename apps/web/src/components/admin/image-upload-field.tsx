@@ -6,12 +6,59 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+async function processSquareImage(file: File, maxSize: number): Promise<File> {
+	return new Promise((resolve, reject) => {
+		const url = URL.createObjectURL(file);
+		const img = new Image();
+		img.onload = () => {
+			URL.revokeObjectURL(url);
+			const { naturalWidth: w, naturalHeight: h } = img;
+
+			if (w === h && w <= maxSize) {
+				resolve(file);
+				return;
+			}
+
+			const size = Math.min(Math.max(w, h), maxSize);
+			const scale = Math.min(size / w, size / h);
+			const scaledW = Math.round(w * scale);
+			const scaledH = Math.round(h * scale);
+
+			const canvas = document.createElement("canvas");
+			canvas.width = size;
+			canvas.height = size;
+			const ctx = canvas.getContext("2d")!;
+			ctx.clearRect(0, 0, size, size);
+			ctx.drawImage(
+				img,
+				Math.round((size - scaledW) / 2),
+				Math.round((size - scaledH) / 2),
+				scaledW,
+				scaledH,
+			);
+
+			canvas.toBlob((blob) => {
+				if (!blob) {
+					reject(new Error("Canvas export failed"));
+					return;
+				}
+				resolve(new File([blob], file.name.replace(/\.\w+$/, ".png"), { type: "image/png" }));
+			}, "image/png");
+		};
+		img.onerror = () => {
+			URL.revokeObjectURL(url);
+			reject(new Error("Failed to load image"));
+		};
+		img.src = url;
+	});
+}
+
 interface ImageUploadFieldProps {
 	label?: string;
 	value: string;
 	purpose: "avatar" | "banner" | "og_image" | "wallet_logo";
 	onUploadComplete: (url: string) => void;
-	aspectRatio?: "square" | "banner";
+	aspectRatio?: "square" | "banner" | "logo";
 }
 
 export function ImageUploadField({
@@ -38,14 +85,25 @@ export function ImageUploadField({
 				return;
 			}
 
+			// Process wallet logos into square images
+			let fileToUpload = file;
+			if (purpose === "wallet_logo") {
+				try {
+					fileToUpload = await processSquareImage(file, 512);
+				} catch {
+					toast.error("Failed to process image");
+					return;
+				}
+			}
+
 			// Show local preview immediately
-			const localUrl = URL.createObjectURL(file);
+			const localUrl = URL.createObjectURL(fileToUpload);
 			setPreview(localUrl);
 
 			setUploading(true);
 			try {
 				const formData = new FormData();
-				formData.append("file", file);
+				formData.append("file", fileToUpload);
 				formData.append("purpose", purpose);
 
 				const serverUrl =
@@ -94,6 +152,17 @@ export function ImageUploadField({
 
 	const displayUrl = preview || value;
 	const isBanner = aspectRatio === "banner";
+	const isLogo = aspectRatio === "logo";
+
+	const zoneClass = isBanner
+		? "h-28 w-full rounded-lg"
+		: isLogo
+			? "h-28 w-28 rounded-lg"
+			: "h-24 w-24 rounded-full";
+
+	const imgClass = isBanner || isLogo
+		? "h-full w-full rounded-lg"
+		: "h-full w-full rounded-full";
 
 	return (
 		<div className={cn("space-y-1.5", !isBanner && "flex flex-col items-center")}>
@@ -107,7 +176,7 @@ export function ImageUploadField({
 				onDrop={handleDrop}
 				className={cn(
 					"relative flex items-center justify-center border-2 border-dashed transition-colors cursor-pointer",
-					isBanner ? "h-28 w-full rounded-lg" : "h-24 w-24 rounded-full",
+					zoneClass,
 					dragActive
 						? "border-primary bg-primary/5"
 						: "border-muted-foreground/25 hover:border-muted-foreground/50",
@@ -124,10 +193,7 @@ export function ImageUploadField({
 						<img
 							src={displayUrl}
 							alt={label || "Upload"}
-							className={cn(
-								"object-cover",
-								isBanner ? "h-full w-full rounded-lg" : "h-full w-full rounded-full",
-							)}
+							className={cn("object-cover", imgClass)}
 						/>
 						{uploading && (
 							<div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-inherit">
@@ -143,7 +209,7 @@ export function ImageUploadField({
 							<>
 								<ImageIcon className="h-5 w-5" />
 								<span className="text-[10px]">
-									{isBanner ? "Drop banner image" : "Upload"}
+									{isBanner ? "Drop banner image" : isLogo ? "Drop logo" : "Upload"}
 								</span>
 							</>
 						)}
