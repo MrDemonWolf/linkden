@@ -13,7 +13,7 @@ import {
 	ExternalLink,
 } from "lucide-react";
 import { trpc } from "@/utils/trpc";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuTrigger,
@@ -297,7 +297,7 @@ export default function BuilderPage() {
 							{publishAll.isPending ? "Publishing..." : "Publish"}
 						</Button>
 						<DropdownMenu>
-							<DropdownMenuTrigger className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-all cursor-pointer disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-8 rounded-lg px-3 text-xs">
+							<DropdownMenuTrigger className={buttonVariants({ size: "sm" })}>
 								<Plus className="mr-1.5 h-3.5 w-3.5" />
 								<span className="hidden sm:inline">Add Block</span>
 								<span className="sm:hidden">Add</span>
