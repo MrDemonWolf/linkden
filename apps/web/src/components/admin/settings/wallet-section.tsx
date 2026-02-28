@@ -64,7 +64,21 @@ function SigningStatusBanner() {
 	);
 }
 
-export function WalletSection() {
+export interface WalletLivePreview {
+	backgroundColor: string;
+	foregroundColor: string;
+	labelColor: string;
+	logoUrl: string;
+	organizationName: string;
+	passDescription: string;
+	qrUrl: string;
+}
+
+interface WalletSectionProps {
+	onPreviewChange?: (state: WalletLivePreview) => void;
+}
+
+export function WalletSection({ onPreviewChange }: WalletSectionProps) {
 	const qc = useQueryClient();
 	const configQuery = useQuery(trpc.wallet.getConfig.queryOptions());
 	const updateConfig = useMutation(trpc.wallet.updateConfig.mutationOptions());
@@ -138,6 +152,27 @@ export function WalletSection() {
 		foregroundColor !== savedForegroundColor ||
 		labelColor !== savedLabelColor ||
 		logoUrl !== savedLogoUrl;
+
+	useEffect(() => {
+		onPreviewChange?.({
+			backgroundColor,
+			foregroundColor,
+			labelColor,
+			logoUrl,
+			organizationName,
+			passDescription,
+			qrUrl: customQrUrl,
+		});
+	}, [
+		backgroundColor,
+		foregroundColor,
+		labelColor,
+		logoUrl,
+		organizationName,
+		passDescription,
+		customQrUrl,
+		onPreviewChange,
+	]);
 
 	const handleSave = async () => {
 		try {
@@ -248,78 +283,74 @@ export function WalletSection() {
 			</div>
 
 			{/* Appearance */}
-			<div className="space-y-1.5">
+			<div className="space-y-3">
 				<p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
 					Appearance
 				</p>
-				<div className="grid gap-4 sm:grid-cols-[1fr_auto]">
-					<div className="space-y-3">
-						<div className="space-y-1.5">
-							<Label htmlFor="s-wallet-bg-color">Background Color</Label>
-							<div className="flex gap-2">
-								<Input
-									id="s-wallet-bg-color"
-									value={backgroundColor}
-									onChange={(e) => setBackgroundColor(e.target.value)}
-									placeholder="#0FACED"
-									className="flex-1"
-								/>
-								<input
-									type="color"
-									value={backgroundColor || "#0FACED"}
-									onChange={(e) => setBackgroundColor(e.target.value.toUpperCase())}
-									className="h-8 w-10 shrink-0 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
-								/>
-							</div>
-						</div>
-						<div className="space-y-1.5">
-							<Label htmlFor="s-wallet-fg-color">Foreground Color</Label>
-							<div className="flex gap-2">
-								<Input
-									id="s-wallet-fg-color"
-									value={foregroundColor}
-									onChange={(e) => setForegroundColor(e.target.value)}
-									placeholder="#091533"
-									className="flex-1"
-								/>
-								<input
-									type="color"
-									value={foregroundColor || "#091533"}
-									onChange={(e) => setForegroundColor(e.target.value.toUpperCase())}
-									className="h-8 w-10 shrink-0 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
-								/>
-							</div>
-						</div>
-						<div className="space-y-1.5">
-							<Label htmlFor="s-wallet-label-color">Label Color</Label>
-							<div className="flex gap-2">
-								<Input
-									id="s-wallet-label-color"
-									value={labelColor}
-									onChange={(e) => setLabelColor(e.target.value)}
-									placeholder="#FFFFFF"
-									className="flex-1"
-								/>
-								<input
-									type="color"
-									value={labelColor || "#FFFFFF"}
-									onChange={(e) => setLabelColor(e.target.value.toUpperCase())}
-									className="h-8 w-10 shrink-0 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
-								/>
-							</div>
+				<div className="grid gap-4 sm:grid-cols-3">
+					<div className="space-y-1.5">
+						<Label htmlFor="s-wallet-bg-color">Background</Label>
+						<div className="flex gap-2">
+							<Input
+								id="s-wallet-bg-color"
+								value={backgroundColor}
+								onChange={(e) => setBackgroundColor(e.target.value)}
+								placeholder="#0FACED"
+								className="flex-1"
+							/>
+							<input
+								type="color"
+								value={backgroundColor || "#0FACED"}
+								onChange={(e) => setBackgroundColor(e.target.value.toUpperCase())}
+								className="h-8 w-10 shrink-0 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
+							/>
 						</div>
 					</div>
-					<div className="flex items-start justify-center">
-						<ImageUploadField
-							label="Logo Image"
-							purpose="wallet_logo"
-							value={logoUrl}
-							onUploadComplete={setLogoUrl}
-							aspectRatio="logo"
-						/>
+					<div className="space-y-1.5">
+						<Label htmlFor="s-wallet-fg-color">Foreground</Label>
+						<div className="flex gap-2">
+							<Input
+								id="s-wallet-fg-color"
+								value={foregroundColor}
+								onChange={(e) => setForegroundColor(e.target.value)}
+								placeholder="#091533"
+								className="flex-1"
+							/>
+							<input
+								type="color"
+								value={foregroundColor || "#091533"}
+								onChange={(e) => setForegroundColor(e.target.value.toUpperCase())}
+								className="h-8 w-10 shrink-0 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
+							/>
+						</div>
+					</div>
+					<div className="space-y-1.5">
+						<Label htmlFor="s-wallet-label-color">Label</Label>
+						<div className="flex gap-2">
+							<Input
+								id="s-wallet-label-color"
+								value={labelColor}
+								onChange={(e) => setLabelColor(e.target.value)}
+								placeholder="#FFFFFF"
+								className="flex-1"
+							/>
+							<input
+								type="color"
+								value={labelColor || "#FFFFFF"}
+								onChange={(e) => setLabelColor(e.target.value.toUpperCase())}
+								className="h-8 w-10 shrink-0 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
+							/>
+						</div>
 					</div>
 				</div>
-				<div className="mt-3 space-y-1.5">
+				<ImageUploadField
+					label="Logo Image"
+					purpose="wallet_logo"
+					value={logoUrl}
+					onUploadComplete={setLogoUrl}
+					aspectRatio="logo"
+				/>
+				<div className="space-y-1.5">
 					<Label htmlFor="s-wallet-qr">Custom QR URL</Label>
 					<Input
 						id="s-wallet-qr"
