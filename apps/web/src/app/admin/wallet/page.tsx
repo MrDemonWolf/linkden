@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
 	Wallet,
@@ -14,7 +15,10 @@ import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatCard } from "@/components/admin/stat-card";
 import { EmptyState } from "@/components/admin/empty-state";
-import { WalletSection } from "@/components/admin/settings/wallet-section";
+import {
+	WalletSection,
+	type WalletLivePreview,
+} from "@/components/admin/settings/wallet-section";
 import { WalletPassPreview } from "@/components/admin/wallet-pass-preview";
 import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 
@@ -22,6 +26,13 @@ export default function WalletPage() {
 	const configQuery = useQuery(trpc.wallet.getConfig.queryOptions());
 	const previewQuery = useQuery(trpc.wallet.generatePreview.queryOptions());
 	const { getAnimationProps } = useEntranceAnimation(!configQuery.isLoading);
+
+	const [livePreview, setLivePreview] = useState<WalletLivePreview | null>(
+		null,
+	);
+	const handlePreviewChange = useCallback((state: WalletLivePreview) => {
+		setLivePreview(state);
+	}, []);
 
 	const isEnabled = configQuery.data?.wallet_pass_enabled === "true";
 	const teamId = configQuery.data?.wallet_team_id ?? "";
@@ -85,81 +96,105 @@ export default function WalletPage() {
 				/>
 			</div>
 
-			{/* Configuration */}
+			{/* Two-column: Config + Preview */}
 			<div
-				className={cn(contentAnim.className)}
+				className={cn(
+					"grid items-start gap-4 lg:grid-cols-[1fr_auto]",
+					contentAnim.className,
+				)}
 				style={contentAnim.style}
 			>
+				{/* Left: Configuration + Download */}
 				<Card>
 					<CardContent className="space-y-4 pt-2">
 						<h2 className="text-sm font-semibold">Configuration</h2>
-						<WalletSection />
-					</CardContent>
-				</Card>
-			</div>
+						<WalletSection onPreviewChange={handlePreviewChange} />
 
-			{/* Preview */}
-			<div
-				className={cn(contentAnim.className)}
-				style={contentAnim.style}
-			>
-				<Card>
-					<CardContent className="space-y-4 pt-2">
-						<h2 className="text-sm font-semibold">Preview</h2>
-						<div className="flex justify-center py-4">
-							<WalletPassPreview
-								backgroundColor={previewQuery.data?.backgroundColor}
-								foregroundColor={previewQuery.data?.foregroundColor}
-								labelColor={previewQuery.data?.labelColor}
-								logoUrl={previewQuery.data?.logoUrl ?? undefined}
-								organizationName={previewQuery.data?.organizationName}
-								profileName={previewQuery.data?.profile?.name ?? undefined}
-								profileEmail={previewQuery.data?.profile?.email ?? undefined}
-								profileImage={previewQuery.data?.profile?.image ?? undefined}
-								passDescription={previewQuery.data?.passDescription}
-								qrUrl={previewQuery.data?.qrUrl ?? undefined}
-							/>
+						{/* Download */}
+						<div className="space-y-3 border-t pt-4">
+							<p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+								Download
+							</p>
+							{isEnabled && isConfigured ? (
+								<div className="space-y-3">
+									<a
+										href="/api/wallet-pass"
+										className="inline-flex items-center gap-2 rounded-lg border border-border bg-primary/5 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-primary/10"
+									>
+										<Download className="h-4 w-4" />
+										Download Wallet Pass
+									</a>
+									{configQuery.data?.wallet_custom_qr_url && (
+										<p className="text-xs text-muted-foreground">
+											QR URL: {configQuery.data.wallet_custom_qr_url}
+										</p>
+									)}
+								</div>
+							) : (
+								<EmptyState
+									icon={Wallet}
+									title="Not ready"
+									description={
+										!isEnabled
+											? "Enable Wallet Pass to make it available to visitors"
+											: "Configure your Team ID and Pass Type ID above"
+									}
+								/>
+							)}
 						</div>
 					</CardContent>
 				</Card>
-			</div>
 
-			{/* Download section */}
-			<div
-				className={cn(contentAnim.className)}
-				style={contentAnim.style}
-			>
-				<Card>
-					<CardContent className="space-y-4 pt-2">
-						<h2 className="text-sm font-semibold">Download</h2>
-						{isEnabled && isConfigured ? (
-							<div className="space-y-3">
-								<a
-									href="/api/wallet-pass"
-									className="inline-flex items-center gap-2 rounded-lg border border-border bg-primary/5 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-primary/10"
-								>
-									<Download className="h-4 w-4" />
-									Download Wallet Pass
-								</a>
-								{configQuery.data?.wallet_custom_qr_url && (
-									<p className="text-xs text-muted-foreground">
-										QR URL: {configQuery.data.wallet_custom_qr_url}
-									</p>
-								)}
+				{/* Right: Sticky Preview */}
+				<div className="lg:sticky lg:top-20">
+					<Card>
+						<CardContent className="space-y-4 pt-2">
+							<h2 className="text-sm font-semibold">Preview</h2>
+							<div className="flex justify-center py-4">
+								<WalletPassPreview
+									backgroundColor={
+										livePreview?.backgroundColor ??
+										previewQuery.data?.backgroundColor
+									}
+									foregroundColor={
+										livePreview?.foregroundColor ??
+										previewQuery.data?.foregroundColor
+									}
+									labelColor={
+										livePreview?.labelColor ?? previewQuery.data?.labelColor
+									}
+									logoUrl={
+										livePreview?.logoUrl ??
+										previewQuery.data?.logoUrl ??
+										undefined
+									}
+									organizationName={
+										livePreview?.organizationName ??
+										previewQuery.data?.organizationName
+									}
+									profileName={
+										previewQuery.data?.profile?.name ?? undefined
+									}
+									profileEmail={
+										previewQuery.data?.profile?.email ?? undefined
+									}
+									profileImage={
+										previewQuery.data?.profile?.image ?? undefined
+									}
+									passDescription={
+										livePreview?.passDescription ??
+										previewQuery.data?.passDescription
+									}
+									qrUrl={
+										livePreview?.qrUrl ??
+										previewQuery.data?.qrUrl ??
+										undefined
+									}
+								/>
 							</div>
-						) : (
-							<EmptyState
-								icon={Wallet}
-								title="Not ready"
-								description={
-									!isEnabled
-										? "Enable Wallet Pass to make it available to visitors"
-										: "Configure your Team ID and Pass Type ID above"
-								}
-							/>
-						)}
-					</CardContent>
-				</Card>
+						</CardContent>
+					</Card>
+				</div>
 			</div>
 		</div>
 	);
