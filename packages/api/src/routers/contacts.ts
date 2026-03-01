@@ -4,12 +4,13 @@ import { contactSubmission } from "@linkden/db/schema/index";
 import { eq, desc, and, inArray } from "drizzle-orm";
 import { z } from "zod";
 
-export const contactsRouter = router({
+export const formsRouter = router({
 	list: protectedProcedure
 		.input(
 			z
 				.object({
 					isRead: z.boolean().optional(),
+					blockId: z.string().optional(),
 					limit: z.number().min(1).max(100).default(50),
 					offset: z.number().min(0).default(0),
 				})
@@ -19,6 +20,9 @@ export const contactsRouter = router({
 			const conditions = [];
 			if (input?.isRead !== undefined) {
 				conditions.push(eq(contactSubmission.isRead, input.isRead));
+			}
+			if (input?.blockId !== undefined) {
+				conditions.push(eq(contactSubmission.blockId, input.blockId));
 			}
 
 			const results = await db
