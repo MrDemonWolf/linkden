@@ -129,6 +129,10 @@ export default function BuilderPage() {
 			social_icons: "Social Icons",
 			embed: "Embed",
 			form: "Form",
+			vcard: "Download Contact",
+		};
+		const defaultConfigs: Partial<Record<string, string>> = {
+			vcard: JSON.stringify({ buttonText: "Download Contact", buttonEmoji: "📇" }),
 		};
 		try {
 			await createBlock.mutateAsync({
@@ -137,6 +141,7 @@ export default function BuilderPage() {
 				title: defaults[type] ?? "New Block",
 				position,
 				isEnabled: true,
+				config: defaultConfigs[type],
 			});
 			invalidate();
 			setNewlyAddedId(id);
@@ -245,7 +250,7 @@ export default function BuilderPage() {
 	});
 
 	const previewElement = (
-		<PhoneFrame previewDark={previewMode === "dark"}>
+		<PhoneFrame previewDark={previewMode === "dark"} isLoading={settingsQuery.isLoading}>
 			<PreviewContent
 				profile={previewProfile}
 				blocks={previewBlocksData}
@@ -356,15 +361,34 @@ export default function BuilderPage() {
 					<div className="sticky top-6">
 						<div className="mb-3 flex items-center justify-between">
 							<span className="text-xs font-medium">Preview</span>
-							<button
-								type="button"
-								onClick={() => setPreviewMode((m) => (m === "light" ? "dark" : "light"))}
-								className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-								aria-label={`Switch to ${previewMode === "dark" ? "light" : "dark"} preview`}
-							>
-								{previewMode === "dark" ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}
-								{previewMode === "dark" ? "Dark" : "Light"}
-							</button>
+							<div className="flex rounded-lg border border-border/50 p-0.5 bg-muted/30">
+								<button
+									type="button"
+									onClick={() => setPreviewMode("light")}
+									className={cn(
+										"flex items-center justify-center rounded-md p-1.5 transition-all",
+										previewMode === "light"
+											? "bg-white/20 text-foreground shadow-sm"
+											: "text-muted-foreground hover:text-foreground",
+									)}
+									aria-label="Light preview"
+								>
+									<Sun className="h-3 w-3" />
+								</button>
+								<button
+									type="button"
+									onClick={() => setPreviewMode("dark")}
+									className={cn(
+										"flex items-center justify-center rounded-md p-1.5 transition-all",
+										previewMode === "dark"
+											? "bg-white/20 text-foreground shadow-sm"
+											: "text-muted-foreground hover:text-foreground",
+									)}
+									aria-label="Dark preview"
+								>
+									<Moon className="h-3 w-3" />
+								</button>
+							</div>
 						</div>
 						{previewElement}
 					</div>
