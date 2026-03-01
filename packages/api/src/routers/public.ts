@@ -159,6 +159,8 @@ export const publicRouter = router({
 				attending: z.enum(["yes", "no", "maybe"]).optional(),
 				guests: z.number().min(0).optional(),
 				captchaToken: z.string().optional(),
+				blockId: z.string().optional(),
+				blockTitle: z.string().optional(),
 			}),
 		)
 		.mutation(async ({ input }) => {
@@ -218,6 +220,8 @@ export const publicRouter = router({
 				rating: input.rating ?? null,
 				attending: input.attending ?? null,
 				guests: input.guests ?? null,
+				blockId: input.blockId ?? null,
+				blockTitle: input.blockTitle ? stripTags(input.blockTitle) : null,
 			});
 
 			return { success: true };
@@ -264,25 +268,25 @@ export const publicRouter = router({
 		}),
 
 	getVCard: publicProcedure.query(async () => {
-		const [enabledSetting] = await db
+		const [vcardBlock] = await db
 			.select()
-			.from(siteSettings)
-			.where(eq(siteSettings.key, "vcard_enabled"));
+			.from(block)
+			.where(
+				and(
+					eq(block.type, "vcard"),
+					eq(block.isEnabled, true),
+					eq(block.status, "published"),
+				),
+			)
+			.orderBy(asc(block.position))
+			.limit(1);
 
-		if (enabledSetting?.value !== "true") {
+		if (!vcardBlock) {
 			return { enabled: false, vcardString: null };
 		}
 
-		const [dataSetting] = await db
-			.select()
-			.from(siteSettings)
-			.where(eq(siteSettings.key, "vcard_data"));
-
-		if (!dataSetting) {
-			return { enabled: true, vcardString: null };
-		}
-
-		const data = vcardDataSchema.parse(JSON.parse(dataSetting.value));
+		const config = vcardBlock.config ? JSON.parse(vcardBlock.config) : {};
+		const data = vcardDataSchema.parse(config);
 		return { enabled: true, vcardString: generateVCardString(data) };
 	}),
 

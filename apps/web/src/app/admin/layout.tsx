@@ -29,7 +29,7 @@ const NAV_ITEMS = [
 	{ href: "/admin" as const, label: "Dashboard", icon: LayoutDashboard },
 	{ href: "/admin/builder" as const, label: "Builder", icon: Blocks },
 	{ href: "/admin/analytics" as const, label: "Analytics", icon: BarChart3 },
-	{ href: "/admin/contacts" as const, label: "Contacts", icon: Mail },
+	{ href: "/admin/forms" as const, label: "Forms", icon: Mail },
 	{ href: "/admin/appearance" as const, label: "Appearance", icon: Palette },
 	{ href: "/admin/settings" as const, label: "Settings", icon: Settings },
 	{ href: "/admin/social" as const, label: "Social", icon: Share2 },
@@ -82,10 +82,10 @@ function SidebarContent({
 					return (
 						<Link
 							key={item.href}
-							href={item.href}
+							href={item.href as never}
 							onClick={onNavClick}
 							aria-current={isActive ? "page" : undefined}
-							aria-label={item.label === "Contacts" && unreadCount > 0 ? `Contacts, ${unreadCount} unread` : undefined}
+							aria-label={item.label === "Forms" && unreadCount > 0 ? `Forms, ${unreadCount} unread` : undefined}
 							className={cn(
 								"flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium transition-all",
 								isActive
@@ -95,7 +95,7 @@ function SidebarContent({
 						>
 							<Icon className="h-4 w-4 shrink-0" />
 							<span>{item.label}</span>
-							{item.label === "Contacts" && unreadCount > 0 && (
+							{item.label === "Forms" && unreadCount > 0 && (
 								<span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[11px] font-semibold text-white">
 									{unreadCount > 99 ? "99+" : unreadCount}
 								</span>
@@ -192,7 +192,7 @@ export default function AdminLayout({
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
 	const unreadQuery = useQuery({
-		...trpc.contacts.unreadCount.queryOptions(),
+		...trpc.forms.unreadCount.queryOptions(),
 		enabled: !!session?.user,
 		refetchInterval: 30000,
 	});
@@ -309,7 +309,7 @@ export default function AdminLayout({
 					return (
 						<Link
 							key={item.href}
-							href={item.href}
+							href={item.href as never}
 							aria-current={isActive ? "page" : undefined}
 							className={cn(
 								"flex flex-1 flex-col items-center gap-0.5 py-2 min-h-[44px] text-[10px]",

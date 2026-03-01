@@ -35,7 +35,7 @@ const chartConfig: ChartConfig = {
 
 export default function AdminDashboardPage() {
 	const overview = useQuery(trpc.analytics.overview.queryOptions({ period: "7d" }));
-	const unreadCount = useQuery(trpc.contacts.unreadCount.queryOptions());
+	const unreadCount = useQuery(trpc.forms.unreadCount.queryOptions());
 	const versionCheck = useQuery(trpc.version.checkUpdate.queryOptions());
 	const viewsOverTime = useQuery(
 		trpc.analytics.viewsOverTime.queryOptions({ period: "7d" }),
@@ -62,7 +62,7 @@ export default function AdminDashboardPage() {
 			icon: Mail,
 			color: "text-orange-500",
 			bg: "bg-orange-500/10",
-			href: "/admin/contacts" as const,
+			href: "/admin/forms" as const,
 		},
 	];
 

@@ -8,6 +8,7 @@ interface Contact {
 	email: string;
 	message: string;
 	isRead: boolean;
+	blockTitle: string | null;
 	createdAt: string | Date;
 }
 
@@ -98,9 +99,16 @@ export function ContactListItem({
 						{relativeDate(contact.createdAt)}
 					</span>
 				</div>
-				<p className="truncate text-[11px] text-muted-foreground">
-					{contact.email}
-				</p>
+				<div className="flex items-center gap-1.5">
+					<p className="truncate text-[11px] text-muted-foreground">
+						{contact.email}
+					</p>
+					{contact.blockTitle && (
+						<span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">
+							{contact.blockTitle}
+						</span>
+					)}
+				</div>
 				<p className="truncate text-[11px] text-muted-foreground/70">
 					{contact.message?.slice(0, 60) || "No message"}
 				</p>

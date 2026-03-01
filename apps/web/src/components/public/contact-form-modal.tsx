@@ -220,6 +220,8 @@ export function ContactFormModal({
 			rating: formData.rating > 0 ? formData.rating : undefined,
 			attending: formData.attending || undefined,
 			guests: formData.guests ? Number(formData.guests) : undefined,
+			blockId,
+			blockTitle: blockTitle || undefined,
 		});
 	};
 

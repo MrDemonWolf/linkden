@@ -1,7 +1,7 @@
 import { router, publicProcedure } from "../index";
 import { blocksRouter } from "./blocks";
 import { settingsRouter } from "./settings";
-import { contactsRouter } from "./contacts";
+import { formsRouter } from "./contacts";
 import { analyticsRouter } from "./analytics";
 import { socialRouter } from "./social";
 import { walletRouter } from "./wallet";
@@ -16,7 +16,7 @@ export const appRouter = router({
 	}),
 	blocks: blocksRouter,
 	settings: settingsRouter,
-	contacts: contactsRouter,
+	forms: formsRouter,
 	analytics: analyticsRouter,
 	social: socialRouter,
 	wallet: walletRouter,

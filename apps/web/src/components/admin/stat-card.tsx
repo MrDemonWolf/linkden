@@ -49,7 +49,7 @@ export function StatCard({
 				</div>
 				{href && (
 					<Link
-						href={href as "/admin/contacts"}
+						href={href as never}
 						className="ml-auto rounded-md p-1 transition-colors hover:bg-muted"
 						aria-label={`Go to ${label}`}
 					>

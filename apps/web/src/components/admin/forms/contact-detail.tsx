@@ -28,6 +28,7 @@ interface Contact {
 	rating: number | null;
 	attending: string | null;
 	guests: number | null;
+	blockTitle: string | null;
 	isRead: boolean;
 	createdAt: string | Date;
 }
@@ -114,9 +115,16 @@ export function ContactDetail({
 						{contact.isRead ? "Read" : "Unread"}
 					</Badge>
 				</div>
-				<p className="text-[11px] text-muted-foreground">
-					{new Date(contact.createdAt).toLocaleString()}
-				</p>
+				<div className="flex items-center gap-2">
+					<p className="text-[11px] text-muted-foreground">
+						{new Date(contact.createdAt).toLocaleString()}
+					</p>
+					{contact.blockTitle && (
+						<span className="rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">
+							{contact.blockTitle}
+						</span>
+					)}
+				</div>
 			</div>
 
 			{/* Content */}
