@@ -3,20 +3,16 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Sun, Moon, Upload, Undo2 } from "lucide-react";
+import { Upload, Undo2 } from "lucide-react";
 import { themePresets } from "@linkden/ui/themes";
 import { getBannerPresetsForTheme } from "@linkden/ui/banner-presets";
-import { socialBrandMap } from "@linkden/ui/social-brands";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { PhoneFrame } from "@/components/admin/phone-frame";
-import { PreviewContent } from "@/components/admin/preview-content";
-import { PageHeader } from "@/components/admin/page-header";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
+import { SharedPreview } from "@/components/admin/shared-preview";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
-import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 import { ProfileSection } from "@/components/admin/appearance/profile-section";
 import { ThemePresetsSection } from "@/components/admin/appearance/theme-presets-section";
 import { ColorsSection } from "@/components/admin/appearance/colors-section";
@@ -71,21 +67,7 @@ function buildSavedState(settings: Record<string, string>): SavedState {
 export default function AppearancePage() {
 	const qc = useQueryClient();
 	const settingsQuery = useQuery(trpc.settings.getAll.queryOptions());
-	const blocksQuery = useQuery(trpc.blocks.list.queryOptions());
-	const blocks = (blocksQuery.data ?? []).filter((b: { isEnabled: boolean }) => b.isEnabled);
-	const socialsQuery = useQuery(trpc.social.list.queryOptions({ activeOnly: true }));
 	const updateSettings = useMutation(trpc.settings.updateBulk.mutationOptions());
-
-	const previewSocialNetworks = useMemo(() => {
-		return (socialsQuery.data ?? [])
-			.filter((s: { isActive: boolean; url: string }) => s.isActive && s.url)
-			.map((s: { slug: string; url: string }) => {
-				const brand = socialBrandMap.get(s.slug);
-				if (!brand) return null;
-				return { slug: s.slug, name: brand.name, url: s.url, hex: brand.hex, svgPath: brand.svgPath };
-			})
-			.filter(Boolean) as Array<{ slug: string; name: string; url: string; hex: string; svgPath: string }>;
-	}, [socialsQuery.data]);
 
 	const settings = settingsQuery.data ?? {};
 
@@ -120,8 +102,6 @@ export default function AppearancePage() {
 	const [brandingText, setBrandingText] = useState("");
 	const [brandingLink, setBrandingLink] = useState("");
 	const [showMobilePreview, setShowMobilePreview] = useState(false);
-
-	const { getAnimationProps } = useEntranceAnimation(!settingsQuery.isLoading);
 
 	const [systemPrefersDark, setSystemPrefersDark] = useState(false);
 	useEffect(() => {
@@ -294,80 +274,50 @@ export default function AppearancePage() {
 		);
 	}
 
-	const previewElement = (
-		<PhoneFrame previewDark={previewDark}>
-			<PreviewContent
-				profile={{
-					name: profileName || "Your Name",
-					email: "",
-					image: profileAvatar || null,
-					bio: profileBio || null,
-					isVerified: verifiedBadge,
-				}}
-				blocks={blocks.map((b: { id: string; type: string; title: string | null; url: string | null; icon: string | null; embedType: string | null; embedUrl: string | null; socialIcons: string | null; config: string | null; position: number }) => ({
-					id: b.id, type: b.type, title: b.title, url: b.url,
-					icon: b.icon, embedType: b.embedType, embedUrl: b.embedUrl,
-					socialIcons: b.socialIcons, config: b.config, position: b.position,
-				}))}
-				socialNetworks={previewSocialNetworks}
-				settings={{
-					brandingEnabled,
-					brandingText: brandingText || "Powered by LinkDen",
-					bannerPreset: bannerEnabled && bannerMode === "preset" ? bannerPreset : null,
-					bannerEnabled,
-					bannerMode,
-					bannerCustomUrl: bannerEnabled && bannerMode === "custom" ? bannerCustomUrl : undefined,
-					}}
-				themeColors={{
-					primary: resolvedThemeVars["--ld-primary"],
-					accent: resolvedThemeVars["--ld-accent"],
-					bg: resolvedThemeVars["--ld-background"],
-					fg: resolvedThemeVars["--ld-foreground"],
-					card: resolvedThemeVars["--ld-card"],
-					cardFg: resolvedThemeVars["--ld-card-foreground"],
-					border: resolvedThemeVars["--ld-border"],
-					muted: resolvedThemeVars["--ld-muted"],
-					mutedFg: resolvedThemeVars["--ld-muted-foreground"],
-				}}
-				colorMode={previewDark ? "dark" : "light"}
-			/>
-		</PhoneFrame>
-	);
-
-	const headerAnim = getAnimationProps(0);
+	const previewOverrides = {
+		profile: {
+			name: profileName || "Your Name",
+			bio: profileBio || null,
+			image: profileAvatar || null,
+			isVerified: verifiedBadge,
+		},
+		themeColors: {
+			primary: resolvedThemeVars["--ld-primary"],
+			accent: resolvedThemeVars["--ld-accent"],
+			bg: resolvedThemeVars["--ld-background"],
+			fg: resolvedThemeVars["--ld-foreground"],
+			card: resolvedThemeVars["--ld-card"],
+			cardFg: resolvedThemeVars["--ld-card-foreground"],
+			border: resolvedThemeVars["--ld-border"],
+			muted: resolvedThemeVars["--ld-muted"],
+			mutedFg: resolvedThemeVars["--ld-muted-foreground"],
+		},
+		settings: {
+			brandingEnabled,
+			brandingText: brandingText || "Powered by LinkDen",
+			bannerEnabled,
+			bannerPreset: bannerEnabled && bannerMode === "preset" ? bannerPreset : null,
+			bannerMode,
+			bannerCustomUrl: bannerEnabled && bannerMode === "custom" ? bannerCustomUrl : undefined,
+		},
+	};
 
 	return (
-		<div className="space-y-4">
-			<PageHeader
-				title="Appearance"
-				description={isDirty ? "You have unpublished changes" : "All changes are live"}
-				className={cn(headerAnim.className)}
-				style={headerAnim.style}
-				actions={
-					<>
-						{isDirty && (
-							<Button variant="ghost" size="sm" onClick={handleDiscard}>
-								<Undo2 className="mr-1.5 h-3.5 w-3.5" />
-								Discard
-							</Button>
-						)}
-						<Button
-							size="sm"
-							variant={isDirty ? "default" : "outline"}
-							disabled={!isDirty || updateSettings.isPending}
-							onClick={handlePublish}
-						>
-							<Upload className="mr-1.5 h-3.5 w-3.5" />
-							{updateSettings.isPending ? "Publishing..." : "Publish"}
-						</Button>
-					</>
-				}
-			/>
+		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-4">
+			{/* Inline header */}
+			<div className="flex items-center justify-between gap-3">
+				<div className="min-w-0">
+					<h1 className="text-base font-semibold tracking-tight">Appearance</h1>
+					<p className={cn("text-xs", isDirty ? "text-amber-500" : "text-muted-foreground")}>
+						{isDirty ? "Unpublished changes" : "All changes are live"}
+					</p>
+				</div>
+			</div>
 
 			{/* Two-column layout */}
 			<div className="flex gap-6">
 				{/* Settings column */}
-				<div className={cn("flex-1 min-w-0 space-y-6", getAnimationProps(1).className)} style={getAnimationProps(1).style}>
+				<div className="flex-1 min-w-0 space-y-6">
 					<ProfileSection
 						profileName={profileName}
 						profileBio={profileBio}
@@ -423,42 +373,13 @@ export default function AppearancePage() {
 				</div>
 
 				{/* Preview column (desktop) */}
-				<div className={cn("hidden w-[320px] shrink-0 lg:block", getAnimationProps(2).className)} style={getAnimationProps(2).style}>
-					<div className="sticky top-16">
-						<div className="mb-3 flex items-center justify-between">
-							<span className="text-xs font-medium text-muted-foreground">Live Preview</span>
-							<div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/30">
-								<button
-									type="button"
-									onClick={() => setPreviewDark(false)}
-									className={cn(
-										"flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-all",
-										!previewDark
-											? "bg-background text-foreground shadow-sm"
-											: "text-muted-foreground hover:text-foreground",
-									)}
-									aria-label="Light preview"
-								>
-									<Sun className="h-3 w-3" />
-									Light
-								</button>
-								<button
-									type="button"
-									onClick={() => setPreviewDark(true)}
-									className={cn(
-										"flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-all",
-										previewDark
-											? "bg-background text-foreground shadow-sm"
-											: "text-muted-foreground hover:text-foreground",
-									)}
-									aria-label="Dark preview"
-								>
-									<Moon className="h-3 w-3" />
-									Dark
-								</button>
-							</div>
-						</div>
-						{previewElement}
+				<div className="hidden w-[320px] shrink-0 lg:block">
+					<div className="sticky top-6">
+						<SharedPreview
+							overrides={previewOverrides}
+							mode={previewDark ? "dark" : "light"}
+							onModeChange={(m) => setPreviewDark(m === "dark")}
+						/>
 					</div>
 				</div>
 			</div>
@@ -468,8 +389,34 @@ export default function AppearancePage() {
 				open={showMobilePreview}
 				onOpenChange={setShowMobilePreview}
 			>
-				{previewElement}
+				<SharedPreview
+					overrides={previewOverrides}
+					mode={previewDark ? "dark" : "light"}
+					onModeChange={(m) => setPreviewDark(m === "dark")}
+					showHeader={false}
+				/>
 			</MobilePreviewSheet>
+
+			{/* Sticky bottom publish bar */}
+			{isDirty && (
+				<div className="fixed bottom-16 md:bottom-0 inset-x-0 md:left-56 z-30 border-t border-border/50 bg-background/80 backdrop-blur-xl px-4 py-3 flex items-center justify-between shadow-lg">
+					<span className="text-sm text-muted-foreground">Unpublished changes</span>
+					<div className="flex gap-2">
+						<Button variant="ghost" size="sm" onClick={handleDiscard}>
+							<Undo2 className="mr-1.5 h-3.5 w-3.5" />
+							Discard
+						</Button>
+						<Button
+							size="sm"
+							disabled={updateSettings.isPending}
+							onClick={handlePublish}
+						>
+							<Upload className="mr-1.5 h-3.5 w-3.5" />
+							{updateSettings.isPending ? "Publishing…" : "Publish"}
+						</Button>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

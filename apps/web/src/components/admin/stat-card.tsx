@@ -28,8 +28,6 @@ export function StatCard({
 }: StatCardProps) {
 	return (
 		<Card size="sm" className="group relative overflow-hidden">
-			{/* Gradient accent bar */}
-			<div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
 			<CardContent className="flex items-center gap-3">
 				<div
 					className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", iconBg)}
@@ -42,7 +40,7 @@ export function StatCard({
 					{isLoading ? (
 						<Skeleton className="mt-1 h-5 w-12" />
 					) : (
-						<p className="text-lg font-semibold leading-tight tabular-nums">
+						<p className="text-2xl font-semibold font-mono leading-tight tabular-nums">
 							{typeof value === "number" ? value.toLocaleString() : value}
 						</p>
 					)}

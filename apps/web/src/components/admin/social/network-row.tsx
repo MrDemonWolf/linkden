@@ -51,22 +51,18 @@ export function NetworkRow({
 		<div
 			role="listitem"
 			className={cn(
-				"animate-in fade-in duration-300 fill-mode-both",
-				"flex rounded-xl px-4 py-3.5 transition-all",
+				"flex rounded-xl px-2 sm:px-4 py-2.5 sm:py-3.5 transition-all",
 				draft.isActive
 					? "border border-primary/20 bg-white/[0.03] backdrop-blur-sm shadow-sm"
 					: "group border border-transparent hover:bg-accent/60",
 			)}
-			style={{
-				...(animationDelay !== undefined ? { animationDelay: `${animationDelay}ms` } : {}),
-			}}
 		>
 			<div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
 				{/* Icon + Name row */}
-				<div className="flex items-center gap-3">
+				<div className="flex items-center gap-2 sm:gap-3">
 					<div
 						className={cn(
-							"flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform",
+							"flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl transition-transform",
 							draft.isActive
 								? ""
 								: "bg-muted/50 group-hover:scale-105",
@@ -78,7 +74,7 @@ export function NetworkRow({
 								: undefined
 						}
 					>
-						<svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+						<svg viewBox="0 0 24 24" className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true">
 							<path
 								d={social.svgPath}
 								fill={fillColor}
@@ -86,13 +82,13 @@ export function NetworkRow({
 						</svg>
 					</div>
 
-					<label htmlFor={`input-${social.slug}`} className="w-20 sm:w-28 shrink-0 truncate text-xs font-medium text-foreground cursor-pointer">
+					<label htmlFor={`input-${social.slug}`} className="sm:w-28 shrink-0 truncate text-xs font-medium text-foreground cursor-pointer">
 						{social.name}
 					</label>
 				</div>
 
 				{/* URL input + toggle */}
-				<div className="flex items-center gap-3 sm:flex-1">
+				<div className="flex items-center gap-2 sm:gap-3 sm:flex-1">
 				<div className="min-w-0 flex-1">
 					{fullUrlMode ? (
 						<Input

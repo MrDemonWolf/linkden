@@ -15,14 +15,12 @@ import {
 	type WalletLivePreview,
 } from "@/components/admin/settings/wallet-section";
 import { WalletPassPreview } from "@/components/admin/wallet-pass-preview";
-import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 
 export default function WalletPage() {
 	const qc = useQueryClient();
 	const configQuery = useQuery(trpc.wallet.getConfig.queryOptions());
 	const previewQuery = useQuery(trpc.wallet.generatePreview.queryOptions());
 	const signingQuery = useQuery(trpc.wallet.getSigningStatus.queryOptions());
-	const { getAnimationProps } = useEntranceAnimation(!configQuery.isLoading);
 
 	const [livePreview, setLivePreview] = useState<WalletLivePreview | null>(
 		null,
@@ -63,16 +61,11 @@ export default function WalletPage() {
 		signingQuery.data?.passTypeId
 	);
 
-	const headerAnim = getAnimationProps(0);
-	const statsAnim = getAnimationProps(1);
-	const contentAnim = getAnimationProps(2);
 
 	return (
 		<div className="space-y-4">
 			<PageHeader
 				title="Wallet Pass"
-				className={cn(headerAnim.className)}
-				style={headerAnim.style}
 				description={
 					isDirty
 						? "You have unsaved changes"
@@ -105,9 +98,7 @@ export default function WalletPage() {
 
 			{/* Status card */}
 			<div
-				className={cn("grid gap-3 sm:grid-cols-1", statsAnim.className)}
-				style={statsAnim.style}
-			>
+				className="grid gap-3 sm:grid-cols-1">
 				<StatCard
 					icon={Settings2}
 					label="Config Status"
@@ -119,12 +110,7 @@ export default function WalletPage() {
 
 			{/* Two-column: Config + Preview */}
 			<div
-				className={cn(
-					"grid items-start gap-4 lg:grid-cols-[1fr_auto]",
-					contentAnim.className,
-				)}
-				style={contentAnim.style}
-			>
+				className="grid items-start gap-4 lg:grid-cols-[1fr_auto]">
 				{/* Left: General Settings + Download */}
 				<Card>
 					<CardContent className="space-y-6 pt-2">

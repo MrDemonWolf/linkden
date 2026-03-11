@@ -6,6 +6,7 @@ export const blockTypeSchema = z.enum([
   "social_icons",
   "embed",
   "form",
+  "vcard",
 ]);
 
 export type BlockType = z.infer<typeof blockTypeSchema>;
@@ -88,6 +89,26 @@ export const formConfigSchema = blockConfigBaseSchema.extend({
   textAlign: z.enum(["left", "center", "right"]).optional(),
 });
 
+export const vcardConfigSchema = blockConfigBaseSchema.extend({
+  fullName: z.string().optional(),
+  nickname: z.string().optional(),
+  birthday: z.string().optional(),
+  photo: z.string().optional(),
+  org: z.string().optional(),
+  title: z.string().optional(),
+  department: z.string().optional(),
+  workEmail: z.string().optional(),
+  workPhone: z.string().optional(),
+  email: z.string().optional(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  urls: z.array(z.object({ label: z.string(), url: z.string() })).optional(),
+  buttonText: z.string().optional(),
+  buttonEmoji: z.string().optional(),
+  buttonEmojiPosition: z.enum(["left", "right"]).optional(),
+  isOutlined: z.boolean().optional(),
+});
+
 export const socialIconItemSchema = z.object({
   platform: z.string(),
   url: z.string().url(),
@@ -112,6 +133,7 @@ export const createBlockSchema = z.object({
       socialIconsConfigSchema,
       embedConfigSchema,
       formConfigSchema,
+      vcardConfigSchema,
       blockConfigBaseSchema,
     ])
     .optional(),
@@ -137,6 +159,7 @@ export const updateBlockSchema = z.object({
       socialIconsConfigSchema,
       embedConfigSchema,
       formConfigSchema,
+      vcardConfigSchema,
       blockConfigBaseSchema,
     ])
     .optional(),

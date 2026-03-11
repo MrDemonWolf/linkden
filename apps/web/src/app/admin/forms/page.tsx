@@ -20,7 +20,6 @@ import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
-import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 import { ContactListItem } from "@/components/admin/forms/contact-list-item";
 import { ContactDetail } from "@/components/admin/forms/contact-detail";
 
@@ -51,7 +50,6 @@ export default function FormsPage() {
 		trpc.forms.list.queryOptions(hasParams ? listParams : undefined),
 	);
 	const contacts = contactsQuery.data ?? [];
-	const { getAnimationProps } = useEntranceAnimation(!contactsQuery.isLoading);
 
 	const selectedContact = contacts.find((c) => c.id === selectedId) ?? null;
 
@@ -155,16 +153,13 @@ export default function FormsPage() {
 		{ value: "read", label: "Read" },
 	];
 
-	const headerAnim = getAnimationProps(0);
-	const listAnim = getAnimationProps(1);
+	const unreadCount = contacts.filter((c) => !c.isRead).length;
 
 	return (
-		<div className="space-y-4">
+		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-4">
 			<PageHeader
 				title="Forms"
 				description="Form submissions from your page"
-				className={cn(headerAnim.className)}
-				style={headerAnim.style}
 				actions={
 					<div className="flex items-center gap-2">
 						<div className="flex items-center gap-1">
@@ -181,15 +176,17 @@ export default function FormsPage() {
 								</Button>
 							))}
 						</div>
-						<Button
-							variant="outline"
-							size="xs"
-							onClick={handleMarkAllRead}
-							disabled={markAllRead.isPending}
-						>
-							<MailCheck className="mr-1 h-3 w-3" />
-							<span className="hidden sm:inline">Mark All Read</span>
-						</Button>
+						{unreadCount > 0 && (
+							<Button
+								variant="outline"
+								size="xs"
+								onClick={handleMarkAllRead}
+								disabled={markAllRead.isPending}
+							>
+								<MailCheck className="mr-1 h-3 w-3" />
+								<span className="hidden sm:inline">Mark All Read</span>
+							</Button>
+						)}
 					</div>
 				}
 			/>
@@ -231,18 +228,35 @@ export default function FormsPage() {
 				</div>
 			)}
 
-			{/* Bulk action bar */}
+			{/* Contextual bulk action bar */}
 			{showBulkActions && (
-				<div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-xs">
-					<span className="font-medium">{checkedIds.size} selected</span>
+				<div className="flex items-center gap-3 px-3 py-2 bg-primary/5 border border-primary/20 rounded-lg">
+					<span className="text-xs font-medium text-primary">{checkedIds.size} selected</span>
 					<Button
-						variant="destructive"
+						variant="ghost"
 						size="xs"
+						onClick={() => {
+							// Mark selected as read
+							const ids = Array.from(checkedIds);
+							Promise.all(ids.map((id) => markRead.mutateAsync({ id }))).then(() => {
+								invalidate();
+								setCheckedIds(new Set());
+								toast.success("Marked as read");
+							}).catch(() => toast.error("Failed to mark as read"));
+						}}
+					>
+						<MailCheck className="mr-1 h-3.5 w-3.5" />
+						Mark read
+					</Button>
+					<Button
+						variant="ghost"
+						size="xs"
+						className="ml-auto text-destructive hover:text-destructive hover:bg-destructive/10"
 						onClick={() => setBulkDeleteConfirm(true)}
 						disabled={deleteMultiple.isPending}
 					>
-						<Trash2 className="mr-1 h-3 w-3" />
-						Delete Selected
+						<Trash2 className="mr-1 h-3.5 w-3.5" />
+						Delete
 					</Button>
 					<Button
 						variant="ghost"
@@ -254,7 +268,7 @@ export default function FormsPage() {
 				</div>
 			)}
 
-			<div className={cn(listAnim.className)} style={listAnim.style}>
+			<div>
 				{contactsQuery.isLoading ? (
 					<SkeletonRows count={4} />
 				) : contacts.length === 0 ? (

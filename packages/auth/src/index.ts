@@ -1,8 +1,22 @@
 import { db } from "@linkden/db";
+import { siteSettings } from "@linkden/db/schema/index";
 import * as schema from "@linkden/db/schema/auth";
 import { env } from "@linkden/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { twoFactor, magicLink } from "better-auth/plugins";
+
+async function getEmailSettings() {
+  const allRows = await db.select().from(siteSettings);
+  const s: Record<string, string> = {};
+  for (const row of allRows) {
+    s[row.key] = row.value;
+  }
+  return {
+    apiKey: s.email_api_key ?? "",
+    from: s.email_from ?? "noreply@example.com",
+  };
+}
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -36,4 +50,29 @@ export const auth = betterAuth({
     //   domain: "<your-workers-subdomain>",
     // },
   },
+  plugins: [
+    twoFactor(),
+    magicLink({
+      sendMagicLink: async ({ email, url }) => {
+        const { apiKey, from } = await getEmailSettings();
+        if (!apiKey) {
+          console.warn("No email API key configured; skipping magic link email");
+          return;
+        }
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            from,
+            to: email,
+            subject: "Sign in to LinkDen",
+            html: `<p>Click the link below to sign in to your LinkDen admin panel:</p><p><a href="${url}">${url}</a></p><p>This link expires in 10 minutes.</p>`,
+          }),
+        });
+      },
+    }),
+  ],
 });

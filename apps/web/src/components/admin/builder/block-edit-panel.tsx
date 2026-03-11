@@ -203,10 +203,9 @@ export function BlockEditPanel({
 	const hasSchedule = !!(scheduledStart || scheduledEnd);
 
 	return (
-		<div ref={panelRef} className="fixed inset-y-0 right-0 z-50 w-full max-w-md border-l border-white/15 dark:border-white/10 bg-white/80 dark:bg-black/60 backdrop-blur-2xl shadow-lg sm:w-[28rem] animate-in slide-in-from-right duration-200">
-			<div className="flex h-full flex-col">
-				{/* Header */}
-				<div className="flex items-center justify-between border-b border-white/15 px-4 py-3">
+		<div ref={panelRef} className="flex h-full flex-col">
+			{/* Header */}
+			<div className="flex items-center justify-between border-b border-white/15 px-4 py-3">
 					<h3 className="text-sm font-medium">
 						Edit {block.type.replace("_", " ")}
 					</h3>
@@ -844,6 +843,5 @@ export function BlockEditPanel({
 					</Button>
 				</div>
 			</div>
-		</div>
 	);
 }

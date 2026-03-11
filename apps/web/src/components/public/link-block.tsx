@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
+import { ArrowRight } from "lucide-react";
 import { trpc } from "@/utils/trpc";
 import type { ThemeColors } from "./public-page";
 import { usePreview } from "./preview-context";
@@ -72,7 +73,7 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 		right: "text-right",
 	};
 
-	const baseClasses = `block w-full px-6 py-3.5 font-medium transition-all duration-200 ${
+	const baseClasses = `group block w-full px-6 py-3.5 font-medium transition-all duration-200 hover:scale-[1.01] hover:shadow-md ${
 		radiusClasses[borderRadius] || "rounded-lg"
 	} ${shadowClasses[shadow || "none"]} ${
 		textAlignClasses[textAlign] || "text-center"
@@ -120,10 +121,11 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 					{emoji && emojiPosition === "left" && (
 						<span aria-hidden="true">{emoji}</span>
 					)}
-					<span>{block.title || "Untitled Link"}</span>
+					<span className="flex-1">{block.title || "Untitled Link"}</span>
 					{emoji && emojiPosition === "right" && (
 						<span aria-hidden="true">{emoji}</span>
 					)}
+					<ArrowRight className="h-4 w-4 shrink-0 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all duration-200" aria-hidden="true" />
 				</span>
 			</a>
 		</div>

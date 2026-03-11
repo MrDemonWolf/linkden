@@ -291,11 +291,23 @@ export const publicRouter = router({
 	}),
 
 	getSetupStatus: publicProcedure.query(async () => {
-		const [setting] = await db
+		const rows = await db
 			.select()
 			.from(siteSettings)
-			.where(eq(siteSettings.key, "setup_completed"));
-		return { completed: setting?.value === "true" };
+			.where(
+				eq(siteSettings.key, "setup_completed"),
+			);
+		const [setting] = rows;
+
+		const [magicLinkRow] = await db
+			.select()
+			.from(siteSettings)
+			.where(eq(siteSettings.key, "magic_link_enabled"));
+
+		return {
+			completed: setting?.value === "true",
+			magicLinkEnabled: magicLinkRow?.value !== "false",
+		};
 	}),
 
 	validateSetupToken: publicProcedure

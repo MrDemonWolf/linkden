@@ -55,13 +55,20 @@ export function ContactListItem({
 			type="button"
 			onClick={onSelect}
 			className={cn(
-				"flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors",
+				"relative flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors",
 				isSelected
 					? "bg-primary/5 dark:bg-primary/10"
-					: "hover:bg-muted/50",
-				!contact.isRead && "border-l-2 border-l-primary",
+					: "hover:bg-muted/30",
+				!contact.isRead && "bg-amber-500/5",
 			)}
 		>
+			{/* Amber left accent bar for unread */}
+			<div
+				className={cn(
+					"absolute left-0 top-2 bottom-2 w-0.5 rounded-full transition-all",
+					!contact.isRead ? "bg-amber-500" : "bg-transparent",
+				)}
+			/>
 			{showCheckbox && (
 				<input
 					type="checkbox"
@@ -80,7 +87,7 @@ export function ContactListItem({
 					"flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
 					contact.isRead
 						? "bg-muted text-muted-foreground"
-						: "bg-primary/10 text-primary",
+						: "bg-amber-500/10 text-amber-500",
 				)}
 			>
 				{getInitials(contact.name)}

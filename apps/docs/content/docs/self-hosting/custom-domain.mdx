@@ -12,7 +12,7 @@ Give your LinkDen instance a custom domain instead of the default `*.workers.dev
 | Service | Default URL | Custom Domain Example |
 |---------|------------|----------------------|
 | Web app | `linkden-web.your-subdomain.workers.dev` | `links.yourdomain.com` or `yourdomain.com` |
-| API | `linkden-api.your-subdomain.workers.dev` | `api.yourdomain.com` |
+| API | `linkden-server.your-subdomain.workers.dev` | `api.yourdomain.com` |
 
 You can set up a custom domain for one or both services.
 
@@ -31,7 +31,7 @@ If your domain isn't on Cloudflare yet:
 
 ### Add Custom Domains to Workers
 
-For each Worker (`linkden-web` and `linkden-api`):
+For each Worker (`linkden-web` and `linkden-server`):
 
 1. Go to **Workers & Pages** > click the Worker.
 2. Go to **Settings > Domains & Routes** > **Add Custom Domain**.
@@ -41,17 +41,18 @@ Cloudflare automatically creates the DNS record and provisions SSL.
 
 ### Update Environment Variables
 
+Update your `.env` file with the custom domain URLs:
+
 ```bash
-NEXT_PUBLIC_API_URL=https://api.yourdomain.com
-NEXT_PUBLIC_SITE_URL=https://yourdomain.com
+NEXT_PUBLIC_SERVER_URL=https://api.yourdomain.com
 CORS_ORIGIN=https://yourdomain.com
-APP_URL=https://yourdomain.com
+BETTER_AUTH_URL=https://api.yourdomain.com
 ```
 
 Redeploy:
 
 ```bash
-pnpm cf:deploy
+pnpm ship
 ```
 
 ## Option 2: Domain on External DNS
@@ -76,7 +77,7 @@ At your DNS provider, create CNAME records:
 
 | Type | Name | Target | TTL |
 |------|------|--------|-----|
-| CNAME | `api` | `linkden-api.your-subdomain.workers.dev` | Auto or 300 |
+| CNAME | `api` | `linkden-server.your-subdomain.workers.dev` | Auto or 300 |
 
 ### Provider-Specific Notes
 
