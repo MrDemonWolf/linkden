@@ -1,51 +1,101 @@
 "use client";
 
-import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
 import { toast } from "sonner";
 import {
 	Plus,
-	Sun,
-	Moon,
-	ChevronDown,
-	Blocks,
 	Upload,
-	ExternalLink,
+	ArrowUpRight,
+	Blocks,
 } from "lucide-react";
-import { trpc } from "@/utils/trpc";
-import { Button, buttonVariants } from "@/components/ui/button";
 import {
-	DropdownMenu,
-	DropdownMenuTrigger,
-	DropdownMenuContent,
-	DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
+	DndContext,
+	DragOverlay,
+	closestCenter,
+	PointerSensor,
+	KeyboardSensor,
+	TouchSensor,
+	useSensor,
+	useSensors,
+	type DragEndEvent,
+	type DragStartEvent,
+} from "@dnd-kit/core";
+import {
+	SortableContext,
+	sortableKeyboardCoordinates,
+	verticalListSortingStrategy,
+	arrayMove,
+} from "@dnd-kit/sortable";
+import { trpc } from "@/utils/trpc";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { socialBrandMap } from "@linkden/ui/social-brands";
-import { PhoneFrame } from "@/components/admin/phone-frame";
-import { PreviewContent } from "@/components/admin/preview-content";
-import { getThemeColors } from "@/components/public/public-page";
-import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
+import { SharedPreview } from "@/components/admin/shared-preview";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
-import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 import { BlockEditPanel } from "@/components/admin/builder/block-edit-panel";
 import { BlockRow } from "@/components/admin/builder/block-row";
-import { BLOCK_TYPES, type BlockType, type Block, generateId } from "@/components/admin/builder/builder-constants";
+import { BLOCK_TYPES, TYPE_BADGE_BG, type BlockType, type Block, generateId } from "@/components/admin/builder/builder-constants";
+import { toast as sonnerToast } from "sonner";
+
+function SocialNetworksSection({
+	socialNetworks,
+}: {
+	socialNetworks: Array<{ slug: string; name: string; url: string; hex: string; svgPath: string }>;
+}) {
+	if (socialNetworks.length === 0) return null;
+	return (
+		<Card>
+			<CardContent className="flex items-center justify-between py-3">
+				<div>
+					<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+						Social Networks
+					</p>
+					<div className="mt-1.5 flex flex-wrap gap-1.5">
+						{socialNetworks.slice(0, 5).map((n) => (
+							<div
+								key={n.slug}
+								className="flex h-6 w-6 items-center justify-center rounded-full"
+								style={{ background: n.hex }}
+								title={n.name}
+							>
+								<svg viewBox="0 0 24 24" className="h-3 w-3 fill-white">
+									<path d={n.svgPath} />
+								</svg>
+							</div>
+						))}
+						{socialNetworks.length > 5 && (
+							<span className="text-[10px] text-muted-foreground self-center">
+								+{socialNetworks.length - 5} more
+							</span>
+						)}
+					</div>
+				</div>
+				<Link href="/admin/social">
+					<Button variant="ghost" size="xs">
+						Manage <ArrowUpRight className="h-3 w-3" />
+					</Button>
+				</Link>
+			</CardContent>
+		</Card>
+	);
+}
 
 export default function BuilderPage() {
 	const qc = useQueryClient();
 	const [editingBlock, setEditingBlock] = useState<Block | null>(null);
 	const [editingOverrides, setEditingOverrides] = useState<Partial<Block> | null>(null);
-	const [previewMode, setPreviewMode] = useState<"light" | "dark">("light");
 	const [showMobilePreview, setShowMobilePreview] = useState(false);
-	const [draggedId, setDraggedId] = useState<string | null>(null);
+	const [activeId, setActiveId] = useState<string | null>(null);
 	const [newlyAddedId, setNewlyAddedId] = useState<string | null>(null);
+	const [showPicker, setShowPicker] = useState(false);
 
 	const blocksQuery = useQuery(trpc.blocks.list.queryOptions());
-	const { getAnimationProps } = useEntranceAnimation(!blocksQuery.isLoading);
 	const blocks: Block[] = (blocksQuery.data as Block[] | undefined) ?? [];
 	const hasDraftQuery = useQuery(trpc.blocks.hasDraft.queryOptions());
 	const hasDrafts = hasDraftQuery.data?.hasDraft ?? false;
@@ -54,7 +104,6 @@ export default function BuilderPage() {
 
 	useUnsavedChanges(hasDrafts);
 
-	// Focus newly added block row after data re-renders
 	useEffect(() => {
 		if (newlyAddedId && blocks.some((b) => b.id === newlyAddedId)) {
 			const el = document.querySelector(`[data-block-id="${newlyAddedId}"]`);
@@ -77,33 +126,6 @@ export default function BuilderPage() {
 			})
 			.filter(Boolean) as Array<{ slug: string; name: string; url: string; hex: string; svgPath: string }>;
 	}, [socialsQuery.data]);
-
-	const previewThemeColors = (() => {
-		const settings = settingsQuery.data ?? {};
-		const themePresetName = settings.theme_preset || "default";
-		return getThemeColors(themePresetName, previewMode);
-	})();
-
-	const previewProfile = (() => {
-		const settings = settingsQuery.data ?? {};
-		return {
-			name: settings.profile_name || "Your Name",
-			email: "",
-			image: settings.avatar_url || null,
-			bio: settings.bio || null,
-			isVerified: settings.verified_badge === "true",
-		};
-	})();
-
-	const previewSettings = (() => {
-		const settings = settingsQuery.data ?? {};
-		return {
-			brandingEnabled: settings.branding_enabled !== "false",
-			brandingText: settings.branding_text || "Powered by LinkDen",
-			bannerPreset: settings.banner_enabled === "true" ? (settings.banner_preset || null) : null,
-			bannerEnabled: settings.banner_enabled === "true",
-			};
-	})();
 
 	const updateSettings = useMutation(trpc.settings.updateBulk.mutationOptions());
 	const contactDelivery = settingsQuery.data?.contact_delivery ?? "database";
@@ -128,7 +150,11 @@ export default function BuilderPage() {
 			header: "Section Header",
 			social_icons: "Social Icons",
 			embed: "Embed",
-			contact_form: "Contact Form",
+			form: "Form",
+			vcard: "Download Contact",
+		};
+		const defaultConfigs: Partial<Record<string, string>> = {
+			vcard: JSON.stringify({ buttonText: "Download Contact", buttonEmoji: "📇" }),
 		};
 		try {
 			await createBlock.mutateAsync({
@@ -137,6 +163,7 @@ export default function BuilderPage() {
 				title: defaults[type] ?? "New Block",
 				position,
 				isEnabled: true,
+				config: defaultConfigs[type],
 			});
 			invalidate();
 			setNewlyAddedId(id);
@@ -188,35 +215,29 @@ export default function BuilderPage() {
 		}
 	};
 
-	const handleDragStart = (e: React.DragEvent, id: string) => {
-		setDraggedId(id);
-		e.dataTransfer.effectAllowed = "move";
-		e.dataTransfer.setData("text/plain", id);
+	// dnd-kit sensors: pointer (mouse+pen), touch, keyboard
+	const sensors = useSensors(
+		useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+		useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
+		useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+	);
+
+	const handleDragStart = (event: DragStartEvent) => {
+		setActiveId(event.active.id as string);
 	};
 
-	const handleDragOver = (e: React.DragEvent) => {
-		e.preventDefault();
-		e.dataTransfer.dropEffect = "move";
-	};
+	const handleDragEnd = async (event: DragEndEvent) => {
+		const { active, over } = event;
+		setActiveId(null);
+		if (!over || active.id === over.id) return;
 
-	const handleDrop = async (e: React.DragEvent, targetId: string) => {
-		e.preventDefault();
-		if (!draggedId || draggedId === targetId) {
-			setDraggedId(null);
-			return;
-		}
+		const oldIndex = blocks.findIndex((b) => b.id === active.id);
+		const newIndex = blocks.findIndex((b) => b.id === over.id);
+		if (oldIndex === -1 || newIndex === -1) return;
 
-		const draggedIndex = blocks.findIndex((b) => b.id === draggedId);
-		const targetIndex = blocks.findIndex((b) => b.id === targetId);
-		if (draggedIndex === -1 || targetIndex === -1) return;
-
-		const reordered = [...blocks];
-		const [removed] = reordered.splice(draggedIndex, 1);
-		reordered.splice(targetIndex, 0, removed);
-
+		const reordered = arrayMove(blocks, oldIndex, newIndex);
 		const updates = reordered.map((b, i) => ({ id: b.id, position: i }));
 
-		setDraggedId(null);
 		try {
 			await reorderBlocks.mutateAsync(updates);
 			invalidate();
@@ -244,129 +265,168 @@ export default function BuilderPage() {
 		return base;
 	});
 
-	const previewElement = (
-		<PhoneFrame previewDark={previewMode === "dark"}>
-			<PreviewContent
-				profile={previewProfile}
-				blocks={previewBlocksData}
-				socialNetworks={previewSocialNetworks}
-				settings={previewSettings}
-				themeColors={previewThemeColors}
-				colorMode={previewMode}
-			/>
-		</PhoneFrame>
-	);
-
-	const headerAnim = getAnimationProps(0);
-	const listAnim = getAnimationProps(1);
-	const previewAnim = getAnimationProps(2);
+	const activeBlock = activeId ? blocks.find((b) => b.id === activeId) : null;
+	const blockIds = blocks.map((b) => b.id);
 
 	return (
-		<div className="space-y-4">
-			<PageHeader
-				title="Builder"
-				className={cn(headerAnim.className)}
-				style={headerAnim.style}
-				description={hasDrafts ? "You have unpublished changes" : "All changes are live"}
-				actions={
-					<>
-						<a
-							href="/"
-							target="_blank"
-							rel="noopener noreferrer"
-							className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-						>
-							<ExternalLink className="h-3.5 w-3.5" />
-							<span className="hidden sm:inline">View Live</span>
-						</a>
-						<Button
-							size="sm"
-							variant={hasDrafts ? "default" : "outline"}
-							disabled={!hasDrafts || publishAll.isPending}
-							onClick={async () => {
-								try {
-									await publishAll.mutateAsync();
-									invalidate();
-									toast.success("All changes published");
-								} catch {
-									toast.error("Failed to publish");
-								}
-							}}
-						>
-							<Upload className="mr-1.5 h-3.5 w-3.5" />
-							{publishAll.isPending ? "Publishing..." : "Publish"}
-						</Button>
-						<DropdownMenu>
-							<DropdownMenuTrigger className={buttonVariants({ size: "default" })}>
-								<Plus className="h-3.5 w-3.5" />
-								<span className="hidden sm:inline">Add Block</span>
-								<span className="sm:hidden">Add</span>
-								<ChevronDown className="h-3 w-3" />
-							</DropdownMenuTrigger>
-							<DropdownMenuContent className="w-56">
-								{BLOCK_TYPES.map((item) => (
-									<DropdownMenuItem key={item.type} onClick={() => handleAddBlock(item.type)}>
-										<item.icon className="h-3.5 w-3.5 text-muted-foreground" />
-										<div>
-											<div className="font-medium">{item.label}</div>
-											<div className="text-[11px] text-muted-foreground">{item.description}</div>
-										</div>
-									</DropdownMenuItem>
-								))}
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</>
-				}
-			/>
+		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-4">
+			{/* Inline header row */}
+			<div className="flex items-center justify-between gap-3">
+				<div className="min-w-0">
+					<h1 className="text-base font-semibold tracking-tight">Builder</h1>
+					<p className={cn(
+						"text-xs",
+						hasDrafts ? "text-amber-500" : "text-muted-foreground",
+					)}>
+						{hasDrafts ? "Unpublished changes" : "All changes are live"}
+					</p>
+				</div>
+				<div className="flex items-center gap-2 shrink-0">
+					<Button
+						size="sm"
+						variant={hasDrafts ? "default" : "outline"}
+						disabled={!hasDrafts || publishAll.isPending}
+						onClick={async () => {
+							try {
+								await publishAll.mutateAsync();
+								invalidate();
+								sonnerToast.success("All changes published");
+							} catch {
+								sonnerToast.error("Failed to publish");
+							}
+						}}
+					>
+						<Upload className="mr-1.5 h-3.5 w-3.5" />
+						{publishAll.isPending ? "Publishing…" : "Publish"}
+					</Button>
+				</div>
+			</div>
 
-			{/* Two panel layout */}
+			{/* Main layout */}
 			<div className="flex gap-6">
-				{/* Left panel: block list */}
-				<div className={cn("flex-1 min-w-0 space-y-2", listAnim.className)} style={listAnim.style}>
-					{blocksQuery.isLoading ? (
-						<SkeletonRows count={3} />
-					) : blocks.length === 0 ? (
-						<EmptyState
-							icon={Blocks}
-							title="No blocks yet"
-							description='Click "Add Block" to start building your page'
-						/>
-					) : (
-						<div role="list" aria-label="Page blocks">
-							{blocks.map((block) => (
-								<div key={block.id} role="listitem" className="mb-2" data-block-id={block.id}>
+				{/* Block list */}
+				<div className="flex-1 min-w-0 space-y-4">
+					<DndContext
+						sensors={sensors}
+						collisionDetection={closestCenter}
+						onDragStart={handleDragStart}
+						onDragEnd={handleDragEnd}
+					>
+						{blocksQuery.isLoading ? (
+							<div className="flex flex-col gap-2">
+								<SkeletonRows count={4} />
+							</div>
+						) : blocks.length === 0 ? (
+							<EmptyState
+								icon={Blocks}
+								title="No blocks yet"
+								description='Click "Add Block" below to start building your page'
+							/>
+						) : (
+							<SortableContext items={blockIds} strategy={verticalListSortingStrategy}>
+								<div className="flex flex-col gap-2" role="list" aria-label="Page blocks">
+									{blocks.map((block) => (
+										<div key={block.id} role="listitem" data-block-id={block.id}>
+											<BlockRow
+												block={block}
+												onToggle={() => handleToggle(block.id, block.isEnabled)}
+												onEdit={() => setEditingBlock(block)}
+												onDelete={() => handleDelete(block.id)}
+											/>
+										</div>
+									))}
+								</div>
+							</SortableContext>
+						)}
+
+						<DragOverlay>
+							{activeBlock && (
+								<div className="rounded-xl bg-card border border-primary/30 shadow-2xl opacity-90 pointer-events-none">
 									<BlockRow
-										block={block}
-										isDragged={draggedId === block.id}
-										onDragStart={(e) => handleDragStart(e, block.id)}
-										onDragOver={handleDragOver}
-										onDrop={(e) => handleDrop(e, block.id)}
-										onToggle={() => handleToggle(block.id, block.isEnabled)}
-										onEdit={() => setEditingBlock(block)}
-										onDelete={() => handleDelete(block.id)}
+										block={activeBlock}
+										onToggle={() => {}}
+										onEdit={() => {}}
+										onDelete={() => {}}
 									/>
 								</div>
-							))}
-						</div>
-					)}
+							)}
+						</DragOverlay>
+					</DndContext>
+
+					{/* Block picker */}
+					<div className="space-y-2">
+						<button
+							type="button"
+							onClick={() => setShowPicker(!showPicker)}
+							className="w-full rounded-xl border-2 border-dashed border-border/60 p-4 text-sm text-muted-foreground hover:border-primary/40 hover:text-primary transition-all flex items-center justify-center gap-2"
+						>
+							<Plus className={cn("h-4 w-4 transition-transform duration-200", showPicker && "rotate-45")} />
+							{showPicker ? "Cancel" : "Add Block"}
+						</button>
+
+						{showPicker && (
+							<div className="grid grid-cols-2 sm:grid-cols-3 gap-2 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+								{BLOCK_TYPES.map((item) => (
+									<button
+										key={item.type}
+										type="button"
+										onClick={() => { handleAddBlock(item.type); setShowPicker(false); }}
+										className="flex flex-col items-start gap-2 rounded-xl border border-border/60 bg-card/50 p-3 text-left hover:border-primary/40 hover:bg-card transition-all"
+									>
+										<div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", TYPE_BADGE_BG[item.type])}>
+											<item.icon className="h-4 w-4" />
+										</div>
+										<div>
+											<div className="text-xs font-semibold">{item.label}</div>
+											<div className="text-[10px] text-muted-foreground leading-tight mt-0.5">{item.description}</div>
+										</div>
+									</button>
+								))}
+							</div>
+						)}
+					</div>
+
+					{/* Social Networks section */}
+					<SocialNetworksSection socialNetworks={previewSocialNetworks} />
 				</div>
 
-				{/* Right panel: phone preview (desktop) */}
-				<div className={cn("hidden w-[380px] shrink-0 lg:block", previewAnim.className)} style={previewAnim.style}>
-					<div className="sticky top-6">
-						<div className="mb-3 flex items-center justify-between">
-							<span className="text-xs font-medium">Preview</span>
-							<button
-								type="button"
-								onClick={() => setPreviewMode((m) => (m === "light" ? "dark" : "light"))}
-								className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-								aria-label={`Switch to ${previewMode === "dark" ? "light" : "dark"} preview`}
-							>
-								{previewMode === "dark" ? <Moon className="h-3.5 w-3.5" /> : <Sun className="h-3.5 w-3.5" />}
-								{previewMode === "dark" ? "Dark" : "Light"}
-							</button>
+				{/* Right: edit panel or preview */}
+				<div className="hidden lg:flex lg:gap-4 shrink-0">
+					{/* Edit panel — slides in when editing */}
+					{editingBlock && (
+						<div className="w-[340px] shrink-0 animate-in slide-in-from-right-4 fade-in-0 duration-200">
+							<BlockEditPanel
+								block={editingBlock}
+								onClose={() => { setEditingBlock(null); setEditingOverrides(null); }}
+								onChange={setEditingOverrides}
+								onSave={handleSaveEdit}
+								isSaving={updateBlock.isPending}
+								contactDelivery={contactDelivery}
+								socialNetworks={previewSocialNetworks}
+								onDeliveryChange={async (value) => {
+									try {
+										await updateSettings.mutateAsync([
+											{ key: "contact_delivery", value },
+										]);
+										qc.invalidateQueries({ queryKey: trpc.settings.getAll.queryOptions().queryKey });
+										toast.success("Delivery mode updated");
+									} catch {
+										toast.error("Failed to update delivery mode");
+									}
+								}}
+							/>
 						</div>
-						{previewElement}
+					)}
+					{/* Preview — always on xl, hidden on lg when editing */}
+					<div className={cn(
+						"w-[300px] shrink-0 sticky top-6",
+						editingBlock ? "hidden xl:block" : "block",
+					)}>
+						<SharedPreview
+							overrides={{
+								blocks: editingOverrides ? previewBlocksData : undefined,
+							}}
+						/>
 					</div>
 				</div>
 			</div>
@@ -376,39 +436,8 @@ export default function BuilderPage() {
 				open={showMobilePreview}
 				onOpenChange={setShowMobilePreview}
 			>
-				{previewElement}
+				<SharedPreview overrides={{ blocks: previewBlocksData }} showHeader={false} />
 			</MobilePreviewSheet>
-
-			{/* Edit panel */}
-			{editingBlock && (
-				<>
-					<div
-						className="fixed inset-0 z-40 bg-black/30"
-						onClick={() => { setEditingBlock(null); setEditingOverrides(null); }}
-						aria-hidden="true"
-					/>
-					<BlockEditPanel
-						block={editingBlock}
-						onClose={() => { setEditingBlock(null); setEditingOverrides(null); }}
-						onChange={setEditingOverrides}
-						onSave={handleSaveEdit}
-						isSaving={updateBlock.isPending}
-						contactDelivery={contactDelivery}
-						socialNetworks={previewSocialNetworks}
-						onDeliveryChange={async (value) => {
-							try {
-								await updateSettings.mutateAsync([
-									{ key: "contact_delivery", value },
-								]);
-								qc.invalidateQueries({ queryKey: trpc.settings.getAll.queryOptions().queryKey });
-								toast.success("Delivery mode updated");
-							} catch {
-								toast.error("Failed to update delivery mode");
-							}
-						}}
-					/>
-				</>
-			)}
 		</div>
 	);
 }

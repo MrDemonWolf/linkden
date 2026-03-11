@@ -7,6 +7,7 @@ import { HeaderBlock } from "./header-block";
 import { SocialIconsBlock } from "./social-icons-block";
 import { EmbedBlock } from "./embed-block";
 import { ContactFormBlock } from "./contact-form-block";
+import { VCardBlock } from "./vcard-block";
 import { WhitelabelFooter } from "./whitelabel-footer";
 import { usePreview } from "./preview-context";
 import type { ThemeColors } from "./public-page";
@@ -70,6 +71,22 @@ function parseConfig(config: string | null): Record<string, unknown> {
 	}
 }
 
+export function PageSkeleton() {
+	return (
+		<div className="flex flex-col items-center gap-4 animate-pulse px-4 py-8">
+			<div className="h-20 w-20 rounded-full bg-muted" />
+			<div className="h-5 w-36 rounded-full bg-muted" />
+			<div className="space-y-1.5 w-full max-w-xs">
+				<div className="h-4 w-48 rounded-full bg-muted mx-auto" />
+				<div className="h-4 w-32 rounded-full bg-muted mx-auto" />
+			</div>
+			{[0, 1, 2].map((i) => (
+				<div key={i} className="h-12 w-full max-w-sm rounded-xl bg-muted" />
+			))}
+		</div>
+	);
+}
+
 export function PageContent({
 	profile,
 	blocks,
@@ -115,6 +132,7 @@ export function PageContent({
 					<Avatar
 						src={profile.image}
 						name={profile.name}
+						email={profile.email}
 						size="lg"
 						hasBanner={!!hasBanner}
 						ringColor={hasBanner ? themeColors.bg : undefined}
@@ -184,8 +202,7 @@ export function PageContent({
 										colorMode={colorMode}
 										networks={socialNetworks}
 										themeColors={themeColors}
-										
-	/>
+									/>
 								);
 							case "embed":
 								return (
@@ -197,7 +214,7 @@ export function PageContent({
 										themeColors={themeColors}
 									/>
 								);
-							case "contact_form":
+							case "form":
 								return (
 									<ContactFormBlock
 										key={blockData.id}
@@ -209,72 +226,51 @@ export function PageContent({
 										themeColors={themeColors}
 									/>
 								);
+							case "vcard":
+								return (
+									<VCardBlock
+										key={blockData.id}
+										block={blockData}
+										config={config}
+										colorMode={colorMode}
+										themeColors={themeColors}
+									/>
+								);
 							default:
 								return null;
 						}
 					})}
 				</div>
 
-				{/* VCard / Wallet Buttons — only on public page */}
-				{!isPreview && (
+				{/* Wallet Button — only on public page */}
+				{!isPreview && settings.walletPassEnabled && (
 					<div className="mt-8 flex justify-center gap-3">
-						{settings.vcardEnabled && (
-							<a
-								href="/api/vcard"
-								className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300"
-								style={{
-									backgroundColor: themeColors.card,
-									color: themeColors.cardFg,
-									border: `1px solid ${themeColors.border}`,
-									transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
-								}}
-								download="contact.vcf"
+						<a
+							href="/api/wallet-pass"
+							className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300"
+							style={{
+								backgroundColor: themeColors.card,
+								color: themeColors.cardFg,
+								border: `1px solid ${themeColors.border}`,
+								transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
+							}}
+						>
+							<svg
+								className="h-4 w-4"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+								strokeWidth={2}
+								aria-hidden="true"
 							>
-								<svg
-									className="h-4 w-4"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke="currentColor"
-									strokeWidth={2}
-									aria-hidden="true"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-									/>
-								</svg>
-								Download Contact
-							</a>
-						)}
-						{settings.walletPassEnabled && (
-							<a
-								href="/api/wallet-pass"
-								className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300"
-								style={{
-									backgroundColor: themeColors.card,
-									color: themeColors.cardFg,
-									border: `1px solid ${themeColors.border}`,
-									transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
-								}}
-							>
-								<svg
-									className="h-4 w-4"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke="currentColor"
-									strokeWidth={2}
-									aria-hidden="true"
-								>
-									<path
-										strokeLinecap="round"
-										strokeLinejoin="round"
-										d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-									/>
-								</svg>
-								Add to Wallet
-							</a>
-						)}
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+								/>
+							</svg>
+							Add to Wallet
+						</a>
 					</div>
 				)}
 			</Wrapper>

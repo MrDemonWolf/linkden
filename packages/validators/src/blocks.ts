@@ -5,7 +5,8 @@ export const blockTypeSchema = z.enum([
   "header",
   "social_icons",
   "embed",
-  "contact_form",
+  "form",
+  "vcard",
 ]);
 
 export type BlockType = z.infer<typeof blockTypeSchema>;
@@ -71,11 +72,41 @@ export function validateEmbedUrl(embedType: string, url: string): boolean {
   return pattern.test(url);
 }
 
-export const contactFormConfigSchema = blockConfigBaseSchema.extend({
+export const formConfigSchema = blockConfigBaseSchema.extend({
+  preset: z.enum(["contact", "connect", "feedback", "rsvp"]).optional(),
   buttonText: z.string().optional(),
   buttonEmoji: z.string().optional(),
   buttonEmojiPosition: z.enum(["left", "right"]).optional(),
   successMessage: z.string().optional(),
+  showPhone: z.boolean().optional(),
+  showSubject: z.boolean().optional(),
+  showCompany: z.boolean().optional(),
+  showWhereMet: z.boolean().optional(),
+  showRating: z.boolean().optional(),
+  showAttending: z.boolean().optional(),
+  showGuests: z.boolean().optional(),
+  isOutlined: z.boolean().optional(),
+  textAlign: z.enum(["left", "center", "right"]).optional(),
+});
+
+export const vcardConfigSchema = blockConfigBaseSchema.extend({
+  fullName: z.string().optional(),
+  nickname: z.string().optional(),
+  birthday: z.string().optional(),
+  photo: z.string().optional(),
+  org: z.string().optional(),
+  title: z.string().optional(),
+  department: z.string().optional(),
+  workEmail: z.string().optional(),
+  workPhone: z.string().optional(),
+  email: z.string().optional(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  urls: z.array(z.object({ label: z.string(), url: z.string() })).optional(),
+  buttonText: z.string().optional(),
+  buttonEmoji: z.string().optional(),
+  buttonEmojiPosition: z.enum(["left", "right"]).optional(),
+  isOutlined: z.boolean().optional(),
 });
 
 export const socialIconItemSchema = z.object({
@@ -101,7 +132,8 @@ export const createBlockSchema = z.object({
       headerConfigSchema,
       socialIconsConfigSchema,
       embedConfigSchema,
-      contactFormConfigSchema,
+      formConfigSchema,
+      vcardConfigSchema,
       blockConfigBaseSchema,
     ])
     .optional(),
@@ -126,7 +158,8 @@ export const updateBlockSchema = z.object({
       headerConfigSchema,
       socialIconsConfigSchema,
       embedConfigSchema,
-      contactFormConfigSchema,
+      formConfigSchema,
+      vcardConfigSchema,
       blockConfigBaseSchema,
     ])
     .optional(),

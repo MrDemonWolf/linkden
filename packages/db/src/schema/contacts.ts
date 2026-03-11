@@ -11,6 +11,12 @@ export const contactSubmission = sqliteTable(
     phone: text("phone"),
     subject: text("subject"),
     company: text("company"),
+    whereMet: text("where_met"),
+    rating: integer("rating"),
+    attending: text("attending"),
+    guests: integer("guests"),
+    blockId: text("block_id"),
+    blockTitle: text("block_title"),
     isRead: integer("is_read", { mode: "boolean" }).default(false).notNull(),
     createdAt: integer("created_at", { mode: "timestamp_ms" })
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
@@ -23,5 +29,6 @@ export const contactSubmission = sqliteTable(
   (table) => [
     index("contact_submission_isRead_idx").on(table.isRead),
     index("contact_submission_createdAt_idx").on(table.createdAt),
+    index("contact_submission_blockId_idx").on(table.blockId),
   ],
 );

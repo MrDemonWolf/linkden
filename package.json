@@ -16,6 +16,7 @@
     "db:push": "turbo -F @linkden/db db:push",
     "db:generate": "turbo -F @linkden/db db:generate",
     "deploy": "turbo -F @linkden/infra deploy",
+    "ship": "turbo -F @linkden/infra deploy",
     "destroy": "turbo -F @linkden/infra destroy",
     "db:reset": "rm -rf apps/server/.wrangler/state && echo 'Local DB wiped. Run pnpm dev to recreate.'"
   },
@@ -27,8 +28,10 @@
   "devDependencies": {
     "@cloudflare/workers-types": "catalog:",
     "@linkden/config": "workspace:*",
+    "@tailwindcss/postcss": "catalog:",
     "@types/node": "^22.13.14",
-"turbo": "^2.6.3",
+    "tailwindcss": "catalog:",
+    "turbo": "^2.6.3",
     "typescript": "catalog:"
   },
   "packageManager": "pnpm@10.29.3",

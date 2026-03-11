@@ -4,58 +4,20 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-	Search as SearchIcon,
-	Shield,
-	Mail,
 	Save,
-	Database,
 	Undo2,
-	MessageSquare,
-	Wallet,
-	UserCircle,
-	type LucideIcon,
 } from "lucide-react";
 import { trpc } from "@/utils/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/admin/page-header";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
-import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 import { SeoSection } from "@/components/admin/settings/seo-section";
 import { CaptchaSection } from "@/components/admin/settings/captcha-section";
 import { EmailSection } from "@/components/admin/settings/email-section";
 import { DataSection } from "@/components/admin/settings/data-section";
-import { ContactFormSection } from "@/components/admin/settings/contact-form-section";
-import { WalletSection } from "@/components/admin/settings/wallet-section";
-import { VCardSection } from "@/components/admin/settings/vcard-section";
-
-// ---- Section definitions ----
-type SectionId =
-	| "seo"
-	| "captcha"
-	| "email"
-	| "contact"
-	| "wallet"
-	| "vcard"
-	| "data";
-
-interface SectionDef {
-	id: SectionId;
-	label: string;
-	icon: LucideIcon;
-}
-
-const SECTIONS: SectionDef[] = [
-	{ id: "seo", label: "SEO", icon: SearchIcon },
-	{ id: "captcha", label: "CAPTCHA", icon: Shield },
-	{ id: "email", label: "Email", icon: Mail },
-	{ id: "contact", label: "Contact Form", icon: MessageSquare },
-	{ id: "wallet", label: "Wallet Pass", icon: Wallet },
-	{ id: "vcard", label: "vCard", icon: UserCircle },
-	{ id: "data", label: "Data & Info", icon: Database },
-];
+import { MigrationSection } from "@/components/admin/settings/migration-section";
 
 // ---- Saved State (global settings only) ----
 interface SavedState {
@@ -68,7 +30,9 @@ interface SavedState {
 	emailProvider: string;
 	emailApiKey: string;
 	emailFrom: string;
-	contactFormEnabled: boolean;
+	adminBrandingEnabled: boolean;
+	seoOgMode: string;
+	seoOgTemplate: string;
 }
 
 function buildSavedState(s: Record<string, string>): SavedState {
@@ -76,13 +40,15 @@ function buildSavedState(s: Record<string, string>): SavedState {
 		seoTitle: s.seo_title ?? "",
 		seoDescription: s.seo_description ?? "",
 		seoOgImage: s.seo_og_image ?? "",
+		seoOgMode: s.seo_og_mode ?? "template",
+		seoOgTemplate: s.seo_og_template ?? "minimal",
 		captchaProvider: s.captcha_provider ?? "none",
 		captchaSiteKey: s.captcha_site_key ?? "",
 		captchaSecretKey: s.captcha_secret_key ?? "",
 		emailProvider: s.email_provider ?? "resend",
 		emailApiKey: s.email_api_key ?? "",
 		emailFrom: s.email_from ?? "",
-		contactFormEnabled: s.contact_form_enabled === "true",
+		adminBrandingEnabled: s.admin_branding_enabled !== "false",
 	};
 }
 
@@ -100,11 +66,7 @@ export default function SettingsPage() {
 	const importData = useMutation(trpc.backup.import.mutationOptions());
 
 	const fileInputRef = useRef<HTMLInputElement>(null);
-	const [activeSection, setActiveSection] = useState<SectionId>("seo");
 
-	const { getAnimationProps } = useEntranceAnimation(
-		!settingsQuery.isLoading,
-	);
 
 	// Saved state for dirty tracking
 	const [savedState, setSavedState] = useState<SavedState>({
@@ -117,13 +79,17 @@ export default function SettingsPage() {
 		emailProvider: "resend",
 		emailApiKey: "",
 		emailFrom: "",
-		contactFormEnabled: false,
+		adminBrandingEnabled: true,
+		seoOgMode: "template",
+		seoOgTemplate: "minimal",
 	});
 
 	// SEO
 	const [seoTitle, setSeoTitle] = useState("");
 	const [seoDescription, setSeoDescription] = useState("");
 	const [seoOgImage, setSeoOgImage] = useState("");
+	const [seoOgMode, setSeoOgMode] = useState("template");
+	const [seoOgTemplate, setSeoOgTemplate] = useState("minimal");
 
 	// CAPTCHA
 	const [captchaProvider, setCaptchaProvider] = useState("none");
@@ -135,8 +101,8 @@ export default function SettingsPage() {
 	const [emailApiKey, setEmailApiKey] = useState("");
 	const [emailFrom, setEmailFrom] = useState("");
 
-	// Contact Form
-	const [contactFormEnabled, setContactFormEnabled] = useState(false);
+	// Admin Branding
+	const [adminBrandingEnabled, setAdminBrandingEnabled] = useState(true);
 
 	// Load settings
 	useEffect(() => {
@@ -146,13 +112,15 @@ export default function SettingsPage() {
 			setSeoTitle(s.seoTitle);
 			setSeoDescription(s.seoDescription);
 			setSeoOgImage(s.seoOgImage);
+			setSeoOgMode(s.seoOgMode);
+			setSeoOgTemplate(s.seoOgTemplate);
 			setCaptchaProvider(s.captchaProvider);
 			setCaptchaSiteKey(s.captchaSiteKey);
 			setCaptchaSecretKey(s.captchaSecretKey);
 			setEmailProvider(s.emailProvider);
 			setEmailApiKey(s.emailApiKey);
 			setEmailFrom(s.emailFrom);
-			setContactFormEnabled(s.contactFormEnabled);
+			setAdminBrandingEnabled(s.adminBrandingEnabled);
 		}
 	}, [settingsQuery.data]);
 
@@ -160,13 +128,15 @@ export default function SettingsPage() {
 		seoTitle !== savedState.seoTitle ||
 		seoDescription !== savedState.seoDescription ||
 		seoOgImage !== savedState.seoOgImage ||
+		seoOgMode !== savedState.seoOgMode ||
+		seoOgTemplate !== savedState.seoOgTemplate ||
 		captchaProvider !== savedState.captchaProvider ||
 		captchaSiteKey !== savedState.captchaSiteKey ||
 		captchaSecretKey !== savedState.captchaSecretKey ||
 		emailProvider !== savedState.emailProvider ||
 		emailApiKey !== savedState.emailApiKey ||
 		emailFrom !== savedState.emailFrom ||
-		contactFormEnabled !== savedState.contactFormEnabled;
+		adminBrandingEnabled !== savedState.adminBrandingEnabled;
 
 	useUnsavedChanges(isDirty);
 
@@ -180,13 +150,15 @@ export default function SettingsPage() {
 		setSeoTitle(savedState.seoTitle);
 		setSeoDescription(savedState.seoDescription);
 		setSeoOgImage(savedState.seoOgImage);
+		setSeoOgMode(savedState.seoOgMode);
+		setSeoOgTemplate(savedState.seoOgTemplate);
 		setCaptchaProvider(savedState.captchaProvider);
 		setCaptchaSiteKey(savedState.captchaSiteKey);
 		setCaptchaSecretKey(savedState.captchaSecretKey);
 		setEmailProvider(savedState.emailProvider);
 		setEmailApiKey(savedState.emailApiKey);
 		setEmailFrom(savedState.emailFrom);
-		setContactFormEnabled(savedState.contactFormEnabled);
+		setAdminBrandingEnabled(savedState.adminBrandingEnabled);
 	};
 
 	const handleSave = async () => {
@@ -195,6 +167,8 @@ export default function SettingsPage() {
 				{ key: "seo_title", value: seoTitle },
 				{ key: "seo_description", value: seoDescription },
 				{ key: "seo_og_image", value: seoOgImage },
+				{ key: "seo_og_mode", value: seoOgMode },
+				{ key: "seo_og_template", value: seoOgTemplate },
 				{ key: "captcha_provider", value: captchaProvider },
 				{ key: "captcha_site_key", value: captchaSiteKey },
 				{ key: "captcha_secret_key", value: captchaSecretKey },
@@ -202,23 +176,28 @@ export default function SettingsPage() {
 				{ key: "email_api_key", value: emailApiKey },
 				{ key: "email_from", value: emailFrom },
 				{
-					key: "contact_form_enabled",
-					value: String(contactFormEnabled),
+					key: "admin_branding_enabled",
+					value: String(adminBrandingEnabled),
 				},
 			]);
 			setSavedState({
 				seoTitle,
 				seoDescription,
 				seoOgImage,
+				seoOgMode,
+				seoOgTemplate,
 				captchaProvider,
 				captchaSiteKey,
 				captchaSecretKey,
 				emailProvider,
 				emailApiKey,
 				emailFrom,
-				contactFormEnabled,
+				adminBrandingEnabled,
 			});
 			invalidate();
+			qc.invalidateQueries({
+				queryKey: trpc.settings.get.queryOptions({ key: "admin_branding_enabled" }).queryKey,
+			});
 			toast.success("Settings saved");
 		} catch {
 			toast.error("Failed to save settings");
@@ -252,9 +231,14 @@ export default function SettingsPage() {
 		try {
 			const text = await file.text();
 			const parsed = JSON.parse(text);
+			if (!parsed.data) {
+				toast.error("Invalid LinkDen export file.");
+				if (fileInputRef.current) fileInputRef.current.value = "";
+				return;
+			}
 			await importData.mutateAsync({
 				mode: "merge",
-				data: parsed.data ?? parsed,
+				data: parsed.data,
 			});
 			invalidate();
 			toast.success("Import successful");
@@ -275,87 +259,15 @@ export default function SettingsPage() {
 		);
 	}
 
-	const headerAnim = getAnimationProps(0);
-	const sidebarAnim = getAnimationProps(1);
-	const contentAnim = getAnimationProps(2);
-
-	const sectionContent: Record<SectionId, React.ReactNode> = {
-		seo: (
-			<SeoSection
-				seoTitle={seoTitle}
-				seoDescription={seoDescription}
-				seoOgImage={seoOgImage}
-				onSeoTitleChange={setSeoTitle}
-				onSeoDescriptionChange={setSeoDescription}
-				onSeoOgImageChange={setSeoOgImage}
-			/>
-		),
-		captcha: (
-			<CaptchaSection
-				captchaProvider={captchaProvider}
-				captchaSiteKey={captchaSiteKey}
-				captchaSecretKey={captchaSecretKey}
-				onCaptchaProviderChange={setCaptchaProvider}
-				onCaptchaSiteKeyChange={setCaptchaSiteKey}
-				onCaptchaSecretKeyChange={setCaptchaSecretKey}
-			/>
-		),
-		email: (
-			<EmailSection
-				emailProvider={emailProvider}
-				emailApiKey={emailApiKey}
-				emailFrom={emailFrom}
-				onEmailProviderChange={setEmailProvider}
-				onEmailApiKeyChange={setEmailApiKey}
-				onEmailFromChange={setEmailFrom}
-			/>
-		),
-		contact: (
-			<ContactFormSection
-				contactFormEnabled={contactFormEnabled}
-				onContactFormEnabledChange={setContactFormEnabled}
-			/>
-		),
-		wallet: <WalletSection />,
-		vcard: <VCardSection />,
-		data: (
-			<DataSection
-				onExport={handleExport}
-				onImport={handleImport}
-				isExporting={exportData.isFetching}
-				isImporting={importData.isPending}
-				fileInputRef={fileInputRef}
-				versionCheck={versionCheck.data ?? null}
-				onCheckUpdates={() =>
-					qc.invalidateQueries({
-						queryKey:
-							trpc.version.checkUpdate.queryOptions().queryKey,
-					})
-				}
-			/>
-		),
-	};
-
-	const activeLabel =
-		SECTIONS.find((s) => s.id === activeSection)?.label ?? "";
-
 	return (
-		<div className="space-y-4">
+		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
 			<PageHeader
 				title="Settings"
-				description={
-					isDirty
-						? "You have unsaved changes"
-						: "Configure your LinkDen instance"
-				}
+				description={isDirty ? "You have unsaved changes" : "Configure your LinkDen instance"}
 				actions={
 					<>
 						{isDirty && (
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={handleDiscard}
-							>
+							<Button variant="ghost" size="sm" onClick={handleDiscard}>
 								<Undo2 className="mr-1.5 h-3.5 w-3.5" />
 								Discard
 							</Button>
@@ -367,94 +279,89 @@ export default function SettingsPage() {
 							onClick={handleSave}
 						>
 							<Save className="mr-1.5 h-3.5 w-3.5" />
-							{updateSettings.isPending ? "Saving..." : "Save"}
+							{updateSettings.isPending ? "Saving…" : "Save"}
 						</Button>
 					</>
 				}
-				className={cn(headerAnim.className)}
-				style={headerAnim.style}
 			/>
 
-			{/* Mobile pills */}
-			<div
-				className={cn(
-					"flex gap-2 overflow-x-auto scrollbar-none md:hidden",
-					sidebarAnim.className,
-				)}
-				style={sidebarAnim.style}
-			>
-				{SECTIONS.map((section) => {
-					const Icon = section.icon;
-					const isActive = activeSection === section.id;
-					return (
-						<button
-							key={section.id}
-							type="button"
-							onClick={() => setActiveSection(section.id)}
-							className={cn(
-								"inline-flex items-center shrink-0 rounded-full px-4 py-2 text-xs font-medium transition-all duration-200",
-								isActive
-									? "border-transparent bg-primary text-primary-foreground shadow-sm ring-1 ring-primary/30"
-									: "border border-border/50 bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground",
-							)}
-						>
-							<Icon className="mr-1.5 h-3 w-3" />
-							{section.label}
-						</button>
-					);
-				})}
-			</div>
+			<Card>
+				<CardContent className="pt-4 space-y-4">
+					<h2 className="text-sm font-semibold">SEO</h2>
+					<SeoSection
+						seoTitle={seoTitle}
+						seoDescription={seoDescription}
+						seoOgImage={seoOgImage}
+						seoOgMode={seoOgMode}
+						seoOgTemplate={seoOgTemplate}
+						profileName={settingsQuery.data?.profile_name ?? ""}
+						bio={settingsQuery.data?.bio ?? ""}
+						primaryColor={settingsQuery.data?.custom_primary ?? "#6366f1"}
+						avatarUrl={settingsQuery.data?.avatar_url ?? ""}
+						onSeoTitleChange={setSeoTitle}
+						onSeoDescriptionChange={setSeoDescription}
+						onSeoOgImageChange={setSeoOgImage}
+						onSeoOgModeChange={setSeoOgMode}
+						onSeoOgTemplateChange={setSeoOgTemplate}
+					/>
+				</CardContent>
+			</Card>
 
-			{/* Desktop sidebar + content */}
-			<div className="flex gap-6">
-				{/* Sidebar (desktop) */}
-				<nav
-					aria-label="Settings sections"
-					className={cn(
-						"hidden md:block w-48 shrink-0",
-						sidebarAnim.className,
-					)}
-					style={sidebarAnim.style}
-				>
-					<div className="sticky top-20 rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 p-1.5 space-y-0.5">
-						{SECTIONS.map((section) => {
-							const Icon = section.icon;
-							const isActive = activeSection === section.id;
-							return (
-								<button
-									key={section.id}
-									type="button"
-									onClick={() => setActiveSection(section.id)}
-									className={cn(
-										"flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium transition-all",
-										isActive
-											? "bg-primary/10 text-primary border-l-2 border-primary"
-											: "text-muted-foreground hover:bg-white/10 hover:text-foreground",
-									)}
-								>
-									<Icon className="h-4 w-4 shrink-0" />
-									{section.label}
-								</button>
-							);
-						})}
-					</div>
-				</nav>
+			<Card>
+				<CardContent className="pt-4 space-y-4">
+					<h2 className="text-sm font-semibold">Security</h2>
+					<CaptchaSection
+						captchaProvider={captchaProvider}
+						captchaSiteKey={captchaSiteKey}
+						captchaSecretKey={captchaSecretKey}
+						onCaptchaProviderChange={setCaptchaProvider}
+						onCaptchaSiteKeyChange={setCaptchaSiteKey}
+						onCaptchaSecretKeyChange={setCaptchaSecretKey}
+					/>
+				</CardContent>
+			</Card>
 
-				{/* Content */}
-				<div
-					className={cn("flex-1 min-w-0", contentAnim.className)}
-					style={contentAnim.style}
-				>
-					<Card>
-						<CardContent className="space-y-4 pt-2">
-							<h2 className="text-sm font-semibold">
-								{activeLabel}
-							</h2>
-							{sectionContent[activeSection]}
-						</CardContent>
-					</Card>
-				</div>
-			</div>
+			<Card>
+				<CardContent className="pt-4 space-y-4">
+					<h2 className="text-sm font-semibold">Email</h2>
+					<EmailSection
+						emailProvider={emailProvider}
+						emailApiKey={emailApiKey}
+						emailFrom={emailFrom}
+						onEmailProviderChange={setEmailProvider}
+						onEmailApiKeyChange={setEmailApiKey}
+						onEmailFromChange={setEmailFrom}
+					/>
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardContent className="pt-4 space-y-4">
+					<h2 className="text-sm font-semibold">Data & Info</h2>
+					<DataSection
+						onExport={handleExport}
+						onImport={handleImport}
+						isExporting={exportData.isFetching}
+						isImporting={importData.isPending}
+						fileInputRef={fileInputRef}
+						versionCheck={versionCheck.data ?? null}
+						onCheckUpdates={() =>
+							qc.invalidateQueries({
+								queryKey: trpc.version.checkUpdate.queryOptions().queryKey,
+							})
+						}
+						adminBrandingEnabled={adminBrandingEnabled}
+						onAdminBrandingEnabledChange={setAdminBrandingEnabled}
+					/>
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardContent className="pt-4 space-y-4">
+					<h2 className="text-sm font-semibold">Migration</h2>
+					<MigrationSection onImportComplete={invalidate} />
+				</CardContent>
+			</Card>
 		</div>
 	);
 }

@@ -26,38 +26,23 @@ export function PageHeader({
 			role="banner"
 			aria-label={title}
 			style={style}
-			className={cn(
-				"sticky top-12 md:top-0 z-20 -mx-2 sm:mx-0 md:rounded-2xl border-x-0 sm:border-x bg-white/50 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-lg shadow-black/5 dark:shadow-black/20 px-4 py-2 md:py-3",
-				children
-					? "flex flex-col gap-2 md:gap-3"
-					: "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between",
-				!(actions || children) && "hidden md:flex",
-				className,
-			)}
+			className={cn("pb-4 md:pb-6", className)}
 		>
-			{children ? (
-				<div className="flex items-center justify-between">
-					<div className="hidden md:flex items-center gap-2 min-w-0">
-						<h1 className="text-lg font-semibold truncate">{title}</h1>
+			<div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+				<div className="min-w-0">
+					<div className="flex items-center gap-2">
+						<h1 className="text-base font-semibold tracking-tight truncate">{title}</h1>
 						{badge}
-						{description && (
-							<p className="text-xs text-muted-foreground">{description}</p>
-						)}
 					</div>
-					{actions && <div className="flex items-center gap-2 ml-auto">{actions}</div>}
+					{description && (
+						<p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+					)}
 				</div>
-			) : (
-				<>
-					<div className="hidden md:block">
-						<h1 className="text-lg font-semibold">{title}</h1>
-						{description && (
-							<p className="text-xs text-muted-foreground">{description}</p>
-						)}
-					</div>
-					{actions && <div className="flex items-center gap-2 ml-auto">{actions}</div>}
-				</>
-			)}
-			{children}
+				{actions && (
+					<div className="flex items-center gap-2 shrink-0 mt-2 sm:mt-0">{actions}</div>
+				)}
+			</div>
+			{children && <div className="mt-3">{children}</div>}
 		</div>
 	);
 }

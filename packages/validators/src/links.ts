@@ -6,7 +6,7 @@ export {
   headerConfigSchema,
   socialIconsConfigSchema,
   embedConfigSchema,
-  contactFormConfigSchema,
+  formConfigSchema,
   socialIconItemSchema,
   createBlockSchema,
   updateBlockSchema,

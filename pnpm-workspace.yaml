@@ -14,3 +14,5 @@ catalog:
   "@libsql/client": 0.15.15
   libsql: 0.5.22
   "@trpc/client": ^11.7.2
+  tailwindcss: ^4.1.18
+  "@tailwindcss/postcss": ^4.1.18

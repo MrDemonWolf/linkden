@@ -15,6 +15,8 @@ interface DataSectionProps {
 		releaseUrl?: string | null;
 	} | null;
 	onCheckUpdates: () => void;
+	adminBrandingEnabled: boolean;
+	onAdminBrandingEnabledChange: (enabled: boolean) => void;
 }
 
 export function DataSection({
@@ -25,9 +27,36 @@ export function DataSection({
 	fileInputRef,
 	versionCheck,
 	onCheckUpdates,
+	adminBrandingEnabled,
+	onAdminBrandingEnabledChange,
 }: DataSectionProps) {
 	return (
 		<div className="space-y-4">
+			{/* Admin branding toggle */}
+			<div className="flex items-center justify-between">
+				<div>
+					<p className="text-xs font-medium">Admin Panel Branding</p>
+					<p className="text-[11px] text-muted-foreground">
+						Show &ldquo;Powered by LinkDen&rdquo; in the admin sidebar
+					</p>
+				</div>
+				<button
+					type="button"
+					role="switch"
+					aria-checked={adminBrandingEnabled}
+					onClick={() => onAdminBrandingEnabledChange(!adminBrandingEnabled)}
+					className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+						adminBrandingEnabled ? "bg-primary" : "bg-muted"
+					}`}
+				>
+					<span
+						className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform ${
+							adminBrandingEnabled ? "translate-x-[18px]" : "translate-x-[3px]"
+						}`}
+					/>
+				</button>
+			</div>
+
 			<div className="flex gap-2">
 				<Button
 					variant="outline"

@@ -90,7 +90,7 @@ export const publicRouter = router({
 
 		// Hide blocks for disabled features
 		const visibleBlocks = scheduledBlocks.filter((b) => {
-			if (b.type === "contact_form" && settings.contact_form_enabled !== "true") return false;
+			if (b.type === "form" && settings.contact_form_enabled !== "true") return false;
 			if (b.type === "social_icons" && socialNetworks.length === 0) return false;
 			return true;
 		});
@@ -154,7 +154,13 @@ export const publicRouter = router({
 				phone: z.string().optional(),
 				subject: z.string().optional(),
 				company: z.string().optional(),
+				whereMet: z.string().optional(),
+				rating: z.number().min(1).max(5).optional(),
+				attending: z.enum(["yes", "no", "maybe"]).optional(),
+				guests: z.number().min(0).optional(),
 				captchaToken: z.string().optional(),
+				blockId: z.string().optional(),
+				blockTitle: z.string().optional(),
 			}),
 		)
 		.mutation(async ({ input }) => {
@@ -210,6 +216,12 @@ export const publicRouter = router({
 				phone: input.phone ? stripTags(input.phone) : null,
 				subject: input.subject ? stripTags(input.subject) : null,
 				company: input.company ? stripTags(input.company) : null,
+				whereMet: input.whereMet ? stripTags(input.whereMet) : null,
+				rating: input.rating ?? null,
+				attending: input.attending ?? null,
+				guests: input.guests ?? null,
+				blockId: input.blockId ?? null,
+				blockTitle: input.blockTitle ? stripTags(input.blockTitle) : null,
 			});
 
 			return { success: true };
@@ -256,34 +268,46 @@ export const publicRouter = router({
 		}),
 
 	getVCard: publicProcedure.query(async () => {
-		const [enabledSetting] = await db
+		const [vcardBlock] = await db
 			.select()
-			.from(siteSettings)
-			.where(eq(siteSettings.key, "vcard_enabled"));
+			.from(block)
+			.where(
+				and(
+					eq(block.type, "vcard"),
+					eq(block.isEnabled, true),
+					eq(block.status, "published"),
+				),
+			)
+			.orderBy(asc(block.position))
+			.limit(1);
 
-		if (enabledSetting?.value !== "true") {
+		if (!vcardBlock) {
 			return { enabled: false, vcardString: null };
 		}
 
-		const [dataSetting] = await db
-			.select()
-			.from(siteSettings)
-			.where(eq(siteSettings.key, "vcard_data"));
-
-		if (!dataSetting) {
-			return { enabled: true, vcardString: null };
-		}
-
-		const data = vcardDataSchema.parse(JSON.parse(dataSetting.value));
+		const config = vcardBlock.config ? JSON.parse(vcardBlock.config) : {};
+		const data = vcardDataSchema.parse(config);
 		return { enabled: true, vcardString: generateVCardString(data) };
 	}),
 
 	getSetupStatus: publicProcedure.query(async () => {
-		const [setting] = await db
+		const rows = await db
 			.select()
 			.from(siteSettings)
-			.where(eq(siteSettings.key, "setup_completed"));
-		return { completed: setting?.value === "true" };
+			.where(
+				eq(siteSettings.key, "setup_completed"),
+			);
+		const [setting] = rows;
+
+		const [magicLinkRow] = await db
+			.select()
+			.from(siteSettings)
+			.where(eq(siteSettings.key, "magic_link_enabled"));
+
+		return {
+			completed: setting?.value === "true",
+			magicLinkEnabled: magicLinkRow?.value !== "false",
+		};
 	}),
 
 	validateSetupToken: publicProcedure

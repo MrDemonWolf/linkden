@@ -19,6 +19,8 @@ const buttonVariants = cva(
           "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600",
         outline:
           "border border-[var(--ld-border)] bg-transparent hover:bg-[var(--ld-muted)] hover:text-[var(--ld-foreground)] focus-visible:ring-[var(--ld-border)]",
+        gradient:
+          "bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 focus-visible:ring-blue-500 shadow-lg shadow-blue-500/20",
       },
       size: {
         sm: "h-8 px-3 text-xs",
