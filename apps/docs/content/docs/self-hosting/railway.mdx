@@ -1,24 +1,15 @@
 ---
 title: Railway Deployment
-description: Deploy LinkDen on Railway with managed infrastructure, automatic SSL, and simple scaling.
+description: Deploy LinkDen on Railway with automatic builds, SSL, and managed infrastructure.
 ---
 
 # Railway Deployment
 
-[Railway](https://railway.app) is a cloud platform that makes it easy to deploy applications with automatic builds, managed databases, and built-in SSL. This guide covers deploying both the LinkDen API and web app on Railway.
+Deploy LinkDen on [Railway](https://railway.app) — a cloud platform that handles builds, SSL, and infrastructure for you. Connect your GitHub repo and Railway takes care of the rest.
 
-## Why Railway?
+## Architecture
 
-- **Simple deployment**: Connect a GitHub repo and Railway handles builds and deploys.
-- **Managed infrastructure**: No servers to configure or maintain.
-- **Automatic SSL**: Custom domains get free SSL certificates instantly.
-- **Built-in databases**: One-click SQLite-compatible volumes or PostgreSQL.
-- **Generous free tier**: $5 free credit/month on the Trial plan; Hobby plan starts at $5/month.
-- **Preview environments**: Automatic deploys for pull requests.
-
-## Architecture on Railway
-
-Railway runs each service as a separate container. LinkDen uses two services plus a persistent volume for the SQLite database:
+Railway runs each service as a separate container with a persistent volume for the SQLite database:
 
 ```
 ┌──────────────────┐     ┌──────────────────┐     ┌──────────────┐
@@ -30,123 +21,65 @@ Railway runs each service as a separate container. LinkDen uses two services plu
 
 ## Prerequisites
 
-1. A [Railway account](https://railway.app) (GitHub sign-in recommended).
-2. The LinkDen repository forked to your GitHub account (or a private repo connected to Railway).
-3. Node.js 20+ and pnpm 9+ installed locally (for initial setup).
+1. A [Railway account](https://railway.app) (GitHub sign-in recommended)
+2. The LinkDen repository forked to your GitHub account
+3. Node.js 20+ and pnpm 9+ installed locally (for initial setup)
 
 ## Step 1: Create a Railway Project
 
 1. Log in to the [Railway dashboard](https://railway.app/dashboard).
-2. Click **New Project**.
-3. Select **Empty Project**.
-4. Name it `LinkDen`.
+2. Click **New Project** > **Empty Project**.
+3. Name it `LinkDen`.
 
 ## Step 2: Deploy the API Service
 
-### Add the Service
-
-1. In your project, click **New** > **GitHub Repo**.
-2. Select the LinkDen repository.
-3. Railway detects the repo and begins a build. Cancel this initial build -- we need to configure it first.
-
-### Configure the Build
-
-1. Click on the service to open its settings.
-2. Go to **Settings**:
+1. Click **New** > **GitHub Repo** and select the LinkDen repository.
+2. Cancel the initial build — you need to configure it first.
+3. Open the service settings:
    - **Service Name**: `linkden-api`
-   - **Root Directory**: Leave empty (uses repo root)
-   - **Build Command**: Leave empty (uses Dockerfile)
    - **Dockerfile Path**: `Dockerfile.api`
 
-If you have not created `Dockerfile.api` yet, see the [Docker guide](/docs/self-hosting/docker) for the complete Dockerfile. Alternatively, use a Nixpacks build:
-
-### Alternative: Nixpacks Build (No Dockerfile)
-
-Railway supports Nixpacks for automatic builds. Create a `railway.json` in the repo root:
-
-```json
-{
-  "build": {
-    "builder": "NIXPACKS"
-  },
-  "$schema": "https://railway.app/railway.schema.json"
-}
-```
-
-And a `nixpacks.toml` for the API:
-
-```toml
-[phases.setup]
-nixPkgs = ["nodejs_20", "sqlite"]
-
-[phases.install]
-cmds = ["corepack enable", "corepack prepare pnpm@10.29.3 --activate", "pnpm install --frozen-lockfile"]
-
-[phases.build]
-cmds = ["echo 'Build complete'"]
-
-[start]
-cmd = "npx tsx apps/server/src/node-entry.ts"
-```
-
-However, the Dockerfile approach gives you more control and is recommended.
+> **Tip:** If you haven't created `Dockerfile.api` yet, see the [Docker guide](/docs/self-hosting/docker) for the complete Dockerfile and Node.js entry point setup.
 
 ### Add a Persistent Volume
 
-SQLite needs a persistent volume so data survives redeployments:
-
-1. Click on the `linkden-api` service.
-2. Go to **Volumes**.
-3. Click **New Volume**.
-4. Set the mount path to `/data`.
-5. Click **Create**.
+1. Click the `linkden-api` service > **Volumes** > **New Volume**.
+2. Set the mount path to `/data`.
+3. Click **Create**.
 
 ### Set Environment Variables
 
-1. Click on the `linkden-api` service.
-2. Go to **Variables**.
-3. Add each variable:
+Go to the service > **Variables** and add:
 
 | Variable | Value |
 |----------|-------|
-| `BETTER_AUTH_SECRET` | A strong random secret (generate with `openssl rand -base64 32`) |
-| `BETTER_AUTH_URL` | `https://linkden-api-production.up.railway.app` (or your custom API domain) |
-| `CORS_ORIGIN` | `https://yourdomain.com` (update after setting up custom domain) |
+| `BETTER_AUTH_SECRET` | Generate with `openssl rand -base64 32` |
+| `BETTER_AUTH_URL` | `https://linkden-api-production.up.railway.app` (or your custom domain) |
+| `CORS_ORIGIN` | `https://yourdomain.com` (update after custom domain setup) |
 | `DATABASE_URL` | `file:/data/linkden.db` |
 | `PORT` | `8787` |
 | `RESEND_API_KEY` | `re_...` (optional) |
 | `RESEND_FROM_EMAIL` | `contact@yourdomain.com` (optional) |
 | `TURNSTILE_SECRET_KEY` | `0x...` (optional) |
 
-4. Click **Deploy** to trigger a build with the new configuration.
-
 ### Expose the Service
 
-1. Go to **Settings** > **Networking**.
-2. Under **Public Networking**, click **Generate Domain** to get a Railway-provided URL (e.g., `linkden-api-production.up.railway.app`).
-3. Note this URL -- you need it for the web app's `NEXT_PUBLIC_SERVER_URL`.
+Go to **Settings** > **Networking** > **Public Networking** and click **Generate Domain**. Note this URL — you'll need it for the web app.
 
 ## Step 3: Deploy the Web App
 
-### Add a Second Service
-
-1. In the same Railway project, click **New** > **GitHub Repo**.
-2. Select the same LinkDen repository again.
-3. Configure it as a separate service.
-
-### Configure the Build
-
-1. Click on the new service and go to **Settings**:
+1. Click **New** > **GitHub Repo** and select the LinkDen repository again.
+2. Configure:
    - **Service Name**: `linkden-web`
    - **Dockerfile Path**: `Dockerfile.web`
 
-### Set Environment Variables (Build Args)
+### Set Build Variables
 
-Since `NEXT_PUBLIC_*` variables must be present at build time, add them as variables:
+`NEXT_PUBLIC_*` variables must be present at build time:
 
 | Variable | Value |
 |----------|-------|
-| `NEXT_PUBLIC_SERVER_URL` | `https://linkden-api-production.up.railway.app` (or your custom API domain) |
+| `NEXT_PUBLIC_SERVER_URL` | `https://linkden-api-production.up.railway.app` (or your custom domain) |
 | `NEXT_PUBLIC_SITE_URL` | `https://linkden-web-production.up.railway.app` (or your custom domain) |
 | `NEXT_PUBLIC_SITE_NAME` | `LinkDen` |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | (optional) |
@@ -154,192 +87,93 @@ Since `NEXT_PUBLIC_*` variables must be present at build time, add them as varia
 
 ### Expose the Service
 
-1. Go to **Settings** > **Networking**.
-2. Click **Generate Domain** to get a public URL.
-3. Visit the URL to verify the web app is running.
+Generate a public domain under **Settings** > **Networking**.
 
-## Step 4: Set Up Custom Domains
+## Step 4: Custom Domains
 
-### Add a Custom Domain for the Web App
-
-1. Click on the `linkden-web` service.
-2. Go to **Settings** > **Networking** > **Custom Domain**.
-3. Enter your domain (e.g., `yourdomain.com` or `links.yourdomain.com`).
-4. Railway shows you a CNAME record to add at your DNS provider.
-
-At your DNS provider, add the record:
+1. Click the service > **Settings** > **Networking** > **Custom Domain**.
+2. Enter your domain (e.g., `yourdomain.com` for web, `api.yourdomain.com` for API).
+3. Add the CNAME record Railway shows you at your DNS provider:
 
 | Type | Name | Target |
 |------|------|--------|
 | CNAME | `@` or subdomain | `linkden-web-production.up.railway.app` |
+| CNAME | `api` | `linkden-api-production.up.railway.app` |
 
-### Add a Custom Domain for the API
+After adding domains, update the environment variables on both services:
 
-1. Click on the `linkden-api` service.
-2. Go to **Settings** > **Networking** > **Custom Domain**.
-3. Enter your API domain (e.g., `api.yourdomain.com`).
-4. Add the CNAME record at your DNS provider.
-
-### Update Environment Variables
-
-After setting up custom domains, update the URLs:
-
-**API service variables:**
+**API service:**
 ```
 CORS_ORIGIN=https://yourdomain.com
 BETTER_AUTH_URL=https://api.yourdomain.com
 ```
 
-**Web service variables:**
+**Web service:**
 ```
 NEXT_PUBLIC_SERVER_URL=https://api.yourdomain.com
 NEXT_PUBLIC_SITE_URL=https://yourdomain.com
 ```
 
-Redeploy both services for changes to take effect.
+Redeploy both services for the changes to take effect. Railway handles SSL automatically.
 
-### SSL Certificates
+## Step 5: First-Time Setup
 
-Railway automatically provisions and renews SSL certificates for custom domains. No configuration is needed. SSL is active within minutes of DNS propagation.
-
-## Step 5: Database Setup
-
-### SQLite with Persistent Volume (Default)
-
-The persistent volume mounted at `/data` stores the SQLite database file. This is the simplest approach and works well for single-instance deployments.
-
-Ensure:
-- `DATABASE_URL=file:/data/linkden.db` is set on the API service.
-- A volume is mounted at `/data`.
-
-### PostgreSQL Alternative (Advanced)
-
-If you prefer a managed PostgreSQL database for better concurrency:
-
-1. In the Railway project, click **New** > **Database** > **PostgreSQL**.
-2. Railway provisions a PostgreSQL instance and provides a `DATABASE_URL`.
-3. Copy the `DATABASE_URL` to the API service variables.
-
-This requires modifying `packages/db` to use the Drizzle PostgreSQL driver instead of SQLite. This is an advanced configuration and beyond the default LinkDen setup.
-
-## Step 6: First-Time Auth Setup
-
-After both services are deployed:
-
-1. Check the API service logs in Railway (click on the `linkden-api` service > **Deployments** > latest deployment > **Logs**) for the setup URL:
+1. Check the API service logs (service > **Deployments** > latest > **Logs**) for the setup URL:
    ```
    Setup URL: https://yourdomain.com/admin/setup?token=<unique-token>
    ```
-   The server generates a one-time secure token on first startup.
-2. Open the setup URL in your browser. The token is required -- navigating to `/admin/setup` without it will show an error.
-3. Complete the wizard to create your admin account (name, email, and password). The token is invalidated once setup completes.
-4. After setup is complete, sign in at `/admin/login`.
-5. Create a test link in the admin panel.
-6. Visit the public page and verify the link appears.
-7. Check analytics data is being recorded.
+2. Open the URL and create your admin account.
+3. Sign in at `/admin/login` and create a test link to verify everything works.
+
+## Updating
+
+If your repo is connected via GitHub, Railway automatically redeploys when you push to the configured branch — zero downtime.
+
+To roll back a bad deploy: go to the service > **Deployments**, find the previous working deployment, and click **Rollback**.
 
 ## Monitoring
 
-### Service Logs
+- **Logs**: Service > **Deployments** > latest > **Logs**
+- **Metrics**: CPU, memory, network, and disk usage are available on the service dashboard
+- **Notifications**: Configure deploy notifications under **Project Settings** > **Integrations** (email, Slack, webhooks)
 
-1. Click on a service in the Railway dashboard.
-2. Go to **Deployments** > click the latest deployment > **Logs**.
-3. View real-time application logs.
+## Cost
 
-### Metrics
-
-Railway provides built-in metrics for each service:
-- **CPU usage**
-- **Memory usage**
-- **Network traffic**
-- **Disk usage** (for volumes)
-
-Access metrics from the service dashboard.
-
-### Deploy Notifications
-
-Railway can send notifications for deployments via:
-- Email
-- Slack (via Railway's integration)
-- Webhooks
-
-Configure under **Project Settings** > **Integrations**.
-
-## Updating LinkDen
-
-### Automatic Deployments
-
-If your repository is connected via GitHub, Railway automatically redeploys when you push to the configured branch.
-
-1. Push changes to your repo.
-2. Railway detects the change and triggers a new build.
-3. The new version is deployed with zero downtime (rolling deployment).
-
-### Manual Redeployment
-
-1. Go to the service in the Railway dashboard.
-2. Click **Deploy** > **Redeploy**.
-
-### Rolling Back
-
-If a deployment has issues:
-
-1. Go to the service > **Deployments**.
-2. Find the previous working deployment.
-3. Click the three-dot menu > **Rollback**.
-
-## Costs
-
-Railway pricing (as of 2025):
-
-| Plan | Cost | Resources |
-|------|------|-----------|
+| Plan | Cost | Included |
+|------|------|----------|
 | **Trial** | Free ($5 credit/month) | 512 MB RAM, shared CPU, 1 GB disk |
 | **Hobby** | $5/month | 8 GB RAM, 8 vCPU, 100 GB disk |
 | **Pro** | $20/month per seat | Team features, higher limits |
 
-Usage-based pricing on top of the base plan:
-- **Compute**: $0.000231/min per vCPU
-- **Memory**: $0.000231/min per GB
-- **Network egress**: $0.10/GB
-- **Volume storage**: $0.25/GB per month
+Usage-based charges apply on top of the base plan: compute at ~$0.000231/min per vCPU, memory at ~$0.000231/min per GB, network egress at $0.10/GB, and volume storage at $0.25/GB/month.
 
-**Typical LinkDen costs:**
-
-A single-user LinkDen instance with low traffic typically uses:
-- ~0.1 vCPU average
-- ~256 MB RAM per service
-- < 1 GB volume storage
-- Minimal network egress
-
-This fits comfortably within the **Hobby plan** ($5/month) with minimal additional usage charges. The Trial plan's $5 free credit may cover it for light usage.
+A typical single-user LinkDen instance fits comfortably on the **Hobby plan** ($5/month). The Trial plan's free credit may cover light usage.
 
 ## Troubleshooting
 
 ### Build fails
 
-- Check the build logs in Railway for specific errors.
-- Ensure `Dockerfile.api` and `Dockerfile.web` exist in the repository root.
-- Verify all build arguments are set as environment variables.
+- Check the build logs for specific errors
+- Ensure `Dockerfile.api` and `Dockerfile.web` exist in the repo root
+- Verify all build arguments are set
 
-### "502 Bad Gateway" or "Application failed to respond"
+### "502 Bad Gateway"
 
-- The service may not be listening on the correct port. Ensure the `PORT` environment variable matches the port your application listens on.
-- Check the deploy logs for startup errors.
-- Verify the health check is passing.
+- Make sure the `PORT` variable matches the port your app listens on
+- Check deploy logs for startup errors
 
 ### Database resets on redeployment
 
-- Ensure a persistent volume is attached to the API service at `/data`.
-- Verify `DATABASE_URL` points to a file inside the volume mount path.
+- Ensure a persistent volume is attached at `/data`
+- Verify `DATABASE_URL=file:/data/linkden.db`
 
 ### CORS errors
 
-- `CORS_ORIGIN` must exactly match the web app's URL including protocol.
-- After switching to a custom domain, update `CORS_ORIGIN` and redeploy the API.
+- `CORS_ORIGIN` must exactly match the web app URL (including `https://`, no trailing slash)
+- After switching to a custom domain, update `CORS_ORIGIN` and redeploy the API
 
 ### Custom domain shows "DNS not configured"
 
-- Verify the CNAME record at your DNS provider.
-- Wait for DNS propagation (can take up to 48 hours, usually minutes).
-- Ensure the CNAME target matches what Railway shows in the dashboard.
+- Verify the CNAME record at your DNS provider
+- Wait for propagation (usually minutes, can take up to 48 hours)
+- Make sure the CNAME target matches what Railway shows in the dashboard

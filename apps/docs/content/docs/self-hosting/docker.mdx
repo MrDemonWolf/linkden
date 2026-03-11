@@ -1,15 +1,13 @@
 ---
 title: Docker
-description: Self-host LinkDen with Docker and Docker Compose for full control over your deployment.
+description: Self-host LinkDen with Docker and Docker Compose on any server.
 ---
 
 # Docker Self-Hosting
 
-This guide covers deploying LinkDen using Docker on any Linux server, VPS, or local machine. Docker gives you full control over the runtime environment, networking, and data storage.
+Run LinkDen on any Linux server, VPS, or local machine using Docker. You get full control over the runtime, networking, and data.
 
 ## Architecture
-
-The Docker deployment runs three components:
 
 ```
 ┌──────────────┐     ┌──────────────────┐     ┌───────────────┐
@@ -21,40 +19,61 @@ The Docker deployment runs three components:
 └──────────────┘
 ```
 
-- **Web app**: Next.js static export served by Caddy (or Nginx).
-- **API server**: Hono running on Node.js with `@hono/node-server`.
-- **Database**: SQLite file on a persistent Docker volume.
+- **Web app**: Next.js static export served by Caddy (or Nginx)
+- **API server**: Hono running on Node.js with `@hono/node-server`
+- **Database**: SQLite file on a persistent Docker volume
 
 ## Prerequisites
 
-- **Docker** 20.10+ and **Docker Compose** v2+ installed on your server.
-- A domain name pointed at your server (for SSL).
+- **Docker** 20.10+ and **Docker Compose** v2+
+- A domain name pointed at your server (for SSL)
 
 ## Quick Start
-
-For those who want to get running fast:
 
 ```bash
 git clone https://github.com/mrdemonwolf/linkden.git
 cd LinkDen
 cp .env.example .env
-# Edit .env with your values (see below)
+# Edit .env with your values (see Environment Variables below)
 docker compose up -d
 ```
 
-The rest of this guide breaks down each component in detail.
+Check the API logs for the one-time setup URL, then open it in your browser to create your admin account:
 
-## Project Structure
-
-Create these files in the repository root:
-
+```bash
+docker compose logs api | grep "Setup URL"
 ```
-LinkDen/
-├── Dockerfile.api          # API server container
-├── Dockerfile.web          # Web app container
-├── docker-compose.yml      # Orchestrates everything
-├── Caddyfile               # Reverse proxy config (if using Caddy)
-└── .env                    # Environment variables
+
+## Database: D1 vs. SQLite File
+
+When running outside Cloudflare, D1 is not available. LinkDen uses Drizzle ORM with SQLite, so you can swap in any SQLite-compatible driver:
+
+| Environment | Database | Driver |
+|-------------|----------|--------|
+| Cloudflare Workers | D1 | `drizzle-orm/d1` (built-in) |
+| Docker / Coolify / Railway | SQLite file | `better-sqlite3` or `@libsql/client` |
+| Turso (managed libSQL) | Remote SQLite | `@libsql/client` |
+
+Update the database initialization in `packages/db/src/index.ts`:
+
+```typescript
+// Option A: better-sqlite3
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import Database from "better-sqlite3";
+
+const sqlite = new Database(process.env.DATABASE_URL?.replace("file:", "") || "./data/linkden.db");
+export const db = drizzle(sqlite);
+```
+
+```typescript
+// Option B: libSQL (also compatible with Turso)
+import { drizzle } from "drizzle-orm/libsql";
+import { createClient } from "@libsql/client";
+
+const client = createClient({
+  url: process.env.DATABASE_URL || "file:./data/linkden.db",
+});
+export const db = drizzle(client);
 ```
 
 ## Dockerfile for the API Server
@@ -116,16 +135,11 @@ serve(
 );
 ```
 
-Install the required dependency:
+Install the required dependencies:
 
 ```bash
 cd apps/server && pnpm add @hono/node-server
-```
-
-For the database driver, install `better-sqlite3` or `@libsql/client` in `packages/db`:
-
-```bash
-cd packages/db && pnpm add better-sqlite3 && pnpm add -D @types/better-sqlite3
+cd ../../packages/db && pnpm add better-sqlite3 && pnpm add -D @types/better-sqlite3
 ```
 
 ## Dockerfile for the Web App
@@ -256,82 +270,67 @@ volumes:
 Create a `.env` file in the project root:
 
 ```bash
-# Required: Better Auth
+# Required
 BETTER_AUTH_SECRET=your-random-secret-here
 BETTER_AUTH_URL=https://api.yourdomain.com
-
-# Required: URLs (update these for production)
 NEXT_PUBLIC_SERVER_URL=https://api.yourdomain.com
 NEXT_PUBLIC_SITE_URL=https://yourdomain.com
 CORS_ORIGIN=https://yourdomain.com
 
-# Optional: Site name
+# Optional
 NEXT_PUBLIC_SITE_NAME=LinkDen
-
-# Optional: Email notifications
 RESEND_API_KEY=
 RESEND_FROM_EMAIL=
-
-# Optional: CAPTCHA
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=
 TURNSTILE_SECRET_KEY=
 ```
 
-Generate a secure `BETTER_AUTH_SECRET` with:
+Generate `BETTER_AUTH_SECRET`:
 
 ```bash
 openssl rand -base64 32
 ```
 
-See the [Environment Variables reference](/docs/self-hosting/environment-variables) for all available options.
+> **Tip:** See the [Environment Variables reference](/docs/self-hosting/environment-variables) for all available options.
 
 ## First-Time Setup
 
-After starting the containers for the first time:
+After starting the containers:
 
-1. Check the API container logs for the setup URL:
+1. Check the API logs for the one-time setup URL:
    ```bash
    docker compose logs api | grep "Setup URL"
    ```
-   The server prints a one-time setup URL with a secure token, e.g.:
-   ```
-   Setup URL: http://localhost:3001/admin/setup?token=<unique-token>
-   ```
-2. Open this URL in your browser to access the setup wizard. The token is required -- navigating to `/admin/setup` without it will show an error.
-3. Complete the wizard to create your admin account (name, email, and password).
-4. The setup token is automatically invalidated once setup completes.
+2. Open the URL in your browser and create your admin account.
+3. The token is invalidated once setup completes.
+4. Sign in at `/admin/login`.
 
-After setup, sign in at `/admin/login`.
-
-## Building and Starting
+## Common Commands
 
 ```bash
-# Build and start all services
+# Build and start
 docker compose up -d --build
 
 # View logs
 docker compose logs -f
-
-# View logs for a specific service
 docker compose logs -f api
-docker compose logs -f web
 
-# Stop all services
+# Stop
 docker compose down
 
-# Stop and remove volumes (deletes database!)
+# Stop and delete data (removes database!)
 docker compose down -v
 ```
 
 ## Reverse Proxy Setup
 
-In production, you should place a reverse proxy in front of the Docker containers to handle SSL termination and route traffic.
+In production, put a reverse proxy in front of the containers to handle SSL.
 
 ### Option A: Caddy (Recommended)
 
-Caddy automatically obtains and renews Let's Encrypt SSL certificates.
+Caddy automatically obtains and renews Let's Encrypt certificates.
 
-Add a `caddy` service to your `docker-compose.yml`:
+Add to `docker-compose.yml`:
 
 ```yaml
 services:
@@ -350,16 +349,13 @@ services:
       - web
       - api
 
-  # ... existing api and web services ...
-  # Remove the "ports" from api and web services since Caddy handles external traffic
-
 volumes:
   linkden-data:
   caddy-data:
   caddy-config:
 ```
 
-Create `Caddyfile` in the project root:
+Create `Caddyfile`:
 
 ```
 yourdomain.com {
@@ -371,28 +367,20 @@ api.yourdomain.com {
 }
 ```
 
-That is the entire Caddy configuration. Caddy automatically:
-- Obtains Let's Encrypt SSL certificates for both domains.
-- Redirects HTTP to HTTPS.
-- Renews certificates before they expire.
-
-When using Caddy as the external reverse proxy, remove the `ports` mapping from the `api` and `web` services (they are only accessible through Caddy's internal Docker network):
+When using Caddy, switch the `api` and `web` services from `ports` to `expose` so they're only reachable through Caddy:
 
 ```yaml
   api:
-    # Remove: ports: - "8787:8787"
     expose:
       - "8787"
-
   web:
-    # Remove: ports: - "3001:3001"
     expose:
       - "3001"
 ```
 
 ### Option B: Nginx
 
-If you prefer Nginx, add it to `docker-compose.yml`:
+Add to `docker-compose.yml`:
 
 ```yaml
 services:
@@ -470,43 +458,22 @@ server {
 }
 ```
 
-For Nginx, you need to manually manage SSL certificates. Use Certbot:
+With Nginx, you manage SSL certificates manually using Certbot:
 
 ```bash
-# Install certbot
 apt install certbot
-
-# Obtain certificates (stop nginx first, or use webroot plugin)
 certbot certonly --standalone -d yourdomain.com -d api.yourdomain.com
-
-# Auto-renewal is configured automatically by certbot
 ```
 
-## Volume Mounts for SQLite Persistence
+## Backups
 
-The SQLite database is stored in a named Docker volume (`linkden-data`) mounted at `/data` inside the API container. This ensures data survives container restarts, image rebuilds, and redeployments.
+The SQLite database lives in the `linkden-data` Docker volume, mounted at `/data`.
 
-### Inspect the Volume
-
-```bash
-# List volumes
-docker volume ls | grep linkden
-
-# Inspect volume details
-docker volume inspect linkden-data
-```
-
-### Back Up the Database
+### Manual Backup
 
 ```bash
-# Create a backup
 docker exec linkden-api sqlite3 /data/linkden.db ".backup /data/backup.db"
 docker cp linkden-api:/data/backup.db ./linkden-backup-$(date +%Y%m%d).db
-
-# Or directly copy the database file (stop writes first for consistency)
-docker compose stop api
-docker cp linkden-api:/data/linkden.db ./linkden-backup.db
-docker compose start api
 ```
 
 ### Restore from Backup
@@ -517,106 +484,57 @@ docker cp ./linkden-backup.db linkden-api:/data/linkden.db
 docker compose start api
 ```
 
-### Automated Backups
+### Automated Daily Backup
 
-Create a cron job for daily backups:
+Add to crontab (`crontab -e`):
 
 ```bash
-# Add to crontab (crontab -e)
 0 3 * * * docker exec linkden-api sqlite3 /data/linkden.db ".backup /data/backup.db" && docker cp linkden-api:/data/backup.db /backups/linkden-$(date +\%Y\%m\%d).db && find /backups -name "linkden-*.db" -mtime +30 -delete
 ```
 
-This backs up daily at 3 AM and deletes backups older than 30 days.
-
-## Health Checks
-
-Both Dockerfiles include health checks that Docker uses to monitor container health:
-
-- **API**: Sends an HTTP request to `http://localhost:8787/` every 30 seconds.
-- **Web**: Sends an HTTP request to `http://localhost:3001/` every 30 seconds.
-
-Check health status:
+## Updating
 
 ```bash
-docker compose ps
-# Look for "(healthy)" in the STATUS column
-
-# Detailed health check info
-docker inspect --format='{{json .State.Health}}' linkden-api | jq
-```
-
-The `web` service has a `depends_on` condition that waits for the `api` to be healthy before starting, ensuring the API is available when the web app comes up.
-
-## Updating LinkDen
-
-To update to a new version:
-
-```bash
-# Pull the latest code
 git pull origin main
-
-# Rebuild and restart (zero-downtime if using rolling updates)
 docker compose up -d --build
-
-# Verify the update
-docker compose ps
-docker compose logs -f --tail=50
 ```
 
-The SQLite database is on a persistent volume, so data is preserved across rebuilds.
+Data is preserved across rebuilds. If the update includes schema changes, Drizzle ORM applies them automatically on startup.
 
-If the update includes database schema changes, they are applied automatically when the API server starts (Drizzle ORM handles migrations).
+## Production Reminders
 
-## Production Checklist
-
-Before going live, verify:
-
-- [ ] `BETTER_AUTH_SECRET` is set to a strong random value
-- [ ] `BETTER_AUTH_URL` matches the API's production URL
-- [ ] `CORS_ORIGIN` matches the web app's production URL exactly (including `https://`, no trailing slash)
-- [ ] `NEXT_PUBLIC_SERVER_URL` points to the API's production URL
-- [ ] `NEXT_PUBLIC_SITE_URL` matches the web app's production URL
-- [ ] SSL is working (lock icon in browser)
-- [ ] Persistent volume is configured for `/data`
-- [ ] Health checks are passing (`docker compose ps` shows "healthy")
-- [ ] Automatic container restart is enabled (`restart: unless-stopped`)
-- [ ] Database backups are configured
-- [ ] Firewall rules allow only ports 80 and 443 from the internet
-- [ ] Setup wizard completed at `/admin/setup`
+- Generate a strong `BETTER_AUTH_SECRET` with `openssl rand -base64 32`
+- Make sure `CORS_ORIGIN` exactly matches your web URL (including `https://`, no trailing slash)
+- Set up database backups
+- Use a reverse proxy with SSL (Caddy or Nginx)
+- Ensure the `/data` volume is persistent
 
 ## Troubleshooting
 
 ### Container keeps restarting
 
 ```bash
-# Check logs for the failing container
 docker compose logs api --tail=100
-docker compose logs web --tail=100
 ```
 
-Common causes:
-- Missing required environment variables
-- Port conflict (another process using 8787 or 3001)
-- Out of memory (increase server RAM or Docker memory limits)
+Common causes: missing environment variables, port conflict, insufficient memory.
 
-### "CORS error" in the browser
+### CORS errors in the browser
 
-- `CORS_ORIGIN` on the API must exactly match the web app URL.
-- If using a reverse proxy, ensure it forwards the `Origin` header.
-- Check that the API is accessible from the browser (visit the API URL directly).
+- `CORS_ORIGIN` must exactly match the web app URL
+- If using a reverse proxy, make sure it forwards the `Origin` header
 
-### Database file is empty after restart
+### Database empty after restart
 
 - Verify the volume is mounted: `docker inspect linkden-api | grep Mounts -A 20`
-- Ensure `DATABASE_URL=file:/data/linkden.db` (path must be inside the mounted volume).
-- Check that the volume was not accidentally removed with `docker compose down -v`.
+- Make sure `DATABASE_URL=file:/data/linkden.db`
+- Check that you didn't run `docker compose down -v` (the `-v` flag deletes volumes)
 
-### Build fails with out-of-memory error
+### Build fails with out-of-memory
 
-Next.js builds can be memory-intensive. Increase the Docker memory limit:
+Add a memory limit to the web service in `docker-compose.yml`:
 
 ```bash
-# In docker-compose.yml, add to the web service:
 deploy:
   resources:
     limits:
@@ -625,6 +543,5 @@ deploy:
 
 ### Cannot connect to API from web app
 
-- If both containers are on the same Docker network, use the service name (`api`) as the hostname.
-- For `NEXT_PUBLIC_SERVER_URL`, use the **external** URL that the browser can reach (not the internal Docker hostname).
-- Verify the API container is healthy: `docker compose ps`.
+- `NEXT_PUBLIC_SERVER_URL` must be the **external** URL the browser can reach (not the internal Docker hostname)
+- Verify the API is healthy: `docker compose ps`

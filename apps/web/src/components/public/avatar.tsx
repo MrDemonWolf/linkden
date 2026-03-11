@@ -1,3 +1,8 @@
+"use client";
+
+import { useState } from "react";
+import { getGravatarUrl } from "@/lib/gravatar";
+
 function getContrastColor(hex: string): string {
 	const r = parseInt(hex.slice(1, 3), 16) / 255;
 	const g = parseInt(hex.slice(3, 5), 16) / 255;
@@ -10,6 +15,7 @@ function getContrastColor(hex: string): string {
 interface AvatarProps {
 	src: string | null;
 	name: string;
+	email?: string;
 	size?: "sm" | "md" | "lg";
 	className?: string;
 	hasBanner?: boolean;
@@ -23,7 +29,9 @@ const sizeClasses = {
 	lg: "h-24 w-24 text-3xl",
 };
 
-export function Avatar({ src, name, size = "md", className, hasBanner, ringColor, themeColors }: AvatarProps) {
+export function Avatar({ src, name, email, size = "md", className, hasBanner, ringColor, themeColors }: AvatarProps) {
+	const [imgError, setImgError] = useState(false);
+
 	const initials = name
 		.split(" ")
 		.map((n) => n[0])
@@ -35,28 +43,36 @@ export function Avatar({ src, name, size = "md", className, hasBanner, ringColor
 		? { boxShadow: `0 0 0 4px ${ringColor}`, transition: "box-shadow 0.5s ease" }
 		: {};
 
+	const fallbackDiv = (
+		<div
+			className={`${sizeClasses[size]} flex items-center justify-center rounded-full font-bold ${hasBanner ? "" : "ring-2 ring-white/20 ring-offset-2 ring-offset-background"} ${className ?? ""}`}
+			style={{
+				...(themeColors
+					? { background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.accent})`, color: getContrastColor(themeColors.primary) }
+					: { background: "linear-gradient(135deg, #0FACED, #38BDF8)", color: "#FFFFFF" }),
+				...ringStyle,
+			}}
+			aria-label={name}
+		>
+			{initials}
+		</div>
+	);
+
+	// Resolve the image URL: src takes priority, then Gravatar, then initials
+	const imageSrc = src ?? (email ? getGravatarUrl(email) : null);
+
 	return (
 		<div className="ld-avatar flex justify-center">
-			{src ? (
+			{imageSrc && !imgError ? (
 				<img
-					src={src}
+					src={imageSrc}
 					alt={name}
-					className={`${sizeClasses[size]} rounded-full object-cover ${hasBanner ? "" : "ring-2 ring-white/20"} ${className ?? ""}`}
+					className={`${sizeClasses[size]} rounded-full object-cover ${hasBanner ? "" : "ring-2 ring-white/20 ring-offset-2 ring-offset-background"} ${className ?? ""}`}
 					style={ringStyle}
+					onError={() => setImgError(true)}
 				/>
 			) : (
-				<div
-					className={`${sizeClasses[size]} flex items-center justify-center rounded-full font-bold ${hasBanner ? "" : "ring-2 ring-white/20"} ${className ?? ""}`}
-					style={{
-						...(themeColors
-							? { background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.accent})`, color: getContrastColor(themeColors.primary) }
-							: { background: "linear-gradient(135deg, #0FACED, #38BDF8)", color: "#FFFFFF" }),
-						...ringStyle,
-					}}
-					aria-label={name}
-				>
-					{initials}
-				</div>
+				fallbackDiv
 			)}
 		</div>
 	);

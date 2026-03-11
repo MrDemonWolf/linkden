@@ -1,79 +1,60 @@
 ---
 title: Export & Import
-description: Back up your LinkDen data as JSON or migrate from LinkStack with the built-in export and import tools.
+description: Back up your LinkDen data as JSON or migrate from LinkStack.
 ---
 
 # Export & Import
 
-LinkDen provides full data portability through JSON export and import. Back up your configuration, migrate between instances, or import from LinkStack.
+Back up your configuration, move between instances, or migrate from LinkStack -- all through JSON files.
 
 ## Exporting Data
-
-Navigate to `/admin/settings` and scroll to the **Export** section.
-
-### What is Exported
-
-The export file includes all of your LinkDen data:
-
-- **Links** -- All links and blocks with their order, visibility, and settings.
-- **Appearance** -- Theme selection, colors, fonts, button styles, and custom CSS.
-- **Profile** -- Display name, bio, and profile image reference.
-- **vCard** -- All vCard fields and configuration.
-- **Wallet** -- Apple Wallet pass configuration (not certificates).
-- **Pages** -- Custom pages (privacy policy, terms, etc.).
-- **Settings** -- General settings including whitelabel toggle.
-
-### How to Export
 
 1. Go to `/admin/settings`.
 2. Click **Export Data**.
 3. A JSON file downloads to your device.
-4. Store the file securely as a backup.
 
-The exported file does not include:
+### What's Included
 
-- Analytics data (page views, clicks).
-- Uploaded images (profile photo, favicon, background).
-- Environment variables or secrets.
+- **Links and blocks** -- Order, visibility, and settings.
+- **Appearance** -- Theme, colors, fonts, button styles, custom CSS.
+- **Profile** -- Display name, bio, and profile image reference.
+- **vCard** -- All vCard fields.
+- **Wallet** -- Apple Wallet pass configuration (not certificates).
+- **Pages** -- Custom pages (privacy policy, terms, etc.).
+- **Settings** -- General settings including whitelabel toggle.
 
-## Importing Data
+### What's Not Included
 
-### LinkDen Format
+- Analytics data (page views, clicks)
+- Uploaded images
+- Environment variables or secrets
 
-To import a LinkDen export:
+## Importing LinkDen Data
 
 1. Go to `/admin/settings`.
 2. Click **Import Data**.
 3. Select your JSON export file.
-4. Review the import summary showing what will be created or updated.
+4. Review the import summary.
 5. Click **Confirm Import**.
 
-Importing overwrites existing data for matching records. New records are created for items that do not exist.
+Importing overwrites matching records and creates new ones for anything that doesn't exist yet.
 
-### LinkStack Migration
+## Migrating from LinkStack
 
-LinkDen supports importing from [LinkStack](https://linkstack.org/), making it easy to migrate:
+LinkDen can import [LinkStack](https://linkstack.org/) exports directly:
 
-1. Export your data from LinkStack (JSON format).
-2. Go to `/admin/settings` in LinkDen.
-3. Click **Import Data** and select the LinkStack export file.
-4. LinkDen automatically detects the LinkStack format and maps the fields.
-5. Review the import summary and click **Confirm Import**.
+1. Export your data from LinkStack as JSON.
+2. In LinkDen, go to `/admin/settings` and click **Import Data**.
+3. Select the LinkStack file -- LinkDen detects the format automatically.
+4. Review the import summary and click **Confirm Import**.
 
-The LinkStack importer maps:
+LinkStack fields are mapped as follows:
 
-| LinkStack Field | LinkDen Field |
-|-----------------|---------------|
-| Links | Links (standard type) |
+| LinkStack | LinkDen |
+|-----------|---------|
+| Links | Link blocks |
 | Title | Display name |
 | Bio | Bio |
 | Theme | Closest matching theme |
 
-Some LinkStack features may not have direct equivalents. The import summary highlights any fields that could not be mapped.
-
-## Best Practices
-
-- **Export before updating** -- Always create a backup before pulling new versions.
-- **Export before importing** -- Create a backup of your current data before importing.
-- **Store exports securely** -- Export files contain your complete link configuration.
-- **Regular backups** -- Schedule periodic exports for disaster recovery.
+The import summary highlights any fields that couldn't be mapped.

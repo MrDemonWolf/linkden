@@ -7,45 +7,46 @@ description: Privacy policy for the LinkDen documentation site and open-source p
 
 **Last updated:** February 2026
 
-LinkDen is an open-source, self-hosted application. This privacy policy covers the **documentation site** hosted at `mrdemonwolf.github.io/linkden`. If you self-host LinkDen, your own privacy policy applies to your instance.
+LinkDen is an open-source, self-hosted application. This policy covers the **documentation site** at `mrdemonwolf.github.io/linkden`. If you self-host LinkDen, your own privacy policy applies to your instance.
 
 ## What We Collect
 
 ### Documentation Site
 
-This documentation site is a static site hosted on **GitHub Pages**. We do not:
+This is a static site hosted on **GitHub Pages**. We do not:
 
 - Use cookies or tracking scripts
 - Collect personal information
 - Use analytics services
 - Store any visitor data
 
-GitHub Pages may collect basic server logs (IP addresses, user-agent strings) as part of their standard hosting. See [GitHub's Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement) for details.
+GitHub Pages may collect basic server logs (IP addresses, user-agent strings) as part of standard hosting. See [GitHub's Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement) for details.
 
 ### Self-Hosted Instances
 
-When you deploy your own LinkDen instance, **you** are the data controller. LinkDen stores the following data in your Cloudflare D1 database:
+When you deploy your own LinkDen instance, **you** are the data controller. LinkDen stores the following in your Cloudflare D1 database:
 
-- **Profile data** — name, bio, profile image URL
-- **Links** — URLs, titles, icons, sort order
-- **Settings** — theme, colors, branding, configuration
-- **Analytics** — page views, link clicks, referrers, country codes (from Cloudflare headers)
-- **Contact form submissions** — name, email, message (if contact form is enabled)
-- **vCard data** — contact information you configure
+- **Profile data** -- name, bio, profile image URL
+- **Links** -- URLs, titles, icons, sort order
+- **Settings** -- theme, colors, branding, configuration
+- **Analytics** -- page views, link clicks, referrers, country codes (from Cloudflare headers)
+- **Contact form submissions** -- name, email, message (if enabled)
+- **vCard data** -- contact information you configure
 
-All data is stored in **your own** Cloudflare D1 database. LinkDen does not phone home, send telemetry, or share data with third parties.
+All data lives in **your own** database. LinkDen does not phone home, send telemetry, or share data with third parties.
 
 ## Third-Party Services
 
-Self-hosted LinkDen instances may optionally integrate with:
+Self-hosted instances may optionally integrate with:
 
-- **Clerk** — authentication provider (see [Clerk's Privacy Policy](https://clerk.com/legal/privacy))
-- **Cloudflare** — hosting and CDN (see [Cloudflare's Privacy Policy](https://www.cloudflare.com/privacypolicy/))
-- **Resend** — email delivery for contact form notifications (see [Resend's Privacy Policy](https://resend.com/legal/privacy-policy))
+- **Cloudflare** -- hosting and CDN (see [Cloudflare's Privacy Policy](https://www.cloudflare.com/privacypolicy/))
+- **Resend** -- email delivery for contact form notifications (see [Resend's Privacy Policy](https://resend.com/legal/privacy-policy))
+
+> **Tip:** Authentication is handled by Better Auth, which runs entirely on your server -- no data is sent to external auth providers.
 
 ## Your Rights
 
-Since LinkDen is self-hosted, you have complete control over all data. You can export, delete, or modify any data at any time through the admin panel or directly in your D1 database.
+Since LinkDen is self-hosted, you have complete control over all data. Export, delete, or modify anything at any time through the admin panel or directly in your D1 database.
 
 ## Contact
 

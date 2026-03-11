@@ -14,20 +14,17 @@ import {
 	Area,
 	XAxis,
 	YAxis,
+	CartesianGrid,
 	Tooltip,
 	ResponsiveContainer,
 } from "recharts";
 import { trpc } from "@/utils/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
-import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatCard } from "@/components/admin/stat-card";
-import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
-
-type Period = "7d" | "30d" | "90d";
+import { PeriodSelector, type Period } from "@/components/admin/period-selector";
 
 const chartConfig: ChartConfig = {
 	count: {
@@ -38,12 +35,9 @@ const chartConfig: ChartConfig = {
 
 export default function AnalyticsPage() {
 	const [period, setPeriod] = useState<Period>("7d");
-	const { getAnimationProps } = useEntranceAnimation(true);
 
 	const overview = useQuery(trpc.analytics.overview.queryOptions({ period }));
-	const viewsOverTime = useQuery(
-		trpc.analytics.viewsOverTime.queryOptions({ period }),
-	);
+	const viewsOverTime = useQuery(trpc.analytics.viewsOverTime.queryOptions({ period }));
 	const topLinks = useQuery(trpc.analytics.topLinks.queryOptions({ period }));
 	const referrers = useQuery(trpc.analytics.referrers.queryOptions({ period }));
 	const countries = useQuery(trpc.analytics.countries.queryOptions({ period }));
@@ -56,43 +50,15 @@ export default function AnalyticsPage() {
 		}),
 	}));
 
-	const periods: { value: Period; label: string }[] = [
-		{ value: "7d", label: "7 days" },
-		{ value: "30d", label: "30 days" },
-		{ value: "90d", label: "90 days" },
-	];
-
-	const headerAnim = getAnimationProps(0);
-	const statsAnim = getAnimationProps(1);
-	const chartAnim = getAnimationProps(2);
-	const gridAnim = getAnimationProps(3);
-
 	return (
-		<div className="space-y-6">
+		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
 			<PageHeader
 				title="Analytics"
 				description="Track your page performance"
-				className={cn(headerAnim.className)}
-				style={headerAnim.style}
-				actions={
-					<div className="flex gap-1">
-						{periods.map((p) => (
-							<Button
-								key={p.value}
-								variant={period === p.value ? "default" : "outline"}
-								size="xs"
-								onClick={() => setPeriod(p.value)}
-								aria-pressed={period === p.value}
-							>
-								{p.label}
-							</Button>
-						))}
-					</div>
-				}
 			/>
 
 			{/* Stat cards */}
-			<div className={cn("grid gap-3 sm:grid-cols-2", statsAnim.className)} style={statsAnim.style}>
+			<div className="grid gap-4 sm:grid-cols-2">
 				<StatCard
 					icon={Eye}
 					label="Total Views"
@@ -110,14 +76,15 @@ export default function AnalyticsPage() {
 			</div>
 
 			{/* Views over time chart */}
-			<Card className={cn(chartAnim.className)} style={chartAnim.style}>
-				<CardHeader>
+			<Card>
+				<CardHeader className="flex-row items-center justify-between">
 					<h2>
 						<CardTitle className="flex items-center gap-1.5">
 							<Eye className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
 							Views over time
 						</CardTitle>
 					</h2>
+					<PeriodSelector value={period} onChange={setPeriod} />
 				</CardHeader>
 				<CardContent>
 					{viewsOverTime.isLoading ? (
@@ -144,6 +111,7 @@ export default function AnalyticsPage() {
 											<stop offset="100%" stopColor="var(--color-count)" stopOpacity={0.02} />
 										</linearGradient>
 									</defs>
+									<CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
 									<XAxis
 										dataKey="label"
 										tickLine={false}
@@ -180,7 +148,7 @@ export default function AnalyticsPage() {
 			</Card>
 
 			{/* Bottom grid */}
-			<div className={cn("grid gap-4 md:grid-cols-3", gridAnim.className)} style={gridAnim.style}>
+			<div className="grid gap-4 md:grid-cols-3">
 				{/* Top Links */}
 				<Card>
 					<CardHeader>
@@ -191,7 +159,7 @@ export default function AnalyticsPage() {
 							</CardTitle>
 						</h2>
 					</CardHeader>
-					<CardContent>
+					<CardContent className="min-h-[200px]">
 						{topLinks.isLoading ? (
 							<div className="space-y-2">
 								{Array.from({ length: 3 }).map((_, i) => (
@@ -201,17 +169,20 @@ export default function AnalyticsPage() {
 						) : !topLinks.data?.length ? (
 							<p className="text-xs text-muted-foreground">No click data yet</p>
 						) : (
-							<div className="space-y-2">
+							<div>
 								{topLinks.data.map((link, i) => (
 									<div
-										key={link.blockId ?? i}
-										className="flex items-center justify-between text-xs"
+										key={link.id ?? i}
+										className="flex items-center justify-between py-2 border-b border-border/40 last:border-0"
 									>
-										<span className="min-w-0 truncate">
-											{link.blockTitle || link.blockUrl || "Unknown"}
-										</span>
-										<span className="ml-2 shrink-0 font-medium">
-											{link.count}
+										<div className="flex items-center gap-2 min-w-0">
+											<span className="text-xs text-muted-foreground w-5 shrink-0">{i + 1}.</span>
+											<span className="truncate text-xs">
+												{link.title || link.url || "Unknown"}
+											</span>
+										</div>
+										<span className="ml-4 shrink-0 text-xs font-mono tabular-nums text-muted-foreground">
+											{link.clicks}
 										</span>
 									</div>
 								))}
@@ -230,7 +201,7 @@ export default function AnalyticsPage() {
 							</CardTitle>
 						</h2>
 					</CardHeader>
-					<CardContent>
+					<CardContent className="min-h-[200px]">
 						{referrers.isLoading ? (
 							<div className="space-y-2">
 								{Array.from({ length: 3 }).map((_, i) => (
@@ -238,20 +209,21 @@ export default function AnalyticsPage() {
 								))}
 							</div>
 						) : !referrers.data?.length ? (
-							<p className="text-xs text-muted-foreground">
-								No referrer data yet
-							</p>
+							<p className="text-xs text-muted-foreground">No referrer data yet</p>
 						) : (
-							<div className="space-y-2">
+							<div>
 								{referrers.data.map((ref, i) => (
 									<div
 										key={ref.referrer ?? i}
-										className="flex items-center justify-between text-xs"
+										className="flex items-center justify-between py-2 border-b border-border/40 last:border-0"
 									>
-										<span className="min-w-0 truncate">
-											{ref.referrer || "Direct"}
-										</span>
-										<span className="ml-2 shrink-0 font-medium">
+										<div className="flex items-center gap-2 min-w-0">
+											<span className="text-xs text-muted-foreground w-5 shrink-0">{i + 1}.</span>
+											<span className="truncate text-xs">
+												{ref.referrer || "Direct"}
+											</span>
+										</div>
+										<span className="ml-4 shrink-0 text-xs font-mono tabular-nums text-muted-foreground">
 											{ref.count}
 										</span>
 									</div>
@@ -271,7 +243,7 @@ export default function AnalyticsPage() {
 							</CardTitle>
 						</h2>
 					</CardHeader>
-					<CardContent>
+					<CardContent className="min-h-[200px]">
 						{countries.isLoading ? (
 							<div className="space-y-2">
 								{Array.from({ length: 3 }).map((_, i) => (
@@ -279,18 +251,19 @@ export default function AnalyticsPage() {
 								))}
 							</div>
 						) : !countries.data?.length ? (
-							<p className="text-xs text-muted-foreground">
-								No country data yet
-							</p>
+							<p className="text-xs text-muted-foreground">No country data yet</p>
 						) : (
-							<div className="space-y-2">
+							<div>
 								{countries.data.map((c, i) => (
 									<div
 										key={c.country ?? i}
-										className="flex items-center justify-between text-xs"
+										className="flex items-center justify-between py-2 border-b border-border/40 last:border-0"
 									>
-										<span>{c.country || "Unknown"}</span>
-										<span className="font-medium">{c.count}</span>
+										<div className="flex items-center gap-2 min-w-0">
+											<span className="text-xs text-muted-foreground w-5 shrink-0">{i + 1}.</span>
+											<span className="text-xs">{c.country || "Unknown"}</span>
+										</div>
+										<span className="text-xs font-mono tabular-nums text-muted-foreground">{c.count}</span>
 									</div>
 								))}
 							</div>

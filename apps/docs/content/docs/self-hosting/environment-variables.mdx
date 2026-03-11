@@ -1,87 +1,70 @@
 ---
 title: Environment Variables
-description: Complete reference of all environment variables used by LinkDen.
+description: Complete reference for all LinkDen environment variables.
 ---
 
-# Environment Variables Reference
+# Environment Variables
 
-This page is the definitive reference for every environment variable used by LinkDen.
+A quick-reference for every environment variable used by LinkDen.
 
 ## Quick Start
-
-LinkDen uses a single `.env` file at the monorepo root:
 
 ```bash
 cp .env.example .env
 ```
 
+LinkDen uses a single `.env` file at the monorepo root. Only four variables are required.
+
 ## Required Variables
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `BETTER_AUTH_SECRET` | Secret key for Better Auth session signing | Generate with `openssl rand -base64 32` |
-| `BETTER_AUTH_URL` | Base URL for the auth server (API server URL) | `http://localhost:3000` |
-| `CORS_ORIGIN` | Allowed CORS origin (frontend URL). Must exactly match including protocol. | `http://localhost:3001` |
-| `NEXT_PUBLIC_SERVER_URL` | Public URL of the API server used by the Next.js frontend | `http://localhost:3000` |
+| `BETTER_AUTH_SECRET` | Secret key for session signing. Generate with `openssl rand -base64 32` | `k3jf8s...` |
+| `BETTER_AUTH_URL` | Base URL of the API server | `http://localhost:3000` |
+| `CORS_ORIGIN` | Frontend URL (must match exactly, including protocol, no trailing slash) | `http://localhost:3001` |
+| `NEXT_PUBLIC_SERVER_URL` | Public URL of the API server, used by the Next.js frontend | `http://localhost:3000` |
+
+## Cloudflare Deployment
+
+Only needed when deploying to Cloudflare:
+
+| Variable | Description |
+|----------|-------------|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers, D1, and KV permissions |
+| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID |
 
 ## Runtime Configuration
 
-Most configuration that was previously done through environment variables is now managed through the admin settings UI at `/admin/settings` and stored in the database. This includes:
+Most settings that were previously environment variables are now managed through the admin UI at `/admin/settings` and stored in the database:
 
-| Setting | Configured In |
-|---------|---------------|
+| Setting | Location |
+|---------|----------|
 | Email provider and API key | Settings > Email |
 | CAPTCHA provider and keys | Settings > CAPTCHA |
 | Apple Wallet Team ID, Pass Type ID | Settings > Apple Wallet |
 | Branding / whitelabel | Settings > Branding |
 | Contact form delivery mode | Settings > Contact Form |
 
-This approach keeps the `.env` file minimal (4 variables) and allows changing settings without redeploying.
-
-## Cloudflare Deployment Variables
-
-When deploying to Cloudflare using Alchemy, you also need:
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers, Pages, D1 permissions | For Cloudflare deploy |
-| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID | For Cloudflare deploy |
-
-### Generating a Cloudflare API Token
-
-1. Go to [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens).
-2. Click **Create Token** and use the **Custom token** template.
-3. Add permissions:
-
-| Scope | Resource | Access |
-|-------|----------|--------|
-| Account | Cloudflare Pages | Edit |
-| Account | Cloudflare Workers Scripts | Edit |
-| Account | D1 | Edit |
-| Account | Workers KV Storage | Edit |
-
-### Finding Your Account ID
-
-Go to the [Cloudflare dashboard](https://dash.cloudflare.com). Your Account ID is in the right sidebar under **Account details**.
+This keeps the `.env` file minimal and lets you change settings without redeploying.
 
 ## Complete `.env` Example
 
 ```bash
-# Better Auth (required)
+# Required
 BETTER_AUTH_SECRET=your-generated-secret-key
 BETTER_AUTH_URL=http://localhost:3000
 CORS_ORIGIN=http://localhost:3001
 NEXT_PUBLIC_SERVER_URL=http://localhost:3000
 
-# Cloudflare Deployment (only needed for Cloudflare hosting)
+# Cloudflare only
 # CLOUDFLARE_API_TOKEN=your-cloudflare-api-token
 # CLOUDFLARE_ACCOUNT_ID=your-cloudflare-account-id
 ```
 
-## Environment Variables by Hosting Platform
+## Setting Variables by Platform
 
-| Platform | How to Set Variables |
-|----------|---------------------|
+| Platform | How to Set |
+|----------|------------|
 | **Cloudflare** | Workers > Settings > Variables (use "Encrypt" for secrets) |
 | **Docker** | `.env` file or `docker-compose.yml` `environment` block |
 | **Coolify** | Coolify UI > Service > Environment Variables |
@@ -89,30 +72,22 @@ NEXT_PUBLIC_SERVER_URL=http://localhost:3000
 
 ## Setup Token
 
-LinkDen does not use an environment variable for the setup token. Instead, a **one-time secure token** is generated automatically by the API server on first startup and printed to the server console. The setup wizard at `/admin/setup` requires this token as a query parameter. Once setup is completed, the token is automatically invalidated. See the [Security](/docs/guide/security) page for details.
-
-## Security Best Practices
-
-- **Never commit `.env` files** to version control. They are included in `.gitignore`.
-- **Generate a strong secret** for `BETTER_AUTH_SECRET` using `openssl rand -base64 32`.
-- **Use different secrets** for development and production.
-- **Encrypt sensitive variables** when your platform supports it.
+LinkDen does not use an environment variable for setup. A one-time secure token is generated automatically by the API server on first startup and printed to the console. See the deployment guide for your platform.
 
 ## Troubleshooting
 
-### API returns CORS errors
+### CORS errors
 
-- `CORS_ORIGIN` must exactly match the web app URL including the protocol (`https://`) and must not have a trailing slash.
-- For local development, set `CORS_ORIGIN=http://localhost:3001`.
+`CORS_ORIGIN` must exactly match the web app URL — including protocol (`https://`), no trailing slash.
 
 ### Authentication not working
 
-- Verify `BETTER_AUTH_SECRET` is set.
-- Verify `BETTER_AUTH_URL` matches the actual URL where the API server is running.
-- For cross-origin setups, ensure `CORS_ORIGIN` is correct.
+- Verify `BETTER_AUTH_SECRET` is set
+- Verify `BETTER_AUTH_URL` matches the actual URL where the API is running
+- For cross-origin setups, double-check `CORS_ORIGIN`
 
-### Environment variable changes not taking effect
+### Changes not taking effect
 
-- `NEXT_PUBLIC_SERVER_URL` is baked into the frontend build. Changing it requires a rebuild.
-- Server-side variables take effect on the next request (no rebuild needed).
-- Docker: Restart the container after changing environment variables.
+- `NEXT_PUBLIC_SERVER_URL` is baked into the frontend at build time. Changing it requires a rebuild.
+- Server-side variables take effect on the next request.
+- Docker: restart the container after changing variables.

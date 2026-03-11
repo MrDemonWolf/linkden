@@ -1,11 +1,11 @@
 ---
 title: API Reference
-description: Complete reference for LinkDen's tRPC API — architecture, authentication, and all endpoints.
+description: Architecture overview and endpoint reference for LinkDen's tRPC API.
 ---
 
 # API Reference
 
-LinkDen's API is built with [tRPC](https://trpc.io/) v11 on top of [Hono](https://hono.dev/), running on Cloudflare Workers.
+LinkDen's API is built with [tRPC](https://trpc.io/) v11 on [Hono](https://hono.dev/), running on Cloudflare Workers. Every call is end-to-end type-safe -- no code generation required.
 
 ## Architecture
 
@@ -29,10 +29,10 @@ Drizzle ORM (packages/db)
 Cloudflare D1 (SQLite)
 ```
 
-- **Hono** -- Ultra-lightweight web framework for edge runtimes. Handles routing, middleware, and request/response processing with zero cold start on Cloudflare Workers.
-- **tRPC v11** -- End-to-end type safety without code generation. Router definitions live in `packages/api`.
-- **Better Auth** -- Email/password authentication. Session cookies are validated on protected procedures.
-- **Drizzle ORM** -- Type-safe SQL query builder for Cloudflare D1. Schema in `packages/db/src/schema/`.
+- **Hono** -- Lightweight web framework for edge runtimes. Zero cold start on Cloudflare Workers.
+- **tRPC v11** -- End-to-end type safety. Router definitions live in `packages/api`.
+- **Better Auth** -- Email/password authentication. Session cookies validated on protected procedures.
+- **Drizzle ORM** -- Type-safe SQL for Cloudflare D1. Schema lives in `packages/db/src/schema/`.
 
 ## Authentication
 
@@ -40,18 +40,10 @@ LinkDen uses [Better Auth](https://www.better-auth.com/) with email/password sig
 
 ### Session Flow
 
-1. During first-time setup at `/admin/setup`, you create an admin account.
-2. Better Auth creates a session with secure cookies.
-3. For subsequent visits, sign in at `/admin/login`.
-4. The session cookie is sent with all API requests to authenticate protected routes.
-
-### Cookie Configuration
-
-| Attribute | Value | Reason |
-|-----------|-------|--------|
-| `sameSite` | `none` | Required for cross-origin requests |
-| `secure` | `true` | Required when `sameSite` is `none` |
-| `httpOnly` | `true` | Prevents JavaScript access to session cookie |
+1. Create an admin account during first-time setup at `/admin/setup`.
+2. Better Auth issues a secure session cookie.
+3. Sign in at `/admin/login` on subsequent visits.
+4. The cookie is sent with every API request to authenticate protected routes.
 
 ### Environment Variables
 
@@ -63,17 +55,13 @@ LinkDen uses [Better Auth](https://www.better-auth.com/) with email/password sig
 
 Generate a secret with: `openssl rand -base64 32`
 
-### Troubleshooting Auth
-
-- **401 Unauthorized** -- Check `BETTER_AUTH_SECRET` is set and consistent. Verify `CORS_ORIGIN` matches the frontend URL exactly.
-- **Cannot create account** -- Use the setup wizard at `/admin/setup` for the initial account.
-- **CORS errors** -- `CORS_ORIGIN` must match the frontend URL including protocol, no trailing slash.
+> **Tip:** If you hit 401 errors, double-check that `CORS_ORIGIN` matches your frontend URL exactly -- including protocol, no trailing slash.
 
 ---
 
 ## Endpoint Reference
 
-All endpoints are available at `/trpc/<router>.<procedure>`. Public procedures require no authentication. Protected procedures require a valid Better Auth session cookie.
+All endpoints live at `/trpc/<router>.<procedure>`. **Public** procedures need no auth. **Protected** procedures require a valid session cookie.
 
 ### Blocks
 
@@ -83,35 +71,11 @@ Manage content blocks on your page.
 |-----------|------|------|-------------|
 | `blocks.list` | Query | Protected | Get all blocks ordered by position |
 | `blocks.get` | Query | Protected | Get a single block by ID |
-| `blocks.create` | Mutation | Protected | Create a new block with client-generated ID |
+| `blocks.create` | Mutation | Protected | Create a new block |
 | `blocks.update` | Mutation | Protected | Update block fields by ID |
 | `blocks.delete` | Mutation | Protected | Delete a block by ID |
 | `blocks.reorder` | Mutation | Protected | Batch update block positions |
-| `blocks.toggleEnabled` | Mutation | Protected | Toggle `isEnabled` field |
-
-#### Block Types
-
-```typescript
-type BlockType = "link" | "header" | "social_icons" | "embed" | "contact_form"
-```
-
-#### Block Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Unique block ID |
-| `type` | BlockType | Block type |
-| `title` | string | Display title |
-| `url` | string? | Destination URL (link blocks) |
-| `icon` | string? | Icon identifier |
-| `embedType` | string? | Embed provider |
-| `embedUrl` | string? | Embed source URL |
-| `socialIcons` | string? | JSON string of social icon data |
-| `isEnabled` | boolean | Visibility on public page |
-| `position` | number | Display order |
-| `scheduledStart` | string? | ISO datetime for scheduled visibility start |
-| `scheduledEnd` | string? | ISO datetime for scheduled visibility end |
-| `config` | string? | JSON string of block configuration |
+| `blocks.toggleEnabled` | Mutation | Protected | Toggle block visibility |
 
 ### Settings
 
@@ -122,29 +86,7 @@ Manage site-wide key-value configuration.
 | `settings.get` | Query | Protected | Get a single setting by key |
 | `settings.getAll` | Query | Protected | Get all settings as key-value map |
 | `settings.update` | Mutation | Protected | Upsert a single key-value pair |
-| `settings.updateBulk` | Mutation | Protected | Upsert an array of key-value pairs |
-
-#### Common Settings Keys
-
-| Key | Description |
-|-----|-------------|
-| `profile_name` | Display name |
-| `bio` | Bio text |
-| `avatar_url` | Avatar image URL |
-| `verified_badge` | Show verified checkmark |
-| `theme_preset` | Theme ID |
-| `seo_title` | Page title |
-| `seo_description` | Meta description |
-| `seo_og_image` | Open Graph image URL |
-| `contact_form_enabled` | Contact form toggle |
-| `contact_delivery` | Delivery mode |
-| `captcha_provider` | CAPTCHA mode |
-| `branding_enabled` | Whitelabel footer toggle |
-| `branding_text` | Custom footer text |
-| `branding_link` | Custom footer link |
-| `vcard_enabled` | vCard download toggle |
-| `wallet_enabled` | Apple Wallet toggle |
-| `setup_completed` | Setup wizard completion flag |
+| `settings.updateBulk` | Mutation | Protected | Upsert multiple key-value pairs |
 
 ### Contacts
 
@@ -152,7 +94,7 @@ Handle contact form submissions.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `contacts.list` | Query | Protected | List submissions with optional `isRead` filter, limit/offset pagination |
+| `contacts.list` | Query | Protected | List submissions (filterable by read status) |
 | `contacts.get` | Query | Protected | Get a single submission by ID |
 | `contacts.markRead` | Mutation | Protected | Mark submission as read |
 | `contacts.markUnread` | Mutation | Protected | Mark submission as unread |
@@ -161,35 +103,35 @@ Handle contact form submissions.
 
 ### Analytics
 
-Track and query page view and click data. All queries accept an optional `{ period: "7d" | "30d" | "90d" }` parameter.
+Track page views and clicks. All queries accept an optional `period` parameter: `"7d"`, `"30d"`, or `"90d"`.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `analytics.overview` | Query | Protected | Returns `{ totalViews, totalClicks }` for period |
-| `analytics.viewsOverTime` | Query | Protected | Returns `[{ date, count }]` grouped by day |
-| `analytics.clicksOverTime` | Query | Protected | Returns `[{ date, count }]` grouped by day |
-| `analytics.topLinks` | Query | Protected | Top 10 links by click count |
+| `analytics.overview` | Query | Protected | Total views and clicks for period |
+| `analytics.viewsOverTime` | Query | Protected | Daily view counts |
+| `analytics.clicksOverTime` | Query | Protected | Daily click counts |
+| `analytics.topLinks` | Query | Protected | Top 10 links by clicks |
 | `analytics.referrers` | Query | Protected | Top 10 referrer domains |
-| `analytics.countries` | Query | Protected | Top 20 countries by page view count |
+| `analytics.countries` | Query | Protected | Top 20 countries by views |
 
 ### Social
 
-Manage social network entries for use in Social Icons blocks.
+Manage social network entries for Social Icons blocks.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `social.list` | Query | Protected | List all networks with optional `activeOnly` filter |
-| `social.toggle` | Mutation | Protected | Set `isActive` true/false for a network by slug |
+| `social.list` | Query | Protected | List all networks (optional `activeOnly` filter) |
+| `social.toggle` | Mutation | Protected | Toggle a network on/off by slug |
 
 ### Wallet
 
-Manage Apple Wallet pass configuration.
+Configure Apple Wallet passes.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
 | `wallet.getConfig` | Query | Protected | Get wallet settings |
 | `wallet.updateConfig` | Mutation | Protected | Update wallet settings |
-| `wallet.generatePreview` | Query | Protected | Returns profile + enabled blocks + QR URL for pass preview |
+| `wallet.generatePreview` | Query | Protected | Preview data for pass generation |
 
 ### vCard
 
@@ -197,13 +139,9 @@ Manage and generate vCard contact files.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `vcard.getConfig` | Query | Protected | Get `{ enabled, data }` |
-| `vcard.updateConfig` | Mutation | Protected | Update enabled flag and/or vCard data fields |
-| `vcard.preview` | Query | Protected | Returns generated `.vcf` string |
-
-#### vCard Data Fields
-
-`fullName`, `nickname`, `birthday`, `photo`, `org`, `title`, `department`, `workEmail`, `workPhone`, `email`, `phone`, `address`, `urls` (array of `{ label, url }`).
+| `vcard.getConfig` | Query | Protected | Get vCard config and data |
+| `vcard.updateConfig` | Mutation | Protected | Update vCard fields |
+| `vcard.preview` | Query | Protected | Generate `.vcf` string |
 
 ### Backup
 
@@ -212,47 +150,26 @@ Import and export all data.
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
 | `backup.export` | Query | Protected | Export all data as JSON |
-| `backup.import` | Mutation | Protected | Import data with `mode: "merge"` or `"replace"` |
+| `backup.import` | Mutation | Protected | Import data (`"merge"` or `"replace"` mode) |
 
 ### Version
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `version.current` | Query | Public | Returns `{ version }` |
-| `version.checkUpdate` | Query | Public | Returns `{ current, latest, hasUpdate, releaseUrl, changelog }` |
+| `version.current` | Query | Public | Returns current version |
+| `version.checkUpdate` | Query | Public | Check for available updates |
 
 ### Public
 
-Public-facing endpoints (no authentication).
+Public-facing endpoints -- no authentication needed.
 
 | Procedure | Type | Description |
 |-----------|------|-------------|
-| `public.getPage` | Query | Full page data: profile, schedule-filtered blocks, theme, settings |
-| `public.submitContact` | Mutation | Submit contact form; validates CAPTCHA if configured |
-| `public.trackView` | Mutation | Record page view with referrer, userAgent, country |
-| `public.trackClick` | Mutation | Record link click with blockId, referrer, userAgent, country |
-| `public.getVCard` | Query | Returns VCard string if vcard is enabled |
-| `public.getSetupStatus` | Query | Returns `{ completed: boolean }` |
+| `public.getPage` | Query | Full page data: profile, blocks, theme, settings |
+| `public.submitContact` | Mutation | Submit contact form (with optional CAPTCHA) |
+| `public.trackView` | Mutation | Record a page view |
+| `public.trackClick` | Mutation | Record a link click |
+| `public.getVCard` | Query | Download vCard if enabled |
+| `public.getSetupStatus` | Query | Check if setup is complete |
 
-## Making API Calls
-
-The tRPC client is configured in the Next.js app:
-
-```typescript
-import { trpc } from "@/utils/trpc";
-
-// In a React component
-const { data } = trpc.public.getPage.useQuery();
-const { data: blocks } = trpc.blocks.list.useQuery();
-```
-
-## Error Handling
-
-tRPC errors include:
-
-- `UNAUTHORIZED` -- Missing or invalid session.
-- `NOT_FOUND` -- Resource does not exist.
-- `BAD_REQUEST` -- Invalid input (validated by Zod schemas from `packages/validators`).
-- `INTERNAL_SERVER_ERROR` -- Unexpected server error.
-
-All input is validated using shared Zod schemas from the `packages/validators` package, ensuring consistent validation between frontend forms and API endpoints.
+All input is validated with shared Zod schemas from `packages/validators`.

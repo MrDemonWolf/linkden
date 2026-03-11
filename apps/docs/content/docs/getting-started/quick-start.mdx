@@ -1,130 +1,98 @@
 ---
 title: Quick Start
-description: Get your LinkDen instance set up and publishing your first links in minutes.
+description: Get your LinkDen instance set up and publish your first links in minutes.
 ---
 
 # Quick Start
 
-This guide walks you through the first-time setup of a LinkDen instance. If you have not yet installed LinkDen, see the [Installation](/docs/getting-started/installation) guide first.
+You'll go from a fresh install to a live link page in about five minutes. If you haven't installed LinkDen yet, start with the [Installation](/docs/getting-started/installation) guide.
 
 ---
 
 ## 1. Run the Setup Wizard
 
-The setup wizard is protected by a one-time security token. When your LinkDen server starts for the first time, it prints a setup URL to the **server console**:
+When LinkDen starts for the first time, it prints a one-time setup URL to your **server console**:
 
 ```
 Setup URL: http://localhost:3001/admin/setup?token=<unique-token>
 ```
 
-Open this URL in your browser. If you navigate to `/admin/setup` without the token, you will see a "Setup Token Required" message directing you to check the server console.
+Open that URL in your browser. The token keeps setup secure -- it's only valid once.
 
-The setup wizard walks you through 4 steps:
+> **Tip:** If you go to `/admin/setup` without the token, the page will tell you to check your server console.
 
-### Step 1: Account
+The wizard has 4 quick steps:
 
-Create your admin account with Better Auth (email/password):
+1. **Account** -- Pick a name, email, and password for your admin login.
+2. **Profile** -- Add a bio and avatar (or skip these for now).
+3. **Theme** -- Choose from 7 theme presets. Each shows color swatches so you can preview.
+4. **Done** -- Hit "Go to Builder" to start adding content.
 
-- **Name** -- Your display name (required).
-- **Email** -- Your email address for sign-in (required).
-- **Password** -- Minimum 8 characters (required).
-
-### Step 2: Profile
-
-Set up your public profile:
-
-- **Bio** -- A short tagline or description (up to 300 characters, optional).
-- **Avatar URL** -- URL to your profile image (optional).
-
-Both fields can be skipped and configured later in settings.
-
-### Step 3: Theme
-
-Choose a theme preset from the 7 available themes. Each theme is shown as a card with two color swatches. Click any theme to select it.
-
-### Step 4: Done
-
-A confirmation screen with a "Go to Builder" button that redirects to `/admin/builder`. The setup token is automatically invalidated once setup completes.
+The setup token is automatically invalidated once you finish.
 
 ---
 
 ## 2. Add Your First Blocks
 
-The block builder at `/admin/builder` uses a two-panel layout:
+The builder at `/admin/builder` has two panels: your block list on the left, and a live phone preview on the right.
 
-- **Left panel** -- Your block list with an "Add Block" dropdown button.
-- **Right panel** -- A live phone preview (visible on larger screens).
+Click **Add Block** to choose from five block types:
 
-Click **Add Block** to see the 5 block types:
+- **Link** -- A clickable button that sends visitors to any URL.
+- **Header** -- A text heading to organize your page into sections.
+- **Social Icons** -- A row of branded social media links.
+- **Embed** -- Embed content from YouTube, Spotify, SoundCloud, and more.
+- **Contact Form** -- Let visitors send you a message right from your page.
 
-| Block Type | Description |
-|------------|-------------|
-| **Link** | A clickable button linking to an external URL |
-| **Header** | A text heading to group or label sections |
-| **Social Icons** | A row of social media icon links |
-| **Embed** | Embed YouTube, Spotify, SoundCloud, or custom content |
-| **Contact Form** | A contact form for visitors to message you |
-
-### Adding a Link
+### Try adding a link
 
 1. Click **Add Block** and select **Link**.
-2. In the edit panel that slides in, fill in:
-   - **Title** -- The text shown on the button (e.g., "My Website").
-   - **URL** -- The destination URL.
-3. Use the **Style** tab to configure icon, colors, border, and animation.
-4. Use the **Schedule** tab to set start/end dates for time-limited visibility.
-5. Click **Save Changes**.
+2. Fill in a **Title** (the button text) and a **URL** (the destination).
+3. Optionally, switch to the **Style** tab to customize colors, icons, or animation.
+4. Click **Save Changes**.
 
-### Reordering Blocks
-
-Drag any block in the list using the grip handle to reorder. The order updates immediately via the `blocks.reorder` mutation.
+You can drag blocks by their grip handle to reorder them anytime.
 
 ---
 
-## 3. Manage Social Icons
+## 3. Set Up Social Icons
 
-Navigate to `/admin/social` to manage social networks. The page features:
+Head to `/admin/social` to manage your social network links.
 
-- **Combobox search** -- A searchable dropdown to quickly find networks by name.
-- **Category filter tabs** -- Horizontal pill-style tabs (Social, Video, Music, Development, etc.) to browse by category.
-- **Auto-invert icons** -- Brand icons that are too dark automatically invert in dark mode for visibility.
+Search for any platform by name, or browse by category (Social, Video, Music, Development, and more). Toggle networks on or off and paste in your profile URLs. Active networks show up in any **Social Icons** block on your page.
 
-Toggle networks on/off and enter URLs. Active networks become available for use in **Social Icons** blocks.
+> **Tip:** Dark brand icons automatically adjust for visibility in dark mode -- no extra setup needed.
 
 ---
 
 ## 4. Configure Settings
 
-Navigate to `/admin/settings` to configure your instance:
+Visit `/admin/settings` to fine-tune your instance:
 
-- **Profile** -- Display name, avatar, bio.
-- **SEO** -- Page title, meta description, OG image.
-- **Contact Form** -- Enable/disable, delivery mode (database only, email notification, or both).
-- **CAPTCHA** -- Provider (none, Cloudflare Turnstile, Google reCAPTCHA) with site key and secret key.
-- **Email** -- Provider (Resend or Cloudflare Email Workers), API key, from address.
-- **Export / Import** -- Backup and restore data as JSON.
-- **About** -- Current version and update check.
+- **Profile** -- Display name, avatar, and bio.
+- **SEO** -- Page title, meta description, and OG image.
+- **Contact Form** -- Enable or disable, choose delivery mode (database, email, or both).
+- **CAPTCHA** -- Add Cloudflare Turnstile or Google reCAPTCHA for form protection.
+- **Email** -- Set up Resend or Cloudflare Email Workers for notifications.
+- **Export / Import** -- Backup and restore your data as JSON.
+- **About** -- Check your current version and look for updates.
 
-Visual settings like themes, banner, verified badge, and branding are configured on the [Appearance](/docs/guide/appearance) page at `/admin/appearance`.
+For visual customization (themes, banners, verified badge, branding), head to the [Appearance](/docs/guide/appearance) page at `/admin/appearance`.
 
 ---
 
 ## 5. View Your Public Page
 
-Click **View Page** in the dashboard header (or navigate to your domain root) to see your live public link page.
-
-Share this URL as your link-in-bio across social media profiles.
+Click **View Page** in the dashboard header, or just visit your domain root. That's your live link-in-bio page -- share it anywhere.
 
 ---
 
 ## Next Steps
 
-| Topic | Link |
-|-------|------|
-| Block types and configuration | [Blocks](/docs/guide/blocks) |
-| Themes, colors, and branding | [Appearance](/docs/guide/appearance) |
-| Social network icons | [Social Networks](/docs/guide/social-networks) |
-| Apple Wallet business card | [Apple Wallet](/docs/guide/apple-wallet) |
-| Contact form setup | [Contact Form](/docs/guide/contact-form) |
-| Analytics | [Analytics](/docs/guide/analytics) |
-| vCard digital business card | [vCard](/docs/guide/vcard) |
+- [Blocks](/docs/guide/blocks) -- Deep dive into block types and configuration.
+- [Appearance](/docs/guide/appearance) -- Themes, colors, and branding options.
+- [Social Networks](/docs/guide/social-networks) -- The full social icon library.
+- [Apple Wallet](/docs/guide/apple-wallet) -- Create a digital business card pass.
+- [Contact Form](/docs/guide/contact-form) -- Set up visitor messaging.
+- [Analytics](/docs/guide/analytics) -- Track page and link views.
+- [vCard](/docs/guide/vcard) -- Offer a downloadable contact card.

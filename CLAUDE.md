@@ -43,3 +43,32 @@ Self-hosted link-in-bio application built for Cloudflare-first deployment.
 - Setup guides → Add reference path here
 
 This prevents context loss! Update this file IMMEDIATELY when creating important docs.
+
+## Design Patterns
+
+### File Storage (R2)
+- **Bucket binding:** `IMAGES_BUCKET` (R2Bucket on Cloudflare Workers)
+- **Upload endpoint:** `POST /api/upload` — accepts `file` + `purpose` form fields, returns `{ publicUrl }`
+- **Serving endpoint:** `GET /api/images/*` — serves from R2 with immutable cache headers
+- **Valid purposes:** `avatar`, `banner`, `og_image`, `wallet_logo`
+- **Client component:** `ImageUploadField` — drag-and-drop upload with preview, replace, and remove buttons
+- **Max file size:** 5MB, images only
+
+### UI/UX Patterns
+- **Color pickers:** hex `<Input>` + native `<input type="color">` swatch side by side
+- **Image uploads:** always use `ImageUploadField` (never plain URL text inputs)
+- **Form layouts:** `FieldGroup` component with `columns` prop for grid layouts
+- **Metrics:** `StatCard` component (icon, label, value, color)
+- **Page headers:** `PageHeader` with optional badge and description
+- **Entrance animations:** `useEntranceAnimation` hook with staggered `getAnimationProps(index)`
+- **Section grouping:** uppercase `tracking-wider` label headers (`text-xs font-medium text-muted-foreground`)
+
+### Wallet Pass
+- Apple HIG generic pass layout (header → primary + thumbnail → secondary → QR)
+- QR generation via `qrcode` library (`QRCode.toDataURL`)
+- Preview component: `WalletPassPreview` with live color/content props
+
+### Admin Panel
+- Wrap sections in `Card` / `CardContent`
+- Section headers: `<h2 className="text-sm font-semibold">`
+- Settings forms: state pairs (current + saved) for dirty detection, save button appears when dirty

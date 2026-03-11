@@ -5,28 +5,32 @@ description: Set up a downloadable digital business card (vCard) for your visito
 
 # vCard
 
-LinkDen lets you create a digital business card that visitors can download as a `.vcf` file. The vCard is compatible with all major contact apps on iOS, Android, macOS, and Windows.
+Give visitors a one-tap way to save your contact info. When enabled, a download button appears on your public page that saves a `.vcf` file compatible with iOS, Android, macOS, and Windows.
 
 ## Enabling vCard
 
-Toggle the vCard download button in `/admin/settings` under the **vCard** section. When enabled, a download button appears on your public page.
+1. Go to `/admin/settings`.
+2. Find the **vCard** section.
+3. Toggle it on.
 
-## Configuring vCard Data
+A download button will appear on your public page.
 
-The vCard data is managed through the `vcard.updateConfig` API. Available fields:
+## Filling In Your Details
+
+Edit your vCard fields in the vCard section of settings. Only fields you fill in are included in the downloaded file -- everything else is left out automatically.
 
 ### Personal Information
 
 - **Full Name** -- Your name as it should appear in contacts.
-- **Nickname** -- An optional alternative name or handle.
-- **Birthday** -- Optional birthday field.
+- **Nickname** -- An alternative name or handle.
+- **Birthday** -- Your birthday.
 - **Photo** -- Profile photo URL.
 
 ### Professional Information
 
-- **Organization** -- Your company or organization name.
+- **Organization** -- Company or organization name.
 - **Title** -- Your role or position.
-- **Department** -- Optional department within the organization.
+- **Department** -- Department within the organization.
 
 ### Contact Details
 
@@ -37,16 +41,12 @@ The vCard data is managed through the `vcard.updateConfig` API. Available fields
 
 ### Address
 
-Full address field for your contact information.
+Your full mailing address.
 
 ### URLs
 
-An array of `{ label, url }` entries for linking to websites, social profiles, or any other URLs.
+Add links to your websites, social profiles, or any other URLs. Each entry has a label and a URL.
 
-## vCard Format
+## Format
 
-LinkDen generates vCard 3.0 format files, which have the widest compatibility across devices and applications. The generated file includes all fields you have filled in and omits empty fields.
-
-## Preview
-
-You can preview the generated `.vcf` output using the `vcard.preview` API procedure, which returns the raw VCard string.
+LinkDen generates vCard 3.0 files, which have the widest compatibility across devices and apps.

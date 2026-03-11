@@ -1,113 +1,50 @@
 ---
 title: Security
-description: Overview of LinkDen's built-in security measures including XSS protection, input sanitization, and secure setup flow.
+description: How LinkDen protects your data with input sanitization, secure setup, and authentication.
 ---
 
 # Security
 
-LinkDen includes multiple layers of server-side protection to prevent cross-site scripting (XSS), injection attacks, and unauthorized access. This page documents the security measures built into the platform.
+LinkDen includes built-in protections against common web attacks. Most security measures work automatically -- this page explains what's covered and what you can configure.
 
-## Setup Token
+## Secure Setup
 
-The setup wizard at `/admin/setup` is protected by a one-time security token to prevent unauthorized account creation.
+The first-run setup wizard is protected by a one-time token to prevent unauthorized account creation.
 
-### How It Works
+1. When the server starts for the first time, a unique setup URL is printed to the **server console**.
+2. Open that URL to access the setup wizard.
+3. Once you complete setup, the token is automatically invalidated.
+4. If the server restarts before setup finishes, a new token is generated.
 
-1. On first startup, the API server generates a random UUID token using `crypto.randomUUID()`.
-2. The full setup URL (including the token) is printed to the **server console**:
-   ```
-   Setup URL: http://localhost:3001/admin/setup?token=<unique-token>
-   ```
-3. The setup wizard validates the token via the `public.validateSetupToken` tRPC endpoint.
-4. If no token is provided or the token is invalid, the wizard shows an error page.
-5. Once setup is completed (the `setup_completed` setting is set to `"true"`), the token is automatically invalidated by calling `invalidateSetupToken()`.
-6. If the server restarts before setup is completed, a new token is generated and printed.
+The token is stored in memory only -- never written to disk or the database. After setup, the wizard page shows "Setup Already Completed" regardless of any token provided.
 
-### Security Properties
+## Input Sanitization
 
-- The token is stored **in-memory only** -- it is never written to the database or disk.
-- The token is a cryptographically random UUID, making it infeasible to guess.
-- The token is single-use: it is invalidated as soon as setup completes.
-- After setup is completed, the `/admin/setup` page shows "Setup Already Completed" regardless of any token provided.
+LinkDen sanitizes all user-provided content on the server side before saving it. This protects against stored XSS attacks even if someone bypasses frontend validation.
 
----
+**What gets sanitized:**
 
-## XSS Protection
-
-LinkDen sanitizes all user-provided content on the server side before storing it in the database. This prevents stored XSS attacks even if the frontend validation is bypassed.
-
-### Settings Sanitization
-
-The settings router (`packages/api/src/routers/settings.ts`) categorizes setting keys and applies appropriate sanitization:
-
-| Category | Keys | Sanitization |
-|----------|------|-------------|
-| **Text** | `profile_name`, `bio`, `branding_text`, `seo_title`, `seo_description` | HTML tags stripped, length limits enforced |
-| **URLs** | `branding_link`, `seo_og_image`, `avatar_url`, `banner_custom_url` | Must be valid `http://` or `https://` URLs |
-| **Colors** | `custom_primary`, `custom_secondary`, `custom_accent`, `custom_background` | Must match `#RRGGBB` hex format |
-| **CSS** | `custom_css` | Script tags, `expression()`, `javascript:` URLs, `@import javascript:`, `behavior:`, and `-moz-binding:` removed |
-
-#### Length Limits
-
-| Field | Max Characters |
-|-------|---------------|
-| `profile_name` | 50 |
-| `bio` | 300 |
-| `branding_text` | 100 |
-| `seo_title` | 100 |
-| `seo_description` | 250 |
-
-### Block Content Sanitization
-
-The blocks router (`packages/api/src/routers/blocks.ts`) sanitizes block content on create and update:
-
-- **Titles** -- HTML tags are stripped from all block titles.
-- **URLs** -- Link URLs and embed URLs are validated to ensure they use `http:` or `https:` protocols. Non-HTTP protocols (e.g., `javascript:`) are rejected.
-- **Social Icons JSON** -- The `socialIcons` field is parsed as JSON. Each entry's `platform` field is stripped of HTML, and each `url` is validated for safe protocols. Invalid JSON is replaced with an empty array `[]`.
-
-### Embed URL Validation
-
-Embed blocks validate URLs against platform-specific patterns defined in `@linkden/validators`:
-
-| Embed Type | Pattern |
-|------------|---------|
-| YouTube | Must match `youtube.com/watch`, `youtube.com/embed`, or `youtu.be/` |
-| Spotify | Must match `open.spotify.com/` |
-| SoundCloud | Must match `soundcloud.com/` |
-| Custom | Must start with `http://` or `https://` |
-
-### Contact Form Sanitization
-
-Public contact form submissions strip HTML tags from all text fields (`name`, `message`, `phone`, `subject`, `company`) before storing them in the database. Email addresses are validated with Zod's `.email()` schema.
-
-### CSS Sanitization
-
-Custom CSS goes through a dedicated sanitizer that removes:
-
-- `<script>` tags and all HTML tags
-- `expression()` calls (IE CSS expressions)
-- `javascript:` protocol in `url()` and `@import`
-- `behavior:` property (IE-specific)
-- `-moz-binding:` property (Firefox XBL)
-
----
+- **Text fields** (profile name, bio, titles, etc.) -- HTML tags are stripped and length limits are enforced.
+- **URLs** -- Validated to ensure they use `http://` or `https://` protocols. Dangerous protocols like `javascript:` are rejected.
+- **Colors** -- Must match `#RRGGBB` hex format.
+- **Custom CSS** -- Script tags, `expression()` calls, `javascript:` URLs, and other known attack vectors are removed.
+- **Contact form submissions** -- All text fields are stripped of HTML before storage.
+- **Embed URLs** -- Validated against platform-specific patterns (e.g., YouTube, Spotify, SoundCloud).
 
 ## Authentication
 
-LinkDen uses [Better Auth](https://www.better-auth.com/) for authentication with email/password credentials. Key security properties:
+LinkDen uses [Better Auth](https://www.better-auth.com/) for authentication with email and password.
 
 - Sessions are signed with the `BETTER_AUTH_SECRET` environment variable.
-- All admin API routes use `protectedProcedure` which requires a valid session.
-- Public routes (`publicProcedure`) have limited scope: page data, contact form submission, analytics tracking, vCard, and setup token validation.
-
----
+- All admin routes require a valid session.
+- Public routes are limited to page data, contact submissions, analytics tracking, vCard downloads, and setup.
 
 ## CORS
 
-The API server enforces CORS origin checking. The `CORS_ORIGIN` environment variable must exactly match the frontend URL (including protocol, no trailing slash). Only requests from the configured origin are allowed to make cross-origin requests to the API.
+The API server checks the request origin against the `CORS_ORIGIN` environment variable. Only requests from your configured frontend URL are accepted.
 
----
+Make sure `CORS_ORIGIN` matches your frontend URL exactly (including protocol, no trailing slash).
 
 ## CAPTCHA
 
-The contact form supports optional CAPTCHA verification via Cloudflare Turnstile or Google reCAPTCHA. When configured, the server validates the CAPTCHA token server-side before accepting the submission. See [Contact Form](/docs/guide/contact-form) for configuration details.
+The contact form supports optional CAPTCHA verification via Cloudflare Turnstile or Google reCAPTCHA. When configured, tokens are validated server-side before accepting submissions. See [Contact Form](/docs/guide/contact-form) for setup details.

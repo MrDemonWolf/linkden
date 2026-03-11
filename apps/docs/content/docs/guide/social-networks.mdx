@@ -1,25 +1,22 @@
 ---
 title: Social Networks
-description: Manage the 100+ social network icons available for Social Icons blocks.
+description: Set up social media icons from 100+ supported platforms.
 ---
 
 # Social Networks
 
-LinkDen includes 100+ predefined social network icons from [Simple Icons](https://simpleicons.org/). Social networks are managed separately from blocks at `/admin/social`.
+LinkDen includes 100+ social network icons from [Simple Icons](https://simpleicons.org/). Manage them at `/admin/social`, then display them on your page with a Social Icons block.
 
-## Managing Social Networks
+## Finding and Activating Networks
 
-Navigate to `/admin/social` to see all available social networks. The page provides several tools for finding and managing networks:
+### Search
 
-### Combobox Search
+Use the search box to quickly find any network by name.
 
-A searchable dropdown (combobox) lets you quickly find any network by typing its name. Start typing and matching networks appear instantly, making it easy to locate specific platforms from the full catalog of 100+ icons.
+### Category Tabs
 
-### Category Filter Tabs
+Filter networks by category:
 
-Horizontal pill-style tabs group networks by category:
-
-- **All** -- Show every available network.
 - **Social** -- Twitter/X, Instagram, Facebook, TikTok, Threads, Bluesky, Mastodon, etc.
 - **Video** -- YouTube, Twitch, Vimeo.
 - **Music** -- Spotify, SoundCloud, Apple Music, Bandcamp.
@@ -27,54 +24,27 @@ Horizontal pill-style tabs group networks by category:
 - **Professional** -- LinkedIn, Dribbble, Behance.
 - **Messaging** -- Discord, Telegram, WhatsApp, Signal.
 - **Gaming** -- Steam, Epic Games, PlayStation, Xbox, Nintendo.
-- **Other** -- Reddit, Pinterest, Medium, Substack, Patreon, Ko-fi, Buy Me a Coffee, and more.
+- **Other** -- Reddit, Pinterest, Medium, Substack, Patreon, Ko-fi, and more.
 
-Click a tab to filter the list to that category.
+### Toggle and URL
 
-### Toggle and URL Entry
+Each network has a toggle switch and a URL field. Turn a network on, then enter the URL to your profile on that platform.
 
-Each network has a toggle switch and a URL field. Toggle a network on to activate it, then enter the URL for your profile on that platform. Networks with empty URLs show a guard prompt when toggled on.
+> **Tip:** Dark brand icons are automatically inverted in dark mode so they stay visible regardless of your theme.
 
-### Auto-Invert Dark Icons
+## Adding Social Icons to Your Page
 
-Brand icons that are too dark to see against a dark background are automatically inverted in dark mode. This ensures all icons remain visible regardless of the admin panel's theme setting, without requiring manual adjustments.
-
-### Fixed Dark Mode Text
-
-Network names and labels use proper contrast colors in dark mode, fixing previous readability issues.
-
-## Using Social Icons
-
-Once you have activated the networks you want:
+Once you've activated the networks you want:
 
 1. Go to `/admin/builder`.
 2. Click **Add Block** and select **Social Icons**.
-3. The block automatically uses your active social networks.
-4. Configure the display options:
+3. The block automatically pulls in your active networks.
+4. Customize the display:
 
 | Option | Description |
 |--------|-------------|
-| Icon size | Size of each social icon |
+| Icon size | Size of each icon |
 | Icon style | Filled, outlined, or rounded |
-| Show labels | Display the network name below each icon |
+| Show labels | Display network names below icons |
 | Spacing | Gap between icons |
-| Use brand colors | Use each network's official brand color |
-
-## Available Networks
-
-LinkDen includes icons for all major platforms:
-
-- **Social**: Twitter/X, Instagram, Facebook, TikTok, Snapchat, Threads, Bluesky, Mastodon
-- **Video**: YouTube, Twitch, Vimeo
-- **Music**: Spotify, SoundCloud, Apple Music, Bandcamp
-- **Development**: GitHub, GitLab, Bitbucket, Stack Overflow, CodePen
-- **Professional**: LinkedIn, Dribbble, Behance
-- **Messaging**: Discord, Telegram, WhatsApp, Signal
-- **Gaming**: Steam, Epic Games, PlayStation, Xbox, Nintendo
-- **Other**: Reddit, Pinterest, Medium, Substack, Patreon, Ko-fi, Buy Me a Coffee, and many more
-
-The full list is automatically updated from the Simple Icons library.
-
-## Icon Updates
-
-Social brand icons are sourced from the `@linkden/ui` package. The icon set is checked weekly via a GitHub Actions workflow that detects when new icons are available from Simple Icons.
+| Use brand colors | Use each network's official color |

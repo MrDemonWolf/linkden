@@ -1,79 +1,53 @@
 ---
 title: Analytics
-description: Track page views, link clicks, referrers, and visitor countries with the built-in privacy-friendly analytics.
+description: Track page views, link clicks, referrers, and visitor countries with built-in privacy-friendly analytics.
 ---
 
 # Analytics
 
-LinkDen includes a built-in analytics dashboard at `/admin/analytics` that tracks visitor activity without relying on third-party services.
+See how your page is performing at `/admin/analytics`. LinkDen tracks visitor activity without relying on third-party services -- all data stays in your own database.
 
-## Dashboard
+## Dashboard Overview
 
-### Period Selector
+### Time Period
 
-Filter all analytics data by time period:
-
-- **7 days** (default)
-- **30 days**
-- **90 days**
-
-All queries re-run when the period changes.
+Filter all data by **7 days** (default), **30 days**, or **90 days**. Changing the period updates every chart and stat on the page.
 
 ### Stat Cards
 
-Two summary cards displayed in a 2-column grid:
+Two cards at the top give you the big picture:
 
-| Card | Icon | Description |
-|------|------|-------------|
-| Total Views | Eye (blue) | Page views for the selected period |
-| Total Clicks | MousePointerClick (green) | Link clicks for the selected period |
+- **Total Views** -- Page views for the selected period.
+- **Total Clicks** -- Link clicks for the selected period.
 
 ### Views Over Time
 
-A bar chart powered by [Recharts](https://recharts.org/) showing daily page views for the selected period. The chart uses a `ChartContainer` wrapper with a `ResponsiveContainer` for automatic resizing. Bars highlight on hover and show the count via a tooltip. Date labels display month and day (e.g., "Feb 23").
+A bar chart showing daily page views. Hover over any bar to see the exact count for that day.
 
-### Bottom Grid
+### Top Links, Referrers, and Countries
 
-Three cards in a 3-column layout (stacks to 1 column on mobile):
+Three cards below the chart break down your traffic:
 
-| Card | Description | Limit |
-|------|-------------|-------|
-| **Top Links** | Block title, URL, and click count ranked by clicks | Top 10 |
-| **Referrers** | Referrer domain and count ("Direct" for null referrers) | Top 10 |
-| **Countries** | Country name and visit count | Top 20 |
+- **Top Links** -- Your most-clicked links ranked by click count (top 10).
+- **Referrers** -- Where your visitors are coming from. Direct visits (no referrer) show as "Direct" (top 10).
+- **Countries** -- Which countries your visitors are in (top 20).
 
-## What is Tracked
+## What Gets Tracked
 
-### Page Views
+**Page views** record the timestamp, referrer, and visitor country each time someone visits your public page.
 
-Every visit to your public link page is recorded with:
-- Timestamp
-- Referrer URL
-- User agent
-- Country (from Cloudflare `CF-IPCountry` header)
-
-### Link Clicks
-
-Every click on a link block is tracked with:
-- Block ID
-- Referrer URL
-- User agent
-- Country
+**Link clicks** record which link was clicked, the referrer, and visitor country.
 
 ## Privacy
 
-LinkDen's analytics are privacy-focused:
+LinkDen's analytics are designed to respect your visitors' privacy:
 
-- **No cookies** are set for tracking.
-- **No IP addresses** are stored. Country data comes from the Cloudflare header.
-- **No third-party scripts** are loaded on the public page.
-- **No fingerprinting** techniques are used.
-- Data is stored in your own D1 database, not sent to any external service.
+- No cookies are set for tracking.
+- No IP addresses are stored. Country data comes from Cloudflare's request header.
+- No third-party scripts are loaded on the public page.
+- No fingerprinting techniques are used.
+- All data lives in your own database and is never sent to an external service.
 
-## Dashboard on Home Page
+## Home Page Summary
 
-The admin dashboard at `/admin` also shows a mini bar chart with views over the last 7 days, plus 3 stat cards (total views, total clicks, unread contacts). The full analytics page provides more detailed breakdowns.
-
-## Data Retention
-
-Analytics data is stored indefinitely in your D1 database. Use the export feature in settings to back up data if needed.
+The admin home page at `/admin` also shows a mini chart with views over the last 7 days, plus quick stats for total views, total clicks, and unread contacts.
