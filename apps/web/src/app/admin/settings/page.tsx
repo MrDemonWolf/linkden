@@ -4,50 +4,20 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-	Search as SearchIcon,
-	Shield,
-	Mail,
 	Save,
-	Database,
 	Undo2,
-	ArrowRightLeft,
-	type LucideIcon,
 } from "lucide-react";
 import { trpc } from "@/utils/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/admin/page-header";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
-import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 import { SeoSection } from "@/components/admin/settings/seo-section";
 import { CaptchaSection } from "@/components/admin/settings/captcha-section";
 import { EmailSection } from "@/components/admin/settings/email-section";
 import { DataSection } from "@/components/admin/settings/data-section";
 import { MigrationSection } from "@/components/admin/settings/migration-section";
-
-// ---- Section definitions ----
-type SectionId =
-	| "seo"
-	| "captcha"
-	| "email"
-	| "data"
-	| "migration";
-
-interface SectionDef {
-	id: SectionId;
-	label: string;
-	icon: LucideIcon;
-}
-
-const SECTIONS: SectionDef[] = [
-	{ id: "seo", label: "SEO", icon: SearchIcon },
-	{ id: "captcha", label: "CAPTCHA", icon: Shield },
-	{ id: "email", label: "Email", icon: Mail },
-	{ id: "data", label: "Data & Info", icon: Database },
-	{ id: "migration", label: "Migration", icon: ArrowRightLeft },
-];
 
 // ---- Saved State (global settings only) ----
 interface SavedState {
@@ -96,11 +66,7 @@ export default function SettingsPage() {
 	const importData = useMutation(trpc.backup.import.mutationOptions());
 
 	const fileInputRef = useRef<HTMLInputElement>(null);
-	const [activeSection, setActiveSection] = useState<SectionId>("seo");
 
-	const { getAnimationProps } = useEntranceAnimation(
-		!settingsQuery.isLoading,
-	);
 
 	// Saved state for dirty tracking
 	const [savedState, setSavedState] = useState<SavedState>({
@@ -293,90 +259,15 @@ export default function SettingsPage() {
 		);
 	}
 
-	const headerAnim = getAnimationProps(0);
-	const sidebarAnim = getAnimationProps(1);
-	const contentAnim = getAnimationProps(2);
-
-	const sectionContent: Record<SectionId, React.ReactNode> = {
-		seo: (
-			<SeoSection
-				seoTitle={seoTitle}
-				seoDescription={seoDescription}
-				seoOgImage={seoOgImage}
-				seoOgMode={seoOgMode}
-				seoOgTemplate={seoOgTemplate}
-				profileName={settingsQuery.data?.profile_name ?? ""}
-				bio={settingsQuery.data?.bio ?? ""}
-				primaryColor={settingsQuery.data?.custom_primary ?? "#6366f1"}
-				avatarUrl={settingsQuery.data?.avatar_url ?? ""}
-				onSeoTitleChange={setSeoTitle}
-				onSeoDescriptionChange={setSeoDescription}
-				onSeoOgImageChange={setSeoOgImage}
-				onSeoOgModeChange={setSeoOgMode}
-				onSeoOgTemplateChange={setSeoOgTemplate}
-			/>
-		),
-		captcha: (
-			<CaptchaSection
-				captchaProvider={captchaProvider}
-				captchaSiteKey={captchaSiteKey}
-				captchaSecretKey={captchaSecretKey}
-				onCaptchaProviderChange={setCaptchaProvider}
-				onCaptchaSiteKeyChange={setCaptchaSiteKey}
-				onCaptchaSecretKeyChange={setCaptchaSecretKey}
-			/>
-		),
-		email: (
-			<EmailSection
-				emailProvider={emailProvider}
-				emailApiKey={emailApiKey}
-				emailFrom={emailFrom}
-				onEmailProviderChange={setEmailProvider}
-				onEmailApiKeyChange={setEmailApiKey}
-				onEmailFromChange={setEmailFrom}
-			/>
-		),
-		data: (
-			<DataSection
-				onExport={handleExport}
-				onImport={handleImport}
-				isExporting={exportData.isFetching}
-				isImporting={importData.isPending}
-				fileInputRef={fileInputRef}
-				versionCheck={versionCheck.data ?? null}
-				onCheckUpdates={() =>
-					qc.invalidateQueries({
-						queryKey:
-							trpc.version.checkUpdate.queryOptions().queryKey,
-					})
-				}
-				adminBrandingEnabled={adminBrandingEnabled}
-				onAdminBrandingEnabledChange={setAdminBrandingEnabled}
-			/>
-		),
-		migration: <MigrationSection onImportComplete={invalidate} />,
-	};
-
-	const activeLabel =
-		SECTIONS.find((s) => s.id === activeSection)?.label ?? "";
-
 	return (
-		<div className="space-y-4">
+		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
 			<PageHeader
 				title="Settings"
-				description={
-					isDirty
-						? "You have unsaved changes"
-						: "Configure your LinkDen instance"
-				}
+				description={isDirty ? "You have unsaved changes" : "Configure your LinkDen instance"}
 				actions={
 					<>
 						{isDirty && (
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={handleDiscard}
-							>
+							<Button variant="ghost" size="sm" onClick={handleDiscard}>
 								<Undo2 className="mr-1.5 h-3.5 w-3.5" />
 								Discard
 							</Button>
@@ -388,94 +279,89 @@ export default function SettingsPage() {
 							onClick={handleSave}
 						>
 							<Save className="mr-1.5 h-3.5 w-3.5" />
-							{updateSettings.isPending ? "Saving..." : "Save"}
+							{updateSettings.isPending ? "Saving…" : "Save"}
 						</Button>
 					</>
 				}
-				className={cn(headerAnim.className)}
-				style={headerAnim.style}
 			/>
 
-			{/* Mobile pills */}
-			<div
-				className={cn(
-					"flex gap-2 overflow-x-auto scrollbar-none md:hidden",
-					sidebarAnim.className,
-				)}
-				style={sidebarAnim.style}
-			>
-				{SECTIONS.map((section) => {
-					const Icon = section.icon;
-					const isActive = activeSection === section.id;
-					return (
-						<button
-							key={section.id}
-							type="button"
-							onClick={() => setActiveSection(section.id)}
-							className={cn(
-								"inline-flex items-center shrink-0 rounded-full px-4 py-2 text-xs font-medium transition-all duration-200",
-								isActive
-									? "border-transparent bg-primary text-primary-foreground shadow-sm ring-1 ring-primary/30"
-									: "border border-border/50 bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground",
-							)}
-						>
-							<Icon className="mr-1.5 h-3 w-3" />
-							{section.label}
-						</button>
-					);
-				})}
-			</div>
+			<Card>
+				<CardContent className="pt-4 space-y-4">
+					<h2 className="text-sm font-semibold">SEO</h2>
+					<SeoSection
+						seoTitle={seoTitle}
+						seoDescription={seoDescription}
+						seoOgImage={seoOgImage}
+						seoOgMode={seoOgMode}
+						seoOgTemplate={seoOgTemplate}
+						profileName={settingsQuery.data?.profile_name ?? ""}
+						bio={settingsQuery.data?.bio ?? ""}
+						primaryColor={settingsQuery.data?.custom_primary ?? "#6366f1"}
+						avatarUrl={settingsQuery.data?.avatar_url ?? ""}
+						onSeoTitleChange={setSeoTitle}
+						onSeoDescriptionChange={setSeoDescription}
+						onSeoOgImageChange={setSeoOgImage}
+						onSeoOgModeChange={setSeoOgMode}
+						onSeoOgTemplateChange={setSeoOgTemplate}
+					/>
+				</CardContent>
+			</Card>
 
-			{/* Desktop sidebar + content */}
-			<div className="flex gap-6">
-				{/* Sidebar (desktop) */}
-				<nav
-					aria-label="Settings sections"
-					className={cn(
-						"hidden md:block w-48 shrink-0",
-						sidebarAnim.className,
-					)}
-					style={sidebarAnim.style}
-				>
-					<div className="sticky top-20 rounded-2xl bg-white/50 dark:bg-white/5 backdrop-blur-2xl border border-white/20 dark:border-white/10 p-1.5 space-y-0.5">
-						{SECTIONS.map((section) => {
-							const Icon = section.icon;
-							const isActive = activeSection === section.id;
-							return (
-								<button
-									key={section.id}
-									type="button"
-									onClick={() => setActiveSection(section.id)}
-									className={cn(
-										"flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium transition-all",
-										isActive
-											? "bg-primary/10 text-primary border-l-2 border-primary shadow-[inset_0_0_12px_rgba(var(--primary-rgb,99,102,241),0.08)]"
-											: "text-muted-foreground hover:bg-white/10 hover:text-foreground",
-									)}
-								>
-									<Icon className="h-4 w-4 shrink-0" />
-									{section.label}
-								</button>
-							);
-						})}
-					</div>
-				</nav>
+			<Card>
+				<CardContent className="pt-4 space-y-4">
+					<h2 className="text-sm font-semibold">Security</h2>
+					<CaptchaSection
+						captchaProvider={captchaProvider}
+						captchaSiteKey={captchaSiteKey}
+						captchaSecretKey={captchaSecretKey}
+						onCaptchaProviderChange={setCaptchaProvider}
+						onCaptchaSiteKeyChange={setCaptchaSiteKey}
+						onCaptchaSecretKeyChange={setCaptchaSecretKey}
+					/>
+				</CardContent>
+			</Card>
 
-				{/* Content */}
-				<div
-					className={cn("flex-1 min-w-0", contentAnim.className)}
-					style={contentAnim.style}
-				>
-					<Card>
-						<CardContent className="space-y-4 pt-2">
-							<h2 className="text-sm font-semibold">
-								{activeLabel}
-							</h2>
-							{sectionContent[activeSection]}
-						</CardContent>
-					</Card>
-				</div>
-			</div>
+			<Card>
+				<CardContent className="pt-4 space-y-4">
+					<h2 className="text-sm font-semibold">Email</h2>
+					<EmailSection
+						emailProvider={emailProvider}
+						emailApiKey={emailApiKey}
+						emailFrom={emailFrom}
+						onEmailProviderChange={setEmailProvider}
+						onEmailApiKeyChange={setEmailApiKey}
+						onEmailFromChange={setEmailFrom}
+					/>
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardContent className="pt-4 space-y-4">
+					<h2 className="text-sm font-semibold">Data & Info</h2>
+					<DataSection
+						onExport={handleExport}
+						onImport={handleImport}
+						isExporting={exportData.isFetching}
+						isImporting={importData.isPending}
+						fileInputRef={fileInputRef}
+						versionCheck={versionCheck.data ?? null}
+						onCheckUpdates={() =>
+							qc.invalidateQueries({
+								queryKey: trpc.version.checkUpdate.queryOptions().queryKey,
+							})
+						}
+						adminBrandingEnabled={adminBrandingEnabled}
+						onAdminBrandingEnabledChange={setAdminBrandingEnabled}
+					/>
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardContent className="pt-4 space-y-4">
+					<h2 className="text-sm font-semibold">Migration</h2>
+					<MigrationSection onImportComplete={invalidate} />
+				</CardContent>
+			</Card>
 		</div>
 	);
 }

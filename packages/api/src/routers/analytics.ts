@@ -120,10 +120,10 @@ export const analyticsRouter = router({
 
 		const results = await db
 			.select({
-				blockId: linkClick.blockId,
-				blockTitle: block.title,
-				blockUrl: block.url,
-				count: count(),
+				id: linkClick.blockId,
+				title: block.title,
+				url: block.url,
+				clicks: count(),
 			})
 			.from(linkClick)
 			.leftJoin(block, eq(linkClick.blockId, block.id))

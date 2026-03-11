@@ -9,6 +9,66 @@ All notable changes to LinkDen are documented here. For the full commit history,
 
 ---
 
+## v0.2.0
+
+**March 2026**
+
+### Builder
+
+- Touch + keyboard drag-and-drop via `@dnd-kit` (replaces HTML5 DnD)
+- Slide-in edit panel replaces modal dialog — preview stays visible while editing
+- On `xl` screens: 3-column layout (blocks | edit panel | preview simultaneously)
+- Expandable block picker grid replaces dropdown — type cards with icon + description
+- Type-specific accent colors on block rows (colored left bar + icon badge per type)
+
+### New Block Type — vCard
+
+- **Download Contact** block (6th block type)
+- Generates a VCard 3.0 `.vcf` file for visitors to save your contact info
+- Configurable button text and emoji
+
+### Form Block (renamed from Contact Form)
+
+- Block type renamed from "Contact Form" to "Form"
+- Added presets: contact, feedback, RSVP, and more
+
+### Apple Wallet
+
+- Glass-morphism card UI with dark navy default colors
+- R2-hosted logo upload
+- QR code generation via `qrcode` library
+- HIG-compliant pass layout (header → primary → secondary → QR)
+
+### Appearance
+
+- Visual theme preset tiles with color swatches (replaces text list)
+- Sticky bottom publish bar — appears only when there are unsaved changes
+- Banner upload with preset and custom modes
+- Verified badge toggle
+
+### Analytics
+
+- Period selector in charts
+
+### Forms (renamed from Contacts)
+
+- Section renamed from Contacts → Forms
+- List + detail split view
+- Bulk actions bar (mark read, delete)
+
+### Settings
+
+- Sidebar navigation replaces tabs
+- OG image template picker with live preview
+- "Powered by LinkDen" branding toggle
+- LinkStack import migration wizard
+
+### Infrastructure
+
+- `pnpm ship` — canonical alias for Cloudflare production deploy
+
+---
+
 ## v0.1.0 -- Initial Release
 
 **February 2026**

@@ -74,6 +74,7 @@ export const blocksRouter = router({
 					"social_icons",
 					"embed",
 					"form",
+					"vcard",
 				]),
 				title: z.string().optional(),
 				url: z.string().optional(),

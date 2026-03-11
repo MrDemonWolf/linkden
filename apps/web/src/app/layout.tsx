@@ -1,16 +1,20 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Montserrat, Roboto } from "next/font/google";
 import "../index.css";
 import Providers from "@/components/providers";
 
-const geistSans = Geist({
-	variable: "--font-geist-sans",
+const montserrat = Montserrat({
 	subsets: ["latin"],
+	variable: "--font-display",
+	weight: ["600", "700", "800"],
+	display: "swap",
 });
 
-const geistMono = Geist_Mono({
-	variable: "--font-geist-mono",
+const roboto = Roboto({
 	subsets: ["latin"],
+	variable: "--font-sans",
+	weight: ["400", "500"],
+	display: "swap",
 });
 
 async function fetchSettings(): Promise<Record<string, string>> {
@@ -71,7 +75,7 @@ export default function RootLayout({
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+				className={`${montserrat.variable} ${roboto.variable} antialiased`}
 			>
 				<Providers>{children}</Providers>
 			</body>

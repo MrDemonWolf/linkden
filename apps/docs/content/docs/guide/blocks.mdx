@@ -1,11 +1,11 @@
 ---
 title: Blocks
-description: Add links, headers, embeds, social icons, and contact forms to your page with the drag-and-drop builder.
+description: Add links, headers, embeds, social icons, forms, and vCard download buttons to your page with the drag-and-drop builder.
 ---
 
 # Blocks
 
-Build your page by adding blocks in the builder at `/admin/builder`. LinkDen supports 5 block types that you can mix, match, and reorder however you like.
+Build your page by adding blocks in the builder at `/admin/builder`. LinkDen supports 6 block types that you can mix, match, and reorder however you like.
 
 ## Block Types
 
@@ -39,19 +39,29 @@ Embed content from YouTube, Spotify, SoundCloud, or any custom URL directly on y
 - **Embed URL** -- The content URL to embed.
 - **Style options** -- aspect ratio, max width, show title.
 
-### Contact Form
+### Form
 
-An inline contact form so visitors can message you without leaving your page.
+An inline contact form so visitors can message you without leaving your page. Choose from built-in presets (contact, feedback, RSVP, and more) or configure fields manually.
 
+- **Preset** -- Quickly configure fields using a preset template.
 - **Style options** -- button text, button emoji, success message.
 
-> **Tip:** The contact form requires setup in `/admin/settings` first. See [Contact Form](/docs/guide/contact-form) for details.
+> **Tip:** The form block requires setup in `/admin/settings` first. See [Contact Form](/docs/guide/contact-form) for details.
+
+### vCard
+
+A **Download Contact** button that generates a VCard 3.0 `.vcf` file. Visitors can tap to save your contact info directly to their device.
+
+- **Button text** -- Label shown on the download button.
+- **Button emoji** -- Optional emoji prefix.
+
+> **Tip:** Contact details are pulled from your profile settings.
 
 ## Adding a Block
 
 1. Open the builder at `/admin/builder`.
-2. Click **Add Block** to open the dropdown.
-3. Select a block type.
+2. Click **Add Block** to expand the block picker grid.
+3. Click the card for the block type you want.
 4. The block appears and its edit panel opens automatically.
 
 ## Editing a Block
