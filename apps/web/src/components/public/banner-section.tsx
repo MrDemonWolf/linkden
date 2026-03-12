@@ -27,6 +27,8 @@ export function BannerSection({
 
 	useEffect(() => {
 		if (isPreview) return;
+		const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		if (prefersReducedMotion) return;
 		const handleScroll = () => {
 			if (!bannerRef.current) return;
 			const scrollY = window.scrollY;
