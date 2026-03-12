@@ -17,7 +17,6 @@ const db = await D1Database("database", {
 
 const imagesBucket = await R2Bucket("images");
 
-// Deploys to: linkden.pages.dev
 export const web = await Nextjs("linkden", {
   cwd: "../../apps/web",
   bindings: {
@@ -50,8 +49,8 @@ export const web = await Nextjs("linkden", {
   },
 });
 
-// Deploys to: linkden-server.<account>.workers.dev
-export const server = await Worker("linkden-server", {
+export const server = await Worker("server", {
+  name: "linkden-api",
   cwd: "../../apps/server",
   entrypoint: "src/index.ts",
   compatibility: "node",

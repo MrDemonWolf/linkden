@@ -7,12 +7,13 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { rateLimiter } from "hono-rate-limiter";
+import type { Context } from "hono";
 
 type Bindings = {
   IMAGES_BUCKET?: R2Bucket;
 };
 
-const getClientIP = (c: any) =>
+const getClientIP = (c: Context) =>
   c.req.header("cf-connecting-ip") || c.req.header("x-forwarded-for") || "unknown";
 
 const app = new Hono();
