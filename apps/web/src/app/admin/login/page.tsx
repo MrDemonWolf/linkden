@@ -21,6 +21,9 @@ export default function AdminLoginPage() {
 	const [isMagicLinkSubmitting, setIsMagicLinkSubmitting] = useState(false);
 	const [magicLinkSent, setMagicLinkSent] = useState(false);
 	const [formError, setFormError] = useState("");
+	const [forgotMode, setForgotMode] = useState(false);
+	const [isForgotSubmitting, setIsForgotSubmitting] = useState(false);
+	const [resetLinkSent, setResetLinkSent] = useState(false);
 
 	const setupStatus = useQuery(trpc.public.getSetupStatus.queryOptions());
 	const magicLinkEnabled = setupStatus.data?.magicLinkEnabled ?? true;
@@ -81,6 +84,34 @@ export default function AdminLoginPage() {
 		}
 	};
 
+	const handleForgotPassword = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!email) {
+			setFormError("Please enter your email address");
+			return;
+		}
+		setFormError("");
+		setIsForgotSubmitting(true);
+		try {
+			await authClient.forgetPassword(
+				{ email, redirectTo: "/admin/reset-password" },
+				{
+					onSuccess: () => {
+						setResetLinkSent(true);
+						toast.success("Reset link sent! Check your email.");
+					},
+					onError: (error) => {
+						const msg = error.error.message || "Failed to send reset link";
+						setFormError(msg);
+						toast.error(msg);
+					},
+				},
+			);
+		} finally {
+			setIsForgotSubmitting(false);
+		}
+	};
+
 	return (
 		<div className="admin-glass-bg flex min-h-screen items-center justify-center px-4">
 			<div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both">
@@ -106,11 +137,93 @@ export default function AdminLoginPage() {
 						</p>
 						<button
 							type="button"
-							className="text-xs text-primary underline underline-offset-2 hover:no-underline"
+							className="text-xs text-primary underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-ring rounded"
 							onClick={() => setMagicLinkSent(false)}
 						>
 							Back to sign in
 						</button>
+					</div>
+				) : resetLinkSent ? (
+					<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl text-center space-y-3">
+						<div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+							<Mail className="h-5 w-5 text-primary" />
+						</div>
+						<h2 className="text-sm font-semibold">Check your email</h2>
+						<p className="text-xs text-muted-foreground">
+							We sent a password reset link to <span className="font-medium text-foreground">{email}</span>. Click it to reset your password.
+						</p>
+						<button
+							type="button"
+							className="text-xs text-primary underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-ring rounded"
+							onClick={() => { setResetLinkSent(false); setForgotMode(false); setFormError(""); }}
+						>
+							Back to sign in
+						</button>
+					</div>
+				) : forgotMode ? (
+					<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl">
+						<form onSubmit={handleForgotPassword} className="space-y-4" aria-describedby={formError ? "login-error" : undefined}>
+							<div aria-live="polite" aria-atomic="true">
+								{formError && (
+									<div
+										id="login-error"
+										className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive"
+									>
+										<AlertCircle className="h-3.5 w-3.5 shrink-0" />
+										<span>{formError}</span>
+									</div>
+								)}
+							</div>
+
+							<div className="space-y-1">
+								<h2 className="text-sm font-semibold">Reset your password</h2>
+								<p className="text-xs text-muted-foreground">
+									Enter your email address and we&apos;ll send you a link to reset your password.
+								</p>
+							</div>
+
+							<div className="space-y-1.5">
+								<Label htmlFor="forgot-email" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+									Email Address
+								</Label>
+								<Input
+									id="forgot-email"
+									type="email"
+									placeholder="you@example.com"
+									value={email}
+									onChange={(e) => setEmail(e.target.value)}
+									autoComplete="email"
+									className="dark:bg-input/30 border-white/15"
+									required
+								/>
+							</div>
+
+							<Button
+								type="submit"
+								variant="default"
+								className="w-full"
+								disabled={isForgotSubmitting}
+							>
+								{isForgotSubmitting ? (
+									<>
+										<Loader2 className="h-4 w-4 animate-spin" />
+										Sending...
+									</>
+								) : (
+									"Send Reset Link"
+								)}
+							</Button>
+
+							<div className="text-center">
+								<button
+									type="button"
+									className="text-xs text-primary underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-ring rounded"
+									onClick={() => { setForgotMode(false); setFormError(""); }}
+								>
+									Back to sign in
+								</button>
+							</div>
+						</form>
 					</div>
 				) : (
 					<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl">
@@ -148,9 +261,13 @@ export default function AdminLoginPage() {
 									<Label htmlFor="password" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
 										Password
 									</Label>
-									<span className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
+									<button
+										type="button"
+										onClick={() => { setForgotMode(true); setFormError(""); }}
+										className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
+									>
 										Forgot?
-									</span>
+									</button>
 								</div>
 								<div className="relative">
 									<Input
@@ -202,7 +319,7 @@ export default function AdminLoginPage() {
 										<div className="w-full border-t border-white/10" />
 									</div>
 									<div className="relative flex justify-center">
-										<span className="bg-transparent px-2 text-[10px] text-muted-foreground">or</span>
+										<span className="bg-transparent px-2 text-xs text-muted-foreground">or</span>
 									</div>
 								</div>
 

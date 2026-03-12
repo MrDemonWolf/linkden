@@ -92,8 +92,9 @@ export default function SetupPage() {
 
 	if (tokenValidation.isLoading) {
 		return (
-			<div className="flex min-h-screen items-center justify-center">
+			<div className="flex min-h-screen items-center justify-center" role="status" aria-label="Loading">
 				<div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+				<span className="sr-only">Loading</span>
 			</div>
 		);
 	}
@@ -322,7 +323,7 @@ export default function SetupPage() {
 							<div className="space-y-1.5">
 								<div className="flex items-center justify-between">
 									<Label htmlFor="setup-bio">Bio</Label>
-									<span className="text-[10px] text-muted-foreground">
+									<span className="text-xs text-muted-foreground">
 										{bio.length}/{BIO_MAX_LENGTH}
 									</span>
 								</div>
