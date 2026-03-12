@@ -15,19 +15,19 @@
     "@linkden/auth": "workspace:*",
     "@linkden/db": "workspace:*",
     "@linkden/env": "workspace:*",
-    "@trpc/server": "catalog:",
-    "better-auth": "catalog:",
-    "dotenv": "catalog:",
-    "hono": "catalog:",
-    "zod": "catalog:"
+    "@trpc/server": "^11.7.2",
+    "better-auth": "^1.4.18",
+    "dotenv": "^17.2.2",
+    "hono": "^4.8.2",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "catalog:",
+    "@cloudflare/workers-types": "^4.20251213.0",
     "@linkden/config": "workspace:*",
     "@types/node": "^22.13.14",
-    "alchemy": "catalog:",
+    "alchemy": "^0.82.1",
     "tsdown": "^0.16.5",
-    "typescript": "catalog:",
-    "wrangler": "catalog:"
+    "typescript": "^5",
+    "wrangler": "^4.54.0"
   }
 }

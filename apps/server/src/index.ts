@@ -3,7 +3,10 @@ import { trpcServer } from "@hono/trpc-server";
 import { createContext } from "@linkden/api/context";
 import { appRouter } from "@linkden/api/routers/index";
 import { auth } from "@linkden/auth";
+import { db } from "@linkden/db";
+import { siteSettings } from "@linkden/db/schema/index";
 import { env } from "@linkden/env/server";
+import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
@@ -40,6 +43,14 @@ app.use("/api/auth/forget-password", cloudflareRateLimiter<{ Bindings: Bindings 
   rateLimitBinding: (c) => c.env.RL_STRICT,
   keyGenerator: rlKeyGenerator,
 }));
+// Block magic link requests when the feature is disabled
+app.use("/api/auth/magic-link/*", async (c, next) => {
+	const [row] = await db.select().from(siteSettings).where(eq(siteSettings.key, "magic_link_enabled"));
+	if (row?.value === "false") {
+		return c.json({ error: "Magic link sign-in is disabled" }, 403);
+	}
+	await next();
+});
 app.use("/api/auth/magic-link/*", cloudflareRateLimiter<{ Bindings: Bindings }>({
   rateLimitBinding: (c) => c.env.RL_STRICT,
   keyGenerator: rlKeyGenerator,

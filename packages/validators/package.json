@@ -6,10 +6,10 @@
     "./*": { "default": "./src/*.ts" }
   },
   "dependencies": {
-    "zod": "catalog:"
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@linkden/config": "workspace:*",
-    "typescript": "catalog:"
+    "typescript": "^5"
   }
 }

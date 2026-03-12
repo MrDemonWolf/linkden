@@ -10,6 +10,8 @@ import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@linkden/ui";
+import { Separator } from "@linkden/ui";
 
 export default function AdminLoginPage() {
 	const [email, setEmail] = useState("");
@@ -22,9 +24,12 @@ export default function AdminLoginPage() {
 	const [resetLinkSent, setResetLinkSent] = useState(false);
 	const [rememberMe, setRememberMe] = useState(true);
 	const [loginSuccess, setLoginSuccess] = useState(false);
+	const [isMagicLinkSubmitting, setIsMagicLinkSubmitting] = useState(false);
+	const [magicLinkSent, setMagicLinkSent] = useState(false);
 
 	const setupStatus = useQuery(trpc.public.getSetupStatus.queryOptions());
 	const branding = setupStatus.data?.branding;
+	const magicLinkEnabled = setupStatus.data?.magicLinkEnabled ?? false;
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -85,6 +90,32 @@ export default function AdminLoginPage() {
 		}
 	};
 
+	const handleMagicLink = async () => {
+		if (!email) {
+			setFormError("Please enter your email address");
+			return;
+		}
+		setFormError("");
+		setIsMagicLinkSubmitting(true);
+		try {
+			await authClient.signIn.magicLink(
+				{ email, callbackURL: "/admin" },
+				{
+					onSuccess: () => {
+						setMagicLinkSent(true);
+					},
+					onError: (error) => {
+						const msg = error.error.message || "Failed to send magic link";
+						setFormError(msg);
+						toast.error(msg);
+					},
+				},
+			);
+		} finally {
+			setIsMagicLinkSubmitting(false);
+		}
+	};
+
 	return (
 		<div className="admin-glass-bg flex min-h-screen items-center justify-center px-4">
 			<div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both">
@@ -111,6 +142,23 @@ export default function AdminLoginPage() {
 					<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl text-center space-y-3">
 						<Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />
 						<p className="text-sm font-medium">Login successful, redirecting...</p>
+					</div>
+				) : magicLinkSent ? (
+					<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl text-center space-y-3">
+						<div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+							<Mail className="h-5 w-5 text-primary" />
+						</div>
+						<h2 className="text-sm font-semibold">Check your email</h2>
+						<p className="text-xs text-muted-foreground">
+							We sent a magic link to <span className="font-medium text-foreground">{email}</span>. Click it to sign in.
+						</p>
+						<button
+							type="button"
+							className="text-xs text-primary underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-ring rounded"
+							onClick={() => { setMagicLinkSent(false); setFormError(""); }}
+						>
+							Back to sign in
+						</button>
 					</div>
 				) : resetLinkSent ? (
 					<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl text-center space-y-3">
@@ -264,16 +312,16 @@ export default function AdminLoginPage() {
 								</div>
 							</div>
 
-							<label htmlFor="remember-me" className="flex items-center gap-2 cursor-pointer">
-								<input
+							<div className="flex items-center gap-2">
+								<Checkbox
 									id="remember-me"
-									type="checkbox"
 									checked={rememberMe}
-									onChange={(e) => setRememberMe(e.target.checked)}
-									className="h-3.5 w-3.5 rounded border-muted-foreground/25 accent-primary"
+									onCheckedChange={(checked) => setRememberMe(checked === true)}
 								/>
-								<span className="text-xs text-muted-foreground">Keep me signed in</span>
-							</label>
+								<Label htmlFor="remember-me" className="text-xs text-muted-foreground cursor-pointer">
+									Keep me signed in
+								</Label>
+							</div>
 
 							<Button
 								type="submit"
@@ -291,6 +339,37 @@ export default function AdminLoginPage() {
 								)}
 							</Button>
 						</form>
+
+						{magicLinkEnabled && (
+							<div className="mt-4 space-y-4">
+								<div className="relative">
+									<Separator />
+									<span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-transparent px-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground backdrop-blur-sm">
+										or continue with
+									</span>
+								</div>
+
+								<Button
+									type="button"
+									variant="outline"
+									className="w-full"
+									disabled={isMagicLinkSubmitting}
+									onClick={handleMagicLink}
+								>
+									{isMagicLinkSubmitting ? (
+										<>
+											<Loader2 className="h-4 w-4 animate-spin" />
+											Sending...
+										</>
+									) : (
+										<>
+											<Mail className="h-4 w-4" />
+											Sign in with Magic Link
+										</>
+									)}
+								</Button>
+							</div>
+						)}
 					</div>
 				)}
 

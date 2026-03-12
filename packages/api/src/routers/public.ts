@@ -170,6 +170,15 @@ export const publicRouter = router({
 			}),
 		)
 		.mutation(async ({ input }) => {
+			// Check if contact form is enabled
+			const [contactEnabled] = await db
+				.select()
+				.from(siteSettings)
+				.where(eq(siteSettings.key, "contact_form_enabled"));
+			if (contactEnabled?.value !== "true") {
+				throw new Error("Contact form is disabled");
+			}
+
 			// Validate CAPTCHA if configured
 			const [captchaProvider] = await db
 				.select()
@@ -274,6 +283,15 @@ export const publicRouter = router({
 		}),
 
 	getVCard: publicProcedure.query(async () => {
+		// Check global vcard setting
+		const [vcardSetting] = await db
+			.select()
+			.from(siteSettings)
+			.where(eq(siteSettings.key, "vcard_enabled"));
+		if (vcardSetting?.value !== "true") {
+			return { enabled: false, vcardString: null };
+		}
+
 		const [vcardBlock] = await db
 			.select()
 			.from(block)

@@ -14,16 +14,16 @@
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
-    "@libsql/client": "catalog:",
+    "@libsql/client": "0.15.15",
     "@linkden/env": "workspace:*",
-    "dotenv": "catalog:",
+    "dotenv": "^17.2.2",
     "drizzle-orm": "^0.45.1",
-    "libsql": "catalog:",
-    "zod": "catalog:"
+    "libsql": "0.5.22",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@linkden/config": "workspace:*",
     "drizzle-kit": "^0.31.8",
-    "typescript": "catalog:"
+    "typescript": "^5"
   }
 }
