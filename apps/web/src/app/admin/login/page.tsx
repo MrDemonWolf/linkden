@@ -28,9 +28,7 @@ export default function AdminLoginPage() {
 
 	const setupStatus = useQuery(trpc.public.getSetupStatus.queryOptions());
 	const magicLinkEnabled = setupStatus.data?.magicLinkEnabled ?? true;
-
-	const brandingQuery = useQuery(trpc.public.getBranding.queryOptions());
-	const branding = brandingQuery.data;
+	const branding = setupStatus.data?.branding;
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
