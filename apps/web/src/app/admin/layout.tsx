@@ -120,7 +120,7 @@ function SidebarContent({
 				aria-current={isActive ? "page" : undefined}
 				aria-label={item.label === "Forms" && unreadCount > 0 ? `Forms, ${unreadCount} unread` : undefined}
 				className={cn(
-					"flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium transition-all",
+					"flex items-center gap-2.5 rounded-lg px-3 py-2 min-h-[44px] text-xs font-medium transition-all",
 					isActive
 						? "bg-primary/10 text-primary border-l-2 border-primary -ml-px"
 						: "text-muted-foreground hover:bg-white/10 hover:backdrop-blur-sm hover:text-foreground",
@@ -147,7 +147,7 @@ function SidebarContent({
 				<span className="flex-1 text-sm font-semibold tracking-tight">LinkDen</span>
 				<button
 					type="button"
-					className="text-muted-foreground hover:text-foreground transition-colors"
+					className="text-muted-foreground hover:text-foreground transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
 					aria-label="Notifications"
 				>
 					<Bell className="h-4 w-4" />
@@ -159,7 +159,7 @@ function SidebarContent({
 				{NAV_GROUPS.map((group) => (
 					<div key={group.label ?? "main"} className="space-y-0.5">
 						{group.label && (
-							<p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+							<p className="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
 								{group.label}
 							</p>
 						)}
@@ -183,6 +183,7 @@ function SidebarContent({
 				>
 					<ExternalLink className="h-3.5 w-3.5" />
 					<span>View Docs</span>
+					<span className="sr-only">(opens in new tab)</span>
 				</a>
 				<a
 					href="/"
@@ -192,6 +193,7 @@ function SidebarContent({
 				>
 					<Globe className="h-3.5 w-3.5" />
 					<span>View Live Page</span>
+					<span className="sr-only">(opens in new tab)</span>
 				</a>
 			</div>
 
@@ -206,7 +208,7 @@ function SidebarContent({
 								type="button"
 								onClick={() => setTheme(opt.value)}
 								className={cn(
-									"flex flex-1 items-center justify-center rounded-md p-1.5 transition-all",
+									"flex flex-1 items-center justify-center rounded-md p-2.5 min-h-[44px] min-w-[44px] transition-all",
 									adminTheme === opt.value
 										? "bg-white/20 text-foreground shadow-sm"
 										: "text-muted-foreground hover:text-foreground",
@@ -230,7 +232,7 @@ function SidebarContent({
 								src={user?.image ?? (user?.email ? getGravatarUrl(user.email, 56) : undefined)}
 								alt={user?.name ?? "Admin"}
 							/>
-							<AvatarFallback className="text-[10px] font-semibold">
+							<AvatarFallback className="text-xs font-semibold">
 								{initials(user?.name)}
 							</AvatarFallback>
 						</Avatar>
@@ -246,7 +248,7 @@ function SidebarContent({
 				</DropdownMenu>
 
 				{adminBrandingEnabled && (
-					<p className="mt-1 px-2 text-[10px] text-muted-foreground/50">
+					<p className="mt-1 px-2 text-xs text-muted-foreground/50">
 						Powered by{" "}
 						<a
 							href="https://github.com/mrdemonwolf/LinkDen"
@@ -255,10 +257,11 @@ function SidebarContent({
 							className="hover:text-muted-foreground transition-colors"
 						>
 							LinkDen
+							<span className="sr-only">(opens in new tab)</span>
 						</a>
 					</p>
 				)}
-				<p className="px-2 text-[10px] text-muted-foreground/50">
+				<p className="px-2 text-xs text-muted-foreground/50">
 					v0.1.0{isDev && " · DEV"}
 				</p>
 			</div>
@@ -291,7 +294,7 @@ export default function AdminLayout({
 	const adminBrandingEnabled = brandingQuery.data?.value !== "false";
 
 	const isPublicRoute =
-		pathname === "/admin/login" || pathname === "/admin/setup";
+		pathname === "/admin/login" || pathname === "/admin/setup" || pathname === "/admin/reset-password" || pathname.startsWith("/admin/reset-password");
 
 	useEffect(() => {
 		if (!isPending && !session?.user && !isPublicRoute) {
@@ -344,7 +347,7 @@ export default function AdminLayout({
 			{/* Mobile header */}
 			<div className="fixed inset-x-0 top-0 z-40 flex h-12 items-center border-b border-white/20 dark:border-white/10 backdrop-blur-2xl bg-white/70 dark:bg-black/40 px-4 md:hidden">
 				<div className="flex items-center gap-2 shrink-0">
-					<div className="flex h-6 w-6 items-center justify-center bg-primary/90 backdrop-blur-sm rounded-md text-primary-foreground text-[10px] font-bold">
+					<div className="flex h-6 w-6 items-center justify-center bg-primary/90 backdrop-blur-sm rounded-md text-primary-foreground text-xs font-bold">
 						LD
 					</div>
 					<span className="text-xs font-semibold">LinkDen</span>
@@ -381,6 +384,7 @@ export default function AdminLayout({
 						className="fixed inset-x-0 top-12 z-50 md:hidden bg-white/90 dark:bg-black/80 backdrop-blur-2xl border-b border-white/20 dark:border-white/10 shadow-xl"
 						role="dialog"
 						aria-modal="true"
+						aria-label="Navigation menu"
 						onKeyDown={(e) => {
 							if (e.key === "Escape") setMobileMenuOpen(false);
 						}}
@@ -389,7 +393,7 @@ export default function AdminLayout({
 							{NAV_GROUPS.map((group) => (
 								<div key={group.label ?? "main"}>
 									{group.label && (
-										<p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+										<p className="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
 											{group.label}
 										</p>
 									)}
@@ -452,7 +456,7 @@ export default function AdminLayout({
 										src={sessionUser?.image ?? (sessionUser?.email ? getGravatarUrl(sessionUser.email, 48) : undefined)}
 										alt={sessionUser?.name ?? "Admin"}
 									/>
-									<AvatarFallback className="text-[10px] font-semibold">
+									<AvatarFallback className="text-xs font-semibold">
 										{initials(sessionUser?.name)}
 									</AvatarFallback>
 								</Avatar>
@@ -489,7 +493,7 @@ export default function AdminLayout({
 							href={item.href as never}
 							aria-current={isActive ? "page" : undefined}
 							className={cn(
-								"flex flex-1 flex-col items-center justify-center gap-1 min-h-[48px] text-[10px] font-medium transition-colors",
+								"flex flex-1 flex-col items-center justify-center gap-1 min-h-[48px] text-xs font-medium transition-colors",
 								isActive
 									? "text-primary"
 									: "text-muted-foreground/70",
