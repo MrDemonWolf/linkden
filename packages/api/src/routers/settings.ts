@@ -37,9 +37,9 @@ function sanitizeCss(css: string): string {
 }
 
 // Keys that should be sanitized as plain text (no HTML)
-const TEXT_KEYS = ["profile_name", "bio", "branding_text", "seo_title", "seo_description", "seo_og_mode", "seo_og_template"];
+const TEXT_KEYS = ["profile_name", "bio", "branding_text", "seo_title", "seo_description", "seo_og_mode", "seo_og_template", "branding_site_name"];
 // Keys that should be validated as URLs
-const URL_KEYS = ["branding_link", "seo_og_image", "avatar_url", "banner_custom_url"];
+const URL_KEYS = ["branding_link", "seo_og_image", "avatar_url", "banner_custom_url", "branding_logo_url", "branding_favicon_url", "branding_pp_url", "branding_tos_url", "branding_cookie_url"];
 // Keys that should be validated as hex colors
 const COLOR_KEYS = ["custom_primary", "custom_secondary", "custom_accent", "custom_background"];
 // Keys with length limits
@@ -49,6 +49,7 @@ const LENGTH_LIMITS: Record<string, number> = {
 	branding_text: 100,
 	seo_title: 100,
 	seo_description: 250,
+	branding_site_name: 50,
 };
 
 function sanitizeSetting(key: string, value: string): string {

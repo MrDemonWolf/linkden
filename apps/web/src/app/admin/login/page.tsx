@@ -24,9 +24,13 @@ export default function AdminLoginPage() {
 	const [forgotMode, setForgotMode] = useState(false);
 	const [isForgotSubmitting, setIsForgotSubmitting] = useState(false);
 	const [resetLinkSent, setResetLinkSent] = useState(false);
+	const [rememberMe, setRememberMe] = useState(false);
 
 	const setupStatus = useQuery(trpc.public.getSetupStatus.queryOptions());
 	const magicLinkEnabled = setupStatus.data?.magicLinkEnabled ?? true;
+
+	const brandingQuery = useQuery(trpc.public.getBranding.queryOptions());
+	const branding = brandingQuery.data;
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -39,7 +43,7 @@ export default function AdminLoginPage() {
 		setIsSubmitting(true);
 		try {
 			await authClient.signIn.email(
-				{ email, password },
+				{ email, password, rememberMe },
 				{
 					onSuccess: () => {
 						toast.success("Signed in successfully");
@@ -117,12 +121,20 @@ export default function AdminLoginPage() {
 			<div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both">
 				{/* Logo + title above card */}
 				<div className="mb-8 text-center">
-					<div className="mx-auto flex h-12 w-12 items-center justify-center bg-primary/90 backdrop-blur-sm text-primary-foreground text-lg font-bold rounded-2xl">
-						LD
-					</div>
-					<h1 className="mt-4 text-xl font-semibold">Sign in to LinkDen</h1>
+					{branding?.logoUrl ? (
+						<img
+							src={branding.logoUrl}
+							alt=""
+							className="h-12 w-12 rounded-2xl object-cover mx-auto"
+						/>
+					) : (
+						<div className="mx-auto flex h-12 w-12 items-center justify-center bg-primary/90 backdrop-blur-sm text-primary-foreground text-lg font-bold rounded-2xl">
+							LD
+						</div>
+					)}
+					<h1 className="mt-4 text-xl font-semibold">Welcome back</h1>
 					<p className="mt-1 text-xs text-muted-foreground">
-						Enter your credentials to access the admin panel
+						Enter your credentials to access your account
 					</p>
 				</div>
 
@@ -264,9 +276,9 @@ export default function AdminLoginPage() {
 									<button
 										type="button"
 										onClick={() => { setForgotMode(true); setFormError(""); }}
-										className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
+										className="text-xs text-primary cursor-pointer hover:text-primary/80 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
 									>
-										Forgot?
+										Forgot password?
 									</button>
 								</div>
 								<div className="relative">
@@ -294,6 +306,17 @@ export default function AdminLoginPage() {
 									</button>
 								</div>
 							</div>
+
+							<label htmlFor="remember-me" className="flex items-center gap-2 cursor-pointer">
+								<input
+									id="remember-me"
+									type="checkbox"
+									checked={rememberMe}
+									onChange={(e) => setRememberMe(e.target.checked)}
+									className="h-3.5 w-3.5 rounded border-muted-foreground/25 accent-primary"
+								/>
+								<span className="text-xs text-muted-foreground">Keep me signed in</span>
+							</label>
 
 							<Button
 								type="submit"
@@ -349,14 +372,33 @@ export default function AdminLoginPage() {
 
 				{setupStatus.data?.completed === false && (
 					<p className="mt-6 text-center text-xs text-muted-foreground">
-						Don&apos;t have an account?{" "}
 						<Link
 							href="/admin/setup"
 							className="text-primary underline underline-offset-2 hover:no-underline font-medium"
 						>
-							Create account
+							Initial setup
 						</Link>
 					</p>
+				)}
+
+				{branding && (branding.ppUrl || branding.tosUrl || branding.cookieUrl) && (
+					<div className="mt-8 flex justify-center gap-4 text-[10px] uppercase tracking-wider text-muted-foreground/60">
+						{branding.ppUrl && (
+							<a href={branding.ppUrl} target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">
+								Privacy Policy
+							</a>
+						)}
+						{branding.tosUrl && (
+							<a href={branding.tosUrl} target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">
+								Terms of Service
+							</a>
+						)}
+						{branding.cookieUrl && (
+							<a href={branding.cookieUrl} target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">
+								Cookie Policy
+							</a>
+						)}
+					</div>
 				)}
 			</div>
 		</div>
