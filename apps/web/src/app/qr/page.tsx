@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function QRPage() {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
+	const [url, setUrl] = useState("");
 
 	useEffect(() => {
 		const url = window.location.origin;
+		setUrl(url);
 		// Simple QR code placeholder - in production, use a QR library
 		const canvas = canvasRef.current;
 		if (!canvas) return;
@@ -43,21 +45,22 @@ export default function QRPage() {
 	}, []);
 
 	return (
-		<div className="flex min-h-screen flex-col items-center justify-center bg-white p-8">
-			<h1 className="mb-6 text-2xl font-bold text-gray-900">
+		<div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 sm:p-8">
+			<h1 className="mb-6 text-2xl font-bold text-foreground">
 				Scan to visit my page
 			</h1>
 			<canvas
 				ref={canvasRef}
-				className="rounded-lg border-2 border-gray-200 shadow-lg"
+				className="rounded-lg border-2 border-border shadow-lg"
 				aria-label="QR code linking to this page"
 			/>
-			<p className="mt-4 text-sm text-gray-500">
+			<p className="sr-only">Visit this page at: {url}</p>
+			<p className="mt-4 text-sm text-muted-foreground">
 				Point your camera at this code to open the link
 			</p>
 			<a
 				href="/"
-				className="mt-6 text-blue-600 hover:underline"
+				className="mt-6 text-primary hover:underline"
 			>
 				Back to page
 			</a>

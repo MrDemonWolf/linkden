@@ -17,7 +17,7 @@ const db = await D1Database("database", {
 
 const imagesBucket = await R2Bucket("images");
 
-export const web = await Nextjs("web", {
+export const web = await Nextjs("linkden", {
   cwd: "../../apps/web",
   bindings: {
     NEXT_PUBLIC_SERVER_URL: alchemy.env.NEXT_PUBLIC_SERVER_URL!,
@@ -50,6 +50,7 @@ export const web = await Nextjs("web", {
 });
 
 export const server = await Worker("server", {
+  name: "linkden-api",
   cwd: "../../apps/server",
   entrypoint: "src/index.ts",
   compatibility: "node",

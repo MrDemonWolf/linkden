@@ -6,10 +6,15 @@ import { env } from "@linkden/env/server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { rateLimiter } from "hono-rate-limiter";
+import type { Context } from "hono";
 
 type Bindings = {
   IMAGES_BUCKET?: R2Bucket;
 };
+
+const getClientIP = (c: Context) =>
+  c.req.header("cf-connecting-ip") || c.req.header("x-forwarded-for") || "unknown";
 
 const app = new Hono();
 
@@ -21,6 +26,61 @@ app.use(
     allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
+  }),
+);
+
+// Rate limiters
+app.use(
+  "/api/auth/sign-in/*",
+  rateLimiter({
+    windowMs: 60 * 1000,
+    limit: 10,
+    keyGenerator: (c) => getClientIP(c),
+  }),
+);
+
+app.use(
+  "/api/auth/forget-password",
+  rateLimiter({
+    windowMs: 60 * 60 * 1000,
+    limit: 5,
+    keyGenerator: (c) => getClientIP(c),
+  }),
+);
+
+app.use(
+  "/api/auth/magic-link/*",
+  rateLimiter({
+    windowMs: 60 * 60 * 1000,
+    limit: 5,
+    keyGenerator: (c) => getClientIP(c),
+  }),
+);
+
+app.use(
+  "/api/auth/sign-up/*",
+  rateLimiter({
+    windowMs: 60 * 60 * 1000,
+    limit: 5,
+    keyGenerator: (c) => getClientIP(c),
+  }),
+);
+
+app.use(
+  "/trpc/public.submitContact*",
+  rateLimiter({
+    windowMs: 60 * 1000,
+    limit: 10,
+    keyGenerator: (c) => getClientIP(c),
+  }),
+);
+
+app.use(
+  "/api/upload",
+  rateLimiter({
+    windowMs: 60 * 1000,
+    limit: 20,
+    keyGenerator: (c) => getClientIP(c),
   }),
 );
 
