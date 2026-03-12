@@ -1,5 +1,5 @@
 {
-  "name": "linkden-web-nathanialhenniges",
+  "name": "linkden-linkden-nathanialhenniges",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-02-19",
   "compatibility_flags": [
@@ -29,10 +29,10 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_id": "f224b009-e1ff-4c21-987b-bb9ec1442626",
+      "database_id": "linkden-database-nathanialhenniges",
       "database_name": "linkden-database-nathanialhenniges",
       "migrations_dir": "../../packages/db/src/migrations",
-      "preview_database_id": "f224b009-e1ff-4c21-987b-bb9ec1442626"
+      "preview_database_id": "linkden-database-nathanialhenniges"
     }
   ]
 }

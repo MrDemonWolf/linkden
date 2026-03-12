@@ -3,6 +3,7 @@ import { Nextjs } from "alchemy/cloudflare";
 import { Worker } from "alchemy/cloudflare";
 import { D1Database } from "alchemy/cloudflare";
 import { R2Bucket } from "alchemy/cloudflare";
+import { RateLimit } from "alchemy/cloudflare";
 import { config } from "dotenv";
 
 config({ path: "./.env" });
@@ -16,6 +17,10 @@ const db = await D1Database("database", {
 });
 
 const imagesBucket = await R2Bucket("images");
+
+const rlAuth = RateLimit({ namespace_id: 1001, simple: { limit: 10, period: 60 } });
+const rlStrict = RateLimit({ namespace_id: 1002, simple: { limit: 5, period: 60 } });
+const rlUpload = RateLimit({ namespace_id: 1003, simple: { limit: 20, period: 60 } });
 
 export const web = await Nextjs("linkden", {
   cwd: "../../apps/web",
@@ -57,6 +62,9 @@ export const server = await Worker("server", {
   bindings: {
     DB: db,
     IMAGES_BUCKET: imagesBucket,
+    RL_AUTH: rlAuth,
+    RL_STRICT: rlStrict,
+    RL_UPLOAD: rlUpload,
     CORS_ORIGIN: alchemy.env.CORS_ORIGIN!,
     BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
     BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
