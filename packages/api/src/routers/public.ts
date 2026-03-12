@@ -141,6 +141,12 @@ export const publicRouter = router({
 				customBackground: settings.custom_background || null,
 				customCss: settings.custom_css || null,
 				socialIconShape: (settings.social_icon_shape as "circle" | "rounded-square") || null,
+				brandingLogoUrl: settings.branding_logo_url || null,
+				brandingFaviconUrl: settings.branding_favicon_url || null,
+				brandingSiteName: settings.branding_site_name || null,
+				brandingPpUrl: settings.branding_pp_url || null,
+				brandingTosUrl: settings.branding_tos_url || null,
+				brandingCookieUrl: settings.branding_cookie_url || null,
 			},
 		};
 	}),
@@ -288,6 +294,21 @@ export const publicRouter = router({
 		const config = vcardBlock.config ? JSON.parse(vcardBlock.config) : {};
 		const data = vcardDataSchema.parse(config);
 		return { enabled: true, vcardString: generateVCardString(data) };
+	}),
+
+	getBranding: publicProcedure.query(async () => {
+		const rows = await db.select().from(siteSettings);
+		const settings: Record<string, string> = {};
+		for (const row of rows) {
+			settings[row.key] = row.value;
+		}
+		return {
+			logoUrl: settings.branding_logo_url || null,
+			siteName: settings.branding_site_name || null,
+			ppUrl: settings.branding_pp_url || null,
+			tosUrl: settings.branding_tos_url || null,
+			cookieUrl: settings.branding_cookie_url || null,
+		};
 	}),
 
 	getSetupStatus: publicProcedure.query(async () => {

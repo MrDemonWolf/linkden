@@ -59,6 +59,12 @@ export async function generateMetadata(): Promise<Metadata> {
 	return {
 		title,
 		description,
+		...(settings.brandingFaviconUrl ? {
+			icons: {
+				icon: settings.brandingFaviconUrl,
+				apple: settings.brandingFaviconUrl,
+			},
+		} : {}),
 		openGraph: {
 			title,
 			description,

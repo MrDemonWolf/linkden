@@ -17,7 +17,7 @@ import { ProfileSection } from "@/components/admin/appearance/profile-section";
 import { ThemePresetsSection } from "@/components/admin/appearance/theme-presets-section";
 import { ColorsSection } from "@/components/admin/appearance/colors-section";
 import { BannerSection } from "@/components/admin/appearance/banner-section";
-import { VerifiedBadgeSection, BrandingSection } from "@/components/admin/appearance/branding-section";
+import { VerifiedBadgeSection } from "@/components/admin/appearance/branding-section";
 import { CustomCssSection } from "@/components/admin/appearance/custom-css-section";
 
 interface SavedState {
@@ -36,9 +36,6 @@ interface SavedState {
 	bannerMode: "preset" | "custom";
 	bannerCustomUrl: string;
 	verifiedBadge: boolean;
-	brandingEnabled: boolean;
-	brandingText: string;
-	brandingLink: string;
 }
 
 function buildSavedState(settings: Record<string, string>): SavedState {
@@ -58,9 +55,6 @@ function buildSavedState(settings: Record<string, string>): SavedState {
 		bannerMode: (settings.banner_mode as "preset" | "custom") || "preset",
 		bannerCustomUrl: settings.banner_custom_url ?? "",
 		verifiedBadge: settings.verified_badge === "true",
-		brandingEnabled: settings.branding_enabled !== "false",
-		brandingText: settings.branding_text ?? "",
-		brandingLink: settings.branding_link ?? "",
 	};
 }
 
@@ -78,8 +72,7 @@ export default function AppearancePage() {
 		accentColor: "#38BDF8", bgColor: "#FFFFFF",
 		customCss: "", bannerEnabled: false, bannerPreset: "",
 		bannerMode: "preset", bannerCustomUrl: "",
-		verifiedBadge: false, brandingEnabled: true,
-		brandingText: "", brandingLink: "",
+		verifiedBadge: false,
 	});
 
 	const [profileName, setProfileName] = useState("");
@@ -98,9 +91,6 @@ export default function AppearancePage() {
 	const [bannerMode, setBannerMode] = useState<"preset" | "custom">("preset");
 	const [bannerCustomUrl, setBannerCustomUrl] = useState("");
 	const [verifiedBadge, setVerifiedBadge] = useState(false);
-	const [brandingEnabled, setBrandingEnabled] = useState(true);
-	const [brandingText, setBrandingText] = useState("");
-	const [brandingLink, setBrandingLink] = useState("");
 	const [showMobilePreview, setShowMobilePreview] = useState(false);
 
 	const [systemPrefersDark, setSystemPrefersDark] = useState(false);
@@ -137,9 +127,6 @@ export default function AppearancePage() {
 			setBannerMode(s.bannerMode);
 			setBannerCustomUrl(s.bannerCustomUrl);
 			setVerifiedBadge(s.verifiedBadge);
-			setBrandingEnabled(s.brandingEnabled);
-			setBrandingText(s.brandingText);
-			setBrandingLink(s.brandingLink);
 		}
 	}, [settingsQuery.data]);
 
@@ -158,10 +145,7 @@ export default function AppearancePage() {
 		bannerPreset !== savedState.bannerPreset ||
 		bannerMode !== savedState.bannerMode ||
 		bannerCustomUrl !== savedState.bannerCustomUrl ||
-		verifiedBadge !== savedState.verifiedBadge ||
-		brandingEnabled !== savedState.brandingEnabled ||
-		brandingText !== savedState.brandingText ||
-		brandingLink !== savedState.brandingLink;
+		verifiedBadge !== savedState.verifiedBadge;
 
 	useUnsavedChanges(isDirty);
 
@@ -201,16 +185,13 @@ export default function AppearancePage() {
 				{ key: "banner_mode", value: bannerMode },
 				{ key: "banner_custom_url", value: bannerCustomUrl },
 				{ key: "verified_badge", value: String(verifiedBadge) },
-				{ key: "branding_enabled", value: String(brandingEnabled) },
-				{ key: "branding_text", value: brandingText },
-				{ key: "branding_link", value: brandingLink },
 				]);
 			setSavedState({
 				profileName, profileBio, profileAvatar,
 				theme: selectedTheme, colorMode,
 				primaryColor, secondaryColor, accentColor, bgColor,
 				customCss, bannerEnabled, bannerPreset, bannerMode, bannerCustomUrl,
-				verifiedBadge, brandingEnabled, brandingText, brandingLink,
+				verifiedBadge,
 			});
 			invalidate();
 			toast.success("Appearance published");
@@ -235,9 +216,6 @@ export default function AppearancePage() {
 		setBannerMode(savedState.bannerMode);
 		setBannerCustomUrl(savedState.bannerCustomUrl);
 		setVerifiedBadge(savedState.verifiedBadge);
-		setBrandingEnabled(savedState.brandingEnabled);
-		setBrandingText(savedState.brandingText);
-		setBrandingLink(savedState.brandingLink);
 	};
 
 	const resolvedThemeVars = useMemo(() => {
@@ -293,8 +271,6 @@ export default function AppearancePage() {
 			mutedFg: resolvedThemeVars["--ld-muted-foreground"],
 		},
 		settings: {
-			brandingEnabled,
-			brandingText: brandingText || "Powered by LinkDen",
 			bannerEnabled,
 			bannerPreset: bannerEnabled && bannerMode === "preset" ? bannerPreset : null,
 			bannerMode,
@@ -356,15 +332,6 @@ export default function AppearancePage() {
 					<VerifiedBadgeSection
 						verifiedBadge={verifiedBadge}
 						onVerifiedBadgeChange={setVerifiedBadge}
-					/>
-					<BrandingSection
-						brandingEnabled={brandingEnabled}
-						brandingText={brandingText}
-						brandingLink={brandingLink}
-						profileName={profileName}
-						onBrandingEnabledChange={setBrandingEnabled}
-						onBrandingTextChange={setBrandingText}
-						onBrandingLinkChange={setBrandingLink}
 					/>
 					<CustomCssSection
 						customCss={customCss}
