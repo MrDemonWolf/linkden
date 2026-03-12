@@ -312,22 +312,22 @@ export const publicRouter = router({
 	}),
 
 	getSetupStatus: publicProcedure.query(async () => {
-		const rows = await db
-			.select()
-			.from(siteSettings)
-			.where(
-				eq(siteSettings.key, "setup_completed"),
-			);
-		const [setting] = rows;
-
-		const [magicLinkRow] = await db
-			.select()
-			.from(siteSettings)
-			.where(eq(siteSettings.key, "magic_link_enabled"));
+		const allRows = await db.select().from(siteSettings);
+		const s: Record<string, string> = {};
+		for (const row of allRows) {
+			s[row.key] = row.value;
+		}
 
 		return {
-			completed: setting?.value === "true",
-			magicLinkEnabled: magicLinkRow?.value !== "false",
+			completed: s.setup_completed === "true",
+			magicLinkEnabled: s.magic_link_enabled !== "false",
+			branding: {
+				logoUrl: s.branding_logo_url || null,
+				siteName: s.branding_site_name || null,
+				ppUrl: s.branding_pp_url || null,
+				tosUrl: s.branding_tos_url || null,
+				cookieUrl: s.branding_cookie_url || null,
+			},
 		};
 	}),
 
