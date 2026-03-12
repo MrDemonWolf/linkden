@@ -307,7 +307,7 @@ export function ContactFormModal({
 					<button
 						type="button"
 						onClick={onClose}
-						className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:opacity-70"
+						className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:opacity-70 focus-visible:ring-2 focus-visible:ring-offset-2"
 						aria-label="Close"
 					>
 						<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -433,7 +433,7 @@ export function ContactFormModal({
 											key={star}
 											type="button"
 											onClick={() => setFormData((prev) => ({ ...prev, rating: prev.rating === star ? 0 : star }))}
-											className="p-0.5 transition-transform hover:scale-110"
+											className="p-2 transition-transform hover:scale-110"
 											aria-label={`${star} star${star > 1 ? "s" : ""}`}
 										>
 											<svg
@@ -454,7 +454,7 @@ export function ContactFormModal({
 						{showAttending && (
 							<div className="space-y-1.5">
 								<label className="text-sm" style={themeColors ? { color: themeColors.mutedFg } : {}}>
-									Attending <span className="text-red-400">*</span>
+									Attending <span className="text-red-400" aria-hidden="true">*</span><span className="sr-only">(required)</span>
 								</label>
 								<div
 									className="flex rounded-xl border overflow-hidden"

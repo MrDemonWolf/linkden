@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "linkden",
-    short_name: "linkden",
-    description: "my pwa app",
-    start_url: "/new",
+    name: "LinkDen",
+    short_name: "LinkDen",
+    description: "Your personal link-in-bio page",
+    start_url: "/",
     display: "standalone",
     background_color: "#ffffff",
     theme_color: "#000000",

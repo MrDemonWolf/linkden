@@ -21,7 +21,7 @@ export function ThemeToggle({ colorMode, onToggle, themeColors }: ThemeTogglePro
 	return (
 		<button
 			onClick={onToggle}
-			className={`fixed right-4 top-4 z-50 rounded-full p-2 transition-colors ${
+			className={`fixed right-4 top-4 z-50 rounded-full p-3 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-current ${
 				themeColors
 					? ""
 					: colorMode === "dark"
