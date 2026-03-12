@@ -102,7 +102,7 @@ export function SocialIconsBlock({
 							href={item.url}
 							target="_blank"
 							rel="noopener noreferrer"
-							className={`inline-flex items-center justify-center transition-transform hover:scale-110 ${
+							className={`inline-flex items-center justify-center transition-transform hover:scale-110 min-h-[44px] min-w-[44px] ${
 								sizeClasses[iconSize] || "h-10 w-10"
 							} ${
 								iconStyle !== "bare"
