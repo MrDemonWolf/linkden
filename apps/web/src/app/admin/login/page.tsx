@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -13,21 +12,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function AdminLoginPage() {
-	const router = useRouter();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [isMagicLinkSubmitting, setIsMagicLinkSubmitting] = useState(false);
-	const [magicLinkSent, setMagicLinkSent] = useState(false);
 	const [formError, setFormError] = useState("");
 	const [forgotMode, setForgotMode] = useState(false);
 	const [isForgotSubmitting, setIsForgotSubmitting] = useState(false);
 	const [resetLinkSent, setResetLinkSent] = useState(false);
-	const [rememberMe, setRememberMe] = useState(false);
+	const [rememberMe, setRememberMe] = useState(true);
+	const [loginSuccess, setLoginSuccess] = useState(false);
 
 	const setupStatus = useQuery(trpc.public.getSetupStatus.queryOptions());
-	const magicLinkEnabled = setupStatus.data?.magicLinkEnabled ?? true;
 	const branding = setupStatus.data?.branding;
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -44,8 +40,8 @@ export default function AdminLoginPage() {
 				{ email, password, rememberMe },
 				{
 					onSuccess: () => {
-						toast.success("Signed in successfully");
-						router.push("/admin");
+						setLoginSuccess(true);
+						window.location.href = "/admin";
 					},
 					onError: (error) => {
 						const msg = error.error.message || "Invalid credentials";
@@ -55,34 +51,9 @@ export default function AdminLoginPage() {
 				},
 			);
 		} finally {
-			setIsSubmitting(false);
-		}
-	};
-
-	const handleMagicLink = async () => {
-		if (!email) {
-			setFormError("Please enter your email address above");
-			return;
-		}
-		setFormError("");
-		setIsMagicLinkSubmitting(true);
-		try {
-			await authClient.signIn.magicLink(
-				{ email, callbackURL: "/admin" },
-				{
-					onSuccess: () => {
-						setMagicLinkSent(true);
-						toast.success("Magic link sent! Check your email.");
-					},
-					onError: (error) => {
-						const msg = error.error.message || "Failed to send magic link";
-						setFormError(msg);
-						toast.error(msg);
-					},
-				},
-			);
-		} finally {
-			setIsMagicLinkSubmitting(false);
+			if (!loginSuccess) {
+				setIsSubmitting(false);
+			}
 		}
 	};
 
@@ -136,22 +107,10 @@ export default function AdminLoginPage() {
 					</p>
 				</div>
 
-				{magicLinkSent ? (
+				{loginSuccess ? (
 					<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl text-center space-y-3">
-						<div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-							<Mail className="h-5 w-5 text-primary" />
-						</div>
-						<h2 className="text-sm font-semibold">Check your email</h2>
-						<p className="text-xs text-muted-foreground">
-							We sent a sign-in link to <span className="font-medium text-foreground">{email}</span>. Click it to access the admin panel.
-						</p>
-						<button
-							type="button"
-							className="text-xs text-primary underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-ring rounded"
-							onClick={() => setMagicLinkSent(false)}
-						>
-							Back to sign in
-						</button>
+						<Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />
+						<p className="text-sm font-medium">Login successful, redirecting...</p>
 					</div>
 				) : resetLinkSent ? (
 					<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl text-center space-y-3">
@@ -332,39 +291,6 @@ export default function AdminLoginPage() {
 								)}
 							</Button>
 						</form>
-
-						{magicLinkEnabled && (
-							<>
-								<div className="relative my-4">
-									<div className="absolute inset-0 flex items-center">
-										<div className="w-full border-t border-white/10" />
-									</div>
-									<div className="relative flex justify-center">
-										<span className="bg-transparent px-2 text-xs text-muted-foreground">or</span>
-									</div>
-								</div>
-
-								<Button
-									type="button"
-									variant="outline"
-									className="w-full border-white/15 dark:bg-input/20"
-									onClick={handleMagicLink}
-									disabled={isMagicLinkSubmitting}
-								>
-									{isMagicLinkSubmitting ? (
-										<>
-											<Loader2 className="h-4 w-4 animate-spin" />
-											Sending...
-										</>
-									) : (
-										<>
-											<Mail className="h-4 w-4" />
-											Sign in with Magic Link
-										</>
-									)}
-								</Button>
-							</>
-						)}
 					</div>
 				)}
 
