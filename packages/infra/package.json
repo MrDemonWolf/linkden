@@ -8,12 +8,12 @@
     "destroy": "alchemy destroy"
   },
   "dependencies": {
-    "dotenv": "catalog:",
-    "zod": "catalog:"
+    "dotenv": "^17.2.2",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@linkden/config": "workspace:*",
-    "alchemy": "catalog:",
-    "typescript": "catalog:"
+    "alchemy": "^0.82.1",
+    "typescript": "^5"
   }
 }

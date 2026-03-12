@@ -31,7 +31,7 @@
       "dist",
       ".turbo",
       "*.generated.*",
-      "pnpm-lock.yaml"
+      "bun.lock"
     ]
   }
 }

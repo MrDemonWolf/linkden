@@ -51,6 +51,11 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 	const shadow = config.shadow as string | undefined;
 	const customBgColor = config.customBgColor as string | undefined;
 	const customTextColor = config.customTextColor as string | undefined;
+	const description = config.description as string | undefined;
+	const thumbnail = config.thumbnail as string | undefined;
+	const isHighlighted = config.isHighlighted as boolean | undefined;
+
+	const hasRichContent = !!(description || thumbnail);
 
 	const radiusClasses: Record<string, string> = {
 		none: "rounded-none",
@@ -73,17 +78,22 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 		right: "text-right",
 	};
 
+	const effectiveTextAlign = hasRichContent ? "left" : textAlign;
+
 	const baseClasses = `group block w-full px-6 py-3.5 font-medium transition-all duration-200 hover:scale-[1.01] hover:shadow-md ${
 		radiusClasses[borderRadius] || "rounded-lg"
 	} ${shadowClasses[shadow || "none"]} ${
-		textAlignClasses[textAlign] || "text-center"
+		textAlignClasses[effectiveTextAlign] || "text-center"
 	} ${animation && animationClasses[animation] ? animationClasses[animation] : ""}`;
 
 	const style: React.CSSProperties = {
 		transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
 	};
 
-	if (customBgColor) {
+	if (isHighlighted && themeColors) {
+		style.backgroundColor = themeColors.primary;
+		style.color = "#ffffff";
+	} else if (customBgColor) {
 		style.backgroundColor = customBgColor;
 		if (customTextColor) style.color = customTextColor;
 	} else if (themeColors) {
@@ -97,7 +107,7 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 		}
 	}
 
-	const colorClasses = customBgColor || themeColors
+	const colorClasses = isHighlighted || customBgColor || themeColors
 		? ""
 		: isOutlined
 			? colorMode === "dark"
@@ -117,15 +127,33 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 				className={`${baseClasses} ${colorClasses} hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2`}
 				style={{ ...style, outlineColor: themeColors?.primary || "#3b82f6" }}
 			>
-				<span className="flex items-center justify-center gap-2">
+				<span className="flex items-center gap-2">
 					{emoji && emojiPosition === "left" && (
-						<span aria-hidden="true">{emoji}</span>
+						<span className="shrink-0" aria-hidden="true">{emoji}</span>
 					)}
-					<span className="flex-1">{block.title || "Untitled Link"}</span>
+					<span className={`flex-1 ${hasRichContent ? "min-w-0" : ""}`}>
+						<span className={hasRichContent ? "block" : ""}>{block.title || "Untitled Link"}</span>
+						{description && (
+							<span
+								className="block text-xs font-normal opacity-70 truncate mt-0.5"
+								title={description}
+							>
+								{description}
+							</span>
+						)}
+					</span>
 					{emoji && emojiPosition === "right" && (
-						<span aria-hidden="true">{emoji}</span>
+						<span className="shrink-0" aria-hidden="true">{emoji}</span>
 					)}
-					<ArrowRight className="h-4 w-4 shrink-0 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all duration-200" aria-hidden="true" />
+					{thumbnail ? (
+						<img
+							src={thumbnail}
+							alt=""
+							className="h-12 w-12 shrink-0 rounded-md object-cover"
+						/>
+					) : (
+						<ArrowRight className="h-4 w-4 shrink-0 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all duration-200" aria-hidden="true" />
+					)}
 				</span>
 			</a>
 		</div>

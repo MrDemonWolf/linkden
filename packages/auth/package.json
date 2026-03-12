@@ -13,12 +13,12 @@
   "dependencies": {
     "@linkden/db": "workspace:*",
     "@linkden/env": "workspace:*",
-    "better-auth": "catalog:",
-    "dotenv": "catalog:",
-    "zod": "catalog:"
+    "better-auth": "^1.4.18",
+    "dotenv": "^17.2.2",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@linkden/config": "workspace:*",
-    "typescript": "catalog:"
+    "typescript": "^5"
   }
 }

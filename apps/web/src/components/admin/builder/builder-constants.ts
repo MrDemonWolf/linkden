@@ -5,6 +5,7 @@ import {
 	Code,
 	MessageSquare,
 	Contact,
+	MapPin,
 } from "lucide-react";
 
 export const BLOCK_TYPES = [
@@ -14,6 +15,7 @@ export const BLOCK_TYPES = [
 	{ type: "embed" as const, label: "Embed", icon: Code, description: "YouTube, Spotify, or other embed" },
 	{ type: "form" as const, label: "Form", icon: MessageSquare, description: "Customizable form with presets" },
 	{ type: "vcard" as const, label: "vCard", icon: Contact, description: "Download contact card button" },
+	{ type: "location" as const, label: "Location", icon: MapPin, description: "Display your location with a map" },
 ] as const;
 
 export type BlockType = (typeof BLOCK_TYPES)[number]["type"];
@@ -88,6 +90,7 @@ export function blockTypeColor(type: string): string {
 		embed: "#10B981",
 		form: "#F59E0B",
 		vcard: "#EC4899",
+		location: "#0EA5E9",
 	};
 	return map[type] ?? "hsl(var(--muted))";
 }
@@ -99,6 +102,7 @@ export const TYPE_ACCENT: Record<string, string> = {
 	embed: "bg-amber-500",
 	form: "bg-pink-500",
 	vcard: "bg-teal-500",
+	location: "bg-sky-500",
 };
 
 export const TYPE_BADGE_BG: Record<string, string> = {
@@ -108,4 +112,5 @@ export const TYPE_BADGE_BG: Record<string, string> = {
 	embed: "bg-amber-500/10 text-amber-400",
 	form: "bg-pink-500/10 text-pink-400",
 	vcard: "bg-teal-500/10 text-teal-400",
+	location: "bg-sky-500/10 text-sky-400",
 };
