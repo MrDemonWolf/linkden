@@ -87,12 +87,16 @@ function SidebarContent({
 	pathname,
 	unreadCount,
 	adminBrandingEnabled,
+	logoUrl,
+	siteName,
 	user,
 	onNavClick,
 }: {
 	pathname: string;
 	unreadCount: number;
 	adminBrandingEnabled: boolean;
+	logoUrl: string;
+	siteName: string;
 	user: { name: string; email: string; image?: string | null } | null;
 	onNavClick?: () => void;
 }) {
@@ -141,10 +145,14 @@ function SidebarContent({
 		<div className="flex h-full flex-col">
 			{/* Logo + Bell */}
 			<div className="flex items-center gap-2 px-4 py-6">
-				<div className="flex h-8 w-8 items-center justify-center bg-primary/90 backdrop-blur-sm rounded-lg text-primary-foreground text-sm font-bold">
-					LD
-				</div>
-				<span className="flex-1 text-sm font-semibold tracking-tight">LinkDen</span>
+				{logoUrl ? (
+					<img src={logoUrl} alt="" className="h-8 w-8 rounded-lg object-cover" />
+				) : (
+					<div className="flex h-8 w-8 items-center justify-center bg-primary/90 backdrop-blur-sm rounded-lg text-primary-foreground text-sm font-bold">
+						LD
+					</div>
+				)}
+				<span className="flex-1 text-sm font-semibold tracking-tight">{siteName}</span>
 				<button
 					type="button"
 					className="text-muted-foreground hover:text-foreground transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
@@ -290,8 +298,19 @@ export default function AdminLayout({
 		enabled: !!session?.user,
 	});
 
+	const logoQuery = useQuery({
+		...trpc.settings.get.queryOptions({ key: "branding_logo_url" }),
+		enabled: !!session?.user,
+	});
+	const siteNameQuery = useQuery({
+		...trpc.settings.get.queryOptions({ key: "branding_site_name" }),
+		enabled: !!session?.user,
+	});
+
 	const unreadCount = unreadQuery.data?.count ?? 0;
 	const adminBrandingEnabled = brandingQuery.data?.value !== "false";
+	const logoUrl = logoQuery.data?.value || "";
+	const siteName = siteNameQuery.data?.value || "LinkDen";
 
 	const isPublicRoute =
 		pathname === "/admin/login" || pathname === "/admin/setup" || pathname === "/admin/reset-password" || pathname.startsWith("/admin/reset-password");
@@ -339,6 +358,8 @@ export default function AdminLayout({
 						pathname={pathname}
 						unreadCount={unreadCount}
 						adminBrandingEnabled={adminBrandingEnabled}
+						logoUrl={logoUrl}
+						siteName={siteName}
 						user={sessionUser}
 					/>
 				</div>
@@ -347,10 +368,14 @@ export default function AdminLayout({
 			{/* Mobile header */}
 			<div className="fixed inset-x-0 top-0 z-40 flex h-12 items-center border-b border-white/20 dark:border-white/10 backdrop-blur-2xl bg-white/70 dark:bg-black/40 px-4 md:hidden">
 				<div className="flex items-center gap-2 shrink-0">
-					<div className="flex h-6 w-6 items-center justify-center bg-primary/90 backdrop-blur-sm rounded-md text-primary-foreground text-xs font-bold">
-						LD
-					</div>
-					<span className="text-xs font-semibold">LinkDen</span>
+					{logoUrl ? (
+						<img src={logoUrl} alt="" className="h-6 w-6 rounded-md object-cover" />
+					) : (
+						<div className="flex h-6 w-6 items-center justify-center bg-primary/90 backdrop-blur-sm rounded-md text-primary-foreground text-xs font-bold">
+							LD
+						</div>
+					)}
+					<span className="text-xs font-semibold">{siteName}</span>
 				</div>
 				{/* Current page — centered absolute */}
 				<span className="absolute inset-x-0 text-center text-xs font-medium text-muted-foreground pointer-events-none">

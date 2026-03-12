@@ -16,6 +16,7 @@ import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { SeoSection } from "@/components/admin/settings/seo-section";
 import { CaptchaSection } from "@/components/admin/settings/captcha-section";
 import { EmailSection } from "@/components/admin/settings/email-section";
+import { BrandingSection } from "@/components/admin/settings/branding-section";
 import { DataSection } from "@/components/admin/settings/data-section";
 import { MigrationSection } from "@/components/admin/settings/migration-section";
 
@@ -33,6 +34,15 @@ interface SavedState {
 	adminBrandingEnabled: boolean;
 	seoOgMode: string;
 	seoOgTemplate: string;
+	siteName: string;
+	logoUrl: string;
+	faviconUrl: string;
+	ppUrl: string;
+	tosUrl: string;
+	cookieUrl: string;
+	footerBrandingEnabled: boolean;
+	footerBrandingText: string;
+	footerBrandingLink: string;
 }
 
 function buildSavedState(s: Record<string, string>): SavedState {
@@ -49,6 +59,15 @@ function buildSavedState(s: Record<string, string>): SavedState {
 		emailApiKey: s.email_api_key ?? "",
 		emailFrom: s.email_from ?? "",
 		adminBrandingEnabled: s.admin_branding_enabled !== "false",
+		siteName: s.branding_site_name ?? "",
+		logoUrl: s.branding_logo_url ?? "",
+		faviconUrl: s.branding_favicon_url ?? "",
+		ppUrl: s.branding_pp_url ?? "",
+		tosUrl: s.branding_tos_url ?? "",
+		cookieUrl: s.branding_cookie_url ?? "",
+		footerBrandingEnabled: s.branding_enabled !== "false",
+		footerBrandingText: s.branding_text ?? "",
+		footerBrandingLink: s.branding_link ?? "",
 	};
 }
 
@@ -82,6 +101,15 @@ export default function SettingsPage() {
 		adminBrandingEnabled: true,
 		seoOgMode: "template",
 		seoOgTemplate: "minimal",
+		siteName: "",
+		logoUrl: "",
+		faviconUrl: "",
+		ppUrl: "",
+		tosUrl: "",
+		cookieUrl: "",
+		footerBrandingEnabled: true,
+		footerBrandingText: "",
+		footerBrandingLink: "",
 	});
 
 	// SEO
@@ -104,6 +132,17 @@ export default function SettingsPage() {
 	// Admin Branding
 	const [adminBrandingEnabled, setAdminBrandingEnabled] = useState(true);
 
+	// Branding
+	const [siteName, setSiteName] = useState("");
+	const [logoUrl, setLogoUrl] = useState("");
+	const [faviconUrl, setFaviconUrl] = useState("");
+	const [ppUrl, setPpUrl] = useState("");
+	const [tosUrl, setTosUrl] = useState("");
+	const [cookieUrl, setCookieUrl] = useState("");
+	const [footerBrandingEnabled, setFooterBrandingEnabled] = useState(true);
+	const [footerBrandingText, setFooterBrandingText] = useState("");
+	const [footerBrandingLink, setFooterBrandingLink] = useState("");
+
 	// Load settings
 	useEffect(() => {
 		if (settingsQuery.data) {
@@ -121,6 +160,15 @@ export default function SettingsPage() {
 			setEmailApiKey(s.emailApiKey);
 			setEmailFrom(s.emailFrom);
 			setAdminBrandingEnabled(s.adminBrandingEnabled);
+			setSiteName(s.siteName);
+			setLogoUrl(s.logoUrl);
+			setFaviconUrl(s.faviconUrl);
+			setPpUrl(s.ppUrl);
+			setTosUrl(s.tosUrl);
+			setCookieUrl(s.cookieUrl);
+			setFooterBrandingEnabled(s.footerBrandingEnabled);
+			setFooterBrandingText(s.footerBrandingText);
+			setFooterBrandingLink(s.footerBrandingLink);
 		}
 	}, [settingsQuery.data]);
 
@@ -136,7 +184,16 @@ export default function SettingsPage() {
 		emailProvider !== savedState.emailProvider ||
 		emailApiKey !== savedState.emailApiKey ||
 		emailFrom !== savedState.emailFrom ||
-		adminBrandingEnabled !== savedState.adminBrandingEnabled;
+		adminBrandingEnabled !== savedState.adminBrandingEnabled
+		|| siteName !== savedState.siteName
+		|| logoUrl !== savedState.logoUrl
+		|| faviconUrl !== savedState.faviconUrl
+		|| ppUrl !== savedState.ppUrl
+		|| tosUrl !== savedState.tosUrl
+		|| cookieUrl !== savedState.cookieUrl
+		|| footerBrandingEnabled !== savedState.footerBrandingEnabled
+		|| footerBrandingText !== savedState.footerBrandingText
+		|| footerBrandingLink !== savedState.footerBrandingLink;
 
 	useUnsavedChanges(isDirty);
 
@@ -159,6 +216,15 @@ export default function SettingsPage() {
 		setEmailApiKey(savedState.emailApiKey);
 		setEmailFrom(savedState.emailFrom);
 		setAdminBrandingEnabled(savedState.adminBrandingEnabled);
+		setSiteName(savedState.siteName);
+		setLogoUrl(savedState.logoUrl);
+		setFaviconUrl(savedState.faviconUrl);
+		setPpUrl(savedState.ppUrl);
+		setTosUrl(savedState.tosUrl);
+		setCookieUrl(savedState.cookieUrl);
+		setFooterBrandingEnabled(savedState.footerBrandingEnabled);
+		setFooterBrandingText(savedState.footerBrandingText);
+		setFooterBrandingLink(savedState.footerBrandingLink);
 	};
 
 	const handleSave = async () => {
@@ -179,6 +245,15 @@ export default function SettingsPage() {
 					key: "admin_branding_enabled",
 					value: String(adminBrandingEnabled),
 				},
+				{ key: "branding_site_name", value: siteName },
+				{ key: "branding_logo_url", value: logoUrl },
+				{ key: "branding_favicon_url", value: faviconUrl },
+				{ key: "branding_pp_url", value: ppUrl },
+				{ key: "branding_tos_url", value: tosUrl },
+				{ key: "branding_cookie_url", value: cookieUrl },
+				{ key: "branding_enabled", value: String(footerBrandingEnabled) },
+				{ key: "branding_text", value: footerBrandingText },
+				{ key: "branding_link", value: footerBrandingLink },
 			]);
 			setSavedState({
 				seoTitle,
@@ -193,6 +268,8 @@ export default function SettingsPage() {
 				emailApiKey,
 				emailFrom,
 				adminBrandingEnabled,
+				siteName, logoUrl, faviconUrl, ppUrl, tosUrl, cookieUrl,
+				footerBrandingEnabled, footerBrandingText, footerBrandingLink,
 			});
 			invalidate();
 			qc.invalidateQueries({
@@ -287,6 +364,35 @@ export default function SettingsPage() {
 
 			<Card>
 				<CardContent className="pt-4 space-y-4">
+					<h2 className="text-sm font-semibold">Branding</h2>
+					<BrandingSection
+						siteName={siteName}
+						logoUrl={logoUrl}
+						faviconUrl={faviconUrl}
+						ppUrl={ppUrl}
+						tosUrl={tosUrl}
+						cookieUrl={cookieUrl}
+						adminBrandingEnabled={adminBrandingEnabled}
+						footerBrandingEnabled={footerBrandingEnabled}
+						footerBrandingText={footerBrandingText}
+						footerBrandingLink={footerBrandingLink}
+						profileName={settingsQuery.data?.profile_name ?? ""}
+						onSiteNameChange={setSiteName}
+						onLogoUrlChange={setLogoUrl}
+						onFaviconUrlChange={setFaviconUrl}
+						onPpUrlChange={setPpUrl}
+						onTosUrlChange={setTosUrl}
+						onCookieUrlChange={setCookieUrl}
+						onAdminBrandingEnabledChange={setAdminBrandingEnabled}
+						onFooterBrandingEnabledChange={setFooterBrandingEnabled}
+						onFooterBrandingTextChange={setFooterBrandingText}
+						onFooterBrandingLinkChange={setFooterBrandingLink}
+					/>
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardContent className="pt-4 space-y-4">
 					<h2 className="text-sm font-semibold">SEO</h2>
 					<SeoSection
 						seoTitle={seoTitle}
@@ -350,8 +456,6 @@ export default function SettingsPage() {
 								queryKey: trpc.version.checkUpdate.queryOptions().queryKey,
 							})
 						}
-						adminBrandingEnabled={adminBrandingEnabled}
-						onAdminBrandingEnabledChange={setAdminBrandingEnabled}
 					/>
 				</CardContent>
 			</Card>
