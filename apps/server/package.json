@@ -18,6 +18,7 @@
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "hono": "catalog:",
+    "hono-rate-limiter": "^0.5.3",
     "zod": "catalog:"
   },
   "devDependencies": {
