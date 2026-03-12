@@ -18,7 +18,9 @@
     "deploy": "turbo -F @linkden/infra deploy",
     "ship": "turbo -F @linkden/infra deploy",
     "destroy": "turbo -F @linkden/infra destroy",
-    "db:reset": "rm -rf apps/server/.wrangler/state && echo 'Local DB wiped. Run pnpm dev to recreate.'"
+    "db:reset": "rm -rf apps/server/.wrangler/state && echo 'Local DB wiped. Run pnpm dev to recreate.'",
+    "reset:password": "tsx scripts/reset-password.ts",
+    "reset:factory": "tsx scripts/factory-reset.ts"
   },
   "dependencies": {
     "@linkden/env": "workspace:*",
@@ -30,7 +32,9 @@
     "@linkden/config": "workspace:*",
     "@tailwindcss/postcss": "catalog:",
     "@types/node": "^22.13.14",
+    "bcryptjs": "^3.0.3",
     "tailwindcss": "catalog:",
+    "tsx": "^4.21.0",
     "turbo": "^2.6.3",
     "typescript": "catalog:"
   },
