@@ -38,23 +38,48 @@ export const analyticsRouter = router({
 				? { start: input.startDate, end: input.endDate }
 				: getDateRange(input?.period ?? "7d");
 
-		const views = await db
-			.select({ count: count() })
-			.from(pageView)
-			.where(
-				and(gte(pageView.createdAt, start), lte(pageView.createdAt, end)),
-			);
+		// Compute previous period window for comparison
+		const periodMs = end.getTime() - start.getTime();
+		const prevEnd = new Date(start.getTime());
+		const prevStart = new Date(start.getTime() - periodMs);
 
-		const clicks = await db
-			.select({ count: count() })
-			.from(linkClick)
-			.where(
-				and(gte(linkClick.createdAt, start), lte(linkClick.createdAt, end)),
-			);
+		const [views, clicks, prevViews, prevClicks, activeLinksResult] = await Promise.all([
+			db
+				.select({ count: count() } as any)
+				.from(pageView)
+				.where(
+					and(gte(pageView.createdAt, start), lte(pageView.createdAt, end)),
+				),
+			db
+				.select({ count: count() } as any)
+				.from(linkClick)
+				.where(
+					and(gte(linkClick.createdAt, start), lte(linkClick.createdAt, end)),
+				),
+			db
+				.select({ count: count() } as any)
+				.from(pageView)
+				.where(
+					and(gte(pageView.createdAt, prevStart), lte(pageView.createdAt, prevEnd)),
+				),
+			db
+				.select({ count: count() } as any)
+				.from(linkClick)
+				.where(
+					and(gte(linkClick.createdAt, prevStart), lte(linkClick.createdAt, prevEnd)),
+				),
+			db
+				.select({ count: count() } as any)
+				.from(block)
+				.where(and(eq(block.isEnabled, true), eq(block.status, "published"))),
+		]);
 
 		return {
 			totalViews: views[0]?.count ?? 0,
 			totalClicks: clicks[0]?.count ?? 0,
+			previousViews: prevViews[0]?.count ?? 0,
+			previousClicks: prevClicks[0]?.count ?? 0,
+			activeLinks: activeLinksResult[0]?.count ?? 0,
 		};
 	}),
 

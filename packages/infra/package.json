@@ -8,12 +8,12 @@
     "destroy": "alchemy destroy"
   },
   "dependencies": {
-    "dotenv": "^17.2.2",
-    "zod": "^4.1.13"
+    "dotenv": "^17.3.1",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@linkden/config": "workspace:*",
-    "alchemy": "^0.82.1",
+    "alchemy": "^0.89.0",
     "typescript": "^5"
   }
 }

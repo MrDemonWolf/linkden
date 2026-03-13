@@ -146,7 +146,10 @@ export const publicRouter = router({
 				brandingSiteName: settings.branding_site_name || null,
 				brandingPpUrl: settings.branding_pp_url || null,
 				brandingTosUrl: settings.branding_tos_url || null,
-				brandingCookieUrl: settings.branding_cookie_url || null,
+				brandingPpMode: (settings.branding_pp_mode as "url" | "text") || "url",
+				brandingPpText: settings.branding_pp_text || null,
+				brandingTosMode: (settings.branding_tos_mode as "url" | "text") || "url",
+				brandingTosText: settings.branding_tos_text || null,
 			},
 		};
 	}),
@@ -325,7 +328,10 @@ export const publicRouter = router({
 			siteName: settings.branding_site_name || null,
 			ppUrl: settings.branding_pp_url || null,
 			tosUrl: settings.branding_tos_url || null,
-			cookieUrl: settings.branding_cookie_url || null,
+			ppMode: (settings.branding_pp_mode as "url" | "text") || "url",
+			ppText: settings.branding_pp_text || null,
+			tosMode: (settings.branding_tos_mode as "url" | "text") || "url",
+			tosText: settings.branding_tos_text || null,
 		};
 	}),
 
@@ -344,7 +350,10 @@ export const publicRouter = router({
 				siteName: s.branding_site_name || null,
 				ppUrl: s.branding_pp_url || null,
 				tosUrl: s.branding_tos_url || null,
-				cookieUrl: s.branding_cookie_url || null,
+				ppMode: (s.branding_pp_mode as "url" | "text") || "url",
+				ppText: s.branding_pp_text || null,
+				tosMode: (s.branding_tos_mode as "url" | "text") || "url",
+				tosText: s.branding_tos_text || null,
 			},
 		};
 	}),

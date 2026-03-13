@@ -12,6 +12,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@linkden/ui";
 import { Separator } from "@linkden/ui";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function AdminLoginPage() {
 	const [email, setEmail] = useState("");
@@ -26,6 +32,8 @@ export default function AdminLoginPage() {
 	const [loginSuccess, setLoginSuccess] = useState(false);
 	const [isMagicLinkSubmitting, setIsMagicLinkSubmitting] = useState(false);
 	const [magicLinkSent, setMagicLinkSent] = useState(false);
+	const [ppDialogOpen, setPpDialogOpen] = useState(false);
+	const [tosDialogOpen, setTosDialogOpen] = useState(false);
 
 	const setupStatus = useQuery(trpc.public.getSetupStatus.queryOptions());
 	const branding = setupStatus.data?.branding;
@@ -71,20 +79,23 @@ export default function AdminLoginPage() {
 		setFormError("");
 		setIsForgotSubmitting(true);
 		try {
-			await authClient.forgetPassword(
-				{ email, redirectTo: "/admin/reset-password" },
-				{
-					onSuccess: () => {
-						setResetLinkSent(true);
-						toast.success("Reset link sent! Check your email.");
-					},
-					onError: (error) => {
-						const msg = error.error.message || "Failed to send reset link";
-						setFormError(msg);
-						toast.error(msg);
-					},
-				},
-			);
+			const response = await fetch("/api/auth/send-password-reset-email", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ email, redirectUrl: `${window.location.origin}/admin/reset-password` }),
+			});
+
+			if (!response.ok) {
+				const error = await response.json() as { message?: string };
+				throw new Error(error.message || "Failed to send reset link");
+			}
+
+			setResetLinkSent(true);
+			toast.success("Reset link sent! Check your email.");
+		} catch (error) {
+			const msg = error instanceof Error ? error.message : "Failed to send reset link";
+			setFormError(msg);
+			toast.error(msg);
 		} finally {
 			setIsForgotSubmitting(false);
 		}
@@ -384,24 +395,53 @@ export default function AdminLoginPage() {
 					</p>
 				)}
 
-				{branding && (branding.ppUrl || branding.tosUrl || branding.cookieUrl) && (
+				{branding && (branding.ppUrl || branding.tosUrl || branding.ppText || branding.tosText) && (
 					<div className="mt-8 flex justify-center gap-4 text-[10px] uppercase tracking-wider text-muted-foreground/60">
-						{branding.ppUrl && (
+						{branding.ppMode === "url" && branding.ppUrl ? (
 							<a href={branding.ppUrl} target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">
 								Privacy Policy
 							</a>
-						)}
-						{branding.tosUrl && (
+						) : branding.ppMode === "text" && branding.ppText ? (
+							<button type="button" onClick={() => setPpDialogOpen(true)} className="hover:text-muted-foreground transition-colors">
+								Privacy Policy
+							</button>
+						) : null}
+						{branding.tosMode === "url" && branding.tosUrl ? (
 							<a href={branding.tosUrl} target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">
 								Terms of Service
 							</a>
-						)}
-						{branding.cookieUrl && (
-							<a href={branding.cookieUrl} target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">
-								Cookie Policy
-							</a>
-						)}
+						) : branding.tosMode === "text" && branding.tosText ? (
+							<button type="button" onClick={() => setTosDialogOpen(true)} className="hover:text-muted-foreground transition-colors">
+								Terms of Service
+							</button>
+						) : null}
 					</div>
+				)}
+
+				{branding?.ppText && (
+					<Dialog open={ppDialogOpen} onOpenChange={setPpDialogOpen}>
+						<DialogContent className="max-h-[80vh] overflow-y-auto">
+							<DialogHeader>
+								<DialogTitle>Privacy Policy</DialogTitle>
+							</DialogHeader>
+							<div className="whitespace-pre-wrap text-sm text-muted-foreground">
+								{branding.ppText}
+							</div>
+						</DialogContent>
+					</Dialog>
+				)}
+
+				{branding?.tosText && (
+					<Dialog open={tosDialogOpen} onOpenChange={setTosDialogOpen}>
+						<DialogContent className="max-h-[80vh] overflow-y-auto">
+							<DialogHeader>
+								<DialogTitle>Terms of Service</DialogTitle>
+							</DialogHeader>
+							<div className="whitespace-pre-wrap text-sm text-muted-foreground">
+								{branding.tosText}
+							</div>
+						</DialogContent>
+					</Dialog>
 				)}
 			</div>
 		</div>

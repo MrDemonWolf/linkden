@@ -39,7 +39,10 @@ interface SavedState {
 	faviconUrl: string;
 	ppUrl: string;
 	tosUrl: string;
-	cookieUrl: string;
+	ppMode: string;
+	tosMode: string;
+	ppText: string;
+	tosText: string;
 	footerBrandingEnabled: boolean;
 	footerBrandingText: string;
 	footerBrandingLink: string;
@@ -64,7 +67,10 @@ function buildSavedState(s: Record<string, string>): SavedState {
 		faviconUrl: s.branding_favicon_url ?? "",
 		ppUrl: s.branding_pp_url ?? "",
 		tosUrl: s.branding_tos_url ?? "",
-		cookieUrl: s.branding_cookie_url ?? "",
+		ppMode: s.branding_pp_mode ?? "url",
+		tosMode: s.branding_tos_mode ?? "url",
+		ppText: s.branding_pp_text ?? "",
+		tosText: s.branding_tos_text ?? "",
 		footerBrandingEnabled: s.branding_enabled !== "false",
 		footerBrandingText: s.branding_text ?? "",
 		footerBrandingLink: s.branding_link ?? "",
@@ -106,7 +112,10 @@ export default function SettingsPage() {
 		faviconUrl: "",
 		ppUrl: "",
 		tosUrl: "",
-		cookieUrl: "",
+		ppMode: "url",
+		tosMode: "url",
+		ppText: "",
+		tosText: "",
 		footerBrandingEnabled: true,
 		footerBrandingText: "",
 		footerBrandingLink: "",
@@ -138,7 +147,10 @@ export default function SettingsPage() {
 	const [faviconUrl, setFaviconUrl] = useState("");
 	const [ppUrl, setPpUrl] = useState("");
 	const [tosUrl, setTosUrl] = useState("");
-	const [cookieUrl, setCookieUrl] = useState("");
+	const [ppMode, setPpMode] = useState("url");
+	const [tosMode, setTosMode] = useState("url");
+	const [ppText, setPpText] = useState("");
+	const [tosText, setTosText] = useState("");
 	const [footerBrandingEnabled, setFooterBrandingEnabled] = useState(true);
 	const [footerBrandingText, setFooterBrandingText] = useState("");
 	const [footerBrandingLink, setFooterBrandingLink] = useState("");
@@ -165,7 +177,10 @@ export default function SettingsPage() {
 			setFaviconUrl(s.faviconUrl);
 			setPpUrl(s.ppUrl);
 			setTosUrl(s.tosUrl);
-			setCookieUrl(s.cookieUrl);
+			setPpMode(s.ppMode);
+			setTosMode(s.tosMode);
+			setPpText(s.ppText);
+			setTosText(s.tosText);
 			setFooterBrandingEnabled(s.footerBrandingEnabled);
 			setFooterBrandingText(s.footerBrandingText);
 			setFooterBrandingLink(s.footerBrandingLink);
@@ -190,7 +205,10 @@ export default function SettingsPage() {
 		|| faviconUrl !== savedState.faviconUrl
 		|| ppUrl !== savedState.ppUrl
 		|| tosUrl !== savedState.tosUrl
-		|| cookieUrl !== savedState.cookieUrl
+		|| ppMode !== savedState.ppMode
+		|| tosMode !== savedState.tosMode
+		|| ppText !== savedState.ppText
+		|| tosText !== savedState.tosText
 		|| footerBrandingEnabled !== savedState.footerBrandingEnabled
 		|| footerBrandingText !== savedState.footerBrandingText
 		|| footerBrandingLink !== savedState.footerBrandingLink;
@@ -221,7 +239,10 @@ export default function SettingsPage() {
 		setFaviconUrl(savedState.faviconUrl);
 		setPpUrl(savedState.ppUrl);
 		setTosUrl(savedState.tosUrl);
-		setCookieUrl(savedState.cookieUrl);
+		setPpMode(savedState.ppMode);
+		setTosMode(savedState.tosMode);
+		setPpText(savedState.ppText);
+		setTosText(savedState.tosText);
 		setFooterBrandingEnabled(savedState.footerBrandingEnabled);
 		setFooterBrandingText(savedState.footerBrandingText);
 		setFooterBrandingLink(savedState.footerBrandingLink);
@@ -250,7 +271,10 @@ export default function SettingsPage() {
 				{ key: "branding_favicon_url", value: faviconUrl },
 				{ key: "branding_pp_url", value: ppUrl },
 				{ key: "branding_tos_url", value: tosUrl },
-				{ key: "branding_cookie_url", value: cookieUrl },
+				{ key: "branding_pp_mode", value: ppMode },
+				{ key: "branding_tos_mode", value: tosMode },
+				{ key: "branding_pp_text", value: ppText },
+				{ key: "branding_tos_text", value: tosText },
 				{ key: "branding_enabled", value: String(footerBrandingEnabled) },
 				{ key: "branding_text", value: footerBrandingText },
 				{ key: "branding_link", value: footerBrandingLink },
@@ -268,7 +292,7 @@ export default function SettingsPage() {
 				emailApiKey,
 				emailFrom,
 				adminBrandingEnabled,
-				siteName, logoUrl, faviconUrl, ppUrl, tosUrl, cookieUrl,
+				siteName, logoUrl, faviconUrl, ppUrl, tosUrl, ppMode, tosMode, ppText, tosText,
 				footerBrandingEnabled, footerBrandingText, footerBrandingLink,
 			});
 			invalidate();
@@ -371,7 +395,10 @@ export default function SettingsPage() {
 						faviconUrl={faviconUrl}
 						ppUrl={ppUrl}
 						tosUrl={tosUrl}
-						cookieUrl={cookieUrl}
+						ppMode={ppMode}
+						tosMode={tosMode}
+						ppText={ppText}
+						tosText={tosText}
 						adminBrandingEnabled={adminBrandingEnabled}
 						footerBrandingEnabled={footerBrandingEnabled}
 						footerBrandingText={footerBrandingText}
@@ -382,7 +409,10 @@ export default function SettingsPage() {
 						onFaviconUrlChange={setFaviconUrl}
 						onPpUrlChange={setPpUrl}
 						onTosUrlChange={setTosUrl}
-						onCookieUrlChange={setCookieUrl}
+						onPpModeChange={setPpMode}
+						onTosModeChange={setTosMode}
+						onPpTextChange={setPpText}
+						onTosTextChange={setTosText}
 						onAdminBrandingEnabledChange={setAdminBrandingEnabled}
 						onFooterBrandingEnabledChange={setFooterBrandingEnabled}
 						onFooterBrandingTextChange={setFooterBrandingText}
