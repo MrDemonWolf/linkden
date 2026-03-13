@@ -11,7 +11,10 @@ interface BrandingSectionProps {
 	faviconUrl: string;
 	ppUrl: string;
 	tosUrl: string;
-	cookieUrl: string;
+	ppMode: string;
+	tosMode: string;
+	ppText: string;
+	tosText: string;
 	adminBrandingEnabled: boolean;
 	footerBrandingEnabled: boolean;
 	footerBrandingText: string;
@@ -22,7 +25,10 @@ interface BrandingSectionProps {
 	onFaviconUrlChange: (v: string) => void;
 	onPpUrlChange: (v: string) => void;
 	onTosUrlChange: (v: string) => void;
-	onCookieUrlChange: (v: string) => void;
+	onPpModeChange: (v: string) => void;
+	onTosModeChange: (v: string) => void;
+	onPpTextChange: (v: string) => void;
+	onTosTextChange: (v: string) => void;
 	onAdminBrandingEnabledChange: (v: boolean) => void;
 	onFooterBrandingEnabledChange: (v: boolean) => void;
 	onFooterBrandingTextChange: (v: string) => void;
@@ -75,13 +81,43 @@ function Toggle({
 	);
 }
 
+function ModeToggle({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+	return (
+		<div className="inline-flex rounded-md border border-border overflow-hidden text-[10px]">
+			<button
+				type="button"
+				className={cn(
+					"px-2 py-0.5 transition-colors",
+					value === "url" ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+				)}
+				onClick={() => onChange("url")}
+			>
+				URL
+			</button>
+			<button
+				type="button"
+				className={cn(
+					"px-2 py-0.5 transition-colors",
+					value === "text" ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+				)}
+				onClick={() => onChange("text")}
+			>
+				Text
+			</button>
+		</div>
+	);
+}
+
 export function BrandingSection({
 	siteName,
 	logoUrl,
 	faviconUrl,
 	ppUrl,
 	tosUrl,
-	cookieUrl,
+	ppMode,
+	tosMode,
+	ppText,
+	tosText,
 	adminBrandingEnabled,
 	footerBrandingEnabled,
 	footerBrandingText,
@@ -92,7 +128,10 @@ export function BrandingSection({
 	onFaviconUrlChange,
 	onPpUrlChange,
 	onTosUrlChange,
-	onCookieUrlChange,
+	onPpModeChange,
+	onTosModeChange,
+	onPpTextChange,
+	onTosTextChange,
 	onAdminBrandingEnabledChange,
 	onFooterBrandingEnabledChange,
 	onFooterBrandingTextChange,
@@ -209,35 +248,53 @@ export function BrandingSection({
 				</p>
 				<div className="grid gap-3 sm:grid-cols-2">
 					<div className="space-y-1.5">
-						<Label htmlFor="branding-pp-url">Privacy Policy URL</Label>
-						<Input
-							id="branding-pp-url"
-							type="url"
-							value={ppUrl}
-							onChange={(e) => onPpUrlChange(e.target.value)}
-							placeholder="https://example.com/privacy"
-						/>
+						<div className="flex items-center gap-2">
+							<Label htmlFor="branding-pp">Privacy Policy</Label>
+							<ModeToggle value={ppMode} onChange={onPpModeChange} />
+						</div>
+						{ppMode === "url" ? (
+							<Input
+								id="branding-pp"
+								type="url"
+								value={ppUrl}
+								onChange={(e) => onPpUrlChange(e.target.value)}
+								placeholder="https://example.com/privacy"
+							/>
+						) : (
+							<textarea
+								id="branding-pp"
+								value={ppText}
+								onChange={(e) => onPpTextChange(e.target.value)}
+								placeholder="Enter your privacy policy text..."
+								className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+								rows={4}
+							/>
+						)}
 					</div>
 					<div className="space-y-1.5">
-						<Label htmlFor="branding-tos-url">Terms of Service URL</Label>
-						<Input
-							id="branding-tos-url"
-							type="url"
-							value={tosUrl}
-							onChange={(e) => onTosUrlChange(e.target.value)}
-							placeholder="https://example.com/terms"
-						/>
+						<div className="flex items-center gap-2">
+							<Label htmlFor="branding-tos">Terms of Service</Label>
+							<ModeToggle value={tosMode} onChange={onTosModeChange} />
+						</div>
+						{tosMode === "url" ? (
+							<Input
+								id="branding-tos"
+								type="url"
+								value={tosUrl}
+								onChange={(e) => onTosUrlChange(e.target.value)}
+								placeholder="https://example.com/terms"
+							/>
+						) : (
+							<textarea
+								id="branding-tos"
+								value={tosText}
+								onChange={(e) => onTosTextChange(e.target.value)}
+								placeholder="Enter your terms of service text..."
+								className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+								rows={4}
+							/>
+						)}
 					</div>
-				</div>
-				<div className="space-y-1.5">
-					<Label htmlFor="branding-cookie-url">Cookie Policy URL</Label>
-					<Input
-						id="branding-cookie-url"
-						type="url"
-						value={cookieUrl}
-						onChange={(e) => onCookieUrlChange(e.target.value)}
-						placeholder="https://example.com/cookies"
-					/>
 				</div>
 			</div>
 		</div>

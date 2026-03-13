@@ -6,13 +6,13 @@
     "./*": { "default": "./src/*.ts" }
   },
   "dependencies": {
-    "@react-email/components": "^0.0.36",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+    "@react-email/components": "^1.0.9",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
     "@linkden/config": "workspace:*",
-    "@types/react": "^19.2.7",
+    "@types/react": "^19.2.14",
     "typescript": "^5"
   }
 }
