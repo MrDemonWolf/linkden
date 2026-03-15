@@ -25,3 +25,8 @@ jobs:
 
       - name: Build
         run: bun run build
+        env:
+          NEXT_PUBLIC_SERVER_URL: http://localhost:3000
+          BETTER_AUTH_URL: http://localhost:3000
+          BETTER_AUTH_SECRET: ci-placeholder-secret-for-build
+          CORS_ORIGIN: http://localhost:3001
