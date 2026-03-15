@@ -3,7 +3,53 @@ import { db } from "@linkden/db";
 import { siteSettings } from "@linkden/db/schema/index";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { invalidateSetupToken } from "./public";
+
+// All valid setting keys — prevents arbitrary key injection
+const VALID_SETTING_KEYS = [
+	"profile_name",
+	"bio",
+	"avatar_url",
+	"banner_preset",
+	"banner_enabled",
+	"banner_mode",
+	"banner_custom_url",
+	"theme_preset",
+	"theme",
+	"custom_primary",
+	"custom_secondary",
+	"custom_accent",
+	"custom_background",
+	"custom_css",
+	"seo_title",
+	"seo_description",
+	"seo_og_image",
+	"seo_og_mode",
+	"seo_og_template",
+	"branding_enabled",
+	"branding_text",
+	"branding_link",
+	"branding_logo_url",
+	"branding_favicon_url",
+	"branding_site_name",
+	"branding_pp_url",
+	"branding_tos_url",
+	"branding_pp_mode",
+	"branding_pp_text",
+	"branding_tos_mode",
+	"branding_tos_text",
+	"default_color_mode",
+	"verified_badge",
+	"wallet_pass_enabled",
+	"vcard_enabled",
+	"contact_form_enabled",
+	"captcha_provider",
+	"captcha_site_key",
+	"captcha_secret_key",
+	"social_icon_shape",
+	"magic_link_enabled",
+] as const;
+
+const settingKeySchema = z.enum(VALID_SETTING_KEYS);
 
 // Sanitization utilities
 function stripHtmlTags(str: string): string {
@@ -25,13 +71,17 @@ function isValidHexColor(color: string): boolean {
 }
 
 function sanitizeCss(css: string): string {
-	// Strip known CSS injection vectors
+	// Strip known CSS injection vectors.
+	// Note: regex-based CSS sanitization has inherent limitations.
+	// Consider a proper CSS parser (e.g. csstree) for stricter validation in the future.
 	return css
 		.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
 		.replace(/<[^>]*>/g, "")
 		.replace(/expression\s*\(/gi, "")
 		.replace(/url\s*\(\s*['"]?\s*javascript:/gi, "url(")
-		.replace(/@import\s+url\s*\(\s*['"]?\s*javascript:/gi, "")
+		.replace(/@import\b/gi, "/* @import blocked */")
+		.replace(/url\s*\(\s*['"]?\s*data:/gi, "url(/* data: blocked */")
+		.replace(/\\[0-9a-fA-F]{1,6}/g, "") // strip backslash escape sequences
 		.replace(/behavior\s*:/gi, "")
 		.replace(/-moz-binding\s*:/gi, "");
 }
@@ -81,7 +131,7 @@ function sanitizeSetting(key: string, value: string): string {
 
 export const settingsRouter = router({
 	get: protectedProcedure
-		.input(z.object({ key: z.string() }))
+		.input(z.object({ key: settingKeySchema }))
 		.query(async ({ input }) => {
 			const [result] = await db
 				.select()
@@ -102,7 +152,7 @@ export const settingsRouter = router({
 	update: protectedProcedure
 		.input(
 			z.object({
-				key: z.string(),
+				key: settingKeySchema,
 				value: z.string(),
 			}),
 		)
@@ -125,17 +175,12 @@ export const settingsRouter = router({
 				});
 			}
 
-			if (input.key === "setup_completed" && sanitizedValue === "true") {
-				invalidateSetupToken();
-			}
-
 			return { success: true };
 		}),
 
 	updateBulk: protectedProcedure
-		.input(z.array(z.object({ key: z.string(), value: z.string() })))
+		.input(z.array(z.object({ key: settingKeySchema, value: z.string() })))
 		.mutation(async ({ input }) => {
-			let setupCompleted = false;
 			for (const { key, value } of input) {
 				const sanitizedValue = sanitizeSetting(key, value);
 				const [existing] = await db
@@ -151,14 +196,6 @@ export const settingsRouter = router({
 				} else {
 					await db.insert(siteSettings).values({ key, value: sanitizedValue });
 				}
-
-				if (key === "setup_completed" && sanitizedValue === "true") {
-					setupCompleted = true;
-				}
-			}
-
-			if (setupCompleted) {
-				invalidateSetupToken();
 			}
 
 			return { success: true };

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Eye, EyeOff, AlertCircle, Loader2, Mail } from "lucide-react";
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 
 export default function AdminLoginPage() {
+	const router = useRouter();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
@@ -36,8 +37,16 @@ export default function AdminLoginPage() {
 	const [tosDialogOpen, setTosDialogOpen] = useState(false);
 
 	const setupStatus = useQuery(trpc.public.getSetupStatus.queryOptions());
+	const hasUsersQuery = useQuery(trpc.public.hasUsers.queryOptions());
 	const branding = setupStatus.data?.branding;
 	const magicLinkEnabled = setupStatus.data?.magicLinkEnabled ?? false;
+
+	// If no users exist yet, redirect to setup
+	useEffect(() => {
+		if (hasUsersQuery.data && !hasUsersQuery.data.hasUsers) {
+			router.replace("/admin/setup");
+		}
+	}, [hasUsersQuery.data, router]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -382,17 +391,6 @@ export default function AdminLoginPage() {
 							</div>
 						)}
 					</div>
-				)}
-
-				{setupStatus.data?.completed === false && (
-					<p className="mt-6 text-center text-xs text-muted-foreground">
-						<Link
-							href="/admin/setup"
-							className="text-primary underline underline-offset-2 hover:no-underline font-medium"
-						>
-							Initial setup
-						</Link>
-					</p>
 				)}
 
 				{branding && (branding.ppUrl || branding.tosUrl || branding.ppText || branding.tosText) && (

@@ -50,7 +50,19 @@ LinkDen is a **single-user** platform. One instance = one link page. Need multip
 
 ### How does authentication work?
 
-LinkDen uses Better Auth for email/password login. You create an admin account during the setup wizard at `/admin/setup` -- no external auth service needed. Everything runs on your own server.
+LinkDen uses Better Auth for email/password login. Navigate to `/admin/setup` after deployment to create your admin account -- no external auth service needed. The first user becomes the admin and registration locks automatically. Everything runs on your own server.
+
+### How do I create my admin account?
+
+After deploying, visit `/admin/setup` in your browser. Enter your name, email, and password. If you visit `/admin/login` first, you'll be redirected to setup automatically.
+
+### Can I add more users?
+
+No. LinkDen is a single-user platform by design. After the first account is created, the signup endpoint returns 403 "Registration is closed". Deploy separate instances for separate users.
+
+### How do I reset my password?
+
+Use the "Forgot password?" link on the login page at `/admin/login`. You'll need email sending configured (Resend or Cloudflare Email Workers) in your admin settings for the reset link to be delivered.
 
 ---
 
