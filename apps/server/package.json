@@ -9,25 +9,26 @@
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server"
   },
   "dependencies": {
-    "@hono/trpc-server": "^0.4.0",
+    "@hono-rate-limiter/cloudflare": "^0.2.2",
+    "@hono/trpc-server": "^0.4.2",
     "@linkden/api": "workspace:*",
     "@linkden/auth": "workspace:*",
     "@linkden/db": "workspace:*",
     "@linkden/env": "workspace:*",
-    "@trpc/server": "catalog:",
-    "better-auth": "catalog:",
-    "dotenv": "catalog:",
-    "hono": "catalog:",
-    "hono-rate-limiter": "^0.5.3",
-    "zod": "catalog:"
+    "drizzle-orm": "^0.45.1",
+    "@trpc/server": "^11.12.0",
+    "better-auth": "^1.5.5",
+    "dotenv": "^17.3.1",
+    "hono": "^4.12.7",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "catalog:",
+    "@cloudflare/workers-types": "^4.20260312.1",
     "@linkden/config": "workspace:*",
-    "@types/node": "^22.13.14",
-    "alchemy": "catalog:",
-    "tsdown": "^0.16.5",
-    "typescript": "catalog:",
-    "wrangler": "catalog:"
+    "@types/node": "^25.5.0",
+    "alchemy": "^0.89.0",
+    "tsdown": "^0.21.2",
+    "typescript": "^5",
+    "wrangler": "^4.72.0"
   }
 }

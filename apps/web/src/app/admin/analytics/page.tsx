@@ -44,7 +44,7 @@ export default function AnalyticsPage() {
 
 	const viewsData = (viewsOverTime.data ?? []).map((d) => ({
 		...d,
-		label: new Date(d.date).toLocaleDateString(undefined, {
+		label: new Date(d.date as string).toLocaleDateString(undefined, {
 			month: "short",
 			day: "numeric",
 		}),
@@ -62,13 +62,13 @@ export default function AnalyticsPage() {
 				<StatCard
 					icon={Eye}
 					label="Total Views"
-					value={overview.data?.totalViews ?? 0}
+					value={(overview.data?.totalViews ?? 0) as number}
 					isLoading={overview.isLoading}
 				/>
 				<StatCard
 					icon={MousePointerClick}
 					label="Total Clicks"
-					value={overview.data?.totalClicks ?? 0}
+					value={(overview.data?.totalClicks ?? 0) as number}
 					iconColor="text-green-500"
 					iconBg="bg-green-500/10"
 					isLoading={overview.isLoading}
@@ -172,17 +172,17 @@ export default function AnalyticsPage() {
 							<div>
 								{topLinks.data.map((link, i) => (
 									<div
-										key={link.id ?? i}
+										key={String(link.id ?? i)}
 										className="flex items-center justify-between py-2 border-b border-border/40 last:border-0"
 									>
 										<div className="flex items-center gap-2 min-w-0">
 											<span className="text-xs text-muted-foreground w-5 shrink-0">{i + 1}.</span>
 											<span className="truncate text-xs">
-												{link.title || link.url || "Unknown"}
+												{(link.title as string | null) || (link.url as string | null) || "Unknown"}
 											</span>
 										</div>
 										<span className="ml-4 shrink-0 text-xs font-mono tabular-nums text-muted-foreground">
-											{link.clicks}
+											{link.clicks as number}
 										</span>
 									</div>
 								))}
@@ -214,17 +214,17 @@ export default function AnalyticsPage() {
 							<div>
 								{referrers.data.map((ref, i) => (
 									<div
-										key={ref.referrer ?? i}
+										key={String(ref.referrer ?? i)}
 										className="flex items-center justify-between py-2 border-b border-border/40 last:border-0"
 									>
 										<div className="flex items-center gap-2 min-w-0">
 											<span className="text-xs text-muted-foreground w-5 shrink-0">{i + 1}.</span>
 											<span className="truncate text-xs">
-												{ref.referrer || "Direct"}
+												{(ref.referrer as string | null) || "Direct"}
 											</span>
 										</div>
 										<span className="ml-4 shrink-0 text-xs font-mono tabular-nums text-muted-foreground">
-											{ref.count}
+											{ref.count as number}
 										</span>
 									</div>
 								))}
@@ -256,14 +256,14 @@ export default function AnalyticsPage() {
 							<div>
 								{countries.data.map((c, i) => (
 									<div
-										key={c.country ?? i}
+										key={String(c.country ?? i)}
 										className="flex items-center justify-between py-2 border-b border-border/40 last:border-0"
 									>
 										<div className="flex items-center gap-2 min-w-0">
 											<span className="text-xs text-muted-foreground w-5 shrink-0">{i + 1}.</span>
-											<span className="text-xs">{c.country || "Unknown"}</span>
+											<span className="text-xs">{(c.country as string | null) || "Unknown"}</span>
 										</div>
-										<span className="text-xs font-mono tabular-nums text-muted-foreground">{c.count}</span>
+										<span className="text-xs font-mono tabular-nums text-muted-foreground">{c.count as number}</span>
 									</div>
 								))}
 							</div>

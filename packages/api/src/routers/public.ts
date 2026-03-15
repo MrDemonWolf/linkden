@@ -14,35 +14,6 @@ import { eq, asc, and } from "drizzle-orm";
 import { z } from "zod";
 import { generateVCardString, vcardDataSchema } from "./vcard";
 
-// In-memory one-time setup token
-let setupToken: string | null = null;
-let setupTokenInitialized = false;
-
-async function getOrCreateSetupToken(): Promise<string | null> {
-	// Check if setup is already completed
-	const [setting] = await db
-		.select()
-		.from(siteSettings)
-		.where(eq(siteSettings.key, "setup_completed"));
-	if (setting?.value === "true") {
-		setupToken = null;
-		return null;
-	}
-
-	if (!setupTokenInitialized) {
-		setupToken = crypto.randomUUID();
-		setupTokenInitialized = true;
-		console.log(`\n  Setup URL: http://localhost:3001/admin/setup?token=${setupToken}\n`);
-	}
-
-	return setupToken;
-}
-
-export function invalidateSetupToken() {
-	setupToken = null;
-	setupTokenInitialized = false;
-}
-
 export const publicRouter = router({
 	getPage: publicProcedure.query(async () => {
 		const [profile] = await db.select().from(user).limit(1);
@@ -141,6 +112,15 @@ export const publicRouter = router({
 				customBackground: settings.custom_background || null,
 				customCss: settings.custom_css || null,
 				socialIconShape: (settings.social_icon_shape as "circle" | "rounded-square") || null,
+				brandingLogoUrl: settings.branding_logo_url || null,
+				brandingFaviconUrl: settings.branding_favicon_url || null,
+				brandingSiteName: settings.branding_site_name || null,
+				brandingPpUrl: settings.branding_pp_url || null,
+				brandingTosUrl: settings.branding_tos_url || null,
+				brandingPpMode: (settings.branding_pp_mode as "url" | "text") || "url",
+				brandingPpText: settings.branding_pp_text || null,
+				brandingTosMode: (settings.branding_tos_mode as "url" | "text") || "url",
+				brandingTosText: settings.branding_tos_text || null,
 			},
 		};
 	}),
@@ -164,6 +144,15 @@ export const publicRouter = router({
 			}),
 		)
 		.mutation(async ({ input }) => {
+			// Check if contact form is enabled
+			const [contactEnabled] = await db
+				.select()
+				.from(siteSettings)
+				.where(eq(siteSettings.key, "contact_form_enabled"));
+			if (contactEnabled?.value !== "true") {
+				throw new Error("Contact form is disabled");
+			}
+
 			// Validate CAPTCHA if configured
 			const [captchaProvider] = await db
 				.select()
@@ -268,6 +257,15 @@ export const publicRouter = router({
 		}),
 
 	getVCard: publicProcedure.query(async () => {
+		// Check global vcard setting
+		const [vcardSetting] = await db
+			.select()
+			.from(siteSettings)
+			.where(eq(siteSettings.key, "vcard_enabled"));
+		if (vcardSetting?.value !== "true") {
+			return { enabled: false, vcardString: null };
+		}
+
 		const [vcardBlock] = await db
 			.select()
 			.from(block)
@@ -290,36 +288,51 @@ export const publicRouter = router({
 		return { enabled: true, vcardString: generateVCardString(data) };
 	}),
 
-	getSetupStatus: publicProcedure.query(async () => {
-		const rows = await db
-			.select()
-			.from(siteSettings)
-			.where(
-				eq(siteSettings.key, "setup_completed"),
-			);
-		const [setting] = rows;
-
-		const [magicLinkRow] = await db
-			.select()
-			.from(siteSettings)
-			.where(eq(siteSettings.key, "magic_link_enabled"));
-
+	getBranding: publicProcedure.query(async () => {
+		const rows = await db.select().from(siteSettings);
+		const settings: Record<string, string> = {};
+		for (const row of rows) {
+			settings[row.key] = row.value;
+		}
 		return {
-			completed: setting?.value === "true",
-			magicLinkEnabled: magicLinkRow?.value !== "false",
+			logoUrl: settings.branding_logo_url || null,
+			siteName: settings.branding_site_name || null,
+			ppUrl: settings.branding_pp_url || null,
+			tosUrl: settings.branding_tos_url || null,
+			ppMode: (settings.branding_pp_mode as "url" | "text") || "url",
+			ppText: settings.branding_pp_text || null,
+			tosMode: (settings.branding_tos_mode as "url" | "text") || "url",
+			tosText: settings.branding_tos_text || null,
 		};
 	}),
 
-	validateSetupToken: publicProcedure
-		.input(z.object({ token: z.string() }))
-		.query(async ({ input }) => {
-			const currentToken = await getOrCreateSetupToken();
-			if (!currentToken) {
-				return { valid: false, reason: "setup_completed" as const };
-			}
-			if (input.token !== currentToken) {
-				return { valid: false, reason: "invalid_token" as const };
-			}
-			return { valid: true, reason: null };
-		}),
+	hasUsers: publicProcedure.query(async () => {
+		const [existingUser] = await db.select({ id: user.id }).from(user).limit(1);
+		return { hasUsers: !!existingUser };
+	}),
+
+	getSetupStatus: publicProcedure.query(async () => {
+		const [existingUser] = await db.select({ id: user.id }).from(user).limit(1);
+
+		const allRows = await db.select().from(siteSettings);
+		const s: Record<string, string> = {};
+		for (const row of allRows) {
+			s[row.key] = row.value;
+		}
+
+		return {
+			completed: !!existingUser,
+			magicLinkEnabled: s.magic_link_enabled !== "false",
+			branding: {
+				logoUrl: s.branding_logo_url || null,
+				siteName: s.branding_site_name || null,
+				ppUrl: s.branding_pp_url || null,
+				tosUrl: s.branding_tos_url || null,
+				ppMode: (s.branding_pp_mode as "url" | "text") || "url",
+				ppText: s.branding_pp_text || null,
+				tosMode: (s.branding_tos_mode as "url" | "text") || "url",
+				tosText: s.branding_tos_text || null,
+			},
+		};
+	}),
 });

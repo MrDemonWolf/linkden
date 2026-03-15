@@ -46,7 +46,7 @@ export function BannerSection({
 				<div
 					ref={bannerRef}
 					className="absolute inset-0"
-					style={{ willChange: "transform" }}
+					style={{ willChange: "transform", backfaceVisibility: "hidden", transformStyle: "preserve-3d" }}
 				>
 					<img
 						src={bannerCustomUrl}
@@ -60,6 +60,7 @@ export function BannerSection({
 					style={{
 						background: `linear-gradient(to top, ${bgColor} 0%, ${bgColor}99 20%, transparent 60%)`,
 						transition: "background 0.5s ease",
+						willChange: "transform",
 					}}
 				/>
 			</div>
@@ -75,7 +76,7 @@ export function BannerSection({
 			<div
 				ref={bannerRef}
 				className={`absolute inset-0 ${preset.type === "css" ? (preset.className ?? "") : ""}`}
-				style={preset.type === "css" ? { ...preset.style, willChange: "transform" } : { willChange: "transform" }}
+				style={preset.type === "css" ? { ...preset.style, willChange: "transform", backfaceVisibility: "hidden", transformStyle: "preserve-3d" } : { willChange: "transform", backfaceVisibility: "hidden", transformStyle: "preserve-3d" }}
 			>
 				{preset.type === "shader" && <ShaderBanner preset={preset} />}
 			</div>
@@ -85,6 +86,7 @@ export function BannerSection({
 				style={{
 					background: `linear-gradient(to top, ${bgColor} 0%, ${bgColor}99 20%, transparent 60%)`,
 					transition: "background 0.5s ease",
+					willChange: "transform",
 				}}
 			/>
 		</div>

@@ -56,7 +56,7 @@ async function processSquareImage(file: File, maxSize: number): Promise<File> {
 interface ImageUploadFieldProps {
 	label?: string;
 	value: string;
-	purpose: "avatar" | "banner" | "og_image" | "wallet_logo";
+	purpose: "avatar" | "banner" | "og_image" | "wallet_logo" | "logo" | "favicon";
 	onUploadComplete: (url: string) => void;
 	aspectRatio?: "square" | "banner" | "logo";
 }
@@ -87,7 +87,7 @@ export function ImageUploadField({
 
 			// Process wallet logos into square images
 			let fileToUpload = file;
-			if (purpose === "wallet_logo") {
+			if (purpose === "wallet_logo" || purpose === "favicon") {
 				try {
 					fileToUpload = await processSquareImage(file, 512);
 				} catch {

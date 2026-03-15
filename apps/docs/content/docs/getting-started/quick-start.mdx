@@ -9,26 +9,13 @@ You'll go from a fresh install to a live link page in about five minutes. If you
 
 ---
 
-## 1. Run the Setup Wizard
+## 1. Create Your Admin Account
 
-When LinkDen starts for the first time, it prints a one-time setup URL to your **server console**:
+Navigate to `/admin/setup` in your browser. If no admin account exists yet, you'll see the setup form.
 
-```
-Setup URL: http://localhost:3001/admin/setup?token=<unique-token>
-```
+Enter your **name**, **email**, and **password**, then click **Create Account**. The first user becomes the admin and registration locks automatically -- no one else can sign up.
 
-Open that URL in your browser. The token keeps setup secure -- it's only valid once.
-
-> **Tip:** If you go to `/admin/setup` without the token, the page will tell you to check your server console.
-
-The wizard has 4 quick steps:
-
-1. **Account** -- Pick a name, email, and password for your admin login.
-2. **Profile** -- Add a bio and avatar (or skip these for now).
-3. **Theme** -- Choose from 7 theme presets. Each shows color swatches so you can preview.
-4. **Done** -- Hit "Go to Builder" to start adding content.
-
-The setup token is automatically invalidated once you finish.
+> **Tip:** If you visit `/admin/login` before creating an account, you'll be redirected to the setup page automatically.
 
 ---
 

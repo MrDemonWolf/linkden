@@ -19,13 +19,13 @@ Self-hosted link-in-bio application built for Cloudflare-first deployment.
 
 ## Commands
 
-- `pnpm dev` — Start all apps in development mode
-- `pnpm build` — Build all apps and packages
-- `pnpm check-types` — TypeScript type checking
-- `pnpm db:generate` — Generate Drizzle migrations
-- `pnpm db:push` — Push schema to database
-- `pnpm deploy` — Deploy to Cloudflare via Alchemy
-- `pnpm destroy` — Tear down Cloudflare resources
+- `bun dev` — Start all apps in development mode
+- `bun run build` — Build all apps and packages
+- `bun run check-types` — TypeScript type checking
+- `bun run db:generate` — Generate Drizzle migrations
+- `bun run db:push` — Push schema to database
+- `bun run deploy` — Deploy to Cloudflare via Alchemy
+- `bun run destroy` — Tear down Cloudflare resources
 
 ## Tech Stack
 

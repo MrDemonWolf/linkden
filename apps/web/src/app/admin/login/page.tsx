@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Eye, EyeOff, AlertCircle, Loader2, Mail } from "lucide-react";
@@ -11,6 +10,14 @@ import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@linkden/ui";
+import { Separator } from "@linkden/ui";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function AdminLoginPage() {
 	const router = useRouter();
@@ -18,15 +25,28 @@ export default function AdminLoginPage() {
 	const [password, setPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [isMagicLinkSubmitting, setIsMagicLinkSubmitting] = useState(false);
-	const [magicLinkSent, setMagicLinkSent] = useState(false);
 	const [formError, setFormError] = useState("");
 	const [forgotMode, setForgotMode] = useState(false);
 	const [isForgotSubmitting, setIsForgotSubmitting] = useState(false);
 	const [resetLinkSent, setResetLinkSent] = useState(false);
+	const [rememberMe, setRememberMe] = useState(true);
+	const [loginSuccess, setLoginSuccess] = useState(false);
+	const [isMagicLinkSubmitting, setIsMagicLinkSubmitting] = useState(false);
+	const [magicLinkSent, setMagicLinkSent] = useState(false);
+	const [ppDialogOpen, setPpDialogOpen] = useState(false);
+	const [tosDialogOpen, setTosDialogOpen] = useState(false);
 
 	const setupStatus = useQuery(trpc.public.getSetupStatus.queryOptions());
-	const magicLinkEnabled = setupStatus.data?.magicLinkEnabled ?? true;
+	const hasUsersQuery = useQuery(trpc.public.hasUsers.queryOptions());
+	const branding = setupStatus.data?.branding;
+	const magicLinkEnabled = setupStatus.data?.magicLinkEnabled ?? false;
+
+	// If no users exist yet, redirect to setup
+	useEffect(() => {
+		if (hasUsersQuery.data && !hasUsersQuery.data.hasUsers) {
+			router.replace("/admin/setup");
+		}
+	}, [hasUsersQuery.data, router]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -39,11 +59,11 @@ export default function AdminLoginPage() {
 		setIsSubmitting(true);
 		try {
 			await authClient.signIn.email(
-				{ email, password },
+				{ email, password, rememberMe },
 				{
 					onSuccess: () => {
-						toast.success("Signed in successfully");
-						router.push("/admin");
+						setLoginSuccess(true);
+						window.location.href = "/admin";
 					},
 					onError: (error) => {
 						const msg = error.error.message || "Invalid credentials";
@@ -53,13 +73,46 @@ export default function AdminLoginPage() {
 				},
 			);
 		} finally {
-			setIsSubmitting(false);
+			if (!loginSuccess) {
+				setIsSubmitting(false);
+			}
+		}
+	};
+
+	const handleForgotPassword = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!email) {
+			setFormError("Please enter your email address");
+			return;
+		}
+		setFormError("");
+		setIsForgotSubmitting(true);
+		try {
+			const response = await fetch("/api/auth/send-password-reset-email", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ email, redirectUrl: `${window.location.origin}/admin/reset-password` }),
+			});
+
+			if (!response.ok) {
+				const error = await response.json() as { message?: string };
+				throw new Error(error.message || "Failed to send reset link");
+			}
+
+			setResetLinkSent(true);
+			toast.success("Reset link sent! Check your email.");
+		} catch (error) {
+			const msg = error instanceof Error ? error.message : "Failed to send reset link";
+			setFormError(msg);
+			toast.error(msg);
+		} finally {
+			setIsForgotSubmitting(false);
 		}
 	};
 
 	const handleMagicLink = async () => {
 		if (!email) {
-			setFormError("Please enter your email address above");
+			setFormError("Please enter your email address");
 			return;
 		}
 		setFormError("");
@@ -70,7 +123,6 @@ export default function AdminLoginPage() {
 				{
 					onSuccess: () => {
 						setMagicLinkSent(true);
-						toast.success("Magic link sent! Check your email.");
 					},
 					onError: (error) => {
 						const msg = error.error.message || "Failed to send magic link";
@@ -84,61 +136,46 @@ export default function AdminLoginPage() {
 		}
 	};
 
-	const handleForgotPassword = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!email) {
-			setFormError("Please enter your email address");
-			return;
-		}
-		setFormError("");
-		setIsForgotSubmitting(true);
-		try {
-			await authClient.forgetPassword(
-				{ email, redirectTo: "/admin/reset-password" },
-				{
-					onSuccess: () => {
-						setResetLinkSent(true);
-						toast.success("Reset link sent! Check your email.");
-					},
-					onError: (error) => {
-						const msg = error.error.message || "Failed to send reset link";
-						setFormError(msg);
-						toast.error(msg);
-					},
-				},
-			);
-		} finally {
-			setIsForgotSubmitting(false);
-		}
-	};
-
 	return (
 		<div className="admin-glass-bg flex min-h-screen items-center justify-center px-4">
 			<div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both">
 				{/* Logo + title above card */}
 				<div className="mb-8 text-center">
-					<div className="mx-auto flex h-12 w-12 items-center justify-center bg-primary/90 backdrop-blur-sm text-primary-foreground text-lg font-bold rounded-2xl">
-						LD
-					</div>
-					<h1 className="mt-4 text-xl font-semibold">Sign in to LinkDen</h1>
+					{branding?.logoUrl ? (
+						<img
+							src={branding.logoUrl}
+							alt=""
+							className="h-12 w-12 rounded-2xl object-cover mx-auto"
+						/>
+					) : (
+						<div className="mx-auto flex h-12 w-12 items-center justify-center bg-primary/90 backdrop-blur-sm text-primary-foreground text-lg font-bold rounded-2xl">
+							LD
+						</div>
+					)}
+					<h1 className="mt-4 text-xl font-semibold">Welcome back</h1>
 					<p className="mt-1 text-xs text-muted-foreground">
-						Enter your credentials to access the admin panel
+						Enter your credentials to access your account
 					</p>
 				</div>
 
-				{magicLinkSent ? (
+				{loginSuccess ? (
+					<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl text-center space-y-3">
+						<Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />
+						<p className="text-sm font-medium">Login successful, redirecting...</p>
+					</div>
+				) : magicLinkSent ? (
 					<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl text-center space-y-3">
 						<div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
 							<Mail className="h-5 w-5 text-primary" />
 						</div>
 						<h2 className="text-sm font-semibold">Check your email</h2>
 						<p className="text-xs text-muted-foreground">
-							We sent a sign-in link to <span className="font-medium text-foreground">{email}</span>. Click it to access the admin panel.
+							We sent a magic link to <span className="font-medium text-foreground">{email}</span>. Click it to sign in.
 						</p>
 						<button
 							type="button"
 							className="text-xs text-primary underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-ring rounded"
-							onClick={() => setMagicLinkSent(false)}
+							onClick={() => { setMagicLinkSent(false); setFormError(""); }}
 						>
 							Back to sign in
 						</button>
@@ -264,9 +301,9 @@ export default function AdminLoginPage() {
 									<button
 										type="button"
 										onClick={() => { setForgotMode(true); setFormError(""); }}
-										className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
+										className="text-xs text-primary cursor-pointer hover:text-primary/80 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
 									>
-										Forgot?
+										Forgot password?
 									</button>
 								</div>
 								<div className="relative">
@@ -295,6 +332,17 @@ export default function AdminLoginPage() {
 								</div>
 							</div>
 
+							<div className="flex items-center gap-2">
+								<Checkbox
+									id="remember-me"
+									checked={rememberMe}
+									onCheckedChange={(checked) => setRememberMe(checked === true)}
+								/>
+								<Label htmlFor="remember-me" className="text-xs text-muted-foreground cursor-pointer">
+									Keep me signed in
+								</Label>
+							</div>
+
 							<Button
 								type="submit"
 								variant="default"
@@ -313,22 +361,20 @@ export default function AdminLoginPage() {
 						</form>
 
 						{magicLinkEnabled && (
-							<>
-								<div className="relative my-4">
-									<div className="absolute inset-0 flex items-center">
-										<div className="w-full border-t border-white/10" />
-									</div>
-									<div className="relative flex justify-center">
-										<span className="bg-transparent px-2 text-xs text-muted-foreground">or</span>
-									</div>
+							<div className="mt-4 space-y-4">
+								<div className="relative">
+									<Separator />
+									<span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-transparent px-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground backdrop-blur-sm">
+										or continue with
+									</span>
 								</div>
 
 								<Button
 									type="button"
 									variant="outline"
-									className="w-full border-white/15 dark:bg-input/20"
-									onClick={handleMagicLink}
+									className="w-full"
 									disabled={isMagicLinkSubmitting}
+									onClick={handleMagicLink}
 								>
 									{isMagicLinkSubmitting ? (
 										<>
@@ -342,21 +388,58 @@ export default function AdminLoginPage() {
 										</>
 									)}
 								</Button>
-							</>
+							</div>
 						)}
 					</div>
 				)}
 
-				{setupStatus.data?.completed === false && (
-					<p className="mt-6 text-center text-xs text-muted-foreground">
-						Don&apos;t have an account?{" "}
-						<Link
-							href="/admin/setup"
-							className="text-primary underline underline-offset-2 hover:no-underline font-medium"
-						>
-							Create account
-						</Link>
-					</p>
+				{branding && (branding.ppUrl || branding.tosUrl || branding.ppText || branding.tosText) && (
+					<div className="mt-8 flex justify-center gap-4 text-[10px] uppercase tracking-wider text-muted-foreground/60">
+						{branding.ppMode === "url" && branding.ppUrl ? (
+							<a href={branding.ppUrl} target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">
+								Privacy Policy
+							</a>
+						) : branding.ppMode === "text" && branding.ppText ? (
+							<button type="button" onClick={() => setPpDialogOpen(true)} className="hover:text-muted-foreground transition-colors">
+								Privacy Policy
+							</button>
+						) : null}
+						{branding.tosMode === "url" && branding.tosUrl ? (
+							<a href={branding.tosUrl} target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">
+								Terms of Service
+							</a>
+						) : branding.tosMode === "text" && branding.tosText ? (
+							<button type="button" onClick={() => setTosDialogOpen(true)} className="hover:text-muted-foreground transition-colors">
+								Terms of Service
+							</button>
+						) : null}
+					</div>
+				)}
+
+				{branding?.ppText && (
+					<Dialog open={ppDialogOpen} onOpenChange={setPpDialogOpen}>
+						<DialogContent className="max-h-[80vh] overflow-y-auto">
+							<DialogHeader>
+								<DialogTitle>Privacy Policy</DialogTitle>
+							</DialogHeader>
+							<div className="whitespace-pre-wrap text-sm text-muted-foreground">
+								{branding.ppText}
+							</div>
+						</DialogContent>
+					</Dialog>
+				)}
+
+				{branding?.tosText && (
+					<Dialog open={tosDialogOpen} onOpenChange={setTosDialogOpen}>
+						<DialogContent className="max-h-[80vh] overflow-y-auto">
+							<DialogHeader>
+								<DialogTitle>Terms of Service</DialogTitle>
+							</DialogHeader>
+							<div className="whitespace-pre-wrap text-sm text-muted-foreground">
+								{branding.tosText}
+							</div>
+						</DialogContent>
+					</Dialog>
 				)}
 			</div>
 		</div>

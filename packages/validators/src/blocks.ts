@@ -7,6 +7,7 @@ export const blockTypeSchema = z.enum([
   "embed",
   "form",
   "vcard",
+  "location",
 ]);
 
 export type BlockType = z.infer<typeof blockTypeSchema>;
@@ -32,6 +33,9 @@ export const linkConfigSchema = blockConfigBaseSchema.extend({
   fontWeight: z.string().optional(),
   isOutlined: z.boolean().optional(),
   openInNewTab: z.boolean().optional(),
+  description: z.string().optional(),
+  thumbnail: z.string().optional(),
+  isHighlighted: z.boolean().optional(),
 });
 
 export const headerConfigSchema = blockConfigBaseSchema.extend({
@@ -109,6 +113,14 @@ export const vcardConfigSchema = blockConfigBaseSchema.extend({
   isOutlined: z.boolean().optional(),
 });
 
+export const locationConfigSchema = blockConfigBaseSchema.extend({
+  address: z.string().optional(),
+  displayMode: z.enum(["text", "map"]).default("text"),
+  linkType: z.enum(["google", "apple", "custom", "none"]).default("none"),
+  customLinkUrl: z.string().optional(),
+  coordinates: z.object({ lat: z.number(), lng: z.number() }).optional(),
+});
+
 export const socialIconItemSchema = z.object({
   platform: z.string(),
   url: z.string().url(),
@@ -134,6 +146,7 @@ export const createBlockSchema = z.object({
       embedConfigSchema,
       formConfigSchema,
       vcardConfigSchema,
+      locationConfigSchema,
       blockConfigBaseSchema,
     ])
     .optional(),
@@ -160,6 +173,7 @@ export const updateBlockSchema = z.object({
       embedConfigSchema,
       formConfigSchema,
       vcardConfigSchema,
+      locationConfigSchema,
       blockConfigBaseSchema,
     ])
     .optional(),

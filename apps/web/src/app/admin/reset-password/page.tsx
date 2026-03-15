@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { AlertCircle, Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
@@ -12,7 +12,11 @@ import { Label } from "@/components/ui/label";
 export default function ResetPasswordPage() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
-	const token = searchParams.get("token") ?? "";
+	const [token, setToken] = useState("");
+
+	useEffect(() => {
+		setToken(searchParams.get("token") ?? "");
+	}, [searchParams]);
 	const [newPassword, setNewPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
