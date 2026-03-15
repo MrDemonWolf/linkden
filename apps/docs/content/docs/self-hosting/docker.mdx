@@ -38,11 +38,7 @@ cp .env.example .env
 docker compose up -d
 ```
 
-Check the API logs for the one-time setup URL, then open it in your browser to create your admin account:
-
-```bash
-docker compose logs api | grep "Setup URL"
-```
+After containers start, visit `http://localhost:3001/admin/setup` in your browser to create your admin account. The first user becomes the admin and registration locks automatically.
 
 ## Database: D1 vs. SQLite File
 
@@ -297,12 +293,9 @@ openssl rand -base64 32
 
 After starting the containers:
 
-1. Check the API logs for the one-time setup URL:
-   ```bash
-   docker compose logs api | grep "Setup URL"
-   ```
-2. Open the URL in your browser and create your admin account.
-3. The token is invalidated once setup completes.
+1. Visit `https://yourdomain.com/admin/setup` in your browser.
+2. Enter your name, email, and password to create your admin account.
+3. The first user becomes the admin and registration locks automatically.
 4. Sign in at `/admin/login`.
 
 ## Common Commands

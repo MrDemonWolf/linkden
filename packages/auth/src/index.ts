@@ -74,6 +74,16 @@ export const auth = betterAuth({
     twoFactor(),
     magicLink({
       sendMagicLink: async ({ email, url }) => {
+        // Check if magic link sign-in is enabled
+        const allRows = await db.select().from(siteSettings);
+        const s: Record<string, string> = {};
+        for (const row of allRows) {
+          s[row.key] = row.value;
+        }
+        if (s.magic_link_enabled === "false") {
+          throw new Error("Magic link sign-in is disabled");
+        }
+
         const { apiKey, from } = await getEmailSettings();
         if (!apiKey) {
           console.warn("No email API key configured; skipping magic link email");

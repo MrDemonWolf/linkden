@@ -1,0 +1,170 @@
+---
+title: Troubleshooting
+description: Common issues and solutions for self-hosted LinkDen instances.
+---
+
+# Troubleshooting
+
+Solutions to common problems across all deployment platforms. For platform-specific issues, also check the troubleshooting section in your deployment guide ([Cloudflare](/docs/self-hosting/cloudflare), [Docker](/docs/self-hosting/docker), [Coolify](/docs/self-hosting/coolify)).
+
+---
+
+## Cloudflare Workers
+
+### D1 binding errors
+
+The API Worker can't find the database.
+
+- Verify the D1 database exists: `wrangler d1 list`
+- Check the binding name in `wrangler.toml` matches what the code expects
+- Redeploy with `pnpm ship` to recreate bindings
+
+### R2 bucket not working
+
+Image uploads fail with "Image storage not configured".
+
+- Ensure the R2 bucket is created and bound as `IMAGES_BUCKET` in the Worker settings
+- Check the R2 binding in your `wrangler.toml` or Alchemy config
+- Verify with `wrangler r2 bucket list`
+
+### CORS errors on workers.dev subdomains
+
+- `CORS_ORIGIN` must exactly match the web Worker URL, including `https://` and no trailing slash
+- Example: `CORS_ORIGIN=https://linkden-web.your-subdomain.workers.dev`
+
+### Auth cookies not working on workers.dev
+
+Better Auth cookies may not work across different `*.workers.dev` subdomains because they're treated as separate origins.
+
+- Use custom domains for both Workers (e.g., `yourdomain.com` and `api.yourdomain.com`)
+- Ensure `BETTER_AUTH_URL` matches the actual API domain
+
+---
+
+## Docker
+
+### Environment variables not loading
+
+- Runtime variables (like `BETTER_AUTH_SECRET`) go in the `environment` block of `docker-compose.yml`
+- `NEXT_PUBLIC_*` variables must be set at **build time** as build args — changing them requires a rebuild
+- Verify with: `docker exec linkden-api env | grep BETTER`
+
+### Port conflicts
+
+```
+Error: listen EADDRINUSE :::8787
+```
+
+Another process is using port 8787. Either stop it or change the port mapping in `docker-compose.yml`.
+
+### Database not persisting
+
+- Check that the volume is mounted: `docker inspect linkden-api | grep Mounts -A 20`
+- Ensure `DATABASE_URL=file:/data/linkden.db`
+- Never use `docker compose down -v` unless you want to delete data
+
+### Volume mount permissions
+
+If the container can't write to `/data`:
+
+```bash
+docker exec linkden-api ls -la /data
+```
+
+Fix with: `chmod 777 /data` inside the container or adjust the user in the Dockerfile.
+
+---
+
+## Coolify
+
+### Build failures
+
+- Check Coolify build logs for the specific error
+- Ensure the Dockerfile path is correct (e.g., `Dockerfile.api` not `./Dockerfile.api`)
+- Verify build context is set to `.` (repository root)
+- If using Docker Compose, make sure `docker-compose.yml` is at the repository root
+
+### Environment variable injection
+
+- API runtime variables: add as **Environment Variables** in Coolify
+- Web build args: add as **Build Arguments** (not environment variables)
+- Mark secrets (API keys, auth secret) as **Secret** in Coolify
+
+### Health check failures
+
+If Coolify reports the service as unhealthy:
+
+- Check that the exposed port matches the health check port
+- API health check: `wget --spider -q http://localhost:8787/`
+- Web health check: `wget --spider -q http://localhost:3001/`
+- Increase `start_period` if the container takes longer to boot
+
+---
+
+## General Issues
+
+### CORS errors
+
+**Symptom:** Browser console shows `Access-Control-Allow-Origin` errors.
+
+**Fix:**
+1. `CORS_ORIGIN` must exactly match the frontend URL (protocol + domain + port, no trailing slash)
+2. Wrong: `http://localhost:3001/` or `localhost:3001`
+3. Right: `http://localhost:3001`
+
+### Auth cookie issues
+
+**Symptom:** Login succeeds but you're immediately logged out, or admin pages show "Unauthorized".
+
+**Causes:**
+- `BETTER_AUTH_URL` doesn't match the actual API URL the browser reaches
+- Frontend and API are on different domains without proper cookie settings
+- `BETTER_AUTH_SECRET` changed between deployments (invalidates existing sessions)
+
+**Fix:**
+- Ensure `BETTER_AUTH_URL` matches the publicly accessible API URL
+- For cross-domain setups, use custom domains on the same root domain
+- If you changed `BETTER_AUTH_SECRET`, users need to log in again
+
+### Email sending failures
+
+**Symptom:** Password reset or magic link emails don't arrive.
+
+**Causes:**
+- Email provider not configured in admin settings
+- API key is invalid or expired
+- From email address not verified with the provider
+
+**Fix:**
+1. Go to `/admin/settings` > **Email**
+2. Select your provider (Resend or Cloudflare Email Workers)
+3. Enter a valid API key
+4. Ensure the "From" email is verified with your provider
+5. Check spam folders
+
+### "Registration is closed" message
+
+**Symptom:** Trying to sign up returns 403 "Registration is closed".
+
+**Explanation:** This is expected behavior. LinkDen is a single-user platform. After the first admin account is created, registration is permanently locked. This protects your instance from unauthorized account creation.
+
+If you need to reset and create a new admin account, you'll need to clear the user table in your database:
+- **Cloudflare D1:** Use the D1 console in the Cloudflare dashboard
+- **Docker:** `docker exec linkden-api sqlite3 /data/linkden.db "DELETE FROM user;"`
+- **Coolify:** Access the container shell through Coolify's terminal
+
+### File upload errors
+
+**Symptom:** Image uploads are rejected.
+
+**Possible causes:**
+- **413 error:** File exceeds the 5 MB size limit. Resize or compress the image.
+- **400 error (file type):** Only image files are allowed: jpg, jpeg, png, gif, webp, svg, ico.
+- **400 error (MIME type):** The file's MIME type doesn't match an allowed image type. Re-export the file in a supported format.
+- **500 error:** R2 bucket (Cloudflare) or image storage is not configured. Check your deployment's storage bindings.
+
+### Settings validation errors
+
+**Symptom:** Saving settings fails with a validation error.
+
+**Explanation:** The settings API only accepts known setting keys. If you're making direct API calls, ensure you're using valid keys. The admin UI handles this automatically.

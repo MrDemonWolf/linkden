@@ -235,16 +235,28 @@ export function BlockEditPanel({
 						</div>
 
 						{block.type === "link" && (
-							<div className="space-y-1.5">
-								<Label htmlFor="edit-url">URL</Label>
-								<Input
-									id="edit-url"
-									value={url}
-									onChange={(e) => setUrl(e.target.value)}
-									placeholder="https://example.com"
-									className="dark:bg-input/30 border-white/15"
-								/>
-							</div>
+							<>
+								<div className="space-y-1.5">
+									<Label htmlFor="edit-url">URL</Label>
+									<Input
+										id="edit-url"
+										value={url}
+										onChange={(e) => setUrl(e.target.value)}
+										placeholder="https://example.com"
+										className="dark:bg-input/30 border-white/15"
+									/>
+								</div>
+								<div className="space-y-1.5">
+									<Label htmlFor="edit-description">Description</Label>
+									<Input
+										id="edit-description"
+										value={parsedConfig.description ?? ""}
+										onChange={(e) => updateConfigField("description", e.target.value)}
+										placeholder="Brief description of the link"
+										className="dark:bg-input/30 border-white/15"
+									/>
+								</div>
+							</>
 						)}
 
 						{block.type === "embed" && (
@@ -499,6 +511,56 @@ export function BlockEditPanel({
 							</>
 						)}
 
+						{block.type === "location" && (
+							<>
+								<div className="space-y-1.5">
+									<Label htmlFor="edit-address">Address</Label>
+									<Input
+										id="edit-address"
+										value={parsedConfig.address ?? ""}
+										onChange={(e) => updateConfigField("address", e.target.value)}
+										placeholder="San Francisco, CA"
+										className="dark:bg-input/30 border-white/15"
+									/>
+								</div>
+								<div className="space-y-1.5">
+									<Label>Link Type</Label>
+									<SegmentedControl
+										value={parsedConfig.linkType ?? "none"}
+										options={[
+											{ value: "google", label: "Google" },
+											{ value: "apple", label: "Apple" },
+											{ value: "custom", label: "Custom" },
+											{ value: "none", label: "None" },
+										]}
+										onChange={(v) => updateConfigField("linkType", v)}
+									/>
+								</div>
+								{parsedConfig.linkType === "custom" && (
+									<div className="space-y-1.5">
+										<Label htmlFor="edit-custom-link">Custom Link URL</Label>
+										<Input
+											id="edit-custom-link"
+											value={parsedConfig.customLinkUrl ?? ""}
+											onChange={(e) => updateConfigField("customLinkUrl", e.target.value)}
+											placeholder="https://maps.example.com/..."
+											className="dark:bg-input/30 border-white/15"
+										/>
+									</div>
+								)}
+								{(parsedConfig.linkType === "google" || parsedConfig.linkType === "apple") && parsedConfig.address && (
+									<div className="space-y-1">
+										<Label className="text-[11px] text-muted-foreground">Generated URL</Label>
+										<p className="text-[11px] font-mono text-muted-foreground break-all">
+											{parsedConfig.linkType === "google"
+												? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parsedConfig.address as string)}`
+												: `https://maps.apple.com/?q=${encodeURIComponent(parsedConfig.address as string)}`}
+										</p>
+									</div>
+								)}
+							</>
+						)}
+
 						{block.type === "social_icons" && (
 							<div className="space-y-3">
 								<Label>Active Networks</Label>
@@ -639,6 +701,12 @@ export function BlockEditPanel({
 
 						{block.type === "link" && (
 							<>
+								<ToggleSwitch
+									checked={!!parsedConfig.isHighlighted}
+									onToggle={() => updateConfigField("isHighlighted", !parsedConfig.isHighlighted)}
+									label="Highlighted"
+									description="Uses accent color background"
+								/>
 								<ToggleSwitch
 									checked={!!parsedConfig.noFollow}
 									onToggle={() => updateConfigField("noFollow", !parsedConfig.noFollow)}

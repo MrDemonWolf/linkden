@@ -18,6 +18,11 @@ const walletKeys = [
 	"wallet_foreground_color",
 	"wallet_label_color",
 	"wallet_logo_url",
+	"wallet_signer_cert",
+	"wallet_signer_key",
+	"wallet_wwdr_cert",
+	"wallet_team_id",
+	"wallet_pass_type_id",
 ];
 
 function stripHtml(str: string): string {
@@ -133,15 +138,82 @@ export const walletRouter = router({
 			return { success: true };
 		}),
 
-	getSigningStatus: protectedProcedure.query(() => {
+	getSigningStatus: protectedProcedure.query(async () => {
+		const results = await db.select().from(siteSettings);
+		const settingsMap: Record<string, string> = {};
+		for (const row of results) {
+			settingsMap[row.key] = row.value;
+		}
 		return {
-			signerCert: !!env.WALLET_SIGNER_CERT,
-			signerKey: !!env.WALLET_SIGNER_KEY,
-			wwdrCert: !!env.WALLET_WWDR_CERT,
-			teamId: !!env.WALLET_TEAM_ID,
-			passTypeId: !!env.WALLET_PASS_TYPE_ID,
+			signerCert: !!settingsMap.wallet_signer_cert || !!env.WALLET_SIGNER_CERT,
+			signerKey: !!settingsMap.wallet_signer_key || !!env.WALLET_SIGNER_KEY,
+			wwdrCert: !!settingsMap.wallet_wwdr_cert || !!env.WALLET_WWDR_CERT,
+			teamId: !!settingsMap.wallet_team_id || !!env.WALLET_TEAM_ID,
+			passTypeId: !!settingsMap.wallet_pass_type_id || !!env.WALLET_PASS_TYPE_ID,
+			source: {
+				signerCert: settingsMap.wallet_signer_cert ? "settings" : env.WALLET_SIGNER_CERT ? "env" : "missing",
+				signerKey: settingsMap.wallet_signer_key ? "settings" : env.WALLET_SIGNER_KEY ? "env" : "missing",
+				wwdrCert: settingsMap.wallet_wwdr_cert ? "settings" : env.WALLET_WWDR_CERT ? "env" : "missing",
+				teamId: settingsMap.wallet_team_id ? "settings" : env.WALLET_TEAM_ID ? "env" : "missing",
+				passTypeId: settingsMap.wallet_pass_type_id ? "settings" : env.WALLET_PASS_TYPE_ID ? "env" : "missing",
+			},
 		};
 	}),
+
+	getSigningKeys: protectedProcedure.query(async () => {
+		const results = await db.select().from(siteSettings);
+		const settingsMap: Record<string, string> = {};
+		for (const row of results) {
+			settingsMap[row.key] = row.value;
+		}
+		return {
+			hasSignerCert: !!settingsMap.wallet_signer_cert,
+			hasSignerKey: !!settingsMap.wallet_signer_key,
+			hasWwdrCert: !!settingsMap.wallet_wwdr_cert,
+			teamId: settingsMap.wallet_team_id || "",
+			passTypeId: settingsMap.wallet_pass_type_id || "",
+		};
+	}),
+
+	updateSigningKeys: protectedProcedure
+		.input(
+			z.object({
+				teamId: z.string().max(20).optional(),
+				passTypeId: z.string().max(100).optional(),
+				signerCert: z.string().optional(),
+				signerKey: z.string().optional(),
+				wwdrCert: z.string().optional(),
+			}),
+		)
+		.mutation(async ({ input }) => {
+			const updates: { key: string; value: string }[] = [];
+			if (input.teamId !== undefined)
+				updates.push({ key: "wallet_team_id", value: input.teamId });
+			if (input.passTypeId !== undefined)
+				updates.push({ key: "wallet_pass_type_id", value: input.passTypeId });
+			if (input.signerCert !== undefined)
+				updates.push({ key: "wallet_signer_cert", value: input.signerCert });
+			if (input.signerKey !== undefined)
+				updates.push({ key: "wallet_signer_key", value: input.signerKey });
+			if (input.wwdrCert !== undefined)
+				updates.push({ key: "wallet_wwdr_cert", value: input.wwdrCert });
+
+			for (const { key, value } of updates) {
+				const [existing] = await db
+					.select()
+					.from(siteSettings)
+					.where(eq(siteSettings.key, key));
+				if (existing) {
+					await db
+						.update(siteSettings)
+						.set({ value })
+						.where(eq(siteSettings.key, key));
+				} else {
+					await db.insert(siteSettings).values({ key, value });
+				}
+			}
+			return { success: true };
+		}),
 
 	generatePreview: protectedProcedure.query(async () => {
 		const [profile] = await db.select().from(user).limit(1);

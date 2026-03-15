@@ -15,15 +15,15 @@
     "@linkden/db": "workspace:*",
     "@linkden/env": "workspace:*",
     "@linkden/ui": "workspace:*",
-    "@trpc/client": "catalog:",
-    "@trpc/server": "catalog:",
-    "dotenv": "catalog:",
+    "@trpc/client": "^11.12.0",
+    "@trpc/server": "^11.12.0",
+    "dotenv": "^17.3.1",
     "drizzle-orm": "^0.45.1",
-    "zod": "catalog:"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@linkden/config": "workspace:*",
-    "hono": "catalog:",
-    "typescript": "catalog:"
+    "hono": "^4.12.7",
+    "typescript": "^5"
   }
 }

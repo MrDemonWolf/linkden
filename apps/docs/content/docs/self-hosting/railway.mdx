@@ -118,12 +118,10 @@ Redeploy both services for the changes to take effect. Railway handles SSL autom
 
 ## Step 5: First-Time Setup
 
-1. Check the API service logs (service > **Deployments** > latest > **Logs**) for the setup URL:
-   ```
-   Setup URL: https://yourdomain.com/admin/setup?token=<unique-token>
-   ```
-2. Open the URL and create your admin account.
-3. Sign in at `/admin/login` and create a test link to verify everything works.
+1. Visit `https://yourdomain.com/admin/setup` in your browser.
+2. Enter your name, email, and password to create your admin account.
+3. The first user becomes the admin and registration locks automatically.
+4. Sign in at `/admin/login` and create a test link to verify everything works.
 
 ## Updating
 
