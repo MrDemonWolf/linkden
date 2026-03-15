@@ -119,20 +119,13 @@ Web:  https://linkden-web.<your-subdomain>.workers.dev
 
 Once you have your real Worker URLs, update the `NEXT_PUBLIC_SERVER_URL`, `CORS_ORIGIN`, and `BETTER_AUTH_URL` values in `.env` and run `pnpm ship` again.
 
-## Step 6: Set Up Authentication
+## Step 6: Create Your Admin Account
 
-LinkDen uses **Better Auth** with email/password. On first run, the server generates a one-time setup token.
+LinkDen uses **Better Auth** with email/password.
 
-1. Check the API Worker logs for the setup URL:
-   ```bash
-   wrangler tail linkden-server
-   ```
-   Look for:
-   ```
-   Setup URL: https://linkden-web.<your-subdomain>.workers.dev/admin/setup?token=<unique-token>
-   ```
-2. Open that URL in your browser and create your admin account.
-3. The token is invalidated after setup completes.
+1. Visit `https://linkden-web.<your-subdomain>.workers.dev/admin/setup` in your browser.
+2. Enter your name, email, and password to create your admin account.
+3. The first user becomes the admin and registration locks automatically -- no one else can sign up.
 4. Sign in at `/admin/login`.
 
 Set your auth secret as an encrypted secret on the API Worker:

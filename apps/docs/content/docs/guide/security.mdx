@@ -7,16 +7,30 @@ description: How LinkDen protects your data with input sanitization, secure setu
 
 LinkDen includes built-in protections against common web attacks. Most security measures work automatically -- this page explains what's covered and what you can configure.
 
-## Secure Setup
+## First-User-Is-Admin
 
-The first-run setup wizard is protected by a one-time token to prevent unauthorized account creation.
+LinkDen uses a simple, secure setup model:
 
-1. When the server starts for the first time, a unique setup URL is printed to the **server console**.
-2. Open that URL to access the setup wizard.
-3. Once you complete setup, the token is automatically invalidated.
-4. If the server restarts before setup finishes, a new token is generated.
+1. Navigate to `/admin/setup` after deployment to create your admin account.
+2. The first user to register becomes the admin.
+3. After the first user is created, registration is permanently locked -- the API returns **403 "Registration is closed"** for any subsequent signup attempts.
+4. If you visit `/admin/login` before an account exists, you'll be redirected to the setup page.
 
-The token is stored in memory only -- never written to disk or the database. After setup, the wizard page shows "Setup Already Completed" regardless of any token provided.
+This eliminates the need for setup tokens or invitation codes while ensuring only you can create the admin account.
+
+## File Upload Restrictions
+
+Image uploads are validated server-side:
+
+- **Max file size:** 5 MB
+- **Allowed extensions:** jpg, jpeg, png, gif, webp, svg, ico
+- **Allowed MIME types:** image/jpeg, image/png, image/gif, image/webp, image/svg+xml, image/x-icon, image/vnd.microsoft.icon
+
+Uploads that fail validation are rejected with descriptive error messages (400 for invalid type, 413 for oversized files).
+
+## Settings Key Allowlist
+
+The settings API only accepts known setting keys. Attempts to read or write arbitrary keys are rejected by Zod validation. This prevents attackers from injecting unexpected configuration values even if they obtain a valid session.
 
 ## Input Sanitization
 
@@ -27,7 +41,7 @@ LinkDen sanitizes all user-provided content on the server side before saving it.
 - **Text fields** (profile name, bio, titles, etc.) -- HTML tags are stripped and length limits are enforced.
 - **URLs** -- Validated to ensure they use `http://` or `https://` protocols. Dangerous protocols like `javascript:` are rejected.
 - **Colors** -- Must match `#RRGGBB` hex format.
-- **Custom CSS** -- Script tags, `expression()` calls, `javascript:` URLs, and other known attack vectors are removed.
+- **Custom CSS** -- Script tags, `expression()` calls, `javascript:` URLs, `@import` directives, `data:` URLs, and backslash escape sequences are blocked.
 - **Contact form submissions** -- All text fields are stripped of HTML before storage.
 - **Embed URLs** -- Validated against platform-specific patterns (e.g., YouTube, Spotify, SoundCloud).
 

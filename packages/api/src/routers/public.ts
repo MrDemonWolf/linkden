@@ -14,35 +14,6 @@ import { eq, asc, and } from "drizzle-orm";
 import { z } from "zod";
 import { generateVCardString, vcardDataSchema } from "./vcard";
 
-// In-memory one-time setup token
-let setupToken: string | null = null;
-let setupTokenInitialized = false;
-
-async function getOrCreateSetupToken(): Promise<string | null> {
-	// Check if setup is already completed
-	const [setting] = await db
-		.select()
-		.from(siteSettings)
-		.where(eq(siteSettings.key, "setup_completed"));
-	if (setting?.value === "true") {
-		setupToken = null;
-		return null;
-	}
-
-	if (!setupTokenInitialized) {
-		setupToken = crypto.randomUUID();
-		setupTokenInitialized = true;
-		console.log(`\n  Setup URL: http://localhost:3001/admin/setup?token=${setupToken}\n`);
-	}
-
-	return setupToken;
-}
-
-export function invalidateSetupToken() {
-	setupToken = null;
-	setupTokenInitialized = false;
-}
-
 export const publicRouter = router({
 	getPage: publicProcedure.query(async () => {
 		const [profile] = await db.select().from(user).limit(1);
@@ -335,7 +306,14 @@ export const publicRouter = router({
 		};
 	}),
 
+	hasUsers: publicProcedure.query(async () => {
+		const [existingUser] = await db.select({ id: user.id }).from(user).limit(1);
+		return { hasUsers: !!existingUser };
+	}),
+
 	getSetupStatus: publicProcedure.query(async () => {
+		const [existingUser] = await db.select({ id: user.id }).from(user).limit(1);
+
 		const allRows = await db.select().from(siteSettings);
 		const s: Record<string, string> = {};
 		for (const row of allRows) {
@@ -343,7 +321,7 @@ export const publicRouter = router({
 		}
 
 		return {
-			completed: s.setup_completed === "true",
+			completed: !!existingUser,
 			magicLinkEnabled: s.magic_link_enabled !== "false",
 			branding: {
 				logoUrl: s.branding_logo_url || null,
@@ -357,17 +335,4 @@ export const publicRouter = router({
 			},
 		};
 	}),
-
-	validateSetupToken: publicProcedure
-		.input(z.object({ token: z.string() }))
-		.query(async ({ input }) => {
-			const currentToken = await getOrCreateSetupToken();
-			if (!currentToken) {
-				return { valid: false, reason: "setup_completed" as const };
-			}
-			if (input.token !== currentToken) {
-				return { valid: false, reason: "invalid_token" as const };
-			}
-			return { valid: true, reason: null };
-		}),
 });

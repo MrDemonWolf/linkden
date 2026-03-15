@@ -4,12 +4,25 @@ import { createContext } from "@linkden/api/context";
 import { appRouter } from "@linkden/api/routers/index";
 import { auth } from "@linkden/auth";
 import { db } from "@linkden/db";
-import { siteSettings } from "@linkden/db/schema/index";
+import { user, siteSettings } from "@linkden/db/schema/index";
 import { env } from "@linkden/env/server";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+
+// File upload validation constants
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "gif", "webp", "svg", "ico"]);
+const ALLOWED_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/svg+xml",
+  "image/x-icon",
+  "image/vnd.microsoft.icon",
+]);
 
 type Bindings = {
   IMAGES_BUCKET?: R2Bucket;
@@ -55,6 +68,14 @@ app.use("/api/auth/magic-link/*", cloudflareRateLimiter<{ Bindings: Bindings }>(
   rateLimitBinding: (c) => c.env.RL_STRICT,
   keyGenerator: rlKeyGenerator,
 }));
+// Block registration after the first user has been created (single-user app)
+app.use("/api/auth/sign-up/*", async (c, next) => {
+	const [existingUser] = await db.select({ id: user.id }).from(user).limit(1);
+	if (existingUser) {
+		return c.json({ error: "Registration is closed" }, 403);
+	}
+	await next();
+});
 app.use("/api/auth/sign-up/*", cloudflareRateLimiter<{ Bindings: Bindings }>({
   rateLimitBinding: (c) => c.env.RL_STRICT,
   keyGenerator: rlKeyGenerator,
@@ -103,9 +124,24 @@ app.post("/api/upload", async (c) => {
     return c.json({ error: "No file provided" }, 400);
   }
 
+  // Validate file size
+  if (file.size > MAX_FILE_SIZE) {
+    return c.json({ error: "File too large. Maximum size is 5MB." }, 413);
+  }
+
+  // Validate file extension
+  const ext = (file.name.split(".").pop() || "").toLowerCase();
+  if (!ALLOWED_EXTENSIONS.has(ext)) {
+    return c.json({ error: `File type not allowed. Allowed types: ${[...ALLOWED_EXTENSIONS].join(", ")}` }, 400);
+  }
+
+  // Validate MIME type
+  if (!ALLOWED_MIME_TYPES.has(file.type)) {
+    return c.json({ error: `MIME type not allowed: ${file.type}` }, 400);
+  }
+
   const validPurposes = ["avatar", "banner", "og_image", "wallet_logo", "logo", "favicon"];
   const filePurpose = validPurposes.includes(purpose ?? "") ? purpose : "misc";
-  const ext = file.name.split(".").pop() || "bin";
   const key = `${filePurpose}/${Date.now()}.${ext}`;
 
   await bucket.put(key, file.stream(), {
