@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Sun, Moon, Copy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
@@ -66,6 +66,23 @@ export function SharedPreview({ overrides, className, mode: controlledMode, onMo
 	const socialsQuery = useQuery(trpc.social.list.queryOptions({ activeOnly: true }));
 
 	const settings = settingsQuery.data ?? {};
+
+	const [systemPrefersDark, setSystemPrefersDark] = useState(false);
+	useEffect(() => {
+		const mq = window.matchMedia("(prefers-color-scheme: dark)");
+		setSystemPrefersDark(mq.matches);
+		const handler = (e: MediaQueryListEvent) => setSystemPrefersDark(e.matches);
+		mq.addEventListener("change", handler);
+		return () => mq.removeEventListener("change", handler);
+	}, []);
+
+	useEffect(() => {
+		if (controlledMode !== undefined) return;
+		const pref = settings.default_color_mode;
+		if (pref === "dark") setInternalMode("dark");
+		else if (pref === "system") setInternalMode(systemPrefersDark ? "dark" : "light");
+		else setInternalMode("light");
+	}, [controlledMode, settings.default_color_mode, systemPrefersDark]);
 
 	const liveProfile = {
 		name: settings.profile_name || "Your Name",

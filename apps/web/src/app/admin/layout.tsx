@@ -13,16 +13,14 @@ import {
 	Settings,
 	Share2,
 	Wallet,
-	ExternalLink,
 	Menu,
 	X,
 	Sun,
 	Moon,
 	Monitor,
-	ChevronDown,
-	Bell,
 	Globe,
 	User,
+	LogOut,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { authClient } from "@/lib/auth-client";
@@ -30,34 +28,35 @@ import { trpc } from "@/utils/trpc";
 import { cn } from "@/lib/utils";
 import { getGravatarUrl } from "@/lib/gravatar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 const NAV_GROUPS = [
 	{
-		label: null,
+		label: "Main",
 		items: [
 			{ href: "/admin" as const, label: "Dashboard", icon: LayoutDashboard },
 			{ href: "/admin/builder" as const, label: "Builder", icon: Blocks },
+			{ href: "/admin/appearance" as const, label: "Appearance", icon: Palette },
+		],
+	},
+	{
+		label: "Engage",
+		items: [
 			{ href: "/admin/analytics" as const, label: "Analytics", icon: BarChart3 },
+			{ href: "/admin/social" as const, label: "Social", icon: Share2 },
 			{ href: "/admin/forms" as const, label: "Forms", icon: Mail },
 		],
 	},
 	{
-		label: "Customize",
+		label: "System",
 		items: [
-			{ href: "/admin/appearance" as const, label: "Appearance", icon: Palette },
-			{ href: "/admin/social" as const, label: "Social", icon: Share2 },
 			{ href: "/admin/wallet" as const, label: "Wallet", icon: Wallet },
+			{ href: "/admin/settings" as const, label: "Settings", icon: Settings },
 		],
 	},
 ] as const;
 
-const SETTINGS_ITEM = { href: "/admin/settings" as const, label: "Settings", icon: Settings };
+const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((g) => [...g.items]);
 
 const BOTTOM_NAV_ITEMS = [
 	{ href: "/admin" as const, label: "Dashboard", icon: LayoutDashboard },
@@ -83,6 +82,51 @@ function initials(name?: string | null) {
 		.toUpperCase();
 }
 
+function DesktopTopBar({ pathname }: { pathname: string }) {
+	const { setTheme, theme } = useTheme();
+
+	const currentPageLabel =
+		ALL_NAV_ITEMS.find((item) =>
+			item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href),
+		)?.label ?? "";
+
+	return (
+		<div className="hidden md:flex h-14 shrink-0 items-center justify-between border-b border-white/10 px-6">
+			<h2 className="text-sm font-semibold">{currentPageLabel}</h2>
+			<div className="flex items-center gap-3">
+				<div className="flex rounded-lg border border-border/50 p-0.5 bg-muted/30">
+					{THEME_OPTIONS.map((opt) => {
+						const Icon = opt.icon;
+						return (
+							<button
+								key={opt.value}
+								type="button"
+								onClick={() => setTheme(opt.value)}
+								className={cn(
+									"flex items-center justify-center rounded-md p-2 min-h-[32px] min-w-[32px] transition-all",
+									theme === opt.value
+										? "bg-white/20 text-foreground shadow-sm"
+										: "text-muted-foreground hover:text-foreground",
+								)}
+								title={opt.label}
+								aria-label={`Switch to ${opt.label} theme`}
+							>
+								<Icon className="h-3.5 w-3.5" />
+							</button>
+						);
+					})}
+				</div>
+				<a href="/" target="_blank" rel="noopener noreferrer">
+					<Button size="sm" variant="default">
+						<Globe className="mr-1.5 h-3.5 w-3.5" />
+						View Live
+					</Button>
+				</a>
+			</div>
+		</div>
+	);
+}
+
 function SidebarContent({
 	pathname,
 	unreadCount,
@@ -101,7 +145,6 @@ function SidebarContent({
 	onNavClick?: () => void;
 }) {
 	const isDev = process.env.NODE_ENV === "development";
-	const { setTheme, theme: adminTheme } = useTheme();
 	const router = useRouter();
 
 	async function handleSignOut() {
@@ -126,8 +169,8 @@ function SidebarContent({
 				className={cn(
 					"flex items-center gap-2.5 rounded-lg px-3 py-2 min-h-[44px] text-xs font-medium transition-all",
 					isActive
-						? "bg-primary/10 text-primary border-l-2 border-primary -ml-px"
-						: "text-muted-foreground hover:bg-white/10 hover:backdrop-blur-sm hover:text-foreground",
+						? "bg-primary/10 border-l-2 border-primary -ml-px text-foreground"
+						: "text-muted-foreground hover:text-foreground hover:bg-white/5",
 				)}
 			>
 				<Icon className="h-4 w-4 shrink-0" />
@@ -143,120 +186,41 @@ function SidebarContent({
 
 	return (
 		<div className="flex h-full flex-col">
-			{/* Logo + Bell */}
-			<div className="flex items-center gap-2 px-4 py-6">
+			{/* Logo + subtitle */}
+			<div className="flex items-center gap-3 px-4 h-14 border-b border-white/5">
 				{logoUrl ? (
 					<img src={logoUrl} alt="" className="h-8 w-8 rounded-lg object-cover" />
 				) : (
-					<div className="flex h-8 w-8 items-center justify-center bg-primary/90 backdrop-blur-sm rounded-lg text-primary-foreground text-sm font-bold">
+					<div className="flex h-8 w-8 items-center justify-center bg-primary/90 rounded-lg text-primary-foreground text-sm font-bold shrink-0">
 						LD
 					</div>
 				)}
-				<span className="flex-1 text-sm font-semibold tracking-tight">{siteName}</span>
-				<button
-					type="button"
-					className="text-muted-foreground hover:text-foreground transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-					aria-label="Notifications"
-				>
-					<Bell className="h-4 w-4" />
-				</button>
+				<div className="flex flex-col min-w-0">
+					<span className="text-sm font-semibold leading-tight truncate">{siteName}</span>
+					<span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
+						Admin Console
+					</span>
+				</div>
 			</div>
 
 			{/* Nav */}
-			<nav aria-label="Main navigation" className="flex-1 px-2 space-y-1">
+			<nav aria-label="Main navigation" className="flex-1 px-2 py-2 space-y-3 overflow-y-auto">
 				{NAV_GROUPS.map((group) => (
-					<div key={group.label ?? "main"} className="space-y-0.5">
-						{group.label && (
-							<p className="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-								{group.label}
-							</p>
+					<div key={group.label} className="space-y-0.5">
+						<p className="px-3 pt-1 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+							{group.label}
+						</p>
+						{(group.items as readonly { href: string; label: string; icon: React.ElementType }[]).map((item) =>
+							renderNavItem(item),
 						)}
-						{group.items.map((item) => renderNavItem(item))}
 					</div>
 				))}
-
-				{/* Settings — standalone at bottom of nav */}
-				<div className="pt-1">
-					{renderNavItem(SETTINGS_ITEM)}
-				</div>
 			</nav>
 
-			{/* Docs + View Live external links */}
-			<div className="px-2 pb-2 space-y-0.5">
-				<a
-					href={isDev ? "http://localhost:3002" : "https://mrdemonwolf.github.io/linkden/"}
-					target="_blank"
-					rel="noopener noreferrer"
-					className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-muted-foreground hover:bg-white/10 hover:backdrop-blur-sm hover:text-foreground transition-all"
-				>
-					<ExternalLink className="h-3.5 w-3.5" />
-					<span>View Docs</span>
-					<span className="sr-only">(opens in new tab)</span>
-				</a>
-				<a
-					href="/"
-					target="_blank"
-					rel="noopener noreferrer"
-					className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-muted-foreground hover:bg-white/10 hover:backdrop-blur-sm hover:text-foreground transition-all"
-				>
-					<Globe className="h-3.5 w-3.5" />
-					<span>View Live Page</span>
-					<span className="sr-only">(opens in new tab)</span>
-				</a>
-			</div>
-
-			{/* Theme toggle */}
-			<div className="px-2 pb-2">
-				<div className="flex w-full rounded-lg border border-border/50 p-0.5 bg-muted/30">
-					{THEME_OPTIONS.map((opt) => {
-						const Icon = opt.icon;
-						return (
-							<button
-								key={opt.value}
-								type="button"
-								onClick={() => setTheme(opt.value)}
-								className={cn(
-									"flex flex-1 items-center justify-center rounded-md p-2.5 min-h-[44px] min-w-[44px] transition-all",
-									adminTheme === opt.value
-										? "bg-white/20 text-foreground shadow-sm"
-										: "text-muted-foreground hover:text-foreground",
-								)}
-								title={opt.label}
-								aria-label={`Switch to ${opt.label} theme`}
-							>
-								<Icon className="h-3.5 w-3.5" />
-							</button>
-						);
-					})}
-				</div>
-			</div>
-
-			{/* User profile footer */}
-			<div className="border-t border-white/10 px-2 py-2">
-				<DropdownMenu>
-					<DropdownMenuTrigger className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2.5 text-left hover:bg-white/10 transition-all">
-						<Avatar className="h-7 w-7 shrink-0">
-							<AvatarImage
-								src={user?.image ?? (user?.email ? getGravatarUrl(user.email, 56) : undefined)}
-								alt={user?.name ?? "Admin"}
-							/>
-							<AvatarFallback className="text-xs font-semibold">
-								{initials(user?.name)}
-							</AvatarFallback>
-						</Avatar>
-						<div className="flex-1 min-w-0">
-							<p className="text-xs font-medium truncate">{user?.name ?? "Admin"}</p>
-						</div>
-						<ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-					</DropdownMenuTrigger>
-					<DropdownMenuContent className="w-44 bottom-full mb-1 mt-0 top-auto origin-bottom-right">
-						<DropdownMenuItem onClick={() => router.push("/admin/profile")}>Profile</DropdownMenuItem>
-						<DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-
+			{/* Branding + version */}
+			<div className="px-4 pb-2">
 				{adminBrandingEnabled && (
-					<p className="mt-1 px-2 text-xs text-muted-foreground/50">
+					<p className="text-xs text-muted-foreground/50">
 						Powered by{" "}
 						<a
 							href="https://github.com/mrdemonwolf/LinkDen"
@@ -269,9 +233,34 @@ function SidebarContent({
 						</a>
 					</p>
 				)}
-				<p className="px-2 text-xs text-muted-foreground/50">
-					v0.1.0{isDev && " · DEV"}
-				</p>
+				<p className="text-xs text-muted-foreground/50">v0.1.0{isDev && " · DEV"}</p>
+			</div>
+
+			{/* User profile footer */}
+			<div className="border-t border-white/5 px-3 py-3">
+				<div className="flex items-center gap-2.5">
+					<Avatar className="h-8 w-8 shrink-0">
+						<AvatarImage
+							src={user?.image ?? (user?.email ? getGravatarUrl(user.email, 56) : undefined)}
+							alt={user?.name ?? "Admin"}
+						/>
+						<AvatarFallback className="text-xs font-semibold">
+							{initials(user?.name)}
+						</AvatarFallback>
+					</Avatar>
+					<div className="flex-1 min-w-0">
+						<p className="text-xs font-semibold truncate">{user?.name ?? "Admin"}</p>
+						<p className="text-[11px] text-muted-foreground/60 truncate">{user?.email}</p>
+					</div>
+					<button
+						type="button"
+						onClick={handleSignOut}
+						className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors"
+						aria-label="Sign out"
+					>
+						<LogOut className="h-3.5 w-3.5" />
+					</button>
+				</div>
 			</div>
 		</div>
 	);
@@ -294,7 +283,7 @@ export default function AdminLayout({
 	});
 
 	const brandingQuery = useQuery({
-		...trpc.settings.get.queryOptions({ key: "admin_branding_enabled" }),
+		...trpc.settings.get.queryOptions({ key: "branding_enabled" }),
 		enabled: !!session?.user,
 	});
 
@@ -352,7 +341,7 @@ export default function AdminLayout({
 			</a>
 
 			{/* Desktop sidebar */}
-			<aside aria-label="Sidebar" className="hidden w-56 shrink-0 border-r border-white/20 dark:border-white/10 bg-white/50 dark:bg-white/5 backdrop-blur-2xl z-20 md:block">
+			<aside aria-label="Sidebar" className="hidden w-56 shrink-0 border-r border-white/20 dark:border-white/10 bg-white/30 dark:bg-black/40 backdrop-blur-2xl z-20 md:block">
 				<div className="sticky top-0 h-screen overflow-y-auto">
 					<SidebarContent
 						pathname={pathname}
@@ -379,8 +368,8 @@ export default function AdminLayout({
 				</div>
 				{/* Current page — centered absolute */}
 				<span className="absolute inset-x-0 text-center text-xs font-medium text-muted-foreground pointer-events-none">
-					{[...NAV_GROUPS.flatMap((g) => [...g.items]), SETTINGS_ITEM].find((item) =>
-						item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href)
+					{ALL_NAV_ITEMS.find((item) =>
+						item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href),
 					)?.label ?? ""}
 				</span>
 				<button
@@ -416,12 +405,10 @@ export default function AdminLayout({
 					>
 						<nav className="flex flex-col px-2 py-2 gap-0.5" aria-label="Navigation">
 							{NAV_GROUPS.map((group) => (
-								<div key={group.label ?? "main"}>
-									{group.label && (
-										<p className="px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-											{group.label}
-										</p>
-									)}
+								<div key={group.label}>
+									<p className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+										{group.label}
+									</p>
 									{(group.items as readonly { href: string; label: string; icon: React.ElementType }[]).map((item) => {
 										const isActive = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
 										const Icon = item.icon;
@@ -450,29 +437,6 @@ export default function AdminLayout({
 									})}
 								</div>
 							))}
-							<div className="border-t border-white/10 mt-1 pt-1">
-								{(() => {
-									const item = SETTINGS_ITEM;
-									const isActive = pathname.startsWith(item.href);
-									const Icon = item.icon;
-									return (
-										<Link
-											href={item.href as never}
-											onClick={() => setMobileMenuOpen(false)}
-											aria-current={isActive ? "page" : undefined}
-											className={cn(
-												"flex items-center gap-3 rounded-lg px-3 py-3 min-h-[44px] text-sm font-medium transition-all",
-												isActive
-													? "bg-primary/10 text-primary"
-													: "text-muted-foreground hover:bg-black/5 dark:hover:bg-white/10 hover:text-foreground",
-											)}
-										>
-											<Icon className="h-4 w-4 shrink-0" />
-											{item.label}
-										</Link>
-									);
-								})()}
-							</div>
 						</nav>
 						<div className="border-t border-white/10 px-4 py-2.5 flex items-center justify-between">
 							<div className="flex items-center gap-2">
@@ -531,10 +495,13 @@ export default function AdminLayout({
 				})}
 			</nav>
 
-			{/* Main content */}
-			<main id="main-content" className="flex-1 pt-12 pb-16 md:pt-0 md:pb-0">
-				<div className="mx-auto max-w-6xl px-4 py-4 sm:px-4 md:p-6">{children}</div>
-			</main>
+			{/* Right side: top bar + main content */}
+			<div className="flex flex-1 flex-col overflow-hidden">
+				<DesktopTopBar pathname={pathname} />
+				<main id="main-content" className="flex-1 overflow-y-auto pt-12 pb-16 md:pt-0 md:pb-0">
+					<div className="mx-auto max-w-6xl px-4 py-4 sm:px-4 md:p-6">{children}</div>
+				</main>
+			</div>
 		</div>
 	);
 }

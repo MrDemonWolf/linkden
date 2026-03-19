@@ -27,33 +27,39 @@ function useCurrentTime() {
 
 function StatusBar({ dark }: { dark: boolean }) {
 	const time = useCurrentTime();
-	const fg = dark ? "fill-white" : "fill-gray-950";
-	const fgText = dark ? "text-white" : "text-gray-950";
+	const fgColor = dark ? "#ffffff" : "#030712";
 
 	return (
-		<div className={cn("flex items-center justify-between px-5 pt-3 pb-1", fgText)} aria-hidden="true">
+		<div
+			className="flex items-center justify-between px-5 pt-3 pb-1"
+			style={{ color: fgColor, transition: "color 0.5s ease" }}
+			aria-hidden="true"
+		>
 			{/* Left: time */}
 			<span className="text-[10px] font-semibold leading-none w-12">{time}</span>
 
 			{/* Center: Dynamic Island */}
-			<div className={cn("h-[14px] w-[52px] rounded-full", dark ? "bg-gray-800" : "bg-gray-200")} />
+			<div
+				className="h-[14px] w-[52px] rounded-full"
+				style={{ backgroundColor: dark ? "#1f2937" : "#e5e7eb", transition: "background-color 0.5s ease" }}
+			/>
 
 			{/* Right: signal + wifi + battery */}
 			<div className="flex items-center gap-[3px] w-12 justify-end">
 				{/* Signal bars */}
-				<svg width="13" height="10" viewBox="0 0 13 10" className={fg}>
+				<svg width="13" height="10" viewBox="0 0 13 10" style={{ fill: fgColor, transition: "fill 0.5s ease" }}>
 					<rect x="0" y="7" width="2.5" height="3" rx="0.5" />
 					<rect x="3.5" y="5" width="2.5" height="5" rx="0.5" />
 					<rect x="7" y="2.5" width="2.5" height="7.5" rx="0.5" />
 					<rect x="10.5" y="0" width="2.5" height="10" rx="0.5" />
 				</svg>
 				{/* WiFi */}
-				<svg width="12" height="9" viewBox="0 0 16 12" className={fg}>
+				<svg width="12" height="9" viewBox="0 0 16 12" style={{ fill: fgColor, transition: "fill 0.5s ease" }}>
 					<path d="M8 9.6a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4zM8 6c1.87 0 3.56.76 4.78 2L11.6 9.18A4.8 4.8 0 008 7.8a4.8 4.8 0 00-3.6 1.38L3.22 8A6.57 6.57 0 018 6zm0-3.6c2.87 0 5.47 1.16 7.36 3.04L14.18 6.6A8.37 8.37 0 008 4.2a8.37 8.37 0 00-6.18 2.4L.64 5.44A10.16 10.16 0 018 2.4z" />
 				</svg>
 				{/* Battery */}
-				<svg width="18" height="9" viewBox="0 0 25 12" className={fg}>
-					<rect x="0" y="0.5" width="21" height="11" rx="2" strokeWidth="1" stroke="currentColor" fill="none" className={dark ? "stroke-white" : "stroke-gray-950"} />
+				<svg width="18" height="9" viewBox="0 0 25 12" style={{ fill: fgColor, transition: "fill 0.5s ease" }}>
+					<rect x="0" y="0.5" width="21" height="11" rx="2" strokeWidth="1" stroke={fgColor} fill="none" />
 					<rect x="1.5" y="2" width="18" height="8" rx="1" />
 					<path d="M23 4v4a2 2 0 000-4z" />
 				</svg>
@@ -100,12 +106,12 @@ export function PhoneFrame({ children, previewDark, isLoading }: PhoneFrameProps
 	return (
 		<div className="relative w-[340px] mx-auto">
 			<div
-				className={cn(
-					"overflow-hidden rounded-[2rem] border-[6px]",
-					previewDark
-						? "border-gray-700 bg-gray-950"
-						: "border-gray-300 bg-white",
-				)}
+				className="overflow-hidden rounded-[2rem] border-[6px]"
+				style={{
+					borderColor: previewDark ? "#374151" : "#d1d5db",
+					backgroundColor: previewDark ? "#030712" : "#ffffff",
+					transition: "background-color 0.5s ease, border-color 0.5s ease",
+				}}
 			>
 				{/* Status bar */}
 				<StatusBar dark={!!previewDark} />

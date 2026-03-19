@@ -6,8 +6,8 @@
 
 ## Progress Tracker
 
-- [ ] Screen 1: Public Link-in-Bio Page (desktop + mobile)
-- [ ] Screen 2: Login Page (desktop + mobile)
+- [x] Screen 1: Public Link-in-Bio Page (desktop + mobile)
+- [x] Screen 2: Login Page (desktop + mobile)
 - [ ] Screen 3: Setup Wizard (desktop + mobile)
 - [ ] Screen 4: Dashboard (desktop + mobile)
 - [ ] Screen 5: Builder (desktop + mobile)

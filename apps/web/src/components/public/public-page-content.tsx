@@ -126,10 +126,10 @@ export function PageContent({
 
 			<Wrapper
 				{...(!isPreview ? { id: "main-content", role: "main" } : {})}
-				className={`mx-auto max-w-lg px-4 ${hasBanner ? "py-0" : "py-8 md:py-12"}`}
+				className={`mx-auto max-w-lg px-4 ${hasBanner ? "py-0" : "py-10 md:py-14"}`}
 			>
 				{/* Profile Section */}
-				<ProfileWrapper className={`ld-profile relative z-10 mb-8 text-center ${hasBanner ? "-mt-20" : ""}`}>
+				<ProfileWrapper className={`ld-profile relative z-10 mb-10 text-center ${hasBanner ? "-mt-20" : ""}`}>
 					<Avatar
 						src={profile.image}
 						name={profile.name}
@@ -139,7 +139,7 @@ export function PageContent({
 						ringColor={hasBanner ? themeColors.bg : undefined}
 						themeColors={{ primary: themeColors.primary, accent: themeColors.accent }}
 					/>
-					<h1 className="mt-4 inline-flex items-center justify-center gap-1.5 text-2xl font-bold">
+					<h1 className="mt-5 inline-flex items-center justify-center gap-1.5 text-[22px] font-bold tracking-tight">
 						{profile.name}
 						{profile.isVerified && (
 							<svg
@@ -158,7 +158,7 @@ export function PageContent({
 					</h1>
 					{profile.bio && (
 						<p
-							className="ld-bio mt-2 text-sm"
+							className="ld-bio mt-3 text-sm leading-relaxed w-[85%] sm:w-full mx-auto"
 							style={{
 								color: themeColors.mutedFg,
 								transition: "color 0.5s ease",
@@ -170,7 +170,7 @@ export function PageContent({
 				</ProfileWrapper>
 
 				{/* Blocks */}
-				<div className="ld-blocks space-y-3" role="list" aria-label="Links and content">
+				<div className="ld-blocks space-y-4 pb-8 w-[85%] sm:w-full mx-auto" role="list" aria-label="Links and content">
 					{blocks.map((blockData) => {
 						const config = parseConfig(blockData.config);
 
