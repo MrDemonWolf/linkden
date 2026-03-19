@@ -57,7 +57,12 @@ export const vcardRouter = router({
 
 		return {
 			enabled: enabledSetting?.value === "true",
-			data: dataSetting ? JSON.parse(dataSetting.value) : {},
+			// Safe-parse JSON — corrupted DB values should not crash the endpoint
+		data: (() => {
+			if (!dataSetting) return {};
+			try { return JSON.parse(dataSetting.value); }
+			catch { return {}; }
+		})(),
 		};
 	}),
 

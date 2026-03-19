@@ -340,7 +340,7 @@ export default function AppearancePage() {
 				</div>
 
 				{/* Preview column (desktop) */}
-				<div className="hidden w-[320px] shrink-0 lg:block">
+				<div className="hidden w-[360px] shrink-0 lg:block">
 					<div className="sticky top-6">
 						<SharedPreview
 							overrides={previewOverrides}

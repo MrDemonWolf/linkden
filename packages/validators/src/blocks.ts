@@ -185,3 +185,52 @@ export const reorderBlocksSchema = z.array(
     position: z.number(),
   }),
 );
+
+// ─── Backup/Import schemas ─────────────────────────────────────────────────
+// These mirror DB columns so backup imports are validated against the actual schema
+// rather than using z.any(). Shared here to prevent drift between backup.ts and blocks.ts.
+
+export const blockImportSchema = z.object({
+  id: z.string(),
+  type: blockTypeSchema,
+  title: z.string().nullable().optional(),
+  url: z.string().nullable().optional(),
+  icon: z.string().nullable().optional(),
+  embedType: z.string().nullable().optional(),
+  embedUrl: z.string().nullable().optional(),
+  socialIcons: z.string().nullable().optional(),
+  isEnabled: z.boolean().optional().default(true),
+  position: z.number(),
+  scheduledStart: z.unknown().optional(),
+  scheduledEnd: z.unknown().optional(),
+  status: z.enum(["published", "draft"]).optional().default("published"),
+  config: z.string().nullable().optional(),
+  createdAt: z.unknown().optional(),
+  updatedAt: z.unknown().optional(),
+});
+
+export const socialNetworkImportSchema = z.object({
+  slug: z.string(),
+  url: z.string().optional(),
+  isActive: z.boolean().optional(),
+  is_active: z.boolean().optional(), // snake_case compat from older exports
+});
+
+export const contactSubmissionImportSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  message: z.string(),
+  phone: z.string().nullable().optional(),
+  subject: z.string().nullable().optional(),
+  company: z.string().nullable().optional(),
+  whereMet: z.string().nullable().optional(),
+  rating: z.number().nullable().optional(),
+  attending: z.string().nullable().optional(),
+  guests: z.number().nullable().optional(),
+  blockId: z.string().nullable().optional(),
+  blockTitle: z.string().nullable().optional(),
+  isRead: z.boolean().optional(),
+  createdAt: z.unknown().optional(),
+  updatedAt: z.unknown().optional(),
+});

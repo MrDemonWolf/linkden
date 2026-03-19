@@ -20,6 +20,36 @@ import { BrandingSection } from "@/components/admin/settings/branding-section";
 import { DataSection } from "@/components/admin/settings/data-section";
 import { MigrationSection } from "@/components/admin/settings/migration-section";
 
+const COMMON_TIMEZONES = [
+	// Americas
+	{ label: "Pacific Time (US & Canada)", value: "America/Los_Angeles" },
+	{ label: "Mountain Time (US & Canada)", value: "America/Denver" },
+	{ label: "Central Time (US & Canada)", value: "America/Chicago" },
+	{ label: "Eastern Time (US & Canada)", value: "America/New_York" },
+	{ label: "Atlantic Time (Canada)", value: "America/Halifax" },
+	{ label: "São Paulo", value: "America/Sao_Paulo" },
+	{ label: "Buenos Aires", value: "America/Argentina/Buenos_Aires" },
+	{ label: "Bogotá", value: "America/Bogota" },
+	{ label: "Mexico City", value: "America/Mexico_City" },
+	// Europe
+	{ label: "UTC", value: "UTC" },
+	{ label: "London (GMT/BST)", value: "Europe/London" },
+	{ label: "Paris / Berlin / Rome", value: "Europe/Paris" },
+	{ label: "Helsinki / Kyiv", value: "Europe/Helsinki" },
+	{ label: "Moscow", value: "Europe/Moscow" },
+	{ label: "Istanbul", value: "Europe/Istanbul" },
+	// Asia/Pacific
+	{ label: "Dubai", value: "Asia/Dubai" },
+	{ label: "Kolkata (IST)", value: "Asia/Kolkata" },
+	{ label: "Bangkok", value: "Asia/Bangkok" },
+	{ label: "Singapore / Kuala Lumpur", value: "Asia/Singapore" },
+	{ label: "Shanghai / Beijing", value: "Asia/Shanghai" },
+	{ label: "Tokyo", value: "Asia/Tokyo" },
+	{ label: "Seoul", value: "Asia/Seoul" },
+	{ label: "Sydney", value: "Australia/Sydney" },
+	{ label: "Auckland", value: "Pacific/Auckland" },
+];
+
 // ---- Saved State (global settings only) ----
 interface SavedState {
 	seoTitle: string;
@@ -46,6 +76,7 @@ interface SavedState {
 	footerBrandingEnabled: boolean;
 	footerBrandingText: string;
 	footerBrandingLink: string;
+	timezone: string;
 }
 
 function buildSavedState(s: Record<string, string>): SavedState {
@@ -74,6 +105,7 @@ function buildSavedState(s: Record<string, string>): SavedState {
 		footerBrandingEnabled: s.branding_enabled !== "false",
 		footerBrandingText: s.branding_text ?? "",
 		footerBrandingLink: s.branding_link ?? "",
+		timezone: s.timezone ?? "",
 	};
 }
 
@@ -119,6 +151,7 @@ export default function SettingsPage() {
 		footerBrandingEnabled: true,
 		footerBrandingText: "",
 		footerBrandingLink: "",
+		timezone: "",
 	});
 
 	// SEO
@@ -154,6 +187,7 @@ export default function SettingsPage() {
 	const [footerBrandingEnabled, setFooterBrandingEnabled] = useState(true);
 	const [footerBrandingText, setFooterBrandingText] = useState("");
 	const [footerBrandingLink, setFooterBrandingLink] = useState("");
+	const [timezone, setTimezone] = useState("");
 
 	// Load settings
 	useEffect(() => {
@@ -184,6 +218,7 @@ export default function SettingsPage() {
 			setFooterBrandingEnabled(s.footerBrandingEnabled);
 			setFooterBrandingText(s.footerBrandingText);
 			setFooterBrandingLink(s.footerBrandingLink);
+			setTimezone(s.timezone);
 		}
 	}, [settingsQuery.data]);
 
@@ -211,7 +246,8 @@ export default function SettingsPage() {
 		|| tosText !== savedState.tosText
 		|| footerBrandingEnabled !== savedState.footerBrandingEnabled
 		|| footerBrandingText !== savedState.footerBrandingText
-		|| footerBrandingLink !== savedState.footerBrandingLink;
+		|| footerBrandingLink !== savedState.footerBrandingLink
+		|| timezone !== savedState.timezone;
 
 	useUnsavedChanges(isDirty);
 
@@ -246,6 +282,7 @@ export default function SettingsPage() {
 		setFooterBrandingEnabled(savedState.footerBrandingEnabled);
 		setFooterBrandingText(savedState.footerBrandingText);
 		setFooterBrandingLink(savedState.footerBrandingLink);
+		setTimezone(savedState.timezone);
 	};
 
 	const handleSave = async () => {
@@ -278,6 +315,7 @@ export default function SettingsPage() {
 				{ key: "branding_enabled", value: String(footerBrandingEnabled) },
 				{ key: "branding_text", value: footerBrandingText },
 				{ key: "branding_link", value: footerBrandingLink },
+				{ key: "timezone", value: timezone },
 			]);
 			setSavedState({
 				seoTitle,
@@ -294,10 +332,14 @@ export default function SettingsPage() {
 				adminBrandingEnabled,
 				siteName, logoUrl, faviconUrl, ppUrl, tosUrl, ppMode, tosMode, ppText, tosText,
 				footerBrandingEnabled, footerBrandingText, footerBrandingLink,
+			timezone,
 			});
 			invalidate();
 			qc.invalidateQueries({
 				queryKey: trpc.settings.get.queryOptions({ key: "admin_branding_enabled" }).queryKey,
+			});
+			qc.invalidateQueries({
+				queryKey: trpc.settings.get.queryOptions({ key: "timezone" }).queryKey,
 			});
 			toast.success("Settings saved");
 		} catch {
@@ -487,6 +529,33 @@ export default function SettingsPage() {
 							})
 						}
 					/>
+				</CardContent>
+			</Card>
+
+			<Card>
+				<CardContent className="pt-4 space-y-4">
+					<h2 className="text-sm font-semibold">Regional</h2>
+					<div className="space-y-1.5">
+						<label htmlFor="timezone-select" className="text-xs font-medium text-muted-foreground">
+							Timezone
+						</label>
+						<select
+							id="timezone-select"
+							value={timezone}
+							onChange={(e) => setTimezone(e.target.value)}
+							className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+						>
+							<option value="">Browser default ({Intl.DateTimeFormat().resolvedOptions().timeZone})</option>
+							{COMMON_TIMEZONES.map((tz) => (
+								<option key={tz.value} value={tz.value}>
+									{tz.label}
+								</option>
+							))}
+						</select>
+						<p className="text-[11px] text-muted-foreground">
+							Used for timestamps on the dashboard. Defaults to your browser&apos;s timezone.
+						</p>
+					</div>
 				</CardContent>
 			</Card>
 

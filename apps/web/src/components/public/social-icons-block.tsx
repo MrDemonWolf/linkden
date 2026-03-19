@@ -37,6 +37,7 @@ export function SocialIconsBlock({
 	const iconStyle = (config.iconStyle as string) || "circle";
 	const showLabels = config.showLabels as boolean | undefined;
 	const spacing = (config.spacing as string) || "default";
+	const alignment = (config.alignment as string) || "center";
 
 	// Use real social networks from API if available
 	const items: { platform: string; url: string; hex?: string; svgPath?: string }[] = [];
@@ -84,13 +85,16 @@ export function SocialIconsBlock({
 		spacious: "gap-5",
 	};
 
+	const justifyClasses: Record<string, string> = {
+		left: "justify-start",
+		center: "justify-center",
+		right: "justify-end",
+	};
+
 	return (
-		<div role="listitem" className="ld-social-block py-2">
-			<div
-				className={`flex flex-wrap items-center justify-center ${gapClasses[spacing] || "gap-3"}`}
-			>
+		<div role="listitem" className="ld-social-block flex flex-col py-2">
+			<div className={`flex flex-wrap items-center ${justifyClasses[alignment] || "justify-center"} ${gapClasses[spacing] || "gap-3"}`}>
 				{items.map((item) => {
-					// Adaptive fill: pick brand color only if it has sufficient contrast
 					const contrastBg = iconStyle === "bare" ? themeColors?.bg : themeColors?.muted;
 					const fill = item.hex && contrastBg && themeColors?.fg
 						? getAccessibleIconFill(item.hex, contrastBg, themeColors.fg)
@@ -102,23 +106,26 @@ export function SocialIconsBlock({
 							href={item.url}
 							target="_blank"
 							rel="noopener noreferrer"
-							className={`inline-flex items-center justify-center transition-transform hover:scale-110 min-h-[44px] min-w-[44px] ${
+							className={`inline-flex items-center justify-center transition-all duration-300 hover:scale-110 hover:-translate-y-0.5 min-h-[44px] min-w-[44px] ${
 								sizeClasses[iconSize] || "h-10 w-10"
 							} ${
 								iconStyle !== "bare"
-									? shapeClasses[iconStyle] || "rounded-full"
+									? `${shapeClasses[iconStyle] || "rounded-full"} backdrop-blur-xl border`
 									: ""
 							} focus-visible:outline-2 focus-visible:outline-offset-2`}
 							style={
 								iconStyle !== "bare"
 									? {
-											backgroundColor: themeColors?.muted || (colorMode === "dark" ? "#1f2937" : "#f3f4f6"),
 											color: themeColors?.fg || (colorMode === "dark" ? "#fff" : "#374151"),
 											outlineColor: themeColors?.primary,
+											backgroundColor: colorMode === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+											borderColor: colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+											transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
 										}
 									: {
 											color: themeColors?.mutedFg || (colorMode === "dark" ? "#d1d5db" : "#4b5563"),
 											outlineColor: themeColors?.primary,
+											transition: "color 0.5s ease",
 										}
 							}
 							aria-label={item.platform}
@@ -138,7 +145,7 @@ export function SocialIconsBlock({
 				})}
 			</div>
 			{showLabels && (
-				<div className="mt-2 flex flex-wrap justify-center gap-2">
+				<div className={`mt-2 flex flex-wrap ${justifyClasses[alignment] || "justify-center"} gap-2`}>
 					{items.map((item) => (
 						<a
 							key={`label-${item.platform}`}
@@ -146,7 +153,7 @@ export function SocialIconsBlock({
 							target="_blank"
 							rel="noopener noreferrer"
 							className="text-xs transition-opacity hover:opacity-80"
-							style={{ color: themeColors?.mutedFg || (colorMode === "dark" ? "#9ca3af" : "#6b7280") }}
+							style={{ color: themeColors?.mutedFg || (colorMode === "dark" ? "#9ca3af" : "#6b7280"), transition: "color 0.5s ease" }}
 						>
 							{item.platform}
 						</a>

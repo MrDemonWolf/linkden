@@ -1,4 +1,5 @@
 import { router, publicProcedure } from "../index";
+import { TRPCError } from "@trpc/server";
 import { db } from "@linkden/db";
 import {
 	user,
@@ -13,6 +14,22 @@ import { socialBrandMap } from "@linkden/ui/social-brands";
 import { eq, asc, and } from "drizzle-orm";
 import { z } from "zod";
 import { generateVCardString, vcardDataSchema } from "./vcard";
+
+// ─── Public Router ─────────────────────────────────────────────────────────
+// These endpoints are unauthenticated — they power the public-facing link page.
+// Because they're open to the internet, every input has strict .max() limits to
+// prevent payload abuse, and CAPTCHA is enforced when configured.
+//
+// getPage: Assembles the full public page in a single query (profile, blocks,
+//   social networks, theme, settings). Blocks are filtered by schedule, enabled
+//   status, and feature flags (e.g. contact form blocks hidden when form is off).
+//
+// submitContact: Public form submission with CAPTCHA validation. Supports both
+//   Cloudflare Turnstile and Google reCAPTCHA. All text inputs are HTML-stripped
+//   to prevent stored XSS.
+//
+// trackView/trackClick: Lightweight analytics endpoints — fire-and-forget from
+//   the client. No auth required so they work for all visitors.
 
 export const publicRouter = router({
 	getPage: publicProcedure.query(async () => {
@@ -125,22 +142,23 @@ export const publicRouter = router({
 		};
 	}),
 
+	// Public contact form — input limits prevent payload abuse from unauthenticated users
 	submitContact: publicProcedure
 		.input(
 			z.object({
-				name: z.string().min(1),
-				email: z.string().email(),
-				message: z.string().min(1),
-				phone: z.string().optional(),
-				subject: z.string().optional(),
-				company: z.string().optional(),
-				whereMet: z.string().optional(),
+				name: z.string().min(1).max(100),
+				email: z.string().email().max(254),
+				message: z.string().min(1).max(5000),
+				phone: z.string().max(30).optional(),
+				subject: z.string().max(200).optional(),
+				company: z.string().max(200).optional(),
+				whereMet: z.string().max(200).optional(),
 				rating: z.number().min(1).max(5).optional(),
 				attending: z.enum(["yes", "no", "maybe"]).optional(),
 				guests: z.number().min(0).optional(),
-				captchaToken: z.string().optional(),
-				blockId: z.string().optional(),
-				blockTitle: z.string().optional(),
+				captchaToken: z.string().max(4096).optional(),
+				blockId: z.string().max(100).optional(),
+				blockTitle: z.string().max(200).optional(),
 			}),
 		)
 		.mutation(async ({ input }) => {
@@ -150,7 +168,7 @@ export const publicRouter = router({
 				.from(siteSettings)
 				.where(eq(siteSettings.key, "contact_form_enabled"));
 			if (contactEnabled?.value !== "true") {
-				throw new Error("Contact form is disabled");
+				throw new TRPCError({ code: "FORBIDDEN", message: "Contact form is disabled" });
 			}
 
 			// Validate CAPTCHA if configured
@@ -165,7 +183,7 @@ export const publicRouter = router({
 
 			if (captchaProvider?.value && captchaProvider.value !== "none") {
 				if (!input.captchaToken) {
-					throw new Error("CAPTCHA verification required");
+					throw new TRPCError({ code: "BAD_REQUEST", message: "CAPTCHA verification required" });
 				}
 
 				let verifyUrl: string;
@@ -189,7 +207,7 @@ export const publicRouter = router({
 					success: boolean;
 				};
 				if (!verifyData.success) {
-					throw new Error("CAPTCHA verification failed");
+					throw new TRPCError({ code: "BAD_REQUEST", message: "CAPTCHA verification failed" });
 				}
 			}
 
@@ -216,12 +234,13 @@ export const publicRouter = router({
 			return { success: true };
 		}),
 
+	// Analytics tracking — inputs are capped to prevent oversized payloads from anonymous visitors
 	trackView: publicProcedure
 		.input(
 			z.object({
-				referrer: z.string().optional(),
-				userAgent: z.string().optional(),
-				country: z.string().optional(),
+				referrer: z.string().max(2048).optional(),
+				userAgent: z.string().max(500).optional(),
+				country: z.string().max(10).optional(),
 			}),
 		)
 		.mutation(async ({ input }) => {
@@ -238,10 +257,10 @@ export const publicRouter = router({
 	trackClick: publicProcedure
 		.input(
 			z.object({
-				blockId: z.string(),
-				referrer: z.string().optional(),
-				userAgent: z.string().optional(),
-				country: z.string().optional(),
+				blockId: z.string().max(100),
+				referrer: z.string().max(2048).optional(),
+				userAgent: z.string().max(500).optional(),
+				country: z.string().max(10).optional(),
 			}),
 		)
 		.mutation(async ({ input }) => {
@@ -283,7 +302,13 @@ export const publicRouter = router({
 			return { enabled: false, vcardString: null };
 		}
 
-		const config = vcardBlock.config ? JSON.parse(vcardBlock.config) : {};
+		let config = {};
+		try {
+			config = vcardBlock.config ? JSON.parse(vcardBlock.config) : {};
+		} catch {
+			// Corrupted JSON in block config — return empty vcard rather than crashing
+			return { enabled: false, vcardString: null };
+		}
 		const data = vcardDataSchema.parse(config);
 		return { enabled: true, vcardString: generateVCardString(data) };
 	}),

@@ -1,12 +1,16 @@
-# LinkDen - Self-Hosted Link-in-Bio Platform
+# LinkDen
 
-LinkDen is a self-hosted, single-user link-in-bio application
-built for Cloudflare-first deployment with Docker/Coolify as
-a secondary target. It gives you full control over your
-personal link page with a drag-and-drop builder, real-time
-analytics, Apple Wallet integration, and full theming.
+This is my personal link-in-bio app — built for me, by me.
+I got tired of handing my links and analytics over to a
+third-party service, so I built something I actually own.
 
-Own your links. Own your data.
+It's open source. If you want your own, fork it and make it
+yours. I don't offer it as a hosted product or service —
+there's no sign-up, no SaaS tier, no support contract. Just
+the code.
+
+**Cloudflare-first** (Workers + D1), with Docker/Coolify as
+a secondary deployment target.
 
 ## Features
 
@@ -52,8 +56,8 @@ Own your links. Own your data.
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/mrdemonwolf/LinkDen.git
-   cd LinkDen
+   git clone https://github.com/MrDemonWolf/linkden.git
+   cd linkden
    ```
 
 2. Copy the environment file and fill in your values:
@@ -196,18 +200,16 @@ LinkDen/
 
 ## License
 
-![GitHub license](https://img.shields.io/github/license/mrdemonwolf/LinkDen.svg?style=for-the-badge&logo=github)
+![GitHub license](https://img.shields.io/github/license/MrDemonWolf/linkden.svg?style=for-the-badge&logo=github)
 
-This project is licensed under the MIT License. See the
+MIT — fork it, run it, make it your own. See the
 [LICENSE](LICENSE) file for details.
 
 ## Contact
 
-Have questions or feedback? Reach out:
-
 - Discord: [Join my server](https://mrdwolf.net/discord)
-- GitHub Issues: [Open an issue](https://github.com/mrdemonwolf/LinkDen/issues)
+- GitHub Issues: [Open an issue](https://github.com/MrDemonWolf/linkden/issues)
 
 ---
 
-Made with love by [MrDemonWolf, Inc.](https://www.mrdemonwolf.com)
+Built by [MrDemonWolf](https://www.mrdemonwolf.com) — for MrDemonWolf.
