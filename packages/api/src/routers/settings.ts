@@ -4,6 +4,24 @@ import { siteSettings } from "@linkden/db/schema/index";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
+// ─── Settings Router ───────────────────────────────────────────────────────
+// Settings are key-value pairs stored in site_settings. The key whitelist below
+// prevents arbitrary key injection — only known keys are accepted.
+//
+// Settings are grouped by category:
+//   - Profile: profile_name, bio, avatar_url, verified_badge
+//   - Appearance: theme_preset, theme, custom_*, banner_*, social_icon_shape
+//   - SEO: seo_title, seo_description, seo_og_image, seo_og_mode, seo_og_template
+//   - Branding: branding_enabled, branding_text, branding_link, branding_logo_url, etc.
+//   - Features: wallet_pass_enabled, vcard_enabled, contact_form_enabled, mapkit_*
+//   - Auth: magic_link_enabled, captcha_provider, captcha_site_key, captcha_secret_key
+//   - Email: email_provider, email_api_key, email_from, contact_delivery
+//   - System: default_color_mode, timezone, admin_branding_enabled
+//
+// Sanitization pipeline: values pass through sanitizeSetting() which applies
+// type-appropriate validation — HTML stripping for text, URL validation,
+// hex color format checks, and CSS injection mitigation.
+
 // All valid setting keys — prevents arbitrary key injection
 const VALID_SETTING_KEYS = [
 	"profile_name",
@@ -47,6 +65,14 @@ const VALID_SETTING_KEYS = [
 	"captcha_secret_key",
 	"social_icon_shape",
 	"magic_link_enabled",
+	"timezone",
+	"email_provider",
+	"email_api_key",
+	"email_from",
+	"admin_branding_enabled",
+	"mapkit_enabled",
+	"mapkit_token",
+	"contact_delivery",
 ] as const;
 
 const settingKeySchema = z.enum(VALID_SETTING_KEYS);

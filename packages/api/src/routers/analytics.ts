@@ -45,31 +45,31 @@ export const analyticsRouter = router({
 
 		const [views, clicks, prevViews, prevClicks, activeLinksResult] = await Promise.all([
 			db
-				.select({ count: count() } as any)
+				.select({ count: count() })
 				.from(pageView)
 				.where(
 					and(gte(pageView.createdAt, start), lte(pageView.createdAt, end)),
 				),
 			db
-				.select({ count: count() } as any)
+				.select({ count: count() })
 				.from(linkClick)
 				.where(
 					and(gte(linkClick.createdAt, start), lte(linkClick.createdAt, end)),
 				),
 			db
-				.select({ count: count() } as any)
+				.select({ count: count() })
 				.from(pageView)
 				.where(
 					and(gte(pageView.createdAt, prevStart), lte(pageView.createdAt, prevEnd)),
 				),
 			db
-				.select({ count: count() } as any)
+				.select({ count: count() })
 				.from(linkClick)
 				.where(
 					and(gte(linkClick.createdAt, prevStart), lte(linkClick.createdAt, prevEnd)),
 				),
 			db
-				.select({ count: count() } as any)
+				.select({ count: count() })
 				.from(block)
 				.where(and(eq(block.isEnabled, true), eq(block.status, "published"))),
 		]);
@@ -159,6 +159,22 @@ export const analyticsRouter = router({
 			.orderBy(desc(count()))
 			.limit(10);
 
+		return results;
+	}),
+
+	recentClicks: protectedProcedure.query(async () => {
+		const results = await db
+			.select({
+				id: linkClick.id,
+				createdAt: linkClick.createdAt,
+				country: linkClick.country,
+				title: block.title,
+				url: block.url,
+			})
+			.from(linkClick)
+			.leftJoin(block, eq(linkClick.blockId, block.id))
+			.orderBy(desc(linkClick.createdAt))
+			.limit(6);
 		return results;
 	}),
 
