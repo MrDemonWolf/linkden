@@ -47,7 +47,7 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 	const isOutlined = config.isOutlined as boolean | undefined;
 	const openInNewTab = config.openInNewTab !== false;
 	const animation = config.animation as string | undefined;
-	const borderRadius = (config.borderRadius as string) || "lg";
+	const borderRadius = (config.borderRadius as string) || "2xl";
 	const shadow = config.shadow as string | undefined;
 	const customBgColor = config.customBgColor as string | undefined;
 	const customTextColor = config.customTextColor as string | undefined;
@@ -62,6 +62,8 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 		sm: "rounded-sm",
 		md: "rounded-md",
 		lg: "rounded-lg",
+		xl: "rounded-xl",
+		"2xl": "rounded-2xl",
 		full: "rounded-full",
 	};
 
@@ -80,42 +82,52 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 
 	const effectiveTextAlign = hasRichContent ? "left" : textAlign;
 
-	const baseClasses = `group block w-full px-6 py-3.5 font-medium transition-all duration-200 hover:scale-[1.01] hover:shadow-md ${
-		radiusClasses[borderRadius] || "rounded-lg"
-	} ${shadowClasses[shadow || "none"]} ${
-		textAlignClasses[effectiveTextAlign] || "text-center"
-	} ${animation && animationClasses[animation] ? animationClasses[animation] : ""}`;
+	const justifyClasses: Record<string, string> = {
+		left: "justify-start",
+		center: "justify-center",
+		right: "justify-end",
+	};
+
+	const baseClasses = hasRichContent
+		? `group block w-full px-6 py-5 font-semibold tracking-wide transition-all duration-300 hover:-translate-y-0.5 ${
+				radiusClasses[borderRadius] || "rounded-2xl"
+			} ${shadowClasses[shadow || "none"]} ${
+				textAlignClasses[effectiveTextAlign] || "text-center"
+			} ${animation && animationClasses[animation] ? animationClasses[animation] : ""}`
+		: `group relative flex items-center w-full py-4 px-6 font-semibold tracking-wide transition-all duration-300 hover:-translate-y-0.5 ${
+				justifyClasses[textAlign] || "justify-center"
+			} ${radiusClasses[borderRadius] || "rounded-2xl"} ${shadowClasses[shadow || "none"]} ${animation && animationClasses[animation] ? animationClasses[animation] : ""}`;
 
 	const style: React.CSSProperties = {
-		transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
+		transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, transform 0.3s cubic-bezier(0.4,0,0.2,1)",
 	};
 
 	if (isHighlighted && themeColors) {
 		style.backgroundColor = themeColors.primary;
 		style.color = "#ffffff";
+		style.boxShadow = `0 10px 25px -5px ${themeColors.primary}33`;
 	} else if (customBgColor) {
 		style.backgroundColor = customBgColor;
 		if (customTextColor) style.color = customTextColor;
-	} else if (themeColors) {
-		if (isOutlined) {
-			style.border = `2px solid ${themeColors.border}`;
-			style.color = themeColors.cardFg;
-			style.backgroundColor = "transparent";
-		} else {
-			style.backgroundColor = themeColors.card;
-			style.color = themeColors.cardFg;
-		}
+	} else if (isOutlined && themeColors) {
+		style.border = `2px solid ${themeColors.border}`;
+		style.color = themeColors.cardFg;
+		style.backgroundColor = "transparent";
 	}
 
-	const colorClasses = isHighlighted || customBgColor || themeColors
+	if (!isHighlighted && !customBgColor && !isOutlined) {
+		style.backgroundColor = colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.7)";
+		style.borderColor = colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.6)";
+		style.color = colorMode === "dark" ? "#ffffff" : "#0f172a";
+	}
+
+	const glassClasses = !isHighlighted && !customBgColor && !isOutlined
+		? "hover:brightness-110 backdrop-blur-2xl border shadow-lg shadow-black/5"
+		: "";
+
+	const colorClasses = isHighlighted || customBgColor || isOutlined
 		? ""
-		: isOutlined
-			? colorMode === "dark"
-				? "border-2 border-gray-600 text-white hover:bg-gray-800"
-				: "border-2 border-gray-300 text-gray-900 hover:bg-gray-50"
-			: colorMode === "dark"
-				? "bg-gray-800 text-white hover:bg-gray-700"
-				: "bg-white text-gray-900 shadow-sm hover:shadow-md";
+		: glassClasses;
 
 	return (
 		<div role="listitem" className="ld-link-block">
@@ -124,37 +136,48 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 				target={openInNewTab ? "_blank" : "_self"}
 				rel={openInNewTab ? "noopener noreferrer" : undefined}
 				onClick={handleClick}
-				className={`${baseClasses} ${colorClasses} hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2`}
+				className={`${baseClasses} ${colorClasses} focus-visible:outline-2 focus-visible:outline-offset-2`}
 				style={{ ...style, outlineColor: themeColors?.primary || "#3b82f6" }}
 			>
-				<span className="flex items-center gap-2">
-					{emoji && emojiPosition === "left" && (
-						<span className="shrink-0" aria-hidden="true">{emoji}</span>
-					)}
-					<span className={`flex-1 ${hasRichContent ? "min-w-0" : ""}`}>
-						<span className={hasRichContent ? "block" : ""}>{block.title || "Untitled Link"}</span>
-						{description && (
-							<span
-								className="block text-xs font-normal opacity-70 truncate mt-0.5"
-								title={description}
-							>
-								{description}
-							</span>
+				{hasRichContent ? (
+					<span className="flex items-center gap-2">
+						{emoji && emojiPosition === "left" && (
+							<span className="shrink-0" aria-hidden="true">{emoji}</span>
+						)}
+						<span className="flex-1 min-w-0">
+							<span className="block">{block.title || "Untitled Link"}</span>
+							{description && (
+								<span
+									className="block text-xs font-normal opacity-70 truncate mt-0.5"
+									title={description}
+								>
+									{description}
+								</span>
+							)}
+						</span>
+						{emoji && emojiPosition === "right" && (
+							<span className="shrink-0" aria-hidden="true">{emoji}</span>
+						)}
+						{thumbnail && (
+							<img
+								src={thumbnail}
+								alt=""
+								className="h-12 w-12 shrink-0 rounded-md object-cover"
+							/>
 						)}
 					</span>
-					{emoji && emojiPosition === "right" && (
-						<span className="shrink-0" aria-hidden="true">{emoji}</span>
-					)}
-					{thumbnail ? (
-						<img
-							src={thumbnail}
-							alt=""
-							className="h-12 w-12 shrink-0 rounded-md object-cover"
-						/>
-					) : (
-						<ArrowRight className="h-4 w-4 shrink-0 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all duration-200" aria-hidden="true" />
-					)}
-				</span>
+				) : (
+					<span className="inline-flex items-center gap-2">
+						{emoji && emojiPosition === "left" && (
+							<span className="shrink-0" aria-hidden="true">{emoji}</span>
+						)}
+						<span>{block.title || "Untitled Link"}</span>
+						{emoji && emojiPosition === "right" && (
+							<span className="shrink-0" aria-hidden="true">{emoji}</span>
+						)}
+						<ArrowRight className="absolute right-4 h-4 w-4 shrink-0 opacity-30 group-hover:opacity-70 group-hover:translate-x-0.5 transition-all duration-300" aria-hidden="true" />
+					</span>
+				)}
 			</a>
 		</div>
 	);

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Eye, EyeOff, AlertCircle, Loader2, Mail } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, Loader2, Mail, Lock } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+
+const cardStyle = {
+	boxShadow: "0 0 40px -10px rgba(99,102,241,0.3)",
+};
 
 export default function AdminLoginPage() {
 	const router = useRouter();
@@ -137,311 +141,347 @@ export default function AdminLoginPage() {
 	};
 
 	return (
-		<div className="admin-glass-bg flex min-h-screen items-center justify-center px-4">
-			<div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both">
-				{/* Logo + title above card */}
-				<div className="mb-8 text-center">
-					{branding?.logoUrl ? (
-						<img
-							src={branding.logoUrl}
-							alt=""
-							className="h-12 w-12 rounded-2xl object-cover mx-auto"
-						/>
-					) : (
-						<div className="mx-auto flex h-12 w-12 items-center justify-center bg-primary/90 backdrop-blur-sm text-primary-foreground text-lg font-bold rounded-2xl">
-							LD
-						</div>
-					)}
-					<h1 className="mt-4 text-xl font-semibold">Welcome back</h1>
-					<p className="mt-1 text-xs text-muted-foreground">
-						Enter your credentials to access your account
-					</p>
-				</div>
-
-				{loginSuccess ? (
-					<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl text-center space-y-3">
-						<Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />
-						<p className="text-sm font-medium">Login successful, redirecting...</p>
-					</div>
-				) : magicLinkSent ? (
-					<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl text-center space-y-3">
-						<div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-							<Mail className="h-5 w-5 text-primary" />
-						</div>
-						<h2 className="text-sm font-semibold">Check your email</h2>
-						<p className="text-xs text-muted-foreground">
-							We sent a magic link to <span className="font-medium text-foreground">{email}</span>. Click it to sign in.
-						</p>
-						<button
-							type="button"
-							className="text-xs text-primary underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-ring rounded"
-							onClick={() => { setMagicLinkSent(false); setFormError(""); }}
+		<div className="login-bg relative min-h-screen flex flex-col">
+			{/* Main */}
+			<main className="flex-1 flex items-center justify-center p-4 sm:p-6">
+				<div className="w-full max-w-[400px] login-card-enter">
+					{loginSuccess ? (
+						<div
+							className="rounded-xl border border-white/[0.06] bg-[#1a1f2e] p-6 sm:p-8 text-center space-y-3"
+							style={cardStyle}
 						>
-							Back to sign in
-						</button>
-					</div>
-				) : resetLinkSent ? (
-					<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl text-center space-y-3">
-						<div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-							<Mail className="h-5 w-5 text-primary" />
+							<Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />
+							<p className="text-sm font-medium text-slate-200">Login successful, redirecting...</p>
 						</div>
-						<h2 className="text-sm font-semibold">Check your email</h2>
-						<p className="text-xs text-muted-foreground">
-							We sent a password reset link to <span className="font-medium text-foreground">{email}</span>. Click it to reset your password.
-						</p>
-						<button
-							type="button"
-							className="text-xs text-primary underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-ring rounded"
-							onClick={() => { setResetLinkSent(false); setForgotMode(false); setFormError(""); }}
+					) : magicLinkSent ? (
+						<div
+							className="rounded-xl border border-white/[0.06] bg-[#1a1f2e] p-6 sm:p-8 text-center space-y-3"
+							style={cardStyle}
 						>
-							Back to sign in
-						</button>
-					</div>
-				) : forgotMode ? (
-					<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl">
-						<form onSubmit={handleForgotPassword} className="space-y-4" aria-describedby={formError ? "login-error" : undefined}>
-							<div aria-live="polite" aria-atomic="true">
-								{formError && (
-									<div
-										id="login-error"
-										className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive"
-									>
-										<AlertCircle className="h-3.5 w-3.5 shrink-0" />
-										<span>{formError}</span>
-									</div>
-								)}
+							<div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+								<Mail className="h-5 w-5 text-primary" />
 							</div>
-
-							<div className="space-y-1">
-								<h2 className="text-sm font-semibold">Reset your password</h2>
-								<p className="text-xs text-muted-foreground">
-									Enter your email address and we&apos;ll send you a link to reset your password.
-								</p>
-							</div>
-
-							<div className="space-y-1.5">
-								<Label htmlFor="forgot-email" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-									Email Address
-								</Label>
-								<Input
-									id="forgot-email"
-									type="email"
-									placeholder="you@example.com"
-									value={email}
-									onChange={(e) => setEmail(e.target.value)}
-									autoComplete="email"
-									className="dark:bg-input/30 border-white/15"
-									required
-								/>
-							</div>
-
-							<Button
-								type="submit"
-								variant="default"
-								className="w-full"
-								disabled={isForgotSubmitting}
+							<h2 className="text-sm font-semibold text-white">Check your email</h2>
+							<p className="text-xs text-slate-400">
+								We sent a magic link to <span className="font-medium text-slate-200">{email}</span>. Click it to sign in.
+							</p>
+							<button
+								type="button"
+								className="text-xs text-primary underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-ring rounded"
+								onClick={() => { setMagicLinkSent(false); setFormError(""); }}
 							>
-								{isForgotSubmitting ? (
-									<>
-										<Loader2 className="h-4 w-4 animate-spin" />
-										Sending...
-									</>
-								) : (
-									"Send Reset Link"
-								)}
-							</Button>
-
-							<div className="text-center">
-								<button
-									type="button"
-									className="text-xs text-primary underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-ring rounded"
-									onClick={() => { setForgotMode(false); setFormError(""); }}
-								>
-									Back to sign in
-								</button>
+								Back to sign in
+							</button>
+						</div>
+					) : resetLinkSent ? (
+						<div
+							className="rounded-xl border border-white/[0.06] bg-[#1a1f2e] p-6 sm:p-8 text-center space-y-3"
+							style={cardStyle}
+						>
+							<div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+								<Mail className="h-5 w-5 text-primary" />
 							</div>
-						</form>
-					</div>
-				) : (
-					<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl">
-						<form onSubmit={handleSubmit} className="space-y-4" aria-describedby={formError ? "login-error" : undefined}>
-							<div aria-live="polite" aria-atomic="true">
-								{formError && (
-									<div
-										id="login-error"
-										className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive"
-									>
-										<AlertCircle className="h-3.5 w-3.5 shrink-0" />
-										<span>{formError}</span>
+							<h2 className="text-sm font-semibold text-white">Check your email</h2>
+							<p className="text-xs text-slate-400">
+								We sent a password reset link to <span className="font-medium text-slate-200">{email}</span>. Click it to reset your password.
+							</p>
+							<button
+								type="button"
+								className="text-xs text-primary underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-ring rounded"
+								onClick={() => { setResetLinkSent(false); setForgotMode(false); setFormError(""); }}
+							>
+								Back to sign in
+							</button>
+						</div>
+					) : forgotMode ? (
+						<div
+							className="rounded-xl border border-white/[0.06] bg-[#1a1f2e] p-6 sm:p-8"
+							style={cardStyle}
+						>
+							{/* Title inside card */}
+							<div className="text-center mb-8">
+								{branding?.logoUrl ? (
+									<img src={branding.logoUrl} alt="" className="h-10 w-10 rounded-xl object-cover mx-auto" />
+								) : (
+									<div className="mx-auto flex h-10 w-10 items-center justify-center bg-primary/90 text-primary-foreground text-sm font-bold rounded-xl">
+										LD
 									</div>
 								)}
+								<h1 className="mt-4 text-2xl font-bold text-white tracking-tight">Reset Password</h1>
+								<p className="mt-1 text-sm text-slate-400">Enter your email and we&apos;ll send you a reset link</p>
 							</div>
 
-							<div className="space-y-1.5">
-								<Label htmlFor="email" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-									Email Address
-								</Label>
-								<Input
-									id="email"
-									type="email"
-									placeholder="you@example.com"
-									value={email}
-									onChange={(e) => setEmail(e.target.value)}
-									autoComplete="email"
-									className="dark:bg-input/30 border-white/15"
-									required
-								/>
-							</div>
+							<form onSubmit={handleForgotPassword} className="space-y-4" aria-describedby={formError ? "login-error" : undefined}>
+								<div aria-live="polite" aria-atomic="true">
+									{formError && (
+										<div
+											id="login-error"
+											className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive"
+										>
+											<AlertCircle className="h-3.5 w-3.5 shrink-0" />
+											<span>{formError}</span>
+										</div>
+									)}
+								</div>
 
-							<div className="space-y-1.5">
-								<div className="flex items-center justify-between">
-									<Label htmlFor="password" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-										Password
+								<div className="space-y-1.5">
+									<Label htmlFor="forgot-email" className="text-sm font-medium text-slate-200">
+										Email Address
 									</Label>
-									<button
-										type="button"
-										onClick={() => { setForgotMode(true); setFormError(""); }}
-										className="text-xs text-primary cursor-pointer hover:text-primary/80 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
-									>
-										Forgot password?
-									</button>
-								</div>
-								<div className="relative">
-									<Input
-										id="password"
-										type={showPassword ? "text" : "password"}
-										placeholder="Your password"
-										value={password}
-										onChange={(e) => setPassword(e.target.value)}
-										autoComplete="current-password"
-										className="dark:bg-input/30 border-white/15"
-									/>
-									<button
-										type="button"
-										onClick={() => setShowPassword(!showPassword)}
-										className="absolute right-0.5 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-foreground"
-										aria-label={showPassword ? "Hide password" : "Show password"}
-										aria-pressed={showPassword}
-									>
-										{showPassword ? (
-											<EyeOff className="h-3.5 w-3.5" />
-										) : (
-											<Eye className="h-3.5 w-3.5" />
-										)}
-									</button>
-								</div>
-							</div>
-
-							<div className="flex items-center gap-2">
-								<Checkbox
-									id="remember-me"
-									checked={rememberMe}
-									onCheckedChange={(checked) => setRememberMe(checked === true)}
-								/>
-								<Label htmlFor="remember-me" className="text-xs text-muted-foreground cursor-pointer">
-									Keep me signed in
-								</Label>
-							</div>
-
-							<Button
-								type="submit"
-								variant="default"
-								className="w-full"
-								disabled={isSubmitting}
-							>
-								{isSubmitting ? (
-									<>
-										<Loader2 className="h-4 w-4 animate-spin" />
-										Signing in...
-									</>
-								) : (
-									"Sign In"
-								)}
-							</Button>
-						</form>
-
-						{magicLinkEnabled && (
-							<div className="mt-4 space-y-4">
-								<div className="relative">
-									<Separator />
-									<span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-transparent px-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground backdrop-blur-sm">
-										or continue with
-									</span>
+									<div className="relative">
+										<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+										<Input
+											id="forgot-email"
+											type="email"
+											placeholder="you@example.com"
+											value={email}
+											onChange={(e) => setEmail(e.target.value)}
+											autoComplete="email"
+											className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10"
+											required
+										/>
+									</div>
 								</div>
 
 								<Button
-									type="button"
-									variant="outline"
-									className="w-full"
-									disabled={isMagicLinkSubmitting}
-									onClick={handleMagicLink}
+									type="submit"
+									variant="default"
+									className="w-full shadow-lg shadow-primary/20 active:scale-[0.98]"
+									disabled={isForgotSubmitting}
 								>
-									{isMagicLinkSubmitting ? (
+									{isForgotSubmitting ? (
 										<>
 											<Loader2 className="h-4 w-4 animate-spin" />
 											Sending...
 										</>
 									) : (
-										<>
-											<Mail className="h-4 w-4" />
-											Sign in with Magic Link
-										</>
+										"Send Reset Link"
 									)}
 								</Button>
-							</div>
-						)}
-					</div>
-				)}
 
-				{branding && (branding.ppUrl || branding.tosUrl || branding.ppText || branding.tosText) && (
-					<div className="mt-8 flex justify-center gap-4 text-[10px] uppercase tracking-wider text-muted-foreground/60">
-						{branding.ppMode === "url" && branding.ppUrl ? (
-							<a href={branding.ppUrl} target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">
-								Privacy Policy
+								<div className="text-center">
+									<button
+										type="button"
+										className="text-xs text-primary underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-ring rounded"
+										onClick={() => { setForgotMode(false); setFormError(""); }}
+									>
+										Back to sign in
+									</button>
+								</div>
+							</form>
+						</div>
+					) : (
+						<div
+							className="rounded-xl border border-white/[0.06] bg-[#1a1f2e] p-6 sm:p-8"
+							style={cardStyle}
+						>
+							{/* Title inside card */}
+							<div className="text-center mb-8">
+								{branding?.logoUrl ? (
+									<img src={branding.logoUrl} alt="" className="h-10 w-10 rounded-xl object-cover mx-auto" />
+								) : (
+									<div className="mx-auto flex h-10 w-10 items-center justify-center bg-primary/90 text-primary-foreground text-sm font-bold rounded-xl">
+										LD
+									</div>
+								)}
+								<h1 className="mt-4 text-2xl font-bold text-white tracking-tight">Welcome Back</h1>
+								<p className="mt-1 text-sm text-slate-400">Enter your credentials to access your account</p>
+							</div>
+
+							<form onSubmit={handleSubmit} className="space-y-4" aria-describedby={formError ? "login-error" : undefined}>
+								<div aria-live="polite" aria-atomic="true">
+									{formError && (
+										<div
+											id="login-error"
+											className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive"
+										>
+											<AlertCircle className="h-3.5 w-3.5 shrink-0" />
+											<span>{formError}</span>
+										</div>
+									)}
+								</div>
+
+								<div className="space-y-1.5">
+									<Label htmlFor="email" className="text-sm font-medium text-slate-200">
+										Email Address
+									</Label>
+									<div className="relative">
+										<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+										<Input
+											id="email"
+											type="email"
+											placeholder="you@example.com"
+											value={email}
+											onChange={(e) => setEmail(e.target.value)}
+											autoComplete="email"
+											className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10"
+											required
+										/>
+									</div>
+								</div>
+
+								<div className="space-y-1.5">
+									<div className="flex items-center justify-between">
+										<Label htmlFor="password" className="text-sm font-medium text-slate-200">
+											Password
+										</Label>
+										<button
+											type="button"
+											onClick={() => { setForgotMode(true); setFormError(""); }}
+											className="text-xs text-primary cursor-pointer hover:text-primary/80 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
+										>
+											Forgot password?
+										</button>
+									</div>
+									<div className="relative">
+										<Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+										<Input
+											id="password"
+											type={showPassword ? "text" : "password"}
+											placeholder="Your password"
+											value={password}
+											onChange={(e) => setPassword(e.target.value)}
+											autoComplete="current-password"
+											className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10"
+										/>
+										<button
+											type="button"
+											onClick={() => setShowPassword(!showPassword)}
+											className="absolute right-0.5 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center text-slate-500 hover:text-slate-200"
+											aria-label={showPassword ? "Hide password" : "Show password"}
+											aria-pressed={showPassword}
+										>
+											{showPassword ? (
+												<EyeOff className="h-3.5 w-3.5" />
+											) : (
+												<Eye className="h-3.5 w-3.5" />
+											)}
+										</button>
+									</div>
+								</div>
+
+								<div className="flex items-center gap-2">
+									<Checkbox
+										id="remember-me"
+										checked={rememberMe}
+										onCheckedChange={(checked) => setRememberMe(checked === true)}
+									/>
+									<Label htmlFor="remember-me" className="text-xs text-slate-400 cursor-pointer">
+										Keep me signed in
+									</Label>
+								</div>
+
+								<Button
+									type="submit"
+									variant="default"
+									className="w-full shadow-lg shadow-primary/20 active:scale-[0.98]"
+									disabled={isSubmitting}
+								>
+									{isSubmitting ? (
+										<>
+											<Loader2 className="h-4 w-4 animate-spin" />
+											Signing in...
+										</>
+									) : (
+										"Sign In"
+									)}
+								</Button>
+							</form>
+
+							{magicLinkEnabled && (
+								<div className="mt-4 space-y-4">
+									<div className="relative">
+										<Separator />
+										<span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1a1f2e] px-2 text-[10px] font-medium uppercase tracking-wider text-slate-500">
+											or continue with
+										</span>
+									</div>
+
+									<Button
+										type="button"
+										variant="outline"
+										className="w-full border-white/10 hover:bg-white/5 text-slate-200"
+										disabled={isMagicLinkSubmitting}
+										onClick={handleMagicLink}
+									>
+										{isMagicLinkSubmitting ? (
+											<>
+												<Loader2 className="h-4 w-4 animate-spin" />
+												Sending...
+											</>
+										) : (
+											<>
+												<Mail className="h-4 w-4" />
+												Sign in with Magic Link
+											</>
+										)}
+									</Button>
+								</div>
+							)}
+						</div>
+					)}
+
+					{/* Below-card link */}
+					{!loginSuccess && !magicLinkSent && !resetLinkSent && (
+						<p className="mt-4 text-center text-xs text-slate-500">
+							Don&apos;t have an account?{" "}
+							<a href="/admin/setup" className="text-primary hover:text-primary/80 transition-colors">
+								Set up LinkDen
 							</a>
-						) : branding.ppMode === "text" && branding.ppText ? (
-							<button type="button" onClick={() => setPpDialogOpen(true)} className="hover:text-muted-foreground transition-colors">
-								Privacy Policy
-							</button>
-						) : null}
-						{branding.tosMode === "url" && branding.tosUrl ? (
-							<a href={branding.tosUrl} target="_blank" rel="noopener noreferrer" className="hover:text-muted-foreground transition-colors">
-								Terms of Service
-							</a>
-						) : branding.tosMode === "text" && branding.tosText ? (
-							<button type="button" onClick={() => setTosDialogOpen(true)} className="hover:text-muted-foreground transition-colors">
-								Terms of Service
-							</button>
-						) : null}
-					</div>
-				)}
+						</p>
+					)}
+				</div>
+			</main>
 
-				{branding?.ppText && (
-					<Dialog open={ppDialogOpen} onOpenChange={setPpDialogOpen}>
-						<DialogContent className="max-h-[80vh] overflow-y-auto">
-							<DialogHeader>
-								<DialogTitle>Privacy Policy</DialogTitle>
-							</DialogHeader>
-							<div className="whitespace-pre-wrap text-sm text-muted-foreground">
-								{branding.ppText}
-							</div>
-						</DialogContent>
-					</Dialog>
-				)}
+			{/* Footer — branding PP/ToS only */}
+			{branding && (branding.ppUrl || branding.tosUrl || branding.ppText || branding.tosText) && (
+				<footer className="py-6 px-6 flex justify-center gap-6">
+					{branding.ppMode === "url" && branding.ppUrl ? (
+						<a href={branding.ppUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 hover:text-primary transition-colors">
+							Privacy Policy
+						</a>
+					) : branding.ppMode === "text" && branding.ppText ? (
+						<button type="button" onClick={() => setPpDialogOpen(true)} className="text-xs text-slate-500 hover:text-primary transition-colors">
+							Privacy Policy
+						</button>
+					) : null}
+					{branding.tosMode === "url" && branding.tosUrl ? (
+						<a href={branding.tosUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 hover:text-primary transition-colors">
+							Terms of Service
+						</a>
+					) : branding.tosMode === "text" && branding.tosText ? (
+						<button type="button" onClick={() => setTosDialogOpen(true)} className="text-xs text-slate-500 hover:text-primary transition-colors">
+							Terms of Service
+						</button>
+					) : null}
+				</footer>
+			)}
 
-				{branding?.tosText && (
-					<Dialog open={tosDialogOpen} onOpenChange={setTosDialogOpen}>
-						<DialogContent className="max-h-[80vh] overflow-y-auto">
-							<DialogHeader>
-								<DialogTitle>Terms of Service</DialogTitle>
-							</DialogHeader>
-							<div className="whitespace-pre-wrap text-sm text-muted-foreground">
-								{branding.tosText}
-							</div>
-						</DialogContent>
-					</Dialog>
-				)}
-			</div>
+			{branding?.ppText && (
+				<Dialog open={ppDialogOpen} onOpenChange={setPpDialogOpen}>
+					<DialogContent className="max-h-[80vh] overflow-y-auto">
+						<DialogHeader>
+							<DialogTitle>Privacy Policy</DialogTitle>
+						</DialogHeader>
+						<div className="whitespace-pre-wrap text-sm text-muted-foreground">
+							{branding.ppText}
+						</div>
+					</DialogContent>
+				</Dialog>
+			)}
+
+			{branding?.tosText && (
+				<Dialog open={tosDialogOpen} onOpenChange={setTosDialogOpen}>
+					<DialogContent className="max-h-[80vh] overflow-y-auto">
+						<DialogHeader>
+							<DialogTitle>Terms of Service</DialogTitle>
+						</DialogHeader>
+						<div className="whitespace-pre-wrap text-sm text-muted-foreground">
+							{branding.tosText}
+						</div>
+					</DialogContent>
+				</Dialog>
+			)}
 		</div>
 	);
 }

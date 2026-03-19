@@ -419,7 +419,7 @@ export default function BuilderPage() {
 					)}
 					{/* Preview — always on xl, hidden on lg when editing */}
 					<div className={cn(
-						"w-[300px] shrink-0 sticky top-6",
+						"w-[360px] shrink-0 sticky top-6",
 						editingBlock ? "hidden xl:block" : "block",
 					)}>
 						<SharedPreview
