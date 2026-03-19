@@ -1,3 +1,22 @@
+// ─── Server Entry Point ────────────────────────────────────────────────────
+// Hono app running on Cloudflare Workers. Handles:
+//   1. Auth routes (Better Auth)
+//   2. tRPC API (all admin + public endpoints)
+//   3. Image upload/serving (R2)
+//
+// Rate limiting uses Cloudflare's native rate limiter with three tiers:
+//   - RL_AUTH (10 req/60s): login, contact form — generous for real users
+//   - RL_STRICT (5 req/60s): password reset, magic link, signup — tight to prevent abuse
+//   - RL_UPLOAD (20 req/60s): image uploads — higher since admin may batch-upload
+//
+// Security patterns:
+//   - Signup lock: after the first user registers, /sign-up returns 403.
+//     This is a single-user app — registration is only for initial setup.
+//   - Magic link gate: checks the magic_link_enabled setting before allowing
+//     magic link auth requests, so admins can disable it at runtime.
+//   - File upload validation: triple-checks extension, MIME type, and size
+//     before writing to R2. This defends against content-type spoofing.
+
 import { cloudflareRateLimiter } from "@hono-rate-limiter/cloudflare";
 import { trpcServer } from "@hono/trpc-server";
 import { createContext } from "@linkden/api/context";

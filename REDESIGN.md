@@ -1,868 +1,652 @@
-# LinkDen — Redesign Specification
+# REDESIGN.md — LinkDen Admin Panel Stitch Prompts
 
-> **Goal:** Make the admin panel and public profile page look multiple times cleaner, more spacious, and dramatically more mobile-friendly — without breaking the established glassmorphism design language or existing functionality.
+> Each section contains one ready-to-copy Google Stitch prompt. Paste the prompt into Stitch, then replace the block below it with the generated output.
+>
+> **Design constraints that must never change:**
+> - Glassmorphism: frosted glass cards with `backdrop-blur`, semi-transparent backgrounds
+> - Dark mode first (deep navy-black base, not pure black)
+> - Electric blue primary accent
+> - Inter font for UI, monospace font for numeric values
+> - Tailwind CSS v4 class names in all output
+> - Radix UI primitives (no custom modal/dropdown HTML)
 
 ---
 
 ## Table of Contents
 
-1. [Design Vision](#1-design-vision)
-2. [Competitive Context](#2-competitive-context)
-3. [Design System Foundations](#3-design-system-foundations)
-4. [Admin Shell](#4-admin-shell)
-5. [Dashboard Page](#5-dashboard-page)
-6. [Analytics Page](#6-analytics-page)
-7. [Builder Page](#7-builder-page)
-8. [Appearance Page](#8-appearance-page)
-9. [Forms Page](#9-forms-page)
-10. [Settings Page](#10-settings-page)
-11. [Public Profile Page](#11-public-profile-page)
-12. [Mobile Experience Overhaul](#12-mobile-experience-overhaul)
-13. [Implementation Priority](#13-implementation-priority)
-14. [Appendix: Component Inventory](#14-appendix-component-inventory)
+1. [Design Tokens](#1-design-tokens)
+2. [Global Layout](#2-global-layout)
+3. [Components](#3-components)
+4. [Pages](#4-pages)
+5. [Implementation Checklist](#5-implementation-checklist)
 
 ---
 
-## 1. Design Vision
+## 1. Design Tokens
 
-### 1.1 Aesthetic Direction: "Precision Glass"
+### 1.1 Full Token Set
 
-LinkDen's existing glassmorphism is a strong foundation. The problem isn't the direction — it's the execution:
-- Glass surfaces are slightly too opaque, killing depth
-- Spacing is inconsistent, making the UI feel improvised
-- Typography is timid — headings don't assert enough hierarchy
-- Mobile feels like a shrunken desktop, not a purpose-built experience
+**Stitch prompt — copy this:**
+```
+Design a complete dark-mode CSS variable token set for a link-in-bio admin panel called LinkDen.
 
-The redesign amplifies what works. The new identity: **Precision Glass** — polished obsidian panels, surgical spacing, confident typography, and restraint that makes every element feel intentional.
+Requirements that must stay:
+- Glassmorphism design language (semi-transparent card surfaces with backdrop-blur)
+- Deep navy-black background (not pure #000000 — use a dark blue-tinted black)
+- Electric blue primary accent color
+- oklch color format for all values
+- Must include: --background, --foreground, --primary, --primary-foreground, --secondary, --secondary-foreground, --muted, --muted-foreground, --accent, --accent-foreground, --destructive, --border, --input, --ring, --card, --card-foreground, --sidebar, --sidebar-foreground, --sidebar-border, --radius
 
-Think: Linear + Vercel dashboard meets a premium audio software UI. Dark, focused, trustworthy.
+Output as CSS :root and .dark blocks with Tailwind CSS v4 @theme inline syntax.
+```
 
-### 1.2 Font System
-
-| Role | Font | Class |
-|------|------|-------|
-| Page titles | Inter Variable | `font-semibold tracking-tight` |
-| Stat values | **DM Mono** (new addition) | `font-mono font-semibold tabular-nums` |
-| Section labels | Inter Variable | `font-semibold uppercase tracking-widest text-[10px]` |
-| Body / inputs | Inter Variable | `font-normal` |
-| Monospace code | DM Mono | `font-mono text-sm` |
-
-**Add to project:** `@fontsource-variable/dm-mono` — apply only to numeric stat displays (visitor counts, click counts, analytics numbers). The contrast between a proportional UI font and monospaced numerals creates a premium data-dashboard feel without changing the entire typography system.
-
-### 1.3 Color Intensification
-
-The current oklch palette is modern but slightly timid. Intensify key tokens:
-
+**Paste Stitch output here:**
 ```css
-/* Intensified dark mode */
-.dark {
-  --background: oklch(0.10 0.03 265);    /* deeper navy-black (was 0.13) */
-  --card: oklch(0.17 0.02 270 / 65%);   /* slightly more translucent (was 0.2 / 70%) */
-  --border: oklch(1 0 0 / 8%);          /* thinner, subtler (was /10%) */
-  --primary: oklch(0.72 0.18 235);      /* more electric blue (was 0.75 0.14 220) */
-  --muted-foreground: oklch(0.48 0.01 270); /* slightly lighter for readability */
-}
+/* REPLACE THIS WITH STITCH OUTPUT */
 ```
-
-This pushes the dark mode into "polished obsidian" territory — deeper blacks, crisper glass edges, more vivid primary accent.
-
-### 1.4 Motion Principles
-
-**One entrance per page, not per component:**
-- Current: every section has staggered `getAnimationProps(index)` entrance
-- New: a single page-level `animate-in fade-in-0 slide-in-from-bottom-2 duration-300` on the main content wrapper
-- Result: less animation code, more elegant feel, no "popcorn" effect of elements appearing sequentially
-
-**Micro-interactions:**
-- Card hover: `hover:border-white/15 dark:hover:border-white/12 transition-colors duration-150`
-- Button hover: existing transitions are fine
-- Nav item hover: `transition-all duration-150` (already exists, keep)
-- List item selection: no animation — instant color change feels snappier
 
 ---
 
-## 2. Competitive Context
+### 1.2 Typography Scale
 
-### 2.1 Linktree (Market Leader)
+**Stitch prompt — copy this:**
+```
+Define a typography scale for a dark glassmorphic admin panel (LinkDen).
 
-**What they do well:**
-- Extremely clean admin: wide whitespace, one clear action per screen
-- Stats shown as large, bold numbers above subtle sparklines
-- Builder is a simple vertical list with drag handles that are big enough to grab on mobile
-- Mobile admin is near-identical to desktop (no layout shift)
+Requirements that must stay:
+- Inter Variable as the primary UI font
+- A monospace font (DM Mono or similar) used only for numeric/stat values
+- Tailwind CSS v4 class names
+- Roles needed: page title, section title, group label (uppercase tracking-widest), body, caption, stat value (large monospace), metric number (small monospace)
 
-**What we can do better:**
-- Linktree's dark mode is nearly non-existent
-- Their analytics are rudimentary (we already have more)
-- Their customization options are locked behind paywall; ours are all free
+Output as a Tailwind CSS v4 @theme block defining font-family tokens, and a reference table mapping each role to its exact Tailwind classes.
+```
 
-**Key takeaway:** Less chrome around data. Let numbers breathe with generous whitespace.
-
-### 2.2 Beacons.ai (Premium Creator Tool)
-
-**What they do well:**
-- Large, editorial typography — section titles are assertive, not shy
-- "Monetization" mindset: every screen shows the value the user is getting
-- Profile preview is always visible on desktop — never hidden
-- Color system is bold: they commit to high-contrast accents
-
-**Key takeaway:** Make the preview pane more prominent and always accessible. Show value metrics confidently.
-
-### 2.3 Later Link in Bio
-
-**What they do well:**
-- Clean period selector (pill tabs, not full-width button strip)
-- Analytics grid uses consistent card height, making visual scanning easy
-- Mobile: dedicated app-like experience with large touch targets
-
-**Key takeaway:** Consistent card heights in analytics grid prevents visual jitter when data loads.
-
-### 2.4 Key Cross-Competitor Insights
-
-1. **All premium link-in-bio tools show the profile preview prominently** — never hide it
-2. **Numbers are displayed large and boldly** — analytics are the value proposition, treat them like it
-3. **Drag handles on builder are always obvious** — not subtle icons, visible affordances
-4. **Mobile uses the same card grid as desktop** — just fewer columns, not a different layout system
-5. **Empty states are warm and encouraging**, not cold error text
+**Paste Stitch output here:**
+```css
+/* REPLACE THIS WITH STITCH OUTPUT */
+```
 
 ---
 
-## 3. Design System Foundations
+## 2. Global Layout
 
-These global fixes deliver maximum visual cleanup per line changed. Apply before touching individual pages.
+### 2.1 Sidebar
 
-### 3.1 Typography Scale
+**Stitch prompt — copy this:**
+```
+Design a dark glassmorphic admin sidebar for LinkDen (a link-in-bio tool).
 
-| Role | Tailwind Classes | Used for |
-|------|-----------------|----------|
-| Page title | `text-base md:text-lg font-semibold tracking-tight` | PageHeader h1 |
-| Section title | `text-sm font-semibold` | Card titles, sidebar section headings |
-| Group label | `text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60` | Nav labels, field group headers |
-| Body | `text-sm leading-relaxed` | Descriptions, input values, list text |
-| Caption | `text-xs text-muted-foreground` | Sub-labels, timestamps, footnotes |
-| Stat value | `text-2xl md:text-3xl font-mono font-semibold tabular-nums` | StatCard numbers |
-| Metric number | `text-sm font-mono tabular-nums` | Analytics counts, click numbers |
+Requirements that must stay:
+- Width: 256px (w-64)
+- Glassmorphism: frosted glass panel, semi-transparent background, subtle border-right
+- Deep navy-black background tint
+- Electric blue active state with a 2px left accent stripe on the active nav item
+- Nav groups with uppercase tracking-widest group labels
+- Nav items: icon + label, 40px height, rounded-lg, hover: subtle white/5 overlay
+- Notification badge on "Forms" nav item — use amber/warning color (NOT red)
+- Bottom section: two ghost buttons side by side for "Docs" and "View Live Page"
+- Theme toggle (Light / Dark / System) as a segmented control
+- User avatar row at the very bottom with dropdown chevron, 44px min height
+- Inter font, Tailwind CSS v4 classes
 
-**Problem today:** Section headers inconsistently use `text-xs font-semibold uppercase`, `text-sm font-medium`, and `text-xs font-medium text-muted-foreground` across pages. The `section-header.tsx` component is not universally adopted.
+Output as a complete React TSX component with Tailwind class names.
+```
 
-**Fix:** Update `section-header.tsx` to always emit `text-[10px] font-semibold uppercase tracking-widest`. Audit every page and replace one-off heading classes with `<SectionHeader>`.
+**Paste Stitch output here:**
+```tsx
+/* REPLACE THIS WITH STITCH OUTPUT */
+```
 
 ---
 
-### 3.2 Spacing Scale
+### 2.2 Mobile Header
 
-Use only these gap/spacing values across the entire admin:
+**Stitch prompt — copy this:**
+```
+Design a dark glassmorphic mobile top header bar for LinkDen admin panel.
 
-| Token | Pixels | Use |
-|-------|--------|-----|
-| `gap-1.5` | 6px | Inline icon + label pairs |
-| `gap-2` | 8px | Tight rows (badge rows, button groups) |
-| `gap-3` | 12px | Nav items, form field pairs within a row |
-| `gap-4` | 16px | Card grid columns, major inline spacing |
-| `gap-6` | 24px | Vertical section stacking |
-| `space-y-1` | 4px | Items within a nav group |
-| `space-y-4` | 16px | Items within a content list |
-| `space-y-6` | 24px | Major page sections (Card to Card) |
-| `p-4 md:p-5` | 16–20px | Card inner padding (all cards, consistent) |
+Requirements that must stay:
+- Fixed top, full width, height 48px (h-12)
+- Glassmorphism: backdrop-blur background, subtle bottom border
+- Left: small logo mark + "LinkDen" text
+- Center: current page name in small muted text (absolutely positioned so it stays centered regardless of button widths)
+- Right: hamburger / X toggle button
+- Inter font, Tailwind CSS v4 classes
+- Must work at 375px viewport width
 
-**Problem today:** `gap-3`, `gap-4`, `gap-6` all used for card grids interchangeably. Pick `gap-4` for all card grids and never deviate.
+Output as a React TSX component with Tailwind class names.
+```
+
+**Paste Stitch output here:**
+```tsx
+/* REPLACE THIS WITH STITCH OUTPUT */
+```
 
 ---
 
-### 3.3 Semantic Color System
+### 2.3 Mobile Dropdown Nav
 
-Apply this mapping consistently for icon backgrounds, dot indicators, and badge variants:
+**Stitch prompt — copy this:**
+```
+Design a dark glassmorphic mobile navigation dropdown for LinkDen admin panel.
 
-| Semantic | Icon BG | Icon Color | Use |
-|----------|---------|-----------|-----|
-| **Primary / Action** | `bg-primary/10` | `text-primary` | Active state, primary stat, current nav |
-| **Success / Live** | `bg-emerald-500/10` | `text-emerald-500` | Connected social, published, active |
-| **Warning / Attention** | `bg-amber-500/10` | `text-amber-500` | Unread messages, incomplete config, pending |
-| **Destructive** | `bg-destructive/10` | `text-destructive` | Delete, error, failed |
-| **Info / Analytics** | `bg-blue-500/10` | `text-blue-500` | Click counts, referrers, data points |
-| **Neutral** | `bg-muted/60` | `text-muted-foreground` | Disabled, secondary, total counts |
+Requirements that must stay:
+- Glassmorphism: frosted glass overlay panel below the header bar
+- Single-column list (NOT a grid) with nav group section labels
+- Group labels: uppercase, tracking-widest, 10px, muted color
+- Nav items: icon + label, minimum 44px touch target height, rounded-lg
+- Active state: electric blue text + bg-primary/10
+- Amber notification badge on the "Forms" item (not red)
+- Bottom: divider then a sign-out row
+- Inter font, Tailwind CSS v4 classes
 
-**Problem today:** Forms unread count badge is `bg-destructive` (red). Unread messages are not errors — change to `bg-amber-500` (warning). The analytics page uses `bg-green-500`, `bg-blue-500`, and `bg-emerald-500` without a documented pattern.
+Output as a React TSX component with Tailwind class names.
+```
+
+**Paste Stitch output here:**
+```tsx
+/* REPLACE THIS WITH STITCH OUTPUT */
+```
 
 ---
 
-### 3.4 Card Anatomy Standard
+### 2.4 Mobile Bottom Nav
 
-All `<Card>` components must follow this pattern:
+**Stitch prompt — copy this:**
+```
+Design a dark glassmorphic mobile bottom tab bar for LinkDen admin panel.
 
-```tsx
-// ✅ Correct
-<Card className="overflow-hidden">
-  <CardContent className="p-4 md:p-5">
-    <SectionHeader label="Section Name" />
-    {/* content */}
-  </CardContent>
-</Card>
+Requirements that must stay:
+- Glassmorphism: frosted glass bar, fixed bottom, backdrop-blur
+- 4 tabs: Dashboard, Builder, Analytics, Forms
+- Icons: h-5 w-5 (not smaller)
+- Minimum tab height: 48px
+- Active tab: electric blue icon + label
+- Inactive tab: muted gray icon + label, no border decorations
+- No visible borders between individual tabs
+- Inter font, Tailwind CSS v4 classes
 
-// ❌ Wrong — padding on wrapper
-<Card className="p-4">
-  <div className="text-sm font-medium">Section Name</div>
-  {/* content */}
-</Card>
+Output as a React TSX component with Tailwind class names.
 ```
 
-**Fix:** Remove all `p-*` classes from `<Card>` wrappers. Ensure `<CardContent>` uses `p-4 md:p-5`. Update `card.tsx` primitive if its default padding conflicts.
+**Paste Stitch output here:**
+```tsx
+/* REPLACE THIS WITH STITCH OUTPUT */
+```
 
 ---
 
-### 3.5 Universal Interactive List Item
+## 3. Components
 
-Every clickable/hoverable list item must use this exact pattern:
+### 3.1 StatCard
 
-```tsx
-<div className={cn(
-  "flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors duration-150 cursor-pointer select-none",
-  isSelected || isActive
-    ? "bg-primary/10 text-primary"
-    : "hover:bg-white/5 dark:hover:bg-white/5 text-foreground"
-)}>
+**Stitch prompt — copy this:**
+```
+Design a dark glassmorphic stat card component for LinkDen admin dashboard.
+
+Requirements that must stay:
+- Glassmorphism: frosted glass card, backdrop-blur, semi-transparent background
+- Layout: icon in a colored rounded square (top-left) + label below + large value below that
+- Value text: large (text-2xl or text-3xl), monospace font, tabular-nums
+- Icon background uses semantic colors: primary/10, emerald/10, amber/10 depending on stat type
+- Optional trend badge (up/down arrow + percentage)
+- Card hover: very subtle border brightening, transition-colors
+- Inter font for label, monospace for value, Tailwind CSS v4 classes
+
+Output as a React TSX component accepting props: icon, label, value, color, trend (optional).
 ```
 
-Never use `-mx-2 px-2` negative margin compensation hacks. Parent cards use `p-0`; list items carry their own `px-3` padding.
+**Paste Stitch output here:**
+```tsx
+/* REPLACE THIS WITH STITCH OUTPUT */
+```
 
 ---
 
-## 4. Admin Shell
+### 3.2 PageHeader
 
-### 4.1 Sidebar — Desktop
-
-**Current problems:**
-- External links (Docs, View Live) are buried as plain `<a>` list items
-- Unread badge uses destructive red (wrong semantic)
-- User trigger has small hit area (`py-2`)
-- Logo area height inconsistent with breathing room
-
-**Redesigned structure:**
-
+**Stitch prompt — copy this:**
 ```
-┌────────────────────────────┐
-│  [LD]  LinkDen      [🔔]  │  ← py-6 (spacious)
-├────────────────────────────┤
-│  ● Dashboard               │  ← active: bg-primary/10 rounded-lg, 3px left accent
-│    Builder                 │  ← hover: bg-white/5
-│    Analytics               │
-│    Forms          [3]      │  ← badge: bg-amber-500 (warning, not error)
-│                            │
-│  CUSTOMIZE                 │  ← text-[10px] uppercase tracking-widest
-│    Appearance              │
-│    Social                  │
-│    Wallet                  │
-│                            │
-│    Settings                │
-├────────────────────────────┤
-│  [↗ Docs]  [↗ Live Page]  │  ← grid-cols-2 ghost buttons
-├────────────────────────────┤
-│  [🌙 ☀ ⬛]               │  ← segmented theme toggle (keep)
-├────────────────────────────┤
-│  [Avatar]  Name        [⌄]│  ← py-2.5 for bigger hit area
-└────────────────────────────┘
+Design a page header component for LinkDen admin panel.
+
+Requirements that must stay:
+- Layout: left side has title (+ optional badge pill beside it), description text below
+- Right side: optional action slot for buttons
+- Title: text-base md:text-lg, font-semibold, tracking-tight
+- Description: text-sm, muted foreground
+- Badge: small pill, rounded-full, uses semantic colors
+- No background — sits above page content, not a card
+- Inter font, Tailwind CSS v4 classes
+
+Output as a React TSX component accepting props: title, description, badge (optional), actions (optional slot).
 ```
 
-**Changes:**
-- Active nav item: add `border-l-2 border-primary ml-[-1px]` left accent stripe
-- Forms unread badge: `bg-amber-500` instead of `bg-destructive`
-- External links: `<div className="grid grid-cols-2 gap-1 px-2 pb-2"><Button variant="ghost" size="sm">` for each
-- User dropdown trigger: `py-2.5` (from current `py-2`)
-- Logo row: `py-6` (from current `py-5`)
-
-> **Google Stitch Prompt:** `Dark glassmorphic admin sidebar 256px wide, deep navy background, frosted glass panels, electric blue accent, segmented theme toggle at bottom, user avatar dropdown footer, Inter font, ultra-minimal horizontal dividers`
+**Paste Stitch output here:**
+```tsx
+/* REPLACE THIS WITH STITCH OUTPUT */
+```
 
 ---
 
-### 4.2 Mobile Header
+### 3.3 Button Variants
 
-**Current problems:**
-- Always shows "LinkDen" with no indication of current page
-- Hamburger icon is the only affordance for navigation beyond bottom bar
+**Stitch prompt — copy this:**
+```
+Design a complete button component system for LinkDen admin panel using CVA (class-variance-authority).
 
-**Redesigned:**
+Requirements that must stay:
+- Glassmorphism aesthetic: default variant uses electric blue, ghost variant is transparent with hover overlay
+- Variants needed: default, secondary, destructive, outline, ghost, link
+- Sizes needed: sm, default, lg, icon
+- All variants must have visible focus rings for accessibility
+- Transitions on hover/active states
+- Inter font, Tailwind CSS v4 classes
+- Uses CVA for variant definitions
 
-```tsx
-<div className="fixed inset-x-0 top-0 z-40 flex h-12 items-center px-4 ...">
-  {/* Logo left */}
-  <div className="flex items-center gap-2 shrink-0">
-    <div className="LD mark" />
-    <span className="text-xs font-semibold">LinkDen</span>
-  </div>
-
-  {/* Current page — centered absolute */}
-  <span className="absolute inset-x-0 text-center text-xs font-medium text-muted-foreground pointer-events-none">
-    {currentPageLabel}  {/* e.g. "Dashboard", "Builder" */}
-  </span>
-
-  {/* Menu toggle right */}
-  <button className="ml-auto" aria-label="...">
-    {mobileMenuOpen ? <X /> : <Menu />}
-  </button>
-</div>
+Output as a complete React TSX button component with CVA variants and all class definitions filled in.
 ```
 
-**Derive `currentPageLabel`** from `pathname` using the `NAV_GROUPS` + `SETTINGS_ITEM` arrays.
+**Paste Stitch output here:**
+```tsx
+/* REPLACE THIS WITH STITCH OUTPUT */
+```
 
 ---
 
-### 4.3 Mobile Dropdown Menu
+### 3.4 Card
 
-**Current:** `grid grid-cols-2 gap-0.5` — functional but compact, hard to tap accurately
+**Stitch prompt — copy this:**
+```
+Design a glassmorphic card component for LinkDen admin panel.
 
-**Redesigned:** Single-column list with group dividers, 44px min touch targets:
+Requirements that must stay:
+- Glassmorphism: frosted glass surface, backdrop-blur, semi-transparent background, subtle border
+- No padding on the Card wrapper itself — padding lives on CardContent (p-4 md:p-5)
+- Card hover: border brightens slightly, transition-colors duration-150
+- Sub-components: Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter
+- Deep navy tinted background
+- Inter font, Tailwind CSS v4 classes
 
-```tsx
-<nav className="flex flex-col px-2 py-2 gap-0.5" aria-label="Navigation">
-  {NAV_GROUPS.map(group => (
-    <div key={group.label ?? "main"}>
-      {group.label && (
-        <p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-          {group.label}
-        </p>
-      )}
-      {group.items.map(item => (
-        <Link className="flex items-center gap-3 rounded-lg px-3 py-3 min-h-[44px] text-sm font-medium transition-colors ..."
-          ...>
-          <Icon className="h-4 w-4 shrink-0" />
-          {item.label}
-          {item.label === "Forms" && unreadCount > 0 && <Badge />}
-        </Link>
-      ))}
-    </div>
-  ))}
-  {/* Settings item */}
-  <div className="border-t border-white/10 mt-1 pt-1">
-    {renderNavItem(SETTINGS_ITEM)}
-  </div>
-</nav>
+Output as React TSX sub-components (Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter) with Tailwind class names.
 ```
 
-> **Google Stitch Prompt:** `Mobile app navigation dropdown overlay, frosted glass panel, single-column nav list with section group labels, 44px touch targets, amber notification badge, sign-out row at bottom, iOS-style blur backdrop`
+**Paste Stitch output here:**
+```tsx
+/* REPLACE THIS WITH STITCH OUTPUT */
+```
 
 ---
 
-### 4.4 Mobile Bottom Nav
+### 3.5 Nav Item (Active / Inactive)
 
-**Current problems:**
-- Only 4 items — Analytics and Forms are missing
-- Active state uses `border-t-2 border-primary` (heavy, border-top pattern feels dated)
-- Icons `h-4 w-4` are slightly small for touch interfaces
+**Stitch prompt — copy this:**
+```
+Design nav item states for a dark glassmorphic sidebar in LinkDen admin panel.
 
-**Redesigned:**
+Requirements that must stay:
+- Active state: bg-primary/10, electric blue text, 2px left border accent stripe (border-primary), rounded-lg
+- Inactive state: transparent background, muted foreground text, hover bg-white/5
+- Layout: icon (h-4 w-4) + label text, gap-3, px-3, height 40px, rounded-lg
+- Transition: transition-colors duration-150
+- No negative margin hacks — the item itself carries its own px-3 padding
+- Inter font, Tailwind CSS v4 classes
 
-- Items: Dashboard, Builder, **Analytics**, **Forms** (replace Social + Settings with more-used pages)
-- Active state: `text-primary` + no border, just icon + label color change
-- Icon: `h-5 w-5` (bump up from h-4)
-- Hit area: `min-h-[48px]` (iOS HIG: 44pt minimum, 48px is safer)
-
-```tsx
-className={cn(
-  "flex flex-1 flex-col items-center justify-center gap-1 min-h-[48px] text-[10px] font-medium transition-colors",
-  isActive ? "text-primary" : "text-muted-foreground/70"
-)}
+Output as a React TSX NavItem component accepting props: icon, label, href, isActive.
 ```
 
-> **Google Stitch Prompt:** `iOS-style bottom tab bar, frosted glass background, 4 tabs with icon and label, active tab in electric blue, inactive in muted gray, no visible borders between tabs, ultra-minimal`
+**Paste Stitch output here:**
+```tsx
+/* REPLACE THIS WITH STITCH OUTPUT */
+```
 
 ---
 
-## 5. Dashboard Page
+### 3.6 Form Fields
 
-**Current problems:** Stat cards use `gap-3` (too tight); chart has no axis labels; top links list has no rank numbers or CTA; empty state missing.
-
-### Redesigned layout:
-
+**Stitch prompt — copy this:**
 ```
-[PageHeader: Dashboard]
+Design a form field system for LinkDen admin panel with dark glassmorphic styling.
 
-[Views]  [Clicks]  [Unread Forms]    ← gap-4, text-3xl DM Mono values
+Requirements that must stay:
+- Glassmorphism: input backgrounds are semi-transparent with subtle border, backdrop-blur on focus
+- Label: text-sm font-medium (NOT text-xs — must be readable)
+- Input: rounded-lg, border, focus ring uses electric blue (ring-primary)
+- Textarea: same as input, min-h-[80px]
+- Select trigger: same styling as input
+- Error message: text-destructive, text-xs, mt-1
+- Helper text: text-muted-foreground, text-xs, mt-1
+- All fields must have visible focus states for accessibility
+- Inter font, Tailwind CSS v4 classes
 
-[──────── Views Over Time ──────────]  [Top Links      ]
-[  Period: [7d] [30d] [90d]         ]  [               ]
-[                                   ]  [1.  Title  234 ]
-[  █████████ area chart             ]  [2.  Title  189 ]
-[                                   ]  [3.  Title   45 ]
-[  X-axis: dates  Y-axis: count     ]  [               ]
-[───────────────────────────────────]  [View all →     ]
+Output as React TSX components: Label, Input, Textarea, SelectTrigger, FieldError, FieldHelper.
 ```
 
-**Changes:**
-- Stat card values: add `font-mono` class to value display
-- Chart card: move period selector inside chart card header (remove from PageHeader actions)
-- Chart: add `CartesianGrid strokeDasharray="3 3"` with very subtle opacity (`stroke-muted-foreground/10`)
-- Chart axes: `XAxis dataKey="date" tick={{ fontSize: 11 }}` + `YAxis tick={{ fontSize: 11 }}`
-- Top links: add 1-based rank number on left (`text-xs text-muted-foreground w-4`), click count right-aligned in `font-mono`, "View all →" link to analytics at bottom
-- Empty state: use `<EmptyState>` component when `topLinks.length === 0`
-
-> **Google Stitch Prompt:** `Admin dashboard with 3 stat cards showing large monospaced numbers, an area chart with subtle grid lines and date axis below, a compact "top links" leaderboard panel to the right, dark glassmorphic cards, electric blue data fills`
+**Paste Stitch output here:**
+```tsx
+/* REPLACE THIS WITH STITCH OUTPUT */
+```
 
 ---
 
-## 6. Analytics Page
+## 4. Pages
 
-**Current problems:** Period selector in PageHeader feels disconnected; list items use negative margin hack; dot colors have no semantic meaning; card heights vary with data.
+### 4.1 Dashboard — `/admin`
 
-### Changes:
+**Stitch prompt — copy this:**
+```
+Design the admin dashboard page for LinkDen, a link-in-bio tool.
 
-**Period selector → inline pill tabs above chart:**
+Requirements that must stay:
+- Glassmorphism: all cards are frosted glass with backdrop-blur
+- Top row: 3 stat cards side by side (Views, Clicks, Unread Forms) — values in large monospace font
+- Main area: full-width area chart card with period selector (7d / 30d / 90d) as pill tabs INSIDE the card header (not in page header), subtle grid lines, date x-axis labels
+- Right side panel: "Top Links" card showing ranked list (1. 2. 3.) with click counts in monospace, "View all" link at bottom
+- Layout: chart takes ~65% width, top links panel takes ~35% on desktop; stacks vertically on mobile
+- Empty state component if no links exist
+- Inter font for UI, monospace for numbers, Tailwind CSS v4 classes
 
-```tsx
-<div className="flex gap-1 rounded-lg bg-muted/50 p-1 w-fit mb-4">
-  {["7d", "30d", "90d"].map(p => (
-    <button key={p} onClick={() => setPeriod(p)}
-      className={cn("rounded-md px-3 py-1.5 text-xs font-medium transition-all",
-        period === p
-          ? "bg-white dark:bg-white/15 shadow-sm text-foreground"
-          : "text-muted-foreground hover:text-foreground"
-      )}>
-      {p}
-    </button>
-  ))}
-</div>
+Output as a React TSX page component with Tailwind class names.
 ```
 
-**Bottom 3-column grid — standardize:**
-
+**Paste Stitch output here:**
 ```tsx
-// Each list item (no negative margins)
-<div className="flex items-center justify-between py-2 border-b border-border/40 last:border-0">
-  <div className="flex items-center gap-2 min-w-0">
-    {/* indicator removed — rely on position/rank */}
-    <span className="text-xs text-muted-foreground w-5 shrink-0">{index + 1}.</span>
-    <span className="text-sm truncate">{name}</span>
-  </div>
-  <span className="text-sm font-mono tabular-nums text-muted-foreground shrink-0 ml-4">{count}</span>
-</div>
+/* REPLACE THIS WITH STITCH OUTPUT */
 ```
-
-Fix card height: add `min-h-[200px]` to each analytics breakdown card so they render uniformly.
-
-> **Google Stitch Prompt:** `Analytics dashboard dark mode, period selector as segmented pill control, full-width area chart with gradient fill, three equal-height stat breakdown cards below showing top links / referrers / countries, rank numbers and monospace counts, electric blue accent`
 
 ---
 
-## 7. Builder Page
+### 4.2 Builder — `/admin/builder`
 
-**Current problems:** Drag handles are invisible until hover; block edit is a centered modal (jarring on mobile); "Add Block" button placement unclear; preview pane has no quick-access actions.
+**Stitch prompt — copy this:**
+```
+Design the link block builder page for LinkDen admin panel.
 
-### Changes:
+Requirements that must stay:
+- Glassmorphism: frosted glass cards throughout
+- Two-column desktop layout: left = draggable block list (~55%), right = sticky phone preview (~45%)
+- Each block row: always-visible left drag handle (GripVertical icon in a bordered left strip), block title + type label below it, toggle switch + edit icon + delete icon on the right
+- Drag handle column uses a subtle left border, cursor-grab
+- Add Block button: full-width dashed border card at the bottom of the list with a + icon
+- Block edit opens as a bottom Sheet on mobile, centered Dialog on desktop
+- Preview pane header has "Copy link" and "Open live page" icon buttons
+- Inter font, Tailwind CSS v4 classes
 
-**Block card — improved affordances:**
-
-```tsx
-// Block row structure
-<Card className="group flex items-center gap-0 overflow-hidden">
-  {/* Drag handle — always visible */}
-  <div className="flex h-full w-8 shrink-0 items-center justify-center border-r border-border/50 text-muted-foreground/40 group-hover:text-muted-foreground cursor-grab active:cursor-grabbing transition-colors">
-    <GripVertical className="h-4 w-4" />
-  </div>
-  <CardContent className="flex flex-1 items-center gap-3 p-3">
-    <div className="flex-1 min-w-0">
-      <p className="text-sm font-medium truncate">{block.title || blockType.label}</p>
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">{blockType.label}</p>
-    </div>
-    <Switch checked={block.enabled} />
-    <IconButton icon={Pencil} size="sm" onClick={onEdit} />
-    <IconButton icon={Trash2} size="sm" variant="ghost-destructive" onClick={onDelete} />
-  </CardContent>
-</Card>
+Output as a React TSX page component with Tailwind class names.
 ```
 
-**Add Block button:** Full-width dashed card at bottom of list:
+**Paste Stitch output here:**
 ```tsx
-<button className="w-full rounded-xl border-2 border-dashed border-border/60 p-4 text-sm text-muted-foreground hover:border-primary/40 hover:text-primary transition-all flex items-center justify-center gap-2">
-  <Plus className="h-4 w-4" /> Add Block
-</button>
+/* REPLACE THIS WITH STITCH OUTPUT */
 ```
-
-**Block edit modal → Sheet on mobile:**
-```tsx
-// Mobile: bottom sheet
-<Sheet open={editOpen && isMobile} onOpenChange={setEditOpen}>
-  <SheetContent side="bottom" className="rounded-t-3xl max-h-[85vh] overflow-y-auto">
-    <BlockEditForm ... />
-  </SheetContent>
-</Sheet>
-
-// Desktop: centered dialog
-<Dialog open={editOpen && !isMobile} onOpenChange={setEditOpen}>
-  <DialogContent className="max-w-lg">
-    <BlockEditForm ... />
-  </DialogContent>
-</Dialog>
-```
-
-**Preview pane header:**
-```tsx
-<div className="flex items-center justify-between mb-3 px-1">
-  <SectionHeader label="Preview" />
-  <div className="flex gap-1">
-    <IconButton icon={Copy} size="sm" title="Copy link" />
-    <IconButton icon={ExternalLink} size="sm" title="Open live page" href="/" />
-  </div>
-</div>
-```
-
-> **Google Stitch Prompt:** `Link-in-bio block builder admin, vertical list of draggable blocks with visible left grip handles, each block card shows title and type label, toggle switch and edit/delete icons on right, full-width dashed add-block button at bottom, sticky phone preview on right, dark glassmorphic design`
 
 ---
 
-## 8. Appearance Page
+### 4.3 Appearance — `/admin/appearance`
 
-**Current problems:** 6 sections stacked vertically creates an overwhelming scroll; Custom CSS section intimidates non-technical users; color pickers aren't in a 2×2 grid; publish/discard button in PageHeader is easy to miss.
-
-### Grouped into 3 cards:
-
+**Stitch prompt — copy this:**
 ```
-Card 1 — Profile & Identity
-  Avatar upload
-  Display name + bio
-  Verified badge toggle
+Design the appearance settings page for LinkDen admin panel.
 
-Card 2 — Theme & Colors
-  Theme presets: visual grid (grid-cols-3 md:grid-cols-4 of preview tiles)
-  Color mode toggle (Light / Dark / System)
-  Color pickers: 2×2 grid
-    [Background] [Foreground]
-    [Primary]    [Accent]
+Requirements that must stay:
+- Glassmorphism: frosted glass cards
+- Grouped into exactly 3 cards stacked vertically:
+  Card 1 — Profile & Identity: avatar upload field, display name input, bio textarea, verified badge toggle
+  Card 2 — Theme & Colors: theme preset tiles in a 3-4 column grid (each tile shows a 2x2 color swatch), color mode toggle (Light/Dark/System), 2x2 color picker grid (Background, Foreground, Primary, Accent) — each picker is a hex input + native color swatch side by side
+  Card 3 — Page Layout: banner toggle with image upload, branding toggle, Custom CSS textarea collapsed by default under an "Advanced" collapsible
+- Sticky bottom bar appears only when there are unsaved changes: "Unpublished changes" label + Discard + Publish buttons
+- Sticky bar sits above mobile bottom nav (bottom-16 on mobile, bottom-0 on desktop offset by sidebar)
+- Inter font, Tailwind CSS v4 classes
 
-Card 3 — Page Layout
-  Banner (toggle → preset swatches or image upload)
-  Branding (powered-by toggle + link text)
-  Custom CSS [collapsed by default — CollapsibleSection, labeled "Advanced"]
+Output as a React TSX page component with Tailwind class names.
 ```
 
-**Theme preset tiles:**
+**Paste Stitch output here:**
 ```tsx
-<div className="grid grid-cols-3 md:grid-cols-4 gap-2">
-  {THEME_PRESETS.map(preset => (
-    <button key={preset.id}
-      className={cn("rounded-lg p-2 border-2 transition-all",
-        selected === preset.id ? "border-primary" : "border-border/50 hover:border-border"
-      )}
-    >
-      {/* Mini color swatch grid showing the preset colors */}
-      <div className="grid grid-cols-2 gap-0.5 rounded overflow-hidden h-8">
-        <div className="rounded-sm" style={{ background: preset.colors.background }} />
-        <div className="rounded-sm" style={{ background: preset.colors.primary }} />
-        <div className="rounded-sm" style={{ background: preset.colors.foreground }} />
-        <div className="rounded-sm" style={{ background: preset.colors.accent }} />
-      </div>
-      <p className="text-[10px] mt-1.5 font-medium truncate">{preset.name}</p>
-    </button>
-  ))}
-</div>
+/* REPLACE THIS WITH STITCH OUTPUT */
 ```
-
-**Sticky bottom publish bar (replaces PageHeader dirty indicator):**
-```tsx
-{isDirty && (
-  <div className="fixed bottom-16 md:bottom-0 inset-x-0 md:left-56 z-30
-                  border-t border-border/50 bg-background/80 backdrop-blur-xl
-                  px-4 py-3 flex items-center justify-between shadow-lg">
-    <span className="text-sm text-muted-foreground">Unpublished changes</span>
-    <div className="flex gap-2">
-      <Button variant="ghost" size="sm" onClick={discard}>Discard</Button>
-      <Button size="sm" onClick={publish}>Publish</Button>
-    </div>
-  </div>
-)}
-```
-
-> **Google Stitch Prompt:** `Appearance settings panel for a link-in-bio tool, three grouped settings cards stacked vertically, first card has avatar upload and bio fields, second card has visual theme preset tiles in a 4-column color swatch grid plus 2x2 color pickers, third card has banner and advanced options, sticky publish bar at bottom, dark glassmorphic UI`
 
 ---
 
-## 9. Forms Page
+### 4.4 Analytics — `/admin/analytics`
 
-**Current problems:** Unread treatment is just a dot (easy to miss); bulk delete UI placement is awkward; mobile full-screen sheet for detail blocks list view.
+**Stitch prompt — copy this:**
+```
+Design the analytics page for LinkDen admin panel.
 
-### Changes:
+Requirements that must stay:
+- Glassmorphism: frosted glass cards
+- Period selector as pill tabs (7d / 30d / 90d) inline above the main chart, NOT in the page header
+- Full-width area chart with gradient fill (electric blue), subtle grid lines, date x-axis
+- Below the chart: 3 equal-height breakdown cards in a grid — Top Links, Referrers, Countries
+- Each breakdown card list: rank number on left (1. 2. 3.), name in middle (truncated), count on right in monospace tabular-nums
+- No colored dot indicators — rank position conveys order
+- Consistent min-height on all 3 breakdown cards so they render at equal height
+- Inter font for UI, monospace for counts, Tailwind CSS v4 classes
 
-**Unread visual treatment:**
-```tsx
-<div className={cn(
-  "relative flex items-start gap-3 px-4 py-3 border-b border-border/40 cursor-pointer transition-colors hover:bg-muted/30",
-  isUnread && "bg-amber-500/5"
-)}>
-  {/* Left accent bar */}
-  <div className={cn(
-    "absolute left-0 top-2 bottom-2 w-0.5 rounded-full transition-all",
-    isUnread ? "bg-amber-500" : "bg-transparent"
-  )} />
-  {/* Amber dot */}
-  <div className={cn("h-2 w-2 rounded-full mt-1.5 shrink-0 transition-colors",
-    isUnread ? "bg-amber-500" : "bg-transparent"
-  )} />
-  ...
+Output as a React TSX page component with Tailwind class names.
 ```
 
-**Contextual bulk action bar (appears when items selected):**
+**Paste Stitch output here:**
 ```tsx
-{selectedIds.size > 0 && (
-  <div className="flex items-center gap-3 px-3 py-2 bg-primary/5 border-b border-primary/20 rounded-t-lg">
-    <span className="text-xs font-medium text-primary">{selectedIds.size} selected</span>
-    <Button variant="ghost" size="sm" onClick={markSelectedRead}>Mark read</Button>
-    <Button variant="ghost-destructive" size="sm" className="ml-auto" onClick={deleteSelected}>
-      <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
-    </Button>
-  </div>
-)}
+/* REPLACE THIS WITH STITCH OUTPUT */
 ```
-
-**Desktop split pane sizing:** List `w-72` fixed, detail `flex-1`.
-
-**PageHeader actions:** Add "Mark all as read" button (appears when unreadCount > 0).
-
-> **Google Stitch Prompt:** `Form submissions inbox UI, two-panel split layout, left panel 288px wide list with amber left-accent bars for unread items, right panel shows full message detail, contextual bulk action bar appears when rows selected, dark glass cards, amber and primary blue accent colors`
 
 ---
 
-## 10. Settings Page
+### 4.5 Social — `/admin/social`
 
-**Current problems:** 5 section tabs overflow on narrow mobile; long scroll within each section; field labels are `text-xs` (hard to read on mobile).
+**Stitch prompt — copy this:**
+```
+Design the social links management page for LinkDen admin panel.
 
-### Changes:
+Requirements that must stay:
+- Glassmorphism: frosted glass card wrapping the list
+- Each social network row: platform icon + platform name + URL input field + enabled toggle + delete button
+- Connected/active rows: subtle green/emerald indicator dot
+- "Add social link" button at the bottom: either a full-width ghost button or a dashed card
+- Empty state when no social links are added
+- Minimum 44px touch target height per row
+- Inter font, Tailwind CSS v4 classes
 
-**Mobile tab → Select dropdown:**
-```tsx
-{/* Mobile only */}
-<div className="md:hidden mb-4">
-  <Select value={activeSection} onValueChange={setActiveSection}>
-    <SelectTrigger className="w-full">
-      <SelectValue />
-    </SelectTrigger>
-    <SelectContent>
-      {SECTIONS.map(s => (
-        <SelectItem key={s.id} value={s.id}>{s.icon && <s.icon />}{s.label}</SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
-</div>
-{/* Desktop sidebar (keep existing) */}
-<nav className="hidden md:block ..." />
+Output as a React TSX page component with Tailwind class names.
 ```
 
-**Section separator pattern:**
+**Paste Stitch output here:**
 ```tsx
-// Wrap each sub-section within a settings card:
-<div className="mb-6 pb-6 border-b border-border/40 last:border-0 last:mb-0 last:pb-0">
-  <h3 className="text-sm font-semibold mb-1">{subsectionTitle}</h3>
-  <p className="text-xs text-muted-foreground mb-4">{subsectionDesc}</p>
-  <FieldGroup ...>
-    {/* fields */}
-  </FieldGroup>
-</div>
+/* REPLACE THIS WITH STITCH OUTPUT */
 ```
-
-**Field labels:** Increase from `text-xs` → `text-sm font-medium` for all `<Label>` components in settings forms.
-
-> **Google Stitch Prompt:** `Settings page with left sidebar section tabs on desktop collapsing to a select dropdown on mobile, each section shows a vertical stack of form subsections separated by subtle dividers, 5 tabs: SEO, CAPTCHA, Email, Data, Migration, dark glass card container, clean spacious form layout`
 
 ---
 
-## 11. Public Profile Page
+### 4.6 Forms — `/admin/forms`
 
-**Current problems:** Link blocks have no hover affordance; social icons too small for touch; no loading skeleton; avatar ring may clash with background.
+**Stitch prompt — copy this:**
+```
+Design the form submissions inbox page for LinkDen admin panel.
 
-### Changes:
+Requirements that must stay:
+- Glassmorphism: frosted glass panels
+- Desktop: two-panel split layout — left list panel (w-72 fixed), right detail panel (flex-1)
+- Mobile: full-screen list, tapping an item opens a bottom Sheet
+- Unread items: amber left accent bar (2px, absolute left edge), amber dot indicator, very subtle amber-tinted background
+- Read items: no accent, no dot, standard background
+- Contextual bulk action bar appears above the list when items are selected: "X selected" + "Mark read" + "Delete" button
+- Page header has "Mark all as read" button when unread count > 0
+- Amber color for unread (NOT red/destructive — these are messages, not errors)
+- Inter font, Tailwind CSS v4 classes
 
-**Link block — enhanced hover:**
-```tsx
-<a className="group relative flex items-center gap-3 rounded-xl px-4 py-3.5
-              border border-border/30 transition-all duration-200
-              hover:scale-[1.01] hover:shadow-md hover:border-border/60
-              bg-card/80 backdrop-blur-sm">
-  {block.icon && (
-    <img src={block.icon} className="h-8 w-8 rounded-md object-cover shrink-0" />
-  )}
-  <span className="flex-1 text-sm font-medium">{block.title}</span>
-  <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all" />
-</a>
+Output as a React TSX page component with Tailwind class names.
 ```
 
-**Social icons — flex wrap:**
+**Paste Stitch output here:**
 ```tsx
-<div className="flex flex-wrap justify-center gap-3">
-  {networks.map(n => (
-    <Tooltip key={n.id} content={n.label}>
-      <a href={n.url} target="_blank"
-         className="flex h-10 w-10 items-center justify-center rounded-full
-                    bg-muted/50 hover:bg-muted transition-colors
-                    text-muted-foreground hover:text-foreground">
-        <n.icon className="h-4.5 w-4.5" />
-      </a>
-    </Tooltip>
-  ))}
-</div>
+/* REPLACE THIS WITH STITCH OUTPUT */
 ```
-
-**Loading skeleton:**
-```tsx
-// While data loads, show:
-<div className="flex flex-col items-center gap-4 animate-pulse">
-  <div className="h-20 w-20 rounded-full bg-muted" />        {/* avatar */}
-  <div className="h-5 w-36 rounded-full bg-muted" />         {/* name */}
-  <div className="space-y-1.5 w-full max-w-xs">
-    <div className="h-4 w-48 rounded-full bg-muted mx-auto" />
-    <div className="h-4 w-32 rounded-full bg-muted mx-auto" />
-  </div>
-  {[0,1,2].map(i => (
-    <div key={i} className="h-12 w-full max-w-sm rounded-xl bg-muted" />
-  ))}
-</div>
-```
-
-**Avatar ring:** Change from `ring-[color]` to `ring-2 ring-white/20 ring-offset-2 ring-offset-background` so it always contrasts regardless of user's chosen background color.
-
-> **Google Stitch Prompt:** `Mobile link-in-bio public profile page, centered layout, circular avatar with subtle ring, display name and bio below, vertical stack of rounded link cards with arrow icon on hover, row of circular social icon buttons, glassmorphic background with subtle aurora gradient, dark mode`
 
 ---
 
-## 12. Mobile Experience Overhaul
+### 4.7 Wallet — `/admin/wallet`
 
-### 12.1 Touch Target Audit
+**Stitch prompt — copy this:**
+```
+Design the Apple Wallet pass editor page for LinkDen admin panel.
 
-Every interactive element must be ≥ 44×44px (iOS HIG standard).
+Requirements that must stay:
+- Glassmorphism: frosted glass cards
+- Two-column desktop layout: left = settings form (~55%), right = sticky live wallet pass preview (~45%)
+- Pass preview uses Apple HIG generic pass layout: header strip → primary field + thumbnail → secondary fields → QR code
+- Color pickers in the form use hex input + native color swatch side by side
+- Preview updates live as form fields change
+- Logo upload uses drag-and-drop image upload field (not a URL text input)
+- Inter font, Tailwind CSS v4 classes
 
-| Element | Current | Required Fix |
-|---------|---------|-------------|
-| Bottom nav items | `min-h-[44px]` ✅ | Bump to `min-h-[48px]` |
-| Block edit/delete buttons | `h-8 w-8` ❌ | → `h-9 w-9` minimum |
-| Color swatch pickers | `h-8 w-8` ❌ | → `h-10 w-10` |
-| Social network toggle rows | varies ❌ | Wrap in `min-h-[44px]` |
-| Settings tab buttons | `py-1.5` ❌ | → `py-2.5` |
-| Mobile nav items (dropdown) | `py-2.5` | → `py-3` (44px with text) |
-
-### 12.2 Bottom Sheet Standard
-
-All modals on mobile use:
-
-```tsx
-<SheetContent
-  side="bottom"
-  className="rounded-t-3xl max-h-[85vh] overflow-y-auto"
-  style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
->
-  {/* Drag handle */}
-  <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-muted-foreground/20" />
-  {/* Content */}
-</SheetContent>
+Output as a React TSX page component with Tailwind class names.
 ```
 
-Apply to: block edit (mobile), appearance preview, forms detail, builder preview.
-
-### 12.3 Input Modes (improve mobile keyboard)
-
-| Input Type | Add attribute |
-|-----------|--------------|
-| URL fields (social networks) | `inputMode="url" autoCapitalize="none"` |
-| Email fields | `inputMode="email" autoCapitalize="none"` |
-| Color hex fields | `autoCapitalize="none" spellCheck={false}` |
-| Search fields | `inputMode="search"` |
-| Numeric fields | `inputMode="numeric"` |
-
-### 12.4 Scroll Behavior
-
-- Main content area: `scroll-smooth`
-- Settings page: scroll to top of content when switching sections on mobile (`window.scrollTo({ top: 0, behavior: 'smooth' })`)
-- Forms list: `scrollIntoView({ behavior: 'smooth', block: 'nearest' })` on selected item
-
-### 12.5 Page Entrance Animation
-
-**Replace** per-component staggered `useEntranceAnimation` with a single page-level entrance on the content wrapper:
-
+**Paste Stitch output here:**
 ```tsx
-// In each page component, wrap the main return:
-<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
-  {/* all content */}
-</div>
+/* REPLACE THIS WITH STITCH OUTPUT */
 ```
 
-Remove `useEntranceAnimation` hook usage from all pages. One entrance per route transition. Cleaner and faster.
+---
 
-> **Google Stitch Prompt:** `Mobile admin panel responsive design, showing iPhone mockup with bottom tab nav, touch-friendly 48px height list items, bottom sheet modal for editing with drag handle and rounded top corners, dark glassmorphic surfaces`
+### 4.8 Settings — `/admin/settings`
+
+**Stitch prompt — copy this:**
+```
+Design the settings page for LinkDen admin panel.
+
+Requirements that must stay:
+- Glassmorphism: frosted glass card wrapping the content area
+- Desktop: left sidebar with section tabs (vertical list), right content area
+- Mobile: section tabs collapse to a Select dropdown (not scrolling tabs)
+- Each section is split into sub-sections separated by subtle bottom borders (not full dividers)
+- Sub-section pattern: title (text-sm font-semibold) + description (text-xs muted) + form fields below
+- Field labels: text-sm font-medium (NOT text-xs — must be readable on mobile)
+- Sections: SEO, CAPTCHA, Email, Data, Danger Zone
+- Danger zone uses destructive/red styling for its actions
+- Inter font, Tailwind CSS v4 classes
+
+Output as a React TSX page component with Tailwind class names.
+```
+
+**Paste Stitch output here:**
+```tsx
+/* REPLACE THIS WITH STITCH OUTPUT */
+```
 
 ---
 
-## 13. Implementation Priority
+### 4.9 Profile — `/admin/profile`
 
-### Tier 1 — High Impact, Quick Wins (do these first)
+**Stitch prompt — copy this:**
+```
+Design the profile editor page for LinkDen admin panel.
 
-| # | Change | File | Impact |
-|---|--------|------|--------|
-| 1 | Typography scale audit + SectionHeader standardization | All page files | ⭐⭐⭐⭐⭐ |
-| 2 | Spacing normalization to gap-4 for card grids | All pages | ⭐⭐⭐⭐⭐ |
-| 3 | Forms badge: `bg-destructive` → `bg-amber-500` | `layout.tsx` | ⭐⭐⭐ |
-| 4 | Stat values: add `font-mono` class | `stat-card.tsx` | ⭐⭐⭐⭐ |
-| 5 | Card padding: all `<Card>` → `p-0`, `<CardContent>` → `p-4 md:p-5` | All pages | ⭐⭐⭐⭐ |
-| 6 | Mobile dropdown: `grid-cols-2` → single-column with group labels | `layout.tsx` | ⭐⭐⭐⭐ |
-| 7 | Bottom nav: `h-4` icons → `h-5`, `min-h-[44px]` → `min-h-[48px]` | `layout.tsx` | ⭐⭐⭐ |
-| 8 | Analytics period selector: PageHeader → inline pill tabs | `analytics/page.tsx` | ⭐⭐⭐⭐ |
-| 9 | Analytics list items: remove negative margin hack | `analytics/page.tsx` | ⭐⭐⭐ |
-| 10 | Page entrance: replace stagger with single wrapper animate-in | All pages | ⭐⭐⭐⭐ |
+Requirements that must stay:
+- Glassmorphism: frosted glass card
+- Banner image upload at the top (full width, drag-and-drop, uses ImageUploadField not a URL input)
+- Avatar upload overlapping the bottom edge of the banner (circular, drag-and-drop)
+- Below: display name input, username input, bio textarea, URL input
+- Save button at the bottom of the form
+- Inter font, Tailwind CSS v4 classes
 
-### Tier 2 — Medium Impact, Medium Effort
+Output as a React TSX page component with Tailwind class names.
+```
 
-| # | Change | File | Impact |
-|---|--------|------|--------|
-| 11 | Block drag handle: always visible, left border | `builder/block-row.tsx` | ⭐⭐⭐⭐ |
-| 12 | Block type label: show below title | `builder/block-row.tsx` | ⭐⭐⭐ |
-| 13 | "Add Block" dashed full-width card | `builder/page.tsx` | ⭐⭐⭐⭐ |
-| 14 | Block edit: Sheet on mobile, Dialog on desktop | `builder/block-edit-panel.tsx` | ⭐⭐⭐⭐ |
-| 15 | Appearance: 3-card grouping | `appearance/page.tsx` | ⭐⭐⭐⭐⭐ |
-| 16 | Appearance: sticky bottom publish bar | `appearance/page.tsx` | ⭐⭐⭐⭐ |
-| 17 | Appearance: theme presets → visual swatch tiles | `appearance/theme-presets-section.tsx` | ⭐⭐⭐⭐⭐ |
-| 18 | Appearance: color pickers → 2×2 grid | `appearance/colors-section.tsx` | ⭐⭐⭐ |
-| 19 | Appearance: Custom CSS → collapsible by default | `appearance/custom-css-section.tsx` | ⭐⭐⭐ |
-| 20 | Forms: amber left-accent bar for unread | `forms/contact-list-item.tsx` | ⭐⭐⭐⭐ |
-| 21 | Forms: contextual bulk action bar | `forms/page.tsx` | ⭐⭐⭐ |
-| 22 | Settings: mobile Select dropdown for sections | `settings/page.tsx` | ⭐⭐⭐⭐ |
-| 23 | Settings: field labels text-xs → text-sm font-medium | Settings subsections | ⭐⭐⭐ |
-| 24 | Mobile header: current page name centered | `layout.tsx` | ⭐⭐⭐ |
-| 25 | Dashboard: move period selector into chart card | `admin/page.tsx` | ⭐⭐⭐ |
-| 26 | Dashboard: Top Links rank numbers + CTA | `admin/page.tsx` | ⭐⭐⭐ |
-
-### Tier 3 — Highest Impact, Most Effort
-
-| # | Change | File | Impact |
-|---|--------|------|--------|
-| 27 | Public: loading skeleton | `public/public-page-content.tsx` | ⭐⭐⭐⭐ |
-| 28 | Public: link block hover scale + arrow | `public/link-block.tsx` | ⭐⭐⭐⭐ |
-| 29 | Public: social icons flex-wrap + `h-10 w-10` | `public/social-icons-block.tsx` | ⭐⭐⭐ |
-| 30 | Public: avatar ring → `ring-offset-background` | `public/avatar.tsx` | ⭐⭐⭐ |
-| 31 | Dark mode token intensification (CSS vars) | `apps/web/src/index.css` | ⭐⭐⭐⭐⭐ |
-| 32 | Add DM Mono font for numerics | `index.css` + `stat-card.tsx` | ⭐⭐⭐⭐ |
-| 33 | Preview pane: Copy link + Open Live buttons | `shared-preview.tsx` | ⭐⭐⭐ |
-| 34 | Sidebar: active item left accent stripe | `layout.tsx` | ⭐⭐⭐ |
-| 35 | Bottom nav: swap to Dashboard/Builder/Analytics/Forms | `layout.tsx` | ⭐⭐⭐⭐ |
+**Paste Stitch output here:**
+```tsx
+/* REPLACE THIS WITH STITCH OUTPUT */
+```
 
 ---
 
-## 14. Appendix: Component Inventory
+### 4.10 Login — `/admin/login`
 
-### Reuse (don't recreate)
+**Stitch prompt — copy this:**
+```
+Design the admin login page for LinkDen.
 
-| Component | Path | Notes |
-|-----------|------|-------|
-| `EmptyState` | `components/admin/empty-state.tsx` | Use on Dashboard top links, Analytics panels |
-| `FieldGroup` | `components/admin/settings/field-group.tsx` | Use for all 2-col form layouts |
-| `CollapsibleSection` | `components/admin/builder/collapsible-section.tsx` | Repurpose for Custom CSS "Advanced" group |
-| `MobilePreviewSheet` | `components/admin/mobile-preview-sheet.tsx` | Use for all preview-on-mobile flows |
-| `ImageUploadField` | `components/admin/image-upload-field.tsx` | Never use plain URL text inputs for images |
-| `SectionHeader` | `components/admin/section-header.tsx` | Adopt universally for all card section titles |
-| `StatCard` | `components/admin/stat-card.tsx` | Add `font-mono` to value, amber semantic for unread |
+Requirements that must stay:
+- Glassmorphism: centered frosted glass card on a deep navy-black background with a subtle aurora/gradient backdrop
+- Card contains: logo mark + "LinkDen" wordmark, email input, password input, "Sign in" button (full width, primary)
+- Subtle "Forgot password?" link below the button
+- No registration link — this is a single-user admin panel
+- Inter font, Tailwind CSS v4 classes
+- Must look polished at 375px mobile width
 
-### Create (new components)
+Output as a React TSX page component with Tailwind class names.
+```
 
-| Component | Purpose |
-|-----------|---------|
-| `PeriodSelector` | Pill-tab strip for 7d/30d/90d — used in Dashboard AND Analytics |
-| `ColorPickerField` | Combined hex Input + swatch, currently duplicated in several places |
-| `PageSkeleton` | Full-page loading skeleton for public profile page |
-| `FormSection` | Settings sub-section wrapper with bottom border separator |
+**Paste Stitch output here:**
+```tsx
+/* REPLACE THIS WITH STITCH OUTPUT */
+```
 
 ---
 
-*Last updated: 2026-03-11 | Based on: Linktree, Beacons.ai, Later competitive analysis + frontend-design direction*
+### 4.11 Setup — `/admin/setup`
+
+**Stitch prompt — copy this:**
+```
+Design the first-run setup wizard page for LinkDen admin panel.
+
+Requirements that must stay:
+- Glassmorphism: centered frosted glass card on a deep navy-black background with aurora backdrop
+- Step indicator at the top showing current step (e.g. step 1 of 3) as connected dots or a progress bar
+- Each step shows a clear title and its form fields
+- Navigation: "Next" primary button (right), "Back" ghost button (left), shown as a row at the bottom of the card
+- Final step shows a "Finish setup" button instead of "Next"
+- Inter font, Tailwind CSS v4 classes
+
+Output as a React TSX page component with Tailwind class names.
+```
+
+**Paste Stitch output here:**
+```tsx
+/* REPLACE THIS WITH STITCH OUTPUT */
+```
+
+---
+
+## 5. Implementation Checklist
+
+### Design Tokens
+- [ ] CSS variables updated with new color palette (`apps/web/src/app/globals.css`)
+- [ ] Typography tokens updated
+- [ ] Border-radius tokens updated
+
+### Global Layout
+- [ ] Sidebar updated (`apps/web/src/app/admin/layout.tsx`)
+- [ ] Mobile header updated (`apps/web/src/app/admin/layout.tsx`)
+- [ ] Mobile dropdown nav updated (`apps/web/src/app/admin/layout.tsx`)
+- [ ] Mobile bottom nav updated (`apps/web/src/app/admin/layout.tsx`)
+
+### Components
+- [ ] `StatCard` updated (`apps/web/src/components/admin/stat-card.tsx`)
+- [ ] `PageHeader` updated (`apps/web/src/components/admin/page-header.tsx`)
+- [ ] `Button` variants updated (`packages/ui/src/components/button.tsx`)
+- [ ] `Card` updated (`packages/ui/src/components/card.tsx`)
+- [ ] `NavItem` updated
+- [ ] Form fields updated (`packages/ui/src/components/`)
+
+### Pages
+- [ ] `/admin` — Dashboard
+- [ ] `/admin/builder` — Builder
+- [ ] `/admin/appearance` — Appearance
+- [ ] `/admin/analytics` — Analytics
+- [ ] `/admin/social` — Social
+- [ ] `/admin/forms` — Forms
+- [ ] `/admin/wallet` — Wallet
+- [ ] `/admin/settings` — Settings
+- [ ] `/admin/profile` — Profile
+- [ ] `/admin/login` — Login
+- [ ] `/admin/setup` — Setup
+
+### QA
+- [ ] Desktop layout reviewed at 1440px
+- [ ] Tablet layout reviewed at 768px
+- [ ] Mobile layout reviewed at 375px
+- [ ] Dark mode verified
+- [ ] Accessibility: focus rings and contrast ratios checked

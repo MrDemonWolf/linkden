@@ -4,7 +4,17 @@ import { block } from "@linkden/db/schema/index";
 import { eq, asc, sql } from "drizzle-orm";
 import { z } from "zod";
 
-// Sanitize user-entered block content
+// ─── Block Router ──────────────────────────────────────────────────────────
+// Blocks are the core content units on the public page. Each block has a type
+// (link, header, social_icons, embed, form, vcard) that determines its rendering
+// and config schema. Blocks follow a draft/published flow: every mutation sets
+// status="draft", and publishAll promotes all drafts at once. This lets the admin
+// preview changes before they go live.
+//
+// Sanitization strategy: all user-entered strings are run through stripHtml (to
+// prevent stored XSS) and sanitizeUrl (to block javascript:/data: schemes).
+// The socialIcons field is a JSON string — parsed, sanitized per-entry, then
+// re-serialized.
 function stripHtml(str: string): string {
 	return str.replace(/<[^>]*>/g, "");
 }
@@ -18,7 +28,8 @@ function sanitizeUrl(url: string): string {
 		}
 		return url;
 	} catch {
-		return url; // might be a relative URL or partial during editing
+		// If URL parsing fails, reject it — unparseable URLs could be javascript: or data: schemes
+		return "";
 	}
 }
 
@@ -41,8 +52,8 @@ function sanitizeBlockInput<T extends Record<string, unknown>>(input: T): T {
 				url: sanitizeUrl(icon.url || ""),
 			}));
 			(sanitized as Record<string, unknown>).socialIcons = JSON.stringify(sanitizedIcons);
-		} catch {
-			// Invalid JSON — clear it
+		} catch (err) {
+			console.warn("Failed to parse socialIcons JSON, resetting to empty array:", err);
 			(sanitized as Record<string, unknown>).socialIcons = "[]";
 		}
 	}
@@ -76,17 +87,17 @@ export const blocksRouter = router({
 					"form",
 					"vcard",
 				]),
-				title: z.string().optional(),
-				url: z.string().optional(),
-				icon: z.string().optional(),
-				embedType: z.string().optional(),
-				embedUrl: z.string().optional(),
-				socialIcons: z.string().optional(),
+				title: z.string().max(200).optional(),
+				url: z.string().max(2048).optional(),
+				icon: z.string().max(100).optional(),
+				embedType: z.string().max(50).optional(),
+				embedUrl: z.string().max(2048).optional(),
+				socialIcons: z.string().max(50000).optional(),
 				isEnabled: z.boolean().default(true),
 				position: z.number(),
 				scheduledStart: z.date().optional(),
 				scheduledEnd: z.date().optional(),
-				config: z.string().optional(),
+				config: z.string().max(50000).optional(),
 			}),
 		)
 		.mutation(async ({ input }) => {
@@ -108,17 +119,17 @@ export const blocksRouter = router({
 		.input(
 			z.object({
 				id: z.string(),
-				title: z.string().optional(),
-				url: z.string().optional(),
-				icon: z.string().optional(),
-				embedType: z.string().optional(),
-				embedUrl: z.string().optional(),
-				socialIcons: z.string().optional(),
+				title: z.string().max(200).optional(),
+				url: z.string().max(2048).optional(),
+				icon: z.string().max(100).optional(),
+				embedType: z.string().max(50).optional(),
+				embedUrl: z.string().max(2048).optional(),
+				socialIcons: z.string().max(50000).optional(),
 				isEnabled: z.boolean().optional(),
 				position: z.number().optional(),
 				scheduledStart: z.date().nullable().optional(),
 				scheduledEnd: z.date().nullable().optional(),
-				config: z.string().optional(),
+				config: z.string().max(50000).optional(),
 			}),
 		)
 		.mutation(async ({ input }) => {
@@ -146,7 +157,7 @@ export const blocksRouter = router({
 					id: z.string(),
 					position: z.number(),
 				}),
-			),
+			).max(200),
 		)
 		.mutation(async ({ input }) => {
 			for (const item of input) {

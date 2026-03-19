@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
@@ -11,8 +11,6 @@ import {
 	BarChart3,
 	Link2,
 	Percent,
-	Plus,
-	Download,
 	Clock,
 	ExternalLink,
 } from "lucide-react";
@@ -26,11 +24,11 @@ import {
 	ResponsiveContainer,
 } from "recharts";
 import { trpc } from "@/utils/trpc";
+import { authClient } from "@/lib/auth-client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
-import { PageHeader } from "@/components/admin/page-header";
 import { StatCard } from "@/components/admin/stat-card";
 import { PeriodSelector, type Period } from "@/components/admin/period-selector";
 
@@ -49,9 +47,14 @@ function computeTrend(current: number, previous: number): { value: number; label
 	return { value: pct, label: `${pct > 0 ? "+" : ""}${pct}%` };
 }
 
-function formatRelativeTime(dateStr: string | Date): string {
+function formatRelativeTime(dateVal: string | Date | number, timezone?: string): string {
 	const now = new Date();
-	const date = typeof dateStr === "string" ? new Date(dateStr) : dateStr;
+	const date =
+		typeof dateVal === "number"
+			? new Date(dateVal)
+			: typeof dateVal === "string"
+				? new Date(dateVal)
+				: dateVal;
 	const diffMs = now.getTime() - date.getTime();
 	const diffMins = Math.floor(diffMs / 60000);
 	if (diffMins < 1) return "Just now";
@@ -71,38 +74,40 @@ function extractDomain(url: string | null): string {
 	}
 }
 
+function getGreeting(hour: number): string {
+	if (hour < 12) return "Good morning";
+	if (hour < 17) return "Good afternoon";
+	return "Good evening";
+}
+
 export default function AdminDashboardPage() {
 	const [period, setPeriod] = useState<Period>("7d");
+	const { data: session } = authClient.useSession();
 
 	const overview = useQuery(trpc.analytics.overview.queryOptions({ period }));
 	const unreadCount = useQuery(trpc.forms.unreadCount.queryOptions());
 	const clicksOverTime = useQuery(trpc.analytics.clicksOverTime.queryOptions({ period }));
 	const topLinks = useQuery(trpc.analytics.topLinks.queryOptions({ period }));
-	const recentForms = useQuery(trpc.forms.list.queryOptions({ limit: 5, offset: 0 }));
+	const recentClicks = useQuery(trpc.analytics.recentClicks.queryOptions());
+	const timezoneQuery = useQuery(trpc.settings.get.queryOptions({ key: "timezone" }));
 
-	const exportData = useQuery({
-		...trpc.backup.export.queryOptions(),
-		enabled: false,
-	});
+	const timezone = timezoneQuery.data?.value || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-	const handleExport = async () => {
-		try {
-			const result = await exportData.refetch();
-			if (result.data) {
-				const blob = new Blob([JSON.stringify(result.data, null, 2)], {
-					type: "application/json",
-				});
-				const url = URL.createObjectURL(blob);
-				const a = document.createElement("a");
-				a.href = url;
-				a.download = `linkden-backup-${new Date().toISOString().slice(0, 10)}.json`;
-				a.click();
-				URL.revokeObjectURL(url);
-			}
-		} catch {
-			// silent
-		}
-	};
+	const { greeting, firstName, formattedDate } = useMemo(() => {
+		const now = new Date();
+		const hour = new Date(
+			now.toLocaleString("en-US", { timeZone: timezone }),
+		).getHours();
+		const name = session?.user?.name ?? "";
+		const first = name.split(" ")[0] || "there";
+		const date = now.toLocaleDateString("en-US", {
+			timeZone: timezone,
+			weekday: "short",
+			month: "short",
+			day: "numeric",
+		});
+		return { greeting: getGreeting(hour), firstName: first, formattedDate: date };
+	}, [session, timezone]);
 
 	const totalViews = (overview.data?.totalViews ?? 0) as number;
 	const totalClicks = (overview.data?.totalClicks ?? 0) as number;
@@ -116,6 +121,9 @@ export default function AdminDashboardPage() {
 	const clicksTrend = computeTrend(totalClicks, previousClicks);
 	const ctrTrend = computeTrend(ctr, prevCtr);
 
+	const periodLabel =
+		period === "7d" ? "7" : period === "30d" ? "30" : "90";
+
 	const clicksData = (clicksOverTime.data ?? []).map((d) => ({
 		...d,
 		label: new Date((d.date as string) || new Date()).toLocaleDateString(undefined, {
@@ -123,28 +131,20 @@ export default function AdminDashboardPage() {
 		}),
 	}));
 
-	const submissions = recentForms.data ?? [];
+	const clicks = recentClicks.data ?? [];
 
 	return (
 		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
-			<PageHeader
-				title="Overview"
-				description="Welcome back, here's what's happening today."
-				actions={
-					<>
-						<Button variant="ghost" size="sm" onClick={handleExport} disabled={exportData.isFetching}>
-							<Download className="mr-1.5 h-3.5 w-3.5" />
-							Export Data
-						</Button>
-						<Link href="/admin/builder">
-							<Button size="sm">
-								<Plus className="mr-1.5 h-3.5 w-3.5" />
-								Create New
-							</Button>
-						</Link>
-					</>
-				}
-			/>
+			{/* Greeting header */}
+			<div className="pb-4 md:pb-6 flex items-center gap-3 flex-wrap">
+				<h1 className="text-2xl font-bold tracking-tight">
+					<span className="text-base font-medium text-muted-foreground">{greeting}, </span>
+					{firstName}
+				</h1>
+				<span className="inline-flex items-center rounded-full border border-border/60 bg-muted/50 px-3 py-1 text-xs text-muted-foreground">
+					{formattedDate}
+				</span>
+			</div>
 
 			{/* Stat cards */}
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -157,6 +157,7 @@ export default function AdminDashboardPage() {
 					href="/admin/analytics"
 					isLoading={overview.isLoading}
 					trend={overview.data ? clicksTrend : null}
+					subtitle={`Last ${periodLabel} days`}
 				/>
 				<StatCard
 					icon={Link2}
@@ -176,6 +177,7 @@ export default function AdminDashboardPage() {
 					iconBg="bg-violet-500/10"
 					isLoading={overview.isLoading}
 					trend={overview.data ? ctrTrend : null}
+					subtitle={`Last ${periodLabel} days`}
 				/>
 				<StatCard
 					icon={Mail}
@@ -188,7 +190,7 @@ export default function AdminDashboardPage() {
 				/>
 			</div>
 
-			{/* Chart + Recent Events */}
+			{/* Chart + Recent Link Clicks */}
 			<div className="grid gap-4 lg:grid-cols-[1fr_320px]">
 				{/* Clicks chart */}
 				<Card>
@@ -252,43 +254,45 @@ export default function AdminDashboardPage() {
 					</CardContent>
 				</Card>
 
-				{/* Recent Events */}
+				{/* Recent Link Clicks */}
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-1.5">
 							<Clock className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-							Recent Events
+							Recent Link Clicks
 						</CardTitle>
 					</CardHeader>
 					<CardContent className="space-y-0">
-						{recentForms.isLoading ? (
+						{recentClicks.isLoading ? (
 							Array.from({ length: 5 }).map((_, i) => (
 								<Skeleton key={`ev-skeleton-${i}`} className="h-12 w-full mb-1" />
 							))
-						) : submissions.length === 0 ? (
-							<p className="text-xs text-muted-foreground py-4 text-center">No recent activity</p>
+						) : clicks.length === 0 ? (
+							<p className="text-xs text-muted-foreground py-4 text-center">No recent clicks</p>
 						) : (
 							<>
-								{submissions.map((sub) => (
-									<div key={sub.id} className="flex items-start gap-3 py-2.5 border-b border-border/40 last:border-0">
-										<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-500/10 mt-0.5">
-											<Mail className="h-3 w-3 text-amber-500" />
+								{clicks.map((click) => (
+									<div key={String(click.id)} className="flex items-start gap-3 py-2.5 border-b border-border/40 last:border-0">
+										<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-green-500/10 mt-0.5">
+											<MousePointerClick className="h-3 w-3 text-green-500" />
 										</div>
 										<div className="min-w-0 flex-1">
 											<p className="text-xs font-medium truncate">
-												{sub.blockTitle || "Contact Form"}
+												{(click.title as string | null) || "Untitled"}
 											</p>
-											<p className="text-[11px] text-muted-foreground truncate">
-												{sub.name} &mdash; {sub.subject || sub.message?.slice(0, 40) || "New submission"}
+											<p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
+												<ExternalLink className="h-2.5 w-2.5 shrink-0" />
+												{extractDomain((click.url as string | null))}
+												{click.country ? ` · ${click.country}` : ""}
 											</p>
 										</div>
 										<span className="text-[10px] text-muted-foreground shrink-0 mt-0.5">
-											{formatRelativeTime(sub.createdAt)}
+											{formatRelativeTime(click.createdAt, timezone)}
 										</span>
 									</div>
 								))}
 								<div className="pt-2">
-									<Link href="/admin/forms">
+									<Link href="/admin/analytics">
 										<Button variant="ghost" size="xs" className="w-full justify-center text-muted-foreground">
 											View all
 											<ArrowUpRight className="ml-1 h-3 w-3" />
