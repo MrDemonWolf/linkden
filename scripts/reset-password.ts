@@ -14,7 +14,7 @@ const password = getArg("password");
 const remote = args.includes("--remote");
 
 if (!email || !password) {
-  console.error("Usage: pnpm reset:password -- --email <email> --password <password> [--remote]");
+  console.error("Usage: bun reset:password -- --email <email> --password <password> [--remote]");
   process.exit(1);
 }
 

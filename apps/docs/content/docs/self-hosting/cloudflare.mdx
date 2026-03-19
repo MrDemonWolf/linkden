@@ -28,13 +28,13 @@ The web frontend is deployed using [`@opennextjs/cloudflare`](https://opennext.j
 ## Prerequisites
 
 1. A [Cloudflare account](https://cloudflare.com) (free tier works).
-2. **Node.js 20+** and **pnpm 9+** installed locally.
+2. **Node.js 20+** and **[Bun](https://bun.sh)** installed locally.
 3. The LinkDen repository cloned:
 
 ```bash
 git clone https://github.com/mrdemonwolf/linkden.git
 cd LinkDen
-pnpm install
+bun install
 ```
 
 ## Step 1: Create a Cloudflare API Token
@@ -107,7 +107,7 @@ openssl rand -base64 32
 ## Step 5: Deploy
 
 ```bash
-pnpm ship
+bun ship
 ```
 
 Alchemy handles everything automatically: creates the D1 database, runs migrations, creates the R2 bucket, deploys both Workers, and outputs the live URLs:
@@ -117,7 +117,7 @@ API:  https://linkden-server.<your-subdomain>.workers.dev
 Web:  https://linkden-web.<your-subdomain>.workers.dev
 ```
 
-Once you have your real Worker URLs, update the `NEXT_PUBLIC_SERVER_URL`, `CORS_ORIGIN`, and `BETTER_AUTH_URL` values in `.env` and run `pnpm ship` again.
+Once you have your real Worker URLs, update the `NEXT_PUBLIC_SERVER_URL`, `CORS_ORIGIN`, and `BETTER_AUTH_URL` values in `.env` and run `bun ship` again.
 
 ## Step 6: Create Your Admin Account
 
@@ -187,7 +187,7 @@ BETTER_AUTH_URL=https://api.yourdomain.com
 ### 9c: Redeploy
 
 ```bash
-pnpm ship
+bun ship
 ```
 
 Alchemy picks up the new env vars and updates the Worker configuration. Your app is now live on your custom domain with SSL.
@@ -198,7 +198,7 @@ After the initial setup, updating is one command:
 
 ```bash
 git pull origin main
-pnpm ship
+bun ship
 ```
 
 ## Monitoring and Logs
@@ -218,7 +218,7 @@ Dashboard analytics are available under **Workers & Pages > your Worker > Analyt
 To remove all Cloudflare resources:
 
 ```bash
-pnpm destroy
+bun destroy
 ```
 
 **This is irreversible.** Back up your D1 database first:
