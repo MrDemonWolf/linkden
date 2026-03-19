@@ -78,7 +78,7 @@ const steps = [
     step: "1",
     title: "Clone & Install",
     description: "Clone the repository and install dependencies.",
-    code: "git clone https://github.com/mrdemonwolf/linkden.git\ncd linkden && pnpm install",
+    code: "git clone https://github.com/mrdemonwolf/linkden.git\ncd linkden && bun install",
   },
   {
     step: "2",
@@ -92,7 +92,7 @@ const steps = [
     title: "Deploy",
     description:
       "Push your database schema and deploy to Cloudflare in one command.",
-    code: "pnpm db:push && pnpm cf:deploy",
+    code: "bun db:push && bun cf:deploy",
   },
 ];
 

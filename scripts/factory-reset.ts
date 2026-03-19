@@ -5,7 +5,7 @@ const confirm = args.includes("--confirm");
 const remote = args.includes("--remote");
 
 if (!confirm) {
-  console.error("Usage: pnpm reset:factory -- --confirm [--remote]");
+  console.error("Usage: bun reset:factory -- --confirm [--remote]");
   console.error("This will DELETE ALL DATA. Pass --confirm to proceed.");
   process.exit(1);
 }
