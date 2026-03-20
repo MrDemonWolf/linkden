@@ -8,7 +8,7 @@ import {
 	LayoutDashboard,
 	Blocks,
 	BarChart3,
-	Mail,
+	Handshake,
 	Palette,
 	Settings,
 	Share2,
@@ -44,7 +44,7 @@ const NAV_GROUPS = [
 		items: [
 			{ href: "/admin/analytics" as const, label: "Analytics", icon: BarChart3 },
 			{ href: "/admin/social" as const, label: "Social", icon: Share2 },
-			{ href: "/admin/forms" as const, label: "Forms", icon: Mail },
+			{ href: "/admin/connections" as const, label: "Connections", icon: Handshake },
 		],
 	},
 	{
@@ -62,7 +62,7 @@ const BOTTOM_NAV_ITEMS = [
 	{ href: "/admin" as const, label: "Dashboard", icon: LayoutDashboard },
 	{ href: "/admin/builder" as const, label: "Builder", icon: Blocks },
 	{ href: "/admin/analytics" as const, label: "Analytics", icon: BarChart3 },
-	{ href: "/admin/forms" as const, label: "Forms", icon: Mail },
+	{ href: "/admin/connections" as const, label: "Connections", icon: Handshake },
 	{ href: "/admin/profile" as const, label: "Profile", icon: User },
 ];
 
@@ -165,7 +165,7 @@ function SidebarContent({
 				href={item.href as never}
 				onClick={onNavClick}
 				aria-current={isActive ? "page" : undefined}
-				aria-label={item.label === "Forms" && unreadCount > 0 ? `Forms, ${unreadCount} unread` : undefined}
+				aria-label={item.label === "Connections" && unreadCount > 0 ? `Connections, ${unreadCount} unread` : undefined}
 				className={cn(
 					"flex items-center gap-2.5 rounded-lg px-3 py-2 min-h-[44px] text-xs font-medium transition-all",
 					isActive
@@ -175,8 +175,8 @@ function SidebarContent({
 			>
 				<Icon className="h-4 w-4 shrink-0" />
 				<span>{item.label}</span>
-				{item.label === "Forms" && unreadCount > 0 && (
-					<span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[11px] font-semibold text-white">
+				{item.label === "Connections" && unreadCount > 0 && (
+					<span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500 px-1 text-[11px] font-semibold text-white">
 						{unreadCount > 99 ? "99+" : unreadCount}
 					</span>
 				)}
@@ -427,8 +427,8 @@ export default function AdminLayout({
 											>
 												<Icon className="h-4 w-4 shrink-0" />
 												{item.label}
-												{item.label === "Forms" && unreadCount > 0 && (
-													<span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[11px] font-semibold text-white">
+												{item.label === "Connections" && unreadCount > 0 && (
+													<span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500 px-1 text-[11px] font-semibold text-white">
 														{unreadCount > 99 ? "99+" : unreadCount}
 													</span>
 												)}
