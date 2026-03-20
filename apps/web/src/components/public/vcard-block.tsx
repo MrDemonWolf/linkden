@@ -2,6 +2,7 @@
 
 import type { ThemeColors } from "./public-page";
 import { getContrastColor } from "./contact-form-modal";
+import { usePreview } from "./preview-context";
 
 interface VCardBlockProps {
 	block: {
@@ -24,6 +25,7 @@ export function VCardBlock({
 	colorMode,
 	themeColors,
 }: VCardBlockProps) {
+	const { isPreview } = usePreview();
 	const buttonText = (config.buttonText as string) || block.title || "Download Contact";
 	const buttonEmoji = config.buttonEmoji as string | undefined;
 	const buttonEmojiPosition = (config.buttonEmojiPosition as string) || "left";
@@ -87,8 +89,9 @@ export function VCardBlock({
 	return (
 		<div role="listitem" className="ld-vcard-block">
 			<a
-				href="/api/vcard"
-				download="contact.vcf"
+				href={isPreview ? undefined : "/api/vcard"}
+				download={isPreview ? undefined : "contact.vcf"}
+				onClick={isPreview ? (e: React.MouseEvent) => e.preventDefault() : undefined}
 				className={`${baseClasses} ${colorClasses} cursor-pointer hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 no-underline`}
 				style={{ ...style, outlineColor: themeColors?.primary || "#3b82f6" }}
 			>

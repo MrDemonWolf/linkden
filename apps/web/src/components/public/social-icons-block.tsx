@@ -1,4 +1,5 @@
 import { getAccessibleIconFill } from "@linkden/ui/color-contrast";
+import { usePreview } from "./preview-context";
 
 interface SocialNetwork {
 	slug: string;
@@ -33,6 +34,7 @@ export function SocialIconsBlock({
 	networks,
 	themeColors,
 }: SocialIconsBlockProps) {
+	const { isPreview } = usePreview();
 	const iconSize = (config.iconSize as string) || "md";
 	const iconStyle = (config.iconStyle as string) || "circle";
 	const showLabels = config.showLabels as boolean | undefined;
@@ -105,9 +107,10 @@ export function SocialIconsBlock({
 					return (
 						<a
 							key={item.platform}
-							href={item.url}
-							target="_blank"
-							rel="noopener noreferrer"
+							href={isPreview ? undefined : item.url}
+							target={isPreview ? undefined : "_blank"}
+							rel={isPreview ? undefined : "noopener noreferrer"}
+							onClick={isPreview ? (e: React.MouseEvent) => e.preventDefault() : undefined}
 							className={`inline-flex items-center justify-center transition-all duration-300 hover:scale-110 hover:-translate-y-0.5 min-h-[44px] min-w-[44px] ${
 								sizeClasses[iconSize] || "h-10 w-10"
 							} ${
@@ -151,9 +154,10 @@ export function SocialIconsBlock({
 					{items.map((item) => (
 						<a
 							key={`label-${item.platform}`}
-							href={item.url}
-							target="_blank"
-							rel="noopener noreferrer"
+							href={isPreview ? undefined : item.url}
+							target={isPreview ? undefined : "_blank"}
+							rel={isPreview ? undefined : "noopener noreferrer"}
+							onClick={isPreview ? (e: React.MouseEvent) => e.preventDefault() : undefined}
 							className="text-xs transition-opacity hover:opacity-80"
 							style={{ color: themeColors?.mutedFg || (colorMode === "dark" ? "#9ca3af" : "#6b7280"), transition: "color 0.5s ease" }}
 						>
