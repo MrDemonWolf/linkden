@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Eye, EyeOff, AlertCircle, Loader2, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, Loader2, Mail, Lock, ArrowRight } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
@@ -18,10 +18,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-
-const cardStyle = {
-	boxShadow: "0 0 40px -10px rgba(99,102,241,0.3)",
-};
 
 export default function AdminLoginPage() {
 	const router = useRouter();
@@ -140,83 +136,83 @@ export default function AdminLoginPage() {
 		}
 	};
 
+	/* Shared card wrapper for status screens (success, magic link sent, reset sent) */
+	const StatusCard = ({ icon, title, description, action }: {
+		icon: React.ReactNode;
+		title: string;
+		description: React.ReactNode;
+		action?: React.ReactNode;
+	}) => (
+		<div className="login-glass-card relative rounded-2xl p-8 sm:p-10 text-center space-y-4">
+			<div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/10 ring-1 ring-blue-500/20">
+				{icon}
+			</div>
+			<h2 className="text-base font-semibold text-white tracking-tight">{title}</h2>
+			<p className="text-sm text-slate-400 leading-relaxed">{description}</p>
+			{action}
+		</div>
+	);
+
+	const BackLink = ({ onClick }: { onClick: () => void }) => (
+		<button
+			type="button"
+			className="text-sm text-blue-400 hover:text-blue-300 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
+			onClick={onClick}
+		>
+			Back to sign in
+		</button>
+	);
+
 	return (
-		<div className="login-bg relative min-h-screen flex flex-col">
+		<div className="login-bg relative min-h-screen flex flex-col overflow-hidden">
 			{/* Main */}
-			<main className="flex-1 flex items-center justify-center p-4 sm:p-6">
-				<div className="w-full max-w-[400px] login-card-enter">
+			<main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6">
+				<div className="w-full max-w-[420px] login-card-enter">
 					{loginSuccess ? (
-						<div
-							className="rounded-xl border border-white/[0.06] bg-[#1a1f2e] p-6 sm:p-8 text-center space-y-3"
-							style={cardStyle}
-						>
-							<Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />
-							<p className="text-sm font-medium text-slate-200">Login successful, redirecting...</p>
-						</div>
+						<StatusCard
+							icon={<Loader2 className="h-5 w-5 animate-spin text-blue-400" />}
+							title="Welcome back"
+							description={<span className="text-slate-300">Signing you in...</span>}
+						/>
 					) : magicLinkSent ? (
-						<div
-							className="rounded-xl border border-white/[0.06] bg-[#1a1f2e] p-6 sm:p-8 text-center space-y-3"
-							style={cardStyle}
-						>
-							<div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-								<Mail className="h-5 w-5 text-primary" />
-							</div>
-							<h2 className="text-sm font-semibold text-white">Check your email</h2>
-							<p className="text-xs text-slate-400">
-								We sent a magic link to <span className="font-medium text-slate-200">{email}</span>. Click it to sign in.
-							</p>
-							<button
-								type="button"
-								className="text-xs text-primary underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-ring rounded"
-								onClick={() => { setMagicLinkSent(false); setFormError(""); }}
-							>
-								Back to sign in
-							</button>
-						</div>
+						<StatusCard
+							icon={<Mail className="h-5 w-5 text-blue-400" />}
+							title="Check your inbox"
+							description={
+								<>We sent a magic link to <span className="font-medium text-slate-200">{email}</span>. Click it to sign in.</>
+							}
+							action={<BackLink onClick={() => { setMagicLinkSent(false); setFormError(""); }} />}
+						/>
 					) : resetLinkSent ? (
-						<div
-							className="rounded-xl border border-white/[0.06] bg-[#1a1f2e] p-6 sm:p-8 text-center space-y-3"
-							style={cardStyle}
-						>
-							<div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-								<Mail className="h-5 w-5 text-primary" />
-							</div>
-							<h2 className="text-sm font-semibold text-white">Check your email</h2>
-							<p className="text-xs text-slate-400">
-								We sent a password reset link to <span className="font-medium text-slate-200">{email}</span>. Click it to reset your password.
-							</p>
-							<button
-								type="button"
-								className="text-xs text-primary underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-ring rounded"
-								onClick={() => { setResetLinkSent(false); setForgotMode(false); setFormError(""); }}
-							>
-								Back to sign in
-							</button>
-						</div>
+						<StatusCard
+							icon={<Mail className="h-5 w-5 text-blue-400" />}
+							title="Check your inbox"
+							description={
+								<>We sent a reset link to <span className="font-medium text-slate-200">{email}</span>. Click it to reset your password.</>
+							}
+							action={<BackLink onClick={() => { setResetLinkSent(false); setForgotMode(false); setFormError(""); }} />}
+						/>
 					) : forgotMode ? (
-						<div
-							className="rounded-xl border border-white/[0.06] bg-[#1a1f2e] p-6 sm:p-8"
-							style={cardStyle}
-						>
-							{/* Title inside card */}
+						<div className="login-glass-card relative rounded-2xl p-8 sm:p-10 transition-shadow duration-300">
+							{/* Header */}
 							<div className="text-center mb-8">
 								{branding?.logoUrl ? (
-									<img src={branding.logoUrl} alt="" className="h-10 w-10 rounded-xl object-cover mx-auto" />
+									<img src={branding.logoUrl} alt="" className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-white/10" />
 								) : (
-									<div className="mx-auto flex h-10 w-10 items-center justify-center bg-primary/90 text-primary-foreground text-sm font-bold rounded-xl">
+									<div className="mx-auto flex h-11 w-11 items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/20">
 										LD
 									</div>
 								)}
-								<h1 className="mt-4 text-2xl font-bold text-white tracking-tight">Reset Password</h1>
-								<p className="mt-1 text-sm text-slate-400">Enter your email and we&apos;ll send you a reset link</p>
+								<h1 className="mt-5 text-2xl font-bold text-white tracking-tight">Reset password</h1>
+								<p className="mt-2 text-sm text-slate-400">Enter your email and we&apos;ll send a reset link</p>
 							</div>
 
-							<form onSubmit={handleForgotPassword} className="space-y-4" aria-describedby={formError ? "login-error" : undefined}>
+							<form onSubmit={handleForgotPassword} className="space-y-5" aria-describedby={formError ? "login-error" : undefined}>
 								<div aria-live="polite" aria-atomic="true">
 									{formError && (
 										<div
 											id="login-error"
-											className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive"
+											className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-xs text-red-400"
 										>
 											<AlertCircle className="h-3.5 w-3.5 shrink-0" />
 											<span>{formError}</span>
@@ -224,11 +220,11 @@ export default function AdminLoginPage() {
 									)}
 								</div>
 
-								<div className="space-y-1.5">
-									<Label htmlFor="forgot-email" className="text-sm font-medium text-slate-200">
-										Email Address
+								<div className="space-y-2">
+									<Label htmlFor="forgot-email" className="text-sm font-medium text-slate-300">
+										Email
 									</Label>
-									<div className="relative">
+									<div className="relative login-input rounded-lg">
 										<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
 										<Input
 											id="forgot-email"
@@ -237,7 +233,7 @@ export default function AdminLoginPage() {
 											value={email}
 											onChange={(e) => setEmail(e.target.value)}
 											autoComplete="email"
-											className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10"
+											className="bg-white/[0.04] border-white/[0.08] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500/40 focus-visible:border-blue-500/30 pl-10 h-11"
 											required
 										/>
 									</div>
@@ -245,8 +241,7 @@ export default function AdminLoginPage() {
 
 								<Button
 									type="submit"
-									variant="default"
-									className="w-full shadow-lg shadow-primary/20 active:scale-[0.98]"
+									className="w-full h-11 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
 									disabled={isForgotSubmitting}
 								>
 									{isForgotSubmitting ? (
@@ -255,45 +250,39 @@ export default function AdminLoginPage() {
 											Sending...
 										</>
 									) : (
-										"Send Reset Link"
+										<>
+											Send reset link
+											<ArrowRight className="h-4 w-4 ml-1" />
+										</>
 									)}
 								</Button>
 
-								<div className="text-center">
-									<button
-										type="button"
-										className="text-xs text-primary underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-ring rounded"
-										onClick={() => { setForgotMode(false); setFormError(""); }}
-									>
-										Back to sign in
-									</button>
+								<div className="text-center pt-1">
+									<BackLink onClick={() => { setForgotMode(false); setFormError(""); }} />
 								</div>
 							</form>
 						</div>
 					) : (
-						<div
-							className="rounded-xl border border-white/[0.06] bg-[#1a1f2e] p-6 sm:p-8"
-							style={cardStyle}
-						>
-							{/* Title inside card */}
+						<div className="login-glass-card relative rounded-2xl p-8 sm:p-10 transition-shadow duration-300">
+							{/* Header */}
 							<div className="text-center mb-8">
 								{branding?.logoUrl ? (
-									<img src={branding.logoUrl} alt="" className="h-10 w-10 rounded-xl object-cover mx-auto" />
+									<img src={branding.logoUrl} alt="" className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-white/10" />
 								) : (
-									<div className="mx-auto flex h-10 w-10 items-center justify-center bg-primary/90 text-primary-foreground text-sm font-bold rounded-xl">
+									<div className="mx-auto flex h-11 w-11 items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/20">
 										LD
 									</div>
 								)}
-								<h1 className="mt-4 text-2xl font-bold text-white tracking-tight">Welcome Back</h1>
-								<p className="mt-1 text-sm text-slate-400">Enter your credentials to access your account</p>
+								<h1 className="mt-5 text-2xl font-bold text-white tracking-tight">Welcome back</h1>
+								<p className="mt-2 text-sm text-slate-400">Sign in to your dashboard</p>
 							</div>
 
-							<form onSubmit={handleSubmit} className="space-y-4" aria-describedby={formError ? "login-error" : undefined}>
+							<form onSubmit={handleSubmit} className="space-y-5" aria-describedby={formError ? "login-error" : undefined}>
 								<div aria-live="polite" aria-atomic="true">
 									{formError && (
 										<div
 											id="login-error"
-											className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive"
+											className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-xs text-red-400"
 										>
 											<AlertCircle className="h-3.5 w-3.5 shrink-0" />
 											<span>{formError}</span>
@@ -301,11 +290,11 @@ export default function AdminLoginPage() {
 									)}
 								</div>
 
-								<div className="space-y-1.5">
-									<Label htmlFor="email" className="text-sm font-medium text-slate-200">
-										Email Address
+								<div className="space-y-2">
+									<Label htmlFor="email" className="text-sm font-medium text-slate-300">
+										Email
 									</Label>
-									<div className="relative">
+									<div className="relative login-input rounded-lg">
 										<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
 										<Input
 											id="email"
@@ -314,47 +303,47 @@ export default function AdminLoginPage() {
 											value={email}
 											onChange={(e) => setEmail(e.target.value)}
 											autoComplete="email"
-											className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10"
+											className="bg-white/[0.04] border-white/[0.08] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500/40 focus-visible:border-blue-500/30 pl-10 h-11"
 											required
 										/>
 									</div>
 								</div>
 
-								<div className="space-y-1.5">
+								<div className="space-y-2">
 									<div className="flex items-center justify-between">
-										<Label htmlFor="password" className="text-sm font-medium text-slate-200">
+										<Label htmlFor="password" className="text-sm font-medium text-slate-300">
 											Password
 										</Label>
 										<button
 											type="button"
 											onClick={() => { setForgotMode(true); setFormError(""); }}
-											className="text-xs text-primary cursor-pointer hover:text-primary/80 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
+											className="text-xs text-blue-400 cursor-pointer hover:text-blue-300 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
 										>
 											Forgot password?
 										</button>
 									</div>
-									<div className="relative">
+									<div className="relative login-input rounded-lg">
 										<Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
 										<Input
 											id="password"
 											type={showPassword ? "text" : "password"}
-											placeholder="Your password"
+											placeholder="Enter your password"
 											value={password}
 											onChange={(e) => setPassword(e.target.value)}
 											autoComplete="current-password"
-											className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10"
+											className="bg-white/[0.04] border-white/[0.08] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500/40 focus-visible:border-blue-500/30 pl-10 h-11"
 										/>
 										<button
 											type="button"
 											onClick={() => setShowPassword(!showPassword)}
-											className="absolute right-0.5 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center text-slate-500 hover:text-slate-200"
+											className="absolute right-0.5 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center text-slate-500 hover:text-slate-300 transition-colors"
 											aria-label={showPassword ? "Hide password" : "Show password"}
 											aria-pressed={showPassword}
 										>
 											{showPassword ? (
-												<EyeOff className="h-3.5 w-3.5" />
+												<EyeOff className="h-4 w-4" />
 											) : (
-												<Eye className="h-3.5 w-3.5" />
+												<Eye className="h-4 w-4" />
 											)}
 										</button>
 									</div>
@@ -373,8 +362,7 @@ export default function AdminLoginPage() {
 
 								<Button
 									type="submit"
-									variant="default"
-									className="w-full shadow-lg shadow-primary/20 active:scale-[0.98]"
+									className="w-full h-11 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
 									disabled={isSubmitting}
 								>
 									{isSubmitting ? (
@@ -383,24 +371,27 @@ export default function AdminLoginPage() {
 											Signing in...
 										</>
 									) : (
-										"Sign In"
+										<>
+											Sign in
+											<ArrowRight className="h-4 w-4 ml-1" />
+										</>
 									)}
 								</Button>
 							</form>
 
 							{magicLinkEnabled && (
-								<div className="mt-4 space-y-4">
+								<div className="mt-6 space-y-4">
 									<div className="relative">
-										<Separator />
-										<span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#1a1f2e] px-2 text-[10px] font-medium uppercase tracking-wider text-slate-500">
-											or continue with
+										<Separator className="bg-white/[0.06]" />
+										<span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0f1726] px-3 text-[10px] font-medium uppercase tracking-wider text-slate-500">
+											or
 										</span>
 									</div>
 
 									<Button
 										type="button"
 										variant="outline"
-										className="w-full border-white/10 hover:bg-white/5 text-slate-200"
+										className="w-full h-11 border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.06] text-slate-200 transition-all"
 										disabled={isMagicLinkSubmitting}
 										onClick={handleMagicLink}
 									>
@@ -423,9 +414,9 @@ export default function AdminLoginPage() {
 
 					{/* Below-card link */}
 					{!loginSuccess && !magicLinkSent && !resetLinkSent && (
-						<p className="mt-4 text-center text-xs text-slate-500">
+						<p className="mt-5 text-center text-xs text-slate-500">
 							Don&apos;t have an account?{" "}
-							<a href="/admin/setup" className="text-primary hover:text-primary/80 transition-colors">
+							<a href="/admin/setup" className="text-blue-400 hover:text-blue-300 transition-colors">
 								Set up LinkDen
 							</a>
 						</p>
@@ -433,24 +424,24 @@ export default function AdminLoginPage() {
 				</div>
 			</main>
 
-			{/* Footer — branding PP/ToS only */}
+			{/* Footer -- branding PP/ToS only */}
 			{branding && (branding.ppUrl || branding.tosUrl || branding.ppText || branding.tosText) && (
-				<footer className="py-6 px-6 flex justify-center gap-6">
+				<footer className="relative z-10 py-6 px-6 flex justify-center gap-6">
 					{branding.ppMode === "url" && branding.ppUrl ? (
-						<a href={branding.ppUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 hover:text-primary transition-colors">
+						<a href={branding.ppUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 hover:text-blue-400 transition-colors">
 							Privacy Policy
 						</a>
 					) : branding.ppMode === "text" && branding.ppText ? (
-						<button type="button" onClick={() => setPpDialogOpen(true)} className="text-xs text-slate-500 hover:text-primary transition-colors">
+						<button type="button" onClick={() => setPpDialogOpen(true)} className="text-xs text-slate-500 hover:text-blue-400 transition-colors">
 							Privacy Policy
 						</button>
 					) : null}
 					{branding.tosMode === "url" && branding.tosUrl ? (
-						<a href={branding.tosUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 hover:text-primary transition-colors">
+						<a href={branding.tosUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 hover:text-blue-400 transition-colors">
 							Terms of Service
 						</a>
 					) : branding.tosMode === "text" && branding.tosText ? (
-						<button type="button" onClick={() => setTosDialogOpen(true)} className="text-xs text-slate-500 hover:text-primary transition-colors">
+						<button type="button" onClick={() => setTosDialogOpen(true)} className="text-xs text-slate-500 hover:text-blue-400 transition-colors">
 							Terms of Service
 						</button>
 					) : null}
