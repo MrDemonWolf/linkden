@@ -39,9 +39,10 @@ export function BannerSection({
 				</h2>
 			</CardHeader>
 			<CardContent className="space-y-3">
+				{/* Enable toggle */}
 				<label
 					htmlFor="a-banner-enabled"
-					className="flex items-start gap-3 cursor-pointer group"
+					className="flex items-start gap-3 cursor-pointer group rounded-lg border border-border/40 p-3 transition-colors hover:border-border/60"
 				>
 					<div className="min-w-0 flex-1">
 						<span className="text-xs font-medium group-hover:text-foreground transition-colors">
@@ -71,8 +72,11 @@ export function BannerSection({
 						/>
 					</button>
 				</label>
+
+				{/* Banner options (when enabled) */}
 				{bannerEnabled && (
-					<>
+					<div className="space-y-3 animate-in fade-in-0 slide-in-from-top-1 duration-200">
+						{/* Mode tabs */}
 						<div className="flex gap-2" role="tablist">
 							<button
 								type="button"
@@ -81,10 +85,10 @@ export function BannerSection({
 								aria-selected={bannerMode === "preset"}
 								onClick={() => onBannerModeChange("preset")}
 								className={cn(
-									"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+									"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
 									bannerMode === "preset"
-										? "border-primary bg-primary/5 text-primary"
-										: "border-border text-muted-foreground hover:text-foreground",
+										? "border-primary/60 bg-primary/10 text-primary shadow-sm"
+										: "border-border/50 text-muted-foreground hover:text-foreground hover:border-border",
 								)}
 							>
 								<Palette className="h-3 w-3" />
@@ -97,10 +101,10 @@ export function BannerSection({
 								aria-selected={bannerMode === "custom"}
 								onClick={() => onBannerModeChange("custom")}
 								className={cn(
-									"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+									"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
 									bannerMode === "custom"
-										? "border-primary bg-primary/5 text-primary"
-										: "border-border text-muted-foreground hover:text-foreground",
+										? "border-primary/60 bg-primary/10 text-primary shadow-sm"
+										: "border-border/50 text-muted-foreground hover:text-foreground hover:border-border",
 								)}
 							>
 								<Upload className="h-3 w-3" />
@@ -108,18 +112,23 @@ export function BannerSection({
 							</button>
 						</div>
 
+						{/* Preset grid or upload */}
 						{bannerMode === "preset" ? (
-							<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5" role="tabpanel" aria-labelledby="tab-banner-preset">
+							<div
+								className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5"
+								role="tabpanel"
+								aria-labelledby="tab-banner-preset"
+							>
 								{themedBannerPresets.map((preset: BannerPreset) => (
 									<button
 										key={preset.id}
 										type="button"
 										onClick={() => onBannerPresetChange(preset.id)}
 										className={cn(
-											"group relative h-12 overflow-hidden rounded-md border-2 transition-all",
+											"group relative h-14 overflow-hidden rounded-lg border-2 transition-all",
 											bannerPreset === preset.id
-												? "border-primary ring-2 ring-primary/30"
-												: "border-transparent hover:border-muted-foreground/30",
+												? "border-primary ring-2 ring-primary/20 shadow-md"
+												: "border-transparent hover:border-muted-foreground/30 hover:shadow-sm",
 										)}
 									>
 										{preset.type === "css" ? (
@@ -131,26 +140,28 @@ export function BannerSection({
 											<ShaderBanner preset={preset} staticPreview />
 										)}
 										{bannerPreset === preset.id && (
-											<div className="absolute inset-0 flex items-center justify-center bg-black/20">
-												<Check className="h-4 w-4 text-white drop-shadow" />
+											<div className="absolute inset-0 flex items-center justify-center bg-black/25 backdrop-blur-[1px]">
+												<Check className="h-4 w-4 text-white drop-shadow-lg" />
 											</div>
 										)}
-										<span className="absolute inset-x-0 bottom-0 bg-black/60 px-1 py-0.5 text-[10px] text-white truncate">
+										<span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-1.5 py-1 text-[10px] font-medium text-white truncate">
 											{preset.name}
 										</span>
 									</button>
 								))}
 							</div>
 						) : (
-							<ImageUploadField
-								label="Banner Image"
-								value={bannerCustomUrl}
-								purpose="banner"
-								aspectRatio="banner"
-								onUploadComplete={onBannerCustomUrlChange}
-							/>
+							<div role="tabpanel" aria-labelledby="tab-banner-custom">
+								<ImageUploadField
+									label="Banner Image"
+									value={bannerCustomUrl}
+									purpose="banner"
+									aspectRatio="banner"
+									onUploadComplete={onBannerCustomUrlChange}
+								/>
+							</div>
 						)}
-					</>
+					</div>
 				)}
 			</CardContent>
 		</Card>
