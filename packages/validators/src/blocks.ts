@@ -6,6 +6,7 @@ export const blockTypeSchema = z.enum([
   "social_icons",
   "embed",
   "form",
+  "connect",
   "vcard",
   "location",
 ]);

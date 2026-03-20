@@ -26,7 +26,7 @@ interface AvatarProps {
 const sizeClasses = {
 	sm: "h-12 w-12 text-lg",
 	md: "h-16 w-16 text-xl",
-	lg: "h-24 w-24 text-3xl",
+	lg: "h-[104px] w-[104px] text-3xl",
 };
 
 export function Avatar({ src, name, email, size = "md", className, hasBanner, ringColor, themeColors }: AvatarProps) {
