@@ -309,8 +309,11 @@ export const publicRouter = router({
 			// Corrupted JSON in block config — return empty vcard rather than crashing
 			return { enabled: false, vcardString: null };
 		}
-		const data = vcardDataSchema.parse(config);
-		return { enabled: true, vcardString: generateVCardString(data) };
+		const result = vcardDataSchema.safeParse(config);
+		if (!result.success) {
+			return { enabled: false, vcardString: null };
+		}
+		return { enabled: true, vcardString: generateVCardString(result.data) };
 	}),
 
 	getBranding: publicProcedure.query(async () => {

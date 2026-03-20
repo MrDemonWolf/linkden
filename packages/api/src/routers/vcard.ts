@@ -44,6 +44,17 @@ function generateVCardString(data: z.infer<typeof vcardDataSchema>): string {
 	return lines.join("\r\n");
 }
 
+function safeParseVcardData(value?: string): z.infer<typeof vcardDataSchema> {
+	if (!value) return {};
+	try {
+		const parsed = JSON.parse(value);
+		const result = vcardDataSchema.safeParse(parsed);
+		return result.success ? result.data : {};
+	} catch {
+		return {};
+	}
+}
+
 export const vcardRouter = router({
 	getConfig: protectedProcedure.query(async () => {
 		const [enabledSetting] = await db
@@ -57,12 +68,7 @@ export const vcardRouter = router({
 
 		return {
 			enabled: enabledSetting?.value === "true",
-			// Safe-parse JSON — corrupted DB values should not crash the endpoint
-		data: (() => {
-			if (!dataSetting) return {};
-			try { return JSON.parse(dataSetting.value); }
-			catch { return {}; }
-		})(),
+			data: safeParseVcardData(dataSetting?.value),
 		};
 	}),
 
@@ -119,7 +125,7 @@ export const vcardRouter = router({
 
 		if (!dataSetting) return { vcardString: "" };
 
-		const data = vcardDataSchema.parse(JSON.parse(dataSetting.value));
+		const data = safeParseVcardData(dataSetting.value);
 		return { vcardString: generateVCardString(data) };
 	}),
 });

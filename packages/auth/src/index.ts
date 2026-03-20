@@ -59,8 +59,8 @@ export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
   advanced: {
     defaultCookieAttributes: {
-      sameSite: "none",
-      secure: true,
+      sameSite: env.BETTER_AUTH_URL?.startsWith("https") ? "none" : "lax",
+      secure: env.BETTER_AUTH_URL?.startsWith("https") ? true : false,
       httpOnly: true,
     },
     // uncomment crossSubDomainCookies setting when ready to deploy and replace <your-workers-subdomain> with your actual workers subdomain
