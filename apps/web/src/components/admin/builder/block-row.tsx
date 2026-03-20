@@ -24,7 +24,7 @@ export function BlockRow({
 	onDelete: () => void;
 }) {
 	const Icon = blockTypeIcon(block.type);
-	const typeLabel = block.type.replace(/_/g, " ");
+	const typeLabel = block.type === "connect" ? "Connect" : block.type.replace(/_/g, " ");
 
 	const {
 		attributes,
@@ -48,15 +48,15 @@ export function BlockRow({
 			ref={setNodeRef}
 			style={style}
 			className={cn(
-				"group flex items-center gap-0 rounded-xl bg-card backdrop-blur-xl border border-white/15 dark:border-white/10 shadow-sm overflow-hidden transition-all hover:shadow-md hover:border-white/20 dark:hover:border-white/12 min-h-[56px]",
+				"group flex items-center gap-0 rounded-xl bg-card/80 backdrop-blur-xl border border-white/10 shadow-sm overflow-hidden transition-all hover:shadow-md hover:border-white/15 min-h-[56px]",
 				isDragging && "opacity-50 shadow-lg scale-[1.01]",
-				!block.isEnabled && "opacity-60",
+				!block.isEnabled && "opacity-50",
 			)}
 		>
 			{/* Drag handle */}
 			<button
 				type="button"
-				className="flex w-9 shrink-0 items-center justify-center border-r border-border/50 text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing transition-colors self-stretch focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+				className="flex w-9 shrink-0 items-center justify-center border-r border-white/8 text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing transition-colors self-stretch focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 				aria-label="Drag to reorder"
 				{...attributes}
 				{...listeners}
@@ -75,7 +75,7 @@ export function BlockRow({
 				<Icon className="h-4 w-4" aria-hidden="true" />
 			</div>
 
-			{/* Content — tapping the body opens edit */}
+			{/* Content -- tapping the body opens edit */}
 			<button
 				type="button"
 				onClick={onEdit}
@@ -89,7 +89,7 @@ export function BlockRow({
 						</p>
 						{block.status === "draft" && (
 							<span
-								className="inline-block h-2 w-2 shrink-0 rounded-full bg-amber-500"
+								className="inline-block h-2 w-2 shrink-0 rounded-full bg-amber-400 animate-pulse"
 								title="Unpublished changes"
 								aria-label="Unpublished changes"
 							/>
@@ -105,39 +105,39 @@ export function BlockRow({
 			</button>
 
 			{/* Actions */}
-			<div className="flex items-center gap-1 pr-2">
+			<div className="flex items-center gap-0.5 pr-2">
 				<button
 					type="button"
 					onClick={(e) => { e.stopPropagation(); onToggle(); }}
 					className={cn(
-						"flex h-9 w-9 items-center justify-center rounded-md transition-colors",
+						"flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
 						block.isEnabled
-							? "text-green-500 hover:text-green-600 hover:bg-green-500/10"
+							? "text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
 							: "text-muted-foreground hover:text-foreground hover:bg-muted",
 					)}
 					aria-label={block.isEnabled ? "Disable block" : "Enable block"}
 				>
 					{block.isEnabled ? (
-						<Eye className="h-4 w-4" />
+						<Eye className="h-3.5 w-3.5" />
 					) : (
-						<EyeOff className="h-4 w-4" />
+						<EyeOff className="h-3.5 w-3.5" />
 					)}
 				</button>
 				<button
 					type="button"
 					onClick={(e) => { e.stopPropagation(); onEdit(); }}
-					className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors sm:hidden"
+					className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors sm:hidden"
 					aria-label="Edit block"
 				>
-					<Pencil className="h-4 w-4" />
+					<Pencil className="h-3.5 w-3.5" />
 				</button>
 				<button
 					type="button"
 					onClick={(e) => { e.stopPropagation(); onDelete(); }}
-					className="hidden sm:flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+					className="hidden sm:flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
 					aria-label="Delete block"
 				>
-					<Trash2 className="h-4 w-4" />
+					<Trash2 className="h-3.5 w-3.5" />
 				</button>
 			</div>
 		</div>
