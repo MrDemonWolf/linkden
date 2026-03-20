@@ -72,6 +72,136 @@ function parseConfig(config: string | null): Record<string, unknown> {
 	}
 }
 
+type BlockData = PageContentProps["blocks"][number];
+
+interface RenderContext {
+	colorMode: "light" | "dark";
+	themeColors: ThemeColors;
+	settings: PageContentProps["settings"];
+	socialNetworks?: SocialNetwork[];
+}
+
+function renderBlock(
+	blockData: BlockData,
+	config: Record<string, unknown>,
+	ctx: RenderContext,
+): React.ReactNode {
+	switch (blockData.type) {
+		case "link":
+			return (
+				<LinkBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={ctx.colorMode}
+					themeColors={ctx.themeColors}
+				/>
+			);
+		case "header":
+			return (
+				<HeaderBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={ctx.colorMode}
+					themeColors={ctx.themeColors}
+				/>
+			);
+		case "social_icons":
+			return (
+				<SocialIconsBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={ctx.colorMode}
+					networks={ctx.socialNetworks}
+					themeColors={ctx.themeColors}
+				/>
+			);
+		case "embed":
+			return (
+				<EmbedBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={ctx.colorMode}
+					themeColors={ctx.themeColors}
+				/>
+			);
+		case "form":
+			return (
+				<ContactFormBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={ctx.colorMode}
+					captchaProvider={ctx.settings.captchaProvider ?? "none"}
+					captchaSiteKey={ctx.settings.captchaSiteKey ?? null}
+					themeColors={ctx.themeColors}
+				/>
+			);
+		case "vcard":
+			return (
+				<VCardBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={ctx.colorMode}
+					themeColors={ctx.themeColors}
+				/>
+			);
+		case "location":
+			return (
+				<LocationBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={ctx.colorMode}
+					themeColors={ctx.themeColors}
+				/>
+			);
+		default:
+			return null;
+	}
+}
+
+type LayoutRow =
+	| { type: "full"; block: BlockData }
+	| { type: "inline-pair"; blocks: [BlockData, BlockData] };
+
+/** Group consecutive inline-layout blocks into pairs; max 2 per row. */
+function groupBlocksIntoRows(blocks: BlockData[]): LayoutRow[] {
+	const rows: LayoutRow[] = [];
+	let inlineBuffer: BlockData[] = [];
+
+	const flushInline = () => {
+		while (inlineBuffer.length >= 2) {
+			rows.push({ type: "inline-pair", blocks: [inlineBuffer[0], inlineBuffer[1]] });
+			inlineBuffer = inlineBuffer.slice(2);
+		}
+		// A lone trailing inline block renders full-width
+		for (const b of inlineBuffer) {
+			rows.push({ type: "full", block: b });
+		}
+		inlineBuffer = [];
+	};
+
+	for (const blockData of blocks) {
+		const config = parseConfig(blockData.config);
+		const layout = (config.layout as string) ?? "full";
+
+		if (layout === "inline") {
+			inlineBuffer.push(blockData);
+		} else {
+			flushInline();
+			rows.push({ type: "full", block: blockData });
+		}
+	}
+	flushInline();
+
+	return rows;
+}
+
 export function PageSkeleton() {
 	return (
 		<div className="flex flex-col items-center gap-4 animate-pulse px-4 py-8">
@@ -101,6 +231,9 @@ export function PageContent({
 
 	const Wrapper = isPreview ? "div" : "main";
 	const ProfileWrapper = isPreview ? "div" : "header";
+
+	const ctx: RenderContext = { colorMode, themeColors, settings, socialNetworks };
+	const rows = groupBlocksIntoRows(blocks);
 
 	return (
 		<div
@@ -171,86 +304,19 @@ export function PageContent({
 
 				{/* Blocks */}
 				<div className="ld-blocks space-y-4 pb-8 w-[85%] sm:w-full mx-auto" role="list" aria-label="Links and content">
-					{blocks.map((blockData) => {
-						const config = parseConfig(blockData.config);
-
-						switch (blockData.type) {
-							case "link":
-								return (
-									<LinkBlock
-										key={blockData.id}
-										block={blockData}
-										config={config}
-										colorMode={colorMode}
-										themeColors={themeColors}
-									/>
-								);
-							case "header":
-								return (
-									<HeaderBlock
-										key={blockData.id}
-										block={blockData}
-										config={config}
-										colorMode={colorMode}
-										themeColors={themeColors}
-									/>
-								);
-							case "social_icons":
-								return (
-									<SocialIconsBlock
-										key={blockData.id}
-										block={blockData}
-										config={config}
-										colorMode={colorMode}
-										networks={socialNetworks}
-										themeColors={themeColors}
-									/>
-								);
-							case "embed":
-								return (
-									<EmbedBlock
-										key={blockData.id}
-										block={blockData}
-										config={config}
-										colorMode={colorMode}
-										themeColors={themeColors}
-									/>
-								);
-							case "form":
-								return (
-									<ContactFormBlock
-										key={blockData.id}
-										block={blockData}
-										config={config}
-										colorMode={colorMode}
-										captchaProvider={settings.captchaProvider ?? "none"}
-										captchaSiteKey={settings.captchaSiteKey ?? null}
-										themeColors={themeColors}
-									/>
-								);
-							case "vcard":
-								return (
-									<VCardBlock
-										key={blockData.id}
-										block={blockData}
-										config={config}
-										colorMode={colorMode}
-										themeColors={themeColors}
-									/>
-								);
-							case "location":
-								return (
-									<LocationBlock
-										key={blockData.id}
-										block={blockData}
-										config={config}
-										colorMode={colorMode}
-										themeColors={themeColors}
-									/>
-								);
-							default:
-								return null;
+					{rows.map((row) => {
+						if (row.type === "inline-pair") {
+							return (
+								<div key={`pair-${row.blocks[0].id}`} className="flex flex-col sm:flex-row gap-4">
+									{row.blocks.map((blockData) => (
+										<div key={blockData.id} className="w-full sm:w-1/2">
+											{renderBlock(blockData, parseConfig(blockData.config), ctx)}
+										</div>
+									))}
+								</div>
+							);
 						}
+						return renderBlock(row.block, parseConfig(row.block.config), ctx);
 					})}
 				</div>
 
