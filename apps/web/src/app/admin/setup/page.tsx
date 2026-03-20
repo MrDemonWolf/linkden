@@ -667,18 +667,15 @@ export default function SetupPage() {
 	const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 	const [showPassword, setShowPassword] = useState(false);
 
-	// Restore from localStorage on first render
-	const saved = typeof window !== "undefined" ? loadProgress() : {};
-
-	const [step, setStep] = useState<number>(saved.step ?? 1);
-	const [name, setName] = useState(saved.name ?? "");
+	// Initialize with defaults; restore from localStorage in useEffect to avoid SSR mismatch
+	const [step, setStep] = useState<number>(1);
+	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
-	const [displayName, setDisplayName] = useState(saved.displayName ?? "");
-	const [bio, setBio] = useState(saved.bio ?? "");
-	const [themePreset, setThemePreset] = useState(
-		saved.themePreset ?? "default",
-	);
+	const [displayName, setDisplayName] = useState("");
+	const [bio, setBio] = useState("");
+	const [themePreset, setThemePreset] = useState("default");
+	const [hydrated, setHydrated] = useState(false);
 
 	const { data: hasUsersData, isLoading } = useQuery(
 		trpc.public.hasUsers.queryOptions(),
@@ -693,10 +690,22 @@ export default function SetupPage() {
 			new URLSearchParams(window.location.search).has("preview"),
 	);
 
+	// Restore from localStorage after mount to avoid SSR hydration mismatch
+	useEffect(() => {
+		const saved = loadProgress();
+		if (saved.step) setStep(saved.step);
+		if (saved.name) setName(saved.name);
+		if (saved.displayName) setDisplayName(saved.displayName);
+		if (saved.bio) setBio(saved.bio);
+		if (saved.themePreset) setThemePreset(saved.themePreset);
+		setHydrated(true);
+	}, []);
+
 	// Persist non-sensitive progress on change (email excluded — sensitive data should not live in localStorage)
 	useEffect(() => {
+		if (!hydrated || devBypass) return;
 		saveProgress({ step, name, displayName, bio, themePreset });
-	}, [step, name, displayName, bio, themePreset]);
+	}, [step, name, displayName, bio, themePreset, hydrated, devBypass]);
 
 	useEffect(() => {
 		if (!devBypass && hasUsersData?.hasUsers) {
@@ -869,7 +878,7 @@ export default function SetupPage() {
 				</div>
 
 				{/* Resume notice — shown when progress was restored mid-wizard */}
-				{step > 1 && step < 4 && saved.step && saved.step > 1 && (
+				{step > 1 && step < 4 && hydrated && (
 					<p className="mt-3 text-center text-[11px] text-slate-600">
 						Progress saved —{" "}
 						<button
