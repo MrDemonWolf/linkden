@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
-import { SharedPreview } from "@/components/admin/shared-preview";
+import { PreviewRenderer } from "@/components/admin/preview-renderer";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { ProfileSection } from "@/components/admin/appearance/profile-section";
 import { ThemePresetsSection } from "@/components/admin/appearance/theme-presets-section";
@@ -342,7 +342,7 @@ export default function AppearancePage() {
 				{/* Preview column (desktop) */}
 				<div className="hidden w-[360px] shrink-0 lg:block">
 					<div className="sticky top-6">
-						<SharedPreview
+						<PreviewRenderer
 							overrides={previewOverrides}
 							mode={previewDark ? "dark" : "light"}
 							onModeChange={(m) => setPreviewDark(m === "dark")}
@@ -356,7 +356,7 @@ export default function AppearancePage() {
 				open={showMobilePreview}
 				onOpenChange={setShowMobilePreview}
 			>
-				<SharedPreview
+				<PreviewRenderer
 					overrides={previewOverrides}
 					mode={previewDark ? "dark" : "light"}
 					onModeChange={(m) => setPreviewDark(m === "dark")}
