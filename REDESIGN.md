@@ -27,7 +27,7 @@
 ### 1.1 Full Token Set
 
 **Stitch prompt — copy this:**
-```
+```text
 Design a complete dark-mode CSS variable token set for a link-in-bio admin panel called LinkDen.
 
 Requirements that must stay:
@@ -50,7 +50,7 @@ Output as CSS :root and .dark blocks with Tailwind CSS v4 @theme inline syntax.
 ### 1.2 Typography Scale
 
 **Stitch prompt — copy this:**
-```
+```text
 Define a typography scale for a dark glassmorphic admin panel (LinkDen).
 
 Requirements that must stay:
@@ -74,7 +74,7 @@ Output as a Tailwind CSS v4 @theme block defining font-family tokens, and a refe
 ### 2.1 Sidebar
 
 **Stitch prompt — copy this:**
-```
+```text
 Design a dark glassmorphic admin sidebar for LinkDen (a link-in-bio tool).
 
 Requirements that must stay:
@@ -103,7 +103,7 @@ Output as a complete React TSX component with Tailwind class names.
 ### 2.2 Mobile Header
 
 **Stitch prompt — copy this:**
-```
+```text
 Design a dark glassmorphic mobile top header bar for LinkDen admin panel.
 
 Requirements that must stay:
@@ -128,7 +128,7 @@ Output as a React TSX component with Tailwind class names.
 ### 2.3 Mobile Dropdown Nav
 
 **Stitch prompt — copy this:**
-```
+```text
 Design a dark glassmorphic mobile navigation dropdown for LinkDen admin panel.
 
 Requirements that must stay:
@@ -154,7 +154,7 @@ Output as a React TSX component with Tailwind class names.
 ### 2.4 Mobile Bottom Nav
 
 **Stitch prompt — copy this:**
-```
+```text
 Design a dark glassmorphic mobile bottom tab bar for LinkDen admin panel.
 
 Requirements that must stay:
@@ -182,7 +182,7 @@ Output as a React TSX component with Tailwind class names.
 ### 3.1 StatCard
 
 **Stitch prompt — copy this:**
-```
+```text
 Design a dark glassmorphic stat card component for LinkDen admin dashboard.
 
 Requirements that must stay:
@@ -207,7 +207,7 @@ Output as a React TSX component accepting props: icon, label, value, color, tren
 ### 3.2 PageHeader
 
 **Stitch prompt — copy this:**
-```
+```text
 Design a page header component for LinkDen admin panel.
 
 Requirements that must stay:
@@ -232,7 +232,7 @@ Output as a React TSX component accepting props: title, description, badge (opti
 ### 3.3 Button Variants
 
 **Stitch prompt — copy this:**
-```
+```text
 Design a complete button component system for LinkDen admin panel using CVA (class-variance-authority).
 
 Requirements that must stay:
@@ -257,7 +257,7 @@ Output as a complete React TSX button component with CVA variants and all class 
 ### 3.4 Card
 
 **Stitch prompt — copy this:**
-```
+```text
 Design a glassmorphic card component for LinkDen admin panel.
 
 Requirements that must stay:
@@ -281,7 +281,7 @@ Output as React TSX sub-components (Card, CardHeader, CardTitle, CardDescription
 ### 3.5 Nav Item (Active / Inactive)
 
 **Stitch prompt — copy this:**
-```
+```text
 Design nav item states for a dark glassmorphic sidebar in LinkDen admin panel.
 
 Requirements that must stay:
@@ -305,7 +305,7 @@ Output as a React TSX NavItem component accepting props: icon, label, href, isAc
 ### 3.6 Form Fields
 
 **Stitch prompt — copy this:**
-```
+```text
 Design a form field system for LinkDen admin panel with dark glassmorphic styling.
 
 Requirements that must stay:
@@ -334,7 +334,7 @@ Output as React TSX components: Label, Input, Textarea, SelectTrigger, FieldErro
 ### 4.1 Dashboard — `/admin`
 
 **Stitch prompt — copy this:**
-```
+```text
 Design the admin dashboard page for LinkDen, a link-in-bio tool.
 
 Requirements that must stay:
@@ -359,7 +359,7 @@ Output as a React TSX page component with Tailwind class names.
 ### 4.2 Builder — `/admin/builder`
 
 **Stitch prompt — copy this:**
-```
+```text
 Design the link block builder page for LinkDen admin panel.
 
 Requirements that must stay:
@@ -385,7 +385,7 @@ Output as a React TSX page component with Tailwind class names.
 ### 4.3 Appearance — `/admin/appearance`
 
 **Stitch prompt — copy this:**
-```
+```text
 Design the appearance settings page for LinkDen admin panel.
 
 Requirements that must stay:
@@ -411,7 +411,7 @@ Output as a React TSX page component with Tailwind class names.
 ### 4.4 Analytics — `/admin/analytics`
 
 **Stitch prompt — copy this:**
-```
+```text
 Design the analytics page for LinkDen admin panel.
 
 Requirements that must stay:
@@ -437,7 +437,7 @@ Output as a React TSX page component with Tailwind class names.
 ### 4.5 Social — `/admin/social`
 
 **Stitch prompt — copy this:**
-```
+```text
 Design the social links management page for LinkDen admin panel.
 
 Requirements that must stay:
@@ -462,7 +462,7 @@ Output as a React TSX page component with Tailwind class names.
 ### 4.6 Forms — `/admin/forms`
 
 **Stitch prompt — copy this:**
-```
+```text
 Design the form submissions inbox page for LinkDen admin panel.
 
 Requirements that must stay:
@@ -489,7 +489,7 @@ Output as a React TSX page component with Tailwind class names.
 ### 4.7 Wallet — `/admin/wallet`
 
 **Stitch prompt — copy this:**
-```
+```text
 Design the Apple Wallet pass editor page for LinkDen admin panel.
 
 Requirements that must stay:
@@ -514,7 +514,7 @@ Output as a React TSX page component with Tailwind class names.
 ### 4.8 Settings — `/admin/settings`
 
 **Stitch prompt — copy this:**
-```
+```text
 Design the settings page for LinkDen admin panel.
 
 Requirements that must stay:
@@ -541,7 +541,7 @@ Output as a React TSX page component with Tailwind class names.
 ### 4.9 Profile — `/admin/profile`
 
 **Stitch prompt — copy this:**
-```
+```text
 Design the profile editor page for LinkDen admin panel.
 
 Requirements that must stay:
@@ -565,7 +565,7 @@ Output as a React TSX page component with Tailwind class names.
 ### 4.10 Login — `/admin/login`
 
 **Stitch prompt — copy this:**
-```
+```text
 Design the admin login page for LinkDen.
 
 Requirements that must stay:
@@ -589,7 +589,7 @@ Output as a React TSX page component with Tailwind class names.
 ### 4.11 Setup — `/admin/setup`
 
 **Stitch prompt — copy this:**
-```
+```text
 Design the first-run setup wizard page for LinkDen admin panel.
 
 Requirements that must stay:

@@ -32,13 +32,19 @@ LinkDen is a **self-hosted, single-user link-in-bio platform** designed for Clou
 
 ## Key Development Commands
 - `bun dev` - Start all applications in development mode.
+- `bun run dev:web` - Start only the web frontend.
+- `bun run dev:server` - Start only the API server.
+- `bun run dev:docs` - Start only the documentation site.
 - `bun run build` - Build all apps and packages.
 - `bun run check-types` - Run TypeScript type checking across the workspace.
 - `bun run db:generate` - Generate Drizzle migrations from schema changes.
 - `bun run db:push` - Push schema changes directly to the database.
 - `bun run deploy` - Deploy the stack to Cloudflare via Alchemy.
+- `bun run ship` - Alias for deploy.
+- `bun run destroy` - Tear down the Cloudflare infrastructure.
 - `bun run test` - Run the test suite using Vitest.
 - `bun run reset:password` - CLI tool to reset the admin password.
+- `bun run reset:factory` - CLI tool to wipe the database and reset to factory defaults.
 
 ## Engineering Standards & Conventions
 
