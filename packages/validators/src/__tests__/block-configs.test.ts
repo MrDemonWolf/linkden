@@ -8,7 +8,7 @@ import {
 
 describe("blockTypeSchema", () => {
 	it("accepts all valid block types", () => {
-		const types = ["link", "header", "social_icons", "embed", "form", "vcard", "location"];
+		const types = ["link", "header", "embed", "connect", "vcard", "location"];
 		for (const type of types) {
 			expect(blockTypeSchema.parse(type)).toBe(type);
 		}
