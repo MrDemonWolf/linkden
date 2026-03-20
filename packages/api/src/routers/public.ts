@@ -8,9 +8,7 @@ import {
 	contactSubmission,
 	pageView,
 	linkClick,
-	socialNetwork,
 } from "@linkden/db/schema/index";
-import { socialBrandMap } from "@linkden/ui/social-brands";
 import { eq, asc, and } from "drizzle-orm";
 import { z } from "zod";
 import { generateVCardString, vcardDataSchema } from "./vcard";
@@ -56,30 +54,9 @@ export const publicRouter = router({
 			settings[row.key] = row.value;
 		}
 
-		// Get active social networks with URLs, enrich from catalog
-		const activeSocials = await db
-			.select()
-			.from(socialNetwork)
-			.where(eq(socialNetwork.isActive, true));
-
-		const socialNetworks = activeSocials
-			.map((s) => {
-				const brand = socialBrandMap.get(s.slug);
-				if (!brand) return null;
-				return {
-					slug: s.slug,
-					name: brand.name,
-					url: s.url,
-					hex: brand.hex,
-					svgPath: brand.svgPath,
-				};
-			})
-			.filter((s): s is NonNullable<typeof s> => s !== null);
-
 		// Hide blocks for disabled features
 		const visibleBlocks = scheduledBlocks.filter((b) => {
-			if (b.type === "form" && settings.contact_form_enabled !== "true") return false;
-			if (b.type === "social_icons" && socialNetworks.length === 0) return false;
+			if (b.type === "connect" && settings.contact_form_enabled !== "true") return false;
 			return true;
 		});
 
@@ -102,7 +79,6 @@ export const publicRouter = router({
 					}
 				: null,
 			blocks: visibleBlocks,
-			socialNetworks,
 			theme,
 			settings: {
 				seoTitle: settings.seo_title || null,
@@ -142,20 +118,15 @@ export const publicRouter = router({
 		};
 	}),
 
-	// Public contact form — input limits prevent payload abuse from unauthenticated users
+	// Connect With Me form — input limits prevent payload abuse from unauthenticated users
 	submitContact: publicProcedure
 		.input(
 			z.object({
-				name: z.string().min(1).max(100),
+				firstName: z.string().min(1).max(50),
+				lastName: z.string().min(1).max(50),
 				email: z.string().email().max(254),
-				message: z.string().min(1).max(5000),
-				phone: z.string().max(30).optional(),
-				subject: z.string().max(200).optional(),
-				company: z.string().max(200).optional(),
-				whereMet: z.string().max(200).optional(),
-				rating: z.number().min(1).max(5).optional(),
-				attending: z.enum(["yes", "no", "maybe"]).optional(),
-				guests: z.number().min(0).optional(),
+				whereMet: z.string().max(200),
+				message: z.string().max(5000).optional(),
 				captchaToken: z.string().max(4096).optional(),
 				blockId: z.string().max(100).optional(),
 				blockTitle: z.string().max(200).optional(),
@@ -217,16 +188,10 @@ export const publicRouter = router({
 			const id = crypto.randomUUID();
 			await db.insert(contactSubmission).values({
 				id,
-				name: stripTags(input.name),
+				name: stripTags(`${input.firstName} ${input.lastName}`),
 				email: input.email,
-				message: stripTags(input.message),
-				phone: input.phone ? stripTags(input.phone) : null,
-				subject: input.subject ? stripTags(input.subject) : null,
-				company: input.company ? stripTags(input.company) : null,
-				whereMet: input.whereMet ? stripTags(input.whereMet) : null,
-				rating: input.rating ?? null,
-				attending: input.attending ?? null,
-				guests: input.guests ?? null,
+				message: input.message ? stripTags(input.message) : "",
+				whereMet: stripTags(input.whereMet),
 				blockId: input.blockId ?? null,
 				blockTitle: input.blockTitle ? stripTags(input.blockTitle) : null,
 			});
