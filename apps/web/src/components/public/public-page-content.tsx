@@ -10,7 +10,16 @@ import { VCardBlock } from "./vcard-block";
 import { LocationBlock } from "./location-block";
 import { WhitelabelFooter } from "./whitelabel-footer";
 import { usePreview } from "./preview-context";
+import { ProfileSocialIcons } from "./profile-social-icons";
 import type { ThemeColors } from "./public-page";
+
+interface SocialNetwork {
+	slug: string;
+	name: string;
+	url: string;
+	hex: string;
+	svgPath: string;
+}
 
 export interface PageContentProps {
 	profile: {
@@ -28,9 +37,11 @@ export interface PageContentProps {
 		icon: string | null;
 		embedType: string | null;
 		embedUrl: string | null;
+		socialIcons: string | null;
 		config: string | null;
 		position: number;
 	}>;
+	socialNetworks?: SocialNetwork[];
 	settings: {
 		brandingEnabled: boolean;
 		brandingText: string;
@@ -61,125 +72,6 @@ function parseConfig(config: string | null): Record<string, unknown> {
 	}
 }
 
-type BlockData = PageContentProps["blocks"][number];
-
-interface RenderContext {
-	colorMode: "light" | "dark";
-	themeColors: ThemeColors;
-	settings: PageContentProps["settings"];
-	socialNetworks?: SocialNetwork[];
-}
-
-function renderBlock(
-	blockData: BlockData,
-	config: Record<string, unknown>,
-	ctx: RenderContext,
-): React.ReactNode {
-	switch (blockData.type) {
-		case "link":
-			return (
-				<LinkBlock
-					key={blockData.id}
-					block={blockData}
-					config={config}
-					colorMode={ctx.colorMode}
-					themeColors={ctx.themeColors}
-				/>
-			);
-		case "header":
-			return (
-				<HeaderBlock
-					key={blockData.id}
-					block={blockData}
-					config={config}
-					colorMode={ctx.colorMode}
-					themeColors={ctx.themeColors}
-				/>
-			);
-		case "embed":
-			return (
-				<EmbedBlock
-					key={blockData.id}
-					block={blockData}
-					config={config}
-					colorMode={ctx.colorMode}
-					themeColors={ctx.themeColors}
-				/>
-			);
-		case "connect":
-			return (
-				<ConnectBlock
-					key={blockData.id}
-					block={blockData}
-					config={config}
-					colorMode={ctx.colorMode}
-					captchaProvider={ctx.settings.captchaProvider ?? "none"}
-					captchaSiteKey={ctx.settings.captchaSiteKey ?? null}
-					themeColors={ctx.themeColors}
-				/>
-			);
-		case "vcard":
-			return (
-				<VCardBlock
-					key={blockData.id}
-					block={blockData}
-					config={config}
-					colorMode={ctx.colorMode}
-					themeColors={ctx.themeColors}
-				/>
-			);
-		case "location":
-			return (
-				<LocationBlock
-					key={blockData.id}
-					block={blockData}
-					config={config}
-					colorMode={ctx.colorMode}
-					themeColors={ctx.themeColors}
-				/>
-			);
-		default:
-			return null;
-	}
-}
-
-type LayoutRow =
-	| { type: "full"; block: BlockData }
-	| { type: "inline-pair"; blocks: [BlockData, BlockData] };
-
-/** Group consecutive inline-layout blocks into pairs; max 2 per row. */
-function groupBlocksIntoRows(blocks: BlockData[]): LayoutRow[] {
-	const rows: LayoutRow[] = [];
-	let inlineBuffer: BlockData[] = [];
-
-	const flushInline = () => {
-		while (inlineBuffer.length >= 2) {
-			rows.push({ type: "inline-pair", blocks: [inlineBuffer[0], inlineBuffer[1]] });
-			inlineBuffer = inlineBuffer.slice(2);
-		}
-		// A lone trailing inline block renders full-width
-		for (const b of inlineBuffer) {
-			rows.push({ type: "full", block: b });
-		}
-		inlineBuffer = [];
-	};
-
-	for (const blockData of blocks) {
-		const config = parseConfig(blockData.config);
-		const layout = (config.layout as string) ?? "full";
-
-		if (layout === "inline") {
-			inlineBuffer.push(blockData);
-		} else {
-			flushInline();
-			rows.push({ type: "full", block: blockData });
-		}
-	}
-	flushInline();
-
-	return rows;
-}
-
 export function PageSkeleton() {
 	return (
 		<div className="flex flex-col items-center gap-4 animate-pulse px-4 py-8">
@@ -196,9 +88,130 @@ export function PageSkeleton() {
 	);
 }
 
+/** Group consecutive blocks with layout:"inline" into 50/50 pairs */
+function groupBlocksWithInlineRows(
+	blocks: PageContentProps["blocks"],
+): Array<{ type: "single"; block: PageContentProps["blocks"][number] } | { type: "inline-row"; blocks: PageContentProps["blocks"] }> {
+	const result: Array<{ type: "single"; block: PageContentProps["blocks"][number] } | { type: "inline-row"; blocks: PageContentProps["blocks"] }> = [];
+	let inlineBuffer: PageContentProps["blocks"] = [];
+
+	for (const block of blocks) {
+		const config = parseConfig(block.config);
+		if (config.layout === "inline" && block.type === "link") {
+			inlineBuffer.push(block);
+			// Flush pairs
+			if (inlineBuffer.length === 2) {
+				result.push({ type: "inline-row", blocks: [...inlineBuffer] });
+				inlineBuffer = [];
+			}
+		} else {
+			// Flush any remaining single inline block
+			if (inlineBuffer.length > 0) {
+				for (const b of inlineBuffer) {
+					result.push({ type: "single", block: b });
+				}
+				inlineBuffer = [];
+			}
+			result.push({ type: "single", block });
+		}
+	}
+	// Flush remaining
+	for (const b of inlineBuffer) {
+		result.push({ type: "single", block: b });
+	}
+
+	return result;
+}
+
+function renderBlock(
+	blockData: PageContentProps["blocks"][number],
+	{
+		colorMode,
+		themeColors,
+		socialNetworks,
+		settings,
+	}: {
+		colorMode: "light" | "dark";
+		themeColors: ThemeColors;
+		socialNetworks?: SocialNetwork[];
+		settings: PageContentProps["settings"];
+	},
+) {
+	const config = parseConfig(blockData.config);
+
+	switch (blockData.type) {
+		case "link":
+			return (
+				<LinkBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={colorMode}
+					themeColors={themeColors}
+				/>
+			);
+		case "header":
+			return (
+				<HeaderBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={colorMode}
+					themeColors={themeColors}
+				/>
+			);
+		case "embed":
+			return (
+				<EmbedBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={colorMode}
+					themeColors={themeColors}
+				/>
+			);
+		
+		case "connect":
+			return (
+				<ConnectBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={colorMode}
+					captchaProvider={settings.captchaProvider ?? "none"}
+					captchaSiteKey={settings.captchaSiteKey ?? null}
+					themeColors={themeColors}
+				/>
+			);
+		case "vcard":
+			return (
+				<VCardBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={colorMode}
+					themeColors={themeColors}
+				/>
+			);
+		case "location":
+			return (
+				<LocationBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={colorMode}
+					themeColors={themeColors}
+				/>
+			);
+		default:
+			return null;
+	}
+}
+
 export function PageContent({
 	profile,
 	blocks,
+	socialNetworks,
 	settings,
 	themeColors,
 	colorMode,
@@ -209,8 +222,9 @@ export function PageContent({
 	const Wrapper = isPreview ? "div" : "main";
 	const ProfileWrapper = isPreview ? "div" : "header";
 
-	const ctx: RenderContext = { colorMode, themeColors, settings, socialNetworks };
-	const rows = groupBlocksIntoRows(blocks);
+	// Filter out social_icons blocks — social icons now render in the profile header
+	const contentBlocks = blocks.filter((b) => b.type !== "social_icons");
+	const groupedBlocks = groupBlocksWithInlineRows(contentBlocks);
 
 	return (
 		<div
@@ -236,9 +250,9 @@ export function PageContent({
 
 			<Wrapper
 				{...(!isPreview ? { id: "main-content", role: "main" } : {})}
-				className={`mx-auto max-w-lg px-4 ${hasBanner ? "py-0" : "py-10 md:py-14"}`}
+				className={`mx-auto max-w-lg px-4 ${hasBanner ? "py-0" : "py-10 md:py-16"}`}
 			>
-				{/* Profile Section */}
+				{/* Profile Section: Avatar -> Name -> Bio -> Social Icons */}
 				<ProfileWrapper className={`ld-profile relative z-10 mb-10 text-center ${hasBanner ? "-mt-20" : ""}`}>
 					<Avatar
 						src={profile.image}
@@ -249,7 +263,8 @@ export function PageContent({
 						ringColor={hasBanner ? themeColors.bg : undefined}
 						themeColors={{ primary: themeColors.primary, accent: themeColors.accent }}
 					/>
-					<h1 className="mt-5 inline-flex items-center justify-center gap-1.5 text-[22px] font-bold tracking-tight">
+
+					<h1 className="mt-5 inline-flex items-center justify-center gap-1.5 text-2xl font-bold tracking-tight">
 						{profile.name}
 						{profile.isVerified && (
 							<svg
@@ -266,9 +281,10 @@ export function PageContent({
 							</svg>
 						)}
 					</h1>
+
 					{profile.bio && (
 						<p
-							className="ld-bio mt-3 text-sm leading-relaxed w-[85%] sm:w-full mx-auto"
+							className="ld-bio mt-3 text-[15px] leading-relaxed max-w-sm mx-auto"
 							style={{
 								color: themeColors.mutedFg,
 								transition: "color 0.5s ease",
@@ -277,37 +293,46 @@ export function PageContent({
 							{profile.bio}
 						</p>
 					)}
+
+					{/* Social Icons — pulled from socialNetwork table, rendered in profile header */}
+					{socialNetworks && socialNetworks.length > 0 && (
+						<ProfileSocialIcons
+							networks={socialNetworks}
+							colorMode={colorMode}
+							themeColors={themeColors}
+						/>
+					)}
 				</ProfileWrapper>
 
-				{/* Blocks */}
-				<div className="ld-blocks space-y-4 pb-8 w-[85%] sm:w-full mx-auto" role="list" aria-label="Links and content">
-					{rows.map((row) => {
-						if (row.type === "inline-pair") {
+				{/* Blocks with inline row support */}
+				<div className="ld-blocks space-y-3.5 pb-8 w-[90%] sm:w-full mx-auto" role="list" aria-label="Links and content">
+					{groupedBlocks.map((group) => {
+						if (group.type === "inline-row") {
+							const key = group.blocks.map((b) => b.id).join("-");
 							return (
-								<div key={`pair-${row.blocks[0].id}`} className="flex flex-col sm:flex-row gap-4">
-									{row.blocks.map((blockData) => (
-										<div key={blockData.id} className="w-full sm:w-1/2">
-											{renderBlock(blockData, parseConfig(blockData.config), ctx)}
-										</div>
-									))}
+								<div key={key} role="listitem" className="ld-inline-row grid grid-cols-2 gap-3">
+									{group.blocks.map((blockData) =>
+										renderBlock(blockData, { colorMode, themeColors, socialNetworks, settings }),
+									)}
 								</div>
 							);
 						}
-						return renderBlock(row.block, parseConfig(row.block.config), ctx);
+						return renderBlock(group.block, { colorMode, themeColors, socialNetworks, settings });
 					})}
 				</div>
 
 				{/* Wallet Button — only on public page */}
 				{!isPreview && settings.walletPassEnabled && (
-					<div className="mt-8 flex justify-center gap-3">
+					<div className="mt-6 flex justify-center pb-4">
 						<a
 							href="/api/wallet-pass"
-							className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300"
+							className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
 							style={{
-								backgroundColor: themeColors.card,
-								color: themeColors.cardFg,
+								backgroundColor: colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.7)",
+								color: themeColors.fg,
 								border: `1px solid ${themeColors.border}`,
-								transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
+								backdropFilter: "blur(20px)",
+								transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, transform 0.3s ease, box-shadow 0.3s ease",
 							}}
 						>
 							<svg
