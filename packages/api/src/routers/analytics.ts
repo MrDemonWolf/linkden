@@ -1,11 +1,15 @@
 import { router, protectedProcedure } from "../index";
 import { db } from "@linkden/db";
-import { pageView, linkClick, block } from "@linkden/db/schema/index";
+import { pageView, linkClick, block, contactSubmission } from "@linkden/db/schema/index";
 import { eq, gte, lte, and, desc, sql, count } from "drizzle-orm";
+import type { SQLWrapper } from "drizzle-orm";
 import { z } from "zod";
 
-function getDateRange(period: string) {
+function getDateRange(period: string): { start: Date | null; end: Date } {
 	const end = new Date();
+	if (period === "all") {
+		return { start: null, end };
+	}
 	const start = new Date();
 	switch (period) {
 		case "7d":
@@ -23,9 +27,17 @@ function getDateRange(period: string) {
 	return { start, end };
 }
 
+/** Build a where clause array for a date column, handling null start (all time). */
+function dateWhere(col: SQLWrapper, start: Date | null, end: Date): (SQLWrapper | undefined)[] {
+	if (start === null) {
+		return [lte(col, end)];
+	}
+	return [gte(col, start), lte(col, end)];
+}
+
 const rangeInput = z
 	.object({
-		period: z.enum(["7d", "30d", "90d"]).default("7d"),
+		period: z.enum(["7d", "30d", "90d", "all"]).default("7d"),
 		startDate: z.date().optional(),
 		endDate: z.date().optional(),
 	})
@@ -35,43 +47,48 @@ export const analyticsRouter = router({
 	overview: protectedProcedure.input(rangeInput).query(async ({ input }) => {
 		const { start, end } =
 			input?.startDate && input?.endDate
-				? { start: input.startDate, end: input.endDate }
+				? { start: input.startDate as Date | null, end: input.endDate }
 				: getDateRange(input?.period ?? "7d");
 
-		// Compute previous period window for comparison
-		const periodMs = end.getTime() - start.getTime();
-		const prevEnd = new Date(start.getTime());
-		const prevStart = new Date(start.getTime() - periodMs);
+		// Compute previous period window for comparison (skip for "all time")
+		const hasPrevious = start !== null;
+		const periodMs = hasPrevious ? end.getTime() - start.getTime() : 0;
+		const prevEnd = hasPrevious ? new Date(start.getTime()) : new Date(0);
+		const prevStart = hasPrevious ? new Date(start.getTime() - periodMs) : new Date(0);
 
-		const [views, clicks, prevViews, prevClicks, activeLinksResult] = await Promise.all([
+		const [views, clicks, prevViews, prevClicks, activeLinksResult, contactsResult] = await Promise.all([
 			db
 				.select({ count: count() })
 				.from(pageView)
-				.where(
-					and(gte(pageView.createdAt, start), lte(pageView.createdAt, end)),
-				),
+				.where(and(...dateWhere(pageView.createdAt, start, end))),
 			db
 				.select({ count: count() })
 				.from(linkClick)
-				.where(
-					and(gte(linkClick.createdAt, start), lte(linkClick.createdAt, end)),
-				),
-			db
-				.select({ count: count() })
-				.from(pageView)
-				.where(
-					and(gte(pageView.createdAt, prevStart), lte(pageView.createdAt, prevEnd)),
-				),
-			db
-				.select({ count: count() })
-				.from(linkClick)
-				.where(
-					and(gte(linkClick.createdAt, prevStart), lte(linkClick.createdAt, prevEnd)),
-				),
+				.where(and(...dateWhere(linkClick.createdAt, start, end))),
+			hasPrevious
+				? db
+						.select({ count: count() })
+						.from(pageView)
+						.where(
+							and(gte(pageView.createdAt, prevStart), lte(pageView.createdAt, prevEnd)),
+						)
+				: Promise.resolve([{ count: 0 }]),
+			hasPrevious
+				? db
+						.select({ count: count() })
+						.from(linkClick)
+						.where(
+							and(gte(linkClick.createdAt, prevStart), lte(linkClick.createdAt, prevEnd)),
+						)
+				: Promise.resolve([{ count: 0 }]),
 			db
 				.select({ count: count() })
 				.from(block)
 				.where(and(eq(block.isEnabled, true), eq(block.status, "published"))),
+			db
+				.select({ count: count() })
+				.from(contactSubmission)
+				.where(and(...dateWhere(contactSubmission.createdAt, start, end))),
 		]);
 
 		return {
@@ -80,6 +97,7 @@ export const analyticsRouter = router({
 			previousViews: prevViews[0]?.count ?? 0,
 			previousClicks: prevClicks[0]?.count ?? 0,
 			activeLinks: activeLinksResult[0]?.count ?? 0,
+			totalConnections: contactsResult[0]?.count ?? 0,
 		};
 	}),
 
@@ -88,7 +106,7 @@ export const analyticsRouter = router({
 		.query(async ({ input }) => {
 			const { start, end } =
 				input?.startDate && input?.endDate
-					? { start: input.startDate, end: input.endDate }
+					? { start: input.startDate as Date | null, end: input.endDate }
 					: getDateRange(input?.period ?? "7d");
 
 			const results = await db
@@ -97,9 +115,7 @@ export const analyticsRouter = router({
 					count: count(),
 				})
 				.from(pageView)
-				.where(
-					and(gte(pageView.createdAt, start), lte(pageView.createdAt, end)),
-				)
+				.where(and(...dateWhere(pageView.createdAt, start, end)))
 				.groupBy(
 					sql`date(${pageView.createdAt} / 1000, 'unixepoch')`,
 				)
@@ -115,7 +131,7 @@ export const analyticsRouter = router({
 		.query(async ({ input }) => {
 			const { start, end } =
 				input?.startDate && input?.endDate
-					? { start: input.startDate, end: input.endDate }
+					? { start: input.startDate as Date | null, end: input.endDate }
 					: getDateRange(input?.period ?? "7d");
 
 			const results = await db
@@ -124,9 +140,7 @@ export const analyticsRouter = router({
 					count: count(),
 				})
 				.from(linkClick)
-				.where(
-					and(gte(linkClick.createdAt, start), lte(linkClick.createdAt, end)),
-				)
+				.where(and(...dateWhere(linkClick.createdAt, start, end)))
 				.groupBy(
 					sql`date(${linkClick.createdAt} / 1000, 'unixepoch')`,
 				)
@@ -140,7 +154,7 @@ export const analyticsRouter = router({
 	topLinks: protectedProcedure.input(rangeInput).query(async ({ input }) => {
 		const { start, end } =
 			input?.startDate && input?.endDate
-				? { start: input.startDate, end: input.endDate }
+				? { start: input.startDate as Date | null, end: input.endDate }
 				: getDateRange(input?.period ?? "7d");
 
 		const results = await db
@@ -152,9 +166,7 @@ export const analyticsRouter = router({
 			})
 			.from(linkClick)
 			.leftJoin(block, eq(linkClick.blockId, block.id))
-			.where(
-				and(gte(linkClick.createdAt, start), lte(linkClick.createdAt, end)),
-			)
+			.where(and(...dateWhere(linkClick.createdAt, start, end)))
 			.groupBy(linkClick.blockId, block.title, block.url)
 			.orderBy(desc(count()))
 			.limit(10);
@@ -181,8 +193,10 @@ export const analyticsRouter = router({
 	referrers: protectedProcedure.input(rangeInput).query(async ({ input }) => {
 		const { start, end } =
 			input?.startDate && input?.endDate
-				? { start: input.startDate, end: input.endDate }
+				? { start: input.startDate as Date | null, end: input.endDate }
 				: getDateRange(input?.period ?? "7d");
+
+		const dateConditions = dateWhere(pageView.createdAt, start, end);
 
 		const results = await db
 			.select({
@@ -192,8 +206,7 @@ export const analyticsRouter = router({
 			.from(pageView)
 			.where(
 				and(
-					gte(pageView.createdAt, start),
-					lte(pageView.createdAt, end),
+					...dateConditions,
 					sql`${pageView.referrer} IS NOT NULL AND ${pageView.referrer} != ''`,
 				),
 			)
@@ -207,8 +220,10 @@ export const analyticsRouter = router({
 	countries: protectedProcedure.input(rangeInput).query(async ({ input }) => {
 		const { start, end } =
 			input?.startDate && input?.endDate
-				? { start: input.startDate, end: input.endDate }
+				? { start: input.startDate as Date | null, end: input.endDate }
 				: getDateRange(input?.period ?? "7d");
+
+		const dateConditions = dateWhere(pageView.createdAt, start, end);
 
 		const results = await db
 			.select({
@@ -218,8 +233,7 @@ export const analyticsRouter = router({
 			.from(pageView)
 			.where(
 				and(
-					gte(pageView.createdAt, start),
-					lte(pageView.createdAt, end),
+					...dateConditions,
 					sql`${pageView.country} IS NOT NULL AND ${pageView.country} != ''`,
 				),
 			)
