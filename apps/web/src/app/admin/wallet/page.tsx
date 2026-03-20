@@ -2,11 +2,10 @@
 
 import { useState, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Settings2, Save, Undo2, Info } from "lucide-react";
+import { Settings2, Save, Undo2, Info, Smartphone } from "lucide-react";
 import { trpc } from "@/utils/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatCard } from "@/components/admin/stat-card";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
@@ -61,6 +60,11 @@ export default function WalletPage() {
 		signingQuery.data?.passTypeId
 	);
 
+	// QR code links to the public profile page URL (not vCard)
+	const publicProfileUrl =
+		typeof window !== "undefined"
+			? `${window.location.origin}`
+			: undefined;
 
 	return (
 		<div className="space-y-4">
@@ -96,9 +100,8 @@ export default function WalletPage() {
 				}
 			/>
 
-			{/* Status card */}
-			<div
-				className="grid gap-3 sm:grid-cols-1">
+			{/* Status cards */}
+			<div className="grid gap-3 sm:grid-cols-2">
 				<StatCard
 					icon={Settings2}
 					label="Config Status"
@@ -106,11 +109,17 @@ export default function WalletPage() {
 					iconColor={isConfigured ? "text-emerald-500" : "text-amber-500"}
 					iconBg={isConfigured ? "bg-emerald-500/10" : "bg-amber-500/10"}
 				/>
+				<StatCard
+					icon={Smartphone}
+					label="QR Destination"
+					value="Public Profile"
+					iconColor="text-blue-500"
+					iconBg="bg-blue-500/10"
+				/>
 			</div>
 
 			{/* Two-column: Config + Preview */}
-			<div
-				className="grid items-start gap-4 lg:grid-cols-[1fr_auto]">
+			<div className="grid items-start gap-4 lg:grid-cols-[1fr_auto]">
 				{/* Left: General Settings + Download */}
 				<Card>
 					<CardContent className="space-y-6 pt-2">
@@ -120,9 +129,9 @@ export default function WalletPage() {
 							saveRef={walletSaveRef}
 						/>
 
-						{/* Download — Apple guidelines: use official badge, never show dimmed state */}
+						{/* Download -- Apple guidelines: use official badge, never show dimmed state */}
 						{isConfigured ? (
-							<div className="flex justify-center">
+							<div className="flex justify-center pt-2 pb-1">
 								<a
 									href="/api/wallet-pass"
 									className="transition-opacity hover:opacity-80"
@@ -220,6 +229,7 @@ export default function WalletPage() {
 										livePreview?.passDescription ??
 										previewQuery.data?.passDescription
 									}
+									qrUrl={publicProfileUrl}
 									showEmail={
 										livePreview?.showEmail ??
 										previewQuery.data?.showEmail
@@ -234,6 +244,10 @@ export default function WalletPage() {
 									}
 								/>
 							</div>
+							{/* Mobile-friendly hint */}
+							<p className="text-center text-[11px] text-muted-foreground">
+								QR code links to your public profile page
+							</p>
 						</CardContent>
 					</Card>
 				</div>
