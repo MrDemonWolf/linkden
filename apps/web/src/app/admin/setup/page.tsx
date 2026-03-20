@@ -8,12 +8,18 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
 	ArrowRight,
+	ArrowLeft,
 	Check,
 	Loader2,
 	Eye,
 	EyeOff,
 	Rocket,
 	Palette,
+	User,
+	Mail,
+	Lock,
+	Type,
+	Sparkles,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
@@ -74,46 +80,58 @@ function clearProgress() {
 	localStorage.removeItem(PROGRESS_KEY);
 }
 
+const cardStyle = {
+	boxShadow: "0 0 40px -10px rgba(99,102,241,0.3)",
+};
+
 // ─── Step Indicator ──────────────────────────────────────────────────────────
 
-const STEP_LABELS = ["Account", "Profile", "Customize", "Done"];
+const STEPS = [
+	{ label: "Account", icon: User },
+	{ label: "Profile", icon: Type },
+	{ label: "Theme", icon: Palette },
+	{ label: "Launch", icon: Rocket },
+] as const;
 
 function StepIndicator({ currentStep }: { currentStep: number }) {
 	return (
 		<nav aria-label="Setup progress" className="mb-8">
-			<ol className="flex items-start">
-				{STEP_LABELS.map((label, i) => {
+			<ol className="flex items-center justify-between">
+				{STEPS.map(({ label, icon: Icon }, i) => {
 					const num = i + 1;
 					const isComplete = num < currentStep;
 					const isActive = num === currentStep;
 					return (
 						<li
 							key={label}
-							className="flex flex-1 items-start last:flex-none"
+							className="flex flex-1 items-center last:flex-none"
 						>
-							<div className="flex flex-col items-center gap-1.5">
+							<div className="flex flex-col items-center gap-2">
 								<div
 									className={cn(
-										"flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-[11px] font-bold transition-all duration-500",
+										"relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-500",
 										isComplete &&
-											"border-primary bg-primary text-white",
+											"border-primary bg-primary text-white shadow-lg shadow-primary/30",
 										isActive &&
-											"border-primary bg-[#1a1f2e] text-primary shadow-primary/40",
+											"border-primary bg-primary/10 text-primary shadow-lg shadow-primary/20",
 										!isComplete &&
 											!isActive &&
-											"border-slate-700 bg-slate-800/50 text-slate-600",
+											"border-slate-700/50 bg-slate-800/30 text-slate-600",
 									)}
 									aria-current={isActive ? "step" : undefined}
 								>
 									{isComplete ? (
-										<Check className="h-3.5 w-3.5 stroke-[3]" />
+										<Check className="h-4 w-4 stroke-[3]" />
 									) : (
-										num
+										<Icon className="h-4 w-4" />
+									)}
+									{isActive && (
+										<span className="absolute inset-0 rounded-full animate-ping border border-primary/30" style={{ animationDuration: "2s" }} />
 									)}
 								</div>
 								<span
 									className={cn(
-										"whitespace-nowrap text-[9px] font-semibold uppercase tracking-widest transition-colors duration-300",
+										"whitespace-nowrap text-[10px] font-semibold uppercase tracking-widest transition-colors duration-300",
 										isActive && "text-primary",
 										isComplete && "text-primary/60",
 										!isActive && !isComplete && "text-slate-600",
@@ -122,11 +140,11 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 									{label}
 								</span>
 							</div>
-							{/* Connector */}
-							{i < STEP_LABELS.length - 1 && (
-								<div className="mx-2 mt-[15px] flex-1 h-[2px] overflow-hidden rounded-full bg-slate-800">
+							{/* Connector line */}
+							{i < STEPS.length - 1 && (
+								<div className="mx-3 mt-[-20px] flex-1 h-[2px] overflow-hidden rounded-full bg-slate-800/60">
 									<div
-										className="h-full rounded-full bg-primary transition-all duration-700"
+										className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-700 ease-out"
 										style={{ width: currentStep > num ? "100%" : "0%" }}
 									/>
 								</div>
@@ -150,10 +168,37 @@ function FormError({ message }: { message?: string }) {
 	if (!message) return null;
 	return (
 		<div
-			className="mb-5 rounded-lg border border-red-500/20 bg-red-500/[0.08] px-3.5 py-2.5 text-xs text-red-400"
+			className="mb-5 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/[0.08] px-3.5 py-2.5 text-xs text-red-400"
 			role="alert"
 		>
+			<span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-red-400" />
 			{message}
+		</div>
+	);
+}
+
+function StepHeader({
+	title,
+	description,
+	icon: Icon,
+}: {
+	title: string;
+	description: string;
+	icon?: React.ComponentType<{ className?: string }>;
+}) {
+	return (
+		<div className="text-center mb-7">
+			{Icon && (
+				<div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 border border-primary/20">
+					<Icon className="h-5 w-5 text-primary" />
+				</div>
+			)}
+			<h1 className="text-xl font-bold tracking-tight text-white">
+				{title}
+			</h1>
+			<p className="mt-1.5 text-sm text-slate-400">
+				{description}
+			</p>
 		</div>
 	);
 }
@@ -211,74 +256,73 @@ function Step1Account({
 
 	return (
 		<div className="p-6 sm:p-8">
-			<div className="mb-7">
-				<div className="mb-5 flex items-center gap-3">
-					<div className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-sm font-bold text-primary">
-						LD
-					</div>
-				</div>
-				<h1 className="text-xl font-bold tracking-tight text-white">
-					Create your admin account
-				</h1>
-				<p className="mt-1 text-sm text-slate-400">
-					You&apos;ll be the owner of this LinkDen instance.
-				</p>
-			</div>
+			<StepHeader
+				icon={User}
+				title="Create your admin account"
+				description="You'll be the owner of this LinkDen instance."
+			/>
 
 			<FormError message={formErrors.form} />
 
 			<div className="space-y-4">
-				<div>
+				<div className="space-y-1.5">
 					<Label
 						htmlFor="setup-name"
-						className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500"
+						className="text-sm font-medium text-slate-200"
 					>
 						Full Name
 					</Label>
-					<Input
-						id="setup-name"
-						value={name}
-						onChange={(e) => {
-							setName(e.target.value);
-							clear("name");
-						}}
-						placeholder="Your name"
-						className="h-11 border-white/10 bg-[#0f1318] text-slate-100 placeholder:text-slate-600 focus-visible:border-primary/50 focus-visible:ring-primary/30"
-						aria-invalid={!!formErrors.name}
-					/>
+					<div className="relative">
+						<User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+						<Input
+							id="setup-name"
+							value={name}
+							onChange={(e) => {
+								setName(e.target.value);
+								clear("name");
+							}}
+							placeholder="Your name"
+							className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10"
+							aria-invalid={!!formErrors.name}
+						/>
+					</div>
 					<FieldError message={formErrors.name} />
 				</div>
 
-				<div>
+				<div className="space-y-1.5">
 					<Label
 						htmlFor="setup-email"
-						className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500"
+						className="text-sm font-medium text-slate-200"
 					>
 						Email Address
 					</Label>
-					<Input
-						id="setup-email"
-						type="email"
-						value={email}
-						onChange={(e) => {
-							setEmail(e.target.value);
-							clear("email");
-						}}
-						placeholder="you@example.com"
-						className="h-11 border-white/10 bg-[#0f1318] text-slate-100 placeholder:text-slate-600 focus-visible:border-primary/50 focus-visible:ring-primary/30"
-						aria-invalid={!!formErrors.email}
-					/>
+					<div className="relative">
+						<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+						<Input
+							id="setup-email"
+							type="email"
+							value={email}
+							onChange={(e) => {
+								setEmail(e.target.value);
+								clear("email");
+							}}
+							placeholder="you@example.com"
+							className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10"
+							aria-invalid={!!formErrors.email}
+						/>
+					</div>
 					<FieldError message={formErrors.email} />
 				</div>
 
-				<div>
+				<div className="space-y-1.5">
 					<Label
 						htmlFor="setup-password"
-						className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500"
+						className="text-sm font-medium text-slate-200"
 					>
 						Password
 					</Label>
 					<div className="relative">
+						<Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
 						<Input
 							id="setup-password"
 							type={showPassword ? "text" : "password"}
@@ -288,13 +332,13 @@ function Step1Account({
 								clear("password");
 							}}
 							placeholder="At least 8 characters"
-							className="h-11 border-white/10 bg-[#0f1318] pr-11 text-slate-100 placeholder:text-slate-600 focus-visible:border-primary/50 focus-visible:ring-primary/30"
+							className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10 pr-11"
 							aria-invalid={!!formErrors.password}
 						/>
 						<button
 							type="button"
 							onClick={() => setShowPassword(!showPassword)}
-							className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-slate-600 transition-colors hover:text-slate-300"
+							className="absolute right-0.5 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center text-slate-500 hover:text-slate-200 transition-colors"
 							aria-label={showPassword ? "Hide password" : "Show password"}
 							aria-pressed={showPassword}
 						>
@@ -322,7 +366,7 @@ function Step1Account({
 					<Button
 						onClick={onSubmit}
 						disabled={isSubmitting}
-						className="bg-primary px-7 text-white shadow-lg shadow-primary/20 hover:bg-primary/90 active:scale-[0.98]"
+						className="w-full sm:w-auto shadow-lg shadow-primary/20 active:scale-[0.98]"
 					>
 						{isSubmitting ? (
 							<>
@@ -352,6 +396,7 @@ function Step2Profile({
 	bio,
 	setBio,
 	isSubmitting,
+	onBack,
 	onSkip,
 	onSubmit,
 }: {
@@ -360,43 +405,43 @@ function Step2Profile({
 	bio: string;
 	setBio: (v: string) => void;
 	isSubmitting: boolean;
+	onBack: () => void;
 	onSkip: () => void;
 	onSubmit: () => void;
 }) {
 	return (
 		<div className="p-6 sm:p-8">
-			<div className="mb-7">
-				<h1 className="text-xl font-bold tracking-tight text-white">
-					Set up your profile
-				</h1>
-				<p className="mt-1 text-sm text-slate-400">
-					This shows on your public LinkDen page. You can always update it
-					later.
-				</p>
-			</div>
+			<StepHeader
+				icon={Type}
+				title="Set up your profile"
+				description="This shows on your public LinkDen page. You can always update it later."
+			/>
 
 			<div className="space-y-5">
-				<div>
+				<div className="space-y-1.5">
 					<Label
 						htmlFor="profile-display-name"
-						className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500"
+						className="text-sm font-medium text-slate-200"
 					>
 						Display Name
 					</Label>
-					<Input
-						id="profile-display-name"
-						value={displayName}
-						onChange={(e) => setDisplayName(e.target.value)}
-						placeholder="How you want to be known"
-						className="h-11 border-white/10 bg-[#0f1318] text-slate-100 placeholder:text-slate-600 focus-visible:border-primary/50 focus-visible:ring-primary/30"
-					/>
+					<div className="relative">
+						<User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+						<Input
+							id="profile-display-name"
+							value={displayName}
+							onChange={(e) => setDisplayName(e.target.value)}
+							placeholder="How you want to be known"
+							className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10"
+						/>
+					</div>
 				</div>
 
 				<div>
 					<div className="mb-1.5 flex items-center justify-between">
 						<Label
 							htmlFor="profile-bio"
-							className="text-xs font-semibold uppercase tracking-wider text-slate-500"
+							className="text-sm font-medium text-slate-200"
 						>
 							Short Bio
 						</Label>
@@ -415,26 +460,36 @@ function Step2Profile({
 						onChange={(e) => setBio(e.target.value.slice(0, BIO_MAX))}
 						placeholder="A short description of what you do..."
 						rows={4}
-						className="w-full resize-none rounded-md border border-white/10 bg-[#0f1318] px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-600 transition-colors focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
+						className="w-full resize-none rounded-md border border-white/10 bg-[#0f1318] px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 transition-colors focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
 					/>
 				</div>
 			</div>
 
 			<CardFooter
 				left={
-					<button
-						type="button"
-						onClick={onSkip}
-						className="text-xs font-medium text-slate-500 transition-colors hover:text-slate-300"
-					>
-						Skip for now
-					</button>
+					<div className="flex items-center gap-3">
+						<button
+							type="button"
+							onClick={onBack}
+							className="flex items-center gap-1 text-xs font-medium text-slate-500 transition-colors hover:text-slate-300"
+						>
+							<ArrowLeft className="h-3 w-3" />
+							Back
+						</button>
+						<button
+							type="button"
+							onClick={onSkip}
+							className="text-xs font-medium text-slate-500 transition-colors hover:text-slate-300"
+						>
+							Skip
+						</button>
+					</div>
 				}
 				right={
 					<Button
 						onClick={onSubmit}
 						disabled={isSubmitting || bio.length > BIO_MAX}
-						className="bg-primary px-7 text-white shadow-lg shadow-primary/20 hover:bg-primary/90 active:scale-[0.98]"
+						className="shadow-lg shadow-primary/20 active:scale-[0.98]"
 					>
 						{isSubmitting ? (
 							<>
@@ -478,8 +533,8 @@ function ThemeCard({
 			className={cn(
 				"group relative flex flex-col overflow-hidden rounded-xl border-2 transition-all duration-200",
 				selected
-					? "border-primary shadow-primary/35"
-					: "border-white/10 hover:border-white/20",
+					? "border-primary shadow-lg shadow-primary/20 scale-[1.02]"
+					: "border-white/10 hover:border-white/20 hover:shadow-md hover:shadow-white/5",
 			)}
 			aria-pressed={selected}
 			title={preset.label}
@@ -534,29 +589,24 @@ function Step3Customize({
 	themePreset,
 	setThemePreset,
 	isSubmitting,
+	onBack,
 	onSkip,
 	onSubmit,
 }: {
 	themePreset: string;
 	setThemePreset: (v: string) => void;
 	isSubmitting: boolean;
+	onBack: () => void;
 	onSkip: () => void;
 	onSubmit: () => void;
 }) {
 	return (
 		<div className="p-6 sm:p-8">
-			<div className="mb-6">
-				<div className="mb-3 flex items-center gap-2">
-					<Palette className="h-4 w-4 text-primary" />
-					<h1 className="text-xl font-bold tracking-tight text-white">
-						Choose a theme
-					</h1>
-				</div>
-				<p className="text-sm text-slate-400">
-					Pick a look for your public page. You can customize everything in
-					detail later.
-				</p>
-			</div>
+			<StepHeader
+				icon={Palette}
+				title="Choose a theme"
+				description="Pick a look for your public page. You can customize everything in detail later."
+			/>
 
 			<div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
 				{themePresets.map((preset) => (
@@ -571,19 +621,29 @@ function Step3Customize({
 
 			<CardFooter
 				left={
-					<button
-						type="button"
-						onClick={onSkip}
-						className="text-xs font-medium text-slate-500 transition-colors hover:text-slate-300"
-					>
-						Skip for now
-					</button>
+					<div className="flex items-center gap-3">
+						<button
+							type="button"
+							onClick={onBack}
+							className="flex items-center gap-1 text-xs font-medium text-slate-500 transition-colors hover:text-slate-300"
+						>
+							<ArrowLeft className="h-3 w-3" />
+							Back
+						</button>
+						<button
+							type="button"
+							onClick={onSkip}
+							className="text-xs font-medium text-slate-500 transition-colors hover:text-slate-300"
+						>
+							Skip
+						</button>
+					</div>
 				}
 				right={
 					<Button
 						onClick={onSubmit}
 						disabled={isSubmitting}
-						className="bg-primary px-7 text-white shadow-lg shadow-primary/20 hover:bg-primary/90 active:scale-[0.98]"
+						className="shadow-lg shadow-primary/20 active:scale-[0.98]"
 					>
 						{isSubmitting ? (
 							<>
@@ -592,8 +652,8 @@ function Step3Customize({
 							</>
 						) : (
 							<>
-								Finish
-								<Check className="ml-1.5 h-3.5 w-3.5 stroke-[2.5]" />
+								Finish Setup
+								<Sparkles className="ml-1.5 h-3.5 w-3.5" />
 							</>
 						)}
 					</Button>
@@ -635,7 +695,7 @@ function Step4Done({
 
 			<Button
 				onClick={onContinue}
-				className="h-11 w-full bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary/90 active:scale-[0.98]"
+				className="h-11 w-full shadow-lg shadow-primary/20 active:scale-[0.98]"
 			>
 				<Rocket className="mr-2 h-4 w-4" />
 				Open Dashboard
@@ -820,12 +880,13 @@ export default function SetupPage() {
 
 	return (
 		<div className="login-bg flex min-h-screen flex-col items-center justify-center p-4 sm:p-6">
-			<div className="login-card-enter w-full max-w-[460px]">
+			<div className="login-card-enter w-full max-w-[480px]">
 				{step < 4 && <StepIndicator currentStep={step} />}
 				{devBypass && <PreviewBanner />}
 
 				<div
-					className="overflow-hidden rounded-2xl border border-white/[0.06] bg-[#1a1f2e] shadow-2xl ring-1 ring-primary/10"
+					className="overflow-hidden rounded-xl border border-white/[0.06] bg-[#1a1f2e] shadow-2xl"
+					style={cardStyle}
 				>
 					{step === 1 && (
 						<Step1Account
@@ -850,6 +911,7 @@ export default function SetupPage() {
 							bio={bio}
 							setBio={setBio}
 							isSubmitting={isSubmitting}
+							onBack={() => goStep(1)}
 							onSkip={() => goStep(3)}
 							onSubmit={handleProfileSubmit}
 						/>
@@ -862,6 +924,7 @@ export default function SetupPage() {
 								saveProgress({ themePreset: v });
 							}}
 							isSubmitting={isSubmitting}
+							onBack={() => goStep(2)}
 							onSkip={() => {
 								clearProgress();
 								goStep(4);
