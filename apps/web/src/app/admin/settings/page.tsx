@@ -6,6 +6,14 @@ import { toast } from "sonner";
 import {
 	Save,
 	Undo2,
+	Globe,
+	Search,
+	Mail,
+	Shield,
+	Database,
+	ArrowDownUp,
+	Settings2,
+	Palette,
 } from "lucide-react";
 import { trpc } from "@/utils/trpc";
 import { Card, CardContent } from "@/components/ui/card";
@@ -107,6 +115,39 @@ function buildSavedState(s: Record<string, string>): SavedState {
 		footerBrandingLink: s.branding_link ?? "",
 		timezone: s.timezone ?? "",
 	};
+}
+
+function SectionCard({
+	icon: Icon,
+	title,
+	description,
+	children,
+}: {
+	icon: React.ElementType;
+	title: string;
+	description?: string;
+	children: React.ReactNode;
+}) {
+	return (
+		<Card className="overflow-hidden">
+			<CardContent className="pt-0">
+				<div className="flex items-start gap-3 border-b border-border/50 py-4 -mx-6 px-6 mb-4">
+					<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400">
+						<Icon className="h-4 w-4" />
+					</div>
+					<div className="min-w-0">
+						<h2 className="text-sm font-semibold">{title}</h2>
+						{description && (
+							<p className="mt-0.5 text-[11px] text-muted-foreground">
+								{description}
+							</p>
+						)}
+					</div>
+				</div>
+				{children}
+			</CardContent>
+		</Card>
+	);
 }
 
 export default function SettingsPage() {
@@ -428,143 +469,157 @@ export default function SettingsPage() {
 				}
 			/>
 
-			<Card>
-				<CardContent className="pt-4 space-y-4">
-					<h2 className="text-sm font-semibold">Branding</h2>
-					<BrandingSection
-						siteName={siteName}
-						logoUrl={logoUrl}
-						faviconUrl={faviconUrl}
-						ppUrl={ppUrl}
-						tosUrl={tosUrl}
-						ppMode={ppMode}
-						tosMode={tosMode}
-						ppText={ppText}
-						tosText={tosText}
-						adminBrandingEnabled={adminBrandingEnabled}
-						footerBrandingEnabled={footerBrandingEnabled}
-						footerBrandingText={footerBrandingText}
-						footerBrandingLink={footerBrandingLink}
-						profileName={settingsQuery.data?.profile_name ?? ""}
-						onSiteNameChange={setSiteName}
-						onLogoUrlChange={setLogoUrl}
-						onFaviconUrlChange={setFaviconUrl}
-						onPpUrlChange={setPpUrl}
-						onTosUrlChange={setTosUrl}
-						onPpModeChange={setPpMode}
-						onTosModeChange={setTosMode}
-						onPpTextChange={setPpText}
-						onTosTextChange={setTosText}
-						onAdminBrandingEnabledChange={setAdminBrandingEnabled}
-						onFooterBrandingEnabledChange={setFooterBrandingEnabled}
-						onFooterBrandingTextChange={setFooterBrandingText}
-						onFooterBrandingLinkChange={setFooterBrandingLink}
-					/>
-				</CardContent>
-			</Card>
+			{/* SEO & Open Graph */}
+			<SectionCard
+				icon={Search}
+				title="SEO & Open Graph"
+				description="Control how your page appears in search results and social media shares"
+			>
+				<SeoSection
+					seoTitle={seoTitle}
+					seoDescription={seoDescription}
+					seoOgImage={seoOgImage}
+					seoOgMode={seoOgMode}
+					seoOgTemplate={seoOgTemplate}
+					profileName={settingsQuery.data?.profile_name ?? ""}
+					bio={settingsQuery.data?.bio ?? ""}
+					primaryColor={settingsQuery.data?.custom_primary ?? "#6366f1"}
+					avatarUrl={settingsQuery.data?.avatar_url ?? ""}
+					onSeoTitleChange={setSeoTitle}
+					onSeoDescriptionChange={setSeoDescription}
+					onSeoOgImageChange={setSeoOgImage}
+					onSeoOgModeChange={setSeoOgMode}
+					onSeoOgTemplateChange={setSeoOgTemplate}
+				/>
+			</SectionCard>
 
-			<Card>
-				<CardContent className="pt-4 space-y-4">
-					<h2 className="text-sm font-semibold">SEO</h2>
-					<SeoSection
-						seoTitle={seoTitle}
-						seoDescription={seoDescription}
-						seoOgImage={seoOgImage}
-						seoOgMode={seoOgMode}
-						seoOgTemplate={seoOgTemplate}
-						profileName={settingsQuery.data?.profile_name ?? ""}
-						bio={settingsQuery.data?.bio ?? ""}
-						primaryColor={settingsQuery.data?.custom_primary ?? "#6366f1"}
-						avatarUrl={settingsQuery.data?.avatar_url ?? ""}
-						onSeoTitleChange={setSeoTitle}
-						onSeoDescriptionChange={setSeoDescription}
-						onSeoOgImageChange={setSeoOgImage}
-						onSeoOgModeChange={setSeoOgMode}
-						onSeoOgTemplateChange={setSeoOgTemplate}
-					/>
-				</CardContent>
-			</Card>
+			{/* Site Configuration */}
+			<SectionCard
+				icon={Settings2}
+				title="Site Configuration"
+				description="Timezone and regional preferences"
+			>
+				<div className="space-y-1.5">
+					<label htmlFor="timezone-select" className="text-xs font-medium text-muted-foreground">
+						Timezone
+					</label>
+					<select
+						id="timezone-select"
+						value={timezone}
+						onChange={(e) => setTimezone(e.target.value)}
+						className="dark:bg-input/30 border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
+					>
+						<option value="">Browser default ({Intl.DateTimeFormat().resolvedOptions().timeZone})</option>
+						{COMMON_TIMEZONES.map((tz) => (
+							<option key={tz.value} value={tz.value}>
+								{tz.label}
+							</option>
+						))}
+					</select>
+					<p className="text-[11px] text-muted-foreground">
+						Used for timestamps on the dashboard. Defaults to your browser&apos;s timezone.
+					</p>
+				</div>
+			</SectionCard>
 
-			<Card>
-				<CardContent className="pt-4 space-y-4">
-					<h2 className="text-sm font-semibold">Security</h2>
-					<CaptchaSection
-						captchaProvider={captchaProvider}
-						captchaSiteKey={captchaSiteKey}
-						captchaSecretKey={captchaSecretKey}
-						onCaptchaProviderChange={setCaptchaProvider}
-						onCaptchaSiteKeyChange={setCaptchaSiteKey}
-						onCaptchaSecretKeyChange={setCaptchaSecretKey}
-					/>
-				</CardContent>
-			</Card>
+			{/* Branding */}
+			<SectionCard
+				icon={Palette}
+				title="Branding"
+				description="Customize your site name, logo, favicon, and footer"
+			>
+				<BrandingSection
+					siteName={siteName}
+					logoUrl={logoUrl}
+					faviconUrl={faviconUrl}
+					ppUrl={ppUrl}
+					tosUrl={tosUrl}
+					ppMode={ppMode}
+					tosMode={tosMode}
+					ppText={ppText}
+					tosText={tosText}
+					adminBrandingEnabled={adminBrandingEnabled}
+					footerBrandingEnabled={footerBrandingEnabled}
+					footerBrandingText={footerBrandingText}
+					footerBrandingLink={footerBrandingLink}
+					profileName={settingsQuery.data?.profile_name ?? ""}
+					onSiteNameChange={setSiteName}
+					onLogoUrlChange={setLogoUrl}
+					onFaviconUrlChange={setFaviconUrl}
+					onPpUrlChange={setPpUrl}
+					onTosUrlChange={setTosUrl}
+					onPpModeChange={setPpMode}
+					onTosModeChange={setTosMode}
+					onPpTextChange={setPpText}
+					onTosTextChange={setTosText}
+					onAdminBrandingEnabledChange={setAdminBrandingEnabled}
+					onFooterBrandingEnabledChange={setFooterBrandingEnabled}
+					onFooterBrandingTextChange={setFooterBrandingText}
+					onFooterBrandingLinkChange={setFooterBrandingLink}
+				/>
+			</SectionCard>
 
-			<Card>
-				<CardContent className="pt-4 space-y-4">
-					<h2 className="text-sm font-semibold">Email</h2>
-					<EmailSection
-						emailProvider={emailProvider}
-						emailApiKey={emailApiKey}
-						emailFrom={emailFrom}
-						onEmailProviderChange={setEmailProvider}
-						onEmailApiKeyChange={setEmailApiKey}
-						onEmailFromChange={setEmailFrom}
-					/>
-				</CardContent>
-			</Card>
+			{/* Email Provider */}
+			<SectionCard
+				icon={Mail}
+				title="Email Provider"
+				description="Configure the email service for notifications and auth emails"
+			>
+				<EmailSection
+					emailProvider={emailProvider}
+					emailApiKey={emailApiKey}
+					emailFrom={emailFrom}
+					onEmailProviderChange={setEmailProvider}
+					onEmailApiKeyChange={setEmailApiKey}
+					onEmailFromChange={setEmailFrom}
+				/>
+			</SectionCard>
 
-			<Card>
-				<CardContent className="pt-4 space-y-4">
-					<h2 className="text-sm font-semibold">Data & Info</h2>
-					<DataSection
-						onExport={handleExport}
-						onImport={handleImport}
-						isExporting={exportData.isFetching}
-						isImporting={importData.isPending}
-						fileInputRef={fileInputRef}
-						versionCheck={versionCheck.data ?? null}
-						onCheckUpdates={() =>
-							qc.invalidateQueries({
-								queryKey: trpc.version.checkUpdate.queryOptions().queryKey,
-							})
-						}
-					/>
-				</CardContent>
-			</Card>
+			{/* Security */}
+			<SectionCard
+				icon={Shield}
+				title="Security"
+				description="CAPTCHA and bot protection settings"
+			>
+				<CaptchaSection
+					captchaProvider={captchaProvider}
+					captchaSiteKey={captchaSiteKey}
+					captchaSecretKey={captchaSecretKey}
+					onCaptchaProviderChange={setCaptchaProvider}
+					onCaptchaSiteKeyChange={setCaptchaSiteKey}
+					onCaptchaSecretKeyChange={setCaptchaSecretKey}
+				/>
+			</SectionCard>
 
-			<Card>
-				<CardContent className="pt-4 space-y-4">
-					<h2 className="text-sm font-semibold">Regional</h2>
-					<div className="space-y-1.5">
-						<label htmlFor="timezone-select" className="text-xs font-medium text-muted-foreground">
-							Timezone
-						</label>
-						<select
-							id="timezone-select"
-							value={timezone}
-							onChange={(e) => setTimezone(e.target.value)}
-							className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-						>
-							<option value="">Browser default ({Intl.DateTimeFormat().resolvedOptions().timeZone})</option>
-							{COMMON_TIMEZONES.map((tz) => (
-								<option key={tz.value} value={tz.value}>
-									{tz.label}
-								</option>
-							))}
-						</select>
-						<p className="text-[11px] text-muted-foreground">
-							Used for timestamps on the dashboard. Defaults to your browser&apos;s timezone.
-						</p>
-					</div>
-				</CardContent>
-			</Card>
+			{/* Data & Info */}
+			<SectionCard
+				icon={Database}
+				title="Data & Info"
+				description="Export, import, and version information"
+			>
+				<DataSection
+					onExport={handleExport}
+					onImport={handleImport}
+					isExporting={exportData.isFetching}
+					isImporting={importData.isPending}
+					fileInputRef={fileInputRef}
+					versionCheck={versionCheck.data ?? null}
+					onCheckUpdates={() =>
+						qc.invalidateQueries({
+							queryKey: trpc.version.checkUpdate.queryOptions().queryKey,
+						})
+					}
+				/>
+			</SectionCard>
 
-			<Card>
-				<CardContent className="pt-4 space-y-4">
-					<h2 className="text-sm font-semibold">Migration</h2>
-					<MigrationSection onImportComplete={invalidate} />
-				</CardContent>
-			</Card>
+			{/* Migration */}
+			<SectionCard
+				icon={ArrowDownUp}
+				title="Migration"
+				description="Import data from other link-in-bio platforms"
+			>
+				<MigrationSection onImportComplete={invalidate} />
+			</SectionCard>
 		</div>
 	);
 }
