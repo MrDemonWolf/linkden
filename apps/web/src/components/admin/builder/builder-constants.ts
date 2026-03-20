@@ -1,18 +1,16 @@
 import {
 	Link as LinkIcon,
 	Type,
-	Share2,
 	Code,
-	MessageSquare,
+	Handshake,
 	Contact,
 } from "lucide-react";
 
 export const BLOCK_TYPES = [
 	{ type: "link" as const, label: "Link", icon: LinkIcon, description: "A clickable link button" },
 	{ type: "header" as const, label: "Header", icon: Type, description: "A text header/divider" },
-	{ type: "social_icons" as const, label: "Social Icons", icon: Share2, description: "Row of social media icons" },
 	{ type: "embed" as const, label: "Embed", icon: Code, description: "YouTube, Spotify, or other embed" },
-	{ type: "form" as const, label: "Form", icon: MessageSquare, description: "Customizable form with presets" },
+	{ type: "connect" as const, label: "Connect", icon: Handshake, description: "Connect With Me form" },
 	{ type: "vcard" as const, label: "vCard", icon: Contact, description: "Download contact card button" },
 ] as const;
 
@@ -26,7 +24,6 @@ export interface Block {
 	icon: string | null;
 	embedType: string | null;
 	embedUrl: string | null;
-	socialIcons: string | null;
 	isEnabled: boolean;
 	position: number;
 	status: "published" | "draft";
@@ -84,9 +81,8 @@ export function blockTypeColor(type: string): string {
 	const map: Record<string, string> = {
 		link: "hsl(var(--primary))",
 		header: "#7C3AED",
-		social_icons: "#3B82F6",
 		embed: "#10B981",
-		form: "#F59E0B",
+		connect: "#3B82F6",
 		vcard: "#EC4899",
 	};
 	return map[type] ?? "hsl(var(--muted))";
@@ -95,17 +91,15 @@ export function blockTypeColor(type: string): string {
 export const TYPE_ACCENT: Record<string, string> = {
 	link: "bg-blue-500",
 	header: "bg-violet-500",
-	social_icons: "bg-emerald-500",
 	embed: "bg-amber-500",
-	form: "bg-pink-500",
+	connect: "bg-blue-500",
 	vcard: "bg-teal-500",
 };
 
 export const TYPE_BADGE_BG: Record<string, string> = {
 	link: "bg-blue-500/10 text-blue-400",
 	header: "bg-violet-500/10 text-violet-400",
-	social_icons: "bg-emerald-500/10 text-emerald-400",
 	embed: "bg-amber-500/10 text-amber-400",
-	form: "bg-pink-500/10 text-pink-400",
+	connect: "bg-blue-500/10 text-blue-400",
 	vcard: "bg-teal-500/10 text-teal-400",
 };

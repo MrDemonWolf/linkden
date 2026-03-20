@@ -11,7 +11,6 @@ import {
 	Mail,
 	Palette,
 	Settings,
-	Share2,
 	Wallet,
 	Menu,
 	X,
@@ -43,7 +42,6 @@ const NAV_GROUPS = [
 		label: "Engage",
 		items: [
 			{ href: "/admin/analytics" as const, label: "Analytics", icon: BarChart3 },
-			{ href: "/admin/social" as const, label: "Social", icon: Share2 },
 			{ href: "/admin/forms" as const, label: "Forms", icon: Mail },
 		],
 	},
