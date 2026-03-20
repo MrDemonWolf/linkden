@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Eye, EyeOff, AlertCircle, Loader2, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, Loader2, Mail } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
@@ -228,19 +228,16 @@ export default function AdminLoginPage() {
 									<Label htmlFor="forgot-email" className="text-sm font-medium text-slate-200">
 										Email Address
 									</Label>
-									<div className="relative">
-										<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-										<Input
-											id="forgot-email"
-											type="email"
-											placeholder="you@example.com"
-											value={email}
-											onChange={(e) => setEmail(e.target.value)}
-											autoComplete="email"
-											className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10"
-											required
-										/>
-									</div>
+									<Input
+										id="forgot-email"
+										type="email"
+										placeholder="you@example.com"
+										value={email}
+										onChange={(e) => setEmail(e.target.value)}
+										autoComplete="email"
+										className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary"
+										required
+									/>
 								</div>
 
 								<Button
@@ -305,19 +302,16 @@ export default function AdminLoginPage() {
 									<Label htmlFor="email" className="text-sm font-medium text-slate-200">
 										Email Address
 									</Label>
-									<div className="relative">
-										<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-										<Input
-											id="email"
-											type="email"
-											placeholder="you@example.com"
-											value={email}
-											onChange={(e) => setEmail(e.target.value)}
-											autoComplete="email"
-											className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10"
-											required
-										/>
-									</div>
+									<Input
+										id="email"
+										type="email"
+										placeholder="you@example.com"
+										value={email}
+										onChange={(e) => setEmail(e.target.value)}
+										autoComplete="email"
+										className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary"
+										required
+									/>
 								</div>
 
 								<div className="space-y-1.5">
@@ -334,7 +328,6 @@ export default function AdminLoginPage() {
 										</button>
 									</div>
 									<div className="relative">
-										<Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
 										<Input
 											id="password"
 											type={showPassword ? "text" : "password"}
@@ -342,7 +335,7 @@ export default function AdminLoginPage() {
 											value={password}
 											onChange={(e) => setPassword(e.target.value)}
 											autoComplete="current-password"
-											className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10"
+											className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary"
 										/>
 										<button
 											type="button"
@@ -422,7 +415,7 @@ export default function AdminLoginPage() {
 					)}
 
 					{/* Below-card link */}
-					{!loginSuccess && !magicLinkSent && !resetLinkSent && (
+					{!loginSuccess && !magicLinkSent && !resetLinkSent && hasUsersQuery.data?.hasUsers === false && (
 						<p className="mt-4 text-center text-xs text-slate-500">
 							Don&apos;t have an account?{" "}
 							<a href="/admin/setup" className="text-primary hover:text-primary/80 transition-colors">

@@ -35,7 +35,8 @@ const COMMON_TIMEZONES = [
 	{ label: "UTC", value: "UTC" },
 	{ label: "London (GMT/BST)", value: "Europe/London" },
 	{ label: "Paris / Berlin / Rome", value: "Europe/Paris" },
-	{ label: "Helsinki / Kyiv", value: "Europe/Helsinki" },
+	{ label: "Helsinki", value: "Europe/Helsinki" },
+	{ label: "Kyiv", value: "Europe/Kyiv" },
 	{ label: "Moscow", value: "Europe/Moscow" },
 	{ label: "Istanbul", value: "Europe/Istanbul" },
 	// Asia/Pacific

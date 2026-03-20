@@ -52,6 +52,7 @@ const NAV_GROUPS = [
 		items: [
 			{ href: "/admin/wallet" as const, label: "Wallet", icon: Wallet },
 			{ href: "/admin/settings" as const, label: "Settings", icon: Settings },
+			{ href: "/admin/profile" as const, label: "Profile", icon: User },
 		],
 	},
 ] as const;
@@ -283,7 +284,7 @@ export default function AdminLayout({
 	});
 
 	const brandingQuery = useQuery({
-		...trpc.settings.get.queryOptions({ key: "branding_enabled" }),
+		...trpc.settings.get.queryOptions({ key: "admin_branding_enabled" }),
 		enabled: !!session?.user,
 	});
 
@@ -303,6 +304,15 @@ export default function AdminLayout({
 
 	const isPublicRoute =
 		pathname === "/admin/login" || pathname === "/admin/setup" || pathname === "/admin/reset-password" || pathname.startsWith("/admin/reset-password");
+
+	// Register service worker for PWA support
+	useEffect(() => {
+		if ("serviceWorker" in navigator) {
+			navigator.serviceWorker
+				.register("/sw.js", { scope: "/admin" })
+				.catch(() => {});
+		}
+	}, []);
 
 	useEffect(() => {
 		if (!isPending && !session?.user && !isPublicRoute) {

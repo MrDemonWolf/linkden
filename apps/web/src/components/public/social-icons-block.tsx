@@ -95,7 +95,9 @@ export function SocialIconsBlock({
 		<div role="listitem" className="ld-social-block flex flex-col py-2">
 			<div className={`flex flex-wrap items-center ${justifyClasses[alignment] || "justify-center"} ${gapClasses[spacing] || "gap-3"}`}>
 				{items.map((item) => {
-					const contrastBg = iconStyle === "bare" ? themeColors?.bg : themeColors?.muted;
+					const contrastBg = iconStyle === "bare"
+						? themeColors?.bg
+						: colorMode === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)";
 					const fill = item.hex && contrastBg && themeColors?.fg
 						? getAccessibleIconFill(item.hex, contrastBg, themeColors.fg)
 						: item.hex || "currentColor";
@@ -120,12 +122,12 @@ export function SocialIconsBlock({
 											outlineColor: themeColors?.primary,
 											backgroundColor: colorMode === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
 											borderColor: colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
-											transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
+											transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, transform 0.2s ease, opacity 0.2s ease",
 										}
 									: {
 											color: themeColors?.mutedFg || (colorMode === "dark" ? "#d1d5db" : "#4b5563"),
 											outlineColor: themeColors?.primary,
-											transition: "color 0.5s ease",
+											transition: "color 0.5s ease, transform 0.2s ease, opacity 0.2s ease",
 										}
 							}
 							aria-label={item.platform}

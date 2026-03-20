@@ -95,18 +95,29 @@ export default function AdminDashboardPage() {
 
 	const { greeting, firstName, formattedDate } = useMemo(() => {
 		const now = new Date();
-		const hour = new Date(
-			now.toLocaleString("en-US", { timeZone: timezone }),
-		).getHours();
 		const name = session?.user?.name ?? "";
 		const first = name.split(" ")[0] || "there";
-		const date = now.toLocaleDateString("en-US", {
-			timeZone: timezone,
-			weekday: "short",
-			month: "short",
-			day: "numeric",
-		});
-		return { greeting: getGreeting(hour), firstName: first, formattedDate: date };
+		try {
+			const hour = new Date(
+				now.toLocaleString("en-US", { timeZone: timezone }),
+			).getHours();
+			const date = now.toLocaleDateString("en-US", {
+				timeZone: timezone,
+				weekday: "short",
+				month: "short",
+				day: "numeric",
+			});
+			return { greeting: getGreeting(hour), firstName: first, formattedDate: date };
+		} catch {
+			// Invalid timezone from DB — fall back to browser default
+			const hour = now.getHours();
+			const date = now.toLocaleDateString("en-US", {
+				weekday: "short",
+				month: "short",
+				day: "numeric",
+			});
+			return { greeting: getGreeting(hour), firstName: first, formattedDate: date };
+		}
 	}, [session, timezone]);
 
 	const totalViews = (overview.data?.totalViews ?? 0) as number;
