@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
 import { toast } from "sonner";
 import {
 	Plus,
 	Upload,
-	ArrowUpRight,
 	Blocks,
 } from "lucide-react";
 import {
@@ -30,9 +28,7 @@ import {
 } from "@dnd-kit/sortable";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { socialBrandMap } from "@linkden/ui/social-brands";
 import { EmptyState } from "@/components/admin/empty-state";
 import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
@@ -42,49 +38,6 @@ import { BlockEditPanel } from "@/components/admin/builder/block-edit-panel";
 import { BlockRow } from "@/components/admin/builder/block-row";
 import { BLOCK_TYPES, TYPE_BADGE_BG, type BlockType, type Block, generateId } from "@/components/admin/builder/builder-constants";
 import { toast as sonnerToast } from "sonner";
-
-function SocialNetworksSection({
-	socialNetworks,
-}: {
-	socialNetworks: Array<{ slug: string; name: string; url: string; hex: string; svgPath: string }>;
-}) {
-	if (socialNetworks.length === 0) return null;
-	return (
-		<Card>
-			<CardContent className="flex items-center justify-between py-3">
-				<div>
-					<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-						Social Networks
-					</p>
-					<div className="mt-1.5 flex flex-wrap gap-1.5">
-						{socialNetworks.slice(0, 5).map((n) => (
-							<div
-								key={n.slug}
-								className="flex h-6 w-6 items-center justify-center rounded-full"
-								style={{ background: n.hex }}
-								title={n.name}
-							>
-								<svg viewBox="0 0 24 24" className="h-3 w-3 fill-white">
-									<path d={n.svgPath} />
-								</svg>
-							</div>
-						))}
-						{socialNetworks.length > 5 && (
-							<span className="text-[10px] text-muted-foreground self-center">
-								+{socialNetworks.length - 5} more
-							</span>
-						)}
-					</div>
-				</div>
-				<Link href="/admin/social">
-					<Button variant="ghost" size="xs">
-						Manage <ArrowUpRight className="h-3 w-3" />
-					</Button>
-				</Link>
-			</CardContent>
-		</Card>
-	);
-}
 
 export default function BuilderPage() {
 	const qc = useQueryClient();
@@ -100,8 +53,6 @@ export default function BuilderPage() {
 	const hasDraftQuery = useQuery(trpc.blocks.hasDraft.queryOptions());
 	const hasDrafts = hasDraftQuery.data?.hasDraft ?? false;
 	const settingsQuery = useQuery(trpc.settings.getAll.queryOptions());
-	const socialsQuery = useQuery(trpc.social.list.queryOptions({ activeOnly: true }));
-
 	useUnsavedChanges(hasDrafts);
 
 	useEffect(() => {
@@ -115,17 +66,6 @@ export default function BuilderPage() {
 			setNewlyAddedId(null);
 		}
 	}, [newlyAddedId, blocks]);
-
-	const previewSocialNetworks = useMemo(() => {
-		return (socialsQuery.data ?? [])
-			.filter((s: { isActive: boolean; url: string }) => s.isActive && s.url)
-			.map((s: { slug: string; url: string }) => {
-				const brand = socialBrandMap.get(s.slug);
-				if (!brand) return null;
-				return { slug: s.slug, name: brand.name, url: s.url, hex: brand.hex, svgPath: brand.svgPath };
-			})
-			.filter(Boolean) as Array<{ slug: string; name: string; url: string; hex: string; svgPath: string }>;
-	}, [socialsQuery.data]);
 
 	const updateSettings = useMutation(trpc.settings.updateBulk.mutationOptions());
 	const contactDelivery = settingsQuery.data?.contact_delivery ?? "database";
@@ -148,9 +88,8 @@ export default function BuilderPage() {
 		const defaults: Record<string, string> = {
 			link: "New Link",
 			header: "Section Header",
-			social_icons: "Social Icons",
 			embed: "Embed",
-			form: "Form",
+			connect: "Connect With Me",
 			vcard: "Download Contact",
 		};
 		const defaultConfigs: Partial<Record<string, string>> = {
@@ -201,7 +140,6 @@ export default function BuilderPage() {
 				icon: data.icon ?? undefined,
 				embedType: data.embedType ?? undefined,
 				embedUrl: data.embedUrl ?? undefined,
-				socialIcons: data.socialIcons ?? undefined,
 				config: data.config ?? undefined,
 				scheduledStart: data.scheduledStart,
 				scheduledEnd: data.scheduledEnd,
@@ -255,7 +193,6 @@ export default function BuilderPage() {
 			icon: b.icon,
 			embedType: b.embedType,
 			embedUrl: b.embedUrl,
-			socialIcons: b.socialIcons,
 			config: b.config,
 			position: b.position,
 		};
@@ -386,8 +323,6 @@ export default function BuilderPage() {
 						)}
 					</div>
 
-					{/* Social Networks section */}
-					<SocialNetworksSection socialNetworks={previewSocialNetworks} />
 				</div>
 
 				{/* Right: edit panel or preview */}
@@ -402,7 +337,6 @@ export default function BuilderPage() {
 								onSave={handleSaveEdit}
 								isSaving={updateBlock.isPending}
 								contactDelivery={contactDelivery}
-								socialNetworks={previewSocialNetworks}
 								onDeliveryChange={async (value) => {
 									try {
 										await updateSettings.mutateAsync([

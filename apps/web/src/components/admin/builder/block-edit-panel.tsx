@@ -1,14 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import { useTheme } from "next-themes";
-import { X, ExternalLink, Plus, Trash2 } from "lucide-react";
-import { getAccessibleIconFill, isLowLuminance } from "@linkden/ui/color-contrast";
+import { X, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn, getAdminThemeColors } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { type Block, EMBED_URL_PATTERNS, validateEmbedUrl } from "./builder-constants";
 import { CollapsibleSection } from "./collapsible-section";
 
@@ -126,17 +123,14 @@ export function BlockEditPanel({
 	isSaving: boolean;
 	contactDelivery: string;
 	onDeliveryChange: (value: string) => void;
-	socialNetworks?: Array<{ slug: string; name: string; url: string; hex: string; svgPath: string }>;
 	onChange?: (data: Partial<Block>) => void;
 }) {
-	const { resolvedTheme } = useTheme();
 	const panelRef = useRef<HTMLDivElement>(null);
 	const [title, setTitle] = useState(block.title ?? "");
 	const [url, setUrl] = useState(block.url ?? "");
 	const [icon, setIcon] = useState(block.icon ?? "");
 	const [embedType, setEmbedType] = useState(block.embedType ?? "");
 	const [embedUrl, setEmbedUrl] = useState(block.embedUrl ?? "");
-	const [socialIcons, setSocialIcons] = useState(block.socialIcons ?? "");
 	const [config, setConfig] = useState(block.config ?? "{}");
 	const [scheduledStart, setScheduledStart] = useState(
 		block.scheduledStart ? new Date(block.scheduledStart).toISOString().slice(0, 16) : "",
@@ -154,12 +148,11 @@ export function BlockEditPanel({
 			icon: icon || null,
 			embedType: embedType || null,
 			embedUrl: embedUrl || null,
-			socialIcons: socialIcons || null,
 			config: config || null,
 			scheduledStart: scheduledStart ? new Date(scheduledStart) : null,
 			scheduledEnd: scheduledEnd ? new Date(scheduledEnd) : null,
 		});
-	}, [title, url, icon, config, embedType, embedUrl, socialIcons, scheduledStart, scheduledEnd]);
+	}, [title, url, icon, config, embedType, embedUrl, scheduledStart, scheduledEnd]);
 
 	// Auto-focus first input when panel opens
 	useEffect(() => {
@@ -193,7 +186,6 @@ export function BlockEditPanel({
 			icon: icon || null,
 			embedType: embedType || null,
 			embedUrl: embedUrl || null,
-			socialIcons: socialIcons || null,
 			config: config || null,
 			scheduledStart: scheduledStart ? new Date(scheduledStart) : null,
 			scheduledEnd: scheduledEnd ? new Date(scheduledEnd) : null,
@@ -287,41 +279,31 @@ export function BlockEditPanel({
 							</>
 						)}
 
-						{block.type === "form" && (
+						{block.type === "connect" && (
 							<>
 								<div className="space-y-1.5">
-									<Label htmlFor="edit-preset">Preset</Label>
-									<GlassSelect
-										id="edit-preset"
-										value={parsedConfig.preset ?? "contact"}
-										onChange={(v) => {
-											updateConfigField("preset", v);
-											const presetDefaults: Record<string, { buttonText: string; buttonEmoji?: string; successMessage?: string; showPhone?: boolean; showCompany?: boolean; showWhereMet?: boolean; showRating?: boolean; showAttending?: boolean; showGuests?: boolean }> = {
-												contact: { buttonText: "Contact Me", buttonEmoji: "✉️", successMessage: "Thanks for reaching out!" },
-												connect: { buttonText: "Connect with Me", buttonEmoji: "🤝", successMessage: "Thanks for connecting!", showPhone: true, showCompany: true, showWhereMet: true },
-												feedback: { buttonText: "Leave Feedback", buttonEmoji: "💬", successMessage: "Thanks for your feedback!", showRating: true },
-												rsvp: { buttonText: "RSVP", buttonEmoji: "🎉", successMessage: "Your RSVP has been received!", showAttending: true, showGuests: true },
-											};
-											const defaults = presetDefaults[v];
-											if (defaults) {
-												const updated = { ...parsedConfig, preset: v, ...defaults };
-												setConfig(JSON.stringify(updated, null, 2));
-											}
-										}}
-									>
-										<option value="contact">Contact Form</option>
-										<option value="connect">Connect with Me</option>
-										<option value="feedback">Feedback</option>
-										<option value="rsvp">RSVP</option>
-									</GlassSelect>
+									<Label>Display Mode</Label>
+									<SegmentedControl
+										value={parsedConfig.displayMode ?? "modal"}
+										options={[
+											{ value: "inline", label: "Inline" },
+											{ value: "modal", label: "Modal" },
+										]}
+										onChange={(v) => updateConfigField("displayMode", v)}
+									/>
+									<p className="text-[11px] text-muted-foreground">
+										{parsedConfig.displayMode === "inline"
+											? "Form renders directly in the block list"
+											: "Button opens the form in a modal"}
+									</p>
 								</div>
 								<div className="space-y-1.5">
 									<Label htmlFor="edit-button-text">Button Text</Label>
 									<Input
 										id="edit-button-text"
-										value={parsedConfig.buttonText ?? "Contact Me"}
+										value={parsedConfig.buttonText ?? "Connect With Me"}
 										onChange={(e) => updateConfigField("buttonText", e.target.value)}
-										placeholder="Contact Me"
+										placeholder="Connect With Me"
 										className="dark:bg-input/30 border-white/15"
 									/>
 								</div>
@@ -331,7 +313,7 @@ export function BlockEditPanel({
 										id="edit-button-emoji"
 										value={parsedConfig.buttonEmoji ?? ""}
 										onChange={(e) => updateConfigField("buttonEmoji", e.target.value)}
-										placeholder="e.g. ✉️"
+										placeholder="e.g. 🤝"
 										className="dark:bg-input/30 border-white/15"
 									/>
 								</div>
@@ -350,9 +332,9 @@ export function BlockEditPanel({
 									<Label htmlFor="edit-success-msg">Success Message</Label>
 									<Input
 										id="edit-success-msg"
-										value={parsedConfig.successMessage ?? "Thanks for reaching out!"}
+										value={parsedConfig.successMessage ?? "Thanks for connecting! I'll be in touch."}
 										onChange={(e) => updateConfigField("successMessage", e.target.value)}
-										placeholder="Thanks for reaching out!"
+										placeholder="Thanks for connecting! I'll be in touch."
 										className="dark:bg-input/30 border-white/15"
 									/>
 								</div>
@@ -561,65 +543,10 @@ export function BlockEditPanel({
 							</>
 						)}
 
-						{block.type === "social_icons" && (
-							<div className="space-y-3">
-								<Label>Active Networks</Label>
-								{socialNetworks.length > 0 ? (
-									<div className="flex flex-wrap gap-1.5">
-										{socialNetworks.map((network) => {
-											const { bg: adminBg, fg: adminFg } = getAdminThemeColors(resolvedTheme);
-											const fillColor = getAccessibleIconFill(network.hex, adminBg, adminFg);
-											const needsRing = isLowLuminance(network.hex);
-											return (
-												<span
-													key={network.slug}
-													className={cn(
-														"inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-xs",
-														needsRing && "ring-1 ring-white/10",
-													)}
-												>
-													<svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill={fillColor}>
-														<path d={network.svgPath} />
-													</svg>
-													{network.name}
-												</span>
-											);
-										})}
-									</div>
-								) : (
-									<div className="flex items-center justify-center rounded-lg border-2 border-dashed border-white/15 px-4 py-6">
-										<p className="text-xs text-muted-foreground">No active networks</p>
-									</div>
-								)}
-								<Link
-									href="/admin/social"
-									className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-white/15 dark:bg-input/30 px-3 py-2 text-xs font-medium transition-colors hover:bg-accent"
-								>
-									Manage Social Networks
-									<ExternalLink className="h-3 w-3" />
-								</Link>
-								<details>
-									<summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
-										Advanced: Override JSON
-									</summary>
-									<div className="mt-2 space-y-1.5">
-										<textarea
-											id="edit-social"
-											value={socialIcons}
-											onChange={(e) => setSocialIcons(e.target.value)}
-											placeholder='[{"platform":"twitter","url":"https://twitter.com/you"}]'
-											rows={4}
-											className="dark:bg-input/30 border-white/15 w-full rounded-lg border bg-transparent backdrop-blur-sm px-2.5 py-1.5 text-xs font-mono outline-none focus:ring-1 focus:ring-ring"
-										/>
-									</div>
-								</details>
-							</div>
-						)}
 					</div>
 
 					{/* ── STYLE (collapsible, default open) ── */}
 					<CollapsibleSection label="Style" defaultOpen>
-						{block.type !== "social_icons" && (
 							<div className="space-y-1.5">
 								<Label htmlFor="edit-icon">Icon name</Label>
 								<Input
@@ -630,74 +557,7 @@ export function BlockEditPanel({
 									className="dark:bg-input/30 border-white/15"
 								/>
 							</div>
-						)}
 
-						{block.type === "social_icons" && (
-							<>
-								<div className="space-y-1.5">
-									<Label>Icon Size</Label>
-									<SegmentedControl
-										value={parsedConfig.iconSize ?? "md"}
-										options={[
-											{ value: "sm", label: "Small" },
-											{ value: "md", label: "Medium" },
-											{ value: "lg", label: "Large" },
-										]}
-										onChange={(v) => updateConfigField("iconSize", v)}
-									/>
-								</div>
-
-								<div className="space-y-1.5">
-									<Label>Icon Shape</Label>
-									<SegmentedControl
-										value={parsedConfig.iconStyle ?? "circle"}
-										options={[
-											{
-												value: "circle",
-												label: "Circle",
-												svg: <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" fill="none" />,
-											},
-											{
-												value: "rounded",
-												label: "Rounded",
-												svg: <rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" strokeWidth="1.5" fill="none" />,
-											},
-											{
-												value: "square",
-												label: "Square",
-												svg: <rect x="3" y="3" width="18" height="18" rx="1" stroke="currentColor" strokeWidth="1.5" fill="none" />,
-											},
-											{
-												value: "bare",
-												label: "Bare",
-												svg: <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 3" fill="none" />,
-											},
-										]}
-										onChange={(v) => updateConfigField("iconStyle", v)}
-									/>
-								</div>
-
-								<div className="space-y-1.5">
-									<Label>Spacing</Label>
-									<SegmentedControl
-										value={parsedConfig.spacing ?? "default"}
-										options={[
-											{ value: "compact", label: "Compact" },
-											{ value: "default", label: "Default" },
-											{ value: "spacious", label: "Spacious" },
-										]}
-										onChange={(v) => updateConfigField("spacing", v)}
-									/>
-								</div>
-
-								<ToggleSwitch
-									checked={!!parsedConfig.showLabels}
-									onToggle={() => updateConfigField("showLabels", !parsedConfig.showLabels)}
-									label="Show Labels"
-									description="Display platform names below icons"
-								/>
-							</>
-						)}
 
 						{block.type === "link" && (
 							<>
@@ -737,7 +597,7 @@ export function BlockEditPanel({
 							</>
 						)}
 
-						{(block.type === "form" || block.type === "vcard") && (
+						{(block.type === "connect" || block.type === "vcard") && (
 							<>
 								<ToggleSwitch
 									checked={!!parsedConfig.isOutlined}
@@ -784,70 +644,6 @@ export function BlockEditPanel({
 					</CollapsibleSection>
 
 					{/* ── FORM FIELDS (collapsible, default open — form blocks only) ── */}
-					{block.type === "form" && (
-						<CollapsibleSection label="Form Fields" defaultOpen>
-							<div className="space-y-1.5">
-								<Label htmlFor="edit-delivery">Delivery mode</Label>
-								<p className="text-[11px] text-muted-foreground">
-									How form submissions are handled
-								</p>
-								<SegmentedControl
-									value={contactDelivery}
-									options={[
-										{ value: "database", label: "Database" },
-										{ value: "email", label: "Email" },
-										{ value: "both", label: "Both" },
-									]}
-									onChange={onDeliveryChange}
-								/>
-							</div>
-							<div className="mt-2 space-y-3">
-								<Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Optional Fields</Label>
-								<ToggleSwitch
-									checked={!!parsedConfig.showPhone}
-									onToggle={() => updateConfigField("showPhone", !parsedConfig.showPhone)}
-									label="Phone Field"
-									description="Show phone number input"
-								/>
-								<ToggleSwitch
-									checked={!!parsedConfig.showSubject}
-									onToggle={() => updateConfigField("showSubject", !parsedConfig.showSubject)}
-									label="Subject Field"
-									description="Show subject line input"
-								/>
-								<ToggleSwitch
-									checked={!!parsedConfig.showCompany}
-									onToggle={() => updateConfigField("showCompany", !parsedConfig.showCompany)}
-									label="Company Field"
-									description="Show company name input"
-								/>
-								<ToggleSwitch
-									checked={!!parsedConfig.showWhereMet}
-									onToggle={() => updateConfigField("showWhereMet", !parsedConfig.showWhereMet)}
-									label="Where Met Field"
-									description="Ask where you met (Connect preset)"
-								/>
-								<ToggleSwitch
-									checked={!!parsedConfig.showRating}
-									onToggle={() => updateConfigField("showRating", !parsedConfig.showRating)}
-									label="Rating Field"
-									description="Show 1-5 star rating (Feedback preset)"
-								/>
-								<ToggleSwitch
-									checked={!!parsedConfig.showAttending}
-									onToggle={() => updateConfigField("showAttending", !parsedConfig.showAttending)}
-									label="Attending Field"
-									description="Yes/No/Maybe selector (RSVP preset)"
-								/>
-								<ToggleSwitch
-									checked={!!parsedConfig.showGuests}
-									onToggle={() => updateConfigField("showGuests", !parsedConfig.showGuests)}
-									label="Guests Field"
-									description="Number of guests input (RSVP preset)"
-								/>
-							</div>
-						</CollapsibleSection>
-					)}
 
 					{/* ── SCHEDULE (collapsible, default closed unless schedule is set) ── */}
 					<CollapsibleSection label="Schedule" defaultOpen={hasSchedule}>

@@ -6,7 +6,7 @@ import { z } from "zod";
 
 // ─── Block Router ──────────────────────────────────────────────────────────
 // Blocks are the core content units on the public page. Each block has a type
-// (link, header, social_icons, embed, form, vcard) that determines its rendering
+// (link, header, embed, connect, vcard, location) that determines its rendering
 // and config schema. Blocks follow a draft/published flow: every mutation sets
 // status="draft", and publishAll promotes all drafts at once. This lets the admin
 // preview changes before they go live.
@@ -82,17 +82,16 @@ export const blocksRouter = router({
 				type: z.enum([
 					"link",
 					"header",
-					"social_icons",
 					"embed",
-					"form",
+					"connect",
 					"vcard",
+					"location",
 				]),
 				title: z.string().max(200).optional(),
 				url: z.string().max(2048).optional(),
 				icon: z.string().max(100).optional(),
 				embedType: z.string().max(50).optional(),
 				embedUrl: z.string().max(2048).optional(),
-				socialIcons: z.string().max(50000).optional(),
 				isEnabled: z.boolean().default(true),
 				position: z.number(),
 				scheduledStart: z.date().optional(),
@@ -124,7 +123,6 @@ export const blocksRouter = router({
 				icon: z.string().max(100).optional(),
 				embedType: z.string().max(50).optional(),
 				embedUrl: z.string().max(2048).optional(),
-				socialIcons: z.string().max(50000).optional(),
 				isEnabled: z.boolean().optional(),
 				position: z.number().optional(),
 				scheduledStart: z.date().nullable().optional(),

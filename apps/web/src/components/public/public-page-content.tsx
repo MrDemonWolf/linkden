@@ -4,22 +4,13 @@ import { Avatar } from "./avatar";
 import { BannerSection } from "./banner-section";
 import { LinkBlock } from "./link-block";
 import { HeaderBlock } from "./header-block";
-import { SocialIconsBlock } from "./social-icons-block";
 import { EmbedBlock } from "./embed-block";
-import { ContactFormBlock } from "./contact-form-block";
+import { ConnectBlock } from "./connect-block";
 import { VCardBlock } from "./vcard-block";
 import { LocationBlock } from "./location-block";
 import { WhitelabelFooter } from "./whitelabel-footer";
 import { usePreview } from "./preview-context";
 import type { ThemeColors } from "./public-page";
-
-interface SocialNetwork {
-	slug: string;
-	name: string;
-	url: string;
-	hex: string;
-	svgPath: string;
-}
 
 export interface PageContentProps {
 	profile: {
@@ -37,11 +28,9 @@ export interface PageContentProps {
 		icon: string | null;
 		embedType: string | null;
 		embedUrl: string | null;
-		socialIcons: string | null;
 		config: string | null;
 		position: number;
 	}>;
-	socialNetworks?: SocialNetwork[];
 	settings: {
 		brandingEnabled: boolean;
 		brandingText: string;
@@ -91,7 +80,6 @@ export function PageSkeleton() {
 export function PageContent({
 	profile,
 	blocks,
-	socialNetworks,
 	settings,
 	themeColors,
 	colorMode,
@@ -195,17 +183,6 @@ export function PageContent({
 										themeColors={themeColors}
 									/>
 								);
-							case "social_icons":
-								return (
-									<SocialIconsBlock
-										key={blockData.id}
-										block={blockData}
-										config={config}
-										colorMode={colorMode}
-										networks={socialNetworks}
-										themeColors={themeColors}
-									/>
-								);
 							case "embed":
 								return (
 									<EmbedBlock
@@ -216,9 +193,9 @@ export function PageContent({
 										themeColors={themeColors}
 									/>
 								);
-							case "form":
+							case "connect":
 								return (
-									<ContactFormBlock
+									<ConnectBlock
 										key={blockData.id}
 										block={blockData}
 										config={config}
