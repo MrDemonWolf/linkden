@@ -13,6 +13,7 @@ export const blockTypeSchema = z.enum([
 export type BlockType = z.infer<typeof blockTypeSchema>;
 
 export const blockConfigBaseSchema = z.object({
+  layout: z.enum(["full", "inline"]).default("full").optional(),
   colorVariant: z.string().optional(),
   customBgColor: z.string().optional(),
   customTextColor: z.string().optional(),

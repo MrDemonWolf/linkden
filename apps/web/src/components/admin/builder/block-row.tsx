@@ -6,6 +6,8 @@ import {
 	EyeOff,
 	Pencil,
 	Trash2,
+	Columns2,
+	Square,
 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -17,12 +19,16 @@ export function BlockRow({
 	onToggle,
 	onEdit,
 	onDelete,
+	onToggleLayout,
 }: {
 	block: Block;
 	onToggle: () => void;
 	onEdit: () => void;
 	onDelete: () => void;
+	onToggleLayout?: () => void;
 }) {
+	const config = block.config ? (() => { try { return JSON.parse(block.config as string); } catch { return {}; } })() : {};
+	const isInline = config.layout === "inline";
 	const Icon = blockTypeIcon(block.type);
 	const typeLabel = block.type.replace(/_/g, " ");
 
@@ -106,6 +112,26 @@ export function BlockRow({
 
 			{/* Actions */}
 			<div className="flex items-center gap-1 pr-2">
+				{onToggleLayout && (
+					<button
+						type="button"
+						onClick={(e) => { e.stopPropagation(); onToggleLayout(); }}
+						className={cn(
+							"flex h-9 w-9 items-center justify-center rounded-md transition-colors",
+							isInline
+								? "text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
+								: "text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted",
+						)}
+						aria-label={isInline ? "Switch to full width" : "Switch to inline (half width)"}
+						title={isInline ? "Inline layout (50/50)" : "Full width layout"}
+					>
+						{isInline ? (
+							<Columns2 className="h-4 w-4" />
+						) : (
+							<Square className="h-4 w-4" />
+						)}
+					</button>
+				)}
 				<button
 					type="button"
 					onClick={(e) => { e.stopPropagation(); onToggle(); }}

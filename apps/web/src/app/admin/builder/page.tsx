@@ -192,6 +192,22 @@ export default function BuilderPage() {
 		}
 	};
 
+	const handleToggleLayout = async (block: Block) => {
+		try {
+			const currentConfig = block.config ? JSON.parse(block.config) : {};
+			const newLayout = currentConfig.layout === "inline" ? "full" : "inline";
+			const newConfig = JSON.stringify({ ...currentConfig, layout: newLayout });
+			await updateBlock.mutateAsync({
+				id: block.id,
+				config: newConfig,
+			});
+			invalidate();
+			toast.success(`Layout: ${newLayout === "inline" ? "inline (50/50)" : "full width"}`);
+		} catch {
+			toast.error("Failed to toggle layout");
+		}
+	};
+
 	const handleSaveEdit = async (data: Partial<Block>) => {
 		try {
 			await updateBlock.mutateAsync({
@@ -332,6 +348,7 @@ export default function BuilderPage() {
 												onToggle={() => handleToggle(block.id, block.isEnabled)}
 												onEdit={() => setEditingBlock(block)}
 												onDelete={() => handleDelete(block.id)}
+												onToggleLayout={() => handleToggleLayout(block)}
 											/>
 										</div>
 									))}
