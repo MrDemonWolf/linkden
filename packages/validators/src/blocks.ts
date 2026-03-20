@@ -53,6 +53,7 @@ export const socialIconsConfigSchema = blockConfigBaseSchema.extend({
   showLabels: z.boolean().optional(),
   spacing: z.number().optional(),
   useBrandColors: z.boolean().optional(),
+  alignment: z.enum(["left", "center", "right"]).optional(),
 });
 
 export const embedConfigSchema = blockConfigBaseSchema.extend({
@@ -201,12 +202,12 @@ export const blockImportSchema = z.object({
   socialIcons: z.string().nullable().optional(),
   isEnabled: z.boolean().optional().default(true),
   position: z.number(),
-  scheduledStart: z.unknown().optional(),
-  scheduledEnd: z.unknown().optional(),
+  scheduledStart: z.number().nullable().optional(),
+  scheduledEnd: z.number().nullable().optional(),
   status: z.enum(["published", "draft"]).optional().default("published"),
   config: z.string().nullable().optional(),
-  createdAt: z.unknown().optional(),
-  updatedAt: z.unknown().optional(),
+  createdAt: z.number().nullable().optional(),
+  updatedAt: z.number().nullable().optional(),
 });
 
 export const socialNetworkImportSchema = z.object({

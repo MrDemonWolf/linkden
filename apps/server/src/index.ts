@@ -24,7 +24,6 @@ import { appRouter } from "@linkden/api/routers/index";
 import { auth } from "@linkden/auth";
 import { db } from "@linkden/db";
 import { user, siteSettings } from "@linkden/db/schema/index";
-import { env } from "@linkden/env/server";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -44,24 +43,25 @@ const ALLOWED_MIME_TYPES = new Set([
 ]);
 
 type Bindings = {
+  CORS_ORIGIN?: string;
   IMAGES_BUCKET?: R2Bucket;
   RL_AUTH: RateLimit;
   RL_STRICT: RateLimit;
   RL_UPLOAD: RateLimit;
 };
 
-const app = new Hono();
+const app = new Hono<{ Bindings: Bindings }>();
 
 app.use(logger());
-app.use(
-  "/*",
-  cors({
-    origin: env.CORS_ORIGIN,
-    allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  }),
-);
+app.use("/*", cors({
+  origin: (origin, c) => {
+    const allowed = c.env?.CORS_ORIGIN || "http://localhost:3001";
+    return origin === allowed ? origin : null;
+  },
+  credentials: true,
+  allowMethods: ["GET", "POST", "OPTIONS"],
+  allowHeaders: ["Content-Type", "Authorization"],
+}));
 
 // Rate limiters (Cloudflare native rate limiting: RL_AUTH=10/60s, RL_STRICT=5/60s, RL_UPLOAD=20/60s)
 const rlKeyGenerator = (c: { req: { header: (name: string) => string | undefined } }) =>
@@ -71,7 +71,7 @@ app.use("/api/auth/sign-in/*", cloudflareRateLimiter<{ Bindings: Bindings }>({
   rateLimitBinding: (c) => c.env.RL_AUTH,
   keyGenerator: rlKeyGenerator,
 }));
-app.use("/api/auth/forget-password", cloudflareRateLimiter<{ Bindings: Bindings }>({
+app.use("/api/auth/send-password-reset-email", cloudflareRateLimiter<{ Bindings: Bindings }>({
   rateLimitBinding: (c) => c.env.RL_STRICT,
   keyGenerator: rlKeyGenerator,
 }));
@@ -130,7 +130,7 @@ app.post("/api/upload", async (c) => {
     return c.json({ error: "Unauthorized" }, 401);
   }
 
-  const bucket = (env as unknown as Bindings).IMAGES_BUCKET;
+  const bucket = c.env.IMAGES_BUCKET;
   if (!bucket) {
     return c.json({ error: "Image storage not configured" }, 500);
   }
@@ -161,7 +161,7 @@ app.post("/api/upload", async (c) => {
 
   const validPurposes = ["avatar", "banner", "og_image", "wallet_logo", "logo", "favicon"];
   const filePurpose = validPurposes.includes(purpose ?? "") ? purpose : "misc";
-  const key = `${filePurpose}/${Date.now()}.${ext}`;
+  const key = `${filePurpose}/${crypto.randomUUID()}.${ext}`;
 
   await bucket.put(key, file.stream(), {
     httpMetadata: { contentType: file.type },
@@ -174,7 +174,7 @@ app.post("/api/upload", async (c) => {
 
 // Serve images from R2
 app.get("/api/images/*", async (c) => {
-  const bucket = (env as unknown as Bindings).IMAGES_BUCKET;
+  const bucket = c.env.IMAGES_BUCKET;
   if (!bucket) {
     return c.json({ error: "Image storage not configured" }, 500);
   }
