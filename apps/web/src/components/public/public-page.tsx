@@ -21,6 +21,7 @@ interface PageData {
 		icon: string | null;
 		embedType: string | null;
 		embedUrl: string | null;
+		socialIcons: string | null;
 		config: string | null;
 		position: number;
 	}>;
