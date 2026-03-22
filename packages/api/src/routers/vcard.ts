@@ -3,6 +3,7 @@ import { db } from "@linkden/db";
 import { siteSettings } from "@linkden/db/schema/index";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { upsertSetting } from "../utils/settings";
 
 const vcardDataSchema = z.object({
 	fullName: z.string().optional(),
@@ -81,37 +82,11 @@ export const vcardRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			if (input.enabled !== undefined) {
-				const key = "vcard_enabled";
-				const value = String(input.enabled);
-				const [existing] = await db
-					.select()
-					.from(siteSettings)
-					.where(eq(siteSettings.key, key));
-				if (existing) {
-					await db
-						.update(siteSettings)
-						.set({ value })
-						.where(eq(siteSettings.key, key));
-				} else {
-					await db.insert(siteSettings).values({ key, value });
-				}
+				await upsertSetting("vcard_enabled", String(input.enabled));
 			}
 
 			if (input.data) {
-				const key = "vcard_data";
-				const value = JSON.stringify(input.data);
-				const [existing] = await db
-					.select()
-					.from(siteSettings)
-					.where(eq(siteSettings.key, key));
-				if (existing) {
-					await db
-						.update(siteSettings)
-						.set({ value })
-						.where(eq(siteSettings.key, key));
-				} else {
-					await db.insert(siteSettings).values({ key, value });
-				}
+				await upsertSetting("vcard_data", JSON.stringify(input.data));
 			}
 
 			return { success: true };

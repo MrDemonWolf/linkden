@@ -26,6 +26,7 @@ import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
 import { cn } from "@/lib/utils";
 import { getGravatarUrl } from "@/lib/gravatar";
+import { initials } from "@/lib/format";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
@@ -70,16 +71,6 @@ const THEME_OPTIONS = [
 	{ value: "dark", icon: Moon, label: "Dark" },
 	{ value: "system", icon: Monitor, label: "System" },
 ] as const;
-
-function initials(name?: string | null) {
-	if (!name) return "?";
-	return name
-		.split(" ")
-		.map((w) => w[0])
-		.join("")
-		.slice(0, 2)
-		.toUpperCase();
-}
 
 function DesktopTopBar({ pathname }: { pathname: string }) {
 	const { setTheme, theme } = useTheme();

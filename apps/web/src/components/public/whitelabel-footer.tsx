@@ -1,3 +1,5 @@
+import { replaceTemplateVars } from "@/lib/format";
+
 interface WhitelabelFooterProps {
 	text: string;
 	mutedFg?: string;
@@ -5,15 +7,8 @@ interface WhitelabelFooterProps {
 	profileName?: string;
 }
 
-function processVariables(text: string, profileName?: string): string {
-	return text
-		.replace(/\{\{year\}\}/g, new Date().getFullYear().toString())
-		.replace(/\{\{copyright\}\}/g, "\u00A9")
-		.replace(/\{\{name\}\}/g, profileName ?? "");
-}
-
 export function WhitelabelFooter({ text, mutedFg, colorMode, profileName }: WhitelabelFooterProps) {
-	const resolvedText = processVariables(text, profileName);
+	const resolvedText = replaceTemplateVars(text, profileName);
 
 	return (
 		<footer className="ld-footer pb-6 pt-12 text-center">

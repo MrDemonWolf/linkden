@@ -38,7 +38,7 @@ export interface Block {
 }
 
 export function generateId() {
-	return `blk_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+	return crypto.randomUUID();
 }
 
 export const EMBED_URL_PATTERNS: Record<string, { pattern: RegExp; placeholder: string; label: string }> = {

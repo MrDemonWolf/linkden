@@ -3,6 +3,8 @@ import { db } from "@linkden/db";
 import { siteSettings } from "@linkden/db/schema/index";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { stripHtml } from "../utils/sanitize";
+import { upsertSetting } from "../utils/settings";
 
 // ─── Settings Router ───────────────────────────────────────────────────────
 // Settings are key-value pairs stored in site_settings. The key whitelist below
@@ -77,11 +79,10 @@ const VALID_SETTING_KEYS = [
 
 const settingKeySchema = z.enum(VALID_SETTING_KEYS);
 
-// Sanitization utilities
-function stripHtmlTags(str: string): string {
-	return str.replace(/<[^>]*>/g, "");
-}
+// Keys containing secrets — masked in API responses, never exposed in plaintext
+const SECRET_SETTING_KEYS = new Set(["email_api_key", "captcha_secret_key", "mapkit_token"]);
 
+// Sanitization utilities
 function isValidUrl(url: string): boolean {
 	if (!url) return true;
 	try {
@@ -130,7 +131,7 @@ const LENGTH_LIMITS: Record<string, number> = {
 
 function sanitizeSetting(key: string, value: string): string {
 	if (TEXT_KEYS.includes(key)) {
-		let sanitized = stripHtmlTags(value);
+		let sanitized = stripHtml(value);
 		const limit = LENGTH_LIMITS[key];
 		if (limit && sanitized.length > limit) {
 			sanitized = sanitized.slice(0, limit);
@@ -219,7 +220,9 @@ export const settingsRouter = router({
 		const results = await db.select().from(siteSettings);
 		const map: Record<string, string> = {};
 		for (const row of results) {
-			map[row.key] = row.value;
+			map[row.key] = SECRET_SETTING_KEYS.has(row.key) && row.value
+				? "••••••"
+				: row.value;
 		}
 		return map;
 	}),
@@ -233,22 +236,7 @@ export const settingsRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			const sanitizedValue = sanitizeSetting(input.key, input.value);
-			const [existing] = await db
-				.select()
-				.from(siteSettings)
-				.where(eq(siteSettings.key, input.key));
-
-			if (existing) {
-				await db
-					.update(siteSettings)
-					.set({ value: sanitizedValue })
-					.where(eq(siteSettings.key, input.key));
-			} else {
-				await db.insert(siteSettings).values({
-					key: input.key,
-					value: sanitizedValue,
-				});
-			}
+			await upsertSetting(input.key, sanitizedValue);
 
 			return { success: true };
 		}),
@@ -258,19 +246,7 @@ export const settingsRouter = router({
 		.mutation(async ({ input }) => {
 			for (const { key, value } of input) {
 				const sanitizedValue = sanitizeSetting(key, value);
-				const [existing] = await db
-					.select()
-					.from(siteSettings)
-					.where(eq(siteSettings.key, key));
-
-				if (existing) {
-					await db
-						.update(siteSettings)
-						.set({ value: sanitizedValue })
-						.where(eq(siteSettings.key, key));
-				} else {
-					await db.insert(siteSettings).values({ key, value: sanitizedValue });
-				}
+				await upsertSetting(key, sanitizedValue);
 			}
 
 			return { success: true };

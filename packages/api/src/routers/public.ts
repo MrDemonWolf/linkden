@@ -12,6 +12,7 @@ import {
 import { eq, asc, and } from "drizzle-orm";
 import { z } from "zod";
 import { generateVCardString, vcardDataSchema } from "./vcard";
+import { buildSettingsMap } from "../utils/settings";
 
 // ─── Public Router ─────────────────────────────────────────────────────────
 // These endpoints are unauthenticated — they power the public-facing link page.
@@ -48,11 +49,7 @@ export const publicRouter = router({
 		});
 
 		// Get all settings at once
-		const settingsRows = await db.select().from(siteSettings);
-		const settings: Record<string, string> = {};
-		for (const row of settingsRows) {
-			settings[row.key] = row.value;
-		}
+		const settings = await buildSettingsMap();
 
 		// Hide blocks for disabled features
 		const visibleBlocks = scheduledBlocks.filter((b) => {
@@ -282,11 +279,7 @@ export const publicRouter = router({
 	}),
 
 	getBranding: publicProcedure.query(async () => {
-		const rows = await db.select().from(siteSettings);
-		const settings: Record<string, string> = {};
-		for (const row of rows) {
-			settings[row.key] = row.value;
-		}
+		const settings = await buildSettingsMap();
 		return {
 			logoUrl: settings.branding_logo_url || null,
 			siteName: settings.branding_site_name || null,
@@ -307,11 +300,7 @@ export const publicRouter = router({
 	getSetupStatus: publicProcedure.query(async () => {
 		const [existingUser] = await db.select({ id: user.id }).from(user).limit(1);
 
-		const allRows = await db.select().from(siteSettings);
-		const s: Record<string, string> = {};
-		for (const row of allRows) {
-			s[row.key] = row.value;
-		}
+		const s = await buildSettingsMap();
 
 		return {
 			completed: !!existingUser,

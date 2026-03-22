@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { cn } from "@/lib/utils";
+import { replaceTemplateVars } from "@/lib/format";
 
 interface BrandingSectionProps {
 	siteName: string;
@@ -219,10 +220,7 @@ export function BrandingSection({
 								<p className="text-[11px] text-muted-foreground">
 									Preview:{" "}
 									<span className="font-medium text-foreground">
-										{footerBrandingText
-											.replace(/\{\{year\}\}/g, new Date().getFullYear().toString())
-											.replace(/\{\{copyright\}\}/g, "\u00A9")
-											.replace(/\{\{name\}\}/g, profileName || "Your Name")}
+										{replaceTemplateVars(footerBrandingText, profileName || "Your Name")}
 									</span>
 								</p>
 							)}
