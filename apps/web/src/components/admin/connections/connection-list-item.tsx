@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { initials, relativeTime } from "@/lib/format";
 import { MapPin } from "lucide-react";
 
 interface Connection {
@@ -21,27 +22,6 @@ interface ConnectionListItemProps {
 	onSelect: () => void;
 	onCheck: (checked: boolean) => void;
 	showCheckbox: boolean;
-}
-
-function getInitials(name: string): string {
-	if (!name) return "?";
-	const parts = name.trim().split(/\s+/);
-	if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-	return name.slice(0, 2).toUpperCase();
-}
-
-function relativeDate(date: string | Date): string {
-	const d = typeof date === "string" ? new Date(date) : date;
-	const now = Date.now();
-	const diff = now - d.getTime();
-	const minutes = Math.floor(diff / 60000);
-	if (minutes < 1) return "Just now";
-	if (minutes < 60) return `${minutes}m ago`;
-	const hours = Math.floor(minutes / 60);
-	if (hours < 24) return `${hours}h ago`;
-	const days = Math.floor(hours / 24);
-	if (days < 7) return `${days}d ago`;
-	return d.toLocaleDateString();
 }
 
 export function ConnectionListItem({
@@ -92,7 +72,7 @@ export function ConnectionListItem({
 						: "bg-blue-500/10 text-blue-500",
 				)}
 			>
-				{getInitials(connection.name)}
+				{initials(connection.name)}
 			</div>
 			<div className="min-w-0 flex-1">
 				<div className="flex items-baseline gap-2">
@@ -105,7 +85,7 @@ export function ConnectionListItem({
 						{connection.name || "Anonymous"}
 					</p>
 					<span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
-						{relativeDate(connection.createdAt)}
+						{relativeTime(connection.createdAt)}
 					</span>
 				</div>
 				<div className="flex items-center gap-1.5">

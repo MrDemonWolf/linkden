@@ -26,6 +26,7 @@ import {
 } from "recharts";
 import { trpc } from "@/utils/trpc";
 import { authClient } from "@/lib/auth-client";
+import { relativeTime } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -46,24 +47,6 @@ function computeTrend(current: number, previous: number): { value: number; label
 	}
 	const pct = Math.round(((current - previous) / previous) * 100);
 	return { value: pct, label: `${pct > 0 ? "+" : ""}${pct}%` };
-}
-
-function formatRelativeTime(dateVal: string | Date | number, timezone?: string): string {
-	const now = new Date();
-	const date =
-		typeof dateVal === "number"
-			? new Date(dateVal)
-			: typeof dateVal === "string"
-				? new Date(dateVal)
-				: dateVal;
-	const diffMs = now.getTime() - date.getTime();
-	const diffMins = Math.floor(diffMs / 60000);
-	if (diffMins < 1) return "Just now";
-	if (diffMins < 60) return `${diffMins}m ago`;
-	const diffHrs = Math.floor(diffMins / 60);
-	if (diffHrs < 24) return `${diffHrs}h ago`;
-	const diffDays = Math.floor(diffHrs / 24);
-	return `${diffDays}d ago`;
 }
 
 function extractDomain(url: string | null): string {
@@ -414,7 +397,7 @@ export default function AdminDashboardPage() {
 												</p>
 											</div>
 											<span className="text-[10px] text-muted-foreground shrink-0 mt-0.5">
-												{formatRelativeTime(click.createdAt, timezone)}
+												{relativeTime(click.createdAt)}
 											</span>
 										</div>
 									))}
