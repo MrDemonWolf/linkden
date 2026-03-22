@@ -213,3 +213,10 @@ export const contactSubmissionImportSchema = z.object({
   createdAt: z.unknown().optional(),
   updatedAt: z.unknown().optional(),
 });
+
+export const socialNetworkImportSchema = z.object({
+  slug: z.string(),
+  url: z.string(),
+  isActive: z.boolean().optional().default(true),
+  addedAt: z.number().nullable().optional(),
+});
