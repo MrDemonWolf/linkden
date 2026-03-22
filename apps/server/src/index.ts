@@ -31,13 +31,12 @@ import { logger } from "hono/logger";
 
 // File upload validation constants
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "gif", "webp", "svg", "ico"]);
+const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "gif", "webp", "ico"]);
 const ALLOWED_MIME_TYPES = new Set([
   "image/jpeg",
   "image/png",
   "image/gif",
   "image/webp",
-  "image/svg+xml",
   "image/x-icon",
   "image/vnd.microsoft.icon",
 ]);
@@ -51,6 +50,13 @@ type Bindings = {
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
+
+// Security headers
+app.use("/*", async (c, next) => {
+  await next();
+  c.res.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  c.res.headers.set("X-Content-Type-Options", "nosniff");
+});
 
 app.use(logger());
 app.use("/*", cors({
