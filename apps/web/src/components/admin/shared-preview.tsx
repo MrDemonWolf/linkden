@@ -26,6 +26,7 @@ interface PreviewOverrides {
 		icon: string | null;
 		embedType: string | null;
 		embedUrl: string | null;
+		socialIcons: string | null;
 		config: string | null;
 		position: number;
 	}>;
@@ -97,6 +98,7 @@ export function SharedPreview({ overrides, className, mode: controlledMode, onMo
 			icon: b.icon,
 			embedType: b.embedType,
 			embedUrl: b.embedUrl,
+			socialIcons: b.socialIcons,
 			config: b.config,
 			position: b.position,
 		}));
