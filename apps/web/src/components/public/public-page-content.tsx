@@ -178,8 +178,6 @@ function renderBlock(
 					block={blockData}
 					config={config}
 					colorMode={colorMode}
-					captchaProvider={settings.captchaProvider ?? "none"}
-					captchaSiteKey={settings.captchaSiteKey ?? null}
 					themeColors={themeColors}
 				/>
 			);

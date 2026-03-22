@@ -51,6 +51,7 @@ export function EmailSection({
 							<button
 								key={p.id}
 								type="button"
+								aria-pressed={isSelected}
 								onClick={() => onEmailProviderChange(p.id)}
 								className={cn(
 									"flex items-start gap-3 rounded-lg border p-3 text-left transition-all",
