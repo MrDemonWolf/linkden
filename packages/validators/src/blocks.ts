@@ -210,8 +210,8 @@ export const contactSubmissionImportSchema = z.object({
   blockId: z.string().nullable().optional(),
   blockTitle: z.string().nullable().optional(),
   isRead: z.boolean().optional(),
-  createdAt: z.unknown().optional(),
-  updatedAt: z.unknown().optional(),
+  createdAt: z.number().nullable().optional(),
+  updatedAt: z.number().nullable().optional(),
 });
 
 export const socialNetworkImportSchema = z.object({

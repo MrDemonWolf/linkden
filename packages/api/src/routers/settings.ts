@@ -169,7 +169,7 @@ function sanitizeSetting(key: string, value: string): string {
 	}
 	// Email provider: enum check
 	if (key === "email_provider") {
-		const allowed = ["resend", "sendgrid", "mailgun", "smtp", "none"];
+		const allowed = ["resend", "sendgrid", "mailgun", "smtp", "cloudflare", "none"];
 		if (value && !allowed.includes(value)) {
 			throw new Error(`Invalid email provider: ${value}`);
 		}
@@ -235,6 +235,9 @@ export const settingsRouter = router({
 			}),
 		)
 		.mutation(async ({ input }) => {
+			if (SECRET_SETTING_KEYS.has(input.key) && input.value === "••••••") {
+				return { success: true };
+			}
 			const sanitizedValue = sanitizeSetting(input.key, input.value);
 			await upsertSetting(input.key, sanitizedValue);
 
@@ -245,6 +248,9 @@ export const settingsRouter = router({
 		.input(z.array(z.object({ key: settingKeySchema, value: z.string() })))
 		.mutation(async ({ input }) => {
 			for (const { key, value } of input) {
+				if (SECRET_SETTING_KEYS.has(key) && value === "••••••") {
+					continue;
+				}
 				const sanitizedValue = sanitizeSetting(key, value);
 				await upsertSetting(key, sanitizedValue);
 			}

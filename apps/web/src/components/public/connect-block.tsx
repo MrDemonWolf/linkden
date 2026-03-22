@@ -22,8 +22,6 @@ interface ConnectBlockProps {
 	};
 	config: Record<string, unknown>;
 	colorMode: "light" | "dark";
-	captchaProvider: string;
-	captchaSiteKey: string | null;
 	themeColors?: ThemeColors;
 }
 

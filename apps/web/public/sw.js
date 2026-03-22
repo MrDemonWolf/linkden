@@ -11,7 +11,7 @@ self.addEventListener("activate", (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== CACHE_NAME)
+          .filter((key) => key !== CACHE_NAME && key.startsWith("linkden-"))
           .map((key) => caches.delete(key))
       )
     ).then(() => self.clients.claim())
@@ -35,7 +35,9 @@ self.addEventListener("fetch", (event) => {
         .then((response) => {
           if (response.ok) {
             const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+            event.waitUntil(
+              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
+            );
           }
           return response;
         })
