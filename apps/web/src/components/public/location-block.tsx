@@ -3,6 +3,7 @@
 import { MapPin } from "lucide-react";
 import { getMapUrl } from "@/lib/map-url";
 import type { ThemeColors } from "./public-page";
+import { usePreview } from "./preview-context";
 
 interface LocationBlockProps {
 	block: {
@@ -17,6 +18,7 @@ interface LocationBlockProps {
 }
 
 export function LocationBlock({ block, config, colorMode, themeColors }: LocationBlockProps) {
+	const { isPreview } = usePreview();
 	const address = (config.address as string) || block.title || "";
 	const linkType = (config.linkType as string) || "none";
 	const customLinkUrl = config.customLinkUrl as string | undefined;
@@ -46,9 +48,10 @@ export function LocationBlock({ block, config, colorMode, themeColors }: Locatio
 		return (
 			<div role="listitem" className="ld-location-block flex justify-center py-1">
 				<a
-					href={mapUrl}
-					target="_blank"
-					rel="noopener noreferrer"
+					href={isPreview ? undefined : mapUrl}
+					target={isPreview ? undefined : "_blank"}
+					rel={isPreview ? undefined : "noopener noreferrer"}
+					onClick={isPreview ? (e: React.MouseEvent) => e.preventDefault() : undefined}
 					className="text-sm hover:underline"
 					style={style}
 				>

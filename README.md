@@ -1,215 +1,159 @@
 # LinkDen
 
-This is my personal link-in-bio app — built for me, by me.
-I got tired of handing my links and analytics over to a
-third-party service, so I built something I actually own.
+**Self-hosted. Open source. Your links, your way.**
 
-It's open source. If you want your own, fork it and make it
-yours. I don't offer it as a hosted product or service —
-there's no sign-up, no SaaS tier, no support contract. Just
-the code.
+LinkDen is a personal link-in-bio app built for people who want to own their data and analytics. No SaaS tiers, no support contracts—just the code.
 
-**Cloudflare-first** (Workers + D1), with Docker/Coolify as
-a secondary deployment target.
-
-## Features
-
-- **Drag-and-Drop Builder** -- Visual block editor with live
-  phone-frame preview, supporting link buttons, headers,
-  social icon rows, embeds, and contact forms.
-- **7 Theme Presets** -- Default, Corporate Classic, Corporate
-  Modern, Hacker Terminal, Neon Cyber, Furry Pastel, and Furry
-  Bold with full light/dark mode support and custom color
-  overrides.
-- **Analytics Dashboard** -- Privacy-friendly page view and
-  link click tracking with time-series charts, top links,
-  referrer breakdown, and country stats.
-- **Contact Form** -- Built-in contact form with CAPTCHA
-  support (Cloudflare Turnstile or Google reCAPTCHA), email
-  notifications via Resend, and submission management.
-- **Apple Wallet Pass** -- Generate .pkpass business cards
-  with your profile, links, and QR code.
-- **vCard Support** -- Downloadable .vcf digital business
-  cards with personal, professional, and social fields.
-- **Export/Import** -- Full data backup and restore as JSON
-  with merge or replace modes.
-- **Whitelabel** -- Toggle off all LinkDen branding for a
-  completely clean public page.
-- **Edge Caching** -- Cloudflare Cache API integration for
-  near-zero-cost hosting on Workers + D1.
-- **50+ Social Networks** -- Curated registry of social
-  platforms with brand colors and icons.
-- **SEO Optimized** -- Auto-generated sitemap.xml, robots.txt,
-  Open Graph tags, and Twitter Cards.
-- **Accessible** -- WCAG 2.1 AA compliant with keyboard
-  navigation, screen reader support, focus indicators, and
-  reduced motion support via Radix UI primitives.
-- **PWA Ready** -- Installable admin panel with web app
-  manifest.
-- **Docker Support** -- Run anywhere with Docker Compose and
-  local SQLite persistence.
-- **Version Management** -- Automatic update checking against
-  GitHub releases with admin banner notifications.
-
-## Getting Started
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/MrDemonWolf/linkden.git
-   cd linkden
-   ```
-
-2. Copy the environment file and fill in your values:
-
-   ```bash
-   cp .env.example .env
-   ```
-
-3. Install dependencies:
-
-   ```bash
-   pnpm install
-   ```
-
-4. Generate database migrations:
-
-   ```bash
-   pnpm db:generate
-   ```
-
-5. Start the development server:
-
-   ```bash
-   pnpm dev
-   ```
-
-6. Open the admin setup wizard at `http://localhost:3001/admin/setup`
-   to create your account and configure your page.
-
-### Docker Quickstart
-
-```bash
-docker compose up -d
-```
-
-The app will be available at `http://localhost:3000`. Set
-`BETTER_AUTH_SECRET` in your environment before starting.
-
-## Tech Stack
-
-| Layer          | Technology                                     |
-| -------------- | ---------------------------------------------- |
-| Frontend       | Next.js 16, React 19, Tailwind CSS v4          |
-| UI Components  | Radix UI, CVA, Lucide Icons                    |
-| Backend        | Hono, tRPC v11                                 |
-| Runtime        | Cloudflare Workers                             |
-| Database       | Drizzle ORM, Cloudflare D1 (SQLite)            |
-| Auth           | Better Auth (email/password)                   |
-| Email          | React Email, Resend API                        |
-| Validation     | Zod v4                                         |
-| Build          | Turborepo, tsdown                              |
-| Deployment     | Alchemy IaC, OpenNext for Cloudflare           |
-| Package Manager| pnpm 10                                        |
-
-## Development
-
-### Prerequisites
-
-- Node.js 22 or later
-- pnpm 10 (`corepack enable && corepack prepare pnpm@10`)
-- A Cloudflare account (for D1 and Workers deployment)
-
-### Setup
-
-1. Install dependencies:
-
-   ```bash
-   pnpm install
-   ```
-
-2. Copy and configure environment variables:
-
-   ```bash
-   cp .env.example .env
-   cp .env.example apps/server/.env
-   cp .env.example apps/web/.env
-   ```
-
-3. Generate database migrations:
-
-   ```bash
-   pnpm db:generate
-   ```
-
-4. Start all apps in development mode:
-
-   ```bash
-   pnpm dev
-   ```
-
-   The frontend runs on `http://localhost:3001` and the
-   API server on `http://localhost:3000`.
-
-### Development Scripts
-
-- `pnpm dev` -- Start all apps in development mode
-- `pnpm build` -- Build all apps and packages
-- `pnpm check-types` -- Run TypeScript type checking
-- `pnpm dev:web` -- Start only the web frontend
-- `pnpm dev:server` -- Start only the API server
-- `pnpm db:generate` -- Generate Drizzle migrations
-- `pnpm db:push` -- Push schema to database
-- `pnpm deploy` -- Deploy to Cloudflare via Alchemy
-- `pnpm destroy` -- Tear down Cloudflare resources
-
-### Code Quality
-
-- TypeScript strict mode across all packages
-- Biome for linting and formatting
-- Zod schemas for runtime validation at all boundaries
-
-## Project Structure
-
-```
-LinkDen/
-├── apps/
-│   ├── web/               # Next.js frontend (public page + admin)
-│   └── server/            # Hono API on Cloudflare Workers
-├── packages/
-│   ├── api/               # tRPC router definitions
-│   ├── auth/              # Better Auth configuration
-│   ├── config/            # Shared TypeScript configuration
-│   ├── db/                # Drizzle ORM schema + migrations
-│   ├── email/             # React Email templates
-│   ├── env/               # Environment variable validation
-│   ├── infra/             # Alchemy IaC for Cloudflare
-│   ├── ui/                # Custom UI component library
-│   └── validators/        # Shared Zod validation schemas
-├── data/
-│   └── social-networks.json  # Curated social platform registry
-├── scripts/
-│   └── check-social-icons.mjs  # Social icon update checker
-├── .github/workflows/     # CI, docs deploy, social icon check
-├── biome.json             # Linting and formatting config
-├── docker-compose.yml     # Docker deployment
-├── Dockerfile             # Multi-stage Docker build
-├── turbo.json             # Turborepo pipeline config
-└── version.json           # App version for update checks
-```
-
-## License
-
-![GitHub license](https://img.shields.io/github/license/MrDemonWolf/linkden.svg?style=for-the-badge&logo=github)
-
-MIT — fork it, run it, make it your own. See the
-[LICENSE](LICENSE) file for details.
-
-## Contact
-
-- Discord: [Join my server](https://mrdwolf.net/discord)
-- GitHub Issues: [Open an issue](https://github.com/MrDemonWolf/linkden/issues)
+Built for **Cloudflare** (Workers + D1 + R2) and **Docker/Coolify**.
 
 ---
 
-Built by [MrDemonWolf](https://www.mrdemonwolf.com) — for MrDemonWolf.
+## Features
+
+- **Drag-and-Drop Builder** — Visual editor with live phone preview.
+- **7 Theme Presets** — Corporate, Hacker, Neon, Furry, and more.
+- **Analytics Dashboard** — Privacy-friendly tracking for views and clicks.
+- **Contact Form** — Built-in messaging with CAPTCHA support.
+- **Apple Wallet Pass** — Digital business cards for your iPhone.
+- **vCard Support** — Downloadable contact cards.
+- **Export/Import** — Full data backup and restore as JSON.
+- **Whitelabel** — **Fully Allowed.** Toggle off all LinkDen branding.
+- **Edge Caching** — Near-zero-cost hosting on Cloudflare.
+- **100+ Social Networks** — Branded colors and icons for every platform.
+- **Secure** — XSS protection, CSRF safety, registration locks, and security headers.
+
+---
+
+## Quick Start (Local Development)
+
+```bash
+git clone https://github.com/MrDemonWolf/linkden.git
+cd linkden
+cp .env.example .env
+bun install
+bun run db:generate
+bun dev
+```
+
+Open `http://localhost:3001/admin/setup` to create your admin account.
+
+---
+
+## Deploy to Cloudflare
+
+LinkDen runs natively on Cloudflare Workers + D1 + R2.
+
+1. **Prerequisites:** [Cloudflare account](https://dash.cloudflare.com), [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/), [Bun](https://bun.sh)
+
+2. **Configure environment:**
+   ```bash
+   cp .env.example .env
+   # Edit .env — set BETTER_AUTH_SECRET, BETTER_AUTH_URL, CORS_ORIGIN, NEXT_PUBLIC_SERVER_URL
+   # Use your production domain URLs
+   ```
+
+3. **Deploy:**
+   ```bash
+   bun run ship
+   ```
+   This provisions D1, R2, and Workers via Alchemy IaC.
+
+4. **Tear down (if needed):**
+   ```bash
+   bun run destroy
+   ```
+
+---
+
+## Deploy with Docker / Coolify
+
+```bash
+cp .env.example .env
+# Edit .env — set at minimum BETTER_AUTH_SECRET
+docker compose up -d
+```
+
+App available at `http://localhost:3000`.
+
+For **Coolify**, point to this repo and set environment variables in the Coolify dashboard. The included `Dockerfile` and `docker-compose.yml` are ready to use.
+
+**Persistent data:** The SQLite database is stored at `/data/linkden.db` inside the container. The `docker-compose.yml` mounts a named volume for persistence.
+
+---
+
+## Environment Variables
+
+See [`.env.example`](.env.example) for the full list. Summary:
+
+| Variable | Required | Description |
+|---|---|---|
+| `BETTER_AUTH_SECRET` | Yes | Auth encryption key. Generate with `openssl rand -base64 32` |
+| `BETTER_AUTH_URL` | Yes | Hono server URL (e.g. `https://api.yourdomain.com`) |
+| `CORS_ORIGIN` | Yes | Next.js frontend URL (e.g. `https://yourdomain.com`) |
+| `NEXT_PUBLIC_SERVER_URL` | Yes | Same as `BETTER_AUTH_URL` (used by browser) |
+| `EMAIL_API_KEY` | No | Resend/SendGrid API key for password reset & magic links |
+| `CAPTCHA_SITE_KEY` / `CAPTCHA_SECRET_KEY` | No | Turnstile keys for contact form protection |
+| `WALLET_*` | No | Apple Wallet pass signing credentials |
+
+---
+
+## Backup & Restore
+
+LinkDen has built-in backup/restore in the admin panel under **Settings > Backup**.
+
+- **Export:** Downloads all blocks, social networks, contact submissions, and settings as JSON. Secrets (API keys, tokens) are excluded from exports for security.
+- **Import:** Supports two modes:
+  - **Replace** — Wipes existing data, then inserts from backup.
+  - **Merge** — Upserts by primary key, preserving data not in the backup.
+- **LinkStack Import:** Migrate from LinkStack with one click.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Frontend** | Next.js 16, React 19, Tailwind CSS v4 |
+| **Backend** | Hono, tRPC v11, Cloudflare Workers |
+| **Database** | Drizzle ORM, Cloudflare D1 (SQLite) |
+| **Auth** | Better Auth |
+| **Storage** | Cloudflare R2 |
+| **Tooling** | Bun, Turborepo, Biome |
+
+---
+
+## Development Scripts
+
+| Command | Description |
+|---|---|
+| `bun dev` | Start everything (Web + Server) |
+| `bun run build` | Build all apps |
+| `bun run check-types` | Run TypeScript checks |
+| `bun run db:generate` | Generate Drizzle migrations |
+| `bun run db:push` | Sync schema to database |
+| `bun run ship` | Deploy to Cloudflare |
+| `bun run destroy` | Tear down infrastructure |
+| `bun run reset:factory` | Wipe DB and start fresh |
+
+---
+
+## Security
+
+- **Single-user:** Registration locks after the first account is created.
+- **Input validation:** All inputs validated with Zod schemas.
+- **XSS protection:** HTML stripped from user inputs; SVG uploads blocked.
+- **CSRF:** SameSite cookie policy with httpOnly and secure flags.
+- **Rate limiting:** Cloudflare-native rate limiters on auth, signup, and uploads.
+- **Security headers:** HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy.
+- **Secret masking:** API keys and tokens are masked in admin UI responses.
+- **Backup safety:** Secrets are excluded from data exports.
+
+---
+
+## License
+
+MIT — fork it, run it, make it your own. **Whitelabeling is 100% fully allowed.**
+
+---
+
+Built by [MrDemonWolf](https://www.mrdemonwolf.com).

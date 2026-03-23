@@ -2,13 +2,12 @@
 
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
 import { toast } from "sonner";
 import {
 	Plus,
 	Upload,
-	ArrowUpRight,
 	Blocks,
+	Rocket,
 } from "lucide-react";
 import {
 	DndContext,
@@ -30,9 +29,7 @@ import {
 } from "@dnd-kit/sortable";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { socialBrandMap } from "@linkden/ui/social-brands";
 import { EmptyState } from "@/components/admin/empty-state";
 import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
@@ -41,50 +38,6 @@ import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { BlockEditPanel } from "@/components/admin/builder/block-edit-panel";
 import { BlockRow } from "@/components/admin/builder/block-row";
 import { BLOCK_TYPES, TYPE_BADGE_BG, type BlockType, type Block, generateId } from "@/components/admin/builder/builder-constants";
-import { toast as sonnerToast } from "sonner";
-
-function SocialNetworksSection({
-	socialNetworks,
-}: {
-	socialNetworks: Array<{ slug: string; name: string; url: string; hex: string; svgPath: string }>;
-}) {
-	if (socialNetworks.length === 0) return null;
-	return (
-		<Card>
-			<CardContent className="flex items-center justify-between py-3">
-				<div>
-					<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-						Social Networks
-					</p>
-					<div className="mt-1.5 flex flex-wrap gap-1.5">
-						{socialNetworks.slice(0, 5).map((n) => (
-							<div
-								key={n.slug}
-								className="flex h-6 w-6 items-center justify-center rounded-full"
-								style={{ background: n.hex }}
-								title={n.name}
-							>
-								<svg viewBox="0 0 24 24" className="h-3 w-3 fill-white">
-									<path d={n.svgPath} />
-								</svg>
-							</div>
-						))}
-						{socialNetworks.length > 5 && (
-							<span className="text-[10px] text-muted-foreground self-center">
-								+{socialNetworks.length - 5} more
-							</span>
-						)}
-					</div>
-				</div>
-				<Link href="/admin/social">
-					<Button variant="ghost" size="xs">
-						Manage <ArrowUpRight className="h-3 w-3" />
-					</Button>
-				</Link>
-			</CardContent>
-		</Card>
-	);
-}
 
 export default function BuilderPage() {
 	const qc = useQueryClient();
@@ -100,7 +53,6 @@ export default function BuilderPage() {
 	const hasDraftQuery = useQuery(trpc.blocks.hasDraft.queryOptions());
 	const hasDrafts = hasDraftQuery.data?.hasDraft ?? false;
 	const settingsQuery = useQuery(trpc.settings.getAll.queryOptions());
-	const socialsQuery = useQuery(trpc.social.list.queryOptions({ activeOnly: true }));
 
 	useUnsavedChanges(hasDrafts);
 
@@ -115,17 +67,6 @@ export default function BuilderPage() {
 			setNewlyAddedId(null);
 		}
 	}, [newlyAddedId, blocks]);
-
-	const previewSocialNetworks = useMemo(() => {
-		return (socialsQuery.data ?? [])
-			.filter((s: { isActive: boolean; url: string }) => s.isActive && s.url)
-			.map((s: { slug: string; url: string }) => {
-				const brand = socialBrandMap.get(s.slug);
-				if (!brand) return null;
-				return { slug: s.slug, name: brand.name, url: s.url, hex: brand.hex, svgPath: brand.svgPath };
-			})
-			.filter(Boolean) as Array<{ slug: string; name: string; url: string; hex: string; svgPath: string }>;
-	}, [socialsQuery.data]);
 
 	const updateSettings = useMutation(trpc.settings.updateBulk.mutationOptions());
 	const contactDelivery = settingsQuery.data?.contact_delivery ?? "database";
@@ -148,13 +89,15 @@ export default function BuilderPage() {
 		const defaults: Record<string, string> = {
 			link: "New Link",
 			header: "Section Header",
-			social_icons: "Social Icons",
 			embed: "Embed",
-			form: "Form",
+			connect: "Connect With Me",
 			vcard: "Download Contact",
+			location: "Location",
 		};
 		const defaultConfigs: Partial<Record<string, string>> = {
-			vcard: JSON.stringify({ buttonText: "Download Contact", buttonEmoji: "📇" }),
+			vcard: JSON.stringify({ buttonText: "Download Contact", buttonEmoji: "" }),
+			connect: JSON.stringify({ preset: "contact", buttonText: "Contact Me", buttonEmoji: "", successMessage: "Thanks for reaching out!" }),
+			location: JSON.stringify({ address: "", linkType: "none" }),
 		};
 		try {
 			await createBlock.mutateAsync({
@@ -215,7 +158,7 @@ export default function BuilderPage() {
 		}
 	};
 
-	// dnd-kit sensors: pointer (mouse+pen), touch, keyboard
+	// dnd-kit sensors
 	const sensors = useSensors(
 		useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
 		useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
@@ -246,65 +189,82 @@ export default function BuilderPage() {
 		}
 	};
 
-	const previewBlocksData = blocks.filter((b) => b.isEnabled).map((b) => {
-		const base = {
-			id: b.id,
-			type: b.type,
-			title: b.title,
-			url: b.url,
-			icon: b.icon,
-			embedType: b.embedType,
-			embedUrl: b.embedUrl,
-			socialIcons: b.socialIcons,
-			config: b.config,
-			position: b.position,
-		};
-		if (editingOverrides && editingOverrides.id === b.id) {
-			return { ...base, ...editingOverrides, position: base.position, type: base.type };
-		}
-		return base;
-	});
+	const previewBlocksData = useMemo(() => {
+		return blocks.filter((b) => b.isEnabled).map((b) => {
+			const base = {
+				id: b.id,
+				type: b.type,
+				title: b.title,
+				url: b.url,
+				icon: b.icon,
+				embedType: b.embedType,
+				embedUrl: b.embedUrl,
+				socialIcons: b.socialIcons,
+				config: b.config,
+				position: b.position,
+			};
+			if (editingOverrides && editingOverrides.id === b.id) {
+				return { ...base, ...editingOverrides, position: base.position, type: base.type };
+			}
+			return base;
+		});
+	}, [blocks, editingOverrides]);
 
 	const activeBlock = activeId ? blocks.find((b) => b.id === activeId) : null;
 	const blockIds = blocks.map((b) => b.id);
 
 	return (
-		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-4">
-			{/* Inline header row */}
-			<div className="flex items-center justify-between gap-3">
+		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out">
+			{/* Header bar with publish button */}
+			<div className="mb-6 flex items-center justify-between gap-4">
 				<div className="min-w-0">
-					<h1 className="text-base font-semibold tracking-tight">Builder</h1>
+					<h1 className="text-lg font-semibold tracking-tight">Page Builder</h1>
 					<p className={cn(
-						"text-xs",
-						hasDrafts ? "text-amber-500" : "text-muted-foreground",
+						"text-xs mt-0.5",
+						hasDrafts ? "text-amber-400" : "text-muted-foreground",
 					)}>
-						{hasDrafts ? "Unpublished changes" : "All changes are live"}
+						{hasDrafts
+							? `Unpublished changes \u00b7 ${blocks.filter((b) => b.status === "draft").length} draft${blocks.filter((b) => b.status === "draft").length !== 1 ? "s" : ""}`
+							: "All changes are live"
+						}
 					</p>
 				</div>
-				<div className="flex items-center gap-2 shrink-0">
-					<Button
-						size="sm"
-						variant={hasDrafts ? "default" : "outline"}
-						disabled={!hasDrafts || publishAll.isPending}
-						onClick={async () => {
-							try {
-								await publishAll.mutateAsync();
-								invalidate();
-								sonnerToast.success("All changes published");
-							} catch {
-								sonnerToast.error("Failed to publish");
-							}
-						}}
-					>
-						<Upload className="mr-1.5 h-3.5 w-3.5" />
-						{publishAll.isPending ? "Publishing…" : "Publish"}
-					</Button>
-				</div>
+				<Button
+					size="sm"
+					disabled={!hasDrafts || publishAll.isPending}
+					onClick={async () => {
+						try {
+							await publishAll.mutateAsync();
+							invalidate();
+							toast.success("All changes published");
+						} catch {
+							toast.error("Failed to publish");
+						}
+					}}
+					className={cn(
+						"gap-2 transition-all",
+						hasDrafts
+							? "bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/25"
+							: "opacity-50",
+					)}
+				>
+					{publishAll.isPending ? (
+						<>
+							<Upload className="h-3.5 w-3.5 animate-pulse" />
+							Publishing...
+						</>
+					) : (
+						<>
+							<Rocket className="h-3.5 w-3.5" />
+							Publish
+						</>
+					)}
+				</Button>
 			</div>
 
-			{/* Main layout */}
-			<div className="flex gap-6">
-				{/* Block list */}
+			{/* Main two-column layout */}
+			<div className="flex gap-6 items-start">
+				{/* Left: Block list + picker */}
 				<div className="flex-1 min-w-0 space-y-4">
 					<DndContext
 						sensors={sensors}
@@ -320,7 +280,7 @@ export default function BuilderPage() {
 							<EmptyState
 								icon={Blocks}
 								title="No blocks yet"
-								description='Click "Add Block" below to start building your page'
+								description="Add your first block below to start building your page"
 							/>
 						) : (
 							<SortableContext items={blockIds} strategy={verticalListSortingStrategy}>
@@ -353,12 +313,17 @@ export default function BuilderPage() {
 						</DragOverlay>
 					</DndContext>
 
-					{/* Block picker */}
+					{/* Flat block type picker */}
 					<div className="space-y-2">
 						<button
 							type="button"
 							onClick={() => setShowPicker(!showPicker)}
-							className="w-full rounded-xl border-2 border-dashed border-border/60 p-4 text-sm text-muted-foreground hover:border-primary/40 hover:text-primary transition-all flex items-center justify-center gap-2"
+							className={cn(
+								"w-full rounded-xl border-2 border-dashed p-4 text-sm transition-all flex items-center justify-center gap-2",
+								showPicker
+									? "border-blue-500/40 text-blue-400 bg-blue-500/5"
+									: "border-border/60 text-muted-foreground hover:border-blue-500/30 hover:text-blue-400 hover:bg-blue-500/5",
+							)}
 						>
 							<Plus className={cn("h-4 w-4 transition-transform duration-200", showPicker && "rotate-45")} />
 							{showPicker ? "Cancel" : "Add Block"}
@@ -371,13 +336,13 @@ export default function BuilderPage() {
 										key={item.type}
 										type="button"
 										onClick={() => { handleAddBlock(item.type); setShowPicker(false); }}
-										className="flex flex-col items-start gap-2 rounded-xl border border-border/60 bg-card/50 p-3 text-left hover:border-primary/40 hover:bg-card transition-all"
+										className="group/picker flex flex-col items-start gap-2 rounded-xl border border-white/10 bg-card/60 backdrop-blur-sm p-3 text-left hover:border-blue-500/30 hover:bg-blue-500/5 transition-all"
 									>
-										<div className={cn("flex h-8 w-8 items-center justify-center rounded-lg", TYPE_BADGE_BG[item.type])}>
+										<div className={cn("flex h-8 w-8 items-center justify-center rounded-lg transition-colors", TYPE_BADGE_BG[item.type])}>
 											<item.icon className="h-4 w-4" />
 										</div>
 										<div>
-											<div className="text-xs font-semibold">{item.label}</div>
+											<div className="text-xs font-semibold group-hover/picker:text-blue-400 transition-colors">{item.label}</div>
 											<div className="text-[10px] text-muted-foreground leading-tight mt-0.5">{item.description}</div>
 										</div>
 									</button>
@@ -385,12 +350,9 @@ export default function BuilderPage() {
 							</div>
 						)}
 					</div>
-
-					{/* Social Networks section */}
-					<SocialNetworksSection socialNetworks={previewSocialNetworks} />
 				</div>
 
-				{/* Right: edit panel or preview */}
+				{/* Right side: Edit panel and/or Preview */}
 				<div className="hidden lg:flex lg:gap-4 shrink-0">
 					{/* Edit panel — slides in when editing */}
 					{editingBlock && (
@@ -402,7 +364,6 @@ export default function BuilderPage() {
 								onSave={handleSaveEdit}
 								isSaving={updateBlock.isPending}
 								contactDelivery={contactDelivery}
-								socialNetworks={previewSocialNetworks}
 								onDeliveryChange={async (value) => {
 									try {
 										await updateSettings.mutateAsync([
@@ -417,7 +378,8 @@ export default function BuilderPage() {
 							/>
 						</div>
 					)}
-					{/* Preview — always on xl, hidden on lg when editing */}
+
+					{/* Permanent live preview sidebar */}
 					<div className={cn(
 						"w-[360px] shrink-0 sticky top-6",
 						editingBlock ? "hidden xl:block" : "block",

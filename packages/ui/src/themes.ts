@@ -1,6 +1,7 @@
 export interface ThemePreset {
   name: string;
   label: string;
+  description: string;
   cssVars: {
     light: Record<string, string>;
     dark: Record<string, string>;
@@ -10,7 +11,8 @@ export interface ThemePreset {
 export const themePresets: ThemePreset[] = [
   {
     name: "default",
-    label: "Liquid",
+    label: "Light",
+    description: "Clean and minimal with bright backgrounds",
     cssVars: {
       light: {
         "--ld-primary": "#091533",
@@ -43,8 +45,184 @@ export const themePresets: ThemePreset[] = [
     },
   },
   {
+    name: "dark",
+    label: "Dark",
+    description: "Sleek dark theme with subtle contrasts",
+    cssVars: {
+      light: {
+        "--ld-primary": "#374151",
+        "--ld-secondary": "#E5E7EB",
+        "--ld-accent": "#60A5FA",
+        "--ld-action": "#1F2937",
+        "--ld-background": "#F4F6F9",
+        "--ld-foreground": "#111827",
+        "--ld-card": "#FFFFFF",
+        "--ld-card-foreground": "#111827",
+        "--ld-border": "#D1D5DB",
+        "--ld-muted": "#F3F4F6",
+        "--ld-muted-foreground": "#334155",
+        "--ld-radius": "0.375rem",
+      },
+      dark: {
+        "--ld-primary": "#94A3B8",
+        "--ld-secondary": "#111827",
+        "--ld-accent": "#38BDF8",
+        "--ld-action": "#38BDF8",
+        "--ld-background": "#080E18",
+        "--ld-foreground": "#F1F5F9",
+        "--ld-card": "#111827",
+        "--ld-card-foreground": "#F1F5F9",
+        "--ld-border": "#1E293B",
+        "--ld-muted": "#111827",
+        "--ld-muted-foreground": "#93C5FD",
+        "--ld-radius": "0.375rem",
+      },
+    },
+  },
+  {
+    name: "ocean-blue",
+    label: "Ocean Blue",
+    description: "Deep blues inspired by the ocean",
+    cssVars: {
+      light: {
+        "--ld-primary": "#1E3A5F",
+        "--ld-secondary": "#E0F2FE",
+        "--ld-accent": "#0EA5E9",
+        "--ld-action": "#0369A1",
+        "--ld-background": "#F0F9FF",
+        "--ld-foreground": "#0C4A6E",
+        "--ld-card": "#FFFFFF",
+        "--ld-card-foreground": "#0C4A6E",
+        "--ld-border": "#BAE6FD",
+        "--ld-muted": "#E0F2FE",
+        "--ld-muted-foreground": "#0369A1",
+        "--ld-radius": "0.75rem",
+      },
+      dark: {
+        "--ld-primary": "#38BDF8",
+        "--ld-secondary": "#082F49",
+        "--ld-accent": "#7DD3FC",
+        "--ld-action": "#7DD3FC",
+        "--ld-background": "#0C1929",
+        "--ld-foreground": "#E0F2FE",
+        "--ld-card": "#0A2540",
+        "--ld-card-foreground": "#E0F2FE",
+        "--ld-border": "#164E63",
+        "--ld-muted": "#0A2540",
+        "--ld-muted-foreground": "#67E8F9",
+        "--ld-radius": "0.75rem",
+      },
+    },
+  },
+  {
+    name: "sunset",
+    label: "Sunset",
+    description: "Warm oranges and golden tones",
+    cssVars: {
+      light: {
+        "--ld-primary": "#C2410C",
+        "--ld-secondary": "#FFF7ED",
+        "--ld-accent": "#F97316",
+        "--ld-action": "#9A3412",
+        "--ld-background": "#FFFBF5",
+        "--ld-foreground": "#431407",
+        "--ld-card": "#FFFFFF",
+        "--ld-card-foreground": "#431407",
+        "--ld-border": "#FED7AA",
+        "--ld-muted": "#FFF7ED",
+        "--ld-muted-foreground": "#9A3412",
+        "--ld-radius": "0.5rem",
+      },
+      dark: {
+        "--ld-primary": "#FB923C",
+        "--ld-secondary": "#1C1108",
+        "--ld-accent": "#FDBA74",
+        "--ld-action": "#FDBA74",
+        "--ld-background": "#1A0F05",
+        "--ld-foreground": "#FFF7ED",
+        "--ld-card": "#271A0C",
+        "--ld-card-foreground": "#FFF7ED",
+        "--ld-border": "#431407",
+        "--ld-muted": "#271A0C",
+        "--ld-muted-foreground": "#FCA86A",
+        "--ld-radius": "0.5rem",
+      },
+    },
+  },
+  {
+    name: "forest",
+    label: "Forest",
+    description: "Natural greens with earthy warmth",
+    cssVars: {
+      light: {
+        "--ld-primary": "#166534",
+        "--ld-secondary": "#DCFCE7",
+        "--ld-accent": "#22C55E",
+        "--ld-action": "#15803D",
+        "--ld-background": "#F0FDF4",
+        "--ld-foreground": "#14532D",
+        "--ld-card": "#FFFFFF",
+        "--ld-card-foreground": "#14532D",
+        "--ld-border": "#BBF7D0",
+        "--ld-muted": "#F0FDF4",
+        "--ld-muted-foreground": "#15803D",
+        "--ld-radius": "0.625rem",
+      },
+      dark: {
+        "--ld-primary": "#4ADE80",
+        "--ld-secondary": "#0A1A0F",
+        "--ld-accent": "#86EFAC",
+        "--ld-action": "#86EFAC",
+        "--ld-background": "#061208",
+        "--ld-foreground": "#DCFCE7",
+        "--ld-card": "#0A1A0F",
+        "--ld-card-foreground": "#DCFCE7",
+        "--ld-border": "#14532D",
+        "--ld-muted": "#0A1A0F",
+        "--ld-muted-foreground": "#86EFAC",
+        "--ld-radius": "0.625rem",
+      },
+    },
+  },
+  {
+    name: "minimal",
+    label: "Minimal",
+    description: "Ultra-clean with monochrome palette",
+    cssVars: {
+      light: {
+        "--ld-primary": "#18181B",
+        "--ld-secondary": "#F4F4F5",
+        "--ld-accent": "#71717A",
+        "--ld-action": "#27272A",
+        "--ld-background": "#FFFFFF",
+        "--ld-foreground": "#09090B",
+        "--ld-card": "#FAFAFA",
+        "--ld-card-foreground": "#09090B",
+        "--ld-border": "#E4E4E7",
+        "--ld-muted": "#F4F4F5",
+        "--ld-muted-foreground": "#71717A",
+        "--ld-radius": "0.25rem",
+      },
+      dark: {
+        "--ld-primary": "#E4E4E7",
+        "--ld-secondary": "#18181B",
+        "--ld-accent": "#A1A1AA",
+        "--ld-action": "#D4D4D8",
+        "--ld-background": "#09090B",
+        "--ld-foreground": "#FAFAFA",
+        "--ld-card": "#18181B",
+        "--ld-card-foreground": "#FAFAFA",
+        "--ld-border": "#27272A",
+        "--ld-muted": "#18181B",
+        "--ld-muted-foreground": "#A1A1AA",
+        "--ld-radius": "0.25rem",
+      },
+    },
+  },
+  {
     name: "corporate-classic",
     label: "Corporate Classic",
+    description: "Professional blue tones for business",
     cssVars: {
       light: {
         "--ld-primary": "#1E3A5F",
@@ -79,6 +257,7 @@ export const themePresets: ThemePreset[] = [
   {
     name: "blood-moon",
     label: "Blood Moon",
+    description: "Bold crimson with dramatic contrasts",
     cssVars: {
       light: {
         "--ld-primary": "#B91C1C",
@@ -113,6 +292,7 @@ export const themePresets: ThemePreset[] = [
   {
     name: "hacker-terminal",
     label: "Hacker Terminal",
+    description: "Matrix-inspired neon green on black",
     cssVars: {
       light: {
         "--ld-primary": "#16A34A",
@@ -145,42 +325,9 @@ export const themePresets: ThemePreset[] = [
     },
   },
   {
-    name: "shadow-wolf",
-    label: "Shadow Wolf",
-    cssVars: {
-      light: {
-        "--ld-primary": "#374151",
-        "--ld-secondary": "#E5E7EB",
-        "--ld-accent": "#60A5FA",
-        "--ld-action": "#1F2937",
-        "--ld-background": "#F4F6F9",
-        "--ld-foreground": "#111827",
-        "--ld-card": "#FFFFFF",
-        "--ld-card-foreground": "#111827",
-        "--ld-border": "#D1D5DB",
-        "--ld-muted": "#F3F4F6",
-        "--ld-muted-foreground": "#334155",
-        "--ld-radius": "0.375rem",
-      },
-      dark: {
-        "--ld-primary": "#94A3B8",
-        "--ld-secondary": "#111827",
-        "--ld-accent": "#38BDF8",
-        "--ld-action": "#38BDF8",
-        "--ld-background": "#080E18",
-        "--ld-foreground": "#F1F5F9",
-        "--ld-card": "#111827",
-        "--ld-card-foreground": "#F1F5F9",
-        "--ld-border": "#1E293B",
-        "--ld-muted": "#111827",
-        "--ld-muted-foreground": "#93C5FD",
-        "--ld-radius": "0.375rem",
-      },
-    },
-  },
-  {
     name: "hellfire",
     label: "Hellfire",
+    description: "Fiery orange with blazing intensity",
     cssVars: {
       light: {
         "--ld-primary": "#C2410C",
@@ -215,6 +362,7 @@ export const themePresets: ThemePreset[] = [
   {
     name: "abyssal",
     label: "Abyssal",
+    description: "Deep purple with mysterious depth",
     cssVars: {
       light: {
         "--ld-primary": "#7C3AED",

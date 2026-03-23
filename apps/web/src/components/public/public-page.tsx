@@ -5,14 +5,6 @@ import { themePresets } from "@linkden/ui/themes";
 import { ThemeToggle } from "./theme-toggle";
 import { PublicPageContent } from "./public-page-content";
 
-interface SocialNetwork {
-	slug: string;
-	name: string;
-	url: string;
-	hex: string;
-	svgPath: string;
-}
-
 interface PageData {
 	profile: {
 		name: string;
@@ -33,7 +25,6 @@ interface PageData {
 		config: string | null;
 		position: number;
 	}>;
-	socialNetworks?: SocialNetwork[];
 	theme: {
 		preset?: string;
 		customColors?: Record<string, string>;
@@ -170,7 +161,6 @@ export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolea
 			<PublicPageContent
 				profile={data.profile}
 				blocks={data.blocks}
-				socialNetworks={data.socialNetworks}
 				settings={{
 					brandingEnabled: data.settings.brandingEnabled,
 					brandingText: data.settings.brandingText,

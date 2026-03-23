@@ -167,11 +167,11 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 						)}
 					</span>
 				) : (
-					<span className="inline-flex items-center gap-2">
+					<span className="inline-flex items-center gap-2 pr-12 overflow-hidden">
 						{emoji && emojiPosition === "left" && (
 							<span className="shrink-0" aria-hidden="true">{emoji}</span>
 						)}
-						<span>{block.title || "Untitled Link"}</span>
+						<span className="truncate">{block.title || "Untitled Link"}</span>
 						{emoji && emojiPosition === "right" && (
 							<span className="shrink-0" aria-hidden="true">{emoji}</span>
 						)}

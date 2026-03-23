@@ -9,6 +9,7 @@ import {
 import { eq, asc, sql } from "drizzle-orm";
 import { z } from "zod";
 import { transformLinkStackData } from "../utils/linkstack-transformer";
+import { upsertSetting } from "../utils/settings";
 import {
 	blockImportSchema,
 	socialNetworkImportSchema,
@@ -37,6 +38,13 @@ export const backupRouter = router({
 			.orderBy(asc(socialNetwork.slug));
 		const contacts = await db.select().from(contactSubmission);
 
+		// Exclude secrets from backup — credentials should never leave the database
+		const SECRET_KEYS = new Set([
+			"email_api_key",
+			"captcha_secret_key",
+			"mapkit_token",
+		]);
+
 		return {
 			version: "1.0",
 			exportedAt: new Date().toISOString(),
@@ -44,7 +52,9 @@ export const backupRouter = router({
 				blocks,
 				settings: settings.reduce(
 					(acc, s) => {
-						acc[s.key] = s.value;
+						if (!SECRET_KEYS.has(s.key)) {
+							acc[s.key] = s.value;
+						}
 						return acc;
 					},
 					{} as Record<string, string>,
@@ -109,18 +119,7 @@ export const backupRouter = router({
 			if (data.settings) {
 				const entries = Object.entries(data.settings);
 				for (const [key, value] of entries) {
-					const [existing] = await db
-						.select()
-						.from(siteSettings)
-						.where(eq(siteSettings.key, key));
-					if (existing) {
-						await db
-							.update(siteSettings)
-							.set({ value })
-							.where(eq(siteSettings.key, key));
-					} else {
-						await db.insert(siteSettings).values({ key, value });
-					}
+					await upsertSetting(key, value);
 				}
 			}
 
@@ -128,7 +127,7 @@ export const backupRouter = router({
 				for (const s of data.socialNetworks) {
 					const slug = s.slug;
 					const url = s.url || "";
-					const isActive = s.isActive ?? s.is_active ?? true;
+					const isActive = s.isActive ?? true;
 
 					if (!url) continue;
 
@@ -162,7 +161,24 @@ export const backupRouter = router({
 	importLinkStack: protectedProcedure
 		.input(
 			z.object({
-				data: z.any(),
+				data: z.object({
+					name: z.string().optional(),
+					littlelink_name: z.string().optional(),
+					littlelink_description: z.string().optional(),
+					theme: z.string().optional(),
+					profile_image: z.string().optional(),
+					links: z.array(z.object({
+						button_id: z.string().optional(),
+						link: z.string().optional(),
+						title: z.string().optional(),
+						order: z.number().optional(),
+						click_number: z.number().optional(),
+						custom_css: z.string().optional(),
+						custom_icon: z.string().optional(),
+						type: z.number().optional(),
+						type_params: z.string().optional(),
+					})).optional(),
+				}),
 				options: z.object({
 					importLinks: z.boolean(),
 					importProfile: z.boolean(),
@@ -201,18 +217,7 @@ export const backupRouter = router({
 				}
 
 				for (const [key, value] of Object.entries(settingsToImport)) {
-					const [existing] = await db
-						.select()
-						.from(siteSettings)
-						.where(eq(siteSettings.key, key));
-					if (existing) {
-						await db
-							.update(siteSettings)
-							.set({ value })
-							.where(eq(siteSettings.key, key));
-					} else {
-						await db.insert(siteSettings).values({ key, value });
-					}
+					await upsertSetting(key, value);
 				}
 
 				if (Object.keys(settingsToImport).length > 0) {

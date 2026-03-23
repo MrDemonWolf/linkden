@@ -1,7 +1,17 @@
 "use client";
 
 import type { ThemeColors } from "./public-page";
-import { getContrastColor } from "./contact-form-modal";
+import { usePreview } from "./preview-context";
+
+function getContrastColor(hex: string): string {
+	const r = parseInt(hex.slice(1, 3), 16) / 255;
+	const g = parseInt(hex.slice(3, 5), 16) / 255;
+	const b = parseInt(hex.slice(5, 7), 16) / 255;
+	const toLinear = (c: number) =>
+		c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+	const L = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+	return L > 0.179 ? "#000000" : "#FFFFFF";
+}
 
 interface VCardBlockProps {
 	block: {
@@ -24,6 +34,7 @@ export function VCardBlock({
 	colorMode,
 	themeColors,
 }: VCardBlockProps) {
+	const { isPreview } = usePreview();
 	const buttonText = (config.buttonText as string) || block.title || "Download Contact";
 	const buttonEmoji = config.buttonEmoji as string | undefined;
 	const buttonEmojiPosition = (config.buttonEmojiPosition as string) || "left";
@@ -87,8 +98,9 @@ export function VCardBlock({
 	return (
 		<div role="listitem" className="ld-vcard-block">
 			<a
-				href="/api/vcard"
-				download="contact.vcf"
+				href={isPreview ? undefined : "/api/vcard"}
+				download={isPreview ? undefined : "contact.vcf"}
+				onClick={isPreview ? (e: React.MouseEvent) => e.preventDefault() : undefined}
 				className={`${baseClasses} ${colorClasses} cursor-pointer hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 no-underline`}
 				style={{ ...style, outlineColor: themeColors?.primary || "#3b82f6" }}
 			>
