@@ -1,10 +1,13 @@
-import { useState } from "react";
+"use client";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { FieldGroup } from "./field-group";
 import { OG_TEMPLATES } from "@/lib/og-templates";
-import { Check, Layout, Link } from "lucide-react";
+import { OgPreviewCard } from "./og-preview-card";
+import { ImageUploadField } from "@/components/admin/image-upload-field";
+import { Check, Layout, Image, Link } from "lucide-react";
 
 interface SeoSectionProps {
 	seoTitle: string;
@@ -41,34 +44,56 @@ export function SeoSection({
 }: SeoSectionProps) {
 	const previewUrl = `/api/og?template=${encodeURIComponent(seoOgTemplate || "minimal")}&name=${encodeURIComponent(profileName || "My Links")}&bio=${encodeURIComponent(bio || "")}&theme=${encodeURIComponent(primaryColor || "#6366f1")}${avatarUrl ? `&avatar=${encodeURIComponent(avatarUrl)}` : ""}&_preview=1`;
 
+	// Determine the OG image URL for the preview card
+	const ogImageForPreview =
+		seoOgMode === "template"
+			? previewUrl
+			: seoOgImage || "";
+
 	return (
-		<div className="space-y-4">
-			<FieldGroup>
-				<div className="space-y-1.5">
-					<Label htmlFor="s-seo-title">Page Title</Label>
-					<Input
-						id="s-seo-title"
-						value={seoTitle}
-						onChange={(e) => onSeoTitleChange(e.target.value)}
-						placeholder="My Links"
-					/>
-				</div>
-			</FieldGroup>
-			<div className="space-y-1.5">
-				<Label htmlFor="s-seo-desc">Description</Label>
-				<textarea
-					id="s-seo-desc"
-					value={seoDescription}
-					onChange={(e) => onSeoDescriptionChange(e.target.value)}
-					rows={2}
-					placeholder="Check out all my links"
-					className="dark:bg-input/30 border-input w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
-				/>
+		<div className="space-y-6">
+			{/* Page Title & Meta Description */}
+			<div className="space-y-4">
+				<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+					Meta Tags
+				</p>
+				<FieldGroup columns={2}>
+					<div className="space-y-1.5">
+						<Label htmlFor="s-seo-title">Page Title</Label>
+						<Input
+							id="s-seo-title"
+							value={seoTitle}
+							onChange={(e) => onSeoTitleChange(e.target.value)}
+							placeholder="My Links"
+						/>
+						<p className="text-[11px] text-muted-foreground">
+							Shown in browser tab and search results
+						</p>
+					</div>
+					<div className="space-y-1.5">
+						<Label htmlFor="s-seo-desc">Meta Description</Label>
+						<textarea
+							id="s-seo-desc"
+							value={seoDescription}
+							onChange={(e) => onSeoDescriptionChange(e.target.value)}
+							rows={2}
+							placeholder="Check out all my links"
+							className="dark:bg-input/30 border-input w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
+						/>
+						<p className="text-[11px] text-muted-foreground">
+							Appears below the title in search engine results
+						</p>
+					</div>
+				</FieldGroup>
 			</div>
 
-			{/* OG Image mode toggle */}
-			<div className="space-y-3">
-				<Label>OG Image</Label>
+			{/* OG Image section */}
+			<div className="space-y-4">
+				<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+					Open Graph Image
+				</p>
+
+				{/* Mode toggle */}
 				<div className="flex gap-2" role="tablist">
 					<button
 						type="button"
@@ -78,12 +103,12 @@ export function SeoSection({
 						className={cn(
 							"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
 							seoOgMode === "template"
-								? "border-primary bg-primary/5 text-primary"
+								? "border-blue-500/50 bg-blue-500/10 text-blue-400"
 								: "border-border text-muted-foreground hover:text-foreground",
 						)}
 					>
 						<Layout className="h-3 w-3" />
-						Use Template
+						Template
 					</button>
 					<button
 						type="button"
@@ -93,7 +118,22 @@ export function SeoSection({
 						className={cn(
 							"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
 							seoOgMode === "custom"
-								? "border-primary bg-primary/5 text-primary"
+								? "border-blue-500/50 bg-blue-500/10 text-blue-400"
+								: "border-border text-muted-foreground hover:text-foreground",
+						)}
+					>
+						<Image className="h-3 w-3" />
+						Upload Image
+					</button>
+					<button
+						type="button"
+						role="tab"
+						aria-selected={seoOgMode === "url"}
+						onClick={() => onSeoOgModeChange("url")}
+						className={cn(
+							"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+							seoOgMode === "url"
+								? "border-blue-500/50 bg-blue-500/10 text-blue-400"
 								: "border-border text-muted-foreground hover:text-foreground",
 						)}
 					>
@@ -102,68 +142,82 @@ export function SeoSection({
 					</button>
 				</div>
 
-				{seoOgMode === "template" ? (
-					<div className="space-y-3">
-						{/* Template grid */}
-						<div className="grid grid-cols-2 gap-2">
-							{OG_TEMPLATES.map((t) => {
-								const isSelected = seoOgTemplate === t.id;
-								return (
-									<button
-										key={t.id}
-										type="button"
-										onClick={() => onSeoOgTemplateChange(t.id)}
-										className={cn(
-											"relative rounded-lg border p-3 text-left transition-all",
-											isSelected
-												? "border-primary bg-primary/5 ring-1 ring-primary"
-												: "border-border/50 hover:border-border hover:bg-muted/30",
-										)}
-									>
-										{isSelected && (
-											<div className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-white">
-												<Check className="h-2.5 w-2.5" />
-											</div>
-										)}
-										<p className="text-xs font-medium">{t.name}</p>
-										<p className="mt-0.5 text-[10px] text-muted-foreground">
-											{t.description}
-										</p>
-									</button>
-								);
-							})}
-						</div>
-
-						{/* Live preview */}
-						<div className="space-y-1.5">
-							<p className="text-[11px] font-medium text-muted-foreground">Preview</p>
-							<div className="overflow-hidden rounded-lg border border-border/50">
-								{/* eslint-disable-next-line @next/next/no-img-element */}
-								<img
-									src={previewUrl}
-									alt="OG Image Preview"
-									className="w-full"
-									key={`${seoOgTemplate}-${profileName}-${bio}`}
-								/>
-							</div>
-							<p className="text-[10px] text-muted-foreground">
-								Uses your profile name and bio automatically
-							</p>
-						</div>
+				{/* Template selection */}
+				{seoOgMode === "template" && (
+					<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+						{OG_TEMPLATES.map((t) => {
+							const isSelected = seoOgTemplate === t.id;
+							return (
+								<button
+									key={t.id}
+									type="button"
+									onClick={() => onSeoOgTemplateChange(t.id)}
+									className={cn(
+										"relative rounded-lg border p-3 text-left transition-all",
+										isSelected
+											? "border-blue-500/50 bg-blue-500/5 ring-1 ring-blue-500/50"
+											: "border-border/50 hover:border-border hover:bg-muted/30",
+									)}
+								>
+									{isSelected && (
+										<div className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-white">
+											<Check className="h-2.5 w-2.5" />
+										</div>
+									)}
+									<p className="text-xs font-medium">{t.name}</p>
+									<p className="mt-0.5 text-[10px] text-muted-foreground">
+										{t.description}
+									</p>
+								</button>
+							);
+						})}
 					</div>
-				) : (
+				)}
+
+				{/* Upload image mode */}
+				{seoOgMode === "custom" && (
+					<div className="space-y-1.5">
+						<ImageUploadField
+							value={seoOgImage}
+							purpose="og_image"
+							onUploadComplete={onSeoOgImageChange}
+							aspectRatio="banner"
+						/>
+						<p className="text-[11px] text-muted-foreground">
+							Recommended size: 1200 x 630 pixels. Max 5MB.
+						</p>
+					</div>
+				)}
+
+				{/* Custom URL mode */}
+				{seoOgMode === "url" && (
 					<div className="space-y-1.5">
 						<Input
 							id="s-seo-og"
 							value={seoOgImage}
 							onChange={(e) => onSeoOgImageChange(e.target.value)}
-							placeholder="https://..."
+							placeholder="https://example.com/og-image.png"
 						/>
 						<p className="text-[11px] text-muted-foreground">
-							Preview image shown when your page is shared on social media
+							Direct URL to your OG image. Recommended: 1200 x 630 pixels.
 						</p>
 					</div>
 				)}
+			</div>
+
+			{/* Live Social Preview */}
+			<div className="space-y-3">
+				<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+					Social Media Preview
+				</p>
+				<p className="text-[11px] text-muted-foreground -mt-2">
+					How your page will look when shared on social media
+				</p>
+				<OgPreviewCard
+					title={seoTitle || profileName || "My Links"}
+					description={seoDescription || bio || "Check out all my links"}
+					imageUrl={ogImageForPreview}
+				/>
 			</div>
 		</div>
 	);

@@ -8,7 +8,6 @@ import { trpc } from "@/utils/trpc";
 import { PhoneFrame } from "@/components/admin/phone-frame";
 import { PreviewContent } from "@/components/admin/preview-content";
 import { getThemeColors, type ThemeColors } from "@/components/public/public-page";
-import { socialBrandMap } from "@linkden/ui/social-brands";
 import { cn } from "@/lib/utils";
 import type { Block } from "@/components/admin/builder/builder-constants";
 
@@ -40,7 +39,6 @@ interface PreviewOverrides {
 		bannerCustomUrl?: string | null;
 		customCss?: string | null;
 	};
-	socialNetworks?: Array<{ slug: string; name: string; url: string; hex: string; svgPath: string }>;
 	themeColors?: ThemeColors;
 }
 
@@ -63,8 +61,6 @@ export function SharedPreview({ overrides, className, mode: controlledMode, onMo
 
 	const settingsQuery = useQuery(trpc.settings.getAll.queryOptions());
 	const blocksQuery = useQuery(trpc.blocks.list.queryOptions());
-	const socialsQuery = useQuery(trpc.social.list.queryOptions({ activeOnly: true }));
-
 	const settings = settingsQuery.data ?? {};
 
 	const [systemPrefersDark, setSystemPrefersDark] = useState(false);
@@ -107,17 +103,6 @@ export function SharedPreview({ overrides, className, mode: controlledMode, onMo
 			position: b.position,
 		}));
 
-	const liveSocialNetworks = (
-		(socialsQuery.data ?? []) as Array<{ isActive: boolean; url: string; slug: string }>
-	)
-		.filter((s) => s.isActive && s.url)
-		.map((s) => {
-			const brand = socialBrandMap.get(s.slug);
-			if (!brand) return null;
-			return { slug: s.slug, name: brand.name, url: s.url, hex: brand.hex, svgPath: brand.svgPath };
-		})
-		.filter(Boolean) as Array<{ slug: string; name: string; url: string; hex: string; svgPath: string }>;
-
 	const themePresetName = settings.theme_preset || "default";
 	const liveThemeColors = getThemeColors(themePresetName, previewMode);
 
@@ -133,7 +118,6 @@ export function SharedPreview({ overrides, className, mode: controlledMode, onMo
 
 	const profile = { ...liveProfile, ...overrides?.profile };
 	const blocks = overrides?.blocks ?? liveBlocks;
-	const socialNetworks = overrides?.socialNetworks ?? liveSocialNetworks;
 	const themeColors = overrides?.themeColors ?? liveThemeColors;
 	const mergedSettings = { ...liveSettings, ...overrides?.settings };
 
@@ -206,7 +190,6 @@ export function SharedPreview({ overrides, className, mode: controlledMode, onMo
 				<PreviewContent
 					profile={profile}
 					blocks={blocks}
-					socialNetworks={socialNetworks}
 					settings={mergedSettings}
 					themeColors={themeColors}
 					colorMode={previewMode}

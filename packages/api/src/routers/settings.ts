@@ -3,6 +3,8 @@ import { db } from "@linkden/db";
 import { siteSettings } from "@linkden/db/schema/index";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { stripHtml } from "../utils/sanitize";
+import { upsertSetting } from "../utils/settings";
 
 // ─── Settings Router ───────────────────────────────────────────────────────
 // Settings are key-value pairs stored in site_settings. The key whitelist below
@@ -77,11 +79,10 @@ const VALID_SETTING_KEYS = [
 
 const settingKeySchema = z.enum(VALID_SETTING_KEYS);
 
-// Sanitization utilities
-function stripHtmlTags(str: string): string {
-	return str.replace(/<[^>]*>/g, "");
-}
+// Keys containing secrets — masked in API responses, never exposed in plaintext
+const SECRET_SETTING_KEYS = new Set(["email_api_key", "captcha_secret_key", "mapkit_token"]);
 
+// Sanitization utilities
 function isValidUrl(url: string): boolean {
 	if (!url) return true;
 	try {
@@ -130,7 +131,7 @@ const LENGTH_LIMITS: Record<string, number> = {
 
 function sanitizeSetting(key: string, value: string): string {
 	if (TEXT_KEYS.includes(key)) {
-		let sanitized = stripHtmlTags(value);
+		let sanitized = stripHtml(value);
 		const limit = LENGTH_LIMITS[key];
 		if (limit && sanitized.length > limit) {
 			sanitized = sanitized.slice(0, limit);
@@ -152,6 +153,55 @@ function sanitizeSetting(key: string, value: string): string {
 	if (key === "custom_css") {
 		return sanitizeCss(value);
 	}
+	// Timezone: validate against known IANA zones
+	if (key === "timezone") {
+		if (value === "") return value; // empty = browser default
+		try {
+			const supported = Intl.supportedValuesOf("timeZone");
+			if (!supported.includes(value)) {
+				throw new Error(`Invalid timezone: ${value}`);
+			}
+		} catch (e) {
+			if (e instanceof Error && e.message.startsWith("Invalid timezone")) throw e;
+			// Intl.supportedValuesOf not available — skip validation
+		}
+		return value;
+	}
+	// Email provider: enum check
+	if (key === "email_provider") {
+		const allowed = ["resend", "sendgrid", "mailgun", "smtp", "cloudflare", "none"];
+		if (value && !allowed.includes(value)) {
+			throw new Error(`Invalid email provider: ${value}`);
+		}
+		return value;
+	}
+	// Email from: basic email format
+	if (key === "email_from") {
+		if (value && !value.includes("@")) {
+			throw new Error("Invalid email address for email_from");
+		}
+		return value;
+	}
+	// API keys / tokens: strip control chars, enforce length limit
+	if (key === "email_api_key" || key === "mapkit_token") {
+		const cleaned = value.replace(/[\x00-\x1f\x7f]/g, "");
+		if (cleaned.length > 512) {
+			return cleaned.slice(0, 512);
+		}
+		return cleaned;
+	}
+	// Boolean settings: coerce to "true"/"false"
+	if (key === "admin_branding_enabled" || key === "mapkit_enabled") {
+		return value === "true" ? "true" : "false";
+	}
+	// Contact delivery: validate allowed values
+	if (key === "contact_delivery") {
+		const allowed = ["email", "database", "both"];
+		if (value && !allowed.includes(value)) {
+			return "database";
+		}
+		return value;
+	}
 	return value;
 }
 
@@ -170,7 +220,9 @@ export const settingsRouter = router({
 		const results = await db.select().from(siteSettings);
 		const map: Record<string, string> = {};
 		for (const row of results) {
-			map[row.key] = row.value;
+			map[row.key] = SECRET_SETTING_KEYS.has(row.key) && row.value
+				? "••••••"
+				: row.value;
 		}
 		return map;
 	}),
@@ -183,23 +235,11 @@ export const settingsRouter = router({
 			}),
 		)
 		.mutation(async ({ input }) => {
-			const sanitizedValue = sanitizeSetting(input.key, input.value);
-			const [existing] = await db
-				.select()
-				.from(siteSettings)
-				.where(eq(siteSettings.key, input.key));
-
-			if (existing) {
-				await db
-					.update(siteSettings)
-					.set({ value: sanitizedValue })
-					.where(eq(siteSettings.key, input.key));
-			} else {
-				await db.insert(siteSettings).values({
-					key: input.key,
-					value: sanitizedValue,
-				});
+			if (SECRET_SETTING_KEYS.has(input.key) && input.value === "••••••") {
+				return { success: true };
 			}
+			const sanitizedValue = sanitizeSetting(input.key, input.value);
+			await upsertSetting(input.key, sanitizedValue);
 
 			return { success: true };
 		}),
@@ -208,20 +248,11 @@ export const settingsRouter = router({
 		.input(z.array(z.object({ key: settingKeySchema, value: z.string() })))
 		.mutation(async ({ input }) => {
 			for (const { key, value } of input) {
-				const sanitizedValue = sanitizeSetting(key, value);
-				const [existing] = await db
-					.select()
-					.from(siteSettings)
-					.where(eq(siteSettings.key, key));
-
-				if (existing) {
-					await db
-						.update(siteSettings)
-						.set({ value: sanitizedValue })
-						.where(eq(siteSettings.key, key));
-				} else {
-					await db.insert(siteSettings).values({ key, value: sanitizedValue });
+				if (SECRET_SETTING_KEYS.has(key) && value === "••••••") {
+					continue;
 				}
+				const sanitizedValue = sanitizeSetting(key, value);
+				await upsertSetting(key, sanitizedValue);
 			}
 
 			return { success: true };

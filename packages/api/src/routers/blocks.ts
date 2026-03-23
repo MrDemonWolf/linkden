@@ -3,10 +3,11 @@ import { db } from "@linkden/db";
 import { block } from "@linkden/db/schema/index";
 import { eq, asc, sql } from "drizzle-orm";
 import { z } from "zod";
+import { stripHtml } from "../utils/sanitize";
 
 // ─── Block Router ──────────────────────────────────────────────────────────
 // Blocks are the core content units on the public page. Each block has a type
-// (link, header, social_icons, embed, form, vcard) that determines its rendering
+// (link, header, embed, connect, vcard, location) that determines its rendering
 // and config schema. Blocks follow a draft/published flow: every mutation sets
 // status="draft", and publishAll promotes all drafts at once. This lets the admin
 // preview changes before they go live.
@@ -15,9 +16,6 @@ import { z } from "zod";
 // prevent stored XSS) and sanitizeUrl (to block javascript:/data: schemes).
 // The socialIcons field is a JSON string — parsed, sanitized per-entry, then
 // re-serialized.
-function stripHtml(str: string): string {
-	return str.replace(/<[^>]*>/g, "");
-}
 
 function sanitizeUrl(url: string): string {
 	if (!url) return url;
@@ -82,10 +80,10 @@ export const blocksRouter = router({
 				type: z.enum([
 					"link",
 					"header",
-					"social_icons",
 					"embed",
-					"form",
+					"connect",
 					"vcard",
+					"location",
 				]),
 				title: z.string().max(200).optional(),
 				url: z.string().max(2048).optional(),
