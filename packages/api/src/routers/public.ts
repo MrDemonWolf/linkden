@@ -1,4 +1,5 @@
 import { router, publicProcedure } from "../index";
+import { TRPCError } from "@trpc/server";
 import { db } from "@linkden/db";
 import {
 	user,
@@ -7,41 +8,27 @@ import {
 	contactSubmission,
 	pageView,
 	linkClick,
-	socialNetwork,
 } from "@linkden/db/schema/index";
-import { socialBrandMap } from "@linkden/ui/social-brands";
 import { eq, asc, and } from "drizzle-orm";
 import { z } from "zod";
 import { generateVCardString, vcardDataSchema } from "./vcard";
+import { buildSettingsMap } from "../utils/settings";
 
-// In-memory one-time setup token
-let setupToken: string | null = null;
-let setupTokenInitialized = false;
-
-async function getOrCreateSetupToken(): Promise<string | null> {
-	// Check if setup is already completed
-	const [setting] = await db
-		.select()
-		.from(siteSettings)
-		.where(eq(siteSettings.key, "setup_completed"));
-	if (setting?.value === "true") {
-		setupToken = null;
-		return null;
-	}
-
-	if (!setupTokenInitialized) {
-		setupToken = crypto.randomUUID();
-		setupTokenInitialized = true;
-		console.log(`\n  Setup URL: http://localhost:3001/admin/setup?token=${setupToken}\n`);
-	}
-
-	return setupToken;
-}
-
-export function invalidateSetupToken() {
-	setupToken = null;
-	setupTokenInitialized = false;
-}
+// ─── Public Router ─────────────────────────────────────────────────────────
+// These endpoints are unauthenticated — they power the public-facing link page.
+// Because they're open to the internet, every input has strict .max() limits to
+// prevent payload abuse, and CAPTCHA is enforced when configured.
+//
+// getPage: Assembles the full public page in a single query (profile, blocks,
+//   social networks, theme, settings). Blocks are filtered by schedule, enabled
+//   status, and feature flags (e.g. contact form blocks hidden when form is off).
+//
+// submitContact: Public form submission with CAPTCHA validation. Supports both
+//   Cloudflare Turnstile and Google reCAPTCHA. All text inputs are HTML-stripped
+//   to prevent stored XSS.
+//
+// trackView/trackClick: Lightweight analytics endpoints — fire-and-forget from
+//   the client. No auth required so they work for all visitors.
 
 export const publicRouter = router({
 	getPage: publicProcedure.query(async () => {
@@ -62,36 +49,11 @@ export const publicRouter = router({
 		});
 
 		// Get all settings at once
-		const settingsRows = await db.select().from(siteSettings);
-		const settings: Record<string, string> = {};
-		for (const row of settingsRows) {
-			settings[row.key] = row.value;
-		}
-
-		// Get active social networks with URLs, enrich from catalog
-		const activeSocials = await db
-			.select()
-			.from(socialNetwork)
-			.where(eq(socialNetwork.isActive, true));
-
-		const socialNetworks = activeSocials
-			.map((s) => {
-				const brand = socialBrandMap.get(s.slug);
-				if (!brand) return null;
-				return {
-					slug: s.slug,
-					name: brand.name,
-					url: s.url,
-					hex: brand.hex,
-					svgPath: brand.svgPath,
-				};
-			})
-			.filter((s): s is NonNullable<typeof s> => s !== null);
+		const settings = await buildSettingsMap();
 
 		// Hide blocks for disabled features
 		const visibleBlocks = scheduledBlocks.filter((b) => {
-			if (b.type === "form" && settings.contact_form_enabled !== "true") return false;
-			if (b.type === "social_icons" && socialNetworks.length === 0) return false;
+			if (b.type === "connect" && settings.contact_form_enabled !== "true") return false;
 			return true;
 		});
 
@@ -114,7 +76,6 @@ export const publicRouter = router({
 					}
 				: null,
 			blocks: visibleBlocks,
-			socialNetworks,
 			theme,
 			settings: {
 				seoTitle: settings.seo_title || null,
@@ -141,29 +102,43 @@ export const publicRouter = router({
 				customBackground: settings.custom_background || null,
 				customCss: settings.custom_css || null,
 				socialIconShape: (settings.social_icon_shape as "circle" | "rounded-square") || null,
+				brandingLogoUrl: settings.branding_logo_url || null,
+				brandingFaviconUrl: settings.branding_favicon_url || null,
+				brandingSiteName: settings.branding_site_name || null,
+				brandingPpUrl: settings.branding_pp_url || null,
+				brandingTosUrl: settings.branding_tos_url || null,
+				brandingPpMode: (settings.branding_pp_mode as "url" | "text") || "url",
+				brandingPpText: settings.branding_pp_text || null,
+				brandingTosMode: (settings.branding_tos_mode as "url" | "text") || "url",
+				brandingTosText: settings.branding_tos_text || null,
 			},
 		};
 	}),
 
+	// Connect With Me form — input limits prevent payload abuse from unauthenticated users
 	submitContact: publicProcedure
 		.input(
 			z.object({
-				name: z.string().min(1),
-				email: z.string().email(),
-				message: z.string().min(1),
-				phone: z.string().optional(),
-				subject: z.string().optional(),
-				company: z.string().optional(),
-				whereMet: z.string().optional(),
-				rating: z.number().min(1).max(5).optional(),
-				attending: z.enum(["yes", "no", "maybe"]).optional(),
-				guests: z.number().min(0).optional(),
-				captchaToken: z.string().optional(),
-				blockId: z.string().optional(),
-				blockTitle: z.string().optional(),
+				firstName: z.string().min(1).max(50),
+				lastName: z.string().min(1).max(50),
+				email: z.string().email().max(254),
+				whereMet: z.string().max(200),
+				message: z.string().max(5000).optional(),
+				captchaToken: z.string().max(4096).optional(),
+				blockId: z.string().max(100).optional(),
+				blockTitle: z.string().max(200).optional(),
 			}),
 		)
 		.mutation(async ({ input }) => {
+			// Check if contact form is enabled
+			const [contactEnabled] = await db
+				.select()
+				.from(siteSettings)
+				.where(eq(siteSettings.key, "contact_form_enabled"));
+			if (contactEnabled?.value !== "true") {
+				throw new TRPCError({ code: "FORBIDDEN", message: "Contact form is disabled" });
+			}
+
 			// Validate CAPTCHA if configured
 			const [captchaProvider] = await db
 				.select()
@@ -176,7 +151,7 @@ export const publicRouter = router({
 
 			if (captchaProvider?.value && captchaProvider.value !== "none") {
 				if (!input.captchaToken) {
-					throw new Error("CAPTCHA verification required");
+					throw new TRPCError({ code: "BAD_REQUEST", message: "CAPTCHA verification required" });
 				}
 
 				let verifyUrl: string;
@@ -200,7 +175,7 @@ export const publicRouter = router({
 					success: boolean;
 				};
 				if (!verifyData.success) {
-					throw new Error("CAPTCHA verification failed");
+					throw new TRPCError({ code: "BAD_REQUEST", message: "CAPTCHA verification failed" });
 				}
 			}
 
@@ -210,16 +185,10 @@ export const publicRouter = router({
 			const id = crypto.randomUUID();
 			await db.insert(contactSubmission).values({
 				id,
-				name: stripTags(input.name),
+				name: stripTags(`${input.firstName} ${input.lastName}`),
 				email: input.email,
-				message: stripTags(input.message),
-				phone: input.phone ? stripTags(input.phone) : null,
-				subject: input.subject ? stripTags(input.subject) : null,
-				company: input.company ? stripTags(input.company) : null,
-				whereMet: input.whereMet ? stripTags(input.whereMet) : null,
-				rating: input.rating ?? null,
-				attending: input.attending ?? null,
-				guests: input.guests ?? null,
+				message: input.message ? stripTags(input.message) : "",
+				whereMet: stripTags(input.whereMet),
 				blockId: input.blockId ?? null,
 				blockTitle: input.blockTitle ? stripTags(input.blockTitle) : null,
 			});
@@ -227,12 +196,13 @@ export const publicRouter = router({
 			return { success: true };
 		}),
 
+	// Analytics tracking — inputs are capped to prevent oversized payloads from anonymous visitors
 	trackView: publicProcedure
 		.input(
 			z.object({
-				referrer: z.string().optional(),
-				userAgent: z.string().optional(),
-				country: z.string().optional(),
+				referrer: z.string().max(2048).optional(),
+				userAgent: z.string().max(500).optional(),
+				country: z.string().max(10).optional(),
 			}),
 		)
 		.mutation(async ({ input }) => {
@@ -249,10 +219,10 @@ export const publicRouter = router({
 	trackClick: publicProcedure
 		.input(
 			z.object({
-				blockId: z.string(),
-				referrer: z.string().optional(),
-				userAgent: z.string().optional(),
-				country: z.string().optional(),
+				blockId: z.string().max(100),
+				referrer: z.string().max(2048).optional(),
+				userAgent: z.string().max(500).optional(),
+				country: z.string().max(10).optional(),
 			}),
 		)
 		.mutation(async ({ input }) => {
@@ -268,6 +238,15 @@ export const publicRouter = router({
 		}),
 
 	getVCard: publicProcedure.query(async () => {
+		// Check global vcard setting
+		const [vcardSetting] = await db
+			.select()
+			.from(siteSettings)
+			.where(eq(siteSettings.key, "vcard_enabled"));
+		if (vcardSetting?.value !== "true") {
+			return { enabled: false, vcardString: null };
+		}
+
 		const [vcardBlock] = await db
 			.select()
 			.from(block)
@@ -285,41 +264,57 @@ export const publicRouter = router({
 			return { enabled: false, vcardString: null };
 		}
 
-		const config = vcardBlock.config ? JSON.parse(vcardBlock.config) : {};
-		const data = vcardDataSchema.parse(config);
-		return { enabled: true, vcardString: generateVCardString(data) };
+		let config = {};
+		try {
+			config = vcardBlock.config ? JSON.parse(vcardBlock.config) : {};
+		} catch {
+			// Corrupted JSON in block config — return empty vcard rather than crashing
+			return { enabled: false, vcardString: null };
+		}
+		const result = vcardDataSchema.safeParse(config);
+		if (!result.success) {
+			return { enabled: false, vcardString: null };
+		}
+		return { enabled: true, vcardString: generateVCardString(result.data) };
 	}),
 
-	getSetupStatus: publicProcedure.query(async () => {
-		const rows = await db
-			.select()
-			.from(siteSettings)
-			.where(
-				eq(siteSettings.key, "setup_completed"),
-			);
-		const [setting] = rows;
-
-		const [magicLinkRow] = await db
-			.select()
-			.from(siteSettings)
-			.where(eq(siteSettings.key, "magic_link_enabled"));
-
+	getBranding: publicProcedure.query(async () => {
+		const settings = await buildSettingsMap();
 		return {
-			completed: setting?.value === "true",
-			magicLinkEnabled: magicLinkRow?.value !== "false",
+			logoUrl: settings.branding_logo_url || null,
+			siteName: settings.branding_site_name || null,
+			ppUrl: settings.branding_pp_url || null,
+			tosUrl: settings.branding_tos_url || null,
+			ppMode: (settings.branding_pp_mode as "url" | "text") || "url",
+			ppText: settings.branding_pp_text || null,
+			tosMode: (settings.branding_tos_mode as "url" | "text") || "url",
+			tosText: settings.branding_tos_text || null,
 		};
 	}),
 
-	validateSetupToken: publicProcedure
-		.input(z.object({ token: z.string() }))
-		.query(async ({ input }) => {
-			const currentToken = await getOrCreateSetupToken();
-			if (!currentToken) {
-				return { valid: false, reason: "setup_completed" as const };
-			}
-			if (input.token !== currentToken) {
-				return { valid: false, reason: "invalid_token" as const };
-			}
-			return { valid: true, reason: null };
-		}),
+	hasUsers: publicProcedure.query(async () => {
+		const [existingUser] = await db.select({ id: user.id }).from(user).limit(1);
+		return { hasUsers: !!existingUser };
+	}),
+
+	getSetupStatus: publicProcedure.query(async () => {
+		const [existingUser] = await db.select({ id: user.id }).from(user).limit(1);
+
+		const s = await buildSettingsMap();
+
+		return {
+			completed: !!existingUser,
+			magicLinkEnabled: s.magic_link_enabled !== "false",
+			branding: {
+				logoUrl: s.branding_logo_url || null,
+				siteName: s.branding_site_name || null,
+				ppUrl: s.branding_pp_url || null,
+				tosUrl: s.branding_tos_url || null,
+				ppMode: (s.branding_pp_mode as "url" | "text") || "url",
+				ppText: s.branding_pp_text || null,
+				tosMode: (s.branding_tos_mode as "url" | "text") || "url",
+				tosText: s.branding_tos_text || null,
+			},
+		};
+	}),
 });

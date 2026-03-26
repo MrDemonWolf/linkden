@@ -3,116 +3,82 @@ title: Blocks
 description: Add links, headers, embeds, social icons, forms, and vCard download buttons to your page with the drag-and-drop builder.
 ---
 
-# Blocks
+# 🧱 Blocks
 
-Build your page by adding blocks in the builder at `/admin/builder`. LinkDen supports 6 block types that you can mix, match, and reorder however you like.
+Build your page by adding blocks in the builder at `/admin/builder`. LinkDen supports **6 block types** that you can mix, match, and reorder however you like.
 
-## Block Types
+### ⚡ Summary
+- **Drag & Drop:** Reorder anything.
+- **Preview:** Live phone frame on the right.
+- **Schedule:** Show/hide blocks automatically by date.
+- **Style:** Custom colors, borders, and animations per block.
 
-### Link
+---
 
-A clickable button that sends visitors to any URL. This is the most common block type.
+## 🏗️ Block Types
 
-- **Title** -- The button text visitors see.
-- **URL** -- Where the button links to.
-- **Icon** -- Optional icon displayed alongside the title.
-- **Style options** -- emoji, text alignment, font weight, outlined style, open in new tab.
+### 🔗 Link
+The most common block. A clickable button to any URL.
+- **Includes:** Title, URL, Icon.
+- **Styles:** Outline, fill, text alignment, emoji.
 
-### Header
+### 📝 Header
+A text heading to organize your page.
+- **Includes:** Title text.
+- **Styles:** H1-H6, divider lines, alignment.
 
-A text heading to visually separate groups of blocks.
+### 🌐 Social Icons
+A row of icons linking to your profiles.
+- **Source:** Uses networks from `/admin/social`.
+- **Styles:** Size, spacing, brand colors (auto dark mode).
 
-- **Title** -- The heading text.
-- **Style options** -- heading level (h1--h6), text alignment, font weight, emoji, show divider line.
+### 📺 Embed
+Embed media directly on your page.
+- **Supported:** YouTube, Spotify, SoundCloud, or **any custom URL**.
+- **Styles:** Aspect ratio, max width.
 
-### Social Icons
+### ✉️ Form
+An inline contact form. Visitors message you directly.
+- **Presets:** Contact, Feedback, RSVP.
+- **Styles:** Button text, success messages.
+> **Note:** Requires setup in `/admin/settings` first.
 
-A row of social media icons linking to your profiles. Uses the networks you've activated in `/admin/social`. See [Social Networks](/docs/guide/social-networks) for setup.
+### 📇 vCard
+A **"Download Contact"** button.
+- **Action:** Generates a `.vcf` file for visitors.
+- **Data:** Pulls from your profile settings.
 
-- **Style options** -- icon size, icon style (filled, outlined, rounded), show labels, spacing, use brand colors.
+---
 
-### Embed
+## 🛠️ Managing Blocks
 
-Embed content from YouTube, Spotify, SoundCloud, or any custom URL directly on your page.
+### Adding
+1. Go to `/admin/builder`.
+2. Click **Add Block**.
+3. Select a type.
 
-- **Embed Type** -- YouTube, Spotify, SoundCloud, or Custom.
-- **Embed URL** -- The content URL to embed.
-- **Style options** -- aspect ratio, max width, show title.
+### Editing
+Click any block to open the slide-in panel:
+- **Content:** Main fields (URL, Title).
+- **Style:** Colors, Icons, Borders.
+- **Options:** Animation, `newTab`, `noFollow`.
+- **Schedule:** Set start/end dates for visibility.
 
-### Form
+### Reordering
+**Drag & Drop** any block by the grip handle on the left. Autosaves immediately.
 
-An inline contact form so visitors can message you without leaving your page. Choose from built-in presets (contact, feedback, RSVP, and more) or configure fields manually.
+### Hiding (Visibility)
+Click the **Eye Icon** 👁️ to toggle visibility without deleting.
+- Great for drafting content.
+- Perfect for seasonal links.
 
-- **Preset** -- Quickly configure fields using a preset template.
-- **Style options** -- button text, button emoji, success message.
+### Deleting
+Click the **Trash Icon** 🗑️ to permanently remove.
 
-> **Tip:** The form block requires setup in `/admin/settings` first. See [Contact Form](/docs/guide/contact-form) for details.
+---
 
-### vCard
-
-A **Download Contact** button that generates a VCard 3.0 `.vcf` file. Visitors can tap to save your contact info directly to their device.
-
-- **Button text** -- Label shown on the download button.
-- **Button emoji** -- Optional emoji prefix.
-
-> **Tip:** Contact details are pulled from your profile settings.
-
-## Adding a Block
-
-1. Open the builder at `/admin/builder`.
-2. Click **Add Block** to expand the block picker grid.
-3. Click the card for the block type you want.
-4. The block appears and its edit panel opens automatically.
-
-## Editing a Block
-
-Click edit on any block to open a slide-in panel with 4 tabs:
-
-### Content Tab
-
-Set the block's core fields -- title, URL, embed type, and embed URL vary depending on the block type.
-
-### Style Tab
-
-Customize the block's appearance with an icon and advanced style settings.
-
-### Options Tab
-
-Quick reference for common options like `noFollow`, `newTab`, `animation`, and `thumbnail`.
-
-### Schedule Tab
-
-Set a start and end date to control when the block is visible. Blocks outside their scheduled window are automatically hidden from visitors.
-
-Use the **Clear schedule** button to remove scheduling and keep the block always visible.
-
-## Shared Style Options
-
-Every block type supports these visual settings:
-
-- Color variant (preset color scheme)
-- Custom background, text, and border colors
-- Border radius and width
-- Shadow
-- Hover or entrance animation
-- Padding
-
-## Reordering Blocks
-
-Drag any block by its grip handle to rearrange the order. Changes save automatically.
-
-## Toggling Visibility
-
-Click the eye icon to show or hide a block. Hidden blocks stay in your list but don't appear on the public page. This is handy for:
-
-- Temporarily removing content without deleting it.
-- Preparing blocks ahead of time and enabling them later.
-- Seasonal or time-limited content.
-
-## Deleting a Block
-
-Click the trash icon to permanently delete a block.
-
-## Phone Preview
-
-The right side of the builder shows a live phone preview of your page. On smaller screens, tap the floating button to open the preview in a modal. Use the light/dark toggle to see how your page looks in both modes.
+## 📱 Phone Preview
+The right side shows a **live preview**.
+- **Interactive:** Scroll and click to test.
+- **Mobile Toggle:** Use the floating button on small screens.
+- **Dark Mode:** Test your theme in both light and dark modes.

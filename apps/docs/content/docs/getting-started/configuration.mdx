@@ -3,11 +3,18 @@ title: Configuration
 description: Set up environment variables and authentication for your LinkDen instance.
 ---
 
-# Configuration
+# ⚙️ Configuration
 
-LinkDen keeps its `.env` file minimal on purpose. You only need four environment variables to get running. Everything else -- email, CAPTCHA, branding, and more -- is configured through the admin panel and stored in the database.
+LinkDen keeps its `.env` file **minimal on purpose**. You only need four environment variables to get running. Everything else -- email, CAPTCHA, branding, and more -- is configured through the admin panel and stored in the database.
 
-## Environment Variables
+### ⚡ TL;DR
+- **Required:** 4 variables (`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CORS_ORIGIN`, `NEXT_PUBLIC_SERVER_URL`).
+- **Config Location:** Most settings are in `/admin/settings` (DB), not `.env`.
+- **Auth:** Built-in email/password (Better Auth). No external provider needed.
+
+---
+
+## 1. 🔑 Environment Variables
 
 Create your `.env` file from the example:
 
@@ -15,14 +22,12 @@ Create your `.env` file from the example:
 cp .env.example .env
 ```
 
-Then set these values:
+### Required Variables Checklist
 
-| Variable | What it does | Example |
-|----------|-------------|---------|
-| `BETTER_AUTH_SECRET` | Signs session cookies (keep this private!) | `openssl rand -base64 32` |
-| `BETTER_AUTH_URL` | URL where the API server runs | `http://localhost:3000` |
-| `CORS_ORIGIN` | URL where the web frontend runs | `http://localhost:3001` |
-| `NEXT_PUBLIC_SERVER_URL` | Public API URL (usually same as `BETTER_AUTH_URL`) | `http://localhost:3000` |
+- [ ] `BETTER_AUTH_SECRET` - **Private.** Signs session cookies.
+- [ ] `BETTER_AUTH_URL` - **Public.** URL where the API server runs.
+- [ ] `CORS_ORIGIN` - **Public.** URL where the web frontend runs.
+- [ ] `NEXT_PUBLIC_SERVER_URL` - **Public.** Same as `BETTER_AUTH_URL`.
 
 ### Generating a Secret
 
@@ -31,10 +36,13 @@ Run this to generate a strong, random secret:
 ```bash
 openssl rand -base64 32
 ```
-
 Paste the output as your `BETTER_AUTH_SECRET`. Use a different secret for production.
 
-### Local Development
+---
+
+## 2. 📝 Examples
+
+### 💻 Local Development
 
 ```bash
 BETTER_AUTH_SECRET=your-generated-secret
@@ -43,7 +51,7 @@ CORS_ORIGIN=http://localhost:3001
 NEXT_PUBLIC_SERVER_URL=http://localhost:3000
 ```
 
-### Production
+### 🌍 Production
 
 ```bash
 BETTER_AUTH_SECRET=your-production-secret
@@ -52,26 +60,41 @@ CORS_ORIGIN=https://yourdomain.com
 NEXT_PUBLIC_SERVER_URL=https://api.yourdomain.com
 ```
 
-> **Tip:** `BETTER_AUTH_URL` and `NEXT_PUBLIC_SERVER_URL` should point to the same server. `CORS_ORIGIN` points to your frontend.
+> **Tip:** `BETTER_AUTH_URL` and `NEXT_PUBLIC_SERVER_URL` should point to the **same server**. `CORS_ORIGIN` points to your **frontend**.
 
-## Authentication
+---
 
-LinkDen uses email and password authentication. No external auth service or OAuth setup is needed.
+## 3. 🔐 Authentication
 
-During the [setup wizard](/docs/getting-started/quick-start), you create your admin account. After that, sign in at `/admin/login` with the same email and password. All admin pages are protected -- unauthenticated visitors only see your public link page.
+LinkDen uses **email and password** authentication.
+- 🚫 **No OAuth needed.**
+- 🚫 **No external auth service needed.**
 
-## Admin Settings (Runtime Config)
+### How it works:
+1. Navigate to `/admin/setup`.
+2. Create your admin account.
+3. The first user becomes the admin.
+4. Registration **locks automatically**.
+5. Sign in at `/admin/login`.
 
-Most configuration lives in the admin panel at `/admin/settings`, not in environment variables. This means you can change settings without redeploying:
+> **Note:** Unauthenticated visitors only see your public link page.
 
-- **Email provider** -- Resend or Cloudflare Email Workers.
-- **CAPTCHA** -- Cloudflare Turnstile or Google reCAPTCHA.
-- **Branding** -- Whitelabel footer text and link.
-- **vCard** -- Enable or disable the downloadable contact card.
-- **Apple Wallet** -- Team ID, Pass Type ID, and custom QR URL.
-- **SEO** -- Page title, meta description, and OG image.
+---
+
+## 4. 🎛️ Admin Settings (Runtime Config)
+
+Most configuration lives in the admin panel at `/admin/settings`, **not** in environment variables. This means you can change settings **without redeploying**:
+
+- 📧 **Email provider** -- Resend or Cloudflare Email Workers.
+- 🛡️ **CAPTCHA** -- Cloudflare Turnstile or Google reCAPTCHA.
+- 🏷️ **Branding** -- Whitelabel footer text and link.
+- 📇 **vCard** -- Enable or disable the downloadable contact card.
+- 🍏 **Apple Wallet** -- Team ID, Pass Type ID, and custom QR URL.
+- 🔍 **SEO** -- Page title, meta description, and OG image.
+
+---
 
 ## Next Steps
 
-- [Quick Start](/docs/getting-started/quick-start) -- Walk through the setup wizard and start building your page.
-- [Self-Hosting](/docs/self-hosting/cloudflare) -- Deploy your configured instance to Cloudflare.
+- 🚀 [Quick Start](/docs/getting-started/quick-start) -- Walk through the setup wizard.
+- ☁️ [Self-Hosting](/docs/self-hosting/cloudflare) -- Deploy to Cloudflare.

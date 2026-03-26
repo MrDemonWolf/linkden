@@ -1,10 +1,10 @@
-FROM node:22-alpine AS base
-RUN corepack enable && corepack prepare pnpm@10 --activate
+FROM oven/bun:latest AS base
+RUN apt-get update && apt-get install -y nodejs && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies
 FROM base AS deps
 WORKDIR /app
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json bun.lock ./
 COPY apps/web/package.json ./apps/web/
 COPY apps/server/package.json ./apps/server/
 COPY packages/api/package.json ./packages/api/
@@ -16,7 +16,7 @@ COPY packages/ui/package.json ./packages/ui/
 COPY packages/validators/package.json ./packages/validators/
 COPY packages/email/package.json ./packages/email/
 COPY packages/infra/package.json ./packages/infra/
-RUN pnpm install --frozen-lockfile
+RUN bun install --frozen-lockfile
 
 # Build
 FROM base AS builder
@@ -24,7 +24,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NODE_ENV=production
-RUN pnpm build
+RUN bun run build
 
 # Runner
 FROM base AS runner

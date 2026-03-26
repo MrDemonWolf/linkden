@@ -3,272 +3,116 @@ title: Cloudflare Deployment
 description: Deploy LinkDen on Cloudflare Workers and D1 — the recommended hosting option.
 ---
 
-# Cloudflare Deployment
+# ☁️ Cloudflare Deployment
 
-Deploy LinkDen to Cloudflare's free tier with two Workers and a D1 database. This is the recommended hosting option — LinkDen was built for it.
+Deploy LinkDen to Cloudflare's free tier with two Workers and a D1 database. LinkDen was built for this.
 
-## Architecture
+### ⚡ TL;DR
+- **Hosting:** Cloudflare Workers (Free tier is plenty).
+- **Database:** Cloudflare D1 (SQLite).
+- **Tooling:** Alchemy (IaC) handles the heavy lifting.
+- **Command:** `bun ship` deploys everything.
 
-```
-┌──────────────────────────┐     ┌──────────────────────┐     ┌──────────────┐
-│  Cloudflare Worker       │     │  Cloudflare Worker    │     │ Cloudflare D1│
-│  linkden-web             │────▶│  linkden-api          │────▶│ (SQLite DB)  │
-│  (Next.js via OpenNext)  │     │  (Hono API + tRPC)    │     │              │
-└──────────────────────────┘     └──────────────────────┘     └──────────────┘
-```
+---
 
-| Service | Purpose | Free Tier |
-|---------|---------|-----------|
-| **linkden-web Worker** | Next.js frontend (SSR + static assets via OpenNext) | 100,000 requests/day |
-| **linkden-api Worker** | Hono API server with tRPC | 100,000 requests/day |
-| **Cloudflare D1** | SQLite database for all application data | 5M rows read/day, 100K writes/day |
+## 1. ✅ Prerequisites
 
-The web frontend is deployed using [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare), which compiles the full Next.js app into a Cloudflare Worker. The free tier is sufficient for most single-user instances.
-
-## Prerequisites
-
-1. A [Cloudflare account](https://cloudflare.com) (free tier works).
-2. **Node.js 20+** and **pnpm 9+** installed locally.
-3. The LinkDen repository cloned:
+- [ ] A **Cloudflare account** (free tier works).
+- [ ] **Node.js 20+** and **[Bun](https://bun.sh)** installed.
+- [ ] Your LinkDen repo cloned:
 
 ```bash
 git clone https://github.com/mrdemonwolf/linkden.git
-cd LinkDen
-pnpm install
+cd linkden
+bun install
 ```
 
-## Step 1: Create a Cloudflare API Token
+---
 
-You'll create a token so the deploy tooling can manage Cloudflare resources on your behalf.
+## 2. 🔑 Step 1: Cloudflare API Token
 
-1. Log in to the [Cloudflare dashboard](https://dash.cloudflare.com).
-2. Go to **Profile icon > My Profile > API Tokens**.
-3. Click **Create Token** and choose the **Custom token** template.
-4. Add these permissions:
+Create a token so LinkDen can manage your resources.
 
-| Permission Scope | Resource | Access Level |
-|-----------------|----------|--------------|
-| Account | Cloudflare Workers Scripts | Edit |
-| Account | D1 | Edit |
-| Account | Workers KV Storage | Edit |
+1. Go to **Profile > My Profile > API Tokens** in the Cloudflare dashboard.
+2. Click **Create Token** > **Custom token**.
+3. Add these **Edit** permissions:
+   - `Account` -> `Cloudflare Workers Scripts`
+   - `Account` -> `D1`
+   - `Account` -> `Workers KV Storage`
+4. Select your **Account** under Account Resources.
+5. **Copy the token!** (It's only shown once).
 
-5. Under **Account Resources**, select your account.
-6. Click **Continue to summary**, then **Create Token**.
-7. **Copy the token immediately** — it's shown only once.
+---
 
-## Step 2: Find Your Account ID
+## 3. 🆔 Step 2: Account ID
 
-Go to the [Cloudflare dashboard](https://dash.cloudflare.com) overview page. Your **Account ID** is in the right sidebar under **Account details**. Copy it.
+1. Find your **Account ID** on the Cloudflare dashboard overview page (right sidebar).
+2. Or run: `npx wrangler whoami`.
 
-You can also run:
+---
 
-```bash
-npx wrangler whoami
-```
-
-## Step 3: Authenticate the Wrangler CLI
-
-```bash
-wrangler login
-```
-
-This opens a browser window for OAuth. Verify with:
-
-```bash
-wrangler whoami
-```
-
-## Step 4: Configure Environment Variables
+## 4. ⚙️ Step 3: Configure `.env`
 
 Create a `.env` file in the project root:
 
 ```bash
-# Cloudflare credentials
-CLOUDFLARE_API_TOKEN=your-api-token-here
-CLOUDFLARE_ACCOUNT_ID=your-account-id-here
+# Cloudflare Credentials
+CLOUDFLARE_API_TOKEN=your-api-token
+CLOUDFLARE_ACCOUNT_ID=your-account-id
 
-# App URLs (use placeholder values on first deploy; update and redeploy once you have real Worker URLs)
+# App URLs (Use placeholders first, update after deploy)
 NEXT_PUBLIC_SERVER_URL=https://linkden-server.<your-subdomain>.workers.dev
 CORS_ORIGIN=https://linkden-web.<your-subdomain>.workers.dev
 
 # Better Auth
-BETTER_AUTH_SECRET=your-random-secret-here
+BETTER_AUTH_SECRET=your-random-secret
 BETTER_AUTH_URL=https://linkden-server.<your-subdomain>.workers.dev
 ```
 
-Generate a secure `BETTER_AUTH_SECRET`:
+> **Tip:** Generate a secret with `openssl rand -base64 32`.
+
+---
+
+## 5. 🚀 Step 4: Deploy
 
 ```bash
-openssl rand -base64 32
+bun ship
 ```
 
-> **Tip:** See the [Environment Variables reference](/docs/self-hosting/environment-variables) for all available options.
+**What happens?**
+Alchemy automatically creates your D1 database, runs migrations, sets up R2 storage, and deploys your Workers.
 
-## Step 5: Deploy
+### 🔄 Important: Update URLs
+Once the command finishes, it will output your real Worker URLs. **Update your `.env`** with these URLs and run `bun ship` one more time to sync them.
 
-```bash
-pnpm ship
-```
+---
 
-Alchemy handles everything automatically: creates the D1 database, runs migrations, creates the R2 bucket, deploys both Workers, and outputs the live URLs:
+## 6. 👤 Step 5: Setup Admin
 
-```
-API:  https://linkden-server.<your-subdomain>.workers.dev
-Web:  https://linkden-web.<your-subdomain>.workers.dev
-```
+1. Visit: `https://linkden-web.<subdomain>.workers.dev/admin/setup`.
+2. Create your account.
+3. **First user becomes admin.** Registration locks automatically after that.
 
-Once you have your real Worker URLs, update the `NEXT_PUBLIC_SERVER_URL`, `CORS_ORIGIN`, and `BETTER_AUTH_URL` values in `.env` and run `pnpm ship` again.
+---
 
-## Step 6: Set Up Authentication
+## 7. 🌐 Step 6: Custom Domains (Optional)
 
-LinkDen uses **Better Auth** with email/password. On first run, the server generates a one-time setup token.
+1. Go to **Workers & Pages** in Cloudflare.
+2. Select your Worker > **Settings > Domains & Routes** > **Add Custom Domain**.
+3. Update your `.env` URLs and run `bun ship` again.
 
-1. Check the API Worker logs for the setup URL:
-   ```bash
-   wrangler tail linkden-server
-   ```
-   Look for:
-   ```
-   Setup URL: https://linkden-web.<your-subdomain>.workers.dev/admin/setup?token=<unique-token>
-   ```
-2. Open that URL in your browser and create your admin account.
-3. The token is invalidated after setup completes.
-4. Sign in at `/admin/login`.
+---
 
-Set your auth secret as an encrypted secret on the API Worker:
+## 🛠️ Common Commands
 
-```bash
-cd apps/server
-echo "your-better-auth-secret" | wrangler secret put BETTER_AUTH_SECRET
-```
+- `bun ship` - Update/Redeploy.
+- `wrangler tail linkden-server` - See live API logs.
+- `bun destroy` - **Irreversible.** Delete all Cloudflare resources.
 
-Or configure it in the dashboard: **Workers & Pages > linkden-server > Settings > Variables**.
+---
 
-## Step 7: Set Secrets (Optional)
-
-If using Resend for email:
-
-```bash
-cd apps/server
-echo "re_your-key" | wrangler secret put RESEND_API_KEY
-```
-
-## Step 8: Verify the Deployment
-
-1. Visit your web Worker URL — you should see the public link page.
-2. Sign in at `/admin/login` and create a test link.
-3. Check that analytics are recording.
-
-If something is off, check the Worker logs:
-
-```bash
-wrangler tail linkden-server
-wrangler tail linkden-web
-```
-
-## Step 9: Custom Domains (Optional)
-
-By default your app is served from `*.workers.dev` URLs. This step shows how to point a custom domain at both Workers.
-
-### 9a: Add Custom Domains in the Dashboard
-
-For each Worker (`linkden-web` and `linkden-server`):
-
-1. Go to **Workers & Pages** in the [Cloudflare dashboard](https://dash.cloudflare.com).
-2. Click the Worker > **Settings > Domains & Routes** > **Add Custom Domain**.
-3. Enter your domain (e.g., `links.yourdomain.com` for the web Worker, `api.yourdomain.com` for the server Worker).
-4. Cloudflare automatically creates the DNS record and provisions SSL.
-
-> **Tip:** If your domain is on external DNS (Namecheap, Route 53, etc.), you'll need to add CNAME records manually at your provider. See the [Custom Domain guide](/docs/self-hosting/custom-domain) for per-provider instructions.
-
-### 9b: Update Environment Variables
-
-Once custom domains are active, update your `.env`:
-
-```bash
-NEXT_PUBLIC_SERVER_URL=https://api.yourdomain.com
-CORS_ORIGIN=https://links.yourdomain.com
-BETTER_AUTH_URL=https://api.yourdomain.com
-```
-
-### 9c: Redeploy
-
-```bash
-pnpm ship
-```
-
-Alchemy picks up the new env vars and updates the Worker configuration. Your app is now live on your custom domain with SSL.
-
-## Subsequent Deploys
-
-After the initial setup, updating is one command:
-
-```bash
-git pull origin main
-pnpm ship
-```
-
-## Monitoring and Logs
-
-Stream live logs from your Workers:
-
-```bash
-wrangler tail linkden-server
-wrangler tail linkden-web
-wrangler tail linkden-server --status error
-```
-
-Dashboard analytics are available under **Workers & Pages > your Worker > Analytics** and **D1 > your database**.
-
-## Tearing Down
-
-To remove all Cloudflare resources:
-
-```bash
-pnpm destroy
-```
-
-**This is irreversible.** Back up your D1 database first:
-
-```bash
-wrangler d1 export linkden-db --output backup.sql
-```
-
-The web Worker must be deleted separately from the Cloudflare dashboard.
-
-## Troubleshooting
-
-### "Authentication error" on deploy
-
-Your API token may have expired or lack the required permissions. Verify with `wrangler whoami`.
-
-### CORS errors in the browser console
-
-`CORS_ORIGIN` on the API Worker must exactly match the web app's origin — including protocol, no trailing slash.
-
-```bash
-# Correct
-CORS_ORIGIN=https://linkden-web.your-subdomain.workers.dev
-
-# Wrong
-CORS_ORIGIN=https://linkden-web.your-subdomain.workers.dev/
-```
-
-### Worker returns 1101 error
-
-Check the logs: `wrangler tail linkden-server --status error`
-
-Common causes: missing environment variable, D1 binding not configured, `BETTER_AUTH_SECRET` mismatch.
-
-## Cost
-
-For a typical single-user link page:
-
-| Metric | Typical Usage | Free Tier Limit |
-|--------|--------------|-----------------|
-| Worker requests (both) | ~10K/month | 100,000/day each |
-| D1 rows read | ~300/day | 5,000,000/day |
-| D1 rows written | ~50/day | 100,000/day |
-| D1 storage | < 50 MB | 5 GB |
-
-Most LinkDen instances run entirely within the free tier.
+## 💰 Cost Check
+For a typical single user, LinkDen stays **100% within the Free Tier**.
+- **Requests:** 100k/day free.
+- **Database:** 5M reads/day free.
+- **Storage:** 5GB free.

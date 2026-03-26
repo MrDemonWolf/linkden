@@ -26,7 +26,7 @@ interface AvatarProps {
 const sizeClasses = {
 	sm: "h-12 w-12 text-lg",
 	md: "h-16 w-16 text-xl",
-	lg: "h-24 w-24 text-3xl",
+	lg: "h-[104px] w-[104px] text-3xl",
 };
 
 export function Avatar({ src, name, email, size = "md", className, hasBanner, ringColor, themeColors }: AvatarProps) {
@@ -40,17 +40,18 @@ export function Avatar({ src, name, email, size = "md", className, hasBanner, ri
 		.slice(0, 2);
 
 	const ringStyle: React.CSSProperties = hasBanner && ringColor
-		? { boxShadow: `0 0 0 4px ${ringColor}`, transition: "box-shadow 0.5s ease" }
+		? { boxShadow: `0 0 0 4px ${ringColor}`, transition: "box-shadow 0.5s ease", filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.3))" }
 		: {};
 
 	const fallbackDiv = (
 		<div
-			className={`${sizeClasses[size]} flex items-center justify-center rounded-full font-bold ${hasBanner ? "" : "ring-2 ring-white/20 ring-offset-2 ring-offset-background"} ${className ?? ""}`}
+			className={`${sizeClasses[size]} flex items-center justify-center rounded-full font-bold shadow-xl ${hasBanner ? "" : "ring-2 ring-white/30 ring-offset-2 ring-offset-background"} ${className ?? ""}`}
 			style={{
 				...(themeColors
 					? { background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.accent})`, color: getContrastColor(themeColors.primary) }
 					: { background: "linear-gradient(135deg, #0FACED, #38BDF8)", color: "#FFFFFF" }),
 				...ringStyle,
+				transition: `background 0.5s ease, color 0.5s ease${ringStyle.transition ? `, ${ringStyle.transition}` : ", box-shadow 0.5s ease"}`,
 			}}
 			aria-label={name}
 		>
@@ -67,7 +68,7 @@ export function Avatar({ src, name, email, size = "md", className, hasBanner, ri
 				<img
 					src={imageSrc}
 					alt={name}
-					className={`${sizeClasses[size]} rounded-full object-cover ${hasBanner ? "" : "ring-2 ring-white/20 ring-offset-2 ring-offset-background"} ${className ?? ""}`}
+					className={`${sizeClasses[size]} rounded-full object-cover shadow-xl ${hasBanner ? "" : "ring-2 ring-white/30 ring-offset-2 ring-offset-background"} ${className ?? ""}`}
 					style={ringStyle}
 					onError={() => setImgError(true)}
 				/>

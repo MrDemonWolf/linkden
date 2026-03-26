@@ -3,96 +3,75 @@ title: Quick Start
 description: Get your LinkDen instance set up and publish your first links in minutes.
 ---
 
-# Quick Start
+# 🚀 Quick Start
 
-You'll go from a fresh install to a live link page in about five minutes. If you haven't installed LinkDen yet, start with the [Installation](/docs/getting-started/installation) guide.
+You'll go from a fresh install to a live link page in about five minutes.
 
----
-
-## 1. Run the Setup Wizard
-
-When LinkDen starts for the first time, it prints a one-time setup URL to your **server console**:
-
-```
-Setup URL: http://localhost:3001/admin/setup?token=<unique-token>
-```
-
-Open that URL in your browser. The token keeps setup secure -- it's only valid once.
-
-> **Tip:** If you go to `/admin/setup` without the token, the page will tell you to check your server console.
-
-The wizard has 4 quick steps:
-
-1. **Account** -- Pick a name, email, and password for your admin login.
-2. **Profile** -- Add a bio and avatar (or skip these for now).
-3. **Theme** -- Choose from 7 theme presets. Each shows color swatches so you can preview.
-4. **Done** -- Hit "Go to Builder" to start adding content.
-
-The setup token is automatically invalidated once you finish.
+> **Pre-requisite:** If you haven't installed LinkDen yet, start with the [Installation Guide](/docs/getting-started/installation).
 
 ---
 
-## 2. Add Your First Blocks
+## 1. 👤 Create Your Admin Account
 
-The builder at `/admin/builder` has two panels: your block list on the left, and a live phone preview on the right.
+Navigate to `/admin/setup` in your browser.
 
-Click **Add Block** to choose from five block types:
+- [ ] Enter your **Name**
+- [ ] Enter your **Email**
+- [ ] Create a **Password**
+- [ ] Click **Create Account**
 
-- **Link** -- A clickable button that sends visitors to any URL.
-- **Header** -- A text heading to organize your page into sections.
-- **Social Icons** -- A row of branded social media links.
-- **Embed** -- Embed content from YouTube, Spotify, SoundCloud, and more.
-- **Contact Form** -- Let visitors send you a message right from your page.
+> **Note:** The first user becomes the admin and registration locks automatically.
 
-### Try adding a link
+---
 
-1. Click **Add Block** and select **Link**.
-2. Fill in a **Title** (the button text) and a **URL** (the destination).
-3. Optionally, switch to the **Style** tab to customize colors, icons, or animation.
+## 2. 🧱 Add Your First Blocks
+
+Go to `/admin/builder`.
+
+- **Left Panel:** Your blocks.
+- **Right Panel:** Live phone preview.
+
+### Try adding a link:
+1. Click **Add Block** → Select **Link**.
+2. Fill in **Title** (button text) and **URL**.
+3. (Optional) Customize colors/icons in the **Style** tab.
 4. Click **Save Changes**.
 
-You can drag blocks by their grip handle to reorder them anytime.
+---
+
+## 3. 🌐 Set Up Social Icons
+
+Go to `/admin/social`.
+
+- [ ] Search for your platform (e.g., "GitHub", "Twitter").
+- [ ] Toggle it **ON**.
+- [ ] Paste your profile URL.
+
+> **Tip:** Dark mode is automatic for brand icons!
 
 ---
 
-## 3. Set Up Social Icons
+## 4. ⚙️ Configure Settings
 
-Head to `/admin/social` to manage your social network links.
+Go to `/admin/settings`.
 
-Search for any platform by name, or browse by category (Social, Video, Music, Development, and more). Toggle networks on or off and paste in your profile URLs. Active networks show up in any **Social Icons** block on your page.
-
-> **Tip:** Dark brand icons automatically adjust for visibility in dark mode -- no extra setup needed.
-
----
-
-## 4. Configure Settings
-
-Visit `/admin/settings` to fine-tune your instance:
-
-- **Profile** -- Display name, avatar, and bio.
-- **SEO** -- Page title, meta description, and OG image.
-- **Contact Form** -- Enable or disable, choose delivery mode (database, email, or both).
-- **CAPTCHA** -- Add Cloudflare Turnstile or Google reCAPTCHA for form protection.
-- **Email** -- Set up Resend or Cloudflare Email Workers for notifications.
-- **Export / Import** -- Backup and restore your data as JSON.
-- **About** -- Check your current version and look for updates.
-
-For visual customization (themes, banners, verified badge, branding), head to the [Appearance](/docs/guide/appearance) page at `/admin/appearance`.
+- **Profile:** Set display name, avatar, bio.
+- **SEO:** Set page title, description.
+- **Contact Form:** Enable/disable messaging.
+- **Whitelabel:** Remove LinkDen branding.
 
 ---
 
-## 5. View Your Public Page
+## 5. 🎉 View Your Public Page
 
-Click **View Page** in the dashboard header, or just visit your domain root. That's your live link-in-bio page -- share it anywhere.
+Click **View Page** in the header.
+**That's it!** Share your URL anywhere.
 
 ---
 
 ## Next Steps
 
-- [Blocks](/docs/guide/blocks) -- Deep dive into block types and configuration.
-- [Appearance](/docs/guide/appearance) -- Themes, colors, and branding options.
-- [Social Networks](/docs/guide/social-networks) -- The full social icon library.
-- [Apple Wallet](/docs/guide/apple-wallet) -- Create a digital business card pass.
-- [Contact Form](/docs/guide/contact-form) -- Set up visitor messaging.
-- [Analytics](/docs/guide/analytics) -- Track page and link views.
-- [vCard](/docs/guide/vcard) -- Offer a downloadable contact card.
+- 🧱 [Blocks](/docs/guide/blocks) -- Deep dive into block types.
+- 🎨 [Appearance](/docs/guide/appearance) -- Themes & Colors.
+- 🍏 [Apple Wallet](/docs/guide/apple-wallet) -- Digital business cards.
+- 📈 [Analytics](/docs/guide/analytics) -- Track your views.

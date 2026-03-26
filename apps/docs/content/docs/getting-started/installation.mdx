@@ -3,82 +3,78 @@ title: Installation
 description: Clone the repository, install dependencies, and get LinkDen running locally.
 ---
 
-# Installation
+# 💻 Installation
 
-You'll clone the repo, install dependencies, set a few environment variables, and start the dev servers. The whole process takes about five minutes.
+Get LinkDen running on your machine in under 5 minutes.
 
-## Prerequisites
+### 📋 Prerequisites
+- **Bun 1.3+** -- Grab it from [bun.sh](https://bun.sh).
+- **Cloudflare account** -- A free account is enough for development.
 
-- **Node.js 22+** -- Grab it from [nodejs.org](https://nodejs.org), or use a version manager like `nvm` or `fnm`.
-- **pnpm 10+** -- Enable it with Corepack:
+---
 
-```bash
-corepack enable && corepack prepare pnpm@latest --activate
-```
-
-- **Cloudflare account** -- A free account at [cloudflare.com](https://cloudflare.com) is enough for development.
-
-## Clone and Install
+## 1. 📂 Clone and Install
 
 ```bash
 git clone https://github.com/mrdemonwolf/linkden.git
 cd linkden
-pnpm install
+bun install
 ```
 
-> **Tip:** `pnpm install` handles all apps and packages in the monorepo automatically.
+> **Tip:** `bun install` handles all apps and packages in the monorepo automatically.
 
-## Set Up Environment Variables
+---
 
-Copy the example file and fill in your values:
+## 2. ⚙️ Environment Setup
 
+Copy the example file:
 ```bash
 cp .env.example .env
 ```
 
-At minimum, set these four variables:
+**Required Variables:**
 
 | Variable | Description | Example |
-|----------|-------------|---------|
-| `BETTER_AUTH_SECRET` | Secret key for session signing | Generate with `openssl rand -base64 32` |
-| `BETTER_AUTH_URL` | URL of the API server | `http://localhost:3000` |
-| `CORS_ORIGIN` | URL of the web frontend | `http://localhost:3001` |
-| `NEXT_PUBLIC_SERVER_URL` | Public URL of the API server | `http://localhost:3000` |
+|---|---|---|
+| `BETTER_AUTH_SECRET` | Secret key for sessions | `openssl rand -base64 32` |
+| `BETTER_AUTH_URL` | API server URL | `http://localhost:3000` |
+| `CORS_ORIGIN` | Web frontend URL | `http://localhost:3001` |
+| `NEXT_PUBLIC_SERVER_URL` | Public API URL | `http://localhost:3000` |
 
-See [Configuration](/docs/getting-started/configuration) for a full explanation of each variable.
+---
 
-## Push the Database Schema
-
-```bash
-pnpm db:push
-```
-
-This creates the database tables LinkDen needs to run.
-
-## Start the Dev Servers
+## 3. 🗄️ Database Setup
 
 ```bash
-pnpm dev
+bun run db:push
+```
+This creates the tables needed to run.
+
+---
+
+## 4. 🚀 Start Dev Servers
+
+```bash
+bun run dev
 ```
 
-This launches everything:
+- 🌐 **Web App:** `http://localhost:3001`
+- ⚙️ **API Server:** `http://localhost:3000`
+- 📚 **Docs:** `http://localhost:3002`
 
-- **Web app** -- `http://localhost:3001`
-- **API server** -- `http://localhost:3000`
-- **Docs** -- `http://localhost:3002`
+---
 
-## Verify It Works
+## 5. ✅ Verify It Works
 
-1. Open `http://localhost:3001` -- you should see an empty public page.
-2. Check your **server console** for a setup URL that looks like this:
-   ```
-   Setup URL: http://localhost:3001/admin/setup?token=<unique-token>
-   ```
-3. Open that URL and complete the 4-step setup wizard (Account, Profile, Theme, Done).
-4. You'll land on the block builder -- you're all set!
+1. **Visit:** `http://localhost:3001/admin/setup`.
+2. **Create Account:** Enter your name, email, and password.
+3. **Registration:** The first user becomes the admin and registration locks automatically.
+4. **Dashboard:** You'll be redirected to the admin panel. **You're all set!**
+
+---
 
 ## Next Steps
 
-- [Quick Start](/docs/getting-started/quick-start) -- Walk through the setup wizard and start adding content.
-- [Configuration](/docs/getting-started/configuration) -- Learn more about environment variables and auth setup.
-- [Self-Hosting](/docs/self-hosting/cloudflare) -- Deploy your instance to Cloudflare.
+- 🚀 [Quick Start](/docs/getting-started/quick-start) -- Add your first links.
+- ⚙️ [Configuration](/docs/getting-started/configuration) -- Deep dive into env vars.
+- ☁️ [Self-Hosting](/docs/self-hosting/cloudflare) -- Deploy to Cloudflare.
