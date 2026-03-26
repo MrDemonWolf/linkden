@@ -9,6 +9,9 @@ export const middleware = t.middleware;
 
 export const publicProcedure = t.procedure;
 
+// Single-user assumption: protectedProcedure gates on session existence only.
+// The signup-lock middleware in apps/server/src/index.ts ensures only one user
+// can ever register, so all authenticated requests belong to the admin.
 export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
 	if (!ctx.session) {
 		throw new TRPCError({

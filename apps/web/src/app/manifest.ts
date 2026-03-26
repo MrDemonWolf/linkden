@@ -2,13 +2,15 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "LinkDen",
+    id: "/admin",
+    name: "LinkDen Admin",
     short_name: "LinkDen",
-    description: "Your personal link-in-bio page",
-    start_url: "/",
+    description: "LinkDen admin panel — manage your link-in-bio page",
+    start_url: "/admin",
+    scope: "/admin",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#000000",
+    background_color: "#000000",
+    theme_color: "#0a0a0a",
     icons: [
       {
         src: "/favicon/web-app-manifest-192x192.png",

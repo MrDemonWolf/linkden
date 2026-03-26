@@ -9,10 +9,12 @@ build
 .next
 .source
 *.tsbuildinfo
+apps/docs/out
 
 # Environment variables
 .env
 .env*.local
+.dev.vars
 
 # IDEs and editors
 .vscode/*

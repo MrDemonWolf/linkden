@@ -38,7 +38,7 @@ export default function FormsPage() {
 	// Fetch form blocks for the filter
 	const blocksQuery = useQuery(trpc.blocks.list.queryOptions());
 	const formBlocks = (blocksQuery.data ?? []).filter(
-		(b: { type: string }) => b.type === "form",
+		(b: { type: string }) => b.type === "connect",
 	);
 
 	const listParams = {

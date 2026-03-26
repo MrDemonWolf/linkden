@@ -3,15 +3,16 @@ import { z } from "zod";
 export const blockTypeSchema = z.enum([
   "link",
   "header",
-  "social_icons",
   "embed",
-  "form",
+  "connect",
   "vcard",
+  "location",
 ]);
 
 export type BlockType = z.infer<typeof blockTypeSchema>;
 
 export const blockConfigBaseSchema = z.object({
+  layout: z.enum(["full", "inline"]).default("full").optional(),
   colorVariant: z.string().optional(),
   customBgColor: z.string().optional(),
   customTextColor: z.string().optional(),
@@ -32,6 +33,9 @@ export const linkConfigSchema = blockConfigBaseSchema.extend({
   fontWeight: z.string().optional(),
   isOutlined: z.boolean().optional(),
   openInNewTab: z.boolean().optional(),
+  description: z.string().optional(),
+  thumbnail: z.string().optional(),
+  isHighlighted: z.boolean().optional(),
 });
 
 export const headerConfigSchema = blockConfigBaseSchema.extend({
@@ -43,12 +47,23 @@ export const headerConfigSchema = blockConfigBaseSchema.extend({
   showDivider: z.boolean().optional(),
 });
 
-export const socialIconsConfigSchema = blockConfigBaseSchema.extend({
-  iconSize: z.number().optional(),
-  iconStyle: z.enum(["circle", "square", "rounded", "bare"]).optional(),
-  showLabels: z.boolean().optional(),
-  spacing: z.number().optional(),
-  useBrandColors: z.boolean().optional(),
+export const whereMetOptions = [
+  "Conference",
+  "Online",
+  "Work",
+  "Mutual Friend",
+  "Social Media",
+  "Other",
+] as const;
+
+export const connectConfigSchema = blockConfigBaseSchema.extend({
+  displayMode: z.enum(["inline", "modal"]).default("modal"),
+  buttonText: z.string().optional(),
+  buttonEmoji: z.string().optional(),
+  buttonEmojiPosition: z.enum(["left", "right"]).optional(),
+  successMessage: z.string().optional(),
+  isOutlined: z.boolean().optional(),
+  textAlign: z.enum(["left", "center", "right"]).optional(),
 });
 
 export const embedConfigSchema = blockConfigBaseSchema.extend({
@@ -72,22 +87,6 @@ export function validateEmbedUrl(embedType: string, url: string): boolean {
   return pattern.test(url);
 }
 
-export const formConfigSchema = blockConfigBaseSchema.extend({
-  preset: z.enum(["contact", "connect", "feedback", "rsvp"]).optional(),
-  buttonText: z.string().optional(),
-  buttonEmoji: z.string().optional(),
-  buttonEmojiPosition: z.enum(["left", "right"]).optional(),
-  successMessage: z.string().optional(),
-  showPhone: z.boolean().optional(),
-  showSubject: z.boolean().optional(),
-  showCompany: z.boolean().optional(),
-  showWhereMet: z.boolean().optional(),
-  showRating: z.boolean().optional(),
-  showAttending: z.boolean().optional(),
-  showGuests: z.boolean().optional(),
-  isOutlined: z.boolean().optional(),
-  textAlign: z.enum(["left", "center", "right"]).optional(),
-});
 
 export const vcardConfigSchema = blockConfigBaseSchema.extend({
   fullName: z.string().optional(),
@@ -109,9 +108,12 @@ export const vcardConfigSchema = blockConfigBaseSchema.extend({
   isOutlined: z.boolean().optional(),
 });
 
-export const socialIconItemSchema = z.object({
-  platform: z.string(),
-  url: z.string().url(),
+export const locationConfigSchema = blockConfigBaseSchema.extend({
+  address: z.string().optional(),
+  displayMode: z.enum(["text", "map"]).default("text"),
+  linkType: z.enum(["google", "apple", "custom", "none"]).default("none"),
+  customLinkUrl: z.string().optional(),
+  coordinates: z.object({ lat: z.number(), lng: z.number() }).optional(),
 });
 
 export const createBlockSchema = z.object({
@@ -121,7 +123,6 @@ export const createBlockSchema = z.object({
   icon: z.string().optional(),
   embedType: z.string().optional(),
   embedUrl: z.string().url().optional(),
-  socialIcons: z.array(socialIconItemSchema).optional(),
   isEnabled: z.boolean().optional(),
   position: z.number(),
   scheduledStart: z.number().optional(),
@@ -130,10 +131,10 @@ export const createBlockSchema = z.object({
     .union([
       linkConfigSchema,
       headerConfigSchema,
-      socialIconsConfigSchema,
       embedConfigSchema,
-      formConfigSchema,
+      connectConfigSchema,
       vcardConfigSchema,
+      locationConfigSchema,
       blockConfigBaseSchema,
     ])
     .optional(),
@@ -147,7 +148,6 @@ export const updateBlockSchema = z.object({
   icon: z.string().optional(),
   embedType: z.string().optional(),
   embedUrl: z.string().url().optional(),
-  socialIcons: z.array(socialIconItemSchema).optional(),
   isEnabled: z.boolean().optional(),
   position: z.number().optional(),
   scheduledStart: z.number().optional(),
@@ -156,10 +156,10 @@ export const updateBlockSchema = z.object({
     .union([
       linkConfigSchema,
       headerConfigSchema,
-      socialIconsConfigSchema,
       embedConfigSchema,
-      formConfigSchema,
+      connectConfigSchema,
       vcardConfigSchema,
+      locationConfigSchema,
       blockConfigBaseSchema,
     ])
     .optional(),
@@ -171,3 +171,52 @@ export const reorderBlocksSchema = z.array(
     position: z.number(),
   }),
 );
+
+// ─── Backup/Import schemas ─────────────────────────────────────────────────
+// These mirror DB columns so backup imports are validated against the actual schema
+// rather than using z.any(). Shared here to prevent drift between backup.ts and blocks.ts.
+
+export const blockImportSchema = z.object({
+  id: z.string(),
+  type: blockTypeSchema,
+  title: z.string().nullable().optional(),
+  url: z.string().nullable().optional(),
+  icon: z.string().nullable().optional(),
+  embedType: z.string().nullable().optional(),
+  embedUrl: z.string().nullable().optional(),
+  socialIcons: z.string().nullable().optional(),
+  isEnabled: z.boolean().optional().default(true),
+  position: z.number(),
+  scheduledStart: z.number().nullable().optional(),
+  scheduledEnd: z.number().nullable().optional(),
+  status: z.enum(["published", "draft"]).optional().default("published"),
+  config: z.string().nullable().optional(),
+  createdAt: z.number().nullable().optional(),
+  updatedAt: z.number().nullable().optional(),
+});
+
+export const contactSubmissionImportSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  message: z.string(),
+  phone: z.string().nullable().optional(),
+  subject: z.string().nullable().optional(),
+  company: z.string().nullable().optional(),
+  whereMet: z.string().nullable().optional(),
+  rating: z.number().nullable().optional(),
+  attending: z.string().nullable().optional(),
+  guests: z.number().nullable().optional(),
+  blockId: z.string().nullable().optional(),
+  blockTitle: z.string().nullable().optional(),
+  isRead: z.boolean().optional(),
+  createdAt: z.number().nullable().optional(),
+  updatedAt: z.number().nullable().optional(),
+});
+
+export const socialNetworkImportSchema = z.object({
+  slug: z.string(),
+  url: z.string(),
+  isActive: z.boolean().optional().default(true),
+  addedAt: z.number().nullable().optional(),
+});

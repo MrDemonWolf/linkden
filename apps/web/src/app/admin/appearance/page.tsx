@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Upload, Undo2 } from "lucide-react";
+import { Upload, Undo2, Eye } from "lucide-react";
 import { themePresets } from "@linkden/ui/themes";
 import { getBannerPresetsForTheme } from "@linkden/ui/banner-presets";
 import { trpc } from "@/utils/trpc";
@@ -11,13 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
-import { SharedPreview } from "@/components/admin/shared-preview";
+import { PreviewRenderer } from "@/components/admin/preview-renderer";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { ProfileSection } from "@/components/admin/appearance/profile-section";
 import { ThemePresetsSection } from "@/components/admin/appearance/theme-presets-section";
 import { ColorsSection } from "@/components/admin/appearance/colors-section";
 import { BannerSection } from "@/components/admin/appearance/banner-section";
-import { VerifiedBadgeSection, BrandingSection } from "@/components/admin/appearance/branding-section";
+import { VerifiedBadgeSection } from "@/components/admin/appearance/branding-section";
 import { CustomCssSection } from "@/components/admin/appearance/custom-css-section";
 
 interface SavedState {
@@ -36,9 +36,6 @@ interface SavedState {
 	bannerMode: "preset" | "custom";
 	bannerCustomUrl: string;
 	verifiedBadge: boolean;
-	brandingEnabled: boolean;
-	brandingText: string;
-	brandingLink: string;
 }
 
 function buildSavedState(settings: Record<string, string>): SavedState {
@@ -58,9 +55,6 @@ function buildSavedState(settings: Record<string, string>): SavedState {
 		bannerMode: (settings.banner_mode as "preset" | "custom") || "preset",
 		bannerCustomUrl: settings.banner_custom_url ?? "",
 		verifiedBadge: settings.verified_badge === "true",
-		brandingEnabled: settings.branding_enabled !== "false",
-		brandingText: settings.branding_text ?? "",
-		brandingLink: settings.branding_link ?? "",
 	};
 }
 
@@ -78,8 +72,7 @@ export default function AppearancePage() {
 		accentColor: "#38BDF8", bgColor: "#FFFFFF",
 		customCss: "", bannerEnabled: false, bannerPreset: "",
 		bannerMode: "preset", bannerCustomUrl: "",
-		verifiedBadge: false, brandingEnabled: true,
-		brandingText: "", brandingLink: "",
+		verifiedBadge: false,
 	});
 
 	const [profileName, setProfileName] = useState("");
@@ -98,9 +91,6 @@ export default function AppearancePage() {
 	const [bannerMode, setBannerMode] = useState<"preset" | "custom">("preset");
 	const [bannerCustomUrl, setBannerCustomUrl] = useState("");
 	const [verifiedBadge, setVerifiedBadge] = useState(false);
-	const [brandingEnabled, setBrandingEnabled] = useState(true);
-	const [brandingText, setBrandingText] = useState("");
-	const [brandingLink, setBrandingLink] = useState("");
 	const [showMobilePreview, setShowMobilePreview] = useState(false);
 
 	const [systemPrefersDark, setSystemPrefersDark] = useState(false);
@@ -137,9 +127,6 @@ export default function AppearancePage() {
 			setBannerMode(s.bannerMode);
 			setBannerCustomUrl(s.bannerCustomUrl);
 			setVerifiedBadge(s.verifiedBadge);
-			setBrandingEnabled(s.brandingEnabled);
-			setBrandingText(s.brandingText);
-			setBrandingLink(s.brandingLink);
 		}
 	}, [settingsQuery.data]);
 
@@ -158,10 +145,7 @@ export default function AppearancePage() {
 		bannerPreset !== savedState.bannerPreset ||
 		bannerMode !== savedState.bannerMode ||
 		bannerCustomUrl !== savedState.bannerCustomUrl ||
-		verifiedBadge !== savedState.verifiedBadge ||
-		brandingEnabled !== savedState.brandingEnabled ||
-		brandingText !== savedState.brandingText ||
-		brandingLink !== savedState.brandingLink;
+		verifiedBadge !== savedState.verifiedBadge;
 
 	useUnsavedChanges(isDirty);
 
@@ -201,16 +185,13 @@ export default function AppearancePage() {
 				{ key: "banner_mode", value: bannerMode },
 				{ key: "banner_custom_url", value: bannerCustomUrl },
 				{ key: "verified_badge", value: String(verifiedBadge) },
-				{ key: "branding_enabled", value: String(brandingEnabled) },
-				{ key: "branding_text", value: brandingText },
-				{ key: "branding_link", value: brandingLink },
 				]);
 			setSavedState({
 				profileName, profileBio, profileAvatar,
 				theme: selectedTheme, colorMode,
 				primaryColor, secondaryColor, accentColor, bgColor,
 				customCss, bannerEnabled, bannerPreset, bannerMode, bannerCustomUrl,
-				verifiedBadge, brandingEnabled, brandingText, brandingLink,
+				verifiedBadge,
 			});
 			invalidate();
 			toast.success("Appearance published");
@@ -235,9 +216,6 @@ export default function AppearancePage() {
 		setBannerMode(savedState.bannerMode);
 		setBannerCustomUrl(savedState.bannerCustomUrl);
 		setVerifiedBadge(savedState.verifiedBadge);
-		setBrandingEnabled(savedState.brandingEnabled);
-		setBrandingText(savedState.brandingText);
-		setBrandingLink(savedState.brandingLink);
 	};
 
 	const resolvedThemeVars = useMemo(() => {
@@ -265,10 +243,15 @@ export default function AppearancePage() {
 		return (
 			<div className="space-y-6" aria-busy="true" role="status" aria-label="Loading appearance settings">
 				<Skeleton className="h-8 w-48" />
-				<div className="grid gap-3 sm:grid-cols-3">
-					{Array.from({ length: 6 }).map((_, i) => (
-						<Skeleton key={`sk-${i}`} className="h-24" />
-					))}
+				<div className="flex gap-6">
+					<div className="flex-1 space-y-4">
+						<Skeleton className="h-64" />
+						<Skeleton className="h-48" />
+						<Skeleton className="h-32" />
+					</div>
+					<div className="hidden lg:block w-[360px]">
+						<Skeleton className="h-[640px] rounded-[2rem]" />
+					</div>
 				</div>
 			</div>
 		);
@@ -293,8 +276,6 @@ export default function AppearancePage() {
 			mutedFg: resolvedThemeVars["--ld-muted-foreground"],
 		},
 		settings: {
-			brandingEnabled,
-			brandingText: brandingText || "Powered by LinkDen",
 			bannerEnabled,
 			bannerPreset: bannerEnabled && bannerMode === "preset" ? bannerPreset : null,
 			bannerMode,
@@ -304,20 +285,30 @@ export default function AppearancePage() {
 
 	return (
 		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-4">
-			{/* Inline header */}
+			{/* Page header */}
 			<div className="flex items-center justify-between gap-3">
 				<div className="min-w-0">
 					<h1 className="text-base font-semibold tracking-tight">Appearance</h1>
-					<p className={cn("text-xs", isDirty ? "text-amber-500" : "text-muted-foreground")}>
+					<p className={cn("text-xs transition-colors", isDirty ? "text-amber-500" : "text-muted-foreground")}>
 						{isDirty ? "Unpublished changes" : "All changes are live"}
 					</p>
 				</div>
+				{/* Mobile preview button */}
+				<Button
+					variant="outline"
+					size="sm"
+					className="lg:hidden"
+					onClick={() => setShowMobilePreview(true)}
+				>
+					<Eye className="mr-1.5 h-3.5 w-3.5" />
+					Preview
+				</Button>
 			</div>
 
-			{/* Two-column layout */}
+			{/* Two-column layout: settings left, preview right */}
 			<div className="flex gap-6">
 				{/* Settings column */}
-				<div className="flex-1 min-w-0 space-y-6">
+				<div className="flex-1 min-w-0 space-y-5">
 					<ProfileSection
 						profileName={profileName}
 						profileBio={profileBio}
@@ -326,10 +317,12 @@ export default function AppearancePage() {
 						onBioChange={setProfileBio}
 						onAvatarChange={setProfileAvatar}
 					/>
+
 					<ThemePresetsSection
 						selectedTheme={selectedTheme}
 						onThemeSelect={handleThemeSelect}
 					/>
+
 					<ColorsSection
 						colorMode={colorMode}
 						primaryColor={primaryColor}
@@ -342,6 +335,7 @@ export default function AppearancePage() {
 						onAccentChange={setAccentColor}
 						onBgChange={setBgColor}
 					/>
+
 					<BannerSection
 						bannerEnabled={bannerEnabled}
 						bannerMode={bannerMode}
@@ -353,29 +347,25 @@ export default function AppearancePage() {
 						onBannerPresetChange={setBannerPreset}
 						onBannerCustomUrlChange={setBannerCustomUrl}
 					/>
+
 					<VerifiedBadgeSection
 						verifiedBadge={verifiedBadge}
 						onVerifiedBadgeChange={setVerifiedBadge}
 					/>
-					<BrandingSection
-						brandingEnabled={brandingEnabled}
-						brandingText={brandingText}
-						brandingLink={brandingLink}
-						profileName={profileName}
-						onBrandingEnabledChange={setBrandingEnabled}
-						onBrandingTextChange={setBrandingText}
-						onBrandingLinkChange={setBrandingLink}
-					/>
+
 					<CustomCssSection
 						customCss={customCss}
 						onCustomCssChange={setCustomCss}
 					/>
+
+					{/* Spacer for sticky publish bar */}
+					{isDirty && <div className="h-16" />}
 				</div>
 
 				{/* Preview column (desktop) */}
-				<div className="hidden w-[320px] shrink-0 lg:block">
+				<div className="hidden w-[360px] shrink-0 lg:block">
 					<div className="sticky top-6">
-						<SharedPreview
+						<PreviewRenderer
 							overrides={previewOverrides}
 							mode={previewDark ? "dark" : "light"}
 							onModeChange={(m) => setPreviewDark(m === "dark")}
@@ -389,7 +379,7 @@ export default function AppearancePage() {
 				open={showMobilePreview}
 				onOpenChange={setShowMobilePreview}
 			>
-				<SharedPreview
+				<PreviewRenderer
 					overrides={previewOverrides}
 					mode={previewDark ? "dark" : "light"}
 					onModeChange={(m) => setPreviewDark(m === "dark")}
@@ -399,8 +389,10 @@ export default function AppearancePage() {
 
 			{/* Sticky bottom publish bar */}
 			{isDirty && (
-				<div className="fixed bottom-16 md:bottom-0 inset-x-0 md:left-56 z-30 border-t border-border/50 bg-background/80 backdrop-blur-xl px-4 py-3 flex items-center justify-between shadow-lg">
-					<span className="text-sm text-muted-foreground">Unpublished changes</span>
+				<div className="fixed bottom-16 md:bottom-0 inset-x-0 md:left-56 z-30 border-t border-border/50 bg-background/80 backdrop-blur-xl px-4 py-3 flex items-center justify-between shadow-lg animate-in slide-in-from-bottom-2 duration-200">
+					<span className="text-sm text-muted-foreground">
+						Unpublished changes
+					</span>
 					<div className="flex gap-2">
 						<Button variant="ghost" size="sm" onClick={handleDiscard}>
 							<Undo2 className="mr-1.5 h-3.5 w-3.5" />
@@ -410,9 +402,10 @@ export default function AppearancePage() {
 							size="sm"
 							disabled={updateSettings.isPending}
 							onClick={handlePublish}
+							className="shadow-sm"
 						>
 							<Upload className="mr-1.5 h-3.5 w-3.5" />
-							{updateSettings.isPending ? "Publishing…" : "Publish"}
+							{updateSettings.isPending ? "Publishing..." : "Publish"}
 						</Button>
 					</div>
 				</div>

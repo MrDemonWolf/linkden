@@ -32,18 +32,26 @@ export function ProfileSection({
 				</h2>
 			</CardHeader>
 			<CardContent className="space-y-4">
-				<div className="flex flex-col items-center gap-2">
+				{/* Avatar upload */}
+				<div className="flex flex-col items-center gap-3">
 					<ImageUploadField
 						value={profileAvatar}
 						purpose="avatar"
 						aspectRatio="square"
 						onUploadComplete={onAvatarChange}
 					/>
+					<p className="text-[10px] text-muted-foreground">
+						Recommended: 400x400px, max 5MB
+					</p>
 				</div>
+
+				{/* Name field */}
 				<div className="space-y-1.5">
 					<div className="flex items-center justify-between">
-						<Label htmlFor="a-name">Display Name</Label>
-						<span className="text-[10px] text-muted-foreground">{profileName.length}/50</span>
+						<Label htmlFor="a-name" className="text-xs">Display Name</Label>
+						<span className="text-[10px] tabular-nums text-muted-foreground">
+							{profileName.length}/50
+						</span>
 					</div>
 					<Input
 						id="a-name"
@@ -53,10 +61,14 @@ export function ProfileSection({
 						placeholder="Your display name"
 					/>
 				</div>
+
+				{/* Bio field */}
 				<div className="space-y-1.5">
 					<div className="flex items-center justify-between">
-						<Label htmlFor="a-bio">Bio</Label>
-						<span className="text-[10px] text-muted-foreground">{profileBio.length}/300</span>
+						<Label htmlFor="a-bio" className="text-xs">Bio</Label>
+						<span className="text-[10px] tabular-nums text-muted-foreground">
+							{profileBio.length}/300
+						</span>
 					</div>
 					<textarea
 						id="a-bio"
@@ -65,7 +77,7 @@ export function ProfileSection({
 						rows={4}
 						maxLength={300}
 						placeholder="A short bio about you"
-						className="dark:bg-input/30 border-input w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
+						className="dark:bg-input/30 border-input w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring placeholder:text-muted-foreground/50"
 					/>
 				</div>
 			</CardContent>

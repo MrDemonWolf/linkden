@@ -4,12 +4,13 @@ import { Avatar } from "./avatar";
 import { BannerSection } from "./banner-section";
 import { LinkBlock } from "./link-block";
 import { HeaderBlock } from "./header-block";
-import { SocialIconsBlock } from "./social-icons-block";
 import { EmbedBlock } from "./embed-block";
-import { ContactFormBlock } from "./contact-form-block";
+import { ConnectBlock } from "./connect-block";
 import { VCardBlock } from "./vcard-block";
+import { LocationBlock } from "./location-block";
 import { WhitelabelFooter } from "./whitelabel-footer";
 import { usePreview } from "./preview-context";
+import { ProfileSocialIcons } from "./profile-social-icons";
 import type { ThemeColors } from "./public-page";
 
 interface SocialNetwork {
@@ -87,6 +88,124 @@ export function PageSkeleton() {
 	);
 }
 
+/** Group consecutive blocks with layout:"inline" into 50/50 pairs */
+function groupBlocksWithInlineRows(
+	blocks: PageContentProps["blocks"],
+): Array<{ type: "single"; block: PageContentProps["blocks"][number] } | { type: "inline-row"; blocks: PageContentProps["blocks"] }> {
+	const result: Array<{ type: "single"; block: PageContentProps["blocks"][number] } | { type: "inline-row"; blocks: PageContentProps["blocks"] }> = [];
+	let inlineBuffer: PageContentProps["blocks"] = [];
+
+	for (const block of blocks) {
+		const config = parseConfig(block.config);
+		if (config.layout === "inline" && block.type === "link") {
+			inlineBuffer.push(block);
+			// Flush pairs
+			if (inlineBuffer.length === 2) {
+				result.push({ type: "inline-row", blocks: [...inlineBuffer] });
+				inlineBuffer = [];
+			}
+		} else {
+			// Flush any remaining single inline block
+			if (inlineBuffer.length > 0) {
+				for (const b of inlineBuffer) {
+					result.push({ type: "single", block: b });
+				}
+				inlineBuffer = [];
+			}
+			result.push({ type: "single", block });
+		}
+	}
+	// Flush remaining
+	for (const b of inlineBuffer) {
+		result.push({ type: "single", block: b });
+	}
+
+	return result;
+}
+
+function renderBlock(
+	blockData: PageContentProps["blocks"][number],
+	{
+		colorMode,
+		themeColors,
+		socialNetworks,
+		settings,
+	}: {
+		colorMode: "light" | "dark";
+		themeColors: ThemeColors;
+		socialNetworks?: SocialNetwork[];
+		settings: PageContentProps["settings"];
+	},
+) {
+	const config = parseConfig(blockData.config);
+
+	switch (blockData.type) {
+		case "link":
+			return (
+				<LinkBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={colorMode}
+					themeColors={themeColors}
+				/>
+			);
+		case "header":
+			return (
+				<HeaderBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={colorMode}
+					themeColors={themeColors}
+				/>
+			);
+		case "embed":
+			return (
+				<EmbedBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={colorMode}
+					themeColors={themeColors}
+				/>
+			);
+		
+		case "connect":
+			return (
+				<ConnectBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={colorMode}
+					themeColors={themeColors}
+				/>
+			);
+		case "vcard":
+			return (
+				<VCardBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={colorMode}
+					themeColors={themeColors}
+				/>
+			);
+		case "location":
+			return (
+				<LocationBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={colorMode}
+					themeColors={themeColors}
+				/>
+			);
+		default:
+			return null;
+	}
+}
+
 export function PageContent({
 	profile,
 	blocks,
@@ -100,6 +219,10 @@ export function PageContent({
 
 	const Wrapper = isPreview ? "div" : "main";
 	const ProfileWrapper = isPreview ? "div" : "header";
+
+	// Filter out social_icons blocks — social icons now render in the profile header
+	const contentBlocks = blocks.filter((b) => b.type !== "social_icons");
+	const groupedBlocks = groupBlocksWithInlineRows(contentBlocks);
 
 	return (
 		<div
@@ -125,10 +248,10 @@ export function PageContent({
 
 			<Wrapper
 				{...(!isPreview ? { id: "main-content", role: "main" } : {})}
-				className={`mx-auto max-w-lg px-4 ${hasBanner ? "py-0" : "py-8 md:py-12"}`}
+				className={`mx-auto max-w-lg px-4 ${hasBanner ? "py-0" : "py-10 md:py-16"}`}
 			>
-				{/* Profile Section */}
-				<ProfileWrapper className={`ld-profile relative z-10 mb-8 text-center ${hasBanner ? "-mt-20" : ""}`}>
+				{/* Profile Section: Avatar -> Name -> Bio -> Social Icons */}
+				<ProfileWrapper className={`ld-profile relative z-10 mb-10 text-center ${hasBanner ? "-mt-20" : ""}`}>
 					<Avatar
 						src={profile.image}
 						name={profile.name}
@@ -138,25 +261,28 @@ export function PageContent({
 						ringColor={hasBanner ? themeColors.bg : undefined}
 						themeColors={{ primary: themeColors.primary, accent: themeColors.accent }}
 					/>
-					<h1 className="mt-4 inline-flex items-center justify-center gap-1.5 text-2xl font-bold">
+
+					<h1 className="mt-5 inline-flex items-center justify-center gap-1.5 text-2xl font-bold tracking-tight">
 						{profile.name}
 						{profile.isVerified && (
 							<svg
 								className="h-6 w-6 shrink-0"
-								style={{ color: themeColors.primary }}
+								style={{ color: themeColors.primary, filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.15))" }}
 								viewBox="0 0 24 24"
 								fill="currentColor"
 								aria-hidden="true"
 								role="img"
 								aria-label="Verified account"
 							>
+								<title>Verified</title>
 								<path fillRule="evenodd" d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-1.549 3.397 4.491 4.491 0 01-1.307 3.497 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clipRule="evenodd" />
 							</svg>
 						)}
 					</h1>
+
 					{profile.bio && (
 						<p
-							className="ld-bio mt-2 text-sm"
+							className="ld-bio mt-3 text-[15px] leading-relaxed max-w-sm mx-auto"
 							style={{
 								color: themeColors.mutedFg,
 								transition: "color 0.5s ease",
@@ -165,94 +291,46 @@ export function PageContent({
 							{profile.bio}
 						</p>
 					)}
+
+					{/* Social Icons — pulled from socialNetwork table, rendered in profile header */}
+					{socialNetworks && socialNetworks.length > 0 && (
+						<ProfileSocialIcons
+							networks={socialNetworks}
+							colorMode={colorMode}
+							themeColors={themeColors}
+						/>
+					)}
 				</ProfileWrapper>
 
-				{/* Blocks */}
-				<div className="ld-blocks space-y-3" role="list" aria-label="Links and content">
-					{blocks.map((blockData) => {
-						const config = parseConfig(blockData.config);
-
-						switch (blockData.type) {
-							case "link":
-								return (
-									<LinkBlock
-										key={blockData.id}
-										block={blockData}
-										config={config}
-										colorMode={colorMode}
-										themeColors={themeColors}
-									/>
-								);
-							case "header":
-								return (
-									<HeaderBlock
-										key={blockData.id}
-										block={blockData}
-										config={config}
-										colorMode={colorMode}
-										themeColors={themeColors}
-									/>
-								);
-							case "social_icons":
-								return (
-									<SocialIconsBlock
-										key={blockData.id}
-										block={blockData}
-										config={config}
-										colorMode={colorMode}
-										networks={socialNetworks}
-										themeColors={themeColors}
-									/>
-								);
-							case "embed":
-								return (
-									<EmbedBlock
-										key={blockData.id}
-										block={blockData}
-										config={config}
-										colorMode={colorMode}
-										themeColors={themeColors}
-									/>
-								);
-							case "form":
-								return (
-									<ContactFormBlock
-										key={blockData.id}
-										block={blockData}
-										config={config}
-										colorMode={colorMode}
-										captchaProvider={settings.captchaProvider ?? "none"}
-										captchaSiteKey={settings.captchaSiteKey ?? null}
-										themeColors={themeColors}
-									/>
-								);
-							case "vcard":
-								return (
-									<VCardBlock
-										key={blockData.id}
-										block={blockData}
-										config={config}
-										colorMode={colorMode}
-										themeColors={themeColors}
-									/>
-								);
-							default:
-								return null;
+				{/* Blocks with inline row support */}
+				<div className="ld-blocks space-y-3.5 pb-8 w-[90%] sm:w-full mx-auto" role="list" aria-label="Links and content">
+					{groupedBlocks.map((group) => {
+						if (group.type === "inline-row") {
+							const key = group.blocks.map((b) => b.id).join("-");
+							return (
+								<div key={key} role="listitem" className="ld-inline-row grid grid-cols-2 gap-3">
+									{group.blocks.map((blockData) =>
+										renderBlock(blockData, { colorMode, themeColors, socialNetworks, settings }),
+									)}
+								</div>
+							);
 						}
+						return renderBlock(group.block, { colorMode, themeColors, socialNetworks, settings });
 					})}
 				</div>
 
 				{/* Wallet Button — only on public page */}
 				{!isPreview && settings.walletPassEnabled && (
-					<div className="mt-8 flex justify-center gap-3">
+					<div className="mt-6 flex justify-center pb-4">
 						<a
 							href="/api/wallet-pass"
-							className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-300"
+							className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
 							style={{
-								backgroundColor: themeColors.card,
-								color: themeColors.cardFg,
+								backgroundColor: colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.7)",
+								color: themeColors.fg,
 								border: `1px solid ${themeColors.border}`,
-								transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
+								backdropFilter: "blur(20px)",
+								transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, transform 0.3s ease, box-shadow 0.3s ease",
 							}}
 						>
 							<svg

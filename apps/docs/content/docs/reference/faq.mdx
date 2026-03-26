@@ -3,133 +3,90 @@ title: FAQ
 description: Frequently asked questions about LinkDen.
 ---
 
-# Frequently Asked Questions
+# ❓ Frequently Asked Questions
 
-## General
+## 🌟 General
 
 ### What is LinkDen?
-
 A self-hosted, open-source link-in-bio platform. Think Linktree, but you own everything and it runs on the edge.
 
 ### Is LinkDen free?
-
-Yes. MIT licensed, zero cost. Cloudflare's free tier covers Workers, D1, and Pages -- so hosting is free too.
+**Yes.** MIT licensed, zero cost. Cloudflare's free tier covers Workers, D1, and Pages -- so hosting is free too.
 
 ### Can I use LinkDen commercially?
-
-Absolutely. The MIT license allows unrestricted commercial use. Remove all branding, use it for clients -- no strings attached.
+**Absolutely.** The MIT license allows unrestricted commercial use. Remove all branding, use it for clients -- no strings attached.
 
 ### How is LinkDen different from Linktree?
 
 | Feature | LinkDen | Linktree |
 |---------|---------|----------|
-| Pricing | Free (self-hosted) | Free tier + paid plans |
-| Data ownership | You own everything | Linktree owns your data |
-| Custom domain | Full support | Paid plans only |
-| Whitelabel | 100% (MIT license) | Not available |
-| Analytics | Built-in, private | Built-in, Linktree has access |
-| Customization | Full code access | Limited to their editor |
-| Apple Wallet | Built-in | Not available |
-| Hosting | Your Cloudflare account | Linktree's servers |
+| 💰 **Pricing** | Free (self-hosted) | Free tier + paid plans |
+| 🏠 **Data ownership** | **You own it all** | Linktree owns it |
+| 🌐 **Custom domain** | Full support | Paid plans only |
+| 🏷️ **Whitelabel** | **100% (Fully Allowed)** | Not available |
+| 📊 **Analytics** | Private & Built-in | Linktree has access |
+| 🎨 **Customization** | Full code access | Limited editor |
+| 🍏 **Apple Wallet** | Built-in | Not available |
 
 ---
 
-## Deployment
+## 🚀 Deployment
 
 ### Do I need a Cloudflare account?
-
-For the primary deployment path, yes. LinkDen runs on Cloudflare Workers and Pages. But Docker self-hosting works too if you'd rather skip Cloudflare entirely.
-
-### Can I deploy without Cloudflare?
-
-Yes. See the [Docker](/docs/self-hosting/docker) and [Coolify](/docs/self-hosting/coolify) guides.
+**Yes** for the primary path (Workers + Pages). But **Docker** works too if you want to skip Cloudflare.
 
 ### Does LinkDen support multiple users?
-
-LinkDen is a **single-user** platform. One instance = one link page. Need multiple pages? Deploy separate instances.
+**No.** LinkDen is a **single-user** platform.
+- One instance = One link page.
+- Need more? Deploy separate instances.
 
 ### How does authentication work?
+LinkDen uses **Better Auth**.
+- No external services needed.
+- First user to `/admin/setup` becomes the admin.
+- Registration locks automatically after that.
 
-LinkDen uses Better Auth for email/password login. You create an admin account during the setup wizard at `/admin/setup` -- no external auth service needed. Everything runs on your own server.
+### How do I reset my password?
+Use the "Forgot password?" link at `/admin/login`.
+> **Note:** Requires email (Resend or Cloudflare) to be configured in Settings.
 
 ---
 
-## Features
+## ✨ Features
 
 ### What block types are available?
-
-Five types: **Link**, **Header**, **Social Icons**, **Embed** (YouTube, Spotify, SoundCloud, Custom), and **Contact Form**. Each has its own styling, scheduling, and behavior options.
+Six types: **Link**, **Header**, **Embed**, **Connect**, **vCard**, and **Location**.
 
 ### How many themes are there?
-
-Seven built-in themes, each with dark and light variants (14 total): Default, Corporate Classic, Corporate Modern, Hacker Terminal, Neon Cyber, Furry Pastel, and Furry Bold. You can also customize colors and add custom CSS.
+**7 built-in themes** (14 total with dark/light variants).
+- Corporate, Hacker, Neon, Furry, and more.
+- Custom CSS is also supported.
 
 ### Can I use my own domain?
-
-Yes. See the [custom domain guide](/docs/self-hosting/custom-domain) for setup instructions.
-
----
-
-## Troubleshooting
-
-### The admin panel shows "Failed to..." errors
-
-This usually means the API server isn't reachable.
-
-1. Is the server running? Start everything with `pnpm dev`.
-2. Is `NEXT_PUBLIC_SERVER_URL` set correctly? Use `http://localhost:3000` for local dev.
-3. Check the server terminal for error output.
-
-### I get CORS errors in the browser
-
-Set `CORS_ORIGIN` to your exact frontend URL. For local dev, that's `http://localhost:3001`.
-
-> **Tip:** No trailing slash, and include the protocol (`http://` or `https://`).
-
-### Database migrations fail
-
-Run `pnpm db:push` from the project root. For a clean slate, reset the D1 database in the Cloudflare dashboard.
-
-### The build fails with type errors
-
-Run `pnpm check-types` to see all errors across the monorepo. Common fixes:
-
-- Add missing environment variables
-- Run `pnpm install` to refresh dependencies
-
-### Styles look broken after updating
-
-Clear the Next.js cache and restart:
-
-```bash
-rm -rf apps/web/.next
-pnpm dev
-```
+**Yes.** See the [custom domain guide](/docs/self-hosting/custom-domain).
 
 ---
 
-## Updating LinkDen
+## 🛠️ Troubleshooting
 
-The admin settings page shows a notification when a new version is available. Versions follow semver and are tracked in `version.json` at the project root.
+### "Failed to..." errors in Admin Panel
+1. **Is the server running?** Check your terminal.
+2. **Check `NEXT_PUBLIC_SERVER_URL`:** Should be `http://localhost:3000` locally.
 
-### Update Process
+### CORS errors in browser
+Set `CORS_ORIGIN` to your frontend URL (e.g., `http://localhost:3001`).
+> **Tip:** No trailing slash!
 
-```bash
-git pull origin main
-pnpm install
-pnpm db:generate && pnpm db:push   # if there are schema changes
-pnpm deploy
-```
+### Build fails with type errors
+Run `bun run check-types`. Usually fixed by:
+- Adding missing environment variables.
+- Running `bun install`.
 
-### Rolling Back
+---
 
-If something goes wrong, check out a previous commit and redeploy:
+## 🔄 Updating LinkDen
 
-```bash
-git log --oneline -10
-git checkout <commit-hash>
-pnpm install
-pnpm deploy
-```
-
-For database rollbacks, restore from your most recent export. See [Export & Import](/docs/guide/export-import).
+1. `git pull origin main`
+2. `bun install`
+3. `bun run db:generate && bun run db:push`
+4. `bun run deploy`

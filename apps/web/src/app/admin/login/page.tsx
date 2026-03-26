@@ -1,16 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Eye, EyeOff, AlertCircle, Loader2, Mail } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, Loader2, Mail, Lock, ArrowRight } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@linkden/ui";
+import { Separator } from "@linkden/ui";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function AdminLoginPage() {
 	const router = useRouter();
@@ -18,15 +25,28 @@ export default function AdminLoginPage() {
 	const [password, setPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [isMagicLinkSubmitting, setIsMagicLinkSubmitting] = useState(false);
-	const [magicLinkSent, setMagicLinkSent] = useState(false);
 	const [formError, setFormError] = useState("");
 	const [forgotMode, setForgotMode] = useState(false);
 	const [isForgotSubmitting, setIsForgotSubmitting] = useState(false);
 	const [resetLinkSent, setResetLinkSent] = useState(false);
+	const [rememberMe, setRememberMe] = useState(true);
+	const [loginSuccess, setLoginSuccess] = useState(false);
+	const [isMagicLinkSubmitting, setIsMagicLinkSubmitting] = useState(false);
+	const [magicLinkSent, setMagicLinkSent] = useState(false);
+	const [ppDialogOpen, setPpDialogOpen] = useState(false);
+	const [tosDialogOpen, setTosDialogOpen] = useState(false);
 
 	const setupStatus = useQuery(trpc.public.getSetupStatus.queryOptions());
-	const magicLinkEnabled = setupStatus.data?.magicLinkEnabled ?? true;
+	const hasUsersQuery = useQuery(trpc.public.hasUsers.queryOptions());
+	const branding = setupStatus.data?.branding;
+	const magicLinkEnabled = setupStatus.data?.magicLinkEnabled ?? false;
+
+	// If no users exist yet, redirect to setup
+	useEffect(() => {
+		if (hasUsersQuery.data && !hasUsersQuery.data.hasUsers) {
+			router.replace("/admin/setup");
+		}
+	}, [hasUsersQuery.data, router]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -39,11 +59,11 @@ export default function AdminLoginPage() {
 		setIsSubmitting(true);
 		try {
 			await authClient.signIn.email(
-				{ email, password },
+				{ email, password, rememberMe },
 				{
 					onSuccess: () => {
-						toast.success("Signed in successfully");
-						router.push("/admin");
+						setLoginSuccess(true);
+						window.location.href = "/admin";
 					},
 					onError: (error) => {
 						const msg = error.error.message || "Invalid credentials";
@@ -53,13 +73,46 @@ export default function AdminLoginPage() {
 				},
 			);
 		} finally {
-			setIsSubmitting(false);
+			if (!loginSuccess) {
+				setIsSubmitting(false);
+			}
+		}
+	};
+
+	const handleForgotPassword = async (e: React.FormEvent) => {
+		e.preventDefault();
+		if (!email) {
+			setFormError("Please enter your email address");
+			return;
+		}
+		setFormError("");
+		setIsForgotSubmitting(true);
+		try {
+			const response = await fetch("/api/auth/send-password-reset-email", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ email, redirectUrl: `${window.location.origin}/admin/reset-password` }),
+			});
+
+			if (!response.ok) {
+				const error = await response.json() as { message?: string };
+				throw new Error(error.message || "Failed to send reset link");
+			}
+
+			setResetLinkSent(true);
+			toast.success("Reset link sent! Check your email.");
+		} catch (error) {
+			const msg = error instanceof Error ? error.message : "Failed to send reset link";
+			setFormError(msg);
+			toast.error(msg);
+		} finally {
+			setIsForgotSubmitting(false);
 		}
 	};
 
 	const handleMagicLink = async () => {
 		if (!email) {
-			setFormError("Please enter your email address above");
+			setFormError("Please enter your email address");
 			return;
 		}
 		setFormError("");
@@ -70,7 +123,6 @@ export default function AdminLoginPage() {
 				{
 					onSuccess: () => {
 						setMagicLinkSent(true);
-						toast.success("Magic link sent! Check your email.");
 					},
 					onError: (error) => {
 						const msg = error.error.message || "Failed to send magic link";
@@ -84,281 +136,343 @@ export default function AdminLoginPage() {
 		}
 	};
 
-	const handleForgotPassword = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!email) {
-			setFormError("Please enter your email address");
-			return;
-		}
-		setFormError("");
-		setIsForgotSubmitting(true);
-		try {
-			await authClient.forgetPassword(
-				{ email, redirectTo: "/admin/reset-password" },
-				{
-					onSuccess: () => {
-						setResetLinkSent(true);
-						toast.success("Reset link sent! Check your email.");
-					},
-					onError: (error) => {
-						const msg = error.error.message || "Failed to send reset link";
-						setFormError(msg);
-						toast.error(msg);
-					},
-				},
-			);
-		} finally {
-			setIsForgotSubmitting(false);
-		}
-	};
+	/* Shared card wrapper for status screens (success, magic link sent, reset sent) */
+	const StatusCard = ({ icon, title, description, action }: {
+		icon: React.ReactNode;
+		title: string;
+		description: React.ReactNode;
+		action?: React.ReactNode;
+	}) => (
+		<div className="login-glass-card relative rounded-2xl p-8 sm:p-10 text-center space-y-4">
+			<div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/10 ring-1 ring-blue-500/20">
+				{icon}
+			</div>
+			<h2 className="text-base font-semibold text-white tracking-tight">{title}</h2>
+			<p className="text-sm text-slate-400 leading-relaxed">{description}</p>
+			{action}
+		</div>
+	);
+
+	const BackLink = ({ onClick }: { onClick: () => void }) => (
+		<button
+			type="button"
+			className="text-sm text-blue-400 hover:text-blue-300 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
+			onClick={onClick}
+		>
+			Back to sign in
+		</button>
+	);
 
 	return (
-		<div className="admin-glass-bg flex min-h-screen items-center justify-center px-4">
-			<div className="w-full max-w-sm animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both">
-				{/* Logo + title above card */}
-				<div className="mb-8 text-center">
-					<div className="mx-auto flex h-12 w-12 items-center justify-center bg-primary/90 backdrop-blur-sm text-primary-foreground text-lg font-bold rounded-2xl">
-						LD
-					</div>
-					<h1 className="mt-4 text-xl font-semibold">Sign in to LinkDen</h1>
-					<p className="mt-1 text-xs text-muted-foreground">
-						Enter your credentials to access the admin panel
-					</p>
-				</div>
-
-				{magicLinkSent ? (
-					<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl text-center space-y-3">
-						<div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-							<Mail className="h-5 w-5 text-primary" />
-						</div>
-						<h2 className="text-sm font-semibold">Check your email</h2>
-						<p className="text-xs text-muted-foreground">
-							We sent a sign-in link to <span className="font-medium text-foreground">{email}</span>. Click it to access the admin panel.
-						</p>
-						<button
-							type="button"
-							className="text-xs text-primary underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-ring rounded"
-							onClick={() => setMagicLinkSent(false)}
-						>
-							Back to sign in
-						</button>
-					</div>
-				) : resetLinkSent ? (
-					<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl text-center space-y-3">
-						<div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-							<Mail className="h-5 w-5 text-primary" />
-						</div>
-						<h2 className="text-sm font-semibold">Check your email</h2>
-						<p className="text-xs text-muted-foreground">
-							We sent a password reset link to <span className="font-medium text-foreground">{email}</span>. Click it to reset your password.
-						</p>
-						<button
-							type="button"
-							className="text-xs text-primary underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-ring rounded"
-							onClick={() => { setResetLinkSent(false); setForgotMode(false); setFormError(""); }}
-						>
-							Back to sign in
-						</button>
-					</div>
-				) : forgotMode ? (
-					<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl">
-						<form onSubmit={handleForgotPassword} className="space-y-4" aria-describedby={formError ? "login-error" : undefined}>
-							<div aria-live="polite" aria-atomic="true">
-								{formError && (
-									<div
-										id="login-error"
-										className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive"
-									>
-										<AlertCircle className="h-3.5 w-3.5 shrink-0" />
-										<span>{formError}</span>
-									</div>
-								)}
-							</div>
-
-							<div className="space-y-1">
-								<h2 className="text-sm font-semibold">Reset your password</h2>
-								<p className="text-xs text-muted-foreground">
-									Enter your email address and we&apos;ll send you a link to reset your password.
-								</p>
-							</div>
-
-							<div className="space-y-1.5">
-								<Label htmlFor="forgot-email" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-									Email Address
-								</Label>
-								<Input
-									id="forgot-email"
-									type="email"
-									placeholder="you@example.com"
-									value={email}
-									onChange={(e) => setEmail(e.target.value)}
-									autoComplete="email"
-									className="dark:bg-input/30 border-white/15"
-									required
-								/>
-							</div>
-
-							<Button
-								type="submit"
-								variant="default"
-								className="w-full"
-								disabled={isForgotSubmitting}
-							>
-								{isForgotSubmitting ? (
-									<>
-										<Loader2 className="h-4 w-4 animate-spin" />
-										Sending...
-									</>
+		<div className="login-bg relative min-h-screen flex flex-col overflow-hidden">
+			{/* Main */}
+			<main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6">
+				<div className="w-full max-w-[420px] login-card-enter">
+					{loginSuccess ? (
+						<StatusCard
+							icon={<Loader2 className="h-5 w-5 animate-spin text-blue-400" />}
+							title="Welcome back"
+							description={<span className="text-slate-300">Signing you in...</span>}
+						/>
+					) : magicLinkSent ? (
+						<StatusCard
+							icon={<Mail className="h-5 w-5 text-blue-400" />}
+							title="Check your inbox"
+							description={
+								<>We sent a magic link to <span className="font-medium text-slate-200">{email}</span>. Click it to sign in.</>
+							}
+							action={<BackLink onClick={() => { setMagicLinkSent(false); setFormError(""); }} />}
+						/>
+					) : resetLinkSent ? (
+						<StatusCard
+							icon={<Mail className="h-5 w-5 text-blue-400" />}
+							title="Check your inbox"
+							description={
+								<>We sent a reset link to <span className="font-medium text-slate-200">{email}</span>. Click it to reset your password.</>
+							}
+							action={<BackLink onClick={() => { setResetLinkSent(false); setForgotMode(false); setFormError(""); }} />}
+						/>
+					) : forgotMode ? (
+						<div className="login-glass-card relative rounded-2xl p-8 sm:p-10 transition-shadow duration-300">
+							{/* Header */}
+							<div className="text-center mb-8">
+								{branding?.logoUrl ? (
+									<img src={branding.logoUrl} alt="" className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-white/10" />
 								) : (
-									"Send Reset Link"
-								)}
-							</Button>
-
-							<div className="text-center">
-								<button
-									type="button"
-									className="text-xs text-primary underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-ring rounded"
-									onClick={() => { setForgotMode(false); setFormError(""); }}
-								>
-									Back to sign in
-								</button>
-							</div>
-						</form>
-					</div>
-				) : (
-					<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl">
-						<form onSubmit={handleSubmit} className="space-y-4" aria-describedby={formError ? "login-error" : undefined}>
-							<div aria-live="polite" aria-atomic="true">
-								{formError && (
-									<div
-										id="login-error"
-										className="flex items-center gap-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive"
-									>
-										<AlertCircle className="h-3.5 w-3.5 shrink-0" />
-										<span>{formError}</span>
+									<div className="mx-auto flex h-11 w-11 items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/20">
+										LD
 									</div>
 								)}
+								<h1 className="mt-5 text-2xl font-bold text-white tracking-tight">Reset password</h1>
+								<p className="mt-2 text-sm text-slate-400">Enter your email and we&apos;ll send a reset link</p>
 							</div>
 
-							<div className="space-y-1.5">
-								<Label htmlFor="email" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-									Email Address
-								</Label>
-								<Input
-									id="email"
-									type="email"
-									placeholder="you@example.com"
-									value={email}
-									onChange={(e) => setEmail(e.target.value)}
-									autoComplete="email"
-									className="dark:bg-input/30 border-white/15"
-									required
-								/>
-							</div>
+							<form onSubmit={handleForgotPassword} className="space-y-5" aria-describedby={formError ? "login-error" : undefined}>
+								<div aria-live="polite" aria-atomic="true">
+									{formError && (
+										<div
+											id="login-error"
+											className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-xs text-red-400"
+										>
+											<AlertCircle className="h-3.5 w-3.5 shrink-0" />
+											<span>{formError}</span>
+										</div>
+									)}
+								</div>
 
-							<div className="space-y-1.5">
-								<div className="flex items-center justify-between">
-									<Label htmlFor="password" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-										Password
+								<div className="space-y-2">
+									<Label htmlFor="forgot-email" className="text-sm font-medium text-slate-300">
+										Email
 									</Label>
-									<button
-										type="button"
-										onClick={() => { setForgotMode(true); setFormError(""); }}
-										className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
-									>
-										Forgot?
-									</button>
-								</div>
-								<div className="relative">
-									<Input
-										id="password"
-										type={showPassword ? "text" : "password"}
-										placeholder="Your password"
-										value={password}
-										onChange={(e) => setPassword(e.target.value)}
-										autoComplete="current-password"
-										className="dark:bg-input/30 border-white/15"
-									/>
-									<button
-										type="button"
-										onClick={() => setShowPassword(!showPassword)}
-										className="absolute right-0.5 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-foreground"
-										aria-label={showPassword ? "Hide password" : "Show password"}
-										aria-pressed={showPassword}
-									>
-										{showPassword ? (
-											<EyeOff className="h-3.5 w-3.5" />
-										) : (
-											<Eye className="h-3.5 w-3.5" />
-										)}
-									</button>
-								</div>
-							</div>
-
-							<Button
-								type="submit"
-								variant="default"
-								className="w-full"
-								disabled={isSubmitting}
-							>
-								{isSubmitting ? (
-									<>
-										<Loader2 className="h-4 w-4 animate-spin" />
-										Signing in...
-									</>
-								) : (
-									"Sign In"
-								)}
-							</Button>
-						</form>
-
-						{magicLinkEnabled && (
-							<>
-								<div className="relative my-4">
-									<div className="absolute inset-0 flex items-center">
-										<div className="w-full border-t border-white/10" />
-									</div>
-									<div className="relative flex justify-center">
-										<span className="bg-transparent px-2 text-xs text-muted-foreground">or</span>
+									<div className="relative login-input rounded-lg">
+										<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+										<Input
+											id="forgot-email"
+											type="email"
+											placeholder="you@example.com"
+											value={email}
+											onChange={(e) => setEmail(e.target.value)}
+											autoComplete="email"
+											className="bg-white/[0.04] border-white/[0.08] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500/40 focus-visible:border-blue-500/30 pl-10 h-11"
+											required
+										/>
 									</div>
 								</div>
 
 								<Button
-									type="button"
-									variant="outline"
-									className="w-full border-white/15 dark:bg-input/20"
-									onClick={handleMagicLink}
-									disabled={isMagicLinkSubmitting}
+									type="submit"
+									className="w-full h-11 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
+									disabled={isForgotSubmitting}
 								>
-									{isMagicLinkSubmitting ? (
+									{isForgotSubmitting ? (
 										<>
 											<Loader2 className="h-4 w-4 animate-spin" />
 											Sending...
 										</>
 									) : (
 										<>
-											<Mail className="h-4 w-4" />
-											Sign in with Magic Link
+											Send reset link
+											<ArrowRight className="h-4 w-4 ml-1" />
 										</>
 									)}
 								</Button>
-							</>
-						)}
-					</div>
-				)}
 
-				{setupStatus.data?.completed === false && (
-					<p className="mt-6 text-center text-xs text-muted-foreground">
-						Don&apos;t have an account?{" "}
-						<Link
-							href="/admin/setup"
-							className="text-primary underline underline-offset-2 hover:no-underline font-medium"
-						>
-							Create account
-						</Link>
-					</p>
-				)}
-			</div>
+								<div className="text-center pt-1">
+									<BackLink onClick={() => { setForgotMode(false); setFormError(""); }} />
+								</div>
+							</form>
+						</div>
+					) : (
+						<div className="login-glass-card relative rounded-2xl p-8 sm:p-10 transition-shadow duration-300">
+							{/* Header */}
+							<div className="text-center mb-8">
+								{branding?.logoUrl ? (
+									<img src={branding.logoUrl} alt="" className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-white/10" />
+								) : (
+									<div className="mx-auto flex h-11 w-11 items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/20">
+										LD
+									</div>
+								)}
+								<h1 className="mt-5 text-2xl font-bold text-white tracking-tight">Welcome back</h1>
+								<p className="mt-2 text-sm text-slate-400">Sign in to your dashboard</p>
+							</div>
+
+							<form onSubmit={handleSubmit} className="space-y-5" aria-describedby={formError ? "login-error" : undefined}>
+								<div aria-live="polite" aria-atomic="true">
+									{formError && (
+										<div
+											id="login-error"
+											className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-xs text-red-400"
+										>
+											<AlertCircle className="h-3.5 w-3.5 shrink-0" />
+											<span>{formError}</span>
+										</div>
+									)}
+								</div>
+
+								<div className="space-y-2">
+									<Label htmlFor="email" className="text-sm font-medium text-slate-300">
+										Email
+									</Label>
+									<div className="relative login-input rounded-lg">
+										<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+										<Input
+											id="email"
+											type="email"
+											placeholder="you@example.com"
+											value={email}
+											onChange={(e) => setEmail(e.target.value)}
+											autoComplete="email"
+											className="bg-white/[0.04] border-white/[0.08] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500/40 focus-visible:border-blue-500/30 pl-10 h-11"
+											required
+										/>
+									</div>
+								</div>
+
+								<div className="space-y-2">
+									<div className="flex items-center justify-between">
+										<Label htmlFor="password" className="text-sm font-medium text-slate-300">
+											Password
+										</Label>
+										<button
+											type="button"
+											onClick={() => { setForgotMode(true); setFormError(""); }}
+											className="text-xs text-blue-400 cursor-pointer hover:text-blue-300 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
+										>
+											Forgot password?
+										</button>
+									</div>
+									<div className="relative login-input rounded-lg">
+										<Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+										<Input
+											id="password"
+											type={showPassword ? "text" : "password"}
+											placeholder="Enter your password"
+											value={password}
+											onChange={(e) => setPassword(e.target.value)}
+											autoComplete="current-password"
+											className="bg-white/[0.04] border-white/[0.08] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500/40 focus-visible:border-blue-500/30 pl-10 h-11"
+										/>
+										<button
+											type="button"
+											onClick={() => setShowPassword(!showPassword)}
+											className="absolute right-0.5 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center text-slate-500 hover:text-slate-300 transition-colors"
+											aria-label={showPassword ? "Hide password" : "Show password"}
+											aria-pressed={showPassword}
+										>
+											{showPassword ? (
+												<EyeOff className="h-4 w-4" />
+											) : (
+												<Eye className="h-4 w-4" />
+											)}
+										</button>
+									</div>
+								</div>
+
+								<div className="flex items-center gap-2">
+									<Checkbox
+										id="remember-me"
+										checked={rememberMe}
+										onCheckedChange={(checked) => setRememberMe(checked === true)}
+									/>
+									<Label htmlFor="remember-me" className="text-xs text-slate-400 cursor-pointer">
+										Keep me signed in
+									</Label>
+								</div>
+
+								<Button
+									type="submit"
+									className="w-full h-11 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
+									disabled={isSubmitting}
+								>
+									{isSubmitting ? (
+										<>
+											<Loader2 className="h-4 w-4 animate-spin" />
+											Signing in...
+										</>
+									) : (
+										<>
+											Sign in
+											<ArrowRight className="h-4 w-4 ml-1" />
+										</>
+									)}
+								</Button>
+							</form>
+
+							{magicLinkEnabled && (
+								<div className="mt-6 space-y-4">
+									<div className="relative">
+										<Separator className="bg-white/[0.06]" />
+										<span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0f1726] px-3 text-[10px] font-medium uppercase tracking-wider text-slate-500">
+											or
+										</span>
+									</div>
+
+									<Button
+										type="button"
+										variant="outline"
+										className="w-full h-11 border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.06] text-slate-200 transition-all"
+										disabled={isMagicLinkSubmitting}
+										onClick={handleMagicLink}
+									>
+										{isMagicLinkSubmitting ? (
+											<>
+												<Loader2 className="h-4 w-4 animate-spin" />
+												Sending...
+											</>
+										) : (
+											<>
+												<Mail className="h-4 w-4" />
+												Sign in with Magic Link
+											</>
+										)}
+									</Button>
+								</div>
+							)}
+						</div>
+					)}
+
+					{/* Below-card link */}
+					{!loginSuccess && !magicLinkSent && !resetLinkSent && (
+						<p className="mt-5 text-center text-xs text-slate-500">
+							Don&apos;t have an account?{" "}
+							<a href="/admin/setup" className="text-blue-400 hover:text-blue-300 transition-colors">
+								Set up LinkDen
+							</a>
+						</p>
+					)}
+				</div>
+			</main>
+
+			{/* Footer -- branding PP/ToS only */}
+			{branding && (branding.ppUrl || branding.tosUrl || branding.ppText || branding.tosText) && (
+				<footer className="relative z-10 py-6 px-6 flex justify-center gap-6">
+					{branding.ppMode === "url" && branding.ppUrl ? (
+						<a href={branding.ppUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 hover:text-blue-400 transition-colors">
+							Privacy Policy
+						</a>
+					) : branding.ppMode === "text" && branding.ppText ? (
+						<button type="button" onClick={() => setPpDialogOpen(true)} className="text-xs text-slate-500 hover:text-blue-400 transition-colors">
+							Privacy Policy
+						</button>
+					) : null}
+					{branding.tosMode === "url" && branding.tosUrl ? (
+						<a href={branding.tosUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 hover:text-blue-400 transition-colors">
+							Terms of Service
+						</a>
+					) : branding.tosMode === "text" && branding.tosText ? (
+						<button type="button" onClick={() => setTosDialogOpen(true)} className="text-xs text-slate-500 hover:text-blue-400 transition-colors">
+							Terms of Service
+						</button>
+					) : null}
+				</footer>
+			)}
+
+			{branding?.ppText && (
+				<Dialog open={ppDialogOpen} onOpenChange={setPpDialogOpen}>
+					<DialogContent className="max-h-[80vh] overflow-y-auto">
+						<DialogHeader>
+							<DialogTitle>Privacy Policy</DialogTitle>
+						</DialogHeader>
+						<div className="whitespace-pre-wrap text-sm text-muted-foreground">
+							{branding.ppText}
+						</div>
+					</DialogContent>
+				</Dialog>
+			)}
+
+			{branding?.tosText && (
+				<Dialog open={tosDialogOpen} onOpenChange={setTosDialogOpen}>
+					<DialogContent className="max-h-[80vh] overflow-y-auto">
+						<DialogHeader>
+							<DialogTitle>Terms of Service</DialogTitle>
+						</DialogHeader>
+						<div className="whitespace-pre-wrap text-sm text-muted-foreground">
+							{branding.tosText}
+						</div>
+					</DialogContent>
+				</Dialog>
+			)}
 		</div>
 	);
 }

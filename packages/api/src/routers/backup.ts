@@ -9,6 +9,21 @@ import {
 import { eq, asc, sql } from "drizzle-orm";
 import { z } from "zod";
 import { transformLinkStackData } from "../utils/linkstack-transformer";
+import { upsertSetting } from "../utils/settings";
+import {
+	blockImportSchema,
+	socialNetworkImportSchema,
+	contactSubmissionImportSchema,
+} from "@linkden/validators";
+
+// ─── Backup Router ─────────────────────────────────────────────────────────
+// Export format is versioned ("1.0") so future migrations can detect and upgrade
+// older backups. Import supports two modes:
+//   - "replace": wipes existing data before inserting (full restore)
+//   - "merge": upserts by primary key, preserving data not in the backup
+//
+// Array size limits (.max(500)) prevent OOM from maliciously large payloads.
+// Settings are capped at 100 entries with key/value length limits.
 
 export const backupRouter = router({
 	export: protectedProcedure.query(async () => {
@@ -23,6 +38,13 @@ export const backupRouter = router({
 			.orderBy(asc(socialNetwork.slug));
 		const contacts = await db.select().from(contactSubmission);
 
+		// Exclude secrets from backup — credentials should never leave the database
+		const SECRET_KEYS = new Set([
+			"email_api_key",
+			"captcha_secret_key",
+			"mapkit_token",
+		]);
+
 		return {
 			version: "1.0",
 			exportedAt: new Date().toISOString(),
@@ -30,7 +52,9 @@ export const backupRouter = router({
 				blocks,
 				settings: settings.reduce(
 					(acc, s) => {
-						acc[s.key] = s.value;
+						if (!SECRET_KEYS.has(s.key)) {
+							acc[s.key] = s.value;
+						}
 						return acc;
 					},
 					{} as Record<string, string>,
@@ -46,16 +70,17 @@ export const backupRouter = router({
 			z.object({
 				mode: z.enum(["merge", "replace"]),
 				data: z.object({
-					blocks: z.array(z.any()).optional(),
-					settings: z.record(z.string(), z.string()).optional(),
-					socialNetworks: z.array(z.any()).optional(),
-					contactSubmissions: z.array(z.any()).optional(),
+					blocks: z.array(blockImportSchema).max(500).optional(),
+					settings: z.record(z.string().max(100), z.string().max(100000)).optional(),
+					socialNetworks: z.array(socialNetworkImportSchema).max(500).optional(),
+					contactSubmissions: z.array(contactSubmissionImportSchema).max(500).optional(),
 				}),
 			}),
 		)
 		.mutation(async ({ input }) => {
 			const { mode, data } = input;
 
+			// In replace mode, wipe tables that are being imported to get a clean slate
 			if (mode === "replace") {
 				if (data.blocks) {
 					await db.run(sql`DELETE FROM block`);
@@ -72,8 +97,8 @@ export const backupRouter = router({
 			}
 
 			if (data.blocks) {
-				for (const b of data.blocks as Record<string, unknown>[]) {
-					const blockId = b.id as string;
+				for (const b of data.blocks) {
+					const blockId = b.id;
 					if (mode === "merge") {
 						const [existing] = await db
 							.select()
@@ -92,28 +117,17 @@ export const backupRouter = router({
 			}
 
 			if (data.settings) {
-				const entries = Object.entries(data.settings) as [string, string][];
+				const entries = Object.entries(data.settings);
 				for (const [key, value] of entries) {
-					const [existing] = await db
-						.select()
-						.from(siteSettings)
-						.where(eq(siteSettings.key, key));
-					if (existing) {
-						await db
-							.update(siteSettings)
-							.set({ value })
-							.where(eq(siteSettings.key, key));
-					} else {
-						await db.insert(siteSettings).values({ key, value });
-					}
+					await upsertSetting(key, value);
 				}
 			}
 
 			if (data.socialNetworks) {
-				for (const s of data.socialNetworks as Record<string, unknown>[]) {
-					const slug = s.slug as string;
-					const url = (s.url as string) || "";
-					const isActive = (s.isActive as boolean) ?? (s.is_active as boolean) ?? true;
+				for (const s of data.socialNetworks) {
+					const slug = s.slug;
+					const url = s.url || "";
+					const isActive = s.isActive ?? true;
 
 					if (!url) continue;
 
@@ -128,8 +142,8 @@ export const backupRouter = router({
 			}
 
 			if (data.contactSubmissions) {
-				for (const c of data.contactSubmissions as Record<string, unknown>[]) {
-					const contactId = c.id as string;
+				for (const c of data.contactSubmissions) {
+					const contactId = c.id;
 					if (mode === "merge") {
 						const [existing] = await db
 							.select()
@@ -147,7 +161,24 @@ export const backupRouter = router({
 	importLinkStack: protectedProcedure
 		.input(
 			z.object({
-				data: z.any(),
+				data: z.object({
+					name: z.string().optional(),
+					littlelink_name: z.string().optional(),
+					littlelink_description: z.string().optional(),
+					theme: z.string().optional(),
+					profile_image: z.string().optional(),
+					links: z.array(z.object({
+						button_id: z.string().optional(),
+						link: z.string().optional(),
+						title: z.string().optional(),
+						order: z.number().optional(),
+						click_number: z.number().optional(),
+						custom_css: z.string().optional(),
+						custom_icon: z.string().optional(),
+						type: z.number().optional(),
+						type_params: z.string().optional(),
+					})).optional(),
+				}),
 				options: z.object({
 					importLinks: z.boolean(),
 					importProfile: z.boolean(),
@@ -186,18 +217,7 @@ export const backupRouter = router({
 				}
 
 				for (const [key, value] of Object.entries(settingsToImport)) {
-					const [existing] = await db
-						.select()
-						.from(siteSettings)
-						.where(eq(siteSettings.key, key));
-					if (existing) {
-						await db
-							.update(siteSettings)
-							.set({ value })
-							.where(eq(siteSettings.key, key));
-					} else {
-						await db.insert(siteSettings).values({ key, value });
-					}
+					await upsertSetting(key, value);
 				}
 
 				if (Object.keys(settingsToImport).length > 0) {

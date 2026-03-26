@@ -1,149 +1,821 @@
 "use client";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-	User,
-	FileText,
-	Palette,
-	CheckCircle2,
 	ArrowRight,
 	ArrowLeft,
-	ShieldX,
+	Check,
+	Loader2,
+	Eye,
+	EyeOff,
+	Rocket,
+	Palette,
+	User,
+	Mail,
+	Lock,
+	Type,
+	Sparkles,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import { themePresets } from "@linkden/ui/themes";
 
-const THEME_PRESETS = [
-	{ name: "default", label: "Default", primary: "#0FACED", accent: "#38BDF8" },
-	{ name: "corporate-classic", label: "Corporate Classic", primary: "#1E3A5F", accent: "#2563EB" },
-	{ name: "corporate-modern", label: "Corporate Modern", primary: "#0D9488", accent: "#14B8A6" },
-	{ name: "hacker-terminal", label: "Hacker Terminal", primary: "#16A34A", accent: "#22C55E" },
-	{ name: "neon-cyber", label: "Neon Cyber", primary: "#7C3AED", accent: "#06B6D4" },
-	{ name: "furry-pastel", label: "Furry Pastel", primary: "#EC4899", accent: "#A855F7" },
-	{ name: "furry-bold", label: "Furry Bold", primary: "#EA580C", accent: "#0D9488" },
-];
+// ─── Setup Wizard ──────────────────────────────────────────────────────────
+// Four-step first-run wizard: Account → Profile → Customize → Done.
+//
+// First-user-is-admin: the wizard only renders when no users exist in the DB.
+// Once a user registers in step 1, /sign-up is locked server-side (see server/index.ts).
+//
+// localStorage strategy: wizard progress (step, name, displayName, bio, themePreset)
+// is saved to localStorage so refreshing mid-wizard doesn't lose input. Email and
+// password are intentionally excluded — credentials should never live in localStorage
+// on potentially shared devices. Progress is cleared on completion or manual "start over".
+
+const PROGRESS_KEY = "linkden_setup_progress";
+
+// Only persist non-sensitive wizard progress — email is intentionally excluded
+// to avoid leaking credentials in localStorage if the browser is shared
+interface SetupProgress {
+	step: number;
+	name: string;
+	displayName: string;
+	bio: string;
+	themePreset: string;
+}
+
+function loadProgress(): Partial<SetupProgress> {
+	if (typeof window === "undefined") return {};
+	try {
+		const raw = localStorage.getItem(PROGRESS_KEY);
+		return raw ? JSON.parse(raw) : {};
+	} catch {
+		return {};
+	}
+}
+
+function saveProgress(data: Partial<SetupProgress>) {
+	if (typeof window === "undefined") return;
+	try {
+		const current = loadProgress();
+		localStorage.setItem(
+			PROGRESS_KEY,
+			JSON.stringify({ ...current, ...data }),
+		);
+	} catch {
+		// ignore
+	}
+}
+
+function clearProgress() {
+	if (typeof window === "undefined") return;
+	localStorage.removeItem(PROGRESS_KEY);
+}
+
+const cardStyle = {
+	boxShadow: "0 0 40px -10px rgba(99,102,241,0.3)",
+};
+
+// ─── Step Indicator ──────────────────────────────────────────────────────────
 
 const STEPS = [
 	{ label: "Account", icon: User },
-	{ label: "Profile", icon: FileText },
+	{ label: "Profile", icon: Type },
 	{ label: "Theme", icon: Palette },
-	{ label: "Done", icon: CheckCircle2 },
-];
+	{ label: "Launch", icon: Rocket },
+] as const;
 
-const BIO_MAX_LENGTH = 300;
+function StepIndicator({ currentStep }: { currentStep: number }) {
+	return (
+		<nav aria-label="Setup progress" className="mb-8">
+			<ol className="flex items-center justify-between">
+				{STEPS.map(({ label, icon: Icon }, i) => {
+					const num = i + 1;
+					const isComplete = num < currentStep;
+					const isActive = num === currentStep;
+					return (
+						<li
+							key={label}
+							className="flex flex-1 items-center last:flex-none"
+						>
+							<div className="flex flex-col items-center gap-2">
+								<div
+									className={cn(
+										"relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-500",
+										isComplete &&
+											"border-primary bg-primary text-white shadow-lg shadow-primary/30",
+										isActive &&
+											"border-primary bg-primary/10 text-primary shadow-lg shadow-primary/20",
+										!isComplete &&
+											!isActive &&
+											"border-slate-700/50 bg-slate-800/30 text-slate-600",
+									)}
+									aria-current={isActive ? "step" : undefined}
+								>
+									{isComplete ? (
+										<Check className="h-4 w-4 stroke-[3]" />
+									) : (
+										<Icon className="h-4 w-4" />
+									)}
+									{isActive && (
+										<span className="absolute inset-0 rounded-full animate-ping border border-primary/30" style={{ animationDuration: "2s" }} />
+									)}
+								</div>
+								<span
+									className={cn(
+										"whitespace-nowrap text-[10px] font-semibold uppercase tracking-widest transition-colors duration-300",
+										isActive && "text-primary",
+										isComplete && "text-primary/60",
+										!isActive && !isComplete && "text-slate-600",
+									)}
+								>
+									{label}
+								</span>
+							</div>
+							{/* Connector line */}
+							{i < STEPS.length - 1 && (
+								<div className="mx-3 mt-[-20px] flex-1 h-[2px] overflow-hidden rounded-full bg-slate-800/60">
+									<div
+										className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-700 ease-out"
+										style={{ width: currentStep > num ? "100%" : "0%" }}
+									/>
+								</div>
+							)}
+						</li>
+					);
+				})}
+			</ol>
+		</nav>
+	);
+}
+
+// ─── Shared ───────────────────────────────────────────────────────────────────
+
+function FieldError({ message }: { message?: string }) {
+	if (!message) return null;
+	return <p className="mt-1 text-[11px] text-red-400">{message}</p>;
+}
+
+function FormError({ message }: { message?: string }) {
+	if (!message) return null;
+	return (
+		<div
+			className="mb-5 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/[0.08] px-3.5 py-2.5 text-xs text-red-400"
+			role="alert"
+		>
+			<span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-red-400" />
+			{message}
+		</div>
+	);
+}
+
+function StepHeader({
+	title,
+	description,
+	icon: Icon,
+}: {
+	title: string;
+	description: string;
+	icon?: React.ComponentType<{ className?: string }>;
+}) {
+	return (
+		<div className="text-center mb-7">
+			{Icon && (
+				<div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 border border-primary/20">
+					<Icon className="h-5 w-5 text-primary" />
+				</div>
+			)}
+			<h1 className="text-xl font-bold tracking-tight text-white">
+				{title}
+			</h1>
+			<p className="mt-1.5 text-sm text-slate-400">
+				{description}
+			</p>
+		</div>
+	);
+}
+
+function CardFooter({
+	left,
+	right,
+}: {
+	left?: React.ReactNode;
+	right: React.ReactNode;
+}) {
+	return (
+		<div className="mt-7 flex items-center justify-between border-t border-white/[0.06] pt-5">
+			<div>{left}</div>
+			<div>{right}</div>
+		</div>
+	);
+}
+
+// ─── Step 1: Account ─────────────────────────────────────────────────────────
+
+function Step1Account({
+	name,
+	setName,
+	email,
+	setEmail,
+	password,
+	setPassword,
+	showPassword,
+	setShowPassword,
+	formErrors,
+	setFormErrors,
+	isSubmitting,
+	onSubmit,
+}: {
+	name: string;
+	setName: (v: string) => void;
+	email: string;
+	setEmail: (v: string) => void;
+	password: string;
+	setPassword: (v: string) => void;
+	showPassword: boolean;
+	setShowPassword: (v: boolean) => void;
+	formErrors: Record<string, string>;
+	setFormErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+	isSubmitting: boolean;
+	onSubmit: () => void;
+}) {
+	const clear = (key: string) =>
+		setFormErrors((p) => {
+			const n = { ...p };
+			delete n[key];
+			return n;
+		});
+
+	return (
+		<div className="p-6 sm:p-8">
+			<StepHeader
+				icon={User}
+				title="Create your admin account"
+				description="You'll be the owner of this LinkDen instance."
+			/>
+
+			<FormError message={formErrors.form} />
+
+			<div className="space-y-4">
+				<div className="space-y-1.5">
+					<Label
+						htmlFor="setup-name"
+						className="text-sm font-medium text-slate-200"
+					>
+						Full Name
+					</Label>
+					<div className="relative">
+						<User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+						<Input
+							id="setup-name"
+							value={name}
+							onChange={(e) => {
+								setName(e.target.value);
+								clear("name");
+							}}
+							placeholder="Your name"
+							className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10"
+							aria-invalid={!!formErrors.name}
+						/>
+					</div>
+					<FieldError message={formErrors.name} />
+				</div>
+
+				<div className="space-y-1.5">
+					<Label
+						htmlFor="setup-email"
+						className="text-sm font-medium text-slate-200"
+					>
+						Email Address
+					</Label>
+					<div className="relative">
+						<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+						<Input
+							id="setup-email"
+							type="email"
+							value={email}
+							onChange={(e) => {
+								setEmail(e.target.value);
+								clear("email");
+							}}
+							placeholder="you@example.com"
+							className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10"
+							aria-invalid={!!formErrors.email}
+						/>
+					</div>
+					<FieldError message={formErrors.email} />
+				</div>
+
+				<div className="space-y-1.5">
+					<Label
+						htmlFor="setup-password"
+						className="text-sm font-medium text-slate-200"
+					>
+						Password
+					</Label>
+					<div className="relative">
+						<Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+						<Input
+							id="setup-password"
+							type={showPassword ? "text" : "password"}
+							value={password}
+							onChange={(e) => {
+								setPassword(e.target.value);
+								clear("password");
+							}}
+							placeholder="At least 8 characters"
+							className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10 pr-11"
+							aria-invalid={!!formErrors.password}
+						/>
+						<button
+							type="button"
+							onClick={() => setShowPassword(!showPassword)}
+							className="absolute right-0.5 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center text-slate-500 hover:text-slate-200 transition-colors"
+							aria-label={showPassword ? "Hide password" : "Show password"}
+							aria-pressed={showPassword}
+						>
+							{showPassword ? (
+								<EyeOff className="h-3.5 w-3.5" />
+							) : (
+								<Eye className="h-3.5 w-3.5" />
+							)}
+						</button>
+					</div>
+					<FieldError message={formErrors.password} />
+				</div>
+			</div>
+
+			<CardFooter
+				left={
+					<a
+						href="/admin/login"
+						className="text-xs text-slate-500 transition-colors hover:text-slate-300"
+					>
+						Already have an account?
+					</a>
+				}
+				right={
+					<Button
+						onClick={onSubmit}
+						disabled={isSubmitting}
+						className="w-full sm:w-auto shadow-lg shadow-primary/20 active:scale-[0.98]"
+					>
+						{isSubmitting ? (
+							<>
+								<Loader2 className="h-4 w-4 animate-spin" />
+								Creating...
+							</>
+						) : (
+							<>
+								Continue
+								<ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+							</>
+						)}
+					</Button>
+				}
+			/>
+		</div>
+	);
+}
+
+// ─── Step 2: Profile ──────────────────────────────────────────────────────────
+
+const BIO_MAX = 160;
+
+function Step2Profile({
+	displayName,
+	setDisplayName,
+	bio,
+	setBio,
+	isSubmitting,
+	onBack,
+	onSkip,
+	onSubmit,
+}: {
+	displayName: string;
+	setDisplayName: (v: string) => void;
+	bio: string;
+	setBio: (v: string) => void;
+	isSubmitting: boolean;
+	onBack: () => void;
+	onSkip: () => void;
+	onSubmit: () => void;
+}) {
+	return (
+		<div className="p-6 sm:p-8">
+			<StepHeader
+				icon={Type}
+				title="Set up your profile"
+				description="This shows on your public LinkDen page. You can always update it later."
+			/>
+
+			<div className="space-y-5">
+				<div className="space-y-1.5">
+					<Label
+						htmlFor="profile-display-name"
+						className="text-sm font-medium text-slate-200"
+					>
+						Display Name
+					</Label>
+					<div className="relative">
+						<User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+						<Input
+							id="profile-display-name"
+							value={displayName}
+							onChange={(e) => setDisplayName(e.target.value)}
+							placeholder="How you want to be known"
+							className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10"
+						/>
+					</div>
+				</div>
+
+				<div>
+					<div className="mb-1.5 flex items-center justify-between">
+						<Label
+							htmlFor="profile-bio"
+							className="text-sm font-medium text-slate-200"
+						>
+							Short Bio
+						</Label>
+						<span
+							className={cn(
+								"font-mono text-[10px] tabular-nums transition-colors",
+								bio.length > BIO_MAX ? "text-red-400" : "text-slate-600",
+							)}
+						>
+							{bio.length}/{BIO_MAX}
+						</span>
+					</div>
+					<textarea
+						id="profile-bio"
+						value={bio}
+						onChange={(e) => setBio(e.target.value.slice(0, BIO_MAX))}
+						placeholder="A short description of what you do..."
+						rows={4}
+						className="w-full resize-none rounded-md border border-white/10 bg-[#0f1318] px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 transition-colors focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
+					/>
+				</div>
+			</div>
+
+			<CardFooter
+				left={
+					<div className="flex items-center gap-3">
+						<button
+							type="button"
+							onClick={onBack}
+							className="flex items-center gap-1 text-xs font-medium text-slate-500 transition-colors hover:text-slate-300"
+						>
+							<ArrowLeft className="h-3 w-3" />
+							Back
+						</button>
+						<button
+							type="button"
+							onClick={onSkip}
+							className="text-xs font-medium text-slate-500 transition-colors hover:text-slate-300"
+						>
+							Skip
+						</button>
+					</div>
+				}
+				right={
+					<Button
+						onClick={onSubmit}
+						disabled={isSubmitting || bio.length > BIO_MAX}
+						className="shadow-lg shadow-primary/20 active:scale-[0.98]"
+					>
+						{isSubmitting ? (
+							<>
+								<Loader2 className="h-4 w-4 animate-spin" />
+								Saving...
+							</>
+						) : (
+							<>
+								Continue
+								<ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+							</>
+						)}
+					</Button>
+				}
+			/>
+		</div>
+	);
+}
+
+// ─── Step 3: Customize (theme) ────────────────────────────────────────────────
+
+function ThemeCard({
+	preset,
+	selected,
+	onSelect,
+}: {
+	preset: (typeof themePresets)[number];
+	selected: boolean;
+	onSelect: () => void;
+}) {
+	const dark = preset.cssVars.dark;
+	const primary = dark["--ld-primary"];
+	const accent = dark["--ld-accent"];
+	const bg = dark["--ld-background"];
+	const card = dark["--ld-card"];
+
+	return (
+		<button
+			type="button"
+			onClick={onSelect}
+			className={cn(
+				"group relative flex flex-col overflow-hidden rounded-xl border-2 transition-all duration-200",
+				selected
+					? "border-primary shadow-lg shadow-primary/20 scale-[1.02]"
+					: "border-white/10 hover:border-white/20 hover:shadow-md hover:shadow-white/5",
+			)}
+			aria-pressed={selected}
+			title={preset.label}
+		>
+			{/* Preview */}
+			<div
+				className="flex h-14 w-full flex-col gap-1 p-2"
+				style={{ backgroundColor: bg }}
+			>
+				<div
+					className="h-2 w-3/4 rounded-full opacity-60"
+					style={{ backgroundColor: card }}
+				/>
+				<div
+					className="h-5 w-full rounded"
+					style={{ backgroundColor: card }}
+				/>
+				<div
+					className="h-2 rounded-full"
+					style={{
+						background: `linear-gradient(90deg, ${primary}, ${accent})`,
+					}}
+				/>
+			</div>
+
+			{/* Label */}
+			<div className="bg-slate-900/40 px-2 py-1.5 flex items-center justify-between">
+				<span className="truncate text-[10px] font-semibold text-slate-300">
+					{preset.label}
+				</span>
+				{selected && (
+					<Check className="h-3 w-3 shrink-0 text-primary stroke-[3]" />
+				)}
+			</div>
+
+			{/* Color dots */}
+			<div className="absolute top-1.5 right-1.5 flex gap-0.5">
+				<div
+					className="h-2.5 w-2.5 rounded-full ring-1 ring-black/20"
+					style={{ backgroundColor: primary }}
+				/>
+				<div
+					className="h-2.5 w-2.5 rounded-full ring-1 ring-black/20"
+					style={{ backgroundColor: accent }}
+				/>
+			</div>
+		</button>
+	);
+}
+
+function Step3Customize({
+	themePreset,
+	setThemePreset,
+	isSubmitting,
+	onBack,
+	onSkip,
+	onSubmit,
+}: {
+	themePreset: string;
+	setThemePreset: (v: string) => void;
+	isSubmitting: boolean;
+	onBack: () => void;
+	onSkip: () => void;
+	onSubmit: () => void;
+}) {
+	return (
+		<div className="p-6 sm:p-8">
+			<StepHeader
+				icon={Palette}
+				title="Choose a theme"
+				description="Pick a look for your public page. You can customize everything in detail later."
+			/>
+
+			<div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+				{themePresets.map((preset) => (
+					<ThemeCard
+						key={preset.name}
+						preset={preset}
+						selected={themePreset === preset.name}
+						onSelect={() => setThemePreset(preset.name)}
+					/>
+				))}
+			</div>
+
+			<CardFooter
+				left={
+					<div className="flex items-center gap-3">
+						<button
+							type="button"
+							onClick={onBack}
+							className="flex items-center gap-1 text-xs font-medium text-slate-500 transition-colors hover:text-slate-300"
+						>
+							<ArrowLeft className="h-3 w-3" />
+							Back
+						</button>
+						<button
+							type="button"
+							onClick={onSkip}
+							className="text-xs font-medium text-slate-500 transition-colors hover:text-slate-300"
+						>
+							Skip
+						</button>
+					</div>
+				}
+				right={
+					<Button
+						onClick={onSubmit}
+						disabled={isSubmitting}
+						className="shadow-lg shadow-primary/20 active:scale-[0.98]"
+					>
+						{isSubmitting ? (
+							<>
+								<Loader2 className="h-4 w-4 animate-spin" />
+								Saving...
+							</>
+						) : (
+							<>
+								Finish Setup
+								<Sparkles className="ml-1.5 h-3.5 w-3.5" />
+							</>
+						)}
+					</Button>
+				}
+			/>
+		</div>
+	);
+}
+
+// ─── Step 4: Done ─────────────────────────────────────────────────────────────
+
+function Step4Done({
+	displayName,
+	onContinue,
+}: {
+	displayName: string;
+	onContinue: () => void;
+}) {
+	const firstName = displayName.trim().split(" ")[0] || "there";
+	return (
+		<div className="p-6 sm:p-10 text-center">
+			<div className="mb-6 flex justify-center">
+				<div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-primary/30 bg-primary/10">
+					<Check className="h-7 w-7 stroke-[2.5] text-primary" />
+					<div
+						className="absolute inset-0 animate-ping rounded-full border border-primary/25"
+						style={{ animationDuration: "2.5s" }}
+					/>
+				</div>
+			</div>
+
+			<h1 className="text-2xl font-bold tracking-tight text-white">
+				You&apos;re all set, {firstName}!
+			</h1>
+			<p className="mx-auto mt-2 mb-8 max-w-xs text-sm text-slate-400">
+				Your LinkDen is ready. Start building your page, adding links, and
+				making it yours.
+			</p>
+
+			<Button
+				onClick={onContinue}
+				className="h-11 w-full shadow-lg shadow-primary/20 active:scale-[0.98]"
+			>
+				<Rocket className="mr-2 h-4 w-4" />
+				Open Dashboard
+			</Button>
+
+			<p className="mt-4 text-[11px] text-slate-600">
+				Profile, theme, and settings are always editable from the admin panel.
+			</p>
+		</div>
+	);
+}
+
+// ─── Preview Banner ───────────────────────────────────────────────────────────
+
+function PreviewBanner() {
+	return (
+		<div className="mb-4 flex items-center justify-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/[0.08] px-3 py-2 text-xs font-medium text-amber-400">
+			<span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
+			Preview mode — no data will be saved
+		</div>
+	);
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SetupPage() {
 	const router = useRouter();
-	const searchParams = useSearchParams();
-	const token = searchParams.get("token") ?? "";
-	const [step, setStep] = useState(0);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+	const [showPassword, setShowPassword] = useState(false);
 
-	// Step 1: Account
+	// Initialize with defaults; restore from localStorage in useEffect to avoid SSR mismatch
+	const [step, setStep] = useState<number>(1);
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
-
-	// Step 2: Profile
+	const [displayName, setDisplayName] = useState("");
 	const [bio, setBio] = useState("");
-	const [avatarUrl, setAvatarUrl] = useState("");
+	const [themePreset, setThemePreset] = useState("default");
+	const [hydrated, setHydrated] = useState(false);
 
-	// Step 3: Theme
-	const [selectedTheme, setSelectedTheme] = useState("default");
+	const { data: hasUsersData, isLoading } = useQuery(
+		trpc.public.hasUsers.queryOptions(),
+	);
+	const updateBulk = useMutation(trpc.settings.updateBulk.mutationOptions());
 
-	const updateSettings = useMutation(trpc.settings.updateBulk.mutationOptions());
+	const isDev = process.env.NODE_ENV === "development";
+	const [devBypass] = useState(
+		() =>
+			isDev &&
+			typeof window !== "undefined" &&
+			new URLSearchParams(window.location.search).has("preview"),
+	);
 
-	// Validate token
-	const tokenValidation = useQuery({
-		...trpc.public.validateSetupToken.queryOptions({ token }),
-		enabled: !!token,
-	});
+	// Restore from localStorage after mount to avoid SSR hydration mismatch
+	useEffect(() => {
+		const saved = loadProgress();
+		if (saved.step) setStep(saved.step);
+		if (saved.name) setName(saved.name);
+		if (saved.displayName) setDisplayName(saved.displayName);
+		if (saved.bio) setBio(saved.bio);
+		if (saved.themePreset) setThemePreset(saved.themePreset);
+		setHydrated(true);
+	}, []);
 
-	// If no token or invalid token, show error
-	if (!token) {
+	// Persist non-sensitive progress on change (email excluded — sensitive data should not live in localStorage)
+	useEffect(() => {
+		if (!hydrated || devBypass) return;
+		saveProgress({ step, name, displayName, bio, themePreset });
+	}, [step, name, displayName, bio, themePreset, hydrated, devBypass]);
+
+	useEffect(() => {
+		if (!devBypass && hasUsersData?.hasUsers) {
+			router.replace("/admin/login");
+		}
+	}, [hasUsersData, router, devBypass]);
+
+	if (!devBypass && (isLoading || hasUsersData?.hasUsers)) {
 		return (
-			<div className="admin-glass-bg flex min-h-screen items-center justify-center px-4">
-				<div className="w-full max-w-sm text-center">
-					<ShieldX className="mx-auto h-12 w-12 text-destructive/60" />
-					<h1 className="mt-4 text-lg font-semibold">Setup Token Required</h1>
-					<p className="mt-2 text-xs text-muted-foreground">
-						A setup token is required to run the setup wizard. Check your server console for the setup URL.
-					</p>
-					<Button
-						variant="outline"
-						className="mt-4"
-						onClick={() => router.push("/admin/login")}
-					>
-						Go to Login
-					</Button>
-				</div>
-			</div>
-		);
-	}
-
-	if (tokenValidation.isLoading) {
-		return (
-			<div className="flex min-h-screen items-center justify-center" role="status" aria-label="Loading">
+			<div
+				className="login-bg flex min-h-screen items-center justify-center"
+				role="status"
+				aria-label="Loading"
+			>
 				<div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
 				<span className="sr-only">Loading</span>
 			</div>
 		);
 	}
 
-	if (tokenValidation.data && !tokenValidation.data.valid) {
-		return (
-			<div className="admin-glass-bg flex min-h-screen items-center justify-center px-4">
-				<div className="w-full max-w-sm text-center">
-					<ShieldX className="mx-auto h-12 w-12 text-destructive/60" />
-					<h1 className="mt-4 text-lg font-semibold">
-						{tokenValidation.data.reason === "setup_completed"
-							? "Setup Already Completed"
-							: "Invalid Setup Token"}
-					</h1>
-					<p className="mt-2 text-xs text-muted-foreground">
-						{tokenValidation.data.reason === "setup_completed"
-							? "This instance has already been set up. Please log in instead."
-							: "The setup token is invalid or expired. Check your server console for a new setup URL."}
-					</p>
-					<Button
-						variant="outline"
-						className="mt-4"
-						onClick={() => router.push("/admin/login")}
-					>
-						Go to Login
-					</Button>
-				</div>
-			</div>
-		);
-	}
+	const goStep = (n: number) => setStep(n);
 
-	const handleStep1 = async () => {
+	// Step 1 submit — create account
+	const handleAccountSubmit = async () => {
+		if (devBypass) {
+			setDisplayName(name || "Preview User");
+			goStep(2);
+			return;
+		}
+
 		const errors: Record<string, string> = {};
-		if (!name) errors.name = "Name is required";
-		if (!email) errors.email = "Email is required";
+		if (!name.trim()) errors.name = "Name is required";
+		if (!email.trim()) errors.email = "Email is required";
 		if (!password) errors.password = "Password is required";
-		else if (password.length < 8) errors.password = "Password must be at least 8 characters";
+		else if (password.length < 8)
+			errors.password = "Must be at least 8 characters";
+
 		setFormErrors(errors);
 		if (Object.keys(errors).length > 0) return;
 
 		setIsSubmitting(true);
 		try {
 			await authClient.signUp.email(
-				{ name, email, password },
+				{ name: name.trim(), email: email.trim(), password },
 				{
 					onSuccess: () => {
-						toast.success("Account created");
-						setFormErrors({});
-						setStep(1);
+						const dn = name.trim();
+						setDisplayName(dn);
+						saveProgress({ step: 2, displayName: dn });
+						goStep(2);
 					},
 					onError: (error) => {
 						const msg = error.error.message || "Failed to create account";
@@ -157,288 +829,133 @@ export default function SetupPage() {
 		}
 	};
 
-	const handleStep2 = async () => {
+	// Step 2 submit — save profile
+	const handleProfileSubmit = async () => {
+		if (devBypass) {
+			goStep(3);
+			return;
+		}
 		setIsSubmitting(true);
 		try {
-			const settings: { key: string; value: string }[] = [];
-			if (bio) settings.push({ key: "bio", value: bio });
-			if (avatarUrl) settings.push({ key: "avatar_url", value: avatarUrl });
-
-			if (settings.length > 0) {
-				await updateSettings.mutateAsync(settings);
-			}
-			toast.success("Profile saved");
-			setStep(2);
+			type BulkInput = Parameters<typeof updateBulk.mutateAsync>[0];
+			const updates: BulkInput = [];
+			if (displayName.trim())
+				updates.push({ key: "profile_name", value: displayName.trim() });
+			if (bio.trim()) updates.push({ key: "bio", value: bio.trim() });
+			if (updates.length > 0) await updateBulk.mutateAsync(updates);
 		} catch {
-			toast.error("Failed to save profile");
+			// non-blocking
 		} finally {
 			setIsSubmitting(false);
+			goStep(3);
 		}
 	};
 
-	const handleStep3 = async () => {
+	// Step 3 submit — save theme
+	const handleCustomizeSubmit = async () => {
+		if (devBypass) {
+			goStep(4);
+			return;
+		}
 		setIsSubmitting(true);
 		try {
-			await updateSettings.mutateAsync([
-				{ key: "theme_preset", value: selectedTheme },
-			]);
-			toast.success("Theme saved");
-			setStep(3);
+			type BulkInput = Parameters<typeof updateBulk.mutateAsync>[0];
+			await updateBulk.mutateAsync([
+				{ key: "theme_preset", value: themePreset },
+			] as BulkInput);
 		} catch {
-			toast.error("Failed to save theme");
+			// non-blocking
 		} finally {
 			setIsSubmitting(false);
+			clearProgress();
+			goStep(4);
 		}
 	};
 
-	const handleFinish = async () => {
-		setIsSubmitting(true);
-		try {
-			await updateSettings.mutateAsync([
-				{ key: "setup_completed", value: "true" },
-			]);
-			router.push("/admin/builder");
-		} catch {
-			toast.error("Failed to complete setup");
-		} finally {
-			setIsSubmitting(false);
-		}
+	// Step 4 — go to dashboard (also clears progress if not cleared yet)
+	const handleDone = () => {
+		clearProgress();
+		router.push("/admin");
 	};
 
 	return (
-		<div className="admin-glass-bg flex min-h-screen items-center justify-center px-4">
-			<div className="w-full max-w-lg animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both">
-				{/* Header */}
-				<div className="mb-8 text-center">
-					<div className="mx-auto flex h-12 w-12 items-center justify-center bg-primary/90 backdrop-blur-sm text-primary-foreground text-lg font-bold rounded-2xl">
-						LD
-					</div>
-					<h1 className="mt-4 text-xl font-semibold">Setup LinkDen</h1>
-					<p className="mt-1 text-xs text-muted-foreground">
-						Get your link-in-bio page ready in a few steps
-					</p>
-				</div>
+		<div className="login-bg flex min-h-screen flex-col items-center justify-center p-4 sm:p-6">
+			<div className="login-card-enter w-full max-w-[480px]">
+				{step < 4 && <StepIndicator currentStep={step} />}
+				{devBypass && <PreviewBanner />}
 
-				{/* Step indicator */}
-				<div className="mb-8 flex items-center justify-center gap-1" aria-label={`Setup progress, step ${step + 1} of ${STEPS.length}`} role="navigation">
-					{STEPS.map((s, i) => {
-						const Icon = s.icon;
-						return (
-							<div key={s.label} className="flex items-center">
-								<div
-									className={`flex items-center gap-1.5 px-2 py-1 text-xs ${
-										i === step
-											? "text-primary font-medium"
-											: i < step
-												? "text-muted-foreground"
-												: "text-muted-foreground/50"
-									}`}
-								>
-									<Icon className="h-3.5 w-3.5" />
-									<span className="hidden sm:inline">{s.label}</span>
-								</div>
-								{i < STEPS.length - 1 && (
-									<div
-										className={`h-px w-6 ${
-											i < step ? "bg-primary" : "bg-border"
-										}`}
-									/>
-								)}
-							</div>
-						);
-					})}
-				</div>
-
-				{/* Step content */}
-				<div className="rounded-2xl border border-white/15 dark:border-white/10 bg-white/5 backdrop-blur-2xl p-6 shadow-xl">
-					{step === 0 && (
-						<div className="space-y-4">
-							<h2 className="text-sm font-medium">Create your account</h2>
-							{formErrors.form && (
-								<p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive" role="alert">
-									{formErrors.form}
-								</p>
-							)}
-							<div className="space-y-1.5">
-								<Label htmlFor="setup-name">Name</Label>
-								<Input
-									id="setup-name"
-									value={name}
-									onChange={(e) => { setName(e.target.value); setFormErrors((prev) => { const { name: _, ...rest } = prev; return rest; }); }}
-									placeholder="Your name"
-									aria-describedby={formErrors.name ? "setup-name-error" : undefined}
-									aria-invalid={!!formErrors.name}
-								/>
-								{formErrors.name && (
-									<p id="setup-name-error" className="text-[11px] text-destructive">{formErrors.name}</p>
-								)}
-							</div>
-							<div className="space-y-1.5">
-								<Label htmlFor="setup-email">Email</Label>
-								<Input
-									id="setup-email"
-									type="email"
-									value={email}
-									onChange={(e) => { setEmail(e.target.value); setFormErrors((prev) => { const { email: _, ...rest } = prev; return rest; }); }}
-									placeholder="you@example.com"
-									aria-describedby={formErrors.email ? "setup-email-error" : undefined}
-									aria-invalid={!!formErrors.email}
-								/>
-								{formErrors.email && (
-									<p id="setup-email-error" className="text-[11px] text-destructive">{formErrors.email}</p>
-								)}
-							</div>
-							<div className="space-y-1.5">
-								<Label htmlFor="setup-password">Password</Label>
-								<Input
-									id="setup-password"
-									type="password"
-									value={password}
-									onChange={(e) => { setPassword(e.target.value); setFormErrors((prev) => { const { password: _, ...rest } = prev; return rest; }); }}
-									placeholder="At least 8 characters"
-									aria-describedby={formErrors.password ? "setup-password-error" : undefined}
-									aria-invalid={!!formErrors.password}
-								/>
-								{formErrors.password && (
-									<p id="setup-password-error" className="text-[11px] text-destructive">{formErrors.password}</p>
-								)}
-							</div>
-							<Button
-								className="w-full"
-								onClick={handleStep1}
-								disabled={isSubmitting}
-							>
-								{isSubmitting ? "Creating account..." : "Create Account"}
-								<ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-							</Button>
-						</div>
-					)}
-
+				<div
+					className="overflow-hidden rounded-xl border border-white/[0.06] bg-[#1a1f2e] shadow-2xl"
+					style={cardStyle}
+				>
 					{step === 1 && (
-						<div className="space-y-4">
-							<h2 className="text-sm font-medium">Profile details</h2>
-							<p className="text-xs text-muted-foreground">
-								These are optional. You can always change them later.
-							</p>
-							<div className="space-y-1.5">
-								<div className="flex items-center justify-between">
-									<Label htmlFor="setup-bio">Bio</Label>
-									<span className="text-xs text-muted-foreground">
-										{bio.length}/{BIO_MAX_LENGTH}
-									</span>
-								</div>
-								<textarea
-									id="setup-bio"
-									value={bio}
-									onChange={(e) => setBio(e.target.value.slice(0, BIO_MAX_LENGTH))}
-									maxLength={BIO_MAX_LENGTH}
-									placeholder="A short description about you"
-									rows={4}
-									className="dark:bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring/50 w-full border bg-transparent backdrop-blur-sm px-2.5 py-1.5 text-xs outline-none focus-visible:ring-1"
-								/>
-							</div>
-							<div className="space-y-1.5">
-								<Label htmlFor="setup-avatar">Avatar URL</Label>
-								<Input
-									id="setup-avatar"
-									value={avatarUrl}
-									onChange={(e) => setAvatarUrl(e.target.value)}
-									placeholder="https://example.com/avatar.jpg"
-								/>
-							</div>
-							<div className="flex gap-2">
-								<Button
-									variant="outline"
-									onClick={() => setStep(0)}
-								>
-									<ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-									Back
-								</Button>
-								<Button
-									className="flex-1"
-									onClick={handleStep2}
-									disabled={isSubmitting}
-								>
-									{isSubmitting ? "Saving..." : "Continue"}
-									<ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-								</Button>
-							</div>
-						</div>
+						<Step1Account
+							name={name}
+							setName={setName}
+							email={email}
+							setEmail={setEmail}
+							password={password}
+							setPassword={setPassword}
+							showPassword={showPassword}
+							setShowPassword={setShowPassword}
+							formErrors={formErrors}
+							setFormErrors={setFormErrors}
+							isSubmitting={isSubmitting}
+							onSubmit={handleAccountSubmit}
+						/>
 					)}
-
 					{step === 2 && (
-						<div className="space-y-4">
-							<h2 className="text-sm font-medium">Choose a theme</h2>
-							<p className="text-xs text-muted-foreground">
-								Pick a starting theme for your public page. You can customize it later.
-							</p>
-							<div className="grid grid-cols-2 gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Theme selection">
-								{THEME_PRESETS.map((theme) => (
-									<button
-										key={theme.name}
-										type="button"
-										role="radio"
-										aria-checked={selectedTheme === theme.name}
-										onClick={() => setSelectedTheme(theme.name)}
-										className={`flex flex-col items-center gap-2 border p-3 text-xs transition-colors ${
-											selectedTheme === theme.name
-												? "border-primary bg-primary/5"
-												: "border-border hover:border-muted-foreground/30"
-										}`}
-									>
-										<div className="flex gap-1">
-											<div
-												className="h-6 w-6 rounded-full"
-												style={{ backgroundColor: theme.primary }}
-											/>
-											<div
-												className="h-6 w-6 rounded-full"
-												style={{ backgroundColor: theme.accent }}
-											/>
-										</div>
-										<span className="font-medium">{theme.label}</span>
-									</button>
-								))}
-							</div>
-							<div className="flex gap-2">
-								<Button
-									variant="outline"
-									onClick={() => setStep(1)}
-								>
-									<ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-									Back
-								</Button>
-								<Button
-									className="flex-1"
-									onClick={handleStep3}
-									disabled={isSubmitting}
-								>
-									{isSubmitting ? "Saving..." : "Continue"}
-									<ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-								</Button>
-							</div>
-						</div>
+						<Step2Profile
+							displayName={displayName}
+							setDisplayName={setDisplayName}
+							bio={bio}
+							setBio={setBio}
+							isSubmitting={isSubmitting}
+							onBack={() => goStep(1)}
+							onSkip={() => goStep(3)}
+							onSubmit={handleProfileSubmit}
+						/>
 					)}
-
 					{step === 3 && (
-						<div className="space-y-4 text-center">
-							<CheckCircle2 className="mx-auto h-10 w-10 text-green-500" />
-							<h2 className="text-sm font-medium">You're all set!</h2>
-							<p className="text-xs text-muted-foreground">
-								Your LinkDen page is ready. Head to the builder to start adding
-								blocks and customizing your page.
-							</p>
-							<Button
-								className="w-full"
-								onClick={handleFinish}
-								disabled={isSubmitting}
-							>
-								{isSubmitting ? "Finishing..." : "Go to Builder"}
-								<ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-							</Button>
-						</div>
+						<Step3Customize
+							themePreset={themePreset}
+							setThemePreset={(v) => {
+								setThemePreset(v);
+								saveProgress({ themePreset: v });
+							}}
+							isSubmitting={isSubmitting}
+							onBack={() => goStep(2)}
+							onSkip={() => {
+								clearProgress();
+								goStep(4);
+							}}
+							onSubmit={handleCustomizeSubmit}
+						/>
+					)}
+					{step === 4 && (
+						<Step4Done
+							displayName={displayName || name}
+							onContinue={handleDone}
+						/>
 					)}
 				</div>
+
+				{/* Resume notice — shown when progress was restored mid-wizard */}
+				{step > 1 && step < 4 && hydrated && (
+					<p className="mt-3 text-center text-[11px] text-slate-600">
+						Progress saved —{" "}
+						<button
+							type="button"
+							className="text-slate-500 underline underline-offset-2 hover:text-slate-300"
+							onClick={() => {
+								clearProgress();
+								goStep(1);
+							}}
+						>
+							start over
+						</button>
+					</p>
+				)}
 			</div>
 		</div>
 	);
