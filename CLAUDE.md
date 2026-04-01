@@ -44,6 +44,11 @@ Self-hosted link-in-bio application built for Cloudflare-first deployment.
 
 This prevents context loss! Update this file IMMEDIATELY when creating important docs.
 
+## Compliance Audits
+
+- GDPR compliance audit (2026-03-31): `docs/gdpr-audit.md`
+- ISO 27001:2022 gap analysis (2026-03-31): `docs/iso27001-gap-analysis.md`
+
 ## Design Patterns
 
 ### File Storage (R2)
