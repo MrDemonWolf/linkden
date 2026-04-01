@@ -24,7 +24,7 @@ interface SocialNetwork {
 export interface PageContentProps {
 	profile: {
 		name: string;
-		email: string;
+		email?: string;
 		image: string | null;
 		bio: string | null;
 		isVerified: boolean;
@@ -55,6 +55,7 @@ export interface PageContentProps {
 		bannerMode?: "preset" | "custom";
 		bannerCustomUrl?: string | null;
 		customCss?: string | null;
+		brandingPpUrl?: string | null;
 	};
 	themeColors: ThemeColors;
 	colorMode: "light" | "dark";
@@ -179,6 +180,7 @@ function renderBlock(
 					config={config}
 					colorMode={colorMode}
 					themeColors={themeColors}
+					ppUrl={settings.brandingPpUrl ?? undefined}
 				/>
 			);
 		case "vcard":

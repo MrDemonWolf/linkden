@@ -6,6 +6,7 @@ import {
 	socialNetwork,
 	contactSubmission,
 } from "@linkden/db/schema/index";
+import { logAudit } from "../utils/audit";
 import { eq, asc, sql } from "drizzle-orm";
 import { z } from "zod";
 import { transformLinkStackData } from "../utils/linkstack-transformer";
@@ -43,8 +44,12 @@ export const backupRouter = router({
 			"email_api_key",
 			"captcha_secret_key",
 			"mapkit_token",
+			"wallet_signer_cert",
+			"wallet_signer_key",
+			"wallet_wwdr_cert",
 		]);
 
+		await logAudit("backup.export");
 		return {
 			version: "1.0",
 			exportedAt: new Date().toISOString(),
@@ -155,6 +160,7 @@ export const backupRouter = router({
 				}
 			}
 
+		await logAudit("backup.import", undefined, undefined, { mode });
 			return { success: true };
 		}),
 

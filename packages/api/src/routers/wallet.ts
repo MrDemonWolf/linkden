@@ -27,13 +27,22 @@ const walletKeys = [
 	"wallet_pass_type_id",
 ];
 
+// Cryptographic credentials — masked in API responses, never returned in plaintext
+const WALLET_SECRET_KEYS = new Set([
+	"wallet_signer_cert",
+	"wallet_signer_key",
+	"wallet_wwdr_cert",
+]);
+
 export const walletRouter = router({
 	getConfig: protectedProcedure.query(async () => {
 		const results = await db.select().from(siteSettings);
 		const config: Record<string, string> = {};
 		for (const row of results) {
 			if (walletKeys.includes(row.key)) {
-				config[row.key] = row.value;
+				config[row.key] = WALLET_SECRET_KEYS.has(row.key) && row.value
+					? "••••••"
+					: row.value;
 			}
 		}
 		return config;

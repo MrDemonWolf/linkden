@@ -243,4 +243,22 @@ export const analyticsRouter = router({
 
 		return results;
 	}),
+
+	purgeExpiredData: protectedProcedure.mutation(async () => {
+		const ninetyDaysAgo = new Date();
+		ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+		const [deletedViews, deletedClicks] = await Promise.all([
+			db.delete(pageView).where(lte(pageView.createdAt, ninetyDaysAgo)),
+			db.delete(linkClick).where(lte(linkClick.createdAt, ninetyDaysAgo)),
+		]);
+
+		return {
+			success: true,
+			deleted: {
+				pageViews: (deletedViews as { rowsAffected?: number }).rowsAffected ?? 0,
+				linkClicks: (deletedClicks as { rowsAffected?: number }).rowsAffected ?? 0,
+			},
+		};
+	}),
 });

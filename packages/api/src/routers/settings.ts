@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { stripHtml } from "../utils/sanitize";
 import { upsertSetting } from "../utils/settings";
+import { logAudit } from "../utils/audit";
 
 // ─── Settings Router ───────────────────────────────────────────────────────
 // Settings are key-value pairs stored in site_settings. The key whitelist below
@@ -213,7 +214,11 @@ export const settingsRouter = router({
 				.select()
 				.from(siteSettings)
 				.where(eq(siteSettings.key, input.key));
-			return result ?? null;
+			if (!result) return null;
+			if (SECRET_SETTING_KEYS.has(result.key) && result.value) {
+				return { ...result, value: "••••••" };
+			}
+			return result;
 		}),
 
 	getAll: protectedProcedure.query(async () => {
@@ -240,6 +245,7 @@ export const settingsRouter = router({
 			}
 			const sanitizedValue = sanitizeSetting(input.key, input.value);
 			await upsertSetting(input.key, sanitizedValue);
+		await logAudit("settings.update", "setting", input.key);
 
 			return { success: true };
 		}),
@@ -254,6 +260,7 @@ export const settingsRouter = router({
 				const sanitizedValue = sanitizeSetting(key, value);
 				await upsertSetting(key, sanitizedValue);
 			}
+		await logAudit("settings.updateBulk", "setting");
 
 			return { success: true };
 		}),

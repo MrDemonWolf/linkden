@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
 import { PublicPage } from "@/components/public/public-page";
 import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
+import { ConsentBanner, hasAnalyticsConsent } from "@/components/public/consent-banner";
 
 export default function Home() {
 	const pageData = useQuery({
@@ -17,7 +18,7 @@ export default function Home() {
 	const trackView = useMutation(trpc.public.trackView.mutationOptions());
 
 	useEffect(() => {
-		if (pageData.data?.profile) {
+		if (pageData.data?.profile && hasAnalyticsConsent()) {
 			trackView.mutate({
 				referrer: document.referrer || undefined,
 				userAgent: navigator.userAgent || undefined,
@@ -41,9 +42,12 @@ export default function Home() {
 	}
 
 	return (
-		<AuthenticatedPublicPage
-			data={pageData.data as Parameters<typeof PublicPage>[0]["data"]}
-		/>
+		<>
+			<ConsentBanner />
+			<AuthenticatedPublicPage
+				data={pageData.data as Parameters<typeof PublicPage>[0]["data"]}
+			/>
+		</>
 	);
 }
 
