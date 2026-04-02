@@ -7,6 +7,12 @@ import type { NextRequest } from "next/server";
 
 const PUBLIC_ADMIN_ROUTES = ["/admin/login", "/admin/setup"];
 
+/**
+ * Edge middleware that protects all /admin/* routes.
+ * Checks for a Better Auth session cookie and redirects unauthenticated requests
+ * to /admin/login with a ?from= param so the user can return after signing in.
+ * Full session validation is still enforced server-side by tRPC protectedProcedure.
+ */
 export function middleware(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 

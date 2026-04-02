@@ -1,6 +1,15 @@
 import { db } from "@linkden/db";
 import { auditLog } from "@linkden/db/schema/index";
 
+/**
+ * Write an entry to the audit log table.
+ * Failures are swallowed so that a logging error never breaks the calling operation.
+ *
+ * @param action - The action being logged (e.g. "settings.update", "backup.export")
+ * @param resourceType - Optional category of the affected resource (e.g. "setting", "contact")
+ * @param resourceId - Optional identifier of the specific resource
+ * @param details - Optional structured metadata to store alongside the log entry
+ */
 export async function logAudit(
 	action: string,
 	resourceType?: string,

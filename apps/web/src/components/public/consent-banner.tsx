@@ -4,11 +4,20 @@ import { useState, useEffect } from "react";
 
 const CONSENT_KEY = "linkden-consent";
 
+/**
+ * Returns true if the visitor has accepted analytics tracking.
+ * Reads from localStorage; returns false in SSR contexts where window is unavailable.
+ */
 export function hasAnalyticsConsent(): boolean {
 	if (typeof window === "undefined") return false;
 	return localStorage.getItem(CONSENT_KEY) === "accepted";
 }
 
+/**
+ * Consent banner rendered at the bottom of the page for first-time visitors.
+ * Persists the visitor's accept/decline decision in localStorage under the key "linkden-consent".
+ * Renders nothing if a decision has already been stored.
+ */
 export function ConsentBanner() {
 	const [visible, setVisible] = useState(false);
 
