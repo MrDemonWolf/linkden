@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
 import { PublicPage } from "@/components/public/public-page";
 import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
+import { ConsentBanner, hasAnalyticsConsent } from "@/components/public/consent-banner";
 
 export default function Home() {
 	const pageData = useQuery({
@@ -15,15 +16,16 @@ export default function Home() {
 		meta: { skipErrorToast: true },
 	});
 	const trackView = useMutation(trpc.public.trackView.mutationOptions());
+	const { mutate: trackViewMutate } = trackView;
 
 	useEffect(() => {
-		if (pageData.data?.profile) {
-			trackView.mutate({
+		if (pageData.data?.profile && hasAnalyticsConsent()) {
+			trackViewMutate({
 				referrer: document.referrer || undefined,
 				userAgent: navigator.userAgent || undefined,
 			});
 		}
-	}, [pageData.data?.profile]);
+	}, [pageData.data?.profile, trackViewMutate]);
 
 	// Show welcome page on error (API unreachable) or when no profile exists
 	if (pageData.isError || (!pageData.isLoading && !pageData.data?.profile)) {
@@ -41,9 +43,12 @@ export default function Home() {
 	}
 
 	return (
-		<AuthenticatedPublicPage
-			data={pageData.data as Parameters<typeof PublicPage>[0]["data"]}
-		/>
+		<>
+			<ConsentBanner />
+			<AuthenticatedPublicPage
+				data={pageData.data as Parameters<typeof PublicPage>[0]["data"]}
+			/>
+		</>
 	);
 }
 

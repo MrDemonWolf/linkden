@@ -8,7 +8,7 @@ import { PublicPageContent } from "./public-page-content";
 interface PageData {
 	profile: {
 		name: string;
-		email: string;
+		email?: string;
 		image: string | null;
 		bio: string | null;
 		isVerified: boolean;
@@ -51,6 +51,7 @@ interface PageData {
 		customAccent: string | null;
 		customBackground: string | null;
 		customCss: string | null;
+		brandingPpUrl?: string | null;
 	};
 }
 
@@ -174,6 +175,7 @@ export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolea
 					bannerMode: data.settings.bannerMode,
 					bannerCustomUrl: data.settings.bannerCustomUrl,
 					customCss: data.settings.customCss,
+				brandingPpUrl: data.settings.brandingPpUrl,
 				}}
 				themeColors={themeColors}
 				colorMode={colorMode}
