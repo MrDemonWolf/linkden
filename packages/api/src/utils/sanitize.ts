@@ -25,7 +25,7 @@ export function stripHtml(str: string): string {
 export function truncateUserAgent(ua?: string): string | null {
 	if (!ua) return null;
 	const match = ua.match(/(Edg\/|EdgA\/|EdgiOS\/|Chrome|Firefox|Safari|Edge|Opera|OPR|MSIE|Trident)[/\s]?(\d+)/i);
-	if (match) {
+	if (match?.[1] && match[2]) {
 		const token = match[1].replace("/", "");
 		const browser = token === "OPR" ? "Opera" : token.startsWith("Edg") ? "Edge" : token;
 		return `${browser}/${match[2]}`;
