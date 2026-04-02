@@ -16,15 +16,16 @@ export default function Home() {
 		meta: { skipErrorToast: true },
 	});
 	const trackView = useMutation(trpc.public.trackView.mutationOptions());
+	const { mutate: trackViewMutate } = trackView;
 
 	useEffect(() => {
 		if (pageData.data?.profile && hasAnalyticsConsent()) {
-			trackView.mutate({
+			trackViewMutate({
 				referrer: document.referrer || undefined,
 				userAgent: navigator.userAgent || undefined,
 			});
 		}
-	}, [pageData.data?.profile]);
+	}, [pageData.data?.profile, trackViewMutate]);
 
 	// Show welcome page on error (API unreachable) or when no profile exists
 	if (pageData.isError || (!pageData.isLoading && !pageData.data?.profile)) {

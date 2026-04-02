@@ -73,7 +73,7 @@ export const formsRouter = router({
 			await db
 				.delete(contactSubmission)
 				.where(eq(contactSubmission.id, input.id));
-			await logAudit("contact.delete", "contact", input.id);
+			void logAudit("contact.delete", "contact", input.id);
 			return { success: true };
 		}),
 

@@ -10,7 +10,11 @@ const CONSENT_KEY = "linkden-consent";
  */
 export function hasAnalyticsConsent(): boolean {
 	if (typeof window === "undefined") return false;
-	return localStorage.getItem(CONSENT_KEY) === "accepted";
+	try {
+		return localStorage.getItem(CONSENT_KEY) === "accepted";
+	} catch {
+		return false;
+	}
 }
 
 /**
@@ -22,17 +26,21 @@ export function ConsentBanner() {
 	const [visible, setVisible] = useState(false);
 
 	useEffect(() => {
-		const stored = localStorage.getItem(CONSENT_KEY);
-		if (!stored) setVisible(true);
+		try {
+			const stored = localStorage.getItem(CONSENT_KEY);
+			if (!stored) setVisible(true);
+		} catch {
+			// Restricted context — don't show banner
+		}
 	}, []);
 
 	const accept = () => {
-		localStorage.setItem(CONSENT_KEY, "accepted");
+		try { localStorage.setItem(CONSENT_KEY, "accepted"); } catch { /* restricted context */ }
 		setVisible(false);
 	};
 
 	const decline = () => {
-		localStorage.setItem(CONSENT_KEY, "declined");
+		try { localStorage.setItem(CONSENT_KEY, "declined"); } catch { /* restricted context */ }
 		setVisible(false);
 	};
 

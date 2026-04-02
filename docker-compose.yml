@@ -14,7 +14,7 @@ services:
       - linkden-data:/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 > /dev/null || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

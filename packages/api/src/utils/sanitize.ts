@@ -24,9 +24,10 @@ export function stripHtml(str: string): string {
  */
 export function truncateUserAgent(ua?: string): string | null {
 	if (!ua) return null;
-	const match = ua.match(/(Chrome|Firefox|Safari|Edge|Opera|OPR|MSIE|Trident)[/\s](\d+)/i);
+	const match = ua.match(/(Edg\/|EdgA\/|EdgiOS\/|Chrome|Firefox|Safari|Edge|Opera|OPR|MSIE|Trident)[/\s]?(\d+)/i);
 	if (match) {
-		const browser = match[1] === "OPR" ? "Opera" : match[1];
+		const token = match[1].replace("/", "");
+		const browser = token === "OPR" ? "Opera" : token.startsWith("Edg") ? "Edge" : token;
 		return `${browser}/${match[2]}`;
 	}
 	return "Other";

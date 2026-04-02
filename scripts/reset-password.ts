@@ -1,4 +1,4 @@
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { hashSync } from "bcryptjs";
 
 const args = process.argv.slice(2);
@@ -33,13 +33,13 @@ const escapedHash = hash.replace(/'/g, "''");
 
 const sql = `UPDATE account SET password='${escapedHash}' WHERE userId=(SELECT id FROM user WHERE email='${escapedEmail}')`;
 
-const remoteFlag = remote ? " --remote" : "";
-const cmd = `npx wrangler d1 execute linkden-db --command "${sql}"${remoteFlag}`;
+const wranglerArgs = ["wrangler", "d1", "execute", "linkden-db", "--command", sql];
+if (remote) wranglerArgs.push("--remote");
 
 console.log(`Resetting password for ${email}${remote ? " (production)" : " (local)"}...`);
 
 try {
-  execSync(cmd, { stdio: "inherit", cwd: "apps/server" });
+  execFileSync("npx", wranglerArgs, { stdio: "inherit", cwd: "apps/server" });
   console.log("Password reset successfully.");
 } catch {
   console.error("Failed to reset password.");

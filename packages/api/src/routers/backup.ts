@@ -160,7 +160,7 @@ export const backupRouter = router({
 				}
 			}
 
-		await logAudit("backup.import", undefined, undefined, { mode });
+			await logAudit("backup.import", undefined, undefined, { mode });
 			return { success: true };
 		}),
 
