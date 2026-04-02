@@ -3,6 +3,7 @@ import { db } from "@linkden/db";
 import { contactSubmission } from "@linkden/db/schema/index";
 import { eq, desc, and, inArray } from "drizzle-orm";
 import { z } from "zod";
+import { logAudit } from "../utils/audit";
 
 export const formsRouter = router({
 	list: protectedProcedure
@@ -72,6 +73,7 @@ export const formsRouter = router({
 			await db
 				.delete(contactSubmission)
 				.where(eq(contactSubmission.id, input.id));
+			void logAudit("contact.delete", "contact", input.id);
 			return { success: true };
 		}),
 
@@ -89,6 +91,7 @@ export const formsRouter = router({
 			await db
 				.delete(contactSubmission)
 				.where(inArray(contactSubmission.id, input.ids));
+			await logAudit("contact.deleteMultiple", "contact", undefined, { count: input.ids.length });
 			return { success: true };
 		}),
 

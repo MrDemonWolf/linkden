@@ -13,6 +13,7 @@ import { eq, asc, and } from "drizzle-orm";
 import { z } from "zod";
 import { generateVCardString, vcardDataSchema } from "./vcard";
 import { buildSettingsMap } from "../utils/settings";
+import { stripHtml, truncateUserAgent } from "../utils/sanitize";
 
 // ─── Public Router ─────────────────────────────────────────────────────────
 // These endpoints are unauthenticated — they power the public-facing link page.
@@ -69,7 +70,6 @@ export const publicRouter = router({
 			profile: profile
 				? {
 						name: profile.name,
-						email: profile.email,
 						image: settings.avatar_url || profile.image,
 						bio: settings.bio || null,
 						isVerified: settings.verified_badge === "true",
@@ -127,6 +127,7 @@ export const publicRouter = router({
 				captchaToken: z.string().max(4096).optional(),
 				blockId: z.string().max(100).optional(),
 				blockTitle: z.string().max(200).optional(),
+				consent: z.literal(true, { error: "Consent is required" }),
 			}),
 		)
 		.mutation(async ({ input }) => {
@@ -180,17 +181,16 @@ export const publicRouter = router({
 			}
 
 			// Sanitize user content to prevent stored XSS
-			const stripTags = (s: string) => s.replace(/<[^>]*>/g, "");
 
 			const id = crypto.randomUUID();
 			await db.insert(contactSubmission).values({
 				id,
-				name: stripTags(`${input.firstName} ${input.lastName}`),
+				name: stripHtml(`${input.firstName} ${input.lastName}`),
 				email: input.email,
-				message: input.message ? stripTags(input.message) : "",
-				whereMet: stripTags(input.whereMet),
+				message: input.message ? stripHtml(input.message) : "",
+				whereMet: stripHtml(input.whereMet),
 				blockId: input.blockId ?? null,
-				blockTitle: input.blockTitle ? stripTags(input.blockTitle) : null,
+				blockTitle: input.blockTitle ? stripHtml(input.blockTitle) : null,
 			});
 
 			return { success: true };
@@ -210,7 +210,7 @@ export const publicRouter = router({
 			await db.insert(pageView).values({
 				id,
 				referrer: input.referrer ?? null,
-				userAgent: input.userAgent ?? null,
+				userAgent: truncateUserAgent(input.userAgent),
 				country: input.country ?? null,
 			});
 			return { success: true };
@@ -231,7 +231,7 @@ export const publicRouter = router({
 				id,
 				blockId: input.blockId,
 				referrer: input.referrer ?? null,
-				userAgent: input.userAgent ?? null,
+				userAgent: truncateUserAgent(input.userAgent),
 				country: input.country ?? null,
 			});
 			return { success: true };

@@ -23,6 +23,7 @@ interface ConnectBlockProps {
 	config: Record<string, unknown>;
 	colorMode: "light" | "dark";
 	themeColors?: ThemeColors;
+	ppUrl?: string;
 }
 
 function getContrastColor(hex: string): string {
@@ -251,6 +252,7 @@ function ConnectForm({
 	isPreview,
 	onClose,
 	isModal = false,
+	ppUrl,
 }: {
 	blockId: string;
 	blockTitle: string | null;
@@ -260,6 +262,7 @@ function ConnectForm({
 	isPreview?: boolean;
 	onClose?: () => void;
 	isModal?: boolean;
+	ppUrl?: string;
 }) {
 	const successMessage =
 		(config.successMessage as string) || "Thanks for connecting! I'll be in touch.";
@@ -270,6 +273,7 @@ function ConnectForm({
 		email: "",
 		whereMet: "",
 		message: "",
+		consent: false,
 	});
 	const [submitted, setSubmitted] = useState(false);
 	const [errors, setErrors] = useState<Record<string, string>>({});
@@ -278,7 +282,7 @@ function ConnectForm({
 		...trpc.public.submitContact.mutationOptions(),
 		onSuccess: () => {
 			setSubmitted(true);
-			setFormData({ firstName: "", lastName: "", email: "", whereMet: "", message: "" });
+			setFormData({ firstName: "", lastName: "", email: "", whereMet: "", message: "", consent: false });
 		},
 	});
 
@@ -292,6 +296,7 @@ function ConnectForm({
 			errs.email = "Invalid email address";
 		}
 		if (!formData.whereMet.trim()) errs.whereMet = "Please select where we met";
+		if (!formData.consent) errs.consent = "You must agree to continue";
 		return errs;
 	}, [formData]);
 
@@ -310,6 +315,7 @@ function ConnectForm({
 			message: formData.message || undefined,
 			blockId,
 			blockTitle: blockTitle || undefined,
+			consent: true,
 		});
 	};
 
@@ -420,6 +426,26 @@ function ConnectForm({
 				themeColors={themeColors}
 			/>
 
+		<div className="flex flex-col gap-1">
+			<label className="flex items-start gap-2.5 cursor-pointer">
+				<input
+					type="checkbox"
+					checked={formData.consent}
+					onChange={(e) => {
+						setFormData((prev) => ({ ...prev, consent: e.target.checked }));
+						if (errors.consent) setErrors((prev) => { const n = { ...prev }; delete n.consent; return n; });
+					}}
+					className="mt-0.5 h-4 w-4 shrink-0 rounded"
+					aria-describedby={errors.consent ? "consent-error" : undefined}
+				/>
+				<span className="text-xs leading-relaxed" style={{ color: themeColors?.mutedFg || (colorMode === "dark" ? "#9ca3af" : "#6b7280") }}>
+					I agree to the processing of my personal data to respond to my enquiry.
+					{ppUrl && (<>{" "}<a href={ppUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:opacity-70" style={{ color: primaryColor }}>Privacy Policy</a></>)}
+				</span>
+			</label>
+			{errors.consent && (<span id="consent-error" className="text-xs text-red-400" role="alert">{errors.consent}</span>)}
+		</div>
+
 			<button
 				type="submit"
 				disabled={submitContact.isPending}
@@ -460,6 +486,7 @@ function ConnectModal({
 	themeColors,
 	isPreview,
 	onClose,
+	ppUrl,
 }: {
 	blockId: string;
 	blockTitle: string | null;
@@ -468,6 +495,7 @@ function ConnectModal({
 	themeColors?: ThemeColors;
 	isPreview?: boolean;
 	onClose: () => void;
+	ppUrl?: string;
 }) {
 	const modalRef = useRef<HTMLDivElement>(null);
 	const modalTitle = blockTitle || "Connect With Me";
@@ -559,6 +587,7 @@ function ConnectModal({
 					isPreview={isPreview}
 					onClose={onClose}
 					isModal
+					ppUrl={ppUrl}
 				/>
 			</div>
 		</div>
@@ -570,6 +599,7 @@ export function ConnectBlock({
 	config,
 	colorMode,
 	themeColors,
+	ppUrl,
 }: ConnectBlockProps) {
 	const { isPreview } = usePreview();
 	const [modalOpen, setModalOpen] = useState(false);
@@ -616,6 +646,7 @@ export function ConnectBlock({
 						colorMode={colorMode}
 						themeColors={themeColors}
 						isPreview={isPreview}
+					ppUrl={ppUrl}
 					/>
 				</div>
 			</div>
@@ -709,6 +740,7 @@ export function ConnectBlock({
 					themeColors={themeColors}
 					isPreview={isPreview}
 					onClose={() => setModalOpen(false)}
+				ppUrl={ppUrl}
 				/>
 			)}
 		</div>
