@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <g transform="translate(256, 256) scale(8.0)">
+  <g transform="translate(256, 240) scale(5.2)">
     <!-- Left ear -->
     <path d="M-24 8 L-18 -30 L-8 -4Z" fill="#0FACED"/>
     <path d="M-20 -2 L-18 -22 L-10 -4Z" fill="#091533" opacity="0.25"/>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { WolfLogo } from "@/components/wolf-logo";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -181,9 +182,7 @@ function SidebarContent({
 				{logoUrl ? (
 					<img src={logoUrl} alt="" className="h-8 w-8 rounded-lg object-cover" />
 				) : (
-					<div className="flex h-8 w-8 items-center justify-center bg-primary/90 rounded-lg text-primary-foreground text-sm font-bold shrink-0">
-						LD
-					</div>
+					<WolfLogo className="h-16 w-16 shrink-0" />
 				)}
 				<div className="flex flex-col min-w-0">
 					<span className="text-sm font-semibold leading-tight truncate">{siteName}</span>
@@ -350,9 +349,7 @@ export default function AdminLayout({
 					{logoUrl ? (
 						<img src={logoUrl} alt="" className="h-6 w-6 rounded-md object-cover" />
 					) : (
-						<div className="flex h-6 w-6 items-center justify-center bg-primary/90 backdrop-blur-sm rounded-md text-primary-foreground text-xs font-bold">
-							LD
-						</div>
+						<WolfLogo className="h-12 w-12" />
 					)}
 					<span className="text-xs font-semibold">{siteName}</span>
 				</div>

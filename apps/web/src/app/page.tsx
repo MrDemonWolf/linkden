@@ -5,6 +5,7 @@ import { trpc } from "@/utils/trpc";
 import { useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
 import { PublicPage } from "@/components/public/public-page";
+import { WolfLogo } from "@/components/wolf-logo";
 import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 import { ConsentBanner, hasAnalyticsConsent } from "@/components/public/consent-banner";
 
@@ -116,7 +117,7 @@ function WelcomePage() {
 				{/* Logo mark */}
 				<div {...getAnimationProps(0)}>
 					<div className="mx-auto mb-8 flex h-18 w-18 items-center justify-center rounded-2xl bg-gradient-to-b from-white/[0.08] to-white/[0.03] ring-1 ring-white/[0.08] shadow-[0_0_40px_-12px_rgba(59,130,246,0.3)] backdrop-blur-xl">
-						<span className="text-2xl font-bold tracking-tight text-white">LD</span>
+						<WolfLogo className="h-24 w-24" />
 					</div>
 				</div>
 

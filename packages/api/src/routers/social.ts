@@ -3,6 +3,7 @@ import { db } from "@linkden/db";
 import { socialNetwork } from "@linkden/db/schema/index";
 import { eq, asc } from "drizzle-orm";
 import { z } from "zod";
+import { sanitizeUrl } from "../utils/sanitize";
 
 export const socialRouter = router({
 	list: protectedProcedure
@@ -33,26 +34,27 @@ export const socialRouter = router({
 			z.array(
 				z.object({
 					slug: z.string(),
-					url: z.string(),
+					url: z.string().url().max(2048),
 					isActive: z.boolean(),
 				}),
-			),
+			).max(50),
 		)
 		.mutation(async ({ input }) => {
 			for (const item of input) {
-				if (item.url) {
+				const safeUrl = sanitizeUrl(item.url);
+				if (safeUrl) {
 					// Upsert: insert or update (persist row even if inactive, so URL isn't lost)
 					await db
 						.insert(socialNetwork)
 						.values({
 							slug: item.slug,
-							url: item.url,
+							url: safeUrl,
 							isActive: item.isActive,
 						})
 						.onConflictDoUpdate({
 							target: socialNetwork.slug,
 							set: {
-								url: item.url,
+								url: safeUrl,
 								isActive: item.isActive,
 							},
 						});

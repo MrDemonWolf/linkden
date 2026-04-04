@@ -47,6 +47,7 @@ type Bindings = {
   RL_AUTH: RateLimit;
   RL_STRICT: RateLimit;
   RL_UPLOAD: RateLimit;
+  RL_PUBLIC: RateLimit;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -114,6 +115,14 @@ app.use("/trpc/public.submitContact*", cloudflareRateLimiter<{ Bindings: Binding
 }));
 app.use("/api/upload", cloudflareRateLimiter<{ Bindings: Bindings }>({
   rateLimitBinding: (c) => c.env.RL_UPLOAD,
+  keyGenerator: rlKeyGenerator,
+}));
+app.use("/trpc/public.trackView*", cloudflareRateLimiter<{ Bindings: Bindings }>({
+  rateLimitBinding: (c) => c.env.RL_PUBLIC,
+  keyGenerator: rlKeyGenerator,
+}));
+app.use("/trpc/public.trackClick*", cloudflareRateLimiter<{ Bindings: Bindings }>({
+  rateLimitBinding: (c) => c.env.RL_PUBLIC,
   keyGenerator: rlKeyGenerator,
 }));
 
@@ -192,6 +201,9 @@ app.get("/api/images/*", async (c) => {
   }
 
   const key = c.req.path.replace("/api/images/", "");
+  if (key.includes("..")) {
+    return c.json({ error: "Invalid path" }, 400);
+  }
   const object = await bucket.get(key);
 
   if (!object) {
