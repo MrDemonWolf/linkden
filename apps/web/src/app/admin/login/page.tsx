@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Eye, EyeOff, AlertCircle, Loader2, Mail, Lock, ArrowRight } from "lucide-react";
+import { WolfLogo } from "@/components/wolf-logo";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
@@ -199,9 +200,7 @@ export default function AdminLoginPage() {
 								{branding?.logoUrl ? (
 									<img src={branding.logoUrl} alt="" className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-white/10" />
 								) : (
-									<div className="mx-auto flex h-11 w-11 items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/20">
-										LD
-									</div>
+									<WolfLogo className="mx-auto h-22 w-22" />
 								)}
 								<h1 className="mt-5 text-2xl font-bold text-white tracking-tight">Reset password</h1>
 								<p className="mt-2 text-sm text-slate-400">Enter your email and we&apos;ll send a reset link</p>
@@ -269,9 +268,7 @@ export default function AdminLoginPage() {
 								{branding?.logoUrl ? (
 									<img src={branding.logoUrl} alt="" className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-white/10" />
 								) : (
-									<div className="mx-auto flex h-11 w-11 items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/20">
-										LD
-									</div>
+									<WolfLogo className="mx-auto h-22 w-22" />
 								)}
 								<h1 className="mt-5 text-2xl font-bold text-white tracking-tight">Welcome back</h1>
 								<p className="mt-2 text-sm text-slate-400">Sign in to your dashboard</p>

@@ -32,6 +32,10 @@ export const metadata: Metadata = {
     description: "Self-hosted link-in-bio platform built on Cloudflare. A modern, whitelabel-friendly Linktree alternative.",
   },
   metadataBase: new URL("https://mrdemonwolf.github.io/linkden"),
+  icons: {
+    icon: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
 };
 
 export default function Layout({ children }: LayoutProps<"/">) {

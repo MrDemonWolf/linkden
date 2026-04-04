@@ -1,4 +1,22 @@
 /**
+ * Sanitize a URL by rejecting non-http(s) schemes (e.g. javascript:, data:).
+ * Returns an empty string for invalid or unparseable URLs.
+ */
+export function sanitizeUrl(url: string): string {
+	if (!url) return url;
+	try {
+		const parsed = new URL(url);
+		if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+			return "";
+		}
+		return url;
+	} catch {
+		// Reject unparseable URLs — could be javascript: or data: schemes
+		return "";
+	}
+}
+
+/**
  * Strip all HTML tags from a string to prevent stored XSS.
  * Uses a multi-pass approach: decode common HTML entities first, then strip tags,
  * to catch obfuscated payloads like &lt;script&gt;.

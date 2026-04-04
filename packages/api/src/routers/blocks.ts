@@ -3,7 +3,7 @@ import { db } from "@linkden/db";
 import { block } from "@linkden/db/schema/index";
 import { eq, asc, sql } from "drizzle-orm";
 import { z } from "zod";
-import { stripHtml } from "../utils/sanitize";
+import { stripHtml, sanitizeUrl } from "../utils/sanitize";
 
 // ─── Block Router ──────────────────────────────────────────────────────────
 // Blocks are the core content units on the public page. Each block has a type
@@ -16,20 +16,6 @@ import { stripHtml } from "../utils/sanitize";
 // prevent stored XSS) and sanitizeUrl (to block javascript:/data: schemes).
 // The socialIcons field is a JSON string — parsed, sanitized per-entry, then
 // re-serialized.
-
-function sanitizeUrl(url: string): string {
-	if (!url) return url;
-	try {
-		const parsed = new URL(url);
-		if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-			return "";
-		}
-		return url;
-	} catch {
-		// If URL parsing fails, reject it — unparseable URLs could be javascript: or data: schemes
-		return "";
-	}
-}
 
 function sanitizeBlockInput<T extends Record<string, unknown>>(input: T): T {
 	const sanitized = { ...input };
