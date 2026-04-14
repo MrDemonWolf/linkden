@@ -8,6 +8,9 @@ LinkDen is a **self-hosted, single-user link-in-bio platform** designed for Clou
 ### Core Architecture (Monorepo)
 - **Runtime:** Bun (v1.3+)
 - **Build System:** Turborepo
+- **Security:**
+    - **Rate Limiting:** Cloudflare-native rate limiting with four tiers: `RL_AUTH` (10/60s), `RL_STRICT` (5/60s), `RL_UPLOAD` (20/60s), and `RL_PUBLIC` (60/60s).
+    - **Signup Lock:** Registration is disabled automatically after the first user is created (single-user model).
 - **Apps:**
   - `apps/web`: Next.js 16 (React 19), Tailwind CSS v4, Radix UI. Handles the admin panel and public pages.
   - `apps/server`: Hono API running on Cloudflare Workers. Serves as the tRPC server.
@@ -18,9 +21,9 @@ LinkDen is a **self-hosted, single-user link-in-bio platform** designed for Clou
   - `packages/ui`: Shared UI component library (Radix + CVA + Tailwind).
   - `packages/auth`: Better Auth configuration.
   - `packages/validators`: Shared Zod schemas for cross-boundary validation.
-  - `packages/env`: Environment variable validation (server/web).
+  - `packages/env`: Cross-runtime environment variable validation (server/web).
   - `packages/infra`: Alchemy IaC for Cloudflare deployment.
-  - `packages/email`: React Email templates.
+  - `packages/email`: React Email templates for contact notifications.
 
 ## Tech Stack
 - **Frontend:** Next.js 16.1.6, React 19.2.4, Tailwind CSS 4.2.1, Radix UI.
@@ -87,7 +90,16 @@ All user-facing documentation and guides MUST be optimized for visual scanning a
 ### 7. Storage (R2)
 - Avatars and banners are stored in Cloudflare R2.
 - Uploads are handled via `POST /api/upload` on the server Worker.
+- **File Validation:** Includes a triple-check on file size (5MB max), extension, and MIME type before writing to R2.
 - Images are served via `GET /api/images/*` with optimized cache headers.
+
+### 8. Audit & Backup
+- **Audit Logging:** Critical admin actions (settings, backups, block changes) are logged to the `audit_log` table via the `logAudit` utility. Failures are captured silently to prevent breaking operations.
+- **Export/Import:** A versioned JSON backup system allows for full migration or partial merging of data.
+- **LinkStack Migration:** Native support for importing LinkStack export files via the `importLinkStack` tRPC mutation.
+
+### 9. Versioning
+- **Update Checker:** The system checks against the GitHub repository's latest release to notify admins of updates. Current versioning is defined in `packages/api/src/routers/version.ts`.
 
 ## Directory Navigation
 - **Logic changes:** Look in `packages/api` (routers) or `apps/server` (entry point).
