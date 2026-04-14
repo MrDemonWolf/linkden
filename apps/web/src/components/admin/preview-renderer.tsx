@@ -187,7 +187,7 @@ export function PreviewRenderer({
 		<div className={className}>
 			{showHeader && (
 				<div className="mb-3 flex items-center justify-between px-1">
-					<span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Preview</span>
+					<span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Preview</span>
 					<div className="flex items-center gap-1">
 						<div className="flex rounded-lg border border-border/50 p-0.5 bg-muted/30">
 							<button

@@ -779,7 +779,7 @@ export default function ProfilePage() {
 								<div className="py-8 text-center">
 									<Globe className="mx-auto h-8 w-8 text-muted-foreground/40" />
 									<p className="mt-2 text-xs text-muted-foreground">No social links yet</p>
-									<p className="mt-1 text-[11px] text-muted-foreground/70">
+									<p className="mt-1 text-[11px] text-muted-foreground">
 										Search below to add your first social network
 									</p>
 								</div>

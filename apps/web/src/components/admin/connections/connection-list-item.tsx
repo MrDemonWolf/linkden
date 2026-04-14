@@ -103,7 +103,7 @@ export function ConnectionListItem({
 					{connection.whereMet && connection.message && (
 						<span className="text-muted-foreground/30">·</span>
 					)}
-					<p className="truncate text-[11px] text-muted-foreground/70">
+					<p className="truncate text-[11px] text-muted-foreground">
 						{connection.message?.slice(0, 50) || "No message"}
 					</p>
 				</div>

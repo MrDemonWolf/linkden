@@ -174,7 +174,7 @@ function CssReference() {
 			{open && (
 				<div className="border-t border-border/40 px-3 py-3 space-y-3 animate-in fade-in-0 slide-in-from-top-1 duration-150">
 					<div>
-						<p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Classes</p>
+						<p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Classes</p>
 						<div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-[11px]">
 							<span className="text-primary/80">.ld-page</span><span className="text-muted-foreground">Page container</span>
 							<span className="text-primary/80">.ld-profile</span><span className="text-muted-foreground">Profile section</span>
@@ -190,7 +190,7 @@ function CssReference() {
 						</div>
 					</div>
 					<div>
-						<p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">Variables</p>
+						<p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Variables</p>
 						<div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-[11px]">
 							<span className="text-primary/80">--ld-primary</span><span className="text-muted-foreground">Primary color</span>
 							<span className="text-primary/80">--ld-accent</span><span className="text-muted-foreground">Accent color</span>

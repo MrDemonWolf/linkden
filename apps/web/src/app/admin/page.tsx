@@ -278,7 +278,7 @@ export default function AdminDashboardPage() {
 											</div>
 										)}
 										{card.subtitle && !card.isLoading && (
-											<p className="text-[10px] text-muted-foreground/70 mt-0.5">{card.subtitle}</p>
+											<p className="text-[10px] text-muted-foreground mt-0.5">{card.subtitle}</p>
 										)}
 									</div>
 									{card.href && (

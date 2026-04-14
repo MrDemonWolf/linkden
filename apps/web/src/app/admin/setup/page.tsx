@@ -677,7 +677,7 @@ function Step4Done({
 				Open Dashboard
 			</Button>
 
-			<p className="mt-4 text-[11px] text-muted-foreground/70">
+			<p className="mt-4 text-[11px] text-muted-foreground">
 				Profile, theme, and settings are always editable from the admin panel.
 			</p>
 		</div>
@@ -900,7 +900,7 @@ export default function SetupPage() {
 
 				{/* Resume notice — shown when progress was restored mid-wizard */}
 				{step > 1 && step < 4 && hydrated && (
-					<p className="mt-3 text-center text-[11px] text-muted-foreground/70">
+					<p className="mt-3 text-center text-[11px] text-muted-foreground">
 						Progress saved —{" "}
 						<button
 							type="button"
