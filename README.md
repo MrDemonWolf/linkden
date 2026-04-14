@@ -1,159 +1,176 @@
-# LinkDen
+# LinkDen - Self-Hosted Link-in-Bio Platform
 
-**Self-hosted. Open source. Your links, your way.**
+LinkDen is a fully self-hosted, open-source link-in-bio platform
+built for the modern web. It gives you a single page to share your
+links, socials, and contact info — all under your own domain, on
+your own infrastructure, without giving your data to anyone else.
 
-LinkDen is a personal link-in-bio app built for people who want to own their data and analytics. No SaaS tiers, no support contracts—just the code.
-
-Built for **Cloudflare** (Workers + D1 + R2) and **Docker/Coolify**.
-
----
+Designed to run on Cloudflare's edge network, LinkDen is fast,
+private, and yours to own completely.
 
 ## Features
 
-- **Drag-and-Drop Builder** — Visual editor with live phone preview.
-- **7 Theme Presets** — Corporate, Hacker, Neon, Furry, and more.
-- **Analytics Dashboard** — Privacy-friendly tracking for views and clicks.
-- **Contact Form** — Built-in messaging with CAPTCHA support.
-- **Apple Wallet Pass** — Digital business cards for your iPhone.
-- **vCard Support** — Downloadable contact cards.
-- **Export/Import** — Full data backup and restore as JSON.
-- **Whitelabel** — **Fully Allowed.** Toggle off all LinkDen branding.
-- **Edge Caching** — Near-zero-cost hosting on Cloudflare.
-- **100+ Social Networks** — Branded colors and icons for every platform.
-- **Secure** — XSS protection, CSRF safety, registration locks, and security headers.
+- **Drag-and-drop builder** — Visually arrange blocks (links,
+  headers, embeds, contact forms, vCards, locations) with live preview.
+- **7 built-in themes** — Choose from curated presets with full
+  color customization available per-theme.
+- **Analytics dashboard** — Track page views and link clicks with
+  privacy-first data collection.
+- **Contact form** — Receive visitor messages directly in the admin
+  panel with read/unread management and optional CAPTCHA.
+- **Apple Wallet pass** — Generate and distribute a digital business
+  card as a `.pkpass` file.
+- **vCard export** — Let visitors download your contact details as
+  a standard `.vcf` file.
+- **Backup and restore** — Export all settings, blocks, and data to
+  JSON and re-import at any time (replace or merge modes).
+- **LinkStack import** — Migrate your existing LinkStack profile
+  directly into LinkDen with one click.
+- **Whitelabel ready** — Fully allowed. Replace all LinkDen branding
+  with your own logo, colors, and name.
+- **100+ social networks** — Built-in branded icons and links for
+  every major platform.
+- **Edge-cached** — Served from Cloudflare's global network for
+  near-zero-latency response times.
+- **Secure** — Registration lock, XSS protection, CSRF safety,
+  rate limiting, and secret masking baked in.
 
----
+## Getting Started
 
-## Quick Start (Local Development)
+Full documentation is available in the docs site included in this
+repo under `apps/docs`. Run it locally with `bun dev:docs` and open
+`http://localhost:3002`.
 
-```bash
-git clone https://github.com/MrDemonWolf/linkden.git
-cd linkden
-cp .env.example .env
-bun install
-bun run db:generate
-bun dev
-```
+Quick start:
 
-Open `http://localhost:3001/admin/setup` to create your admin account.
-
----
-
-## Deploy to Cloudflare
-
-LinkDen runs natively on Cloudflare Workers + D1 + R2.
-
-1. **Prerequisites:** [Cloudflare account](https://dash.cloudflare.com), [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/), [Bun](https://bun.sh)
-
-2. **Configure environment:**
+1. Clone the repository and install dependencies:
+   ```bash
+   git clone https://github.com/MrDemonWolf/linkden.git
+   cd linkden
+   bun install
+   ```
+2. Copy the example environment file and fill in your values:
    ```bash
    cp .env.example .env
-   # Edit .env — set BETTER_AUTH_SECRET, BETTER_AUTH_URL, CORS_ORIGIN, NEXT_PUBLIC_SERVER_URL
-   # Use your production domain URLs
    ```
-
-3. **Deploy:**
+3. Generate migrations and start all services:
    ```bash
-   bun run ship
+   bun db:generate
+   bun dev
    ```
-   This provisions D1, R2, and Workers via Alchemy IaC.
-
-4. **Tear down (if needed):**
-   ```bash
-   bun run destroy
-   ```
-
----
-
-## Deploy with Docker / Coolify
-
-```bash
-cp .env.example .env
-# Edit .env — set at minimum BETTER_AUTH_SECRET
-docker compose up -d
-```
-
-App available at `http://localhost:3000`.
-
-For **Coolify**, point to this repo and set environment variables in the Coolify dashboard. The included `Dockerfile` and `docker-compose.yml` are ready to use.
-
-**Persistent data:** The SQLite database is stored at `/data/linkden.db` inside the container. The `docker-compose.yml` mounts a named volume for persistence.
-
----
-
-## Environment Variables
-
-See [`.env.example`](.env.example) for the full list. Summary:
-
-| Variable | Required | Description |
-|---|---|---|
-| `BETTER_AUTH_SECRET` | Yes | Auth encryption key. Generate with `openssl rand -base64 32` |
-| `BETTER_AUTH_URL` | Yes | Hono server URL (e.g. `https://api.yourdomain.com`) |
-| `CORS_ORIGIN` | Yes | Next.js frontend URL (e.g. `https://yourdomain.com`) |
-| `NEXT_PUBLIC_SERVER_URL` | Yes | Same as `BETTER_AUTH_URL` (used by browser) |
-| `EMAIL_API_KEY` | No | Resend/SendGrid API key for password reset & magic links |
-| `CAPTCHA_SITE_KEY` / `CAPTCHA_SECRET_KEY` | No | Turnstile keys for contact form protection |
-| `WALLET_*` | No | Apple Wallet pass signing credentials |
-
----
-
-## Backup & Restore
-
-LinkDen has built-in backup/restore in the admin panel under **Settings > Backup**.
-
-- **Export:** Downloads all blocks, social networks, contact submissions, and settings as JSON. Secrets (API keys, tokens) are excluded from exports for security.
-- **Import:** Supports two modes:
-  - **Replace** — Wipes existing data, then inserts from backup.
-  - **Merge** — Upserts by primary key, preserving data not in the backup.
-- **LinkStack Import:** Migrate from LinkStack with one click.
-
----
+4. Open `http://localhost:3001/admin/setup` to create your admin
+   account.
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| **Frontend** | Next.js 16, React 19, Tailwind CSS v4 |
-| **Backend** | Hono, tRPC v11, Cloudflare Workers |
-| **Database** | Drizzle ORM, Cloudflare D1 (SQLite) |
-| **Auth** | Better Auth |
-| **Storage** | Cloudflare R2 |
-| **Tooling** | Bun, Turborepo, Biome |
+| Layer        | Technology                                           |
+|--------------|------------------------------------------------------|
+| Frontend     | Next.js 16, React 19, Tailwind CSS v4, Radix UI      |
+| Backend      | Hono, tRPC v11, Cloudflare Workers                   |
+| Database     | Drizzle ORM, Cloudflare D1 (SQLite)                  |
+| Auth         | Better Auth (email/password, 2FA, magic link)        |
+| Storage      | Cloudflare R2                                        |
+| Build system | Bun 1.3.10, Turborepo                                |
+| Testing      | Vitest, @testing-library/react                       |
+| Deployment   | Cloudflare Workers + Pages (primary), Docker (secondary) |
 
----
+## Development
 
-## Development Scripts
+### Prerequisites
 
-| Command | Description |
-|---|---|
-| `bun dev` | Start everything (Web + Server) |
-| `bun run build` | Build all apps |
-| `bun run check-types` | Run TypeScript checks |
-| `bun run db:generate` | Generate Drizzle migrations |
-| `bun run db:push` | Sync schema to database |
-| `bun run ship` | Deploy to Cloudflare |
-| `bun run destroy` | Tear down infrastructure |
-| `bun run reset:factory` | Wipe DB and start fresh |
+- [Bun](https://bun.sh) v1.3.10 or later
+- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/)
+  for local Cloudflare Workers emulation
+- A Cloudflare account (free tier works for local development)
 
----
+### Setup
 
-## Security
+1. Install dependencies:
+   ```bash
+   bun install
+   ```
+2. Configure environment variables:
+   ```bash
+   # apps/server/.env
+   BETTER_AUTH_SECRET=your-secret-here        # openssl rand -base64 32
+   BETTER_AUTH_URL=http://localhost:3000
+   CORS_ORIGIN=http://localhost:3001
 
-- **Single-user:** Registration locks after the first account is created.
-- **Input validation:** All inputs validated with Zod schemas.
-- **XSS protection:** HTML stripped from user inputs; SVG uploads blocked.
-- **CSRF:** SameSite cookie policy with httpOnly and secure flags.
-- **Rate limiting:** Cloudflare-native rate limiters on auth, signup, and uploads.
-- **Security headers:** HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy.
-- **Secret masking:** API keys and tokens are masked in admin UI responses.
-- **Backup safety:** Secrets are excluded from data exports.
+   # apps/web/.env
+   NEXT_PUBLIC_SERVER_URL=http://localhost:3000
+   ```
+3. Generate and push the database schema:
+   ```bash
+   bun db:generate
+   bun db:push
+   ```
+4. Start all apps:
+   ```bash
+   bun dev
+   ```
 
----
+### Development Scripts
+
+- `bun dev` — Start all apps (web :3001, server :3000, docs :3002)
+- `bun dev:web` — Start the Next.js frontend only
+- `bun dev:server` — Start the Cloudflare Workers API only
+- `bun dev:docs` — Start the documentation site only
+- `bun build` — Build all apps and packages
+- `bun check-types` — TypeScript type checks across the monorepo
+- `bun test` — Run the test suite with Vitest
+- `bun test:watch` — Run tests in watch mode
+- `bun db:generate` — Generate a Drizzle migration from schema changes
+- `bun db:push` — Push the current schema to the local D1 database
+- `bun db:reset` — Wipe the local database state (`.wrangler/state`)
+- `bun reset:password` — Reset the admin account password via CLI
+- `bun reset:factory` — Factory-reset all data and settings
+- `bun ship` — Build and deploy to Cloudflare via Alchemy IaC
+- `bun destroy` — Tear down all Cloudflare infrastructure
+
+### Code Quality
+
+- **Biome** — Linting and formatting across all packages
+- **TypeScript** — Strict mode enabled in every workspace
+- **Zod** — Runtime validation on all API inputs and environment
+  variables
+- **Drizzle ORM** — Type-safe queries with no raw SQL exposure
+
+## Project Structure
+
+```
+linkden/
+├── apps/
+│   ├── web/          # Next.js frontend (public page + admin panel)
+│   ├── server/       # Hono API on Cloudflare Workers
+│   └── docs/         # Fumadocs documentation site
+├── packages/
+│   ├── api/          # tRPC router definitions
+│   ├── auth/         # Better Auth configuration
+│   ├── config/       # Shared TypeScript configuration
+│   ├── db/           # Drizzle ORM schema, migrations, D1 client
+│   ├── email/        # React Email templates
+│   ├── env/          # Shared environment variable validation
+│   ├── infra/        # Alchemy IaC for Cloudflare deployment
+│   ├── ui/           # UI component library (Radix + CVA + Tailwind)
+│   └── validators/   # Shared Zod validation schemas
+├── scripts/          # CLI utilities (reset-password, factory-reset)
+├── docs/             # Compliance reports (GDPR, ISO 27001)
+└── package.json      # Root workspace config (Bun + Turborepo)
+```
 
 ## License
 
-MIT — fork it, run it, make it your own. **Whitelabeling is 100% fully allowed.**
+![GitHub license](https://img.shields.io/github/license/mrdemonwolf/linkden.svg?style=for-the-badge&logo=github)
+
+MIT — fork it, run it, make it your own. Whitelabeling is fully
+allowed.
+
+## Contact
+
+Have a question or found a bug?
+
+- [Join my Discord server](https://mrdwolf.net/discord)
 
 ---
 
-Built by [MrDemonWolf](https://www.mrdemonwolf.com).
+Made with love by [MrDemonWolf, Inc.](https://www.mrdemonwolf.com)

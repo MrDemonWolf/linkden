@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
             // frame-src * is intentional: link-in-bio blocks may embed YouTube, Spotify, etc.
             value: process.env.NODE_ENV === "production"
               ? "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; frame-src *; connect-src 'self' https:; font-src 'self' data:; object-src 'none'; base-uri 'self';"
-              : "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; frame-src *; connect-src 'self' https: http://localhost:*; font-src 'self' data:; object-src 'none'; base-uri 'self';",
+              : "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; frame-src *; connect-src 'self' https: http://localhost:*; font-src 'self' data:; object-src 'none'; base-uri 'self';",
           },
         ],
       },

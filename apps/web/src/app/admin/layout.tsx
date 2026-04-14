@@ -15,14 +15,10 @@ import {
 	Wallet,
 	Menu,
 	X,
-	Sun,
-	Moon,
-	Monitor,
 	Globe,
 	User,
 	LogOut,
 } from "lucide-react";
-import { useTheme } from "next-themes";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
 import { cn } from "@/lib/utils";
@@ -30,6 +26,7 @@ import { getGravatarUrl } from "@/lib/gravatar";
 import { initials } from "@/lib/format";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const NAV_GROUPS = [
 	{
@@ -67,15 +64,7 @@ const BOTTOM_NAV_ITEMS = [
 	{ href: "/admin/profile" as const, label: "Profile", icon: User },
 ];
 
-const THEME_OPTIONS = [
-	{ value: "light", icon: Sun, label: "Light" },
-	{ value: "dark", icon: Moon, label: "Dark" },
-	{ value: "system", icon: Monitor, label: "System" },
-] as const;
-
 function DesktopTopBar({ pathname }: { pathname: string }) {
-	const { setTheme, theme } = useTheme();
-
 	const currentPageLabel =
 		ALL_NAV_ITEMS.find((item) =>
 			item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href),
@@ -85,28 +74,7 @@ function DesktopTopBar({ pathname }: { pathname: string }) {
 		<div className="hidden md:flex h-14 shrink-0 items-center justify-between border-b border-white/10 px-6">
 			<h2 className="text-sm font-semibold">{currentPageLabel}</h2>
 			<div className="flex items-center gap-3">
-				<div className="flex rounded-lg border border-border/50 p-0.5 bg-muted/30">
-					{THEME_OPTIONS.map((opt) => {
-						const Icon = opt.icon;
-						return (
-							<button
-								key={opt.value}
-								type="button"
-								onClick={() => setTheme(opt.value)}
-								className={cn(
-									"flex items-center justify-center rounded-md p-2 min-h-[32px] min-w-[32px] transition-all",
-									theme === opt.value
-										? "bg-white/20 text-foreground shadow-sm"
-										: "text-muted-foreground hover:text-foreground",
-								)}
-								title={opt.label}
-								aria-label={`Switch to ${opt.label} theme`}
-							>
-								<Icon className="h-3.5 w-3.5" />
-							</button>
-						);
-					})}
-				</div>
+				<ThemeToggle />
 				<a href="/" target="_blank" rel="noopener noreferrer">
 					<Button size="sm" variant="default">
 						<Globe className="mr-1.5 h-3.5 w-3.5" />

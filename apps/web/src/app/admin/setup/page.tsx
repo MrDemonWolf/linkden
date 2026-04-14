@@ -5,7 +5,6 @@ export const dynamic = "force-dynamic";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { toast } from "sonner";
 import {
 	ArrowRight,
 	ArrowLeft,
@@ -16,8 +15,6 @@ import {
 	Rocket,
 	Palette,
 	User,
-	Mail,
-	Lock,
 	Type,
 	Sparkles,
 } from "lucide-react";
@@ -26,6 +23,7 @@ import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/utils";
 import { themePresets } from "@linkden/ui/themes";
 
@@ -80,10 +78,6 @@ function clearProgress() {
 	localStorage.removeItem(PROGRESS_KEY);
 }
 
-const cardStyle = {
-	boxShadow: "0 0 40px -10px rgba(99,102,241,0.3)",
-};
-
 // ─── Step Indicator ──────────────────────────────────────────────────────────
 
 const STEPS = [
@@ -116,7 +110,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 											"border-primary bg-primary/10 text-primary shadow-lg shadow-primary/20",
 										!isComplete &&
 											!isActive &&
-											"border-slate-700/50 bg-slate-800/30 text-slate-600",
+											"border-border bg-muted text-muted-foreground",
 									)}
 									aria-current={isActive ? "step" : undefined}
 								>
@@ -134,7 +128,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 										"whitespace-nowrap text-[10px] font-semibold uppercase tracking-widest transition-colors duration-300",
 										isActive && "text-primary",
 										isComplete && "text-primary/60",
-										!isActive && !isComplete && "text-slate-600",
+										!isActive && !isComplete && "text-muted-foreground",
 									)}
 								>
 									{label}
@@ -142,7 +136,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 							</div>
 							{/* Connector line */}
 							{i < STEPS.length - 1 && (
-								<div className="mx-3 mt-[-20px] flex-1 h-[2px] overflow-hidden rounded-full bg-slate-800/60">
+								<div className="mx-3 mt-[-20px] flex-1 h-[2px] overflow-hidden rounded-full bg-border">
 									<div
 										className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-700 ease-out"
 										style={{ width: currentStep > num ? "100%" : "0%" }}
@@ -193,17 +187,17 @@ function StepHeader({
 					<Icon className="h-5 w-5 text-primary" />
 				</div>
 			)}
-			<h1 className="text-xl font-bold tracking-tight text-white">
+			<h1 className="text-xl font-bold tracking-tight text-foreground">
 				{title}
 			</h1>
-			<p className="mt-1.5 text-sm text-slate-400">
+			<p className="mt-1.5 text-sm text-muted-foreground">
 				{description}
 			</p>
 		</div>
 	);
 }
 
-function CardFooter({
+function StepFooter({
 	left,
 	right,
 }: {
@@ -211,7 +205,7 @@ function CardFooter({
 	right: React.ReactNode;
 }) {
 	return (
-		<div className="mt-7 flex items-center justify-between border-t border-white/[0.06] pt-5">
+		<div className="mt-7 flex items-center justify-between border-t border-border pt-5">
 			<div>{left}</div>
 			<div>{right}</div>
 		</div>
@@ -268,61 +262,54 @@ function Step1Account({
 				<div className="space-y-1.5">
 					<Label
 						htmlFor="setup-name"
-						className="text-sm font-medium text-slate-200"
+						className="text-sm font-medium text-foreground"
 					>
 						Full Name
 					</Label>
-					<div className="relative">
-						<User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-						<Input
-							id="setup-name"
-							value={name}
-							onChange={(e) => {
-								setName(e.target.value);
-								clear("name");
-							}}
-							placeholder="Your name"
-							className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10"
-							aria-invalid={!!formErrors.name}
-						/>
-					</div>
+					<Input
+						id="setup-name"
+						value={name}
+						onChange={(e) => {
+							setName(e.target.value);
+							clear("name");
+						}}
+						placeholder="Your name"
+						className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
+						aria-invalid={!!formErrors.name}
+					/>
 					<FieldError message={formErrors.name} />
 				</div>
 
 				<div className="space-y-1.5">
 					<Label
 						htmlFor="setup-email"
-						className="text-sm font-medium text-slate-200"
+						className="text-sm font-medium text-foreground"
 					>
 						Email Address
 					</Label>
-					<div className="relative">
-						<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-						<Input
-							id="setup-email"
-							type="email"
-							value={email}
-							onChange={(e) => {
-								setEmail(e.target.value);
-								clear("email");
-							}}
-							placeholder="you@example.com"
-							className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10"
-							aria-invalid={!!formErrors.email}
-						/>
-					</div>
+					<Input
+						id="setup-email"
+						type="email"
+						value={email}
+						onChange={(e) => {
+							setEmail(e.target.value);
+							clear("email");
+						}}
+						placeholder="you@example.com"
+						className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
+						aria-invalid={!!formErrors.email}
+					/>
 					<FieldError message={formErrors.email} />
 				</div>
 
 				<div className="space-y-1.5">
 					<Label
 						htmlFor="setup-password"
-						className="text-sm font-medium text-slate-200"
+						className="text-sm font-medium text-foreground"
 					>
 						Password
 					</Label>
 					<div className="relative">
-						<Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
 						<Input
 							id="setup-password"
 							type={showPassword ? "text" : "password"}
@@ -332,13 +319,13 @@ function Step1Account({
 								clear("password");
 							}}
 							placeholder="At least 8 characters"
-							className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10 pr-11"
+							className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary pr-11"
 							aria-invalid={!!formErrors.password}
 						/>
 						<button
 							type="button"
 							onClick={() => setShowPassword(!showPassword)}
-							className="absolute right-0.5 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center text-slate-500 hover:text-slate-200 transition-colors"
+							className="absolute right-0.5 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
 							aria-label={showPassword ? "Hide password" : "Show password"}
 							aria-pressed={showPassword}
 						>
@@ -353,15 +340,7 @@ function Step1Account({
 				</div>
 			</div>
 
-			<CardFooter
-				left={
-					<a
-						href="/admin/login"
-						className="text-xs text-slate-500 transition-colors hover:text-slate-300"
-					>
-						Already have an account?
-					</a>
-				}
+			<StepFooter
 				right={
 					<Button
 						onClick={onSubmit}
@@ -421,34 +400,31 @@ function Step2Profile({
 				<div className="space-y-1.5">
 					<Label
 						htmlFor="profile-display-name"
-						className="text-sm font-medium text-slate-200"
+						className="text-sm font-medium text-foreground"
 					>
 						Display Name
 					</Label>
-					<div className="relative">
-						<User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-						<Input
-							id="profile-display-name"
-							value={displayName}
-							onChange={(e) => setDisplayName(e.target.value)}
-							placeholder="How you want to be known"
-							className="bg-[#0f1318] border-white/10 text-slate-100 placeholder:text-slate-500 focus-visible:ring-primary pl-10"
-						/>
-					</div>
+					<Input
+						id="profile-display-name"
+						value={displayName}
+						onChange={(e) => setDisplayName(e.target.value)}
+						placeholder="How you want to be known"
+						className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
+					/>
 				</div>
 
 				<div>
 					<div className="mb-1.5 flex items-center justify-between">
 						<Label
 							htmlFor="profile-bio"
-							className="text-sm font-medium text-slate-200"
+							className="text-sm font-medium text-foreground"
 						>
 							Short Bio
 						</Label>
 						<span
 							className={cn(
 								"font-mono text-[10px] tabular-nums transition-colors",
-								bio.length > BIO_MAX ? "text-red-400" : "text-slate-600",
+								bio.length > BIO_MAX ? "text-red-400" : "text-muted-foreground",
 							)}
 						>
 							{bio.length}/{BIO_MAX}
@@ -460,18 +436,18 @@ function Step2Profile({
 						onChange={(e) => setBio(e.target.value.slice(0, BIO_MAX))}
 						placeholder="A short description of what you do..."
 						rows={4}
-						className="w-full resize-none rounded-md border border-white/10 bg-[#0f1318] px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 transition-colors focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
+						className="w-full resize-none rounded-md border border-border bg-input px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30"
 					/>
 				</div>
 			</div>
 
-			<CardFooter
+			<StepFooter
 				left={
 					<div className="flex items-center gap-3">
 						<button
 							type="button"
 							onClick={onBack}
-							className="flex items-center gap-1 text-xs font-medium text-slate-500 transition-colors hover:text-slate-300"
+							className="flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
 						>
 							<ArrowLeft className="h-3 w-3" />
 							Back
@@ -479,7 +455,7 @@ function Step2Profile({
 						<button
 							type="button"
 							onClick={onSkip}
-							className="text-xs font-medium text-slate-500 transition-colors hover:text-slate-300"
+							className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
 						>
 							Skip
 						</button>
@@ -561,8 +537,8 @@ function ThemeCard({
 			</div>
 
 			{/* Label */}
-			<div className="bg-slate-900/40 px-2 py-1.5 flex items-center justify-between">
-				<span className="truncate text-[10px] font-semibold text-slate-300">
+			<div className="bg-muted px-2 py-1.5 flex items-center justify-between">
+				<span className="truncate text-[10px] font-semibold text-foreground">
 					{preset.label}
 				</span>
 				{selected && (
@@ -619,13 +595,13 @@ function Step3Customize({
 				))}
 			</div>
 
-			<CardFooter
+			<StepFooter
 				left={
 					<div className="flex items-center gap-3">
 						<button
 							type="button"
 							onClick={onBack}
-							className="flex items-center gap-1 text-xs font-medium text-slate-500 transition-colors hover:text-slate-300"
+							className="flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
 						>
 							<ArrowLeft className="h-3 w-3" />
 							Back
@@ -633,7 +609,7 @@ function Step3Customize({
 						<button
 							type="button"
 							onClick={onSkip}
-							className="text-xs font-medium text-slate-500 transition-colors hover:text-slate-300"
+							className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
 						>
 							Skip
 						</button>
@@ -685,10 +661,10 @@ function Step4Done({
 				</div>
 			</div>
 
-			<h1 className="text-2xl font-bold tracking-tight text-white">
+			<h1 className="text-2xl font-bold tracking-tight text-foreground">
 				You&apos;re all set, {firstName}!
 			</h1>
-			<p className="mx-auto mt-2 mb-8 max-w-xs text-sm text-slate-400">
+			<p className="mx-auto mt-2 mb-8 max-w-xs text-sm text-muted-foreground">
 				Your LinkDen is ready. Start building your page, adding links, and
 				making it yours.
 			</p>
@@ -701,20 +677,9 @@ function Step4Done({
 				Open Dashboard
 			</Button>
 
-			<p className="mt-4 text-[11px] text-slate-600">
+			<p className="mt-4 text-[11px] text-muted-foreground/70">
 				Profile, theme, and settings are always editable from the admin panel.
 			</p>
-		</div>
-	);
-}
-
-// ─── Preview Banner ───────────────────────────────────────────────────────────
-
-function PreviewBanner() {
-	return (
-		<div className="mb-4 flex items-center justify-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/[0.08] px-3 py-2 text-xs font-medium text-amber-400">
-			<span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
-			Preview mode — no data will be saved
 		</div>
 	);
 }
@@ -742,16 +707,24 @@ export default function SetupPage() {
 	);
 	const updateBulk = useMutation(trpc.settings.updateBulk.mutationOptions());
 
-	const isDev = process.env.NODE_ENV === "development";
-	const [devBypass] = useState(
+	const [testMode] = useState(
 		() =>
-			isDev &&
 			typeof window !== "undefined" &&
-			new URLSearchParams(window.location.search).has("preview"),
+			new URLSearchParams(window.location.search).get("test") === "true",
 	);
 
 	// Restore from localStorage after mount to avoid SSR hydration mismatch
 	useEffect(() => {
+		if (testMode) {
+			// Pre-fill dummy data so dev doesn't have to type every time
+			setName("Dev User");
+			setEmail("dev@linkden.local");
+			setPassword("password123");
+			setDisplayName("Dev User");
+			setBio("Just a dev testing things out.");
+			setHydrated(true);
+			return;
+		}
 		const saved = loadProgress();
 		if (saved.step) setStep(saved.step);
 		if (saved.name) setName(saved.name);
@@ -759,21 +732,21 @@ export default function SetupPage() {
 		if (saved.bio) setBio(saved.bio);
 		if (saved.themePreset) setThemePreset(saved.themePreset);
 		setHydrated(true);
-	}, []);
+	}, [testMode]);
 
 	// Persist non-sensitive progress on change (email excluded — sensitive data should not live in localStorage)
 	useEffect(() => {
-		if (!hydrated || devBypass) return;
+		if (!hydrated || testMode) return;
 		saveProgress({ step, name, displayName, bio, themePreset });
-	}, [step, name, displayName, bio, themePreset, hydrated, devBypass]);
+	}, [step, name, displayName, bio, themePreset, hydrated, testMode]);
 
 	useEffect(() => {
-		if (!devBypass && hasUsersData?.hasUsers) {
-			router.replace("/admin/login");
+		if (hasUsersData?.hasUsers) {
+			router.replace(testMode ? "/admin" : "/admin/login");
 		}
-	}, [hasUsersData, router, devBypass]);
+	}, [hasUsersData, router, testMode]);
 
-	if (!devBypass && (isLoading || hasUsersData?.hasUsers)) {
+	if (isLoading || hasUsersData?.hasUsers) {
 		return (
 			<div
 				className="login-bg flex min-h-screen items-center justify-center"
@@ -790,18 +763,12 @@ export default function SetupPage() {
 
 	// Step 1 submit — create account
 	const handleAccountSubmit = async () => {
-		if (devBypass) {
-			setDisplayName(name || "Preview User");
-			goStep(2);
-			return;
-		}
-
 		const errors: Record<string, string> = {};
-		if (!name.trim()) errors.name = "Name is required";
-		if (!email.trim()) errors.email = "Email is required";
-		if (!password) errors.password = "Password is required";
+		if (!name.trim()) errors.name = "What should we call you?";
+		if (!email.trim()) errors.email = "We need your email to set up your account";
+		if (!password) errors.password = "Pick a password to secure your account";
 		else if (password.length < 8)
-			errors.password = "Must be at least 8 characters";
+			errors.password = "A bit short — use at least 8 characters";
 
 		setFormErrors(errors);
 		if (Object.keys(errors).length > 0) return;
@@ -818,9 +785,8 @@ export default function SetupPage() {
 						goStep(2);
 					},
 					onError: (error) => {
-						const msg = error.error.message || "Failed to create account";
+						const msg = error.error.message || "Something went wrong — please try again";
 						setFormErrors({ form: msg });
-						toast.error(msg);
 					},
 				},
 			);
@@ -831,10 +797,6 @@ export default function SetupPage() {
 
 	// Step 2 submit — save profile
 	const handleProfileSubmit = async () => {
-		if (devBypass) {
-			goStep(3);
-			return;
-		}
 		setIsSubmitting(true);
 		try {
 			type BulkInput = Parameters<typeof updateBulk.mutateAsync>[0];
@@ -853,10 +815,6 @@ export default function SetupPage() {
 
 	// Step 3 submit — save theme
 	const handleCustomizeSubmit = async () => {
-		if (devBypass) {
-			goStep(4);
-			return;
-		}
 		setIsSubmitting(true);
 		try {
 			type BulkInput = Parameters<typeof updateBulk.mutateAsync>[0];
@@ -879,15 +837,15 @@ export default function SetupPage() {
 	};
 
 	return (
-		<div className="login-bg flex min-h-screen flex-col items-center justify-center p-4 sm:p-6">
+		<div className="login-bg relative flex min-h-screen flex-col items-center justify-center p-4 sm:p-6">
+			{/* Theme toggle */}
+			<div className="absolute right-4 top-4 z-20">
+				<ThemeToggle />
+			</div>
 			<div className="login-card-enter w-full max-w-[480px]">
 				{step < 4 && <StepIndicator currentStep={step} />}
-				{devBypass && <PreviewBanner />}
 
-				<div
-					className="overflow-hidden rounded-xl border border-white/[0.06] bg-[#1a1f2e] shadow-2xl"
-					style={cardStyle}
-				>
+				<div className="login-glass-card overflow-hidden rounded-2xl shadow-2xl">
 					{step === 1 && (
 						<Step1Account
 							name={name}
@@ -942,11 +900,11 @@ export default function SetupPage() {
 
 				{/* Resume notice — shown when progress was restored mid-wizard */}
 				{step > 1 && step < 4 && hydrated && (
-					<p className="mt-3 text-center text-[11px] text-slate-600">
+					<p className="mt-3 text-center text-[11px] text-muted-foreground/70">
 						Progress saved —{" "}
 						<button
 							type="button"
-							className="text-slate-500 underline underline-offset-2 hover:text-slate-300"
+							className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
 							onClick={() => {
 								clearProgress();
 								goStep(1);

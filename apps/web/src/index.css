@@ -105,6 +105,16 @@
   h1, h2, h3, h4 {
     font-family: var(--font-display);
   }
+
+  /* Override browser autofill background on login/setup pages only */
+  .login-glass-card input:-webkit-autofill,
+  .login-glass-card input:-webkit-autofill:hover,
+  .login-glass-card input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px oklch(from var(--input) l c h) inset;
+    -webkit-text-fill-color: oklch(from var(--foreground) l c h);
+    transition: background-color 5000s ease-in-out 0s;
+    caret-color: oklch(from var(--foreground) l c h);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -126,11 +136,11 @@
   background-attachment: fixed;
 }
 
-/* Login/Setup dark background with indigo glow */
+/* Login/Setup background — theme-aware, uses primary color glow over base background */
 .login-bg {
   background:
-    radial-gradient(ellipse at 50% 40%, rgba(99, 102, 241, 0.12) 0%, transparent 60%),
-    linear-gradient(to bottom right, #0a0e1a, #111827);
+    radial-gradient(ellipse at 50% 40%, oklch(from var(--primary) l c h / 0.08) 0%, transparent 60%),
+    var(--background);
   background-attachment: fixed;
 }
 
@@ -140,6 +150,14 @@
 }
 .login-card-enter {
   animation: login-card-enter 200ms ease-out both;
+}
+
+/* Shared glass card for login, setup, and reset-password — theme-aware */
+.login-glass-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 0 40px -10px oklch(from var(--primary) l c h / 0.15);
+  backdrop-filter: blur(12px);
 }
 
 /* Profile header entrance */
