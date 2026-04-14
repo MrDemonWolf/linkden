@@ -7,7 +7,7 @@ import { FieldGroup } from "./field-group";
 import { OG_TEMPLATES } from "@/lib/og-templates";
 import { OgPreviewCard } from "./og-preview-card";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
-import { Check, Layout, Image, Link } from "lucide-react";
+import { Check, Layout, Image } from "lucide-react";
 
 interface SeoSectionProps {
 	seoTitle: string;
@@ -125,21 +125,6 @@ export function SeoSection({
 						<Image className="h-3 w-3" />
 						Upload Image
 					</button>
-					<button
-						type="button"
-						role="tab"
-						aria-selected={seoOgMode === "url"}
-						onClick={() => onSeoOgModeChange("url")}
-						className={cn(
-							"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
-							seoOgMode === "url"
-								? "border-blue-500/50 bg-blue-500/10 text-blue-400"
-								: "border-border text-muted-foreground hover:text-foreground",
-						)}
-					>
-						<Link className="h-3 w-3" />
-						Custom URL
-					</button>
 				</div>
 
 				{/* Template selection */}
@@ -189,20 +174,6 @@ export function SeoSection({
 					</div>
 				)}
 
-				{/* Custom URL mode */}
-				{seoOgMode === "url" && (
-					<div className="space-y-1.5">
-						<Input
-							id="s-seo-og"
-							value={seoOgImage}
-							onChange={(e) => onSeoOgImageChange(e.target.value)}
-							placeholder="https://example.com/og-image.png"
-						/>
-						<p className="text-[11px] text-muted-foreground">
-							Direct URL to your OG image. Recommended: 1200 x 630 pixels.
-						</p>
-					</div>
-				)}
 			</div>
 
 			{/* Live Social Preview */}

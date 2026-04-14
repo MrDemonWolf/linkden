@@ -14,10 +14,16 @@ import {
 	ExternalLink,
 	Plus,
 	Share2,
+	Trophy,
+	Globe,
+	ChevronDown,
 } from "lucide-react";
 import {
 	BarChart,
 	Bar,
+	AreaChart,
+	Area,
+	Legend,
 	XAxis,
 	YAxis,
 	CartesianGrid,
@@ -38,6 +44,17 @@ const chartConfig: ChartConfig = {
 	count: {
 		label: "Clicks",
 		color: "var(--primary, #0FACED)",
+	},
+};
+
+const areaChartConfig: ChartConfig = {
+	views: {
+		label: "Views",
+		color: "var(--primary, #0FACED)",
+	},
+	clicks: {
+		label: "Clicks",
+		color: "#22c55e",
 	},
 };
 
@@ -74,7 +91,12 @@ export default function AdminDashboardPage() {
 	const clicksOverTime = useQuery(trpc.analytics.clicksOverTime.queryOptions({ period }));
 	const topLinks = useQuery(trpc.analytics.topLinks.queryOptions({ period }));
 	const recentClicks = useQuery(trpc.analytics.recentClicks.queryOptions());
+	const viewsOverTime = useQuery(trpc.analytics.viewsOverTime.queryOptions({ period }));
+	const referrers = useQuery(trpc.analytics.referrers.queryOptions({ period }));
+	const countries = useQuery(trpc.analytics.countries.queryOptions({ period }));
 	const timezoneQuery = useQuery(trpc.settings.get.queryOptions({ key: "timezone" }));
+
+	const [showDetailedAnalytics, setShowDetailedAnalytics] = useState(false);
 
 	const timezone = timezoneQuery.data?.value || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -129,6 +151,29 @@ export default function AdminDashboardPage() {
 
 	const clicks = recentClicks.data ?? [];
 
+	// Merged views+clicks time series for detailed analytics
+	const areaChartData = useMemo(() => {
+		const viewsMap = new Map<string, number>();
+		const clicksMap = new Map<string, number>();
+		for (const d of viewsOverTime.data ?? []) {
+			viewsMap.set(d.date as string, d.count as number);
+		}
+		for (const d of clicksOverTime.data ?? []) {
+			clicksMap.set(d.date as string, d.count as number);
+		}
+		const allDates = new Set([...viewsMap.keys(), ...clicksMap.keys()]);
+		return [...allDates].sort().map((date) => ({
+			date,
+			label: new Date(date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+			views: viewsMap.get(date) ?? 0,
+			clicks: clicksMap.get(date) ?? 0,
+		}));
+	}, [viewsOverTime.data, clicksOverTime.data]);
+
+	const totalReferrerCount = (referrers.data ?? []).reduce(
+		(sum, r) => sum + (r.count as number), 0,
+	);
+
 	const statCards = [
 		{
 			icon: Eye,
@@ -141,7 +186,6 @@ export default function AdminDashboardPage() {
 			isLoading: overview.isLoading,
 			trend: overview.data ? viewsTrend : null,
 			subtitle: `Last ${periodLabel} days`,
-			href: "/admin/analytics",
 		},
 		{
 			icon: MousePointerClick,
@@ -154,7 +198,6 @@ export default function AdminDashboardPage() {
 			isLoading: overview.isLoading,
 			trend: overview.data ? clicksTrend : null,
 			subtitle: `Last ${periodLabel} days`,
-			href: "/admin/analytics",
 		},
 		{
 			icon: Percent,
@@ -402,12 +445,15 @@ export default function AdminDashboardPage() {
 										</div>
 									))}
 									<div className="pt-2">
-										<Link href="/admin/analytics">
-											<Button variant="ghost" size="xs" className="w-full justify-center text-muted-foreground">
-												View all
-												<ArrowUpRight className="ml-1 h-3 w-3" />
-											</Button>
-										</Link>
+										<Button
+											variant="ghost"
+											size="xs"
+											className="w-full justify-center text-muted-foreground"
+											onClick={() => setShowDetailedAnalytics(true)}
+										>
+											View detailed analytics
+											<ChevronDown className="ml-1 h-3 w-3" />
+										</Button>
 									</div>
 								</>
 							)}
@@ -419,17 +465,11 @@ export default function AdminDashboardPage() {
 			{/* Top Performing Links */}
 			<div {...getAnimationProps(8)}>
 				<Card>
-					<CardHeader className="flex-row items-center justify-between">
+					<CardHeader>
 						<CardTitle className="flex items-center gap-1.5">
 							<Eye className="h-4 w-4 text-blue-400" aria-hidden="true" />
 							Top Performing Links
 						</CardTitle>
-						<Link href="/admin/analytics">
-							<Button variant="ghost" size="xs" className="text-muted-foreground">
-								View all
-								<ArrowUpRight className="ml-1 h-3 w-3" />
-							</Button>
-						</Link>
 					</CardHeader>
 					<CardContent>
 						{topLinks.isLoading ? (
@@ -474,6 +514,151 @@ export default function AdminDashboardPage() {
 					</CardContent>
 				</Card>
 			</div>
+
+			{/* Detailed Analytics — collapsible */}
+			<div {...getAnimationProps(9)}>
+				<button
+					type="button"
+					onClick={() => setShowDetailedAnalytics(!showDetailedAnalytics)}
+					className="flex w-full items-center justify-center gap-2 rounded-xl border border-border/40 bg-muted/20 px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+				>
+					<BarChart3 className="h-4 w-4" />
+					{showDetailedAnalytics ? "Hide" : "Show"} Detailed Analytics
+					<ChevronDown className={`h-4 w-4 transition-transform duration-200 ${showDetailedAnalytics ? "rotate-180" : ""}`} />
+				</button>
+			</div>
+
+			{showDetailedAnalytics && (
+				<div className="space-y-4 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+					{/* Views & Clicks Over Time */}
+					<Card>
+						<CardHeader>
+							<CardTitle className="flex items-center gap-1.5">
+								<Eye className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+								Views &amp; Clicks Over Time
+							</CardTitle>
+						</CardHeader>
+						<CardContent>
+							{viewsOverTime.isLoading || clicksOverTime.isLoading ? (
+								<div className="flex h-56 items-end gap-1" aria-busy="true" role="status" aria-label="Loading chart data">
+									{Array.from({ length: 7 }).map((_, i) => (
+										<Skeleton key={`sk-${i}`} className="flex-1" style={{ height: `${20 + Math.random() * 80}%` }} />
+									))}
+								</div>
+							) : areaChartData.length === 0 ? (
+								<div className="flex h-56 items-center justify-center text-xs text-muted-foreground">
+									No data for this period
+								</div>
+							) : (
+								<ChartContainer config={areaChartConfig} className="h-56 w-full" aria-label="Views and clicks over time chart" role="img">
+									<ResponsiveContainer width="100%" height="100%">
+										<AreaChart data={areaChartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+											<defs>
+												<linearGradient id="viewsGradient" x1="0" y1="0" x2="0" y2="1">
+													<stop offset="0%" stopColor="var(--color-views)" stopOpacity={0.3} />
+													<stop offset="100%" stopColor="var(--color-views)" stopOpacity={0.02} />
+												</linearGradient>
+												<linearGradient id="clicksGradient" x1="0" y1="0" x2="0" y2="1">
+													<stop offset="0%" stopColor="var(--color-clicks)" stopOpacity={0.3} />
+													<stop offset="100%" stopColor="var(--color-clicks)" stopOpacity={0.02} />
+												</linearGradient>
+											</defs>
+											<CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
+											<XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 10 }} />
+											<YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
+											<Tooltip content={<ChartTooltipContent labelFormatter={(label) => label} />} />
+											<Legend verticalAlign="top" height={28} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
+											<Area type="monotone" dataKey="views" name="Views" stroke="var(--color-views)" strokeWidth={2} fill="url(#viewsGradient)" dot={false} activeDot={{ r: 4, strokeWidth: 2 }} />
+											<Area type="monotone" dataKey="clicks" name="Clicks" stroke="var(--color-clicks)" strokeWidth={2} fill="url(#clicksGradient)" dot={false} activeDot={{ r: 4, strokeWidth: 2 }} />
+										</AreaChart>
+									</ResponsiveContainer>
+								</ChartContainer>
+							)}
+						</CardContent>
+					</Card>
+
+					{/* Referrers + Countries */}
+					<div className="grid gap-4 lg:grid-cols-2">
+						{/* Referrer Sources */}
+						<Card>
+							<CardHeader>
+								<CardTitle className="flex items-center gap-1.5">
+									<ArrowUpRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+									Referrer Sources
+								</CardTitle>
+							</CardHeader>
+							<CardContent>
+								{referrers.isLoading ? (
+									<div className="space-y-3">
+										{Array.from({ length: 5 }).map((_, i) => (
+											<Skeleton key={`ref-${i}`} className="h-8" />
+										))}
+									</div>
+								) : !referrers.data?.length ? (
+									<p className="text-xs text-muted-foreground py-8 text-center">No referrer data yet</p>
+								) : (
+									<div className="space-y-2.5">
+										{referrers.data.map((ref, i) => {
+											const refCount = ref.count as number;
+											const pct = totalReferrerCount > 0 ? Math.round((refCount / totalReferrerCount) * 100) : 0;
+											return (
+												<div key={String(ref.referrer ?? i)}>
+													<div className="flex items-center justify-between mb-1">
+														<div className="flex items-center gap-2 min-w-0">
+															<span className="text-xs text-muted-foreground w-5 shrink-0 tabular-nums">{i + 1}.</span>
+															<span className="truncate text-xs font-medium">{(ref.referrer as string | null) || "Direct"}</span>
+														</div>
+														<div className="flex items-center gap-2 shrink-0">
+															<span className="text-[10px] text-muted-foreground">{pct}%</span>
+															<span className="text-xs font-mono tabular-nums text-muted-foreground">{refCount.toLocaleString()}</span>
+														</div>
+													</div>
+													<div className="h-1 w-full rounded-full bg-muted/50 overflow-hidden">
+														<div className="h-full rounded-full bg-blue-500/60 transition-all duration-500" style={{ width: `${pct}%` }} />
+													</div>
+												</div>
+											);
+										})}
+									</div>
+								)}
+							</CardContent>
+						</Card>
+
+						{/* Visitor Countries */}
+						<Card>
+							<CardHeader>
+								<CardTitle className="flex items-center gap-1.5">
+									<Globe className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+									Visitor Countries
+								</CardTitle>
+							</CardHeader>
+							<CardContent>
+								{countries.isLoading ? (
+									<div className="grid gap-2 sm:grid-cols-2">
+										{Array.from({ length: 8 }).map((_, i) => (
+											<Skeleton key={`co-${i}`} className="h-10" />
+										))}
+									</div>
+								) : !countries.data?.length ? (
+									<p className="text-xs text-muted-foreground py-6 text-center">No country data yet</p>
+								) : (
+									<div className="grid gap-2 sm:grid-cols-2">
+										{countries.data.map((c, i) => (
+											<div key={String(c.country ?? i)} className="flex items-center justify-between rounded-lg border border-border/40 bg-muted/20 px-3 py-2">
+												<div className="flex items-center gap-2 min-w-0">
+													<span className="text-xs text-muted-foreground shrink-0 tabular-nums">#{i + 1}</span>
+													<span className="text-xs font-medium truncate">{(c.country as string | null) || "Unknown"}</span>
+												</div>
+												<span className="text-xs font-mono tabular-nums text-muted-foreground shrink-0 ml-2">{(c.count as number).toLocaleString()}</span>
+											</div>
+										))}
+									</div>
+								)}
+							</CardContent>
+						</Card>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

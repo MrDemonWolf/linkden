@@ -68,13 +68,35 @@ export async function generateMetadata(): Promise<Metadata> {
 		openGraph: {
 			title,
 			description,
-			...(ogImageUrl ? { images: [{ url: ogImageUrl }] } : {}),
+			...(ogImageUrl
+				? {
+						images: [
+							{
+								url: ogImageUrl,
+								width: 1200,
+								height: 630,
+								alt: title,
+							},
+						],
+					}
+				: {}),
 		},
 		twitter: {
 			card: "summary_large_image",
 			title,
 			description,
-			...(ogImageUrl ? { images: [ogImageUrl] } : {}),
+			...(ogImageUrl
+				? {
+						images: [
+							{
+								url: ogImageUrl,
+								width: 1200,
+								height: 630,
+								alt: title,
+							},
+						],
+					}
+				: {}),
 		},
 	};
 }

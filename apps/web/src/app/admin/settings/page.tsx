@@ -27,6 +27,8 @@ import { EmailSection } from "@/components/admin/settings/email-section";
 import { BrandingSection } from "@/components/admin/settings/branding-section";
 import { DataSection } from "@/components/admin/settings/data-section";
 import { MigrationSection } from "@/components/admin/settings/migration-section";
+import { ConsentSection } from "@/components/admin/settings/consent-section";
+import { Cookie } from "lucide-react";
 
 const COMMON_TIMEZONES = [
 	// Americas
@@ -86,6 +88,10 @@ interface SavedState {
 	footerBrandingText: string;
 	footerBrandingLink: string;
 	timezone: string;
+	consentBannerEnabled: boolean;
+	consentBannerText: string;
+	consentPrivacyUrl: string;
+	consentCategories: string;
 }
 
 function buildSavedState(s: Record<string, string>): SavedState {
@@ -115,6 +121,10 @@ function buildSavedState(s: Record<string, string>): SavedState {
 		footerBrandingText: s.branding_text ?? "",
 		footerBrandingLink: s.branding_link ?? "",
 		timezone: s.timezone ?? "",
+		consentBannerEnabled: s.consent_banner_enabled !== "false",
+		consentBannerText: s.consent_banner_text ?? "",
+		consentPrivacyUrl: s.consent_privacy_url ?? "",
+		consentCategories: s.consent_categories ?? JSON.stringify({ analytics: true, marketing: false, functional: false }),
 	};
 }
 
@@ -194,6 +204,10 @@ export default function SettingsPage() {
 		footerBrandingText: "",
 		footerBrandingLink: "",
 		timezone: "",
+		consentBannerEnabled: true,
+		consentBannerText: "",
+		consentPrivacyUrl: "",
+		consentCategories: JSON.stringify({ analytics: true, marketing: false, functional: false }),
 	});
 
 	// SEO
@@ -231,6 +245,14 @@ export default function SettingsPage() {
 	const [footerBrandingLink, setFooterBrandingLink] = useState("");
 	const [timezone, setTimezone] = useState("");
 
+	// Consent
+	const [consentBannerEnabled, setConsentBannerEnabled] = useState(true);
+	const [consentBannerText, setConsentBannerText] = useState("");
+	const [consentPrivacyUrl, setConsentPrivacyUrl] = useState("");
+	const [consentCategories, setConsentCategories] = useState(
+		JSON.stringify({ analytics: true, marketing: false, functional: false }),
+	);
+
 	// Load settings
 	useEffect(() => {
 		if (settingsQuery.data) {
@@ -261,6 +283,10 @@ export default function SettingsPage() {
 			setFooterBrandingText(s.footerBrandingText);
 			setFooterBrandingLink(s.footerBrandingLink);
 			setTimezone(s.timezone);
+			setConsentBannerEnabled(s.consentBannerEnabled);
+			setConsentBannerText(s.consentBannerText);
+			setConsentPrivacyUrl(s.consentPrivacyUrl);
+			setConsentCategories(s.consentCategories);
 		}
 	}, [settingsQuery.data]);
 
@@ -289,7 +315,11 @@ export default function SettingsPage() {
 		|| footerBrandingEnabled !== savedState.footerBrandingEnabled
 		|| footerBrandingText !== savedState.footerBrandingText
 		|| footerBrandingLink !== savedState.footerBrandingLink
-		|| timezone !== savedState.timezone;
+		|| timezone !== savedState.timezone
+		|| consentBannerEnabled !== savedState.consentBannerEnabled
+		|| consentBannerText !== savedState.consentBannerText
+		|| consentPrivacyUrl !== savedState.consentPrivacyUrl
+		|| consentCategories !== savedState.consentCategories;
 
 	useUnsavedChanges(isDirty);
 
@@ -325,6 +355,10 @@ export default function SettingsPage() {
 		setFooterBrandingText(savedState.footerBrandingText);
 		setFooterBrandingLink(savedState.footerBrandingLink);
 		setTimezone(savedState.timezone);
+		setConsentBannerEnabled(savedState.consentBannerEnabled);
+		setConsentBannerText(savedState.consentBannerText);
+		setConsentPrivacyUrl(savedState.consentPrivacyUrl);
+		setConsentCategories(savedState.consentCategories);
 	};
 
 	const handleSave = async () => {
@@ -358,6 +392,10 @@ export default function SettingsPage() {
 				{ key: "branding_text", value: footerBrandingText },
 				{ key: "branding_link", value: footerBrandingLink },
 				{ key: "timezone", value: timezone },
+				{ key: "consent_banner_enabled", value: String(consentBannerEnabled) },
+				{ key: "consent_banner_text", value: consentBannerText },
+				{ key: "consent_privacy_url", value: consentPrivacyUrl },
+				{ key: "consent_categories", value: consentCategories },
 			]);
 			setSavedState({
 				seoTitle,
@@ -374,7 +412,7 @@ export default function SettingsPage() {
 				adminBrandingEnabled,
 				siteName, logoUrl, faviconUrl, ppUrl, tosUrl, ppMode, tosMode, ppText, tosText,
 				footerBrandingEnabled, footerBrandingText, footerBrandingLink,
-			timezone,
+			timezone, consentBannerEnabled, consentBannerText, consentPrivacyUrl, consentCategories,
 			});
 			invalidate();
 			qc.invalidateQueries({
@@ -491,6 +529,24 @@ export default function SettingsPage() {
 					onSeoOgImageChange={setSeoOgImage}
 					onSeoOgModeChange={setSeoOgMode}
 					onSeoOgTemplateChange={setSeoOgTemplate}
+				/>
+			</SectionCard>
+
+			{/* Cookie & Consent */}
+			<SectionCard
+				icon={Cookie}
+				title="Cookie & Consent"
+				description="Configure the GDPR consent banner and cookie categories"
+			>
+				<ConsentSection
+					enabled={consentBannerEnabled}
+					bannerText={consentBannerText}
+					privacyUrl={consentPrivacyUrl}
+					categories={JSON.parse(consentCategories)}
+					onEnabledChange={setConsentBannerEnabled}
+					onBannerTextChange={setConsentBannerText}
+					onPrivacyUrlChange={setConsentPrivacyUrl}
+					onCategoriesChange={(v) => setConsentCategories(JSON.stringify(v))}
 				/>
 			</SectionCard>
 

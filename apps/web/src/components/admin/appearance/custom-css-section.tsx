@@ -97,7 +97,7 @@ function CssEditor({
 						...defaultKeymap,
 						...historyKeymap,
 						...closeBracketsKeymap,
-					]),
+					] as Parameters<typeof keymap.of>[0]),
 					updateListener,
 					EditorView.lineWrapping,
 				],

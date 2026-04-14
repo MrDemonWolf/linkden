@@ -2,12 +2,15 @@
 
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
 	Plus,
 	Upload,
 	Blocks,
 	Rocket,
+	User,
+	Globe,
 } from "lucide-react";
 import {
 	DndContext,
@@ -38,15 +41,44 @@ import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { BlockEditPanel } from "@/components/admin/builder/block-edit-panel";
 import { BlockRow } from "@/components/admin/builder/block-row";
 import { BLOCK_TYPES, TYPE_BADGE_BG, type BlockType, type Block, generateId } from "@/components/admin/builder/builder-constants";
+import { ProfileTab } from "@/components/admin/builder/profile-tab";
+import { SocialTab } from "@/components/admin/builder/social-tab";
+
+const TABS = [
+	{ id: "blocks", label: "Blocks", icon: Blocks },
+	{ id: "profile", label: "Profile", icon: User },
+	{ id: "social", label: "Social Links", icon: Globe },
+] as const;
+
+type TabId = (typeof TABS)[number]["id"];
 
 export default function BuilderPage() {
 	const qc = useQueryClient();
+	const searchParams = useSearchParams();
+	const router = useRouter();
+
+	const tabParam = searchParams.get("tab");
+	const activeTab: TabId = (TABS.some((t) => t.id === tabParam) ? tabParam : "blocks") as TabId;
+
+	const setActiveTab = (tab: TabId) => {
+		const params = new URLSearchParams(searchParams.toString());
+		if (tab === "blocks") {
+			params.delete("tab");
+		} else {
+			params.set("tab", tab);
+		}
+		const query = params.toString();
+		router.replace(`/admin/builder${query ? `?${query}` : ""}` as "/admin/builder", { scroll: false });
+	};
+
 	const [editingBlock, setEditingBlock] = useState<Block | null>(null);
 	const [editingOverrides, setEditingOverrides] = useState<Partial<Block> | null>(null);
 	const [showMobilePreview, setShowMobilePreview] = useState(false);
 	const [activeId, setActiveId] = useState<string | null>(null);
 	const [newlyAddedId, setNewlyAddedId] = useState<string | null>(null);
 	const [showPicker, setShowPicker] = useState(false);
+	const [profileDirty, setProfileDirty] = useState(false);
+	const [socialDirty, setSocialDirty] = useState(false);
 
 	const blocksQuery = useQuery(trpc.blocks.list.queryOptions());
 	const blocks: Block[] = (blocksQuery.data as Block[] | undefined) ?? [];
@@ -54,7 +86,11 @@ export default function BuilderPage() {
 	const hasDrafts = hasDraftQuery.data?.hasDraft ?? false;
 	const settingsQuery = useQuery(trpc.settings.getAll.queryOptions());
 
-	useUnsavedChanges(hasDrafts);
+	const handleProfileDirtyChange = useCallback((dirty: boolean) => setProfileDirty(dirty), []);
+	const handleSocialDirtyChange = useCallback((dirty: boolean) => setSocialDirty(dirty), []);
+
+	const hasAnyChanges = hasDrafts || profileDirty || socialDirty;
+	useUnsavedChanges(hasAnyChanges);
 
 	useEffect(() => {
 		if (newlyAddedId && blocks.some((b) => b.id === newlyAddedId)) {
@@ -215,7 +251,7 @@ export default function BuilderPage() {
 
 	return (
 		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out">
-			{/* Header bar with publish button */}
+			{/* Header bar */}
 			<div className="mb-6 flex items-center justify-between gap-4">
 				<div className="min-w-0">
 					<h1 className="text-lg font-semibold tracking-tight">Page Builder</h1>
@@ -229,133 +265,176 @@ export default function BuilderPage() {
 						}
 					</p>
 				</div>
-				<Button
-					size="sm"
-					disabled={!hasDrafts || publishAll.isPending}
-					onClick={async () => {
-						try {
-							await publishAll.mutateAsync();
-							invalidate();
-							toast.success("All changes published");
-						} catch {
-							toast.error("Failed to publish");
-						}
-					}}
-					className={cn(
-						"gap-2 transition-all",
-						hasDrafts
-							? "bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/25"
-							: "opacity-50",
-					)}
-				>
-					{publishAll.isPending ? (
-						<>
-							<Upload className="h-3.5 w-3.5 animate-pulse" />
-							Publishing...
-						</>
-					) : (
-						<>
-							<Rocket className="h-3.5 w-3.5" />
-							Publish
-						</>
-					)}
-				</Button>
+				{activeTab === "blocks" && (
+					<Button
+						size="sm"
+						disabled={!hasDrafts || publishAll.isPending}
+						onClick={async () => {
+							try {
+								await publishAll.mutateAsync();
+								invalidate();
+								toast.success("All changes published");
+							} catch {
+								toast.error("Failed to publish");
+							}
+						}}
+						className={cn(
+							"gap-2 transition-all",
+							hasDrafts
+								? "bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/25"
+								: "opacity-50",
+						)}
+					>
+						{publishAll.isPending ? (
+							<>
+								<Upload className="h-3.5 w-3.5 animate-pulse" />
+								Publishing...
+							</>
+						) : (
+							<>
+								<Rocket className="h-3.5 w-3.5" />
+								Publish
+							</>
+						)}
+					</Button>
+				)}
 			</div>
 
-			{/* Main two-column layout */}
-			<div className="flex gap-6 items-start">
-				{/* Left: Block list + picker */}
-				<div className="flex-1 min-w-0 space-y-4">
-					<DndContext
-						sensors={sensors}
-						collisionDetection={closestCenter}
-						onDragStart={handleDragStart}
-						onDragEnd={handleDragEnd}
+			{/* Tab bar */}
+			<div className="mb-6 flex gap-1 rounded-lg border border-border/50 bg-muted/30 p-1" role="tablist">
+				{TABS.map((tab) => (
+					<button
+						key={tab.id}
+						type="button"
+						role="tab"
+						aria-selected={activeTab === tab.id}
+						onClick={() => {
+							setActiveTab(tab.id);
+							// Close edit panel when switching tabs
+							if (tab.id !== "blocks") {
+								setEditingBlock(null);
+								setEditingOverrides(null);
+							}
+						}}
+						className={cn(
+							"flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
+							activeTab === tab.id
+								? "bg-background text-foreground shadow-sm"
+								: "text-muted-foreground hover:text-foreground",
+						)}
 					>
-						{blocksQuery.isLoading ? (
-							<div className="flex flex-col gap-2">
-								<SkeletonRows count={4} />
-							</div>
-						) : blocks.length === 0 ? (
-							<EmptyState
-								icon={Blocks}
-								title="No blocks yet"
-								description="Add your first block below to start building your page"
-							/>
-						) : (
-							<SortableContext items={blockIds} strategy={verticalListSortingStrategy}>
-								<div className="flex flex-col gap-2" role="list" aria-label="Page blocks">
-									{blocks.map((block) => (
-										<div key={block.id} role="listitem" data-block-id={block.id}>
+						<tab.icon className="h-3.5 w-3.5" />
+						{tab.label}
+					</button>
+				))}
+			</div>
+
+			{/* Main layout */}
+			<div className="flex gap-6 items-start">
+				{/* Left: Tab content */}
+				<div className="flex-1 min-w-0 space-y-4">
+					{activeTab === "blocks" && (
+						<>
+							<DndContext
+								sensors={sensors}
+								collisionDetection={closestCenter}
+								onDragStart={handleDragStart}
+								onDragEnd={handleDragEnd}
+							>
+								{blocksQuery.isLoading ? (
+									<div className="flex flex-col gap-2">
+										<SkeletonRows count={4} />
+									</div>
+								) : blocks.length === 0 ? (
+									<EmptyState
+										icon={Blocks}
+										title="No blocks yet"
+										description="Add your first block below to start building your page"
+									/>
+								) : (
+									<SortableContext items={blockIds} strategy={verticalListSortingStrategy}>
+										<div className="flex flex-col gap-2" role="list" aria-label="Page blocks">
+											{blocks.map((block) => (
+												<div key={block.id} role="listitem" data-block-id={block.id}>
+													<BlockRow
+														block={block}
+														onToggle={() => handleToggle(block.id, block.isEnabled)}
+														onEdit={() => setEditingBlock(block)}
+														onDelete={() => handleDelete(block.id)}
+													/>
+												</div>
+											))}
+										</div>
+									</SortableContext>
+								)}
+
+								<DragOverlay>
+									{activeBlock && (
+										<div className="rounded-xl bg-card border border-primary/30 shadow-2xl opacity-90 pointer-events-none">
 											<BlockRow
-												block={block}
-												onToggle={() => handleToggle(block.id, block.isEnabled)}
-												onEdit={() => setEditingBlock(block)}
-												onDelete={() => handleDelete(block.id)}
+												block={activeBlock}
+												onToggle={() => {}}
+												onEdit={() => {}}
+												onDelete={() => {}}
 											/>
 										</div>
-									))}
-								</div>
-							</SortableContext>
-						)}
+									)}
+								</DragOverlay>
+							</DndContext>
 
-						<DragOverlay>
-							{activeBlock && (
-								<div className="rounded-xl bg-card border border-primary/30 shadow-2xl opacity-90 pointer-events-none">
-									<BlockRow
-										block={activeBlock}
-										onToggle={() => {}}
-										onEdit={() => {}}
-										onDelete={() => {}}
-									/>
-								</div>
-							)}
-						</DragOverlay>
-					</DndContext>
+							{/* Flat block type picker */}
+							<div className="space-y-2">
+								<button
+									type="button"
+									onClick={() => setShowPicker(!showPicker)}
+									className={cn(
+										"w-full rounded-xl border-2 border-dashed p-4 text-sm transition-all flex items-center justify-center gap-2",
+										showPicker
+											? "border-blue-500/40 text-blue-400 bg-blue-500/5"
+											: "border-border/60 text-muted-foreground hover:border-blue-500/30 hover:text-blue-400 hover:bg-blue-500/5",
+									)}
+								>
+									<Plus className={cn("h-4 w-4 transition-transform duration-200", showPicker && "rotate-45")} />
+									{showPicker ? "Cancel" : "Add Block"}
+								</button>
 
-					{/* Flat block type picker */}
-					<div className="space-y-2">
-						<button
-							type="button"
-							onClick={() => setShowPicker(!showPicker)}
-							className={cn(
-								"w-full rounded-xl border-2 border-dashed p-4 text-sm transition-all flex items-center justify-center gap-2",
-								showPicker
-									? "border-blue-500/40 text-blue-400 bg-blue-500/5"
-									: "border-border/60 text-muted-foreground hover:border-blue-500/30 hover:text-blue-400 hover:bg-blue-500/5",
-							)}
-						>
-							<Plus className={cn("h-4 w-4 transition-transform duration-200", showPicker && "rotate-45")} />
-							{showPicker ? "Cancel" : "Add Block"}
-						</button>
-
-						{showPicker && (
-							<div className="grid grid-cols-2 sm:grid-cols-3 gap-2 animate-in fade-in-0 slide-in-from-top-2 duration-200">
-								{BLOCK_TYPES.map((item) => (
-									<button
-										key={item.type}
-										type="button"
-										onClick={() => { handleAddBlock(item.type); setShowPicker(false); }}
-										className="group/picker flex flex-col items-start gap-2 rounded-xl border border-white/10 bg-card/60 backdrop-blur-sm p-3 text-left hover:border-blue-500/30 hover:bg-blue-500/5 transition-all"
-									>
-										<div className={cn("flex h-8 w-8 items-center justify-center rounded-lg transition-colors", TYPE_BADGE_BG[item.type])}>
-											<item.icon className="h-4 w-4" />
-										</div>
-										<div>
-											<div className="text-xs font-semibold group-hover/picker:text-blue-400 transition-colors">{item.label}</div>
-											<div className="text-[10px] text-muted-foreground leading-tight mt-0.5">{item.description}</div>
-										</div>
-									</button>
-								))}
+								{showPicker && (
+									<div className="grid grid-cols-2 sm:grid-cols-3 gap-2 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+										{BLOCK_TYPES.map((item) => (
+											<button
+												key={item.type}
+												type="button"
+												onClick={() => { handleAddBlock(item.type); setShowPicker(false); }}
+												className="group/picker flex flex-col items-start gap-2 rounded-xl border border-white/10 bg-card/60 backdrop-blur-sm p-3 text-left hover:border-blue-500/30 hover:bg-blue-500/5 transition-all"
+											>
+												<div className={cn("flex h-8 w-8 items-center justify-center rounded-lg transition-colors", TYPE_BADGE_BG[item.type])}>
+													<item.icon className="h-4 w-4" />
+												</div>
+												<div>
+													<div className="text-xs font-semibold group-hover/picker:text-blue-400 transition-colors">{item.label}</div>
+													<div className="text-[10px] text-muted-foreground leading-tight mt-0.5">{item.description}</div>
+												</div>
+											</button>
+										))}
+									</div>
+								)}
 							</div>
-						)}
-					</div>
+						</>
+					)}
+
+					{activeTab === "profile" && (
+						<ProfileTab onDirtyChange={handleProfileDirtyChange} />
+					)}
+
+					{activeTab === "social" && (
+						<SocialTab onDirtyChange={handleSocialDirtyChange} />
+					)}
 				</div>
 
 				{/* Right side: Edit panel and/or Preview */}
 				<div className="hidden lg:flex lg:gap-4 shrink-0">
-					{/* Edit panel — slides in when editing */}
-					{editingBlock && (
+					{/* Edit panel — slides in when editing blocks */}
+					{activeTab === "blocks" && editingBlock && (
 						<div className="w-[340px] shrink-0 animate-in slide-in-from-right-4 fade-in-0 duration-200">
 							<BlockEditPanel
 								block={editingBlock}
@@ -382,7 +461,7 @@ export default function BuilderPage() {
 					{/* Permanent live preview sidebar */}
 					<div className={cn(
 						"w-[360px] shrink-0 sticky top-6",
-						editingBlock ? "hidden xl:block" : "block",
+						activeTab === "blocks" && editingBlock ? "hidden xl:block" : "block",
 					)}>
 						<SharedPreview
 							overrides={{

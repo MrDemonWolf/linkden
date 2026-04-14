@@ -175,7 +175,7 @@ function SigningKeysSection() {
 
 	return (
 		<div className="space-y-3">
-			<h2 className="text-sm font-semibold">Signing Keys</h2>
+			<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Signing Keys</p>
 
 			{/* Status banner */}
 			<div className="relative overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-xs">
@@ -450,7 +450,7 @@ export function WalletSection({
 
 			{/* Pass Details */}
 			<div className="space-y-3">
-				<h2 className="text-sm font-semibold">Pass Details</h2>
+				<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Pass Details</p>
 				<FieldGroup columns={2}>
 					<div className="space-y-1.5">
 						<Label htmlFor="s-wallet-org-name">Organization Name</Label>
@@ -477,7 +477,7 @@ export function WalletSection({
 
 			{/* Appearance & Branding */}
 			<div className="space-y-3">
-				<h2 className="text-sm font-semibold">Appearance & Branding</h2>
+				<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Appearance & Branding</p>
 				<div className="grid gap-4 lg:grid-cols-[3fr_2fr_2fr]">
 					{/* Colors */}
 					<div className="space-y-3">
