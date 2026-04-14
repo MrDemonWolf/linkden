@@ -80,7 +80,7 @@ export const auth = betterAuth({
         for (const row of allRows) {
           s[row.key] = row.value;
         }
-        if (s.magic_link_enabled === "false") {
+        if (s.magic_link_enabled !== "true") {
           throw new Error("Magic link sign-in is disabled");
         }
 

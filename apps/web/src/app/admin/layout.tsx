@@ -8,7 +8,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
 	LayoutDashboard,
 	Blocks,
-	BarChart3,
 	Handshake,
 	Palette,
 	Settings,
@@ -16,7 +15,7 @@ import {
 	Menu,
 	X,
 	Globe,
-	User,
+	UserCog,
 	LogOut,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
@@ -40,8 +39,6 @@ const NAV_GROUPS = [
 	{
 		label: "Engage",
 		items: [
-			{ href: "/admin/analytics" as const, label: "Analytics", icon: BarChart3 },
-			{ href: "/admin/profile" as const, label: "Profile", icon: User },
 			{ href: "/admin/connections" as const, label: "Connections", icon: Handshake },
 		],
 	},
@@ -49,6 +46,7 @@ const NAV_GROUPS = [
 		label: "System",
 		items: [
 			{ href: "/admin/wallet" as const, label: "Wallet", icon: Wallet },
+			{ href: "/admin/account" as const, label: "Account", icon: UserCog },
 			{ href: "/admin/settings" as const, label: "Settings", icon: Settings },
 		],
 	},
@@ -59,9 +57,8 @@ const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((g) => [...g.items]);
 const BOTTOM_NAV_ITEMS = [
 	{ href: "/admin" as const, label: "Dashboard", icon: LayoutDashboard },
 	{ href: "/admin/builder" as const, label: "Builder", icon: Blocks },
-	{ href: "/admin/analytics" as const, label: "Analytics", icon: BarChart3 },
 	{ href: "/admin/connections" as const, label: "Connections", icon: Handshake },
-	{ href: "/admin/profile" as const, label: "Profile", icon: User },
+	{ href: "/admin/settings" as const, label: "Settings", icon: Settings },
 ];
 
 function DesktopTopBar({ pathname }: { pathname: string }) {
@@ -361,7 +358,7 @@ export default function AdminLayout({
 						<nav className="flex flex-col px-2 py-2 gap-0.5" aria-label="Navigation">
 							{NAV_GROUPS.map((group) => (
 								<div key={group.label}>
-									<p className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+									<p className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
 										{group.label}
 									</p>
 									{(group.items as readonly { href: string; label: string; icon: React.ElementType }[]).map((item) => {

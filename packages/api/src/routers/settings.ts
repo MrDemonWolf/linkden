@@ -76,6 +76,10 @@ const VALID_SETTING_KEYS = [
 	"mapkit_enabled",
 	"mapkit_token",
 	"contact_delivery",
+	"consent_banner_enabled",
+	"consent_banner_text",
+	"consent_privacy_url",
+	"consent_categories",
 ] as const;
 
 const settingKeySchema = z.enum(VALID_SETTING_KEYS);

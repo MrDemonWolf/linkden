@@ -2,12 +2,12 @@
 
 import { useState, useCallback, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Settings2, Save, Undo2, Info, Smartphone } from "lucide-react";
+import { Settings2, Save, Undo2, Info, Smartphone, CreditCard } from "lucide-react";
 import { trpc } from "@/utils/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/admin/page-header";
-import { StatCard } from "@/components/admin/stat-card";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import {
 	WalletSection,
@@ -60,20 +60,31 @@ export default function WalletPage() {
 		signingQuery.data?.passTypeId
 	);
 
-	// QR code links to the public profile page URL (not vCard)
 	const publicProfileUrl =
 		typeof window !== "undefined"
 			? `${window.location.origin}`
 			: undefined;
 
 	return (
-		<div className="space-y-4">
+		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
 			<PageHeader
 				title="Wallet Pass"
 				description={
 					isDirty
 						? "You have unsaved changes"
 						: "Generate Apple Wallet passes for your page"
+				}
+				badge={
+					<Badge
+						variant="outline"
+						className={isConfigured
+							? "gap-1 border-emerald-500/30 text-emerald-500"
+							: "gap-1 border-amber-500/30 text-amber-500"
+						}
+					>
+						<Settings2 className="h-3 w-3" />
+						{isConfigured ? "Ready" : "Setup Required"}
+					</Badge>
 				}
 				actions={
 					<>
@@ -100,43 +111,42 @@ export default function WalletPage() {
 				}
 			/>
 
-			{/* Status cards */}
-			<div className="grid gap-3 sm:grid-cols-2">
-				<StatCard
-					icon={Settings2}
-					label="Config Status"
-					value={isConfigured ? "Ready" : "Incomplete"}
-					iconColor={isConfigured ? "text-emerald-500" : "text-amber-500"}
-					iconBg={isConfigured ? "bg-emerald-500/10" : "bg-amber-500/10"}
-				/>
-				<StatCard
-					icon={Smartphone}
-					label="QR Destination"
-					value="Public Profile"
-					iconColor="text-blue-500"
-					iconBg="bg-blue-500/10"
-				/>
-			</div>
-
 			{/* Two-column: Config + Preview */}
-			<div className="grid items-start gap-4 lg:grid-cols-[1fr_auto]">
-				{/* Left: General Settings + Download */}
-				<Card>
-					<CardContent className="space-y-6 pt-2">
-						<WalletSection
-							onPreviewChange={handlePreviewChange}
-							onDirtyChange={setIsDirty}
-							saveRef={walletSaveRef}
-						/>
+			<div className="grid items-start gap-6 lg:grid-cols-[1fr_auto]">
+				{/* Left: Configuration */}
+				<div className="space-y-6">
+					<Card className="overflow-hidden">
+						<CardContent className="pt-0">
+							<div className="flex items-start gap-3 border-b border-border/50 py-4 -mx-6 px-6 mb-4">
+								<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400">
+									<CreditCard className="h-4 w-4" />
+								</div>
+								<div className="min-w-0">
+									<h2 className="text-sm font-semibold">Pass Configuration</h2>
+									<p className="mt-0.5 text-[11px] text-muted-foreground">
+										Signing keys, pass details, and appearance
+									</p>
+								</div>
+							</div>
+							<WalletSection
+								onPreviewChange={handlePreviewChange}
+								onDirtyChange={setIsDirty}
+								saveRef={walletSaveRef}
+							/>
+						</CardContent>
+					</Card>
 
-						{/* Download -- Apple guidelines: use official badge, never show dimmed state */}
-						{isConfigured ? (
-							<div className="flex justify-center pt-2 pb-1">
+					{/* Download section */}
+					{isConfigured ? (
+						<Card className="overflow-hidden border-emerald-500/20 bg-gradient-to-b from-emerald-500/5 to-transparent">
+							<CardContent className="flex flex-col items-center py-6">
+								<p className="mb-4 text-xs font-medium text-muted-foreground">
+									Your wallet pass is ready to download
+								</p>
 								<a
 									href="/api/wallet-pass"
 									className="transition-opacity hover:opacity-80"
 								>
-									{/* Official Apple "Add to Apple Wallet" badge */}
 									<svg
 										xmlns="http://www.w3.org/2000/svg"
 										width="240"
@@ -173,79 +183,114 @@ export default function WalletPage() {
 										</text>
 									</svg>
 								</a>
+							</CardContent>
+						</Card>
+					) : (
+						<div className="relative overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] px-3.5 py-2.5">
+							<div className="absolute inset-y-0 left-0 w-0.5 bg-primary/50" />
+							<div className="flex items-start gap-2.5 pl-1.5">
+								<Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+								<p className="text-xs leading-relaxed text-muted-foreground">
+									Complete the configuration above to enable
+									wallet pass generation.
+								</p>
 							</div>
-						) : (
-							<div className="relative overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] px-3.5 py-2.5">
-								<div className="absolute inset-y-0 left-0 w-0.5 bg-primary/50" />
-								<div className="flex items-start gap-2.5 pl-1.5">
-									<Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-									<p className="text-xs leading-relaxed text-muted-foreground">
-										Complete the environment configuration above to enable
-										wallet pass generation.
+						</div>
+					)}
+				</div>
+
+				{/* Right: Sticky Preview with phone frame */}
+				<div className="lg:sticky lg:top-20">
+					<Card className="overflow-hidden">
+						<CardContent className="pt-0">
+							<div className="flex items-start gap-3 border-b border-border/50 py-4 -mx-6 px-6 mb-4">
+								<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400">
+									<Smartphone className="h-4 w-4" />
+								</div>
+								<div className="min-w-0">
+									<h2 className="text-sm font-semibold">Live Preview</h2>
+									<p className="mt-0.5 text-[11px] text-muted-foreground">
+										How the pass looks on a device
 									</p>
 								</div>
 							</div>
-						)}
-					</CardContent>
-				</Card>
 
-				{/* Right: Sticky Preview */}
-				<div className="lg:sticky lg:top-20">
-					<Card>
-						<CardContent className="space-y-4 pt-2">
-							<h2 className="text-sm font-semibold">Preview</h2>
-							<div className="flex justify-center py-4">
-								<WalletPassPreview
-									backgroundColor={
-										livePreview?.backgroundColor ??
-										previewQuery.data?.backgroundColor
-									}
-									foregroundColor={
-										livePreview?.foregroundColor ??
-										previewQuery.data?.foregroundColor
-									}
-									labelColor={
-										livePreview?.labelColor ?? previewQuery.data?.labelColor
-									}
-									logoUrl={
-										livePreview?.logoUrl ??
-										previewQuery.data?.logoUrl ??
-										undefined
-									}
-									organizationName={
-										livePreview?.organizationName ??
-										previewQuery.data?.organizationName
-									}
-									profileName={
-										previewQuery.data?.profile?.name ?? undefined
-									}
-									profileEmail={
-										previewQuery.data?.profile?.email ?? undefined
-									}
-									profileImage={
-										previewQuery.data?.profile?.image ?? undefined
-									}
-									passDescription={
-										livePreview?.passDescription ??
-										previewQuery.data?.passDescription
-									}
-									qrUrl={publicProfileUrl}
-									showEmail={
-										livePreview?.showEmail ??
-										previewQuery.data?.showEmail
-									}
-									showName={
-										livePreview?.showName ??
-										previewQuery.data?.showName
-									}
-									showQrCode={
-										livePreview?.showQrCode ??
-										previewQuery.data?.showQrCode
-									}
-								/>
+							{/* Phone frame mockup */}
+							<div className="flex justify-center py-2">
+								<div className="relative rounded-[32px] border-2 border-border/30 bg-black/80 p-3 shadow-xl">
+									{/* Notch */}
+									<div className="absolute top-0 left-1/2 -translate-x-1/2 h-5 w-24 rounded-b-2xl bg-black/80" />
+									{/* Screen */}
+									<div className="overflow-hidden rounded-[22px] bg-neutral-900">
+										{/* Status bar */}
+										<div className="flex items-center justify-between px-6 py-2 text-[10px] font-medium text-white/70">
+											<span>9:41</span>
+											<div className="flex items-center gap-1">
+												<div className="h-2 w-3 rounded-sm border border-white/40 relative">
+													<div className="absolute inset-[1px] rounded-[1px] bg-white/60" />
+												</div>
+											</div>
+										</div>
+										{/* Pass */}
+										<div className="px-3 pb-4">
+											<WalletPassPreview
+												backgroundColor={
+													livePreview?.backgroundColor ??
+													previewQuery.data?.backgroundColor
+												}
+												foregroundColor={
+													livePreview?.foregroundColor ??
+													previewQuery.data?.foregroundColor
+												}
+												labelColor={
+													livePreview?.labelColor ?? previewQuery.data?.labelColor
+												}
+												logoUrl={
+													livePreview?.logoUrl ??
+													previewQuery.data?.logoUrl ??
+													undefined
+												}
+												organizationName={
+													livePreview?.organizationName ??
+													previewQuery.data?.organizationName
+												}
+												profileName={
+													previewQuery.data?.profile?.name ?? undefined
+												}
+												profileEmail={
+													previewQuery.data?.profile?.email ?? undefined
+												}
+												profileImage={
+													previewQuery.data?.profile?.image ?? undefined
+												}
+												passDescription={
+													livePreview?.passDescription ??
+													previewQuery.data?.passDescription
+												}
+												qrUrl={publicProfileUrl}
+												showEmail={
+													livePreview?.showEmail ??
+													previewQuery.data?.showEmail
+												}
+												showName={
+													livePreview?.showName ??
+													previewQuery.data?.showName
+												}
+												showQrCode={
+													livePreview?.showQrCode ??
+													previewQuery.data?.showQrCode
+												}
+											/>
+										</div>
+									</div>
+									{/* Home indicator */}
+									<div className="flex justify-center pt-2 pb-1">
+										<div className="h-1 w-24 rounded-full bg-white/20" />
+									</div>
+								</div>
 							</div>
-							{/* Mobile-friendly hint */}
-							<p className="text-center text-[11px] text-muted-foreground">
+
+							<p className="mt-2 text-center text-[11px] text-muted-foreground">
 								QR code links to your public profile page
 							</p>
 						</CardContent>

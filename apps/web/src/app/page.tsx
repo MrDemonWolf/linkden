@@ -45,9 +45,18 @@ export default function Home() {
 		);
 	}
 
+	const consentSettings = pageData.data?.settings
+		? {
+				consentBannerEnabled: pageData.data.settings.consentBannerEnabled,
+				consentBannerText: pageData.data.settings.consentBannerText,
+				consentPrivacyUrl: pageData.data.settings.consentPrivacyUrl,
+				consentCategories: pageData.data.settings.consentCategories,
+			}
+		: undefined;
+
 	return (
 		<>
-			<ConsentBanner />
+			<ConsentBanner settings={consentSettings} />
 			<AuthenticatedPublicPage
 				data={pageData.data as Parameters<typeof PublicPage>[0]["data"]}
 			/>

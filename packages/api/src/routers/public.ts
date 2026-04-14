@@ -111,6 +111,10 @@ export const publicRouter = router({
 				brandingPpText: settings.branding_pp_text || null,
 				brandingTosMode: (settings.branding_tos_mode as "url" | "text") || "url",
 				brandingTosText: settings.branding_tos_text || null,
+				consentBannerEnabled: settings.consent_banner_enabled !== "false",
+				consentBannerText: settings.consent_banner_text || null,
+				consentPrivacyUrl: settings.consent_privacy_url || null,
+				consentCategories: settings.consent_categories || null,
 			},
 		};
 	}),
@@ -304,7 +308,7 @@ export const publicRouter = router({
 
 		return {
 			completed: !!existingUser,
-			magicLinkEnabled: s.magic_link_enabled !== "false",
+			magicLinkEnabled: s.magic_link_enabled === "true",
 			branding: {
 				logoUrl: s.branding_logo_url || null,
 				siteName: s.branding_site_name || null,
