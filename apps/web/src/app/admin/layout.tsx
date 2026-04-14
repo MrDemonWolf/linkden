@@ -154,7 +154,7 @@ function SidebarContent({
 				)}
 				<div className="flex flex-col min-w-0">
 					<span className="text-sm font-semibold leading-tight truncate">{siteName}</span>
-					<span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
+					<span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
 						Admin Console
 					</span>
 				</div>
@@ -164,7 +164,7 @@ function SidebarContent({
 			<nav aria-label="Main navigation" className="flex-1 px-2 py-2 space-y-3 overflow-y-auto">
 				{NAV_GROUPS.map((group) => (
 					<div key={group.label} className="space-y-0.5">
-						<p className="px-3 pt-1 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+						<p className="px-3 pt-1 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
 							{group.label}
 						</p>
 						{(group.items as readonly { href: string; label: string; icon: React.ElementType }[]).map((item) =>
@@ -177,20 +177,20 @@ function SidebarContent({
 			{/* Branding + version */}
 			<div className="px-4 pb-2">
 				{adminBrandingEnabled && (
-					<p className="text-xs text-muted-foreground/50">
+					<p className="text-xs text-muted-foreground">
 						Powered by{" "}
 						<a
 							href="https://github.com/mrdemonwolf/LinkDen"
 							target="_blank"
 							rel="noopener noreferrer"
-							className="hover:text-muted-foreground transition-colors"
+							className="hover:text-foreground transition-colors"
 						>
 							LinkDen
 							<span className="sr-only">(opens in new tab)</span>
 						</a>
 					</p>
 				)}
-				<p className="text-xs text-muted-foreground/50">v0.1.0{isDev && " · DEV"}</p>
+				<p className="text-xs text-muted-foreground">v0.1.0{isDev && " · DEV"}</p>
 			</div>
 
 			{/* User profile footer */}
@@ -207,7 +207,7 @@ function SidebarContent({
 					</Avatar>
 					<div className="flex-1 min-w-0">
 						<p className="text-xs font-semibold truncate">{user?.name ?? "Admin"}</p>
-						<p className="text-[11px] text-muted-foreground/60 truncate">{user?.email}</p>
+						<p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
 					</div>
 					<button
 						type="button"
@@ -440,7 +440,7 @@ export default function AdminLayout({
 								"flex flex-1 flex-col items-center justify-center gap-1 min-h-[48px] text-xs font-medium transition-colors",
 								isActive
 									? "text-primary"
-									: "text-muted-foreground/70",
+									: "text-muted-foreground",
 							)}
 						>
 							<Icon className="h-5 w-5" />

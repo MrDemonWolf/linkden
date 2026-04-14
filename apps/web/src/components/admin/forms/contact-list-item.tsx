@@ -96,7 +96,7 @@ export function ContactListItem({
 						</span>
 					)}
 				</div>
-				<p className="truncate text-[11px] text-muted-foreground/70">
+				<p className="truncate text-[11px] text-muted-foreground">
 					{contact.message?.slice(0, 60) || "No message"}
 				</p>
 			</div>

@@ -200,7 +200,7 @@ export const themePresets: ThemePreset[] = [
         "--ld-card-foreground": "#09090B",
         "--ld-border": "#E4E4E7",
         "--ld-muted": "#F4F4F5",
-        "--ld-muted-foreground": "#71717A",
+        "--ld-muted-foreground": "#65656D",
         "--ld-radius": "0.25rem",
       },
       dark: {
@@ -249,7 +249,7 @@ export const themePresets: ThemePreset[] = [
         "--ld-card-foreground": "#F1F5F9",
         "--ld-border": "#334155",
         "--ld-muted": "#334155",
-        "--ld-muted-foreground": "#8899AE",
+        "--ld-muted-foreground": "#A8B5C4",
         "--ld-radius": "0.375rem",
       },
     },
