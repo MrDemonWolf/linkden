@@ -156,7 +156,7 @@ export default function FormsPage() {
 	const unreadCount = contacts.filter((c) => !c.isRead).length;
 
 	return (
-		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-4">
+		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
 			<PageHeader
 				title="Forms"
 				description="Form submissions from your page"

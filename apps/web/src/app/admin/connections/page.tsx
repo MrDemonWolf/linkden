@@ -169,7 +169,7 @@ export default function ConnectionsPage() {
 	const unreadCount = connections.filter((c) => !c.isRead).length;
 
 	return (
-		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-4">
+		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
 			<PageHeader
 				title="Connections"
 				description="People who connected with you through your page"

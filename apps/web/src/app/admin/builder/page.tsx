@@ -250,7 +250,7 @@ export default function BuilderPage() {
 	const blockIds = blocks.map((b) => b.id);
 
 	return (
-		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out">
+		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
 			{/* Header bar */}
 			<div className="mb-6 flex items-center justify-between gap-4">
 				<div className="min-w-0">

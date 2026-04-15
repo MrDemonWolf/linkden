@@ -112,7 +112,7 @@ export default function WalletPage() {
 			/>
 
 			{/* Two-column: Config + Preview */}
-			<div className="grid items-start gap-6 lg:grid-cols-[1fr_auto]">
+			<div className="grid items-start gap-6 lg:grid-cols-[1fr_360px]">
 				{/* Left: Configuration */}
 				<div className="space-y-6">
 					<Card className="overflow-hidden">

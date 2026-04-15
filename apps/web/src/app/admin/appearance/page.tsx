@@ -241,7 +241,7 @@ export default function AppearancePage() {
 
 	if (settingsQuery.isLoading) {
 		return (
-			<div className="space-y-6" aria-busy="true" role="status" aria-label="Loading appearance settings">
+			<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6" aria-busy="true" role="status" aria-label="Loading appearance settings">
 				<Skeleton className="h-8 w-48" />
 				<div className="flex gap-6">
 					<div className="flex-1 space-y-4">
@@ -284,7 +284,7 @@ export default function AppearancePage() {
 	};
 
 	return (
-		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-4">
+		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
 			{/* Page header */}
 			<div className="flex items-center justify-between gap-3">
 				<div className="min-w-0">

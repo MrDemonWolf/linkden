@@ -320,7 +320,7 @@ export default function SocialPage() {
 	let rowAnimIndex = 0;
 
 	return (
-		<div className="space-y-6">
+		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
 			<PageHeader
 				title="Social Networks"
 				badge={
