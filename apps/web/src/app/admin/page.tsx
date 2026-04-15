@@ -226,9 +226,9 @@ export default function AdminDashboardPage() {
 	];
 
 	return (
-		<div className="space-y-6">
+		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
 			{/* Greeting header */}
-			<div {...getAnimationProps(0)} className="pb-2 md:pb-4 flex items-center gap-3 flex-wrap">
+			<div {...getAnimationProps(0)} className="flex items-center gap-3 flex-wrap">
 				<h1 className="text-2xl font-bold tracking-tight">
 					<span className="text-base font-medium text-muted-foreground">{greeting}, </span>
 					{firstName}
@@ -341,7 +341,7 @@ export default function AdminDashboardPage() {
 			</div>
 
 			{/* Chart + Recent Link Clicks */}
-			<div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+			<div className="grid gap-4 lg:grid-cols-[1fr_360px]">
 				{/* Clicks chart */}
 				<div {...getAnimationProps(6)}>
 					<Card>

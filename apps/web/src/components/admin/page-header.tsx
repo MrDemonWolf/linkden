@@ -26,7 +26,7 @@ export function PageHeader({
 			role="banner"
 			aria-label={title}
 			style={style}
-			className={cn("pb-4 md:pb-6", className)}
+			className={cn(className)}
 		>
 			<div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
 				<div className="min-w-0">

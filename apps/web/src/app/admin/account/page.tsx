@@ -201,7 +201,7 @@ export default function AccountPage() {
 				description="Manage your password, two-factor authentication, and sign-in methods"
 			/>
 
-			<div className="max-w-2xl space-y-6">
+			<div className="space-y-6">
 				{/* Change Password */}
 				<Card>
 					<SectionHeader icon={Shield} title="Change Password" variant="muted" />
