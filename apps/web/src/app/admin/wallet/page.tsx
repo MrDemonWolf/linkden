@@ -14,6 +14,7 @@ import {
 	type WalletLivePreview,
 } from "@/components/admin/settings/wallet-section";
 import { WalletPassPreview } from "@/components/admin/wallet-pass-preview";
+import { DeviceFrame } from "@/components/admin/device-frame";
 
 export default function WalletPage() {
 	const qc = useQueryClient();
@@ -215,79 +216,60 @@ export default function WalletPage() {
 								</div>
 							</div>
 
-							{/* Phone frame mockup */}
+							{/* Unified device frame (shared with Appearance + Builder previews) */}
 							<div className="flex justify-center py-2">
-								<div className="relative rounded-[32px] border-2 border-border/30 bg-black/80 p-3 shadow-xl">
-									{/* Notch */}
-									<div className="absolute top-0 left-1/2 -translate-x-1/2 h-5 w-24 rounded-b-2xl bg-black/80" />
-									{/* Screen */}
-									<div className="overflow-hidden rounded-[22px] bg-neutral-900">
-										{/* Status bar */}
-										<div className="flex items-center justify-between px-6 py-2 text-[10px] font-medium text-white/70">
-											<span>9:41</span>
-											<div className="flex items-center gap-1">
-												<div className="h-2 w-3 rounded-sm border border-white/40 relative">
-													<div className="absolute inset-[1px] rounded-[1px] bg-white/60" />
-												</div>
-											</div>
-										</div>
-										{/* Pass */}
-										<div className="px-3 pb-4">
-											<WalletPassPreview
-												backgroundColor={
-													livePreview?.backgroundColor ??
-													previewQuery.data?.backgroundColor
-												}
-												foregroundColor={
-													livePreview?.foregroundColor ??
-													previewQuery.data?.foregroundColor
-												}
-												labelColor={
-													livePreview?.labelColor ?? previewQuery.data?.labelColor
-												}
-												logoUrl={
-													livePreview?.logoUrl ??
-													previewQuery.data?.logoUrl ??
-													undefined
-												}
-												organizationName={
-													livePreview?.organizationName ??
-													previewQuery.data?.organizationName
-												}
-												profileName={
-													previewQuery.data?.profile?.name ?? undefined
-												}
-												profileEmail={
-													previewQuery.data?.profile?.email ?? undefined
-												}
-												profileImage={
-													previewQuery.data?.profile?.image ?? undefined
-												}
-												passDescription={
-													livePreview?.passDescription ??
-													previewQuery.data?.passDescription
-												}
-												qrUrl={publicProfileUrl}
-												showEmail={
-													livePreview?.showEmail ??
-													previewQuery.data?.showEmail
-												}
-												showName={
-													livePreview?.showName ??
-													previewQuery.data?.showName
-												}
-												showQrCode={
-													livePreview?.showQrCode ??
-													previewQuery.data?.showQrCode
-												}
-											/>
-										</div>
+								<DeviceFrame width={300} height="auto" previewDark>
+									<div className="px-3 pt-1 pb-4">
+										<WalletPassPreview
+											backgroundColor={
+												livePreview?.backgroundColor ??
+												previewQuery.data?.backgroundColor
+											}
+											foregroundColor={
+												livePreview?.foregroundColor ??
+												previewQuery.data?.foregroundColor
+											}
+											labelColor={
+												livePreview?.labelColor ?? previewQuery.data?.labelColor
+											}
+											logoUrl={
+												livePreview?.logoUrl ??
+												previewQuery.data?.logoUrl ??
+												undefined
+											}
+											organizationName={
+												livePreview?.organizationName ??
+												previewQuery.data?.organizationName
+											}
+											profileName={
+												previewQuery.data?.profile?.name ?? undefined
+											}
+											profileEmail={
+												previewQuery.data?.profile?.email ?? undefined
+											}
+											profileImage={
+												previewQuery.data?.profile?.image ?? undefined
+											}
+											passDescription={
+												livePreview?.passDescription ??
+												previewQuery.data?.passDescription
+											}
+											qrUrl={publicProfileUrl}
+											showEmail={
+												livePreview?.showEmail ??
+												previewQuery.data?.showEmail
+											}
+											showName={
+												livePreview?.showName ??
+												previewQuery.data?.showName
+											}
+											showQrCode={
+												livePreview?.showQrCode ??
+												previewQuery.data?.showQrCode
+											}
+										/>
 									</div>
-									{/* Home indicator */}
-									<div className="flex justify-center pt-2 pb-1">
-										<div className="h-1 w-24 rounded-full bg-white/20" />
-									</div>
-								</div>
+								</DeviceFrame>
 							</div>
 
 							<p className="mt-2 text-center text-[11px] text-muted-foreground">
