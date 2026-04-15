@@ -2,14 +2,30 @@
   "name": "@linkden/ui",
   "type": "module",
   "exports": {
-    ".": { "default": "./src/index.ts" },
-    "./*": { "default": "./src/*.ts" },
-    "./components/tabs": { "default": "./src/components/tabs.tsx" },
-    "./components/switch": { "default": "./src/components/switch.tsx" },
-    "./components/badge": { "default": "./src/components/badge.tsx" },
-    "./components/tooltip": { "default": "./src/components/tooltip.tsx" },
-    "./themes": { "default": "./src/themes.ts" },
-    "./banner-presets": { "default": "./src/banner-presets.ts" }
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    },
+    "./components/tabs": {
+      "default": "./src/components/tabs.tsx"
+    },
+    "./components/switch": {
+      "default": "./src/components/switch.tsx"
+    },
+    "./components/badge": {
+      "default": "./src/components/badge.tsx"
+    },
+    "./components/tooltip": {
+      "default": "./src/components/tooltip.tsx"
+    },
+    "./themes": {
+      "default": "./src/themes.ts"
+    },
+    "./banner-presets": {
+      "default": "./src/banner-presets.ts"
+    }
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",
@@ -28,8 +44,8 @@
     "tailwind-merge": "^3.5.0"
   },
   "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
     "@linkden/config": "workspace:*",
