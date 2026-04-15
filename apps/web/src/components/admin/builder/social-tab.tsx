@@ -11,6 +11,15 @@ import { getAccessibleIconFill, isLowLuminance } from "@linkden/ui/color-contras
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { SectionHeader } from "@/components/admin/section-header";
 import { NetworkRow } from "@/components/admin/social/network-row";
 import {
@@ -18,6 +27,42 @@ import {
 	CATEGORY_LABELS,
 } from "@/components/admin/social/social-constants";
 import { cn, getAdminThemeColors } from "@/lib/utils";
+
+const URL_PLACEHOLDERS: Record<string, string> = {
+	twitter: "https://twitter.com/yourhandle",
+	x: "https://x.com/yourhandle",
+	instagram: "https://instagram.com/yourhandle",
+	facebook: "https://facebook.com/yourpage",
+	linkedin: "https://linkedin.com/in/yourhandle",
+	github: "https://github.com/yourhandle",
+	gitlab: "https://gitlab.com/yourhandle",
+	youtube: "https://youtube.com/@yourhandle",
+	tiktok: "https://tiktok.com/@yourhandle",
+	twitch: "https://twitch.tv/yourhandle",
+	discord: "https://discord.gg/yourinvite",
+	telegram: "https://t.me/yourhandle",
+	whatsapp: "https://wa.me/1234567890",
+	reddit: "https://reddit.com/user/yourhandle",
+	pinterest: "https://pinterest.com/yourhandle",
+	snapchat: "https://snapchat.com/add/yourhandle",
+	threads: "https://threads.net/@yourhandle",
+	mastodon: "https://mastodon.social/@yourhandle",
+	bluesky: "https://bsky.app/profile/yourhandle",
+	spotify: "https://open.spotify.com/artist/yourid",
+	"apple-music": "https://music.apple.com/artist/yourid",
+	soundcloud: "https://soundcloud.com/yourhandle",
+	bandcamp: "https://yourhandle.bandcamp.com",
+	"buy-me-a-coffee": "https://buymeacoffee.com/yourhandle",
+	patreon: "https://patreon.com/yourhandle",
+	kofi: "https://ko-fi.com/yourhandle",
+	behance: "https://behance.net/yourhandle",
+	dribbble: "https://dribbble.com/yourhandle",
+	medium: "https://medium.com/@yourhandle",
+	substack: "https://yourhandle.substack.com",
+	blogger: "https://yourblog.blogspot.com",
+	email: "mailto:you@example.com",
+	website: "https://yoursite.com",
+};
 
 interface SocialTabProps {
 	onDirtyChange: (dirty: boolean) => void;
@@ -33,6 +78,24 @@ export function SocialTab({ onDirtyChange }: SocialTabProps) {
 	const [drafts, setDrafts] = useState<Record<string, NetworkDraft>>({});
 	const [socialInitialized, setSocialInitialized] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
+	const [pendingSlug, setPendingSlug] = useState<string | null>(null);
+	const [pendingUrl, setPendingUrl] = useState("");
+
+	const pendingBrand = useMemo(
+		() => (pendingSlug ? socialBrands.find((b) => b.slug === pendingSlug) ?? null : null),
+		[pendingSlug],
+	);
+
+	const pendingUrlValid = useMemo(() => {
+		const trimmed = pendingUrl.trim();
+		if (!trimmed) return false;
+		try {
+			const u = new URL(trimmed);
+			return u.protocol === "http:" || u.protocol === "https:";
+		} catch {
+			return false;
+		}
+	}, [pendingUrl]);
 
 	const dbRows = socialsQuery.data ?? [];
 
@@ -80,7 +143,7 @@ export function SocialTab({ onDirtyChange }: SocialTabProps) {
 		}
 
 		inactive.sort((a, b) => a.name.localeCompare(b.name));
-		return inactive.slice(0, 20);
+		return inactive;
 	}, [allItems, activeNetworks, searchQuery]);
 
 	const socialDirty = useMemo(() => {
@@ -124,12 +187,32 @@ export function SocialTab({ onDirtyChange }: SocialTabProps) {
 		});
 	};
 
-	const handleActivateNetwork = (slug: string) => {
+	const openAddDialog = (slug: string) => {
+		setPendingSlug(slug);
+		setPendingUrl("");
+	};
+
+	const closeAddDialog = () => {
+		setPendingSlug(null);
+		setPendingUrl("");
+	};
+
+	const handleConfirmAddNetwork = () => {
+		if (!pendingSlug || !pendingUrlValid) return;
+		const slug = pendingSlug;
+		const url = pendingUrl.trim();
 		setDrafts((prev) => ({
 			...prev,
-			[slug]: { ...prev[slug], isActive: true },
+			[slug]: { ...prev[slug], url, isActive: true },
 		}));
 		setSearchQuery("");
+		closeAddDialog();
+		// Flush state, then scroll to new row
+		setTimeout(() => {
+			document
+				.getElementById(`network-${slug}`)
+				?.scrollIntoView({ behavior: "smooth", block: "center" });
+		}, 50);
 	};
 
 	const handleRemoveNetwork = (slug: string) => {
@@ -214,7 +297,7 @@ export function SocialTab({ onDirtyChange }: SocialTabProps) {
 										<button
 											type="button"
 											onClick={() => handleRemoveNetwork(social.slug)}
-											className="absolute -right-1 -top-1 hidden group-hover:flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm transition-opacity"
+											className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm opacity-60 transition-opacity hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100"
 											aria-label={`Remove ${social.name}`}
 										>
 											<Trash2 className="h-3 w-3" />
@@ -274,8 +357,8 @@ export function SocialTab({ onDirtyChange }: SocialTabProps) {
 									<button
 										key={network.slug}
 										type="button"
-										onClick={() => handleActivateNetwork(network.slug)}
-										className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent/50 group/item"
+										onClick={() => openAddDialog(network.slug)}
+										className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent/50 focus-visible:bg-accent/50 focus-visible:outline-none group/item"
 									>
 										<div
 											className={cn(
@@ -300,6 +383,80 @@ export function SocialTab({ onDirtyChange }: SocialTabProps) {
 					)}
 				</CardContent>
 			</Card>
+
+			<Dialog
+				open={pendingSlug !== null}
+				onOpenChange={(open) => {
+					if (!open) closeAddDialog();
+				}}
+			>
+				<DialogContent className="sm:max-w-md">
+					<DialogHeader>
+						<DialogTitle className="flex items-center gap-3">
+							{pendingBrand && (() => {
+								const { bg, fg } = getAdminThemeColors(resolvedTheme);
+								const fill = getAccessibleIconFill(pendingBrand.hex, bg, fg);
+								const needsRing = isLowLuminance(pendingBrand.hex);
+								return (
+									<div
+										className={cn(
+											"flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+											needsRing && "ring-1 ring-border dark:ring-white/20",
+										)}
+										style={{ backgroundColor: `${pendingBrand.hex}20` }}
+									>
+										<svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+											<path d={pendingBrand.svgPath} fill={fill} />
+										</svg>
+									</div>
+								);
+							})()}
+							<span>Add {pendingBrand?.name ?? "Network"}</span>
+						</DialogTitle>
+						<DialogDescription>
+							Enter the URL for your {pendingBrand?.name ?? "profile"}. It will appear on your public page.
+						</DialogDescription>
+					</DialogHeader>
+
+					<form
+						onSubmit={(e) => {
+							e.preventDefault();
+							handleConfirmAddNetwork();
+						}}
+						className="space-y-2"
+					>
+						<Label htmlFor="add-network-url" className="text-xs">
+							URL
+						</Label>
+						<Input
+							id="add-network-url"
+							type="url"
+							autoFocus
+							value={pendingUrl}
+							onChange={(e) => setPendingUrl(e.target.value)}
+							placeholder={
+								pendingSlug ? URL_PLACEHOLDERS[pendingSlug] ?? "https://" : "https://"
+							}
+							aria-invalid={pendingUrl.length > 0 && !pendingUrlValid}
+						/>
+						{pendingUrl.length > 0 && !pendingUrlValid && (
+							<p className="text-xs text-destructive">
+								Enter a valid URL starting with http:// or https://
+							</p>
+						)}
+
+						<DialogFooter className="pt-2">
+							<Button type="button" variant="ghost" onClick={closeAddDialog}>
+								Cancel
+							</Button>
+							<Button type="submit" disabled={!pendingUrlValid}>
+								<Plus className="mr-1.5 h-3.5 w-3.5" />
+								Add Network
+							</Button>
+						</DialogFooter>
+					</form>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
