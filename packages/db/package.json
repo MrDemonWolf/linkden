@@ -24,6 +24,6 @@
   "devDependencies": {
     "@linkden/config": "workspace:*",
     "drizzle-kit": "^0.31.9",
-    "typescript": "^5"
+    "typescript": "^5.9.3"
   }
 }
