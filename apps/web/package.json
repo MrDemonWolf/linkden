@@ -55,13 +55,13 @@
     "@linkden/config": "workspace:*",
     "@tailwindcss/postcss": "^4.2.1",
     "@tanstack/react-query-devtools": "^5.91.3",
-    "@types/node": "^25",
+    "@types/node": "^25.5.0",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "alchemy": "^0.89.0",
     "tailwindcss": "^4.2.1",
-    "typescript": "^5",
+    "typescript": "^5.9.3",
     "wrangler": "^4.72.0"
   }
 }
