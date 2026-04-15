@@ -16,15 +16,15 @@
     "@linkden/env": "workspace:*",
     "@linkden/ui": "workspace:*",
     "@linkden/validators": "workspace:*",
-    "@trpc/client": "^11.12.0",
-    "@trpc/server": "^11.12.0",
-    "dotenv": "^17.3.1",
-    "drizzle-orm": "^0.45.1",
+    "@trpc/client": "^11.16.0",
+    "@trpc/server": "^11.16.0",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@linkden/config": "workspace:*",
-    "hono": "^4.12.7",
+    "hono": "^4.12.14",
     "typescript": "^5.9.3"
   }
 }
