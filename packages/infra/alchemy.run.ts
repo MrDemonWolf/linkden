@@ -21,6 +21,7 @@ const imagesBucket = await R2Bucket("images");
 const rlAuth = RateLimit({ namespace_id: 1001, simple: { limit: 10, period: 60 } });
 const rlStrict = RateLimit({ namespace_id: 1002, simple: { limit: 5, period: 60 } });
 const rlUpload = RateLimit({ namespace_id: 1003, simple: { limit: 20, period: 60 } });
+const rlPublic = RateLimit({ namespace_id: 1004, simple: { limit: 60, period: 60 } });
 
 export const web = await Nextjs("linkden", {
   cwd: "../../apps/web",
@@ -65,6 +66,7 @@ export const server = await Worker("server", {
     RL_AUTH: rlAuth,
     RL_STRICT: rlStrict,
     RL_UPLOAD: rlUpload,
+    RL_PUBLIC: rlPublic,
     CORS_ORIGIN: alchemy.env.CORS_ORIGIN!,
     BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
     BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
