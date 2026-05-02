@@ -491,7 +491,9 @@ export default function AdminDashboardPage() {
 								<tbody>
 									{topLinks.data.map((link, i) => (
 										<tr key={String(link.id ?? i)} className="border-b border-border/20 last:border-0">
-											<td className="py-2.5 text-xs text-muted-foreground">{i + 1}</td>
+											<td className="py-2.5 text-[11px] font-mono text-muted-foreground tabular-nums">
+												{String(i + 1).padStart(2, "0")}
+											</td>
 											<td className="py-2.5">
 												<p className="text-xs font-medium truncate max-w-[200px]">{(link.title as string | null) || "Untitled"}</p>
 											</td>

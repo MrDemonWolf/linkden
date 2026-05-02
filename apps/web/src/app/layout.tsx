@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Montserrat, Roboto } from "next/font/google";
+import { JetBrains_Mono, Montserrat, Roboto } from "next/font/google";
 import "../index.css";
 import Providers from "@/components/providers";
 
@@ -20,6 +20,13 @@ const roboto = Roboto({
 	subsets: ["latin"],
 	variable: "--font-sans",
 	weight: ["400", "500"],
+	display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+	subsets: ["latin"],
+	variable: "--font-mono",
+	weight: ["400", "500", "600"],
 	display: "swap",
 });
 
@@ -107,9 +114,9 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" suppressHydrationWarning>
+		<html lang="en" className="dark" suppressHydrationWarning>
 			<body
-				className={`${montserrat.variable} ${roboto.variable} antialiased`}
+				className={`${montserrat.variable} ${roboto.variable} ${jetbrainsMono.variable} antialiased`}
 			>
 				<Providers>{children}</Providers>
 			</body>
