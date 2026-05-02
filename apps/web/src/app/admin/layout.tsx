@@ -73,7 +73,7 @@ function DesktopTopBar({ pathname, siteName }: { pathname: string; siteName: str
 				<h2 className="text-sm font-semibold">{currentPageLabel}</h2>
 				<span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5">
 					<span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--primary)]" />
-					<span className="text-[10px] font-medium text-foreground font-mono">{siteName.toLowerCase()}</span>
+					<span className="text-[10px] font-medium text-foreground font-mono">{siteName}</span>
 				</span>
 			</div>
 			<div className="flex items-center gap-3">
