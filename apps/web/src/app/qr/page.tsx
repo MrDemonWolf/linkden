@@ -45,22 +45,27 @@ export default function QRPage() {
 	}, []);
 
 	return (
-		<div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 sm:p-8">
-			<h1 className="mb-6 text-2xl font-bold text-foreground">
+		<div className="login-bg flex min-h-screen flex-col items-center justify-center p-4 sm:p-8">
+			<p className="mb-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-mono">
+				LinkDen · QR
+			</p>
+			<h1 className="mb-6 text-2xl font-semibold tracking-[-0.015em] text-foreground">
 				Scan to visit my page
 			</h1>
-			<canvas
-				ref={canvasRef}
-				className="rounded-lg border-2 border-border shadow-lg"
-				aria-label="QR code linking to this page"
-			/>
+			<div className="rounded-2xl border border-primary/30 bg-card p-4 backdrop-blur-md shadow-[0_0_40px_-12px_var(--primary)]">
+				<canvas
+					ref={canvasRef}
+					className="rounded-lg"
+					aria-label="QR code linking to this page"
+				/>
+			</div>
 			<p className="sr-only">Visit this page at: {url}</p>
-			<p className="mt-4 text-sm text-muted-foreground">
-				Point your camera at this code to open the link
+			<p className="mt-4 text-xs text-muted-foreground font-mono">
+				{url || "Point your camera at this code to open the link"}
 			</p>
 			<a
 				href="/"
-				className="mt-6 text-primary hover:underline"
+				className="mt-6 text-sm text-primary hover:underline"
 			>
 				Back to page
 			</a>
