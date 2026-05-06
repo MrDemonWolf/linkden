@@ -126,7 +126,7 @@ function WelcomePage() {
 				<div {...getAnimationProps(3)}>
 					<a
 						href="/admin/setup"
-						className="mt-10 inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 px-7 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-200 hover:from-blue-500 hover:to-blue-400 hover:scale-[1.02] active:scale-[0.98]"
+						className="mt-10 inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-primary to-[color:var(--chart-2)] px-7 text-sm font-semibold text-primary-foreground shadow-[0_0_30px_-8px_var(--primary)] transition-all duration-200 hover:shadow-[0_0_40px_-8px_var(--primary)] hover:scale-[1.02] active:scale-[0.98]"
 					>
 						Get Started
 						<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

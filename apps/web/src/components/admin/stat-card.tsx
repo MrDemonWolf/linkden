@@ -34,13 +34,18 @@ export function StatCard({
 		<Card size="sm" className="group relative overflow-hidden">
 			<CardContent className="flex items-center gap-3">
 				<div
-					className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", iconBg)}
+					className={cn(
+						"flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/30",
+						iconBg,
+					)}
 					aria-hidden="true"
 				>
 					<Icon className={cn("h-4 w-4", iconColor)} />
 				</div>
 				<div className="min-w-0 flex-1">
-					<p className="text-[11px] text-muted-foreground">{label}</p>
+					<p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-mono">
+						{label}
+					</p>
 					{isLoading ? (
 						<Skeleton className="mt-1 h-5 w-12" />
 					) : (

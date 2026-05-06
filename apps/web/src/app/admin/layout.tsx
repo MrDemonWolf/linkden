@@ -61,7 +61,7 @@ const BOTTOM_NAV_ITEMS = [
 	{ href: "/admin/settings" as const, label: "Settings", icon: Settings },
 ];
 
-function DesktopTopBar({ pathname }: { pathname: string }) {
+function DesktopTopBar({ pathname, siteName }: { pathname: string; siteName: string }) {
 	const currentPageLabel =
 		ALL_NAV_ITEMS.find((item) =>
 			item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href),
@@ -69,7 +69,13 @@ function DesktopTopBar({ pathname }: { pathname: string }) {
 
 	return (
 		<div className="hidden md:flex h-14 shrink-0 items-center justify-between border-b border-white/10 px-6">
-			<h2 className="text-sm font-semibold">{currentPageLabel}</h2>
+			<div className="flex items-center gap-3">
+				<h2 className="text-sm font-semibold">{currentPageLabel}</h2>
+				<span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5">
+					<span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--primary)]" />
+					<span className="text-[10px] font-medium text-foreground font-mono">{siteName}</span>
+				</span>
+			</div>
 			<div className="flex items-center gap-3">
 				<ThemeToggle />
 				<a href="/" target="_blank" rel="noopener noreferrer">
@@ -123,13 +129,19 @@ function SidebarContent({
 				aria-current={isActive ? "page" : undefined}
 				aria-label={item.label === "Connections" && unreadCount > 0 ? `Connections, ${unreadCount} unread` : undefined}
 				className={cn(
-					"flex items-center gap-2.5 rounded-lg px-3 py-2 min-h-[44px] text-xs font-medium transition-all",
+					"relative flex items-center gap-2.5 rounded-lg px-3 py-2 min-h-[44px] text-xs font-medium transition-all",
 					isActive
-						? "bg-primary/10 border-l-2 border-primary -ml-px text-foreground"
+						? "bg-primary/10 text-foreground"
 						: "text-muted-foreground hover:text-foreground hover:bg-white/5",
 				)}
 			>
-				<Icon className="h-4 w-4 shrink-0" />
+				{isActive && (
+					<span
+						aria-hidden
+						className="absolute left-0 top-2 bottom-2 w-0.5 rounded-sm bg-primary shadow-[0_0_10px_var(--primary)]"
+					/>
+				)}
+				<Icon className={cn("h-4 w-4 shrink-0", isActive && "text-primary")} />
 				<span>{item.label}</span>
 				{item.label === "Connections" && unreadCount > 0 && (
 					<span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500 px-1 text-[11px] font-semibold text-white">
@@ -449,7 +461,7 @@ export default function AdminLayout({
 
 			{/* Right side: top bar + main content */}
 			<div className="flex flex-1 flex-col overflow-hidden">
-				<DesktopTopBar pathname={pathname} />
+				<DesktopTopBar pathname={pathname} siteName={siteName} />
 				<main id="main-content" className="flex-1 overflow-y-auto pt-12 pb-16 md:pt-0 md:pb-0">
 					<div className="mx-auto max-w-6xl px-4 py-4 sm:px-4 md:p-6">{children}</div>
 				</main>
