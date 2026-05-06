@@ -7,6 +7,7 @@ interface PageHeaderProps {
 	description?: string;
 	actions?: React.ReactNode;
 	badge?: React.ReactNode;
+	kicker?: React.ReactNode;
 	children?: React.ReactNode;
 	className?: string;
 	style?: React.CSSProperties;
@@ -17,6 +18,7 @@ export function PageHeader({
 	description,
 	actions,
 	badge,
+	kicker,
 	children,
 	className,
 	style,
@@ -30,8 +32,13 @@ export function PageHeader({
 		>
 			<div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
 				<div className="min-w-0">
+					{kicker && (
+						<p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-mono mb-1">
+							{kicker}
+						</p>
+					)}
 					<div className="flex items-center gap-2">
-						<h1 className="text-base font-semibold tracking-tight truncate">{title}</h1>
+						<h1 className="text-xl font-semibold tracking-[-0.015em] truncate">{title}</h1>
 						{badge}
 					</div>
 					{description && (
