@@ -177,7 +177,7 @@ app.post("/api/upload", async (c) => {
     return c.json({ error: `MIME type not allowed: ${file.type}` }, 400);
   }
 
-  const validPurposes = ["avatar", "banner", "og_image", "wallet_logo"];
+  const validPurposes = ["avatar", "banner", "og_image", "wallet_logo", "logo", "favicon", "login_logo", "login_background"];
   if (!purpose || !validPurposes.includes(purpose)) {
     return c.json({ error: `Invalid upload purpose. Allowed purposes: ${validPurposes.join(", ")}` }, 400);
   }

@@ -87,6 +87,10 @@ interface SavedState {
 	footerBrandingEnabled: boolean;
 	footerBrandingText: string;
 	footerBrandingLink: string;
+	loginLogoUrl: string;
+	loginBgMode: string;
+	loginBgPreset: string;
+	loginBgCustomUrl: string;
 	timezone: string;
 	consentBannerEnabled: boolean;
 	consentBannerText: string;
@@ -120,6 +124,10 @@ function buildSavedState(s: Record<string, string>): SavedState {
 		footerBrandingEnabled: s.branding_enabled !== "false",
 		footerBrandingText: s.branding_text ?? "",
 		footerBrandingLink: s.branding_link ?? "",
+		loginLogoUrl: s.branding_login_logo_url ?? "",
+		loginBgMode: s.branding_login_bg_mode ?? "default",
+		loginBgPreset: s.branding_login_bg_preset ?? "wolf-shadow",
+		loginBgCustomUrl: s.branding_login_bg_custom_url ?? "",
 		timezone: s.timezone ?? "",
 		consentBannerEnabled: s.consent_banner_enabled !== "false",
 		consentBannerText: s.consent_banner_text ?? "",
@@ -203,6 +211,10 @@ export default function SettingsPage() {
 		footerBrandingEnabled: true,
 		footerBrandingText: "",
 		footerBrandingLink: "",
+		loginLogoUrl: "",
+		loginBgMode: "default",
+		loginBgPreset: "wolf-shadow",
+		loginBgCustomUrl: "",
 		timezone: "",
 		consentBannerEnabled: true,
 		consentBannerText: "",
@@ -243,6 +255,10 @@ export default function SettingsPage() {
 	const [footerBrandingEnabled, setFooterBrandingEnabled] = useState(true);
 	const [footerBrandingText, setFooterBrandingText] = useState("");
 	const [footerBrandingLink, setFooterBrandingLink] = useState("");
+	const [loginLogoUrl, setLoginLogoUrl] = useState("");
+	const [loginBgMode, setLoginBgMode] = useState("default");
+	const [loginBgPreset, setLoginBgPreset] = useState("wolf-shadow");
+	const [loginBgCustomUrl, setLoginBgCustomUrl] = useState("");
 	const [timezone, setTimezone] = useState("");
 
 	// Consent
@@ -282,6 +298,10 @@ export default function SettingsPage() {
 			setFooterBrandingEnabled(s.footerBrandingEnabled);
 			setFooterBrandingText(s.footerBrandingText);
 			setFooterBrandingLink(s.footerBrandingLink);
+			setLoginLogoUrl(s.loginLogoUrl);
+			setLoginBgMode(s.loginBgMode);
+			setLoginBgPreset(s.loginBgPreset);
+			setLoginBgCustomUrl(s.loginBgCustomUrl);
 			setTimezone(s.timezone);
 			setConsentBannerEnabled(s.consentBannerEnabled);
 			setConsentBannerText(s.consentBannerText);
@@ -315,6 +335,10 @@ export default function SettingsPage() {
 		|| footerBrandingEnabled !== savedState.footerBrandingEnabled
 		|| footerBrandingText !== savedState.footerBrandingText
 		|| footerBrandingLink !== savedState.footerBrandingLink
+		|| loginLogoUrl !== savedState.loginLogoUrl
+		|| loginBgMode !== savedState.loginBgMode
+		|| loginBgPreset !== savedState.loginBgPreset
+		|| loginBgCustomUrl !== savedState.loginBgCustomUrl
 		|| timezone !== savedState.timezone
 		|| consentBannerEnabled !== savedState.consentBannerEnabled
 		|| consentBannerText !== savedState.consentBannerText
@@ -354,6 +378,10 @@ export default function SettingsPage() {
 		setFooterBrandingEnabled(savedState.footerBrandingEnabled);
 		setFooterBrandingText(savedState.footerBrandingText);
 		setFooterBrandingLink(savedState.footerBrandingLink);
+		setLoginLogoUrl(savedState.loginLogoUrl);
+		setLoginBgMode(savedState.loginBgMode);
+		setLoginBgPreset(savedState.loginBgPreset);
+		setLoginBgCustomUrl(savedState.loginBgCustomUrl);
 		setTimezone(savedState.timezone);
 		setConsentBannerEnabled(savedState.consentBannerEnabled);
 		setConsentBannerText(savedState.consentBannerText);
@@ -391,6 +419,10 @@ export default function SettingsPage() {
 				{ key: "branding_enabled", value: String(footerBrandingEnabled) },
 				{ key: "branding_text", value: footerBrandingText },
 				{ key: "branding_link", value: footerBrandingLink },
+				{ key: "branding_login_logo_url", value: loginLogoUrl },
+				{ key: "branding_login_bg_mode", value: loginBgMode },
+				{ key: "branding_login_bg_preset", value: loginBgPreset },
+				{ key: "branding_login_bg_custom_url", value: loginBgCustomUrl },
 				{ key: "timezone", value: timezone },
 				{ key: "consent_banner_enabled", value: String(consentBannerEnabled) },
 				{ key: "consent_banner_text", value: consentBannerText },
@@ -412,6 +444,7 @@ export default function SettingsPage() {
 				adminBrandingEnabled,
 				siteName, logoUrl, faviconUrl, ppUrl, tosUrl, ppMode, tosMode, ppText, tosText,
 				footerBrandingEnabled, footerBrandingText, footerBrandingLink,
+				loginLogoUrl, loginBgMode, loginBgPreset, loginBgCustomUrl,
 			timezone, consentBannerEnabled, consentBannerText, consentPrivacyUrl, consentCategories,
 			});
 			invalidate();
@@ -600,6 +633,10 @@ export default function SettingsPage() {
 					footerBrandingText={footerBrandingText}
 					footerBrandingLink={footerBrandingLink}
 					profileName={settingsQuery.data?.profile_name ?? ""}
+					loginLogoUrl={loginLogoUrl}
+					loginBgMode={loginBgMode}
+					loginBgPreset={loginBgPreset}
+					loginBgCustomUrl={loginBgCustomUrl}
 					onSiteNameChange={setSiteName}
 					onLogoUrlChange={setLogoUrl}
 					onFaviconUrlChange={setFaviconUrl}
@@ -613,6 +650,10 @@ export default function SettingsPage() {
 					onFooterBrandingEnabledChange={setFooterBrandingEnabled}
 					onFooterBrandingTextChange={setFooterBrandingText}
 					onFooterBrandingLinkChange={setFooterBrandingLink}
+					onLoginLogoUrlChange={setLoginLogoUrl}
+					onLoginBgModeChange={setLoginBgMode}
+					onLoginBgPresetChange={setLoginBgPreset}
+					onLoginBgCustomUrlChange={setLoginBgCustomUrl}
 				/>
 			</SectionCard>
 
