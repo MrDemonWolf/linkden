@@ -13,14 +13,16 @@ interface ProfileSocialIconsProps {
 	networks: SocialNetwork[];
 	colorMode: "light" | "dark";
 	themeColors: ThemeColors;
+	shape?: "circle" | "rounded-square";
 }
 
 /**
  * Social icons row rendered in the profile header section (below bio, above blocks).
  * Pulls data from the socialNetwork table rather than from blocks.
  */
-export function ProfileSocialIcons({ networks, colorMode, themeColors }: ProfileSocialIconsProps) {
+export function ProfileSocialIcons({ networks, colorMode, themeColors, shape = "circle" }: ProfileSocialIconsProps) {
 	if (networks.length === 0) return null;
+	const radiusClass = shape === "rounded-square" ? "rounded-lg" : "rounded-full";
 
 	return (
 		<nav
@@ -39,7 +41,7 @@ export function ProfileSocialIcons({ networks, colorMode, themeColors }: Profile
 						href={network.url}
 						target="_blank"
 						rel="noopener noreferrer"
-						className="group inline-flex items-center justify-center h-10 w-10 rounded-full transition-all duration-300 hover:scale-110 hover:-translate-y-0.5 hover:bg-[var(--ld-primary)]/10 min-h-[44px] min-w-[44px] focus-visible:outline-2 focus-visible:outline-offset-2 [&_svg_path]:transition-[fill] [&_svg_path]:duration-200 hover:[&_svg_path]:!fill-[var(--ld-primary)]"
+						className={`group inline-flex items-center justify-center h-10 w-10 ${radiusClass} transition-all duration-300 hover:scale-110 hover:-translate-y-0.5 hover:bg-[var(--ld-primary)]/10 min-h-[44px] min-w-[44px] focus-visible:outline-2 focus-visible:outline-offset-2 [&_svg_path]:transition-[fill] [&_svg_path]:duration-200 hover:[&_svg_path]:!fill-[var(--ld-primary)]`}
 						style={{
 							color: themeColors.fg,
 							outlineColor: themeColors.primary,
