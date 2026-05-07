@@ -2,11 +2,15 @@
   "name": "@linkden/validators",
   "type": "module",
   "exports": {
-    ".": { "default": "./src/index.ts" },
-    "./*": { "default": "./src/*.ts" }
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
   },
   "dependencies": {
-    "zod": "^4.3.6"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@linkden/config": "workspace:*",
