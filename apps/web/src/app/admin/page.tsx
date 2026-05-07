@@ -14,16 +14,11 @@ import {
 	ExternalLink,
 	Plus,
 	Share2,
-	Trophy,
-	Globe,
 	ChevronDown,
 } from "lucide-react";
 import {
 	BarChart,
 	Bar,
-	AreaChart,
-	Area,
-	Legend,
 	XAxis,
 	YAxis,
 	CartesianGrid,
@@ -38,23 +33,16 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import { PeriodSelector, type Period } from "@/components/admin/period-selector";
+import { ViewsClicksChart } from "@/components/admin/analytics/views-clicks-chart";
+import { TopLinksList } from "@/components/admin/analytics/top-links-list";
+import { CountriesList } from "@/components/admin/analytics/countries-list";
+import { ReferrersList } from "@/components/admin/analytics/referrers-list";
 import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 
 const chartConfig: ChartConfig = {
 	count: {
 		label: "Clicks",
 		color: "var(--primary, #0FACED)",
-	},
-};
-
-const areaChartConfig: ChartConfig = {
-	views: {
-		label: "Views",
-		color: "var(--primary, #0FACED)",
-	},
-	clicks: {
-		label: "Clicks",
-		color: "#22c55e",
 	},
 };
 
@@ -150,29 +138,6 @@ export default function AdminDashboardPage() {
 	}));
 
 	const clicks = recentClicks.data ?? [];
-
-	// Merged views+clicks time series for detailed analytics
-	const areaChartData = useMemo(() => {
-		const viewsMap = new Map<string, number>();
-		const clicksMap = new Map<string, number>();
-		for (const d of viewsOverTime.data ?? []) {
-			viewsMap.set(d.date as string, d.count as number);
-		}
-		for (const d of clicksOverTime.data ?? []) {
-			clicksMap.set(d.date as string, d.count as number);
-		}
-		const allDates = new Set([...viewsMap.keys(), ...clicksMap.keys()]);
-		return [...allDates].sort().map((date) => ({
-			date,
-			label: new Date(date).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-			views: viewsMap.get(date) ?? 0,
-			clicks: clicksMap.get(date) ?? 0,
-		}));
-	}, [viewsOverTime.data, clicksOverTime.data]);
-
-	const totalReferrerCount = (referrers.data ?? []).reduce(
-		(sum, r) => sum + (r.count as number), 0,
-	);
 
 	const statCards = [
 		{
@@ -464,57 +429,12 @@ export default function AdminDashboardPage() {
 
 			{/* Top Performing Links */}
 			<div {...getAnimationProps(8)}>
-				<Card>
-					<CardHeader>
-						<CardTitle className="flex items-center gap-1.5">
-							<Eye className="h-4 w-4 text-blue-400" aria-hidden="true" />
-							Top Performing Links
-						</CardTitle>
-					</CardHeader>
-					<CardContent>
-						{topLinks.isLoading ? (
-							Array.from({ length: 5 }).map((_, i) => (
-								<Skeleton key={`tbl-skeleton-${i}`} className="h-10 w-full mb-1" />
-							))
-						) : !topLinks.data?.length ? (
-							<p className="text-xs text-muted-foreground py-4 text-center">No clicks yet</p>
-						) : (
-							<table className="w-full">
-								<thead>
-									<tr className="border-b border-border/40">
-										<th className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider py-2 text-left w-8">#</th>
-										<th className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider py-2 text-left">Link Title</th>
-										<th className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider py-2 text-left hidden sm:table-cell">Destination</th>
-										<th className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider py-2 text-right w-20">Clicks</th>
-									</tr>
-								</thead>
-								<tbody>
-									{topLinks.data.map((link, i) => (
-										<tr key={String(link.id ?? i)} className="border-b border-border/20 last:border-0">
-											<td className="py-2.5 text-[11px] font-mono text-muted-foreground tabular-nums">
-												{String(i + 1).padStart(2, "0")}
-											</td>
-											<td className="py-2.5">
-												<p className="text-xs font-medium truncate max-w-[200px]">{(link.title as string | null) || "Untitled"}</p>
-											</td>
-											<td className="py-2.5 hidden sm:table-cell">
-												<span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-													<ExternalLink className="h-2.5 w-2.5" />
-													{extractDomain((link.url as string) || "")}
-												</span>
-											</td>
-											<td className="py-2.5 text-right">
-												<span className="text-xs font-mono tabular-nums font-medium">
-													{(link.clicks as number).toLocaleString()}
-												</span>
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						)}
-					</CardContent>
-				</Card>
+				<TopLinksList
+					title="Top Performing Links"
+					items={topLinks.data}
+					isLoading={topLinks.isLoading}
+					limit={10}
+				/>
 			</div>
 
 			{/* Detailed Analytics — collapsible */}
@@ -532,132 +452,24 @@ export default function AdminDashboardPage() {
 
 			{showDetailedAnalytics && (
 				<div className="space-y-4 animate-in fade-in-0 slide-in-from-top-2 duration-200">
-					{/* Views & Clicks Over Time */}
-					<Card>
-						<CardHeader>
-							<CardTitle className="flex items-center gap-1.5">
-								<Eye className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-								Views &amp; Clicks Over Time
-							</CardTitle>
-						</CardHeader>
-						<CardContent>
-							{viewsOverTime.isLoading || clicksOverTime.isLoading ? (
-								<div className="flex h-56 items-end gap-1" aria-busy="true" role="status" aria-label="Loading chart data">
-									{Array.from({ length: 7 }).map((_, i) => (
-										<Skeleton key={`sk-${i}`} className="flex-1" style={{ height: `${20 + Math.random() * 80}%` }} />
-									))}
-								</div>
-							) : areaChartData.length === 0 ? (
-								<div className="flex h-56 items-center justify-center text-xs text-muted-foreground">
-									No data for this period
-								</div>
-							) : (
-								<ChartContainer config={areaChartConfig} className="h-56 w-full" aria-label="Views and clicks over time chart" role="img">
-									<ResponsiveContainer width="100%" height="100%">
-										<AreaChart data={areaChartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-											<defs>
-												<linearGradient id="viewsGradient" x1="0" y1="0" x2="0" y2="1">
-													<stop offset="0%" stopColor="var(--color-views)" stopOpacity={0.3} />
-													<stop offset="100%" stopColor="var(--color-views)" stopOpacity={0.02} />
-												</linearGradient>
-												<linearGradient id="clicksGradient" x1="0" y1="0" x2="0" y2="1">
-													<stop offset="0%" stopColor="var(--color-clicks)" stopOpacity={0.3} />
-													<stop offset="100%" stopColor="var(--color-clicks)" stopOpacity={0.02} />
-												</linearGradient>
-											</defs>
-											<CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
-											<XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 10 }} />
-											<YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
-											<Tooltip content={<ChartTooltipContent labelFormatter={(label) => label} />} />
-											<Legend verticalAlign="top" height={28} iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-											<Area type="monotone" dataKey="views" name="Views" stroke="var(--color-views)" strokeWidth={2} fill="url(#viewsGradient)" dot={false} activeDot={{ r: 4, strokeWidth: 2 }} />
-											<Area type="monotone" dataKey="clicks" name="Clicks" stroke="var(--color-clicks)" strokeWidth={2} fill="url(#clicksGradient)" dot={false} activeDot={{ r: 4, strokeWidth: 2 }} />
-										</AreaChart>
-									</ResponsiveContainer>
-								</ChartContainer>
-							)}
-						</CardContent>
-					</Card>
+					<ViewsClicksChart
+						views={viewsOverTime.data}
+						clicks={clicksOverTime.data}
+						isLoading={viewsOverTime.isLoading || clicksOverTime.isLoading}
+						title="Views & Clicks Over Time"
+					/>
 
-					{/* Referrers + Countries */}
 					<div className="grid gap-4 lg:grid-cols-2">
-						{/* Referrer Sources */}
-						<Card>
-							<CardHeader>
-								<CardTitle className="flex items-center gap-1.5">
-									<ArrowUpRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-									Referrer Sources
-								</CardTitle>
-							</CardHeader>
-							<CardContent>
-								{referrers.isLoading ? (
-									<div className="space-y-3">
-										{Array.from({ length: 5 }).map((_, i) => (
-											<Skeleton key={`ref-${i}`} className="h-8" />
-										))}
-									</div>
-								) : !referrers.data?.length ? (
-									<p className="text-xs text-muted-foreground py-8 text-center">No referrer data yet</p>
-								) : (
-									<div className="space-y-2.5">
-										{referrers.data.map((ref, i) => {
-											const refCount = ref.count as number;
-											const pct = totalReferrerCount > 0 ? Math.round((refCount / totalReferrerCount) * 100) : 0;
-											return (
-												<div key={String(ref.referrer ?? i)}>
-													<div className="flex items-center justify-between mb-1">
-														<div className="flex items-center gap-2 min-w-0">
-															<span className="text-xs text-muted-foreground w-5 shrink-0 tabular-nums">{i + 1}.</span>
-															<span className="truncate text-xs font-medium">{(ref.referrer as string | null) || "Direct"}</span>
-														</div>
-														<div className="flex items-center gap-2 shrink-0">
-															<span className="text-[10px] text-muted-foreground">{pct}%</span>
-															<span className="text-xs font-mono tabular-nums text-muted-foreground">{refCount.toLocaleString()}</span>
-														</div>
-													</div>
-													<div className="h-1 w-full rounded-full bg-muted/50 overflow-hidden">
-														<div className="h-full rounded-full bg-blue-500/60 transition-all duration-500" style={{ width: `${pct}%` }} />
-													</div>
-												</div>
-											);
-										})}
-									</div>
-								)}
-							</CardContent>
-						</Card>
-
-						{/* Visitor Countries */}
-						<Card>
-							<CardHeader>
-								<CardTitle className="flex items-center gap-1.5">
-									<Globe className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-									Visitor Countries
-								</CardTitle>
-							</CardHeader>
-							<CardContent>
-								{countries.isLoading ? (
-									<div className="grid gap-2 sm:grid-cols-2">
-										{Array.from({ length: 8 }).map((_, i) => (
-											<Skeleton key={`co-${i}`} className="h-10" />
-										))}
-									</div>
-								) : !countries.data?.length ? (
-									<p className="text-xs text-muted-foreground py-6 text-center">No country data yet</p>
-								) : (
-									<div className="grid gap-2 sm:grid-cols-2">
-										{countries.data.map((c, i) => (
-											<div key={String(c.country ?? i)} className="flex items-center justify-between rounded-lg border border-border/40 bg-muted/20 px-3 py-2">
-												<div className="flex items-center gap-2 min-w-0">
-													<span className="text-xs text-muted-foreground shrink-0 tabular-nums">#{i + 1}</span>
-													<span className="text-xs font-medium truncate">{(c.country as string | null) || "Unknown"}</span>
-												</div>
-												<span className="text-xs font-mono tabular-nums text-muted-foreground shrink-0 ml-2">{(c.count as number).toLocaleString()}</span>
-											</div>
-										))}
-									</div>
-								)}
-							</CardContent>
-						</Card>
+						<ReferrersList
+							title="Referrer Sources"
+							items={referrers.data}
+							isLoading={referrers.isLoading}
+						/>
+						<CountriesList
+							title="Visitor Countries"
+							items={countries.data}
+							isLoading={countries.isLoading}
+						/>
 					</div>
 				</div>
 			)}

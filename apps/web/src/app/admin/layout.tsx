@@ -17,6 +17,7 @@ import {
 	Globe,
 	UserCog,
 	LogOut,
+	BarChart3,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
@@ -39,6 +40,7 @@ const NAV_GROUPS = [
 	{
 		label: "Engage",
 		items: [
+			{ href: "/admin/analytics" as const, label: "Analytics", icon: BarChart3 },
 			{ href: "/admin/connections" as const, label: "Connections", icon: Handshake },
 		],
 	},
@@ -57,7 +59,7 @@ const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((g) => [...g.items]);
 const BOTTOM_NAV_ITEMS = [
 	{ href: "/admin" as const, label: "Dashboard", icon: LayoutDashboard },
 	{ href: "/admin/builder" as const, label: "Builder", icon: Blocks },
-	{ href: "/admin/connections" as const, label: "Connections", icon: Handshake },
+	{ href: "/admin/analytics" as const, label: "Analytics", icon: BarChart3 },
 	{ href: "/admin/settings" as const, label: "Settings", icon: Settings },
 ];
 
