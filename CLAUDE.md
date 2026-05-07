@@ -19,13 +19,15 @@ Self-hosted link-in-bio application built for Cloudflare-first deployment.
 
 ## Commands
 
-- `bun dev` — Start all apps in development mode
+- `bun dev` — Start all apps in development mode (web :3001, server :3000, docs :3002)
 - `bun run build` — Build all apps and packages
 - `bun run check-types` — TypeScript type checking
 - `bun run db:generate` — Generate Drizzle migrations
 - `bun run db:push` — Push schema to database
-- `bun run deploy` — Deploy to Cloudflare via Alchemy
+- `bun ship` — Build and deploy to Cloudflare via Alchemy IaC
 - `bun run destroy` — Tear down Cloudflare resources
+- `bun reset:password` — Reset admin password via CLI
+- `bun reset:factory` — Factory-reset all data and settings
 
 ## Tech Stack
 
@@ -67,6 +69,11 @@ This prevents context loss! Update this file IMMEDIATELY when creating important
 - **Page headers:** `PageHeader` with optional badge and description
 - **Entrance animations:** `useEntranceAnimation` hook with staggered `getAnimationProps(index)`
 - **Section grouping:** uppercase `tracking-wider` label headers (`text-xs font-medium text-muted-foreground`)
+- **Social icon shape:** `SocialIconShapeSection` component — `"circle"` | `"rounded-square"`, setting key `social_icon_shape`
+- **Consent banner:** `consent_banner_enabled` + `consent_banner_text` settings, shown on public page footer
+- **MapKit:** `mapkit_enabled` + `mapkit_token` settings, used by Location blocks for Apple Maps embed
+- **Admin branding:** `admin_branding_enabled` setting — controls LinkDen logo/name inside admin panel
+- **Connections page:** `/admin/connections` — contact form submissions inbox (tRPC `forms.*` router); uses split-panel list+detail layout same as builder
 
 ### Wallet Pass
 - Apple HIG generic pass layout (header → primary + thumbnail → secondary → QR)
@@ -77,3 +84,16 @@ This prevents context loss! Update this file IMMEDIATELY when creating important
 - Wrap sections in `Card` / `CardContent`
 - Section headers: `<h2 className="text-sm font-semibold">`
 - Settings forms: state pairs (current + saved) for dirty detection, save button appears when dirty
+- Setup wizard: `/admin/setup` — 4-step split-panel onboarding (Account → Profile → Theme → Done); redirects to `/admin/login` if account already exists
+- Login page: `/admin/login` — split-panel layout; left side customizable via branding settings (`branding_login_*`)
+
+### Settings Key Groups
+All settings stored as key-value in `site_settings` table. Key whitelist enforced in `packages/api/src/routers/settings.ts`.
+- **Profile:** `profile_name`, `bio`, `avatar_url`, `verified_badge`
+- **Appearance:** `theme_preset`, `theme`, `custom_primary/secondary/accent/background`, `custom_css`, `banner_*`, `social_icon_shape`
+- **SEO:** `seo_title`, `seo_description`, `seo_og_image`, `seo_og_mode`, `seo_og_template`
+- **Branding:** `branding_enabled`, `branding_text`, `branding_link`, `branding_logo_url`, `branding_favicon_url`, `branding_site_name`, `branding_pp_url`, `branding_tos_url`, `admin_branding_enabled`
+- **Features:** `wallet_pass_enabled`, `vcard_enabled`, `contact_form_enabled`, `mapkit_enabled`, `mapkit_token`
+- **Auth/CAPTCHA:** `magic_link_enabled`, `captcha_provider`, `captcha_site_key`, `captcha_secret_key`
+- **Email:** `email_provider`, `email_api_key`, `email_from`, `contact_delivery`
+- **System:** `default_color_mode`, `timezone`, `consent_banner_enabled`, `consent_banner_text`
