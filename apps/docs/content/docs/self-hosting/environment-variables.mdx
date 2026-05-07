@@ -47,6 +47,22 @@ Most settings that were previously environment variables are now managed through
 
 This keeps the `.env` file minimal and lets you change settings without redeploying.
 
+## Apple Wallet (Optional)
+
+Only required if you want to generate Apple Wallet passes. All five variables are needed together — if any one is missing, Wallet pass generation is disabled and the admin UI shows an incomplete status.
+
+| Variable | Description |
+|----------|-------------|
+| `WALLET_SIGNER_CERT` | Your Pass Type signing certificate (Base64-encoded PEM) |
+| `WALLET_SIGNER_KEY` | Private key for the signing certificate (Base64-encoded PEM) |
+| `WALLET_WWDR_CERT` | Apple's WWDR certificate (Base64-encoded PEM) |
+| `WALLET_TEAM_ID` | Your Apple Developer Team ID (e.g. `ABC12DEF34`) |
+| `WALLET_PASS_TYPE_ID` | Your Pass Type Identifier (e.g. `pass.com.yourname.linkden`) |
+
+> These are **secrets** — use the "Encrypt" option in Cloudflare's dashboard, or store them as secrets in your Docker/Coolify setup. Never commit them to git.
+>
+> See the [Apple Wallet guide](/docs/guide/apple-wallet) for step-by-step certificate setup.
+
 ## Complete `.env` Example
 
 ```bash
@@ -56,9 +72,16 @@ BETTER_AUTH_URL=http://localhost:3000
 CORS_ORIGIN=http://localhost:3001
 NEXT_PUBLIC_SERVER_URL=http://localhost:3000
 
-# Cloudflare only
+# Cloudflare deployment only
 # CLOUDFLARE_API_TOKEN=your-cloudflare-api-token
 # CLOUDFLARE_ACCOUNT_ID=your-cloudflare-account-id
+
+# Apple Wallet (optional — all 5 required together)
+# WALLET_SIGNER_CERT=base64encodedcert...
+# WALLET_SIGNER_KEY=base64encodedkey...
+# WALLET_WWDR_CERT=base64encodedwwdr...
+# WALLET_TEAM_ID=ABC12DEF34
+# WALLET_PASS_TYPE_ID=pass.com.yourname.linkden
 ```
 
 ## Setting Variables by Platform

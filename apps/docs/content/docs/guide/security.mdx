@@ -62,3 +62,16 @@ Make sure `CORS_ORIGIN` matches your frontend URL exactly (including protocol, n
 ## CAPTCHA
 
 The contact form supports optional CAPTCHA verification via Cloudflare Turnstile or Google reCAPTCHA. When configured, tokens are validated server-side before accepting submissions. See [Contact Form](/docs/guide/contact-form) for setup details.
+
+## Rate Limiting
+
+When deployed to Cloudflare Workers, LinkDen uses **Cloudflare Rate Limiting** (via Alchemy bindings) to protect all API endpoints. Four independent rate limit buckets are applied:
+
+| Binding | Protects | Purpose |
+|---------|----------|---------|
+| `RL_AUTH` | `/auth/*` routes | Prevents brute-force login and password-reset attacks |
+| `RL_STRICT` | Sensitive mutations | Extra protection for admin write operations |
+| `RL_UPLOAD` | `/api/upload` | Limits file upload frequency |
+| `RL_PUBLIC` | Public page + analytics | Prevents scraping and analytics flooding |
+
+Rate limit thresholds are configured in `packages/infra/src/alchemy.run.ts` and apply automatically on deployment. **No additional configuration is needed.** Limits are not active in local development.

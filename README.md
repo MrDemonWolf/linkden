@@ -10,30 +10,32 @@ private, and yours to own completely.
 
 ## Features
 
-- **Drag-and-drop builder** — Visually arrange blocks (links,
-  headers, embeds, contact forms, vCards, locations) with live preview.
+- **Drag-and-drop builder** — Visually arrange 7 block types (links,
+  headers, embeds, social icons, forms, vCards, locations) with live preview.
 - **7 built-in themes** — Choose from curated presets with full
-  color customization available per-theme.
+  color customization and social icon shape control per-theme.
 - **Analytics dashboard** — Track page views and link clicks with
   privacy-first data collection.
-- **Contact form** — Receive visitor messages directly in the admin
-  panel with read/unread management and optional CAPTCHA.
+- **Connections inbox** — Receive visitor contact form messages directly in
+  the admin panel with read/unread management and optional CAPTCHA.
 - **Apple Wallet pass** — Generate and distribute a digital business
   card as a `.pkpass` file.
 - **vCard export** — Let visitors download your contact details as
   a standard `.vcf` file.
+- **Location block** — Embed an Apple Maps or Google Maps tile showing
+  your physical address.
 - **Backup and restore** — Export all settings, blocks, and data to
   JSON and re-import at any time (replace or merge modes).
 - **LinkStack import** — Migrate your existing LinkStack profile
   directly into LinkDen with one click.
 - **Whitelabel ready** — Fully allowed. Replace all LinkDen branding
-  with your own logo, colors, and name.
+  with your own logo, colors, and name. Consent banner included.
 - **100+ social networks** — Built-in branded icons and links for
   every major platform.
 - **Edge-cached** — Served from Cloudflare's global network for
   near-zero-latency response times.
 - **Secure** — Registration lock, XSS protection, CSRF safety,
-  rate limiting, and secret masking baked in.
+  Cloudflare rate limiting, and secret masking baked in.
 
 ## Getting Started
 
