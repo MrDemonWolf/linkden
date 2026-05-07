@@ -46,10 +46,7 @@ interface LinkStackImportWizardProps {
 function isLinkStackFormat(data: unknown): data is LinkStackData {
 	if (typeof data !== "object" || data === null) return false;
 	const obj = data as Record<string, unknown>;
-	return (
-		("littlelink_name" in obj || "littlelink_description" in obj) &&
-		Array.isArray(obj.links)
-	);
+	return ("littlelink_name" in obj || "littlelink_description" in obj) && Array.isArray(obj.links);
 }
 
 export function LinkStackImportWizard({
@@ -66,9 +63,7 @@ export function LinkStackImportWizard({
 	const [stats, setStats] = useState<ImportStats | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
-	const importMutation = useMutation(
-		trpc.backup.importLinkStack.mutationOptions(),
-	);
+	const importMutation = useMutation(trpc.backup.importLinkStack.mutationOptions());
 
 	const reset = useCallback(() => {
 		setStep("upload");
@@ -148,9 +143,7 @@ export function LinkStackImportWizard({
 					<>
 						<DialogHeader>
 							<DialogTitle>Select File</DialogTitle>
-							<DialogDescription>
-								Upload your LinkStack export JSON file.
-							</DialogDescription>
+							<DialogDescription>Upload your LinkStack export JSON file.</DialogDescription>
 						</DialogHeader>
 
 						<div className="space-y-4">
@@ -161,23 +154,17 @@ export function LinkStackImportWizard({
 									className="flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border/60 p-8 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
 								>
 									<Upload className="h-8 w-8" />
-									<span className="text-sm font-medium">
-										Click to select file
-									</span>
+									<span className="text-sm font-medium">Click to select file</span>
 									<span className="text-xs">JSON files only</span>
 								</button>
 							) : (
 								<div className="rounded-lg border border-border/50 p-4 space-y-2">
 									<div className="flex items-center gap-2">
 										<FileJson className="h-4 w-4 text-primary" />
-										<span className="text-sm font-medium">
-											File parsed successfully
-										</span>
+										<span className="text-sm font-medium">File parsed successfully</span>
 									</div>
 									<div className="text-xs text-muted-foreground space-y-1">
-										{parsedData.littlelink_name && (
-											<p>Profile: {parsedData.littlelink_name}</p>
-										)}
+										{parsedData.littlelink_name && <p>Profile: {parsedData.littlelink_name}</p>}
 										<p>Links found: {linkCount}</p>
 										{hasTheme && <p>Theme: {parsedData.theme}</p>}
 									</div>
@@ -186,8 +173,7 @@ export function LinkStackImportWizard({
 										size="xs"
 										onClick={() => {
 											setParsedData(null);
-											if (fileInputRef.current)
-												fileInputRef.current.value = "";
+											if (fileInputRef.current) fileInputRef.current.value = "";
 										}}
 									>
 										Choose different file
@@ -205,11 +191,7 @@ export function LinkStackImportWizard({
 						</div>
 
 						<DialogFooter>
-							<Button
-								size="sm"
-								disabled={!parsedData}
-								onClick={() => setStep("options")}
-							>
+							<Button size="sm" disabled={!parsedData} onClick={() => setStep("options")}>
 								Next
 								<ArrowRight className="ml-1.5 h-3 w-3" />
 							</Button>
@@ -222,8 +204,7 @@ export function LinkStackImportWizard({
 						<DialogHeader>
 							<DialogTitle>What to Import</DialogTitle>
 							<DialogDescription>
-								Choose what data to import from your LinkStack
-								export.
+								Choose what data to import from your LinkStack export.
 							</DialogDescription>
 						</DialogHeader>
 
@@ -236,16 +217,16 @@ export function LinkStackImportWizard({
 									className="h-4 w-4 rounded border-border accent-primary"
 								/>
 								<div>
-									<p className="text-sm font-medium">
-										Import Links
-									</p>
+									<p className="text-sm font-medium">Import Links</p>
 									<p className="text-xs text-muted-foreground">
 										{linkCount} link{linkCount !== 1 ? "s" : ""} found
 									</p>
 								</div>
 							</label>
 
-							<label className={`flex items-center gap-3 rounded-lg border border-border/50 p-3 transition-colors ${hasProfile ? "cursor-pointer hover:bg-muted/50" : "opacity-50 cursor-not-allowed"}`}>
+							<label
+								className={`flex items-center gap-3 rounded-lg border border-border/50 p-3 transition-colors ${hasProfile ? "cursor-pointer hover:bg-muted/50" : "opacity-50 cursor-not-allowed"}`}
+							>
 								<input
 									type="checkbox"
 									checked={importProfile && hasProfile}
@@ -254,18 +235,16 @@ export function LinkStackImportWizard({
 									className="h-4 w-4 rounded border-border accent-primary"
 								/>
 								<div>
-									<p className="text-sm font-medium">
-										Import Profile
-									</p>
+									<p className="text-sm font-medium">Import Profile</p>
 									<p className="text-xs text-muted-foreground">
-										{hasProfile
-											? "Name and bio"
-											: "No profile data found"}
+										{hasProfile ? "Name and bio" : "No profile data found"}
 									</p>
 								</div>
 							</label>
 
-							<label className={`flex items-center gap-3 rounded-lg border border-border/50 p-3 transition-colors ${hasTheme ? "cursor-pointer hover:bg-muted/50" : "opacity-50 cursor-not-allowed"}`}>
+							<label
+								className={`flex items-center gap-3 rounded-lg border border-border/50 p-3 transition-colors ${hasTheme ? "cursor-pointer hover:bg-muted/50" : "opacity-50 cursor-not-allowed"}`}
+							>
 								<input
 									type="checkbox"
 									checked={importTheme && hasTheme}
@@ -274,24 +253,16 @@ export function LinkStackImportWizard({
 									className="h-4 w-4 rounded border-border accent-primary"
 								/>
 								<div>
-									<p className="text-sm font-medium">
-										Import Theme
-									</p>
+									<p className="text-sm font-medium">Import Theme</p>
 									<p className="text-xs text-muted-foreground">
-										{hasTheme
-											? `Theme: ${parsedData?.theme}`
-											: "No theme data found"}
+										{hasTheme ? `Theme: ${parsedData?.theme}` : "No theme data found"}
 									</p>
 								</div>
 							</label>
 						</div>
 
 						<DialogFooter className="flex-row justify-between sm:justify-between">
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() => setStep("upload")}
-							>
+							<Button variant="ghost" size="sm" onClick={() => setStep("upload")}>
 								<ArrowLeft className="mr-1.5 h-3 w-3" />
 								Back
 							</Button>
@@ -311,9 +282,7 @@ export function LinkStackImportWizard({
 					<>
 						<DialogHeader>
 							<DialogTitle>Importing...</DialogTitle>
-							<DialogDescription>
-								Please wait while your data is being imported.
-							</DialogDescription>
+							<DialogDescription>Please wait while your data is being imported.</DialogDescription>
 						</DialogHeader>
 
 						<div className="py-6 space-y-3">
@@ -334,8 +303,7 @@ export function LinkStackImportWizard({
 						<DialogHeader>
 							<DialogTitle>Import Complete</DialogTitle>
 							<DialogDescription>
-								Your LinkStack data has been imported
-								successfully.
+								Your LinkStack data has been imported successfully.
 							</DialogDescription>
 						</DialogHeader>
 
@@ -349,22 +317,16 @@ export function LinkStackImportWizard({
 									{stats.linksImported > 0 && (
 										<p>
 											{stats.linksImported} link
-											{stats.linksImported !== 1 ? "s" : ""}{" "}
-											imported
+											{stats.linksImported !== 1 ? "s" : ""} imported
 										</p>
 									)}
-									{stats.settingsUpdated && (
-										<p>Profile settings updated</p>
-									)}
+									{stats.settingsUpdated && <p>Profile settings updated</p>}
 								</div>
 							)}
 						</div>
 
 						<DialogFooter>
-							<Button
-								size="sm"
-								onClick={() => onOpenChange(false)}
-							>
+							<Button size="sm" onClick={() => onOpenChange(false)}>
 								Close
 							</Button>
 						</DialogFooter>

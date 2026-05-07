@@ -109,9 +109,14 @@ export default function AccountPage() {
 		}
 		setIsChangingEmail(true);
 		try {
-			await (authClient as unknown as {
-				changeEmail: (args: { newEmail: string; callbackURL: string }) => Promise<{ error?: { message?: string } }>;
-			}).changeEmail({
+			await (
+				authClient as unknown as {
+					changeEmail: (args: {
+						newEmail: string;
+						callbackURL: string;
+					}) => Promise<{ error?: { message?: string } }>;
+				}
+			).changeEmail({
 				newEmail,
 				callbackURL: "/admin/account",
 			});
@@ -294,10 +299,10 @@ export default function AccountPage() {
 	const handleMagicLinkToggle = async (enabled: boolean) => {
 		setMagicLinkEnabled(enabled);
 		try {
-			await updateSettingsMl.mutateAsync([
-				{ key: "magic_link_enabled", value: String(enabled) },
-			]);
-			qc.invalidateQueries({ queryKey: trpc.settings.get.queryOptions({ key: "magic_link_enabled" }).queryKey });
+			await updateSettingsMl.mutateAsync([{ key: "magic_link_enabled", value: String(enabled) }]);
+			qc.invalidateQueries({
+				queryKey: trpc.settings.get.queryOptions({ key: "magic_link_enabled" }).queryKey,
+			});
 			toast.success(`Magic link sign-in ${enabled ? "enabled" : "disabled"}`);
 		} catch {
 			setMagicLinkEnabled(!enabled);
@@ -339,7 +344,12 @@ export default function AccountPage() {
 
 	if (settingsQuery.isLoading) {
 		return (
-			<div className="space-y-6 max-w-2xl" aria-busy="true" role="status" aria-label="Loading account">
+			<div
+				className="space-y-6 max-w-2xl"
+				aria-busy="true"
+				role="status"
+				aria-label="Loading account"
+			>
 				<Skeleton className="h-12 w-64" />
 				<Skeleton className="h-48" />
 				<Skeleton className="h-64" />
@@ -355,11 +365,7 @@ export default function AccountPage() {
 				description="Manage your profile, sign-in, and destructive operations"
 				actions={
 					profileDirty ? (
-						<Button
-							size="sm"
-							onClick={handleSaveProfile}
-							disabled={updateSettings.isPending}
-						>
+						<Button size="sm" onClick={handleSaveProfile} disabled={updateSettings.isPending}>
 							{updateSettings.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
 							Save
 						</Button>
@@ -401,14 +407,23 @@ export default function AccountPage() {
 										Change
 									</Button>
 								) : (
-									<Button size="sm" variant="ghost" onClick={() => { setEmailEditing(false); setNewEmail(""); }}>
+									<Button
+										size="sm"
+										variant="ghost"
+										onClick={() => {
+											setEmailEditing(false);
+											setNewEmail("");
+										}}
+									>
 										<X className="h-3.5 w-3.5" />
 									</Button>
 								)}
 							</div>
 							{emailEditing && (
 								<div className="py-3 space-y-2 border-b border-dashed border-border">
-									<Label htmlFor="newEmail" className="text-xs text-muted-foreground">New email address</Label>
+									<Label htmlFor="newEmail" className="text-xs text-muted-foreground">
+										New email address
+									</Label>
 									<div className="flex gap-2">
 										<Input
 											id="newEmail"
@@ -418,7 +433,11 @@ export default function AccountPage() {
 											placeholder="you@example.com"
 											autoComplete="email"
 										/>
-										<Button size="sm" onClick={handleChangeEmail} disabled={isChangingEmail || !newEmail}>
+										<Button
+											size="sm"
+											onClick={handleChangeEmail}
+											disabled={isChangingEmail || !newEmail}
+										>
 											{isChangingEmail ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Send"}
 										</Button>
 									</div>
@@ -445,9 +464,14 @@ export default function AccountPage() {
 								</Button>
 							</div>
 							{passwordOpen && (
-								<form onSubmit={handleChangePassword} className="space-y-3 py-3 border-b border-dashed border-border">
+								<form
+									onSubmit={handleChangePassword}
+									className="space-y-3 py-3 border-b border-dashed border-border"
+								>
 									<div className="space-y-1.5">
-										<Label htmlFor="currentPw" className="text-xs text-muted-foreground">Current password</Label>
+										<Label htmlFor="currentPw" className="text-xs text-muted-foreground">
+											Current password
+										</Label>
 										<div className="relative">
 											<Input
 												id="currentPw"
@@ -463,12 +487,18 @@ export default function AccountPage() {
 												onClick={() => setShowCurrentPw(!showCurrentPw)}
 												aria-label={showCurrentPw ? "Hide password" : "Show password"}
 											>
-												{showCurrentPw ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+												{showCurrentPw ? (
+													<EyeOff className="h-3.5 w-3.5" />
+												) : (
+													<Eye className="h-3.5 w-3.5" />
+												)}
 											</button>
 										</div>
 									</div>
 									<div className="space-y-1.5">
-										<Label htmlFor="newPw" className="text-xs text-muted-foreground">New password</Label>
+										<Label htmlFor="newPw" className="text-xs text-muted-foreground">
+											New password
+										</Label>
 										<div className="relative">
 											<Input
 												id="newPw"
@@ -484,12 +514,18 @@ export default function AccountPage() {
 												onClick={() => setShowNewPw(!showNewPw)}
 												aria-label={showNewPw ? "Hide password" : "Show password"}
 											>
-												{showNewPw ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+												{showNewPw ? (
+													<EyeOff className="h-3.5 w-3.5" />
+												) : (
+													<Eye className="h-3.5 w-3.5" />
+												)}
 											</button>
 										</div>
 									</div>
 									<div className="space-y-1.5">
-										<Label htmlFor="confirmPw" className="text-xs text-muted-foreground">Confirm new password</Label>
+										<Label htmlFor="confirmPw" className="text-xs text-muted-foreground">
+											Confirm new password
+										</Label>
 										<Input
 											id="confirmPw"
 											type="password"
@@ -513,7 +549,9 @@ export default function AccountPage() {
 							<div className="grid grid-cols-[1fr_auto_auto] gap-3 items-center py-3 border-b border-dashed border-border">
 								<div className="min-w-0">
 									<div className="text-xs font-medium">Two-factor authentication</div>
-									<div className="text-[11px] text-muted-foreground">TOTP via authenticator app</div>
+									<div className="text-[11px] text-muted-foreground">
+										TOTP via authenticator app
+									</div>
 								</div>
 								<Badge variant={is2faEnabled ? "default" : "secondary"} className="text-[10px]">
 									{is2faEnabled ? "enabled" : "disabled"}
@@ -548,7 +586,9 @@ export default function AccountPage() {
 							<div className="grid grid-cols-[1fr_auto] gap-3 items-center">
 								<div className="min-w-0">
 									<div className="text-xs font-medium">Delete all content</div>
-									<div className="text-[11px] text-muted-foreground">removes blocks + analytics · keeps account</div>
+									<div className="text-[11px] text-muted-foreground">
+										removes blocks + analytics · keeps account
+									</div>
 								</div>
 								<Button size="sm" variant="outline" onClick={() => setDeleteContentOpen(true)}>
 									Delete
@@ -558,7 +598,9 @@ export default function AccountPage() {
 							<div className="grid grid-cols-[1fr_auto] gap-3 items-center pt-3 border-t border-dashed border-destructive/30">
 								<div className="min-w-0">
 									<div className="text-xs font-medium">Reset everything</div>
-									<div className="text-[11px] text-muted-foreground">full wipe · returns to setup wizard</div>
+									<div className="text-[11px] text-muted-foreground">
+										full wipe · returns to setup wizard
+									</div>
 								</div>
 								<Button
 									size="sm"
@@ -571,12 +613,17 @@ export default function AccountPage() {
 							</div>
 
 							<div className="flex gap-2 items-center pt-1">
-								<span className="text-[11px] text-muted-foreground shrink-0">type "CONFIRM" to enable:</span>
+								<span className="text-[11px] text-muted-foreground shrink-0">
+									type "CONFIRM" to enable:
+								</span>
 								<Input
 									value={resetConfirm}
 									onChange={(e) => setResetConfirm(e.target.value)}
 									placeholder="CONFIRM"
-									className={cn("flex-1 font-mono text-xs", resetConfirm === "CONFIRM" && "border-destructive")}
+									className={cn(
+										"flex-1 font-mono text-xs",
+										resetConfirm === "CONFIRM" && "border-destructive",
+									)}
 								/>
 							</div>
 						</CardContent>
@@ -601,7 +648,12 @@ export default function AccountPage() {
 										? "Verify authenticator"
 										: "Enable two-factor"}
 							</h2>
-							<Button size="sm" variant="ghost" onClick={() => setTwoFaModalOpen(false)} disabled={is2faLoading}>
+							<Button
+								size="sm"
+								variant="ghost"
+								onClick={() => setTwoFaModalOpen(false)}
+								disabled={is2faLoading}
+							>
 								<X className="h-3.5 w-3.5" />
 							</Button>
 						</div>
@@ -614,7 +666,9 @@ export default function AccountPage() {
 										: "Add an extra layer of security by requiring a code from your authenticator app when signing in."}
 								</p>
 								<div className="space-y-1.5">
-									<Label htmlFor="twoFaPw" className="text-xs text-muted-foreground">Current password</Label>
+									<Label htmlFor="twoFaPw" className="text-xs text-muted-foreground">
+										Current password
+									</Label>
 									<Input
 										id="twoFaPw"
 										type="password"
@@ -624,17 +678,35 @@ export default function AccountPage() {
 									/>
 								</div>
 								<div className="flex justify-end gap-2">
-									<Button variant="outline" size="sm" onClick={() => setTwoFaModalOpen(false)} disabled={is2faLoading}>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => setTwoFaModalOpen(false)}
+										disabled={is2faLoading}
+									>
 										Cancel
 									</Button>
 									{twoFaMode === "disable" ? (
-										<Button variant="destructive" size="sm" onClick={handleDisable2FA} disabled={is2faLoading || !twoFaPassword}>
+										<Button
+											variant="destructive"
+											size="sm"
+											onClick={handleDisable2FA}
+											disabled={is2faLoading || !twoFaPassword}
+										>
 											{is2faLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
 											Disable
 										</Button>
 									) : (
-										<Button size="sm" onClick={handleEnable2FA} disabled={is2faLoading || !twoFaPassword}>
-											{is2faLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Shield className="h-3.5 w-3.5" />}
+										<Button
+											size="sm"
+											onClick={handleEnable2FA}
+											disabled={is2faLoading || !twoFaPassword}
+										>
+											{is2faLoading ? (
+												<Loader2 className="h-3.5 w-3.5 animate-spin" />
+											) : (
+												<Shield className="h-3.5 w-3.5" />
+											)}
 											Continue
 										</Button>
 									)}
@@ -658,8 +730,12 @@ export default function AccountPage() {
 									)}
 									{totpUri && (
 										<details className="text-xs">
-											<summary className="cursor-pointer text-muted-foreground hover:text-foreground">Manual entry key</summary>
-											<code className="mt-1 block break-all rounded bg-muted px-2 py-1 text-[10px]">{totpUri}</code>
+											<summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+												Manual entry key
+											</summary>
+											<code className="mt-1 block break-all rounded bg-muted px-2 py-1 text-[10px]">
+												{totpUri}
+											</code>
 										</details>
 									)}
 								</div>
@@ -671,13 +747,17 @@ export default function AccountPage() {
 										</p>
 										<div className="grid grid-cols-2 gap-1">
 											{backupCodes.map((code) => (
-												<code key={code} className="text-[10px] font-mono text-muted-foreground">{code}</code>
+												<code key={code} className="text-[10px] font-mono text-muted-foreground">
+													{code}
+												</code>
 											))}
 										</div>
 									</div>
 								)}
 								<div className="space-y-1.5">
-									<Label htmlFor="twoFaCode" className="text-xs text-muted-foreground">Verification code</Label>
+									<Label htmlFor="twoFaCode" className="text-xs text-muted-foreground">
+										Verification code
+									</Label>
 									<Input
 										id="twoFaCode"
 										type="text"
@@ -689,10 +769,19 @@ export default function AccountPage() {
 									/>
 								</div>
 								<div className="flex justify-end gap-2">
-									<Button variant="outline" size="sm" onClick={() => setTwoFaModalOpen(false)} disabled={is2faLoading}>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => setTwoFaModalOpen(false)}
+										disabled={is2faLoading}
+									>
 										Cancel
 									</Button>
-									<Button size="sm" onClick={handleVerify2FA} disabled={is2faLoading || twoFaCode.length !== 6}>
+									<Button
+										size="sm"
+										onClick={handleVerify2FA}
+										disabled={is2faLoading || twoFaCode.length !== 6}
+									>
 										{is2faLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
 										Verify & activate
 									</Button>

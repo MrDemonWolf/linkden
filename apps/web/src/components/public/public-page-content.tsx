@@ -140,7 +140,7 @@ function renderBlock(
 					themeColors={themeColors}
 				/>
 			);
-		
+
 		case "connect":
 			return (
 				<ConnectBlock
@@ -246,14 +246,10 @@ export function PageContent({
 					{showCover && (
 						<div className="ld-hero-cover relative h-28 w-full overflow-hidden sm:h-36">
 							{settings.bannerMode === "custom" && settings.bannerCustomUrl ? (
-								<img
-									src={settings.bannerCustomUrl}
-									alt=""
-									className="h-full w-full object-cover"
-								/>
+								<img src={settings.bannerCustomUrl} alt="" className="h-full w-full object-cover" />
 							) : coverPreset ? (
 								<div
-									className={`absolute inset-0 ${coverPreset.type === "css" ? coverPreset.className ?? "" : ""}`}
+									className={`absolute inset-0 ${coverPreset.type === "css" ? (coverPreset.className ?? "") : ""}`}
 									style={coverPreset.type === "css" ? coverPreset.style : undefined}
 								>
 									{coverPreset.type === "shader" && <ShaderBanner preset={coverPreset} />}
@@ -284,7 +280,10 @@ export function PageContent({
 							{profile.isVerified && (
 								<svg
 									className="h-6 w-6 shrink-0"
-									style={{ color: themeColors.primary, filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.15))" }}
+									style={{
+										color: themeColors.primary,
+										filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.15))",
+									}}
 									viewBox="0 0 24 24"
 									fill="currentColor"
 									aria-hidden="true"
@@ -292,7 +291,11 @@ export function PageContent({
 									aria-label="Verified account"
 								>
 									<title>Verified</title>
-									<path fillRule="evenodd" d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-1.549 3.397 4.491 4.491 0 01-1.307 3.497 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clipRule="evenodd" />
+									<path
+										fillRule="evenodd"
+										d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-1.549 3.397 4.491 4.491 0 01-1.307 3.497 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z"
+										clipRule="evenodd"
+									/>
 								</svg>
 							)}
 						</h1>
@@ -318,11 +321,7 @@ export function PageContent({
 				</ProfileWrapper>
 
 				{/* Single-column block stream — 50ms staggered fade-in */}
-				<div
-					className="ld-blocks space-y-3.5 pb-8"
-					role="list"
-					aria-label="Links and content"
-				>
+				<div className="ld-blocks space-y-3.5 pb-8" role="list" aria-label="Links and content">
 					{contentBlocks.map((blockData, index) => (
 						<div key={blockData.id} style={getAnimationProps(index).style}>
 							{renderBlock(blockData, { colorMode, themeColors, socialNetworks, settings })}

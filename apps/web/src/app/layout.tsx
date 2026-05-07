@@ -38,7 +38,9 @@ async function fetchSettings(): Promise<Record<string, string>> {
 			next: { revalidate: 60 },
 		});
 		if (!res.ok) return {};
-		const json = await res.json() as { result?: { data?: { settings?: Record<string, string> } } };
+		const json = (await res.json()) as {
+			result?: { data?: { settings?: Record<string, string> } };
+		};
 		return json?.result?.data?.settings ?? {};
 	} catch {
 		return {};
@@ -66,12 +68,14 @@ export async function generateMetadata(): Promise<Metadata> {
 	return {
 		title,
 		description,
-		...(settings.brandingFaviconUrl ? {
-			icons: {
-				icon: settings.brandingFaviconUrl,
-				apple: settings.brandingFaviconUrl,
-			},
-		} : {}),
+		...(settings.brandingFaviconUrl
+			? {
+					icons: {
+						icon: settings.brandingFaviconUrl,
+						apple: settings.brandingFaviconUrl,
+					},
+				}
+			: {}),
 		openGraph: {
 			title,
 			description,

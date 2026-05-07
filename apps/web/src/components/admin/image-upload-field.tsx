@@ -56,7 +56,15 @@ async function processSquareImage(file: File, maxSize: number): Promise<File> {
 interface ImageUploadFieldProps {
 	label?: string;
 	value: string;
-	purpose: "avatar" | "banner" | "og_image" | "wallet_logo" | "logo" | "favicon" | "login_logo" | "login_background";
+	purpose:
+		| "avatar"
+		| "banner"
+		| "og_image"
+		| "wallet_logo"
+		| "logo"
+		| "favicon"
+		| "login_logo"
+		| "login_background";
 	onUploadComplete: (url: string) => void;
 	aspectRatio?: "square" | "banner" | "logo";
 }
@@ -106,8 +114,7 @@ export function ImageUploadField({
 				formData.append("file", fileToUpload);
 				formData.append("purpose", purpose);
 
-				const serverUrl =
-					process.env.NEXT_PUBLIC_SERVER_URL || "";
+				const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "";
 				const res = await fetch(`${serverUrl}/api/upload`, {
 					method: "POST",
 					body: formData,
@@ -118,7 +125,7 @@ export function ImageUploadField({
 					throw new Error("Upload failed");
 				}
 
-				const data = await res.json() as { publicUrl: string };
+				const data = (await res.json()) as { publicUrl: string };
 				const fullUrl = data.publicUrl.startsWith("http")
 					? data.publicUrl
 					: `${serverUrl}${data.publicUrl}`;
@@ -160,9 +167,7 @@ export function ImageUploadField({
 			? "h-28 w-28 rounded-lg"
 			: "h-24 w-24 rounded-full";
 
-	const imgClass = isBanner || isLogo
-		? "h-full w-full rounded-lg"
-		: "h-full w-full rounded-full";
+	const imgClass = isBanner || isLogo ? "h-full w-full rounded-lg" : "h-full w-full rounded-full";
 
 	return (
 		<div className={cn("space-y-1.5", !isBanner && "flex flex-col items-center")}>

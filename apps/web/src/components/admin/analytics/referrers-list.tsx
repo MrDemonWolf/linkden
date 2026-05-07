@@ -15,11 +15,7 @@ interface ReferrersListProps {
 	title?: string;
 }
 
-export function ReferrersList({
-	items,
-	isLoading,
-	title = "Referrers",
-}: ReferrersListProps) {
+export function ReferrersList({ items, isLoading, title = "Referrers" }: ReferrersListProps) {
 	const data = items ?? [];
 	const total = data.reduce((sum, r) => sum + r.count, 0);
 
@@ -39,9 +35,7 @@ export function ReferrersList({
 						))}
 					</div>
 				) : data.length === 0 ? (
-					<p className="text-xs text-muted-foreground py-6 text-center">
-						No referrer data yet
-					</p>
+					<p className="text-xs text-muted-foreground py-6 text-center">No referrer data yet</p>
 				) : (
 					<div className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
 						{data.map((ref, i) => {
@@ -58,9 +52,7 @@ export function ReferrersList({
 											</span>
 										</div>
 										<div className="flex items-center gap-2 shrink-0">
-											<span className="text-[10px] text-muted-foreground tabular-nums">
-												{pct}%
-											</span>
+											<span className="text-[10px] text-muted-foreground tabular-nums">{pct}%</span>
 											<span className="text-xs font-mono tabular-nums text-muted-foreground">
 												{ref.count.toLocaleString()}
 											</span>

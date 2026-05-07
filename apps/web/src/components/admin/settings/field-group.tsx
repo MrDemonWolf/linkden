@@ -7,11 +7,7 @@ export function FieldGroup({
 	children: React.ReactNode;
 	columns?: 1 | 2;
 }) {
-	return (
-		<div className={cn("grid gap-4", columns === 2 && "sm:grid-cols-2")}>
-			{children}
-		</div>
-	);
+	return <div className={cn("grid gap-4", columns === 2 && "sm:grid-cols-2")}>{children}</div>;
 }
 
 export const selectClassName =

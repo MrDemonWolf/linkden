@@ -40,13 +40,9 @@ export function HeaderBlock({ block, config, colorMode, themeColors }: HeaderBlo
 
 	const content = (
 		<span className="flex items-center justify-center gap-2">
-			{emoji && emojiPosition === "left" && (
-				<span aria-hidden="true">{emoji}</span>
-			)}
+			{emoji && emojiPosition === "left" && <span aria-hidden="true">{emoji}</span>}
 			<span>{block.title || ""}</span>
-			{emoji && emojiPosition === "right" && (
-				<span aria-hidden="true">{emoji}</span>
-			)}
+			{emoji && emojiPosition === "right" && <span aria-hidden="true">{emoji}</span>}
 		</span>
 	);
 
@@ -60,7 +56,10 @@ export function HeaderBlock({ block, config, colorMode, themeColors }: HeaderBlo
 			{showDivider && (
 				<hr
 					className="mt-2"
-					style={{ borderColor: themeColors?.border || (colorMode === "dark" ? "#374151" : "#e5e7eb"), transition: "border-color 0.5s ease" }}
+					style={{
+						borderColor: themeColors?.border || (colorMode === "dark" ? "#374151" : "#e5e7eb"),
+						transition: "border-color 0.5s ease",
+					}}
 				/>
 			)}
 		</div>

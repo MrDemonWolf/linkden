@@ -51,18 +51,13 @@ export function CountriesList({
 						))}
 					</div>
 				) : data.length === 0 ? (
-					<p className="text-xs text-muted-foreground py-6 text-center">
-						No country data yet
-					</p>
+					<p className="text-xs text-muted-foreground py-6 text-center">No country data yet</p>
 				) : (
 					<div className="space-y-2">
 						{data.map((c, i) => {
 							const pct = max > 0 ? Math.round((c.count / max) * 100) : 0;
 							return (
-								<div
-									key={String(c.country ?? i)}
-									className="flex items-center gap-3"
-								>
+								<div key={String(c.country ?? i)} className="flex items-center gap-3">
 									<span className="text-base shrink-0 w-5 text-center">
 										{flagFromCountry(c.country)}
 									</span>

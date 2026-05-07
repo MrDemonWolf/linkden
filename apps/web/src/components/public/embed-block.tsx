@@ -39,20 +39,12 @@ function getEmbedUrl(embedType: string | null, embedUrl: string | null): string 
 
 	switch (embedType) {
 		case "youtube": {
-			const match = embedUrl.match(
-				/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/,
-			);
-			return match
-				? `https://www.youtube-nocookie.com/embed/${match[1]}`
-				: null;
+			const match = embedUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+			return match ? `https://www.youtube-nocookie.com/embed/${match[1]}` : null;
 		}
 		case "spotify": {
-			const match = embedUrl.match(
-				/spotify\.com\/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/,
-			);
-			return match
-				? `https://open.spotify.com/embed/${match[1]}/${match[2]}`
-				: null;
+			const match = embedUrl.match(/spotify\.com\/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/);
+			return match ? `https://open.spotify.com/embed/${match[1]}/${match[2]}` : null;
 		}
 		case "soundcloud":
 			return `https://w.soundcloud.com/player/?url=${encodeURIComponent(embedUrl)}&auto_play=false&visual=true`;
@@ -100,7 +92,10 @@ export function EmbedBlock({ block, config, colorMode, themeColors }: EmbedBlock
 			{showTitle && block.title && (
 				<h3
 					className="mb-2 text-sm font-medium"
-					style={{ color: themeColors?.mutedFg || (colorMode === "dark" ? "#d1d5db" : "#374151"), transition: "color 0.5s ease" }}
+					style={{
+						color: themeColors?.mutedFg || (colorMode === "dark" ? "#d1d5db" : "#374151"),
+						transition: "color 0.5s ease",
+					}}
 				>
 					{block.title}
 				</h3>

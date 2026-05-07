@@ -7,13 +7,7 @@ import { cn } from "@/lib/utils";
 
 /* ---------- lightweight CodeMirror wrapper (lazy-loaded) ---------- */
 
-function CssEditor({
-	value,
-	onChange,
-}: {
-	value: string;
-	onChange: (value: string) => void;
-}) {
+function CssEditor({ value, onChange }: { value: string; onChange: (value: string) => void }) {
 	const editorRef = useRef<HTMLDivElement>(null);
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const viewRef = useRef<any>(null);
@@ -28,12 +22,21 @@ function CssEditor({
 		let destroyed = false;
 
 		(async () => {
-			const { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter, drawSelection } = await import("@codemirror/view");
+			const {
+				EditorView,
+				keymap,
+				lineNumbers,
+				highlightActiveLine,
+				highlightActiveLineGutter,
+				drawSelection,
+			} = await import("@codemirror/view");
 			const { EditorState } = await import("@codemirror/state");
 			const { css } = await import("@codemirror/lang-css");
 			const { oneDark } = await import("@codemirror/theme-one-dark");
 			const { defaultKeymap, history, historyKeymap } = await import("@codemirror/commands");
-			const { syntaxHighlighting, defaultHighlightStyle, bracketMatching } = await import("@codemirror/language");
+			const { syntaxHighlighting, defaultHighlightStyle, bracketMatching } = await import(
+				"@codemirror/language"
+			);
 			const { closeBrackets, closeBracketsKeymap } = await import("@codemirror/autocomplete");
 
 			if (destroyed || !editorRef.current) return;
@@ -93,11 +96,9 @@ function CssEditor({
 					oneDark,
 					editorTheme,
 					syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-					keymap.of([
-						...defaultKeymap,
-						...historyKeymap,
-						...closeBracketsKeymap,
-					] as Parameters<typeof keymap.of>[0]),
+					keymap.of([...defaultKeymap, ...historyKeymap, ...closeBracketsKeymap] as Parameters<
+						typeof keymap.of
+					>[0]),
 					updateListener,
 					EditorView.lineWrapping,
 				],
@@ -118,7 +119,7 @@ function CssEditor({
 		};
 		// Only run once on mount - value is captured at creation time
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	}, [value]);
 
 	// Sync external value changes into the editor (e.g. discard/reset)
 	useEffect(() => {
@@ -174,32 +175,55 @@ function CssReference() {
 			{open && (
 				<div className="border-t border-border/40 px-3 py-3 space-y-3 animate-in fade-in-0 slide-in-from-top-1 duration-150">
 					<div>
-						<p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Classes</p>
+						<p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+							Classes
+						</p>
 						<div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-[11px]">
-							<span className="text-primary/80">.ld-page</span><span className="text-muted-foreground">Page container</span>
-							<span className="text-primary/80">.ld-profile</span><span className="text-muted-foreground">Profile section</span>
-							<span className="text-primary/80">.ld-avatar</span><span className="text-muted-foreground">Profile avatar</span>
-							<span className="text-primary/80">.ld-bio</span><span className="text-muted-foreground">Bio text</span>
-							<span className="text-primary/80">.ld-blocks</span><span className="text-muted-foreground">Blocks container</span>
-							<span className="text-primary/80">.ld-link-block</span><span className="text-muted-foreground">Link buttons</span>
-							<span className="text-primary/80">.ld-header-block</span><span className="text-muted-foreground">Header blocks</span>
-							<span className="text-primary/80">.ld-social-block</span><span className="text-muted-foreground">Social icons</span>
-							<span className="text-primary/80">.ld-embed-block</span><span className="text-muted-foreground">Embed blocks</span>
-							<span className="text-primary/80">.ld-contact-block</span><span className="text-muted-foreground">Contact form</span>
-							<span className="text-primary/80">.ld-footer</span><span className="text-muted-foreground">Branding footer</span>
+							<span className="text-primary/80">.ld-page</span>
+							<span className="text-muted-foreground">Page container</span>
+							<span className="text-primary/80">.ld-profile</span>
+							<span className="text-muted-foreground">Profile section</span>
+							<span className="text-primary/80">.ld-avatar</span>
+							<span className="text-muted-foreground">Profile avatar</span>
+							<span className="text-primary/80">.ld-bio</span>
+							<span className="text-muted-foreground">Bio text</span>
+							<span className="text-primary/80">.ld-blocks</span>
+							<span className="text-muted-foreground">Blocks container</span>
+							<span className="text-primary/80">.ld-link-block</span>
+							<span className="text-muted-foreground">Link buttons</span>
+							<span className="text-primary/80">.ld-header-block</span>
+							<span className="text-muted-foreground">Header blocks</span>
+							<span className="text-primary/80">.ld-social-block</span>
+							<span className="text-muted-foreground">Social icons</span>
+							<span className="text-primary/80">.ld-embed-block</span>
+							<span className="text-muted-foreground">Embed blocks</span>
+							<span className="text-primary/80">.ld-contact-block</span>
+							<span className="text-muted-foreground">Contact form</span>
+							<span className="text-primary/80">.ld-footer</span>
+							<span className="text-muted-foreground">Branding footer</span>
 						</div>
 					</div>
 					<div>
-						<p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Variables</p>
+						<p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+							Variables
+						</p>
 						<div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-[11px]">
-							<span className="text-primary/80">--ld-primary</span><span className="text-muted-foreground">Primary color</span>
-							<span className="text-primary/80">--ld-accent</span><span className="text-muted-foreground">Accent color</span>
-							<span className="text-primary/80">--ld-background</span><span className="text-muted-foreground">Page background</span>
-							<span className="text-primary/80">--ld-foreground</span><span className="text-muted-foreground">Text color</span>
-							<span className="text-primary/80">--ld-card</span><span className="text-muted-foreground">Card background</span>
-							<span className="text-primary/80">--ld-border</span><span className="text-muted-foreground">Border color</span>
-							<span className="text-primary/80">--ld-muted</span><span className="text-muted-foreground">Muted background</span>
-							<span className="text-primary/80">--ld-radius</span><span className="text-muted-foreground">Border radius</span>
+							<span className="text-primary/80">--ld-primary</span>
+							<span className="text-muted-foreground">Primary color</span>
+							<span className="text-primary/80">--ld-accent</span>
+							<span className="text-muted-foreground">Accent color</span>
+							<span className="text-primary/80">--ld-background</span>
+							<span className="text-muted-foreground">Page background</span>
+							<span className="text-primary/80">--ld-foreground</span>
+							<span className="text-muted-foreground">Text color</span>
+							<span className="text-primary/80">--ld-card</span>
+							<span className="text-muted-foreground">Card background</span>
+							<span className="text-primary/80">--ld-border</span>
+							<span className="text-muted-foreground">Border color</span>
+							<span className="text-primary/80">--ld-muted</span>
+							<span className="text-muted-foreground">Muted background</span>
+							<span className="text-primary/80">--ld-radius</span>
+							<span className="text-muted-foreground">Border radius</span>
 						</div>
 					</div>
 				</div>

@@ -13,18 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@linkden/ui";
 import { Separator } from "@linkden/ui";
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ShaderBanner } from "@/components/public/shader-banner";
-import {
-	getLoginBgStyle,
-	getLoginShaderPreset,
-	isCustomLoginBg,
-} from "@/lib/login-bg";
+import { getLoginBgStyle, getLoginShaderPreset, isCustomLoginBg } from "@/lib/login-bg";
 
 export default function AdminLoginPage() {
 	const router = useRouter();
@@ -103,11 +94,14 @@ export default function AdminLoginPage() {
 			const response = await fetch("/api/auth/send-password-reset-email", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ email, redirectUrl: `${window.location.origin}/admin/reset-password` }),
+				body: JSON.stringify({
+					email,
+					redirectUrl: `${window.location.origin}/admin/reset-password`,
+				}),
 			});
 
 			if (!response.ok) {
-				const error = await response.json() as { message?: string };
+				const error = (await response.json()) as { message?: string };
 				throw new Error(error.message || "Failed to send reset link");
 			}
 
@@ -149,7 +143,12 @@ export default function AdminLoginPage() {
 	};
 
 	/* Shared card wrapper for status screens (success, magic link sent, reset sent) */
-	const StatusCard = ({ icon, title, description, action }: {
+	const StatusCard = ({
+		icon,
+		title,
+		description,
+		action,
+	}: {
 		icon: React.ReactNode;
 		title: string;
 		description: React.ReactNode;
@@ -176,10 +175,7 @@ export default function AdminLoginPage() {
 	);
 
 	return (
-		<div
-			className="login-bg relative min-h-screen overflow-hidden"
-			style={loginBgStyle}
-		>
+		<div className="login-bg relative min-h-screen overflow-hidden" style={loginBgStyle}>
 			{/* Shader background — full-bleed when a shader preset is selected */}
 			{loginShaderPreset && (
 				<div className="absolute inset-0">
@@ -187,9 +183,7 @@ export default function AdminLoginPage() {
 				</div>
 			)}
 			{/* Legibility overlay for custom + preset images */}
-			{hasCustomBg && (
-				<div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
-			)}
+			{hasCustomBg && <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />}
 
 			<div className="relative z-10 min-h-screen lg:grid lg:grid-cols-2">
 				{/* Brand panel — lg+ only */}
@@ -204,9 +198,7 @@ export default function AdminLoginPage() {
 						) : (
 							<WolfLogo className="h-10 w-10" />
 						)}
-						<span className="text-sm font-semibold tracking-tight text-foreground">
-							{siteName}
-						</span>
+						<span className="text-sm font-semibold tracking-tight text-foreground">{siteName}</span>
 					</div>
 
 					<div className="max-w-md">
@@ -224,290 +216,366 @@ export default function AdminLoginPage() {
 						</p>
 					</div>
 
-					<div className="data-mono text-[11px] text-muted-foreground/70">
-						v0.1.0 · self-hosted
-					</div>
+					<div className="data-mono text-[11px] text-muted-foreground/70">v0.1.0 · self-hosted</div>
 				</aside>
 
 				{/* Form column */}
 				<div className="flex flex-col min-h-screen lg:min-h-0">
-			<main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6">
-				<div className="w-full max-w-[420px] login-card-enter">
-					{loginSuccess ? (
-						<StatusCard
-							icon={<Loader2 className="h-5 w-5 animate-spin text-blue-400" />}
-							title="Welcome back"
-							description={<span className="text-slate-300">Signing you in...</span>}
-						/>
-					) : magicLinkSent ? (
-						<StatusCard
-							icon={<Mail className="h-5 w-5 text-blue-400" />}
-							title="Check your inbox"
-							description={
-								<>We sent a magic link to <span className="font-medium text-slate-200">{email}</span>. Click it to sign in.</>
-							}
-							action={<BackLink onClick={() => { setMagicLinkSent(false); setFormError(""); }} />}
-						/>
-					) : resetLinkSent ? (
-						<StatusCard
-							icon={<Mail className="h-5 w-5 text-blue-400" />}
-							title="Check your inbox"
-							description={
-								<>We sent a reset link to <span className="font-medium text-slate-200">{email}</span>. Click it to reset your password.</>
-							}
-							action={<BackLink onClick={() => { setResetLinkSent(false); setForgotMode(false); setFormError(""); }} />}
-						/>
-					) : forgotMode ? (
-						<div className="login-glass-card relative rounded-2xl p-8 sm:p-10 transition-shadow duration-300">
-							{/* Header */}
-							<div className="text-center mb-8">
-								{loginLogoUrl ? (
-									<img src={loginLogoUrl} alt="" className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-white/10" />
-								) : (
-									<WolfLogo className="mx-auto h-22 w-22" />
-								)}
-								<h1 className="mt-5 text-2xl font-bold text-white tracking-tight">Reset password</h1>
-								<p className="mt-2 text-sm text-slate-400">Enter your email and we&apos;ll send a reset link</p>
-							</div>
-
-							<form onSubmit={handleForgotPassword} className="space-y-5" aria-describedby={formError ? "login-error" : undefined}>
-								<div aria-live="polite" aria-atomic="true">
-									{formError && (
-										<div
-											id="login-error"
-											className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-xs text-red-400"
-										>
-											<AlertCircle className="h-3.5 w-3.5 shrink-0" />
-											<span>{formError}</span>
-										</div>
-									)}
-								</div>
-
-								<div className="space-y-2">
-									<Label htmlFor="forgot-email" className="text-sm font-medium text-slate-300">
-										Email
-									</Label>
-									<div className="relative login-input rounded-lg">
-										<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-										<Input
-											id="forgot-email"
-											type="email"
-											placeholder="you@example.com"
-											value={email}
-											onChange={(e) => setEmail(e.target.value)}
-											autoComplete="email"
-											className="bg-white/[0.04] border-white/[0.08] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500/40 focus-visible:border-blue-500/30 pl-10 h-11"
-											required
+					<main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6">
+						<div className="w-full max-w-[420px] login-card-enter">
+							{loginSuccess ? (
+								<StatusCard
+									icon={<Loader2 className="h-5 w-5 animate-spin text-blue-400" />}
+									title="Welcome back"
+									description={<span className="text-slate-300">Signing you in...</span>}
+								/>
+							) : magicLinkSent ? (
+								<StatusCard
+									icon={<Mail className="h-5 w-5 text-blue-400" />}
+									title="Check your inbox"
+									description={
+										<>
+											We sent a magic link to{" "}
+											<span className="font-medium text-slate-200">{email}</span>. Click it to sign
+											in.
+										</>
+									}
+									action={
+										<BackLink
+											onClick={() => {
+												setMagicLinkSent(false);
+												setFormError("");
+											}}
 										/>
-									</div>
-								</div>
-
-								<Button
-									type="submit"
-									className="w-full h-11 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
-									disabled={isForgotSubmitting}
-								>
-									{isForgotSubmitting ? (
+									}
+								/>
+							) : resetLinkSent ? (
+								<StatusCard
+									icon={<Mail className="h-5 w-5 text-blue-400" />}
+									title="Check your inbox"
+									description={
 										<>
-											<Loader2 className="h-4 w-4 animate-spin" />
-											Sending...
+											We sent a reset link to{" "}
+											<span className="font-medium text-slate-200">{email}</span>. Click it to reset
+											your password.
 										</>
-									) : (
-										<>
-											Send reset link
-											<ArrowRight className="h-4 w-4 ml-1" />
-										</>
-									)}
-								</Button>
-
-								<div className="text-center pt-1">
-									<BackLink onClick={() => { setForgotMode(false); setFormError(""); }} />
-								</div>
-							</form>
-						</div>
-					) : (
-						<div className="login-glass-card relative rounded-2xl p-8 sm:p-10 transition-shadow duration-300">
-							{/* Header */}
-							<div className="text-center mb-8">
-								{loginLogoUrl ? (
-									<img src={loginLogoUrl} alt="" className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-white/10" />
-								) : (
-									<WolfLogo className="mx-auto h-22 w-22" />
-								)}
-								<h1 className="mt-5 text-2xl font-bold text-white tracking-tight">Welcome back</h1>
-								<p className="mt-2 text-sm text-slate-400">Sign in to your dashboard</p>
-							</div>
-
-							<form onSubmit={handleSubmit} className="space-y-5" aria-describedby={formError ? "login-error" : undefined}>
-								<div aria-live="polite" aria-atomic="true">
-									{formError && (
-										<div
-											id="login-error"
-											className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-xs text-red-400"
-										>
-											<AlertCircle className="h-3.5 w-3.5 shrink-0" />
-											<span>{formError}</span>
-										</div>
-									)}
-								</div>
-
-								<div className="space-y-2">
-									<Label htmlFor="email" className="text-sm font-medium text-slate-300">
-										Email
-									</Label>
-									<div className="relative login-input rounded-lg">
-										<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-										<Input
-											id="email"
-											type="email"
-											placeholder="you@example.com"
-											value={email}
-											onChange={(e) => setEmail(e.target.value)}
-											autoComplete="email"
-											className="bg-white/[0.04] border-white/[0.08] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500/40 focus-visible:border-blue-500/30 pl-10 h-11"
-											required
+									}
+									action={
+										<BackLink
+											onClick={() => {
+												setResetLinkSent(false);
+												setForgotMode(false);
+												setFormError("");
+											}}
 										/>
-									</div>
-								</div>
-
-								<div className="space-y-2">
-									<div className="flex items-center justify-between">
-										<Label htmlFor="password" className="text-sm font-medium text-slate-300">
-											Password
-										</Label>
-										<button
-											type="button"
-											onClick={() => { setForgotMode(true); setFormError(""); }}
-											className="text-xs text-blue-400 cursor-pointer hover:text-blue-300 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
-										>
-											Forgot password?
-										</button>
-									</div>
-									<div className="relative login-input rounded-lg">
-										<Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
-										<Input
-											id="password"
-											type={showPassword ? "text" : "password"}
-											placeholder="Enter your password"
-											value={password}
-											onChange={(e) => setPassword(e.target.value)}
-											autoComplete="current-password"
-											className="bg-white/[0.04] border-white/[0.08] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500/40 focus-visible:border-blue-500/30 pl-10 h-11"
-										/>
-										<button
-											type="button"
-											onClick={() => setShowPassword(!showPassword)}
-											className="absolute right-0.5 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center text-slate-500 hover:text-slate-300 transition-colors"
-											aria-label={showPassword ? "Hide password" : "Show password"}
-											aria-pressed={showPassword}
-										>
-											{showPassword ? (
-												<EyeOff className="h-4 w-4" />
-											) : (
-												<Eye className="h-4 w-4" />
-											)}
-										</button>
-									</div>
-								</div>
-
-								<div className="flex items-center gap-2">
-									<Checkbox
-										id="remember-me"
-										checked={rememberMe}
-										onCheckedChange={(checked) => setRememberMe(checked === true)}
-									/>
-									<Label htmlFor="remember-me" className="text-xs text-slate-400 cursor-pointer">
-										Keep me signed in
-									</Label>
-								</div>
-
-								<Button
-									type="submit"
-									className="w-full h-11 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
-									disabled={isSubmitting}
-								>
-									{isSubmitting ? (
-										<>
-											<Loader2 className="h-4 w-4 animate-spin" />
-											Signing in...
-										</>
-									) : (
-										<>
-											Sign in
-											<ArrowRight className="h-4 w-4 ml-1" />
-										</>
-									)}
-								</Button>
-							</form>
-
-							{magicLinkEnabled && (
-								<div className="mt-6 space-y-4">
-									<div className="relative">
-										<Separator className="bg-white/[0.06]" />
-										<span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0f1726] px-3 text-[10px] font-medium uppercase tracking-wider text-slate-500">
-											or
-										</span>
-									</div>
-
-									<Button
-										type="button"
-										variant="outline"
-										className="w-full h-11 border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.06] text-slate-200 transition-all"
-										disabled={isMagicLinkSubmitting}
-										onClick={handleMagicLink}
-									>
-										{isMagicLinkSubmitting ? (
-											<>
-												<Loader2 className="h-4 w-4 animate-spin" />
-												Sending...
-											</>
+									}
+								/>
+							) : forgotMode ? (
+								<div className="login-glass-card relative rounded-2xl p-8 sm:p-10 transition-shadow duration-300">
+									{/* Header */}
+									<div className="text-center mb-8">
+										{loginLogoUrl ? (
+											<img
+												src={loginLogoUrl}
+												alt=""
+												className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-white/10"
+											/>
 										) : (
-											<>
-												<Mail className="h-4 w-4" />
-												Sign in with Magic Link
-											</>
+											<WolfLogo className="mx-auto h-22 w-22" />
 										)}
-									</Button>
+										<h1 className="mt-5 text-2xl font-bold text-white tracking-tight">
+											Reset password
+										</h1>
+										<p className="mt-2 text-sm text-slate-400">
+											Enter your email and we&apos;ll send a reset link
+										</p>
+									</div>
+
+									<form
+										onSubmit={handleForgotPassword}
+										className="space-y-5"
+										aria-describedby={formError ? "login-error" : undefined}
+									>
+										<div aria-live="polite" aria-atomic="true">
+											{formError && (
+												<div
+													id="login-error"
+													className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-xs text-red-400"
+												>
+													<AlertCircle className="h-3.5 w-3.5 shrink-0" />
+													<span>{formError}</span>
+												</div>
+											)}
+										</div>
+
+										<div className="space-y-2">
+											<Label htmlFor="forgot-email" className="text-sm font-medium text-slate-300">
+												Email
+											</Label>
+											<div className="relative login-input rounded-lg">
+												<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+												<Input
+													id="forgot-email"
+													type="email"
+													placeholder="you@example.com"
+													value={email}
+													onChange={(e) => setEmail(e.target.value)}
+													autoComplete="email"
+													className="bg-white/[0.04] border-white/[0.08] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500/40 focus-visible:border-blue-500/30 pl-10 h-11"
+													required
+												/>
+											</div>
+										</div>
+
+										<Button
+											type="submit"
+											className="w-full h-11 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
+											disabled={isForgotSubmitting}
+										>
+											{isForgotSubmitting ? (
+												<>
+													<Loader2 className="h-4 w-4 animate-spin" />
+													Sending...
+												</>
+											) : (
+												<>
+													Send reset link
+													<ArrowRight className="h-4 w-4 ml-1" />
+												</>
+											)}
+										</Button>
+
+										<div className="text-center pt-1">
+											<BackLink
+												onClick={() => {
+													setForgotMode(false);
+													setFormError("");
+												}}
+											/>
+										</div>
+									</form>
+								</div>
+							) : (
+								<div className="login-glass-card relative rounded-2xl p-8 sm:p-10 transition-shadow duration-300">
+									{/* Header */}
+									<div className="text-center mb-8">
+										{loginLogoUrl ? (
+											<img
+												src={loginLogoUrl}
+												alt=""
+												className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-white/10"
+											/>
+										) : (
+											<WolfLogo className="mx-auto h-22 w-22" />
+										)}
+										<h1 className="mt-5 text-2xl font-bold text-white tracking-tight">
+											Welcome back
+										</h1>
+										<p className="mt-2 text-sm text-slate-400">Sign in to your dashboard</p>
+									</div>
+
+									<form
+										onSubmit={handleSubmit}
+										className="space-y-5"
+										aria-describedby={formError ? "login-error" : undefined}
+									>
+										<div aria-live="polite" aria-atomic="true">
+											{formError && (
+												<div
+													id="login-error"
+													className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-xs text-red-400"
+												>
+													<AlertCircle className="h-3.5 w-3.5 shrink-0" />
+													<span>{formError}</span>
+												</div>
+											)}
+										</div>
+
+										<div className="space-y-2">
+											<Label htmlFor="email" className="text-sm font-medium text-slate-300">
+												Email
+											</Label>
+											<div className="relative login-input rounded-lg">
+												<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+												<Input
+													id="email"
+													type="email"
+													placeholder="you@example.com"
+													value={email}
+													onChange={(e) => setEmail(e.target.value)}
+													autoComplete="email"
+													className="bg-white/[0.04] border-white/[0.08] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500/40 focus-visible:border-blue-500/30 pl-10 h-11"
+													required
+												/>
+											</div>
+										</div>
+
+										<div className="space-y-2">
+											<div className="flex items-center justify-between">
+												<Label htmlFor="password" className="text-sm font-medium text-slate-300">
+													Password
+												</Label>
+												<button
+													type="button"
+													onClick={() => {
+														setForgotMode(true);
+														setFormError("");
+													}}
+													className="text-xs text-blue-400 cursor-pointer hover:text-blue-300 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
+												>
+													Forgot password?
+												</button>
+											</div>
+											<div className="relative login-input rounded-lg">
+												<Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+												<Input
+													id="password"
+													type={showPassword ? "text" : "password"}
+													placeholder="Enter your password"
+													value={password}
+													onChange={(e) => setPassword(e.target.value)}
+													autoComplete="current-password"
+													className="bg-white/[0.04] border-white/[0.08] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500/40 focus-visible:border-blue-500/30 pl-10 h-11"
+												/>
+												<button
+													type="button"
+													onClick={() => setShowPassword(!showPassword)}
+													className="absolute right-0.5 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center text-slate-500 hover:text-slate-300 transition-colors"
+													aria-label={showPassword ? "Hide password" : "Show password"}
+													aria-pressed={showPassword}
+												>
+													{showPassword ? (
+														<EyeOff className="h-4 w-4" />
+													) : (
+														<Eye className="h-4 w-4" />
+													)}
+												</button>
+											</div>
+										</div>
+
+										<div className="flex items-center gap-2">
+											<Checkbox
+												id="remember-me"
+												checked={rememberMe}
+												onCheckedChange={(checked) => setRememberMe(checked === true)}
+											/>
+											<Label
+												htmlFor="remember-me"
+												className="text-xs text-slate-400 cursor-pointer"
+											>
+												Keep me signed in
+											</Label>
+										</div>
+
+										<Button
+											type="submit"
+											className="w-full h-11 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
+											disabled={isSubmitting}
+										>
+											{isSubmitting ? (
+												<>
+													<Loader2 className="h-4 w-4 animate-spin" />
+													Signing in...
+												</>
+											) : (
+												<>
+													Sign in
+													<ArrowRight className="h-4 w-4 ml-1" />
+												</>
+											)}
+										</Button>
+									</form>
+
+									{magicLinkEnabled && (
+										<div className="mt-6 space-y-4">
+											<div className="relative">
+												<Separator className="bg-white/[0.06]" />
+												<span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0f1726] px-3 text-[10px] font-medium uppercase tracking-wider text-slate-500">
+													or
+												</span>
+											</div>
+
+											<Button
+												type="button"
+												variant="outline"
+												className="w-full h-11 border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.06] text-slate-200 transition-all"
+												disabled={isMagicLinkSubmitting}
+												onClick={handleMagicLink}
+											>
+												{isMagicLinkSubmitting ? (
+													<>
+														<Loader2 className="h-4 w-4 animate-spin" />
+														Sending...
+													</>
+												) : (
+													<>
+														<Mail className="h-4 w-4" />
+														Sign in with Magic Link
+													</>
+												)}
+											</Button>
+										</div>
+									)}
 								</div>
 							)}
+
+							{/* Below-card link */}
+							{!loginSuccess && !magicLinkSent && !resetLinkSent && (
+								<p className="mt-5 text-center text-xs text-slate-500">
+									Don&apos;t have an account?{" "}
+									<a
+										href="/admin/setup"
+										className="text-blue-400 hover:text-blue-300 transition-colors"
+									>
+										Set up LinkDen
+									</a>
+								</p>
+							)}
 						</div>
-					)}
+					</main>
 
-					{/* Below-card link */}
-					{!loginSuccess && !magicLinkSent && !resetLinkSent && (
-						<p className="mt-5 text-center text-xs text-slate-500">
-							Don&apos;t have an account?{" "}
-							<a href="/admin/setup" className="text-blue-400 hover:text-blue-300 transition-colors">
-								Set up LinkDen
-							</a>
-						</p>
-					)}
-				</div>
-			</main>
-
-			{/* Footer -- branding PP/ToS only */}
-			{branding && (branding.ppUrl || branding.tosUrl || branding.ppText || branding.tosText) && (
-				<footer className="relative z-10 py-6 px-6 flex justify-center gap-6">
-					{branding.ppMode === "url" && branding.ppUrl ? (
-						<a href={branding.ppUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 hover:text-blue-400 transition-colors">
-							Privacy Policy
-						</a>
-					) : branding.ppMode === "text" && branding.ppText ? (
-						<button type="button" onClick={() => setPpDialogOpen(true)} className="text-xs text-slate-500 hover:text-blue-400 transition-colors">
-							Privacy Policy
-						</button>
-					) : null}
-					{branding.tosMode === "url" && branding.tosUrl ? (
-						<a href={branding.tosUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-slate-500 hover:text-blue-400 transition-colors">
-							Terms of Service
-						</a>
-					) : branding.tosMode === "text" && branding.tosText ? (
-						<button type="button" onClick={() => setTosDialogOpen(true)} className="text-xs text-slate-500 hover:text-blue-400 transition-colors">
-							Terms of Service
-						</button>
-					) : null}
-				</footer>
-			)}
+					{/* Footer -- branding PP/ToS only */}
+					{branding &&
+						(branding.ppUrl || branding.tosUrl || branding.ppText || branding.tosText) && (
+							<footer className="relative z-10 py-6 px-6 flex justify-center gap-6">
+								{branding.ppMode === "url" && branding.ppUrl ? (
+									<a
+										href={branding.ppUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="text-xs text-slate-500 hover:text-blue-400 transition-colors"
+									>
+										Privacy Policy
+									</a>
+								) : branding.ppMode === "text" && branding.ppText ? (
+									<button
+										type="button"
+										onClick={() => setPpDialogOpen(true)}
+										className="text-xs text-slate-500 hover:text-blue-400 transition-colors"
+									>
+										Privacy Policy
+									</button>
+								) : null}
+								{branding.tosMode === "url" && branding.tosUrl ? (
+									<a
+										href={branding.tosUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="text-xs text-slate-500 hover:text-blue-400 transition-colors"
+									>
+										Terms of Service
+									</a>
+								) : branding.tosMode === "text" && branding.tosText ? (
+									<button
+										type="button"
+										onClick={() => setTosDialogOpen(true)}
+										className="text-xs text-slate-500 hover:text-blue-400 transition-colors"
+									>
+										Terms of Service
+									</button>
+								) : null}
+							</footer>
+						)}
 				</div>
 			</div>
 

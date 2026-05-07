@@ -35,9 +35,7 @@ export function NetworkRow({
 	const fullUrlMode = isFullUrlTemplate(template);
 	const prefix = fullUrlMode ? "" : getPrefix(template);
 	const suffix = fullUrlMode ? "" : getSuffix(template);
-	const displayValue = fullUrlMode
-		? draft.url
-		: extractUsername(draft.url, template);
+	const displayValue = fullUrlMode ? draft.url : extractUsername(draft.url, template);
 
 	const { bg: adminBg, fg: adminFg } = getAdminThemeColors(resolvedTheme);
 	const fillColor = draft.isActive
@@ -63,87 +61,75 @@ export function NetworkRow({
 					<div
 						className={cn(
 							"flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl transition-transform",
-							draft.isActive
-								? ""
-								: "bg-muted/50 group-hover:scale-105",
+							draft.isActive ? "" : "bg-muted/50 group-hover:scale-105",
 							needsRing && draft.isActive && "ring-1 ring-border dark:ring-white/20",
 						)}
-						style={
-							draft.isActive
-								? { backgroundColor: `${social.hex}15` }
-								: undefined
-						}
+						style={draft.isActive ? { backgroundColor: `${social.hex}15` } : undefined}
 					>
 						<svg viewBox="0 0 24 24" className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true">
-							<path
-								d={social.svgPath}
-								fill={fillColor}
-							/>
+							<path d={social.svgPath} fill={fillColor} />
 						</svg>
 					</div>
 
-					<label htmlFor={`input-${social.slug}`} className="sm:w-28 shrink-0 truncate text-xs font-medium text-foreground cursor-pointer">
+					<label
+						htmlFor={`input-${social.slug}`}
+						className="sm:w-28 shrink-0 truncate text-xs font-medium text-foreground cursor-pointer"
+					>
 						{social.name}
 					</label>
 				</div>
 
 				{/* URL input + toggle */}
 				<div className="flex items-center gap-2 sm:gap-3 sm:flex-1">
-				<div className="min-w-0 flex-1">
-					{fullUrlMode ? (
-						<Input
-							id={`input-${social.slug}`}
-							value={draft.url}
-							onChange={(e) =>
-								onUrlChange(social.slug, e.target.value)
-							}
-							placeholder="https://..."
-							className="h-8 text-xs"
-							aria-label={`URL for ${social.name}`}
-						/>
-					) : (
-						<div className="flex items-center rounded-lg border border-input bg-transparent h-8 overflow-hidden focus-within:ring-1 focus-within:ring-ring">
-							{prefix && (
-								<span className="shrink-0 select-none pl-2.5 text-xs text-muted-foreground">
-									{prefix}
-								</span>
-							)}
-							<input
+					<div className="min-w-0 flex-1">
+						{fullUrlMode ? (
+							<Input
 								id={`input-${social.slug}`}
-								value={displayValue}
-								onChange={(e) =>
-									onUrlChange(
-										social.slug,
-										buildUrl(e.target.value, template),
-									)
-								}
-								placeholder="username"
-								className="min-w-0 flex-1 bg-transparent px-1.5 text-xs outline-none placeholder:text-muted-foreground/50"
+								value={draft.url}
+								onChange={(e) => onUrlChange(social.slug, e.target.value)}
+								placeholder="https://..."
+								className="h-8 text-xs"
 								aria-label={`URL for ${social.name}`}
 							/>
-							{suffix && (
-								<span className="shrink-0 select-none pr-2.5 text-xs text-muted-foreground">
-									{suffix}
-								</span>
-							)}
-						</div>
+						) : (
+							<div className="flex items-center rounded-lg border border-input bg-transparent h-8 overflow-hidden focus-within:ring-1 focus-within:ring-ring">
+								{prefix && (
+									<span className="shrink-0 select-none pl-2.5 text-xs text-muted-foreground">
+										{prefix}
+									</span>
+								)}
+								<input
+									id={`input-${social.slug}`}
+									value={displayValue}
+									onChange={(e) => onUrlChange(social.slug, buildUrl(e.target.value, template))}
+									placeholder="username"
+									className="min-w-0 flex-1 bg-transparent px-1.5 text-xs outline-none placeholder:text-muted-foreground/50"
+									aria-label={`URL for ${social.name}`}
+								/>
+								{suffix && (
+									<span className="shrink-0 select-none pr-2.5 text-xs text-muted-foreground">
+										{suffix}
+									</span>
+								)}
+							</div>
+						)}
+					</div>
+
+					<Switch
+						checked={draft.isActive}
+						onCheckedChange={() => onToggle(social.slug)}
+						disabled={!draft.url}
+						aria-label={`Toggle ${social.name}`}
+						aria-describedby={!draft.url ? toggleDescriptionId : undefined}
+						className={cn(!draft.url && "opacity-40 cursor-not-allowed")}
+					/>
+					{!draft.url && (
+						<span id={toggleDescriptionId} className="sr-only">
+							Enter a URL to enable
+						</span>
 					)}
 				</div>
-
-				<Switch
-					checked={draft.isActive}
-					onCheckedChange={() => onToggle(social.slug)}
-					disabled={!draft.url}
-					aria-label={`Toggle ${social.name}`}
-					aria-describedby={!draft.url ? toggleDescriptionId : undefined}
-					className={cn(!draft.url && "opacity-40 cursor-not-allowed")}
-				/>
-				{!draft.url && (
-					<span id={toggleDescriptionId} className="sr-only">Enter a URL to enable</span>
-				)}
-				</div>
 			</div>
-
 		</div>
 	);
 }

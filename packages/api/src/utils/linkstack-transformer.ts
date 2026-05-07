@@ -96,10 +96,7 @@ function mapButtonIdToIcon(buttonId: string | undefined): string | null {
 export function isLinkStackExport(data: unknown): data is LinkStackExport {
 	if (typeof data !== "object" || data === null) return false;
 	const obj = data as Record<string, unknown>;
-	return (
-		("littlelink_name" in obj || "littlelink_description" in obj) &&
-		Array.isArray(obj.links)
-	);
+	return ("littlelink_name" in obj || "littlelink_description" in obj) && Array.isArray(obj.links);
 }
 
 export function transformLinkStackData(raw: LinkStackExport): TransformResult {

@@ -10,7 +10,6 @@ import {
 	Star,
 	CalendarCheck,
 	Users,
-	MessageSquare,
 	MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -49,9 +48,7 @@ function StarRating({ rating }: { rating: number }) {
 				<Star
 					key={i}
 					className={`h-3.5 w-3.5 ${
-						i < rating
-							? "fill-amber-400 text-amber-400"
-							: "text-muted-foreground/30"
+						i < rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"
 					}`}
 				/>
 			))}
@@ -67,7 +64,9 @@ function AttendingBadge({ attending }: { attending: string }) {
 	};
 	const cls = variants[attending.toLowerCase()] ?? "bg-muted text-muted-foreground";
 	return (
-		<span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${cls}`}>
+		<span
+			className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${cls}`}
+		>
 			{attending.charAt(0).toUpperCase() + attending.slice(1)}
 		</span>
 	);
@@ -104,14 +103,13 @@ export function ContactDetail({
 							: "?"}
 					</div>
 					<div className="min-w-0 flex-1">
-						<p className="text-sm font-semibold truncate">
-							{contact.name || "Anonymous"}
-						</p>
-						<p className="text-[11px] text-muted-foreground truncate">
-							{contact.email}
-						</p>
+						<p className="text-sm font-semibold truncate">{contact.name || "Anonymous"}</p>
+						<p className="text-[11px] text-muted-foreground truncate">{contact.email}</p>
 					</div>
-					<Badge variant={contact.isRead ? "secondary" : "default"} className="shrink-0 text-[10px]">
+					<Badge
+						variant={contact.isRead ? "secondary" : "default"}
+						className="shrink-0 text-[10px]"
+					>
 						{contact.isRead ? "Read" : "Unread"}
 					</Badge>
 				</div>
@@ -137,20 +135,14 @@ export function ContactDetail({
 					<div className="space-y-1.5">
 						<div className="flex items-center gap-2 text-xs">
 							<Mail className="h-3.5 w-3.5 text-muted-foreground" />
-							<a
-								href={`mailto:${contact.email}`}
-								className="text-primary hover:underline"
-							>
+							<a href={`mailto:${contact.email}`} className="text-primary hover:underline">
 								{contact.email}
 							</a>
 						</div>
 						{contact.phone && (
 							<div className="flex items-center gap-2 text-xs">
 								<Phone className="h-3.5 w-3.5 text-muted-foreground" />
-								<a
-									href={`tel:${contact.phone}`}
-									className="text-primary hover:underline"
-								>
+								<a href={`tel:${contact.phone}`} className="text-primary hover:underline">
 									{contact.phone}
 								</a>
 							</div>
@@ -225,22 +217,12 @@ export function ContactDetail({
 			{/* Actions */}
 			<div className="flex flex-wrap gap-2 border-t px-4 py-3">
 				{contact.isRead ? (
-					<Button
-						variant="outline"
-						size="xs"
-						onClick={onMarkUnread}
-						disabled={isMarkingUnread}
-					>
+					<Button variant="outline" size="xs" onClick={onMarkUnread} disabled={isMarkingUnread}>
 						<Mail className="mr-1 h-3 w-3" />
 						Mark Unread
 					</Button>
 				) : (
-					<Button
-						variant="outline"
-						size="xs"
-						onClick={onMarkRead}
-						disabled={isMarkingRead}
-					>
+					<Button variant="outline" size="xs" onClick={onMarkRead} disabled={isMarkingRead}>
 						<MailOpen className="mr-1 h-3 w-3" />
 						Mark Read
 					</Button>
@@ -251,11 +233,7 @@ export function ContactDetail({
 						Reply
 					</Button>
 				</a>
-				<Button
-					variant="destructive"
-					size="xs"
-					onClick={onDelete}
-				>
+				<Button variant="destructive" size="xs" onClick={onDelete}>
 					<Trash2 className="mr-1 h-3 w-3" />
 					Delete
 				</Button>

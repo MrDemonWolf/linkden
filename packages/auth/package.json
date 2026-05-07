@@ -1,24 +1,24 @@
 {
-  "name": "@linkden/auth",
-  "type": "module",
-  "exports": {
-    ".": {
-      "default": "./src/index.ts"
-    },
-    "./*": {
-      "default": "./src/*.ts"
-    }
-  },
-  "scripts": {},
-  "dependencies": {
-    "@linkden/db": "workspace:*",
-    "@linkden/env": "workspace:*",
-    "better-auth": "^1.6.9",
-    "dotenv": "^17.4.2",
-    "zod": "^4.4.3"
-  },
-  "devDependencies": {
-    "@linkden/config": "workspace:*",
-    "typescript": "^5.9.3"
-  }
+	"name": "@linkden/auth",
+	"type": "module",
+	"exports": {
+		".": {
+			"default": "./src/index.ts"
+		},
+		"./*": {
+			"default": "./src/*.ts"
+		}
+	},
+	"scripts": {},
+	"dependencies": {
+		"@linkden/db": "workspace:*",
+		"@linkden/env": "workspace:*",
+		"better-auth": "^1.6.9",
+		"dotenv": "^17.4.2",
+		"zod": "^4.4.3"
+	},
+	"devDependencies": {
+		"@linkden/config": "workspace:*",
+		"typescript": "^5.9.3"
+	}
 }

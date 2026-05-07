@@ -2,7 +2,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FieldGroup, selectClassName } from "./field-group";
+import { FieldGroup } from "./field-group";
 import { cn } from "@/lib/utils";
 import { Mail, Cloud, Key, AtSign } from "lucide-react";
 
@@ -63,18 +63,14 @@ export function EmailSection({
 								<div
 									className={cn(
 										"mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
-										isSelected
-											? "bg-blue-500/10 text-blue-400"
-											: "bg-muted text-muted-foreground",
+										isSelected ? "bg-blue-500/10 text-blue-400" : "bg-muted text-muted-foreground",
 									)}
 								>
 									<Icon className="h-3.5 w-3.5" />
 								</div>
 								<div className="min-w-0">
 									<p className="text-xs font-medium">{p.name}</p>
-									<p className="mt-0.5 text-[10px] text-muted-foreground">
-										{p.description}
-									</p>
+									<p className="mt-0.5 text-[10px] text-muted-foreground">{p.description}</p>
 								</div>
 							</button>
 						);

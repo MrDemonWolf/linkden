@@ -45,10 +45,7 @@ export function SeoSection({
 	const previewUrl = `/api/og?template=${encodeURIComponent(seoOgTemplate || "minimal")}&name=${encodeURIComponent(profileName || "My Links")}&bio=${encodeURIComponent(bio || "")}&theme=${encodeURIComponent(primaryColor || "#6366f1")}${avatarUrl ? `&avatar=${encodeURIComponent(avatarUrl)}` : ""}&_preview=1`;
 
 	// Determine the OG image URL for the preview card
-	const ogImageForPreview =
-		seoOgMode === "template"
-			? previewUrl
-			: seoOgImage || "";
+	const ogImageForPreview = seoOgMode === "template" ? previewUrl : seoOgImage || "";
 
 	return (
 		<div className="space-y-6">
@@ -150,9 +147,7 @@ export function SeoSection({
 										</div>
 									)}
 									<p className="text-xs font-medium">{t.name}</p>
-									<p className="mt-0.5 text-[10px] text-muted-foreground">
-										{t.description}
-									</p>
+									<p className="mt-0.5 text-[10px] text-muted-foreground">{t.description}</p>
 								</button>
 							);
 						})}
@@ -173,7 +168,6 @@ export function SeoSection({
 						</p>
 					</div>
 				)}
-
 			</div>
 
 			{/* Live Social Preview */}

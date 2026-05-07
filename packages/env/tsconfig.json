@@ -1,3 +1,3 @@
 {
-  "extends": "@linkden/config/tsconfig.base.json"
+	"extends": "@linkden/config/tsconfig.base.json"
 }

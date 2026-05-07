@@ -56,15 +56,12 @@ export function MapKitSection() {
 		<div className="space-y-3">
 			<h2 className="text-sm font-semibold">Apple MapKit JS</h2>
 			<p className="text-[11px] text-muted-foreground">
-				Enable MapKit JS for address autocomplete in location blocks. Requires an Apple Developer account and a MapKit JS JWT token.
+				Enable MapKit JS for address autocomplete in location blocks. Requires an Apple Developer
+				account and a MapKit JS JWT token.
 			</p>
 
 			<div className="flex items-center gap-3">
-				<Switch
-					checked={enabled}
-					onCheckedChange={setEnabled}
-					aria-label="Enable MapKit JS"
-				/>
+				<Switch checked={enabled} onCheckedChange={setEnabled} aria-label="Enable MapKit JS" />
 				<Label>Enable MapKit JS</Label>
 			</div>
 
@@ -82,11 +79,7 @@ export function MapKitSection() {
 			)}
 
 			{isDirty && (
-				<Button
-					onClick={handleSave}
-					disabled={updateBulk.isPending}
-					size="sm"
-				>
+				<Button onClick={handleSave} disabled={updateBulk.isPending} size="sm">
 					{updateBulk.isPending ? "Saving..." : "Save MapKit Settings"}
 				</Button>
 			)}

@@ -101,12 +101,7 @@ export function ConfirmDialog({
 					>
 						{cancelLabel}
 					</Button>
-					<Button
-						variant={variant}
-						size="sm"
-						onClick={onConfirm}
-						disabled={isPending}
-					>
+					<Button variant={variant} size="sm" onClick={onConfirm} disabled={isPending}>
 						{isPending ? "..." : confirmLabel}
 					</Button>
 				</div>

@@ -14,11 +14,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-	ChartContainer,
-	ChartTooltipContent,
-	type ChartConfig,
-} from "@/components/ui/chart";
+import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 
 const areaChartConfig: ChartConfig = {
 	views: { label: "Views", color: "var(--primary, #0FACED)" },
@@ -66,10 +62,7 @@ export function ViewsClicksChart({
 		<Card>
 			<CardHeader>
 				<CardTitle className="flex items-center gap-1.5">
-					<Eye
-						className="h-4 w-4 text-primary"
-						aria-hidden="true"
-					/>
+					<Eye className="h-4 w-4 text-primary" aria-hidden="true" />
 					{title}
 				</CardTitle>
 			</CardHeader>
@@ -119,7 +112,12 @@ export function ViewsClicksChart({
 								</defs>
 								<CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
 								<XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 10 }} />
-								<YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
+								<YAxis
+									tickLine={false}
+									axisLine={false}
+									tick={{ fontSize: 10 }}
+									allowDecimals={false}
+								/>
 								<Tooltip content={<ChartTooltipContent labelFormatter={(label) => label} />} />
 								<Legend
 									verticalAlign="top"

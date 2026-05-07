@@ -30,8 +30,7 @@ function getContrastColor(hex: string): string {
 	const r = parseInt(hex.slice(1, 3), 16) / 255;
 	const g = parseInt(hex.slice(3, 5), 16) / 255;
 	const b = parseInt(hex.slice(5, 7), 16) / 255;
-	const toLinear = (c: number) =>
-		c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+	const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
 	const L = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
 	return L > 0.179 ? "#000000" : "#FFFFFF";
 }
@@ -67,14 +66,12 @@ function FloatingField({
 			}
 		: {};
 
-	const errorBorderStyle: React.CSSProperties =
-		error && touched ? { borderColor: "#f87171" } : {};
+	const errorBorderStyle: React.CSSProperties = error && touched ? { borderColor: "#f87171" } : {};
 
 	const baseClasses =
 		"peer w-full rounded-xl border px-4 pt-5 pb-2 text-sm outline-none transition-all duration-200 placeholder-transparent focus:ring-1 focus:ring-current/20";
 
-	const labelBase =
-		"pointer-events-none absolute left-4 text-sm transition-all duration-200";
+	const labelBase = "pointer-events-none absolute left-4 text-sm transition-all duration-200";
 
 	const labelClasses = `${labelBase} top-1/2 -translate-y-1/2 peer-focus:top-3 peer-focus:translate-y-0 peer-focus:text-[10px] peer-focus:font-medium ${
 		value ? "top-3 translate-y-0 text-[10px] font-medium" : ""
@@ -84,9 +81,7 @@ function FloatingField({
 		value ? "top-2 text-[10px] font-medium" : ""
 	}`;
 
-	const labelStyle: React.CSSProperties = themeColors
-		? { color: themeColors.mutedFg }
-		: {};
+	const labelStyle: React.CSSProperties = themeColors ? { color: themeColors.mutedFg } : {};
 
 	if (multiline) {
 		return (
@@ -167,12 +162,9 @@ function WhereMetSelect({
 			}
 		: {};
 
-	const errorBorderStyle: React.CSSProperties =
-		error && touched ? { borderColor: "#f87171" } : {};
+	const errorBorderStyle: React.CSSProperties = error && touched ? { borderColor: "#f87171" } : {};
 
-	const labelStyle: React.CSSProperties = themeColors
-		? { color: themeColors.mutedFg }
-		: {};
+	const labelStyle: React.CSSProperties = themeColors ? { color: themeColors.mutedFg } : {};
 
 	const handleSelectChange = (val: string) => {
 		if (val === "Other") {
@@ -209,7 +201,10 @@ function WhereMetSelect({
 					className="pointer-events-none absolute left-4 top-3 translate-y-0 text-[10px] font-medium transition-all duration-200"
 					style={labelStyle}
 				>
-					Where did we meet? <span className="text-red-400" aria-hidden="true">*</span>
+					Where did we meet?{" "}
+					<span className="text-red-400" aria-hidden="true">
+						*
+					</span>
 				</label>
 				{/* Chevron icon */}
 				<svg
@@ -282,7 +277,14 @@ function ConnectForm({
 		...trpc.public.submitContact.mutationOptions(),
 		onSuccess: () => {
 			setSubmitted(true);
-			setFormData({ firstName: "", lastName: "", email: "", whereMet: "", message: "", consent: false });
+			setFormData({
+				firstName: "",
+				lastName: "",
+				email: "",
+				whereMet: "",
+				message: "",
+				consent: false,
+			});
 		},
 	});
 
@@ -372,9 +374,7 @@ function ConnectForm({
 	return (
 		<form onSubmit={handleSubmit} className="space-y-3" noValidate>
 			{isPreview && (
-				<p className="mb-3 text-center text-[10px] uppercase tracking-widest opacity-40">
-					Preview
-				</p>
+				<p className="mb-3 text-center text-[10px] uppercase tracking-widest opacity-40">Preview</p>
 			)}
 
 			<div className="grid gap-3 sm:grid-cols-2">
@@ -426,25 +426,52 @@ function ConnectForm({
 				themeColors={themeColors}
 			/>
 
-		<div className="flex flex-col gap-1">
-			<label className="flex items-start gap-2.5 cursor-pointer">
-				<input
-					type="checkbox"
-					checked={formData.consent}
-					onChange={(e) => {
-						setFormData((prev) => ({ ...prev, consent: e.target.checked }));
-						if (errors.consent) setErrors((prev) => { const n = { ...prev }; delete n.consent; return n; });
-					}}
-					className="mt-0.5 h-4 w-4 shrink-0 rounded"
-					aria-describedby={errors.consent ? "consent-error" : undefined}
-				/>
-				<span className="text-xs leading-relaxed" style={{ color: themeColors?.mutedFg || (colorMode === "dark" ? "#9ca3af" : "#6b7280") }}>
-					I agree to the processing of my personal data to respond to my enquiry.
-					{ppUrl && (<>{" "}<a href={ppUrl} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:opacity-70" style={{ color: primaryColor }}>Privacy Policy</a></>)}
-				</span>
-			</label>
-			{errors.consent && (<span id="consent-error" className="text-xs text-red-400" role="alert">{errors.consent}</span>)}
-		</div>
+			<div className="flex flex-col gap-1">
+				<label className="flex items-start gap-2.5 cursor-pointer">
+					<input
+						type="checkbox"
+						checked={formData.consent}
+						onChange={(e) => {
+							setFormData((prev) => ({ ...prev, consent: e.target.checked }));
+							if (errors.consent)
+								setErrors((prev) => {
+									const n = { ...prev };
+									delete n.consent;
+									return n;
+								});
+						}}
+						className="mt-0.5 h-4 w-4 shrink-0 rounded"
+						aria-describedby={errors.consent ? "consent-error" : undefined}
+					/>
+					<span
+						className="text-xs leading-relaxed"
+						style={{
+							color: themeColors?.mutedFg || (colorMode === "dark" ? "#9ca3af" : "#6b7280"),
+						}}
+					>
+						I agree to the processing of my personal data to respond to my enquiry.
+						{ppUrl && (
+							<>
+								{" "}
+								<a
+									href={ppUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="underline underline-offset-2 hover:opacity-70"
+									style={{ color: primaryColor }}
+								>
+									Privacy Policy
+								</a>
+							</>
+						)}
+					</span>
+				</label>
+				{errors.consent && (
+					<span id="consent-error" className="text-xs text-red-400" role="alert">
+						{errors.consent}
+					</span>
+				)}
+			</div>
 
 			<button
 				type="submit"
@@ -458,9 +485,25 @@ function ConnectForm({
 			>
 				{submitContact.isPending ? (
 					<span className="inline-flex items-center gap-2">
-						<svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-							<circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-							<path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+						<svg
+							className="h-4 w-4 animate-spin"
+							viewBox="0 0 24 24"
+							fill="none"
+							aria-hidden="true"
+						>
+							<circle
+								className="opacity-25"
+								cx="12"
+								cy="12"
+								r="10"
+								stroke="currentColor"
+								strokeWidth="4"
+							/>
+							<path
+								className="opacity-75"
+								fill="currentColor"
+								d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+							/>
 						</svg>
 						Sending...
 					</span>
@@ -572,7 +615,13 @@ function ConnectModal({
 						className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:opacity-70 focus-visible:ring-2 focus-visible:ring-offset-2"
 						aria-label="Close"
 					>
-						<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+						<svg
+							className="h-5 w-5"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							strokeWidth={2}
+						>
 							<path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
 						</svg>
 					</button>
@@ -594,13 +643,7 @@ function ConnectModal({
 	);
 }
 
-export function ConnectBlock({
-	block,
-	config,
-	colorMode,
-	themeColors,
-	ppUrl,
-}: ConnectBlockProps) {
+export function ConnectBlock({ block, config, colorMode, themeColors, ppUrl }: ConnectBlockProps) {
 	const { isPreview } = usePreview();
 	const [modalOpen, setModalOpen] = useState(false);
 
@@ -624,8 +667,16 @@ export function ConnectBlock({
 					borderColor: themeColors.border,
 				}
 			: colorMode === "dark"
-				? { backgroundColor: "rgba(31,41,55,0.8)", color: "#f9fafb", borderColor: "rgba(255,255,255,0.08)" }
-				: { backgroundColor: "rgba(255,255,255,0.8)", color: "#111827", borderColor: "rgba(0,0,0,0.06)" };
+				? {
+						backgroundColor: "rgba(31,41,55,0.8)",
+						color: "#f9fafb",
+						borderColor: "rgba(255,255,255,0.08)",
+					}
+				: {
+						backgroundColor: "rgba(255,255,255,0.8)",
+						color: "#111827",
+						borderColor: "rgba(0,0,0,0.06)",
+					};
 
 		return (
 			<div role="listitem" className="ld-connect-block">
@@ -646,7 +697,7 @@ export function ConnectBlock({
 						colorMode={colorMode}
 						themeColors={themeColors}
 						isPreview={isPreview}
-					ppUrl={ppUrl}
+						ppUrl={ppUrl}
 					/>
 				</div>
 			</div>
@@ -679,9 +730,7 @@ export function ConnectBlock({
 
 	const baseClasses = `block w-full px-6 py-3.5 font-medium transition-all duration-200 ${
 		radiusClasses[borderRadius] || "rounded-2xl"
-	} ${shadowClasses[shadow || "none"]} ${
-		textAlignClasses[textAlign] || "text-center"
-	}`;
+	} ${shadowClasses[shadow || "none"]} ${textAlignClasses[textAlign] || "text-center"}`;
 
 	const style: React.CSSProperties = {
 		transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
@@ -740,7 +789,7 @@ export function ConnectBlock({
 					themeColors={themeColors}
 					isPreview={isPreview}
 					onClose={() => setModalOpen(false)}
-				ppUrl={ppUrl}
+					ppUrl={ppUrl}
 				/>
 			)}
 		</div>

@@ -20,14 +20,10 @@ export function MigrationSection({ onImportComplete }: MigrationSectionProps) {
 					<h3 className="text-sm font-medium">Import from LinkStack</h3>
 				</div>
 				<p className="text-xs text-muted-foreground">
-					Migrate your links, profile, and theme from a LinkStack export
-					file. Your existing data will not be overwritten.
+					Migrate your links, profile, and theme from a LinkStack export file. Your existing data
+					will not be overwritten.
 				</p>
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={() => setWizardOpen(true)}
-				>
+				<Button variant="outline" size="sm" onClick={() => setWizardOpen(true)}>
 					Start Migration
 				</Button>
 			</div>

@@ -77,12 +77,7 @@ function CertFileInput({
 					<Upload className="mr-1.5 h-3.5 w-3.5" />
 					{hasValue ? "Replace file" : "Upload file"}
 				</Button>
-				<Button
-					type="button"
-					variant="ghost"
-					size="sm"
-					onClick={() => setShowPaste(!showPaste)}
-				>
+				<Button type="button" variant="ghost" size="sm" onClick={() => setShowPaste(!showPaste)}>
 					Paste
 				</Button>
 			</div>
@@ -171,18 +166,31 @@ function SigningKeysSection() {
 	}
 
 	const status = statusQuery.data;
-	const allSet = status?.signerCert && status?.signerKey && status?.wwdrCert && status?.teamId && status?.passTypeId;
+	const allSet =
+		status?.signerCert &&
+		status?.signerKey &&
+		status?.wwdrCert &&
+		status?.teamId &&
+		status?.passTypeId;
 
 	return (
 		<div className="space-y-3">
-			<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Signing Keys</p>
+			<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+				Signing Keys
+			</p>
 
 			{/* Status banner */}
 			<div className="relative overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-xs">
-				<div className={`absolute inset-y-0 left-0 w-0.5 ${allSet ? "bg-emerald-500" : "bg-amber-400"}`} />
+				<div
+					className={`absolute inset-y-0 left-0 w-0.5 ${allSet ? "bg-emerald-500" : "bg-amber-400"}`}
+				/>
 				<div className="flex flex-wrap gap-x-4 gap-y-1 pl-1.5">
 					{[
-						{ label: "Signer Certificate", ok: status?.signerCert, src: status?.source?.signerCert },
+						{
+							label: "Signer Certificate",
+							ok: status?.signerCert,
+							src: status?.source?.signerCert,
+						},
 						{ label: "Signer Key", ok: status?.signerKey, src: status?.source?.signerKey },
 						{ label: "WWDR Certificate", ok: status?.wwdrCert, src: status?.source?.wwdrCert },
 						{ label: "Team ID", ok: status?.teamId, src: status?.source?.teamId },
@@ -256,11 +264,7 @@ function SigningKeysSection() {
 			/>
 
 			{isDirty && (
-				<Button
-					onClick={handleSaveKeys}
-					disabled={updateKeys.isPending}
-					className="w-full"
-				>
+				<Button onClick={handleSaveKeys} disabled={updateKeys.isPending} className="w-full">
 					{updateKeys.isPending ? "Saving..." : "Save Signing Keys"}
 				</Button>
 			)}
@@ -286,11 +290,7 @@ interface WalletSectionProps {
 	saveRef?: React.MutableRefObject<(() => Promise<void>) | null>;
 }
 
-export function WalletSection({
-	onPreviewChange,
-	onDirtyChange,
-	saveRef,
-}: WalletSectionProps) {
+export function WalletSection({ onPreviewChange, onDirtyChange, saveRef }: WalletSectionProps) {
 	const qc = useQueryClient();
 	const configQuery = useQuery(trpc.wallet.getConfig.queryOptions());
 	const updateConfig = useMutation(trpc.wallet.updateConfig.mutationOptions());
@@ -450,7 +450,9 @@ export function WalletSection({
 
 			{/* Pass Details */}
 			<div className="space-y-3">
-				<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Pass Details</p>
+				<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+					Pass Details
+				</p>
 				<FieldGroup columns={2}>
 					<div className="space-y-1.5">
 						<Label htmlFor="s-wallet-org-name">Organization Name</Label>
@@ -477,7 +479,9 @@ export function WalletSection({
 
 			{/* Appearance & Branding */}
 			<div className="space-y-3">
-				<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Appearance & Branding</p>
+				<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+					Appearance & Branding
+				</p>
 				<div className="grid gap-4 lg:grid-cols-[3fr_2fr_2fr]">
 					{/* Colors */}
 					<div className="space-y-3">
@@ -494,9 +498,7 @@ export function WalletSection({
 								<input
 									type="color"
 									value={backgroundColor || "#091533"}
-									onChange={(e) =>
-										setBackgroundColor(e.target.value.toUpperCase())
-									}
+									onChange={(e) => setBackgroundColor(e.target.value.toUpperCase())}
 									className="h-8 w-10 shrink-0 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
 								/>
 							</div>
@@ -514,9 +516,7 @@ export function WalletSection({
 								<input
 									type="color"
 									value={foregroundColor || "#FFFFFF"}
-									onChange={(e) =>
-										setForegroundColor(e.target.value.toUpperCase())
-									}
+									onChange={(e) => setForegroundColor(e.target.value.toUpperCase())}
 									className="h-8 w-10 shrink-0 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
 								/>
 							</div>
@@ -534,9 +534,7 @@ export function WalletSection({
 								<input
 									type="color"
 									value={labelColor || "#0FACED"}
-									onChange={(e) =>
-										setLabelColor(e.target.value.toUpperCase())
-									}
+									onChange={(e) => setLabelColor(e.target.value.toUpperCase())}
 									className="h-8 w-10 shrink-0 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
 								/>
 							</div>
@@ -554,9 +552,7 @@ export function WalletSection({
 							/>
 							<div className="space-y-0.5">
 								<Label>Show Email</Label>
-								<p className="text-[11px] text-muted-foreground">
-									Display email on the pass
-								</p>
+								<p className="text-[11px] text-muted-foreground">Display email on the pass</p>
 							</div>
 						</div>
 						<div className="flex items-center gap-3">
@@ -567,9 +563,7 @@ export function WalletSection({
 							/>
 							<div className="space-y-0.5">
 								<Label>Show Name</Label>
-								<p className="text-[11px] text-muted-foreground">
-									Display name on the pass
-								</p>
+								<p className="text-[11px] text-muted-foreground">Display name on the pass</p>
 							</div>
 						</div>
 						<div className="flex items-center gap-3">
@@ -580,9 +574,7 @@ export function WalletSection({
 							/>
 							<div className="space-y-0.5">
 								<Label>Show QR Code</Label>
-								<p className="text-[11px] text-muted-foreground">
-									Display QR code on the pass
-								</p>
+								<p className="text-[11px] text-muted-foreground">Display QR code on the pass</p>
 							</div>
 						</div>
 					</div>
@@ -599,7 +591,6 @@ export function WalletSection({
 					</div>
 				</div>
 			</div>
-
 		</div>
 	);
 }

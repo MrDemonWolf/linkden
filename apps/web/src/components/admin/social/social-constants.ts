@@ -1,12 +1,4 @@
-import {
-	Users,
-	MessageCircle,
-	Code2,
-	Briefcase,
-	FileText,
-	Music,
-	Gamepad2,
-} from "lucide-react";
+import { Users, MessageCircle, Code2, Briefcase, FileText, Music, Gamepad2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export interface NetworkDraft {

@@ -14,12 +14,7 @@ export interface CssBannerPreset extends BannerPresetBase {
 
 export interface ShaderBannerPreset extends BannerPresetBase {
 	type: "shader";
-	shaderType:
-		| "mesh-gradient"
-		| "neuro-noise"
-		| "waves"
-		| "grain-gradient"
-		| "swirl";
+	shaderType: "mesh-gradient" | "neuro-noise" | "waves" | "grain-gradient" | "swirl";
 	shaderProps: Record<string, unknown>;
 }
 
@@ -33,8 +28,7 @@ const universalPresets: CssBannerPreset[] = [
 		type: "css",
 		category: "gradient",
 		style: {
-			background:
-				"linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)",
+			background: "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)",
 		},
 	},
 	{

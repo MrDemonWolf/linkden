@@ -1,19 +1,32 @@
-import {
-	Link as LinkIcon,
-	Type,
-	Code,
-	Contact,
-	MapPin,
-	Users,
-} from "lucide-react";
+import { Link as LinkIcon, Type, Code, Contact, MapPin, Users } from "lucide-react";
 
 export const BLOCK_TYPES = [
 	{ type: "link" as const, label: "Link", icon: LinkIcon, description: "A clickable link button" },
 	{ type: "header" as const, label: "Header", icon: Type, description: "A text header/divider" },
-	{ type: "embed" as const, label: "Embed", icon: Code, description: "YouTube, Spotify, or other embed" },
-	{ type: "connect" as const, label: "Connect With Me", icon: Users, description: "Contact form with presets" },
-	{ type: "vcard" as const, label: "vCard", icon: Contact, description: "Download contact card button" },
-	{ type: "location" as const, label: "Location", icon: MapPin, description: "Show your location on a map" },
+	{
+		type: "embed" as const,
+		label: "Embed",
+		icon: Code,
+		description: "YouTube, Spotify, or other embed",
+	},
+	{
+		type: "connect" as const,
+		label: "Connect With Me",
+		icon: Users,
+		description: "Contact form with presets",
+	},
+	{
+		type: "vcard" as const,
+		label: "vCard",
+		icon: Contact,
+		description: "Download contact card button",
+	},
+	{
+		type: "location" as const,
+		label: "Location",
+		icon: MapPin,
+		description: "Show your location on a map",
+	},
 ] as const;
 
 export type BlockType = (typeof BLOCK_TYPES)[number]["type"];
@@ -41,7 +54,10 @@ export function generateId() {
 	return crypto.randomUUID();
 }
 
-export const EMBED_URL_PATTERNS: Record<string, { pattern: RegExp; placeholder: string; label: string }> = {
+export const EMBED_URL_PATTERNS: Record<
+	string,
+	{ pattern: RegExp; placeholder: string; label: string }
+> = {
 	youtube: {
 		pattern: /(?:youtube\.com\/(?:watch|embed)|youtu\.be\/)/i,
 		placeholder: "https://youtube.com/watch?v=dQw4w9WgXcQ",

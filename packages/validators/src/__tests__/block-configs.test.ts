@@ -43,9 +43,7 @@ describe("linkConfigSchema", () => {
 	});
 
 	it("rejects invalid emojiPosition", () => {
-		expect(() =>
-			linkConfigSchema.parse({ emojiPosition: "top" }),
-		).toThrow();
+		expect(() => linkConfigSchema.parse({ emojiPosition: "top" })).toThrow();
 	});
 
 	it("accepts config without new fields (backward compatible)", () => {
@@ -91,15 +89,11 @@ describe("locationConfigSchema", () => {
 	});
 
 	it("rejects invalid linkType", () => {
-		expect(() =>
-			locationConfigSchema.parse({ linkType: "bing" }),
-		).toThrow();
+		expect(() => locationConfigSchema.parse({ linkType: "bing" })).toThrow();
 	});
 
 	it("rejects invalid displayMode", () => {
-		expect(() =>
-			locationConfigSchema.parse({ displayMode: "3d" }),
-		).toThrow();
+		expect(() => locationConfigSchema.parse({ displayMode: "3d" })).toThrow();
 	});
 
 	it("accepts optional customLinkUrl", () => {
@@ -125,8 +119,6 @@ describe("headerConfigSchema", () => {
 	});
 
 	it("rejects invalid heading level", () => {
-		expect(() =>
-			headerConfigSchema.parse({ headingLevel: "h7" }),
-		).toThrow();
+		expect(() => headerConfigSchema.parse({ headingLevel: "h7" })).toThrow();
 	});
 });

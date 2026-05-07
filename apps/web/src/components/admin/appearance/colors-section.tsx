@@ -25,7 +25,9 @@ function ColorField({
 }) {
 	return (
 		<div className="space-y-1.5">
-			<Label htmlFor={id} className="text-xs">{label}</Label>
+			<Label htmlFor={id} className="text-xs">
+				{label}
+			</Label>
 			<div className="flex gap-2">
 				<div className="relative">
 					<input
@@ -125,9 +127,24 @@ export function ColorsSection({
 
 				{/* Color pickers grid */}
 				<div className="grid gap-3 sm:grid-cols-2">
-					<ColorField id="color-primary" label="Primary" value={primaryColor} onChange={onPrimaryChange} />
-					<ColorField id="color-secondary" label="Secondary" value={secondaryColor} onChange={onSecondaryChange} />
-					<ColorField id="color-accent" label="Accent" value={accentColor} onChange={onAccentChange} />
+					<ColorField
+						id="color-primary"
+						label="Primary"
+						value={primaryColor}
+						onChange={onPrimaryChange}
+					/>
+					<ColorField
+						id="color-secondary"
+						label="Secondary"
+						value={secondaryColor}
+						onChange={onSecondaryChange}
+					/>
+					<ColorField
+						id="color-accent"
+						label="Accent"
+						value={accentColor}
+						onChange={onAccentChange}
+					/>
 					<ColorField id="color-bg" label="Background" value={bgColor} onChange={onBgChange} />
 				</div>
 			</CardContent>
