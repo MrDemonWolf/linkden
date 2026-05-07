@@ -9,15 +9,11 @@ const MeshGradient = lazy(() =>
 const NeuroNoise = lazy(() =>
 	import("@paper-design/shaders-react").then((m) => ({ default: m.NeuroNoise })),
 );
-const Waves = lazy(() =>
-	import("@paper-design/shaders-react").then((m) => ({ default: m.Waves })),
-);
+const Waves = lazy(() => import("@paper-design/shaders-react").then((m) => ({ default: m.Waves })));
 const GrainGradient = lazy(() =>
 	import("@paper-design/shaders-react").then((m) => ({ default: m.GrainGradient })),
 );
-const Swirl = lazy(() =>
-	import("@paper-design/shaders-react").then((m) => ({ default: m.Swirl })),
-);
+const Swirl = lazy(() => import("@paper-design/shaders-react").then((m) => ({ default: m.Swirl })));
 
 const shaderMap = {
 	"mesh-gradient": MeshGradient,
@@ -38,18 +34,11 @@ export function ShaderBanner({ preset, staticPreview }: ShaderBannerProps) {
 
 	const freezeProps = staticPreview ? { speed: 0, frame: 0 } : {};
 	const fallbackColor =
-		(preset.shaderProps.colorBack as string) ??
-		(preset.shaderProps.colorMid as string) ??
-		"#000";
+		(preset.shaderProps.colorBack as string) ?? (preset.shaderProps.colorMid as string) ?? "#000";
 
 	return (
 		<Suspense
-			fallback={
-				<div
-					className="absolute inset-0"
-					style={{ backgroundColor: fallbackColor }}
-				/>
-			}
+			fallback={<div className="absolute inset-0" style={{ backgroundColor: fallbackColor }} />}
 		>
 			<Component
 				{...preset.shaderProps}

@@ -6,15 +6,9 @@ import { eq } from "drizzle-orm";
  * Upsert a single site setting (insert or update by key).
  */
 export async function upsertSetting(key: string, value: string): Promise<void> {
-	const [existing] = await db
-		.select()
-		.from(siteSettings)
-		.where(eq(siteSettings.key, key));
+	const [existing] = await db.select().from(siteSettings).where(eq(siteSettings.key, key));
 	if (existing) {
-		await db
-			.update(siteSettings)
-			.set({ value })
-			.where(eq(siteSettings.key, key));
+		await db.update(siteSettings).set({ value }).where(eq(siteSettings.key, key));
 	} else {
 		await db.insert(siteSettings).values({ key, value });
 	}

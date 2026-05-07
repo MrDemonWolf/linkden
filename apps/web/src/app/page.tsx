@@ -38,7 +38,11 @@ export default function Home() {
 	if (pageData.isLoading) {
 		return (
 			<div className="flex min-h-screen items-center justify-center">
-				<div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" role="status" aria-label="Loading">
+				<div
+					className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"
+					role="status"
+					aria-label="Loading"
+				>
 					<span className="sr-only">Loading</span>
 				</div>
 			</div>
@@ -57,9 +61,7 @@ export default function Home() {
 	return (
 		<>
 			<ConsentBanner settings={consentSettings} />
-			<AuthenticatedPublicPage
-				data={pageData.data as Parameters<typeof PublicPage>[0]["data"]}
-			/>
+			<AuthenticatedPublicPage data={pageData.data as Parameters<typeof PublicPage>[0]["data"]} />
 		</>
 	);
 }
@@ -102,7 +104,8 @@ function WelcomePage() {
 						</span>
 					</h1>
 					<p className="mt-4 text-base leading-relaxed text-muted-foreground">
-						Your self-hosted link-in-bio page is almost ready. Complete the setup wizard to create your profile and start sharing.
+						Your self-hosted link-in-bio page is almost ready. Complete the setup wizard to create
+						your profile and start sharing.
 					</p>
 				</div>
 
@@ -129,7 +132,13 @@ function WelcomePage() {
 						className="mt-10 inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-primary to-[color:var(--chart-2)] px-7 text-sm font-semibold text-primary-foreground shadow-[0_0_30px_-8px_var(--primary)] transition-all duration-200 hover:shadow-[0_0_40px_-8px_var(--primary)] hover:scale-[1.02] active:scale-[0.98]"
 					>
 						Get Started
-						<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+						<svg
+							className="h-4 w-4"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							strokeWidth={2}
+						>
 							<path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
 						</svg>
 					</a>
@@ -139,7 +148,10 @@ function WelcomePage() {
 				<div {...getAnimationProps(4)}>
 					<p className="mt-8 text-xs text-muted-foreground/50">
 						Already set up?{" "}
-						<a href="/admin/login" className="text-primary/70 underline underline-offset-2 transition-colors duration-200 hover:text-primary">
+						<a
+							href="/admin/login"
+							className="text-primary/70 underline underline-offset-2 transition-colors duration-200 hover:text-primary"
+						>
 							Sign in
 						</a>
 					</p>

@@ -18,7 +18,9 @@ export function ThemeToggle() {
 
 	// Render a size-matched placeholder during SSR to prevent hydration mismatch
 	if (!mounted) {
-		return <div className="flex rounded-lg border border-border/50 p-0.5 bg-card/80 backdrop-blur-sm shadow-sm h-[36px] w-[104px]" />;
+		return (
+			<div className="flex rounded-lg border border-border/50 p-0.5 bg-card/80 backdrop-blur-sm shadow-sm h-[36px] w-[104px]" />
+		);
 	}
 
 	return (

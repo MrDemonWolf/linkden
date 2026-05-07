@@ -27,7 +27,7 @@ export function BannerSection({
 
 	useEffect(() => {
 		if (isPreview) return;
-		const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 		if (prefersReducedMotion) return;
 		const handleScroll = () => {
 			if (!bannerRef.current) return;
@@ -46,13 +46,13 @@ export function BannerSection({
 				<div
 					ref={bannerRef}
 					className="absolute inset-0"
-					style={{ willChange: "transform", backfaceVisibility: "hidden", transformStyle: "preserve-3d" }}
+					style={{
+						willChange: "transform",
+						backfaceVisibility: "hidden",
+						transformStyle: "preserve-3d",
+					}}
 				>
-					<img
-						src={bannerCustomUrl}
-						alt=""
-						className="h-full w-full object-cover"
-					/>
+					<img src={bannerCustomUrl} alt="" className="h-full w-full object-cover" />
 				</div>
 				{/* Gradient fade overlay */}
 				<div
@@ -76,7 +76,20 @@ export function BannerSection({
 			<div
 				ref={bannerRef}
 				className={`absolute inset-0 ${preset.type === "css" ? (preset.className ?? "") : ""}`}
-				style={preset.type === "css" ? { ...preset.style, willChange: "transform", backfaceVisibility: "hidden", transformStyle: "preserve-3d" } : { willChange: "transform", backfaceVisibility: "hidden", transformStyle: "preserve-3d" }}
+				style={
+					preset.type === "css"
+						? {
+								...preset.style,
+								willChange: "transform",
+								backfaceVisibility: "hidden",
+								transformStyle: "preserve-3d",
+							}
+						: {
+								willChange: "transform",
+								backfaceVisibility: "hidden",
+								transformStyle: "preserve-3d",
+							}
+				}
 			>
 				{preset.type === "shader" && <ShaderBanner preset={preset} />}
 			</div>

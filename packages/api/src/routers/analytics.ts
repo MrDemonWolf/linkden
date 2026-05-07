@@ -56,40 +56,37 @@ export const analyticsRouter = router({
 		const prevEnd = hasPrevious ? new Date(start.getTime()) : new Date(0);
 		const prevStart = hasPrevious ? new Date(start.getTime() - periodMs) : new Date(0);
 
-		const [views, clicks, prevViews, prevClicks, activeLinksResult, contactsResult] = await Promise.all([
-			db
-				.select({ count: count() })
-				.from(pageView)
-				.where(and(...dateWhere(pageView.createdAt, start, end))),
-			db
-				.select({ count: count() })
-				.from(linkClick)
-				.where(and(...dateWhere(linkClick.createdAt, start, end))),
-			hasPrevious
-				? db
-						.select({ count: count() })
-						.from(pageView)
-						.where(
-							and(gte(pageView.createdAt, prevStart), lte(pageView.createdAt, prevEnd)),
-						)
-				: Promise.resolve([{ count: 0 }]),
-			hasPrevious
-				? db
-						.select({ count: count() })
-						.from(linkClick)
-						.where(
-							and(gte(linkClick.createdAt, prevStart), lte(linkClick.createdAt, prevEnd)),
-						)
-				: Promise.resolve([{ count: 0 }]),
-			db
-				.select({ count: count() })
-				.from(block)
-				.where(and(eq(block.isEnabled, true), eq(block.status, "published"))),
-			db
-				.select({ count: count() })
-				.from(contactSubmission)
-				.where(and(...dateWhere(contactSubmission.createdAt, start, end))),
-		]);
+		const [views, clicks, prevViews, prevClicks, activeLinksResult, contactsResult] =
+			await Promise.all([
+				db
+					.select({ count: count() })
+					.from(pageView)
+					.where(and(...dateWhere(pageView.createdAt, start, end))),
+				db
+					.select({ count: count() })
+					.from(linkClick)
+					.where(and(...dateWhere(linkClick.createdAt, start, end))),
+				hasPrevious
+					? db
+							.select({ count: count() })
+							.from(pageView)
+							.where(and(gte(pageView.createdAt, prevStart), lte(pageView.createdAt, prevEnd)))
+					: Promise.resolve([{ count: 0 }]),
+				hasPrevious
+					? db
+							.select({ count: count() })
+							.from(linkClick)
+							.where(and(gte(linkClick.createdAt, prevStart), lte(linkClick.createdAt, prevEnd)))
+					: Promise.resolve([{ count: 0 }]),
+				db
+					.select({ count: count() })
+					.from(block)
+					.where(and(eq(block.isEnabled, true), eq(block.status, "published"))),
+				db
+					.select({ count: count() })
+					.from(contactSubmission)
+					.where(and(...dateWhere(contactSubmission.createdAt, start, end))),
+			]);
 
 		return {
 			totalViews: views[0]?.count ?? 0,
@@ -101,55 +98,43 @@ export const analyticsRouter = router({
 		};
 	}),
 
-	viewsOverTime: protectedProcedure
-		.input(rangeInput)
-		.query(async ({ input }) => {
-			const { start, end } =
-				input?.startDate && input?.endDate
-					? { start: input.startDate as Date | null, end: input.endDate }
-					: getDateRange(input?.period ?? "7d");
+	viewsOverTime: protectedProcedure.input(rangeInput).query(async ({ input }) => {
+		const { start, end } =
+			input?.startDate && input?.endDate
+				? { start: input.startDate as Date | null, end: input.endDate }
+				: getDateRange(input?.period ?? "7d");
 
-			const results = await db
-				.select({
-					date: sql<string>`date(${pageView.createdAt} / 1000, 'unixepoch')`,
-					count: count(),
-				})
-				.from(pageView)
-				.where(and(...dateWhere(pageView.createdAt, start, end)))
-				.groupBy(
-					sql`date(${pageView.createdAt} / 1000, 'unixepoch')`,
-				)
-				.orderBy(
-					sql`date(${pageView.createdAt} / 1000, 'unixepoch')`,
-				);
+		const results = await db
+			.select({
+				date: sql<string>`date(${pageView.createdAt} / 1000, 'unixepoch')`,
+				count: count(),
+			})
+			.from(pageView)
+			.where(and(...dateWhere(pageView.createdAt, start, end)))
+			.groupBy(sql`date(${pageView.createdAt} / 1000, 'unixepoch')`)
+			.orderBy(sql`date(${pageView.createdAt} / 1000, 'unixepoch')`);
 
-			return results;
-		}),
+		return results;
+	}),
 
-	clicksOverTime: protectedProcedure
-		.input(rangeInput)
-		.query(async ({ input }) => {
-			const { start, end } =
-				input?.startDate && input?.endDate
-					? { start: input.startDate as Date | null, end: input.endDate }
-					: getDateRange(input?.period ?? "7d");
+	clicksOverTime: protectedProcedure.input(rangeInput).query(async ({ input }) => {
+		const { start, end } =
+			input?.startDate && input?.endDate
+				? { start: input.startDate as Date | null, end: input.endDate }
+				: getDateRange(input?.period ?? "7d");
 
-			const results = await db
-				.select({
-					date: sql<string>`date(${linkClick.createdAt} / 1000, 'unixepoch')`,
-					count: count(),
-				})
-				.from(linkClick)
-				.where(and(...dateWhere(linkClick.createdAt, start, end)))
-				.groupBy(
-					sql`date(${linkClick.createdAt} / 1000, 'unixepoch')`,
-				)
-				.orderBy(
-					sql`date(${linkClick.createdAt} / 1000, 'unixepoch')`,
-				);
+		const results = await db
+			.select({
+				date: sql<string>`date(${linkClick.createdAt} / 1000, 'unixepoch')`,
+				count: count(),
+			})
+			.from(linkClick)
+			.where(and(...dateWhere(linkClick.createdAt, start, end)))
+			.groupBy(sql`date(${linkClick.createdAt} / 1000, 'unixepoch')`)
+			.orderBy(sql`date(${linkClick.createdAt} / 1000, 'unixepoch')`);
 
-			return results;
-		}),
+		return results;
+	}),
 
 	topLinks: protectedProcedure.input(rangeInput).query(async ({ input }) => {
 		const { start, end } =
@@ -232,10 +217,7 @@ export const analyticsRouter = router({
 			})
 			.from(pageView)
 			.where(
-				and(
-					...dateConditions,
-					sql`${pageView.country} IS NOT NULL AND ${pageView.country} != ''`,
-				),
+				and(...dateConditions, sql`${pageView.country} IS NOT NULL AND ${pageView.country} != ''`),
 			)
 			.groupBy(pageView.country)
 			.orderBy(desc(count()))

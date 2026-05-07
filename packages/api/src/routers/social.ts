@@ -21,23 +21,22 @@ export const socialRouter = router({
 						.from(socialNetwork)
 						.where(eq(socialNetwork.isActive, true))
 						.orderBy(asc(socialNetwork.slug))
-				: await db
-						.select()
-						.from(socialNetwork)
-						.orderBy(asc(socialNetwork.slug));
+				: await db.select().from(socialNetwork).orderBy(asc(socialNetwork.slug));
 
 			return results;
 		}),
 
 	updateBulk: protectedProcedure
 		.input(
-			z.array(
-				z.object({
-					slug: z.string(),
-					url: z.string().url().max(2048),
-					isActive: z.boolean(),
-				}),
-			).max(50),
+			z
+				.array(
+					z.object({
+						slug: z.string(),
+						url: z.string().url().max(2048),
+						isActive: z.boolean(),
+					}),
+				)
+				.max(50),
 		)
 		.mutation(async ({ input }) => {
 			for (const item of input) {
@@ -60,9 +59,7 @@ export const socialRouter = router({
 						});
 				} else {
 					// No URL — delete the row if it exists
-					await db
-						.delete(socialNetwork)
-						.where(eq(socialNetwork.slug, item.slug));
+					await db.delete(socialNetwork).where(eq(socialNetwork.slug, item.slug));
 				}
 			}
 			return { success: true };

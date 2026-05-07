@@ -22,10 +22,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { SectionHeader } from "@/components/admin/section-header";
 import { NetworkRow } from "@/components/admin/social/network-row";
-import {
-	type NetworkDraft,
-	CATEGORY_LABELS,
-} from "@/components/admin/social/social-constants";
+import { type NetworkDraft, CATEGORY_LABELS } from "@/components/admin/social/social-constants";
 import { cn, getAdminThemeColors } from "@/lib/utils";
 
 const URL_PLACEHOLDERS: Record<string, string> = {
@@ -82,7 +79,7 @@ export function SocialTab({ onDirtyChange }: SocialTabProps) {
 	const [pendingUrl, setPendingUrl] = useState("");
 
 	const pendingBrand = useMemo(
-		() => (pendingSlug ? socialBrands.find((b) => b.slug === pendingSlug) ?? null : null),
+		() => (pendingSlug ? (socialBrands.find((b) => b.slug === pendingSlug) ?? null) : null),
 		[pendingSlug],
 	);
 
@@ -271,7 +268,12 @@ export function SocialTab({ onDirtyChange }: SocialTabProps) {
 		<div className="space-y-4">
 			{/* Active Social Links */}
 			<Card className="border-t-2 border-t-primary bg-gradient-to-b from-primary/5 to-transparent">
-				<SectionHeader icon={Globe} title="Active Social Links" count={activeCount} variant="primary" />
+				<SectionHeader
+					icon={Globe}
+					title="Active Social Links"
+					count={activeCount}
+					variant="primary"
+				/>
 				<CardContent className="space-y-3">
 					{activeNetworks.length === 0 ? (
 						<div className="py-8 text-center">
@@ -287,7 +289,11 @@ export function SocialTab({ onDirtyChange }: SocialTabProps) {
 								const draft = drafts[social.slug] ?? { url: "", isActive: false };
 								const brand = socialBrands.find((b) => b.slug === social.slug)!;
 								return (
-									<div key={social.slug} id={`network-${social.slug}`} className="group relative rounded-xl transition-all">
+									<div
+										key={social.slug}
+										id={`network-${social.slug}`}
+										className="group relative rounded-xl transition-all"
+									>
 										<NetworkRow
 											social={brand}
 											draft={draft}
@@ -373,7 +379,9 @@ export function SocialTab({ onDirtyChange }: SocialTabProps) {
 										</div>
 										<div className="min-w-0 flex-1">
 											<p className="text-xs font-medium truncate">{network.name}</p>
-											<p className="text-[10px] text-muted-foreground">{CATEGORY_LABELS[network.category] || network.category}</p>
+											<p className="text-[10px] text-muted-foreground">
+												{CATEGORY_LABELS[network.category] || network.category}
+											</p>
 										</div>
 										<Plus className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover/item:opacity-100 transition-opacity" />
 									</button>
@@ -393,28 +401,30 @@ export function SocialTab({ onDirtyChange }: SocialTabProps) {
 				<DialogContent className="sm:max-w-md">
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-3">
-							{pendingBrand && (() => {
-								const { bg, fg } = getAdminThemeColors(resolvedTheme);
-								const fill = getAccessibleIconFill(pendingBrand.hex, bg, fg);
-								const needsRing = isLowLuminance(pendingBrand.hex);
-								return (
-									<div
-										className={cn(
-											"flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
-											needsRing && "ring-1 ring-border dark:ring-white/20",
-										)}
-										style={{ backgroundColor: `${pendingBrand.hex}20` }}
-									>
-										<svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-											<path d={pendingBrand.svgPath} fill={fill} />
-										</svg>
-									</div>
-								);
-							})()}
+							{pendingBrand &&
+								(() => {
+									const { bg, fg } = getAdminThemeColors(resolvedTheme);
+									const fill = getAccessibleIconFill(pendingBrand.hex, bg, fg);
+									const needsRing = isLowLuminance(pendingBrand.hex);
+									return (
+										<div
+											className={cn(
+												"flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+												needsRing && "ring-1 ring-border dark:ring-white/20",
+											)}
+											style={{ backgroundColor: `${pendingBrand.hex}20` }}
+										>
+											<svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+												<path d={pendingBrand.svgPath} fill={fill} />
+											</svg>
+										</div>
+									);
+								})()}
 							<span>Add {pendingBrand?.name ?? "Network"}</span>
 						</DialogTitle>
 						<DialogDescription>
-							Enter the URL for your {pendingBrand?.name ?? "profile"}. It will appear on your public page.
+							Enter the URL for your {pendingBrand?.name ?? "profile"}. It will appear on your
+							public page.
 						</DialogDescription>
 					</DialogHeader>
 
@@ -434,9 +444,7 @@ export function SocialTab({ onDirtyChange }: SocialTabProps) {
 							autoFocus
 							value={pendingUrl}
 							onChange={(e) => setPendingUrl(e.target.value)}
-							placeholder={
-								pendingSlug ? URL_PLACEHOLDERS[pendingSlug] ?? "https://" : "https://"
-							}
+							placeholder={pendingSlug ? (URL_PLACEHOLDERS[pendingSlug] ?? "https://") : "https://"}
 							aria-invalid={pendingUrl.length > 0 && !pendingUrlValid}
 						/>
 						{pendingUrl.length > 0 && !pendingUrlValid && (

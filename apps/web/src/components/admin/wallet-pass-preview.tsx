@@ -80,10 +80,7 @@ export function WalletPassPreview({
 	}
 
 	return (
-		<div
-			className="relative overflow-hidden rounded-[16px]"
-			style={{ backgroundColor: bg }}
-		>
+		<div className="relative overflow-hidden rounded-[16px]" style={{ backgroundColor: bg }}>
 			{/* Top highlight */}
 			<div
 				className="pointer-events-none absolute inset-x-0 top-0 h-[1px]"
@@ -94,11 +91,7 @@ export function WalletPassPreview({
 			<div className="flex items-center justify-between px-4 pt-4 pb-0.5">
 				<div className="flex items-center gap-2">
 					{logoUrl ? (
-						<img
-							src={logoUrl}
-							alt="Logo"
-							className="h-[22px] w-auto max-w-[60px] object-contain"
-						/>
+						<img src={logoUrl} alt="Logo" className="h-[22px] w-auto max-w-[60px] object-contain" />
 					) : (
 						<div
 							className="flex h-[22px] w-[22px] items-center justify-center rounded-md text-[9px] font-bold"
@@ -107,10 +100,7 @@ export function WalletPassPreview({
 							W
 						</div>
 					)}
-					<span
-						className="text-[12px] font-semibold tracking-tight"
-						style={{ color: fg }}
-					>
+					<span className="text-[12px] font-semibold tracking-tight" style={{ color: fg }}>
 						{organizationName || "Organization"}
 					</span>
 				</div>
@@ -122,10 +112,7 @@ export function WalletPassPreview({
 						>
 							Profile
 						</p>
-						<p
-							className="text-[9px] font-medium"
-							style={{ color: fg, opacity: 0.7 }}
-						>
+						<p className="text-[9px] font-medium" style={{ color: fg, opacity: 0.7 }}>
 							LinkDen
 						</p>
 					</div>
@@ -192,10 +179,7 @@ export function WalletPassPreview({
 							>
 								{field.label}
 							</p>
-							<p
-								className="mt-0.5 truncate text-[11px] font-medium"
-								style={{ color: fg }}
-							>
+							<p className="mt-0.5 truncate text-[11px] font-medium" style={{ color: fg }}>
 								{field.value}
 							</p>
 						</div>
@@ -206,10 +190,7 @@ export function WalletPassPreview({
 			{/* Separator */}
 			{showQrCode && (
 				<div className="px-4 pt-4 pb-0">
-					<div
-						className="h-px w-full"
-						style={{ backgroundColor: `${fg}15` }}
-					/>
+					<div className="h-px w-full" style={{ backgroundColor: `${fg}15` }} />
 				</div>
 			)}
 
@@ -221,11 +202,7 @@ export function WalletPassPreview({
 						style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.12)" }}
 					>
 						{qrDataUrl ? (
-							<img
-								src={qrDataUrl}
-								alt="QR Code"
-								className="h-[80px] w-[80px]"
-							/>
+							<img src={qrDataUrl} alt="QR Code" className="h-[80px] w-[80px]" />
 						) : (
 							<div className="grid h-[80px] w-[80px] grid-cols-8 grid-rows-8 gap-[1px] p-0.5">
 								{Array.from({ length: 64 }).map((_, i) => (
@@ -234,9 +211,8 @@ export function WalletPassPreview({
 										className="rounded-[0.5px]"
 										style={{
 											backgroundColor: [
-												0, 1, 2, 3, 4, 5, 6, 8, 14, 16, 22, 24, 25, 27, 29,
-												30, 33, 35, 37, 38, 40, 41, 42, 47, 48, 50, 54, 56,
-												57, 58, 59, 60, 61, 62, 63,
+												0, 1, 2, 3, 4, 5, 6, 8, 14, 16, 22, 24, 25, 27, 29, 30, 33, 35, 37, 38, 40,
+												41, 42, 47, 48, 50, 54, 56, 57, 58, 59, 60, 61, 62, 63,
 											].includes(i)
 												? "#000"
 												: "#fff",
@@ -246,10 +222,7 @@ export function WalletPassPreview({
 							</div>
 						)}
 					</div>
-					<p
-						className="mt-2 text-[8px] font-medium tracking-wide"
-						style={{ color: `${fg}50` }}
-					>
+					<p className="mt-2 text-[8px] font-medium tracking-wide" style={{ color: `${fg}50` }}>
 						Scan to view profile
 					</p>
 				</div>

@@ -1,8 +1,4 @@
 {
-  "title": "Reference",
-  "pages": [
-    "api",
-    "faq",
-    "changelog"
-  ]
+	"title": "Reference",
+	"pages": ["api", "faq", "changelog"]
 }

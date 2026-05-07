@@ -1,19 +1,19 @@
 {
-  "name": "@linkden/validators",
-  "type": "module",
-  "exports": {
-    ".": {
-      "default": "./src/index.ts"
-    },
-    "./*": {
-      "default": "./src/*.ts"
-    }
-  },
-  "dependencies": {
-    "zod": "^4.4.3"
-  },
-  "devDependencies": {
-    "@linkden/config": "workspace:*",
-    "typescript": "^5.9.3"
-  }
+	"name": "@linkden/validators",
+	"type": "module",
+	"exports": {
+		".": {
+			"default": "./src/index.ts"
+		},
+		"./*": {
+			"default": "./src/*.ts"
+		}
+	},
+	"dependencies": {
+		"zod": "^4.4.3"
+	},
+	"devDependencies": {
+		"@linkden/config": "workspace:*",
+		"typescript": "^5.9.3"
+	}
 }

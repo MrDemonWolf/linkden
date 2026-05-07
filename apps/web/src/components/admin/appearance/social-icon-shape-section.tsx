@@ -44,11 +44,7 @@ export function SocialIconShapeSection({
 				</h2>
 			</CardHeader>
 			<CardContent>
-				<div
-					className="grid grid-cols-2 gap-2.5"
-					role="radiogroup"
-					aria-label="Social icon shape"
-				>
+				<div className="grid grid-cols-2 gap-2.5" role="radiogroup" aria-label="Social icon shape">
 					{OPTIONS.map((opt) => {
 						const selected = shape === opt.value;
 						return (

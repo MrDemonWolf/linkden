@@ -71,7 +71,12 @@ export interface ThemeColors {
 export function getThemeColors(
 	themePresetName: string,
 	colorMode: "light" | "dark",
-	customColors?: { primary?: string | null; secondary?: string | null; accent?: string | null; background?: string | null },
+	customColors?: {
+		primary?: string | null;
+		secondary?: string | null;
+		accent?: string | null;
+		background?: string | null;
+	},
 ): ThemeColors {
 	const theme = themePresets.find((t) => t.name === themePresetName) ?? themePresets[0];
 	const vars = theme.cssVars[colorMode];
@@ -150,9 +155,23 @@ export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolea
 						transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
 					}}
 				>
-					<svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-						<path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-						<path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+					<svg
+						className="h-3 w-3"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						strokeWidth={2}
+					>
+						<path
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+						/>
+						<path
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+						/>
 					</svg>
 					Admin
 				</a>
@@ -176,8 +195,8 @@ export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolea
 					bannerMode: data.settings.bannerMode,
 					bannerCustomUrl: data.settings.bannerCustomUrl,
 					customCss: data.settings.customCss,
-				brandingPpUrl: data.settings.brandingPpUrl,
-				socialIconShape: data.settings.socialIconShape,
+					brandingPpUrl: data.settings.brandingPpUrl,
+					socialIconShape: data.settings.socialIconShape,
 				}}
 				themeColors={themeColors}
 				colorMode={colorMode}

@@ -10,12 +10,7 @@ interface SectionHeaderProps {
 	variant?: "primary" | "muted";
 }
 
-export function SectionHeader({
-	icon: Icon,
-	title,
-	count,
-	variant = "muted",
-}: SectionHeaderProps) {
+export function SectionHeader({ icon: Icon, title, count, variant = "muted" }: SectionHeaderProps) {
 	return (
 		<CardHeader>
 			<h2>
@@ -23,33 +18,26 @@ export function SectionHeader({
 					<span
 						className={cn(
 							"flex h-7 w-7 items-center justify-center rounded-lg",
-							variant === "primary"
-								? "bg-primary/10 ring-1 ring-primary/20"
-								: "bg-muted/80",
+							variant === "primary" ? "bg-primary/10 ring-1 ring-primary/20" : "bg-muted/80",
 						)}
 					>
 						<Icon
 							className={cn(
 								"h-4 w-4",
-								variant === "primary"
-									? "text-primary"
-									: "text-muted-foreground",
+								variant === "primary" ? "text-primary" : "text-muted-foreground",
 							)}
 							aria-hidden="true"
 						/>
 					</span>
 					{title}
-					{count !== undefined && (
-						variant === "primary" ? (
+					{count !== undefined &&
+						(variant === "primary" ? (
 							<Badge variant="outline" className="ml-1 text-[10px] border-primary/30 text-primary">
 								{count}
 							</Badge>
 						) : (
-							<span className="text-xs font-normal text-muted-foreground">
-								({count})
-							</span>
-						)
-					)}
+							<span className="text-xs font-normal text-muted-foreground">({count})</span>
+						))}
 				</CardTitle>
 			</h2>
 		</CardHeader>

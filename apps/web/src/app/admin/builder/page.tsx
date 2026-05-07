@@ -4,15 +4,7 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import {
-	Plus,
-	Upload,
-	Blocks,
-	Rocket,
-	User,
-	Globe,
-	Smartphone,
-} from "lucide-react";
+import { Plus, Upload, Blocks, Rocket, User, Globe, Smartphone } from "lucide-react";
 import {
 	DndContext,
 	DragOverlay,
@@ -29,10 +21,7 @@ import {
 	type DragStartEvent,
 	type DropAnimation,
 } from "@dnd-kit/core";
-import {
-	restrictToVerticalAxis,
-	restrictToParentElement,
-} from "@dnd-kit/modifiers";
+import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
 import {
 	SortableContext,
 	sortableKeyboardCoordinates,
@@ -52,7 +41,13 @@ import { PageHeader } from "@/components/admin/page-header";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { BlockEditPanel } from "@/components/admin/builder/block-edit-panel";
 import { BlockRow } from "@/components/admin/builder/block-row";
-import { BLOCK_TYPES, TYPE_BADGE_BG, type BlockType, type Block, generateId } from "@/components/admin/builder/builder-constants";
+import {
+	BLOCK_TYPES,
+	TYPE_BADGE_BG,
+	type BlockType,
+	type Block,
+	generateId,
+} from "@/components/admin/builder/builder-constants";
 import { ProfileTab } from "@/components/admin/builder/profile-tab";
 import { SocialTab } from "@/components/admin/builder/social-tab";
 
@@ -88,7 +83,9 @@ export default function BuilderPage() {
 			params.set("tab", tab);
 		}
 		const query = params.toString();
-		router.replace(`/admin/builder${query ? `?${query}` : ""}` as "/admin/builder", { scroll: false });
+		router.replace(`/admin/builder${query ? `?${query}` : ""}` as "/admin/builder", {
+			scroll: false,
+		});
 	};
 
 	const [editingBlock, setEditingBlock] = useState<Block | null>(null);
@@ -152,7 +149,12 @@ export default function BuilderPage() {
 		};
 		const defaultConfigs: Partial<Record<string, string>> = {
 			vcard: JSON.stringify({ buttonText: "Download Contact", buttonEmoji: "" }),
-			connect: JSON.stringify({ preset: "contact", buttonText: "Contact Me", buttonEmoji: "", successMessage: "Thanks for reaching out!" }),
+			connect: JSON.stringify({
+				preset: "contact",
+				buttonText: "Contact Me",
+				buttonEmoji: "",
+				successMessage: "Thanks for reaching out!",
+			}),
 			location: JSON.stringify({ address: "", linkType: "none" }),
 		};
 		try {
@@ -257,24 +259,26 @@ export default function BuilderPage() {
 	};
 
 	const previewBlocksData = useMemo(() => {
-		return blocks.filter((b) => b.isEnabled).map((b) => {
-			const base = {
-				id: b.id,
-				type: b.type,
-				title: b.title,
-				url: b.url,
-				icon: b.icon,
-				embedType: b.embedType,
-				embedUrl: b.embedUrl,
-				socialIcons: b.socialIcons,
-				config: b.config,
-				position: b.position,
-			};
-			if (editingOverrides && editingOverrides.id === b.id) {
-				return { ...base, ...editingOverrides, position: base.position, type: base.type };
-			}
-			return base;
-		});
+		return blocks
+			.filter((b) => b.isEnabled)
+			.map((b) => {
+				const base = {
+					id: b.id,
+					type: b.type,
+					title: b.title,
+					url: b.url,
+					icon: b.icon,
+					embedType: b.embedType,
+					embedUrl: b.embedUrl,
+					socialIcons: b.socialIcons,
+					config: b.config,
+					position: b.position,
+				};
+				if (editingOverrides && editingOverrides.id === b.id) {
+					return { ...base, ...editingOverrides, position: base.position, type: base.type };
+				}
+				return base;
+			});
 	}, [blocks, editingOverrides]);
 
 	const activeBlock = activeId ? blocks.find((b) => b.id === activeId) : null;
@@ -286,7 +290,11 @@ export default function BuilderPage() {
 			{/* Header bar */}
 			<PageHeader
 				title="Page Builder"
-				description={hasDrafts ? `Unpublished changes · ${draftCount} draft${draftCount !== 1 ? "s" : ""}` : "All changes are live"}
+				description={
+					hasDrafts
+						? `Unpublished changes · ${draftCount} draft${draftCount !== 1 ? "s" : ""}`
+						: "All changes are live"
+				}
 				badge={
 					hasDrafts ? (
 						<Badge variant="outline" className="border-amber-400/40 bg-amber-400/10 text-amber-400">
@@ -445,7 +453,12 @@ export default function BuilderPage() {
 											: "border-border/60 text-muted-foreground hover:border-primary/30 hover:text-primary hover:bg-primary/5",
 									)}
 								>
-									<Plus className={cn("h-4 w-4 transition-transform duration-200", showPicker && "rotate-45")} />
+									<Plus
+										className={cn(
+											"h-4 w-4 transition-transform duration-200",
+											showPicker && "rotate-45",
+										)}
+									/>
 									{showPicker ? "Cancel" : "Add Block"}
 								</button>
 
@@ -455,15 +468,27 @@ export default function BuilderPage() {
 											<button
 												key={item.type}
 												type="button"
-												onClick={() => { handleAddBlock(item.type); setShowPicker(false); }}
+												onClick={() => {
+													handleAddBlock(item.type);
+													setShowPicker(false);
+												}}
 												className="group/picker flex flex-col items-start gap-2 rounded-xl border border-white/10 bg-card/60 backdrop-blur-sm p-3 text-left hover:border-primary/30 hover:bg-primary/5 transition-all"
 											>
-												<div className={cn("flex h-8 w-8 items-center justify-center rounded-lg transition-colors", TYPE_BADGE_BG[item.type])}>
+												<div
+													className={cn(
+														"flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
+														TYPE_BADGE_BG[item.type],
+													)}
+												>
 													<item.icon className="h-4 w-4" />
 												</div>
 												<div>
-													<div className="text-xs font-semibold group-hover/picker:text-primary transition-colors">{item.label}</div>
-													<div className="text-[10px] text-muted-foreground leading-tight mt-0.5">{item.description}</div>
+													<div className="text-xs font-semibold group-hover/picker:text-primary transition-colors">
+														{item.label}
+													</div>
+													<div className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+														{item.description}
+													</div>
 												</div>
 											</button>
 										))}
@@ -473,13 +498,9 @@ export default function BuilderPage() {
 						</>
 					)}
 
-					{activeTab === "profile" && (
-						<ProfileTab onDirtyChange={handleProfileDirtyChange} />
-					)}
+					{activeTab === "profile" && <ProfileTab onDirtyChange={handleProfileDirtyChange} />}
 
-					{activeTab === "social" && (
-						<SocialTab onDirtyChange={handleSocialDirtyChange} />
-					)}
+					{activeTab === "social" && <SocialTab onDirtyChange={handleSocialDirtyChange} />}
 				</div>
 
 				{/* Right side: Edit panel and/or Preview */}
@@ -489,17 +510,20 @@ export default function BuilderPage() {
 						<div className="w-[340px] shrink-0 animate-in slide-in-from-right-4 fade-in-0 duration-200">
 							<BlockEditPanel
 								block={editingBlock}
-								onClose={() => { setEditingBlock(null); setEditingOverrides(null); }}
+								onClose={() => {
+									setEditingBlock(null);
+									setEditingOverrides(null);
+								}}
 								onChange={setEditingOverrides}
 								onSave={handleSaveEdit}
 								isSaving={updateBlock.isPending}
 								contactDelivery={contactDelivery}
 								onDeliveryChange={async (value) => {
 									try {
-										await updateSettings.mutateAsync([
-											{ key: "contact_delivery", value },
-										]);
-										qc.invalidateQueries({ queryKey: trpc.settings.getAll.queryOptions().queryKey });
+										await updateSettings.mutateAsync([{ key: "contact_delivery", value }]);
+										qc.invalidateQueries({
+											queryKey: trpc.settings.getAll.queryOptions().queryKey,
+										});
 										toast.success("Delivery mode updated");
 									} catch {
 										toast.error("Failed to update delivery mode");
@@ -510,10 +534,12 @@ export default function BuilderPage() {
 					)}
 
 					{/* Permanent live preview sidebar */}
-					<div className={cn(
-						"w-[360px] shrink-0 sticky top-6",
-						activeTab === "blocks" && editingBlock ? "hidden xl:block" : "block",
-					)}>
+					<div
+						className={cn(
+							"w-[360px] shrink-0 sticky top-6",
+							activeTab === "blocks" && editingBlock ? "hidden xl:block" : "block",
+						)}
+					>
 						<SharedPreview
 							overrides={{
 								blocks: editingOverrides ? previewBlocksData : undefined,
@@ -535,10 +561,7 @@ export default function BuilderPage() {
 			</Button>
 
 			{/* Mobile preview sheet */}
-			<MobilePreviewSheet
-				open={showMobilePreview}
-				onOpenChange={setShowMobilePreview}
-			>
+			<MobilePreviewSheet open={showMobilePreview} onOpenChange={setShowMobilePreview}>
 				<SharedPreview overrides={{ blocks: previewBlocksData }} showHeader={false} />
 			</MobilePreviewSheet>
 		</div>

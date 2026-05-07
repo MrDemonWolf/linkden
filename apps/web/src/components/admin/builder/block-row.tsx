@@ -1,12 +1,6 @@
 "use client";
 
-import {
-	GripVertical,
-	Eye,
-	EyeOff,
-	Pencil,
-	Trash2,
-} from "lucide-react";
+import { GripVertical, Eye, EyeOff, Pencil, Trash2 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
@@ -28,18 +22,13 @@ export function BlockRow({
 	const Icon = blockTypeIcon(block.type);
 	const typeLabel = block.type === "connect" ? "Connect" : block.type.replace(/_/g, " ");
 
-	const {
-		attributes,
-		listeners,
-		setNodeRef,
-		transform,
-		transition,
-		isDragging,
-		isSorting,
-	} = useSortable({ id: block.id });
+	const { attributes, listeners, setNodeRef, transform, transition, isDragging, isSorting } =
+		useSortable({ id: block.id });
 
 	const style: React.CSSProperties = {
-		transform: CSS.Transform.toString(transform ? { ...transform, x: 0, scaleX: 1, scaleY: 1 } : null),
+		transform: CSS.Transform.toString(
+			transform ? { ...transform, x: 0, scaleX: 1, scaleY: 1 } : null,
+		),
 		transition,
 		willChange: isSorting ? "transform" : undefined,
 	};
@@ -76,10 +65,12 @@ export function BlockRow({
 			<div className={cn("w-[3px] self-stretch shrink-0", accent ? "bg-primary" : accentClass)} />
 
 			{/* Icon circle */}
-			<div className={cn(
-				"ml-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-				badgeClass,
-			)}>
+			<div
+				className={cn(
+					"ml-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+					badgeClass,
+				)}
+			>
 				<Icon className="h-4 w-4" aria-hidden="true" />
 			</div>
 
@@ -92,9 +83,7 @@ export function BlockRow({
 			>
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-1.5">
-						<p className="truncate text-sm font-medium">
-							{block.title || "Untitled"}
-						</p>
+						<p className="truncate text-sm font-medium">{block.title || "Untitled"}</p>
 						{block.status === "draft" && (
 							<span
 								className="inline-block h-2 w-2 shrink-0 rounded-full bg-amber-400 animate-pulse"
@@ -103,10 +92,12 @@ export function BlockRow({
 							/>
 						)}
 					</div>
-					<span className={cn(
-						"inline-block mt-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none capitalize",
-						badgeClass,
-					)}>
+					<span
+						className={cn(
+							"inline-block mt-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none capitalize",
+							badgeClass,
+						)}
+					>
 						{typeLabel}
 					</span>
 				</div>
@@ -116,7 +107,10 @@ export function BlockRow({
 			<div className="flex items-center gap-0.5 pr-2">
 				<button
 					type="button"
-					onClick={(e) => { e.stopPropagation(); onToggle(); }}
+					onClick={(e) => {
+						e.stopPropagation();
+						onToggle();
+					}}
 					className={cn(
 						"flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
 						block.isEnabled
@@ -125,15 +119,14 @@ export function BlockRow({
 					)}
 					aria-label={block.isEnabled ? "Disable block" : "Enable block"}
 				>
-					{block.isEnabled ? (
-						<Eye className="h-3.5 w-3.5" />
-					) : (
-						<EyeOff className="h-3.5 w-3.5" />
-					)}
+					{block.isEnabled ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
 				</button>
 				<button
 					type="button"
-					onClick={(e) => { e.stopPropagation(); onEdit(); }}
+					onClick={(e) => {
+						e.stopPropagation();
+						onEdit();
+					}}
 					className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors sm:hidden"
 					aria-label="Edit block"
 				>
@@ -141,7 +134,10 @@ export function BlockRow({
 				</button>
 				<button
 					type="button"
-					onClick={(e) => { e.stopPropagation(); onDelete(); }}
+					onClick={(e) => {
+						e.stopPropagation();
+						onDelete();
+					}}
 					className="hidden sm:flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
 					aria-label="Delete block"
 				>

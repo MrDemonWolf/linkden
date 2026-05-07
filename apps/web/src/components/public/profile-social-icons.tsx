@@ -20,7 +20,12 @@ interface ProfileSocialIconsProps {
  * Social icons row rendered in the profile header section (below bio, above blocks).
  * Pulls data from the socialNetwork table rather than from blocks.
  */
-export function ProfileSocialIcons({ networks, colorMode, themeColors, shape = "circle" }: ProfileSocialIconsProps) {
+export function ProfileSocialIcons({
+	networks,
+	colorMode,
+	themeColors,
+	shape = "circle",
+}: ProfileSocialIconsProps) {
 	if (networks.length === 0) return null;
 	const radiusClass = shape === "rounded-square" ? "rounded-lg" : "rounded-full";
 
@@ -31,9 +36,10 @@ export function ProfileSocialIcons({ networks, colorMode, themeColors, shape = "
 		>
 			{networks.map((network) => {
 				const contrastBg = themeColors.bg;
-				const fill = network.hex && contrastBg && themeColors.fg
-					? getAccessibleIconFill(network.hex, contrastBg, themeColors.fg)
-					: network.hex || "currentColor";
+				const fill =
+					network.hex && contrastBg && themeColors.fg
+						? getAccessibleIconFill(network.hex, contrastBg, themeColors.fg)
+						: network.hex || "currentColor";
 
 				return (
 					<a
@@ -49,7 +55,8 @@ export function ProfileSocialIcons({ networks, colorMode, themeColors, shape = "
 							borderColor: colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
 							border: `1px solid ${colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}`,
 							backdropFilter: "blur(12px)",
-							transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, transform 0.3s ease",
+							transition:
+								"background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, transform 0.3s ease",
 						}}
 						aria-label={network.name}
 						title={network.name}

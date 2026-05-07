@@ -190,12 +190,11 @@ export function PreviewRenderer({
 		brandingEnabled: settings.branding_enabled !== "false",
 		brandingText: settings.branding_text || "Powered by LinkDen",
 		bannerEnabled: settings.banner_enabled === "true",
-		bannerPreset: settings.banner_enabled === "true" ? (settings.banner_preset || null) : null,
+		bannerPreset: settings.banner_enabled === "true" ? settings.banner_preset || null : null,
 		bannerMode: (settings.banner_mode as "preset" | "custom") || "preset",
 		bannerCustomUrl: settings.banner_custom_url || undefined,
 		customCss: settings.custom_css || null,
-		socialIconShape:
-			(settings.social_icon_shape as "circle" | "rounded-square") || "circle",
+		socialIconShape: (settings.social_icon_shape as "circle" | "rounded-square") || "circle",
 	};
 
 	// Merge overrides with live data — always use dummy blocks
@@ -206,18 +205,23 @@ export function PreviewRenderer({
 
 	function handleCopyLink() {
 		const url = typeof window !== "undefined" ? window.location.origin : "";
-		navigator.clipboard.writeText(url).then(() => {
-			toast.success("Link copied");
-		}).catch(() => {
-			toast.error("Failed to copy");
-		});
+		navigator.clipboard
+			.writeText(url)
+			.then(() => {
+				toast.success("Link copied");
+			})
+			.catch(() => {
+				toast.error("Failed to copy");
+			});
 	}
 
 	return (
 		<div className={className}>
 			{showHeader && (
 				<div className="mb-3 flex items-center justify-between px-1">
-					<span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Preview</span>
+					<span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+						Preview
+					</span>
 					<div className="flex items-center gap-1">
 						<div className="flex rounded-lg border border-border/50 p-0.5 bg-muted/30">
 							<button

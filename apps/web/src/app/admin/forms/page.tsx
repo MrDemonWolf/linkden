@@ -3,15 +3,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-	Mail,
-	MailOpen,
-	MailCheck,
-	Trash2,
-	Filter,
-	X,
-	MessageSquare,
-} from "lucide-react";
+import { Mail, MailCheck, Trash2, Filter, X, MessageSquare } from "lucide-react";
 import { trpc } from "@/utils/trpc";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,18 +29,14 @@ export default function FormsPage() {
 
 	// Fetch form blocks for the filter
 	const blocksQuery = useQuery(trpc.blocks.list.queryOptions());
-	const formBlocks = (blocksQuery.data ?? []).filter(
-		(b: { type: string }) => b.type === "connect",
-	);
+	const formBlocks = (blocksQuery.data ?? []).filter((b: { type: string }) => b.type === "connect");
 
 	const listParams = {
 		...(filter !== "all" ? { isRead: filter === "read" } : {}),
 		...(formBlockFilter ? { blockId: formBlockFilter } : {}),
 	};
 	const hasParams = Object.keys(listParams).length > 0;
-	const contactsQuery = useQuery(
-		trpc.forms.list.queryOptions(hasParams ? listParams : undefined),
-	);
+	const contactsQuery = useQuery(trpc.forms.list.queryOptions(hasParams ? listParams : undefined));
 	const contacts = contactsQuery.data ?? [];
 
 	const selectedContact = contacts.find((c) => c.id === selectedId) ?? null;
@@ -71,10 +59,19 @@ export default function FormsPage() {
 	// Auto-mark as read when selecting an unread contact
 	useEffect(() => {
 		if (selectedContact && !selectedContact.isRead) {
-			markRead.mutateAsync({ id: selectedContact.id }).then(invalidate).catch(() => {});
+			markRead
+				.mutateAsync({ id: selectedContact.id })
+				.then(invalidate)
+				.catch(() => {});
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [selectedId]);
+	}, [
+		selectedContact?.isRead,
+		invalidate,
+		selectedContact?.id,
+		markRead.mutateAsync,
+		selectedContact,
+	]);
 
 	const handleSelect = (id: string) => {
 		setSelectedId(id);
@@ -238,11 +235,13 @@ export default function FormsPage() {
 						onClick={() => {
 							// Mark selected as read
 							const ids = Array.from(checkedIds);
-							Promise.all(ids.map((id) => markRead.mutateAsync({ id }))).then(() => {
-								invalidate();
-								setCheckedIds(new Set());
-								toast.success("Marked as read");
-							}).catch(() => toast.error("Failed to mark as read"));
+							Promise.all(ids.map((id) => markRead.mutateAsync({ id })))
+								.then(() => {
+									invalidate();
+									setCheckedIds(new Set());
+									toast.success("Marked as read");
+								})
+								.catch(() => toast.error("Failed to mark as read"));
 						}}
 					>
 						<MailCheck className="mr-1 h-3.5 w-3.5" />
@@ -258,11 +257,7 @@ export default function FormsPage() {
 						<Trash2 className="mr-1 h-3.5 w-3.5" />
 						Delete
 					</Button>
-					<Button
-						variant="ghost"
-						size="xs"
-						onClick={() => setCheckedIds(new Set())}
-					>
+					<Button variant="ghost" size="xs" onClick={() => setCheckedIds(new Set())}>
 						Clear
 					</Button>
 				</div>

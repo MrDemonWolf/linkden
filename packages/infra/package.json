@@ -1,19 +1,19 @@
 {
-  "name": "@linkden/infra",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "alchemy dev",
-    "deploy": "alchemy deploy",
-    "destroy": "alchemy destroy"
-  },
-  "dependencies": {
-    "dotenv": "^17.4.2",
-    "zod": "^4.4.3"
-  },
-  "devDependencies": {
-    "@linkden/config": "workspace:*",
-    "alchemy": "^0.89.0",
-    "typescript": "^5.9.3"
-  }
+	"name": "@linkden/infra",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "alchemy dev",
+		"deploy": "alchemy deploy",
+		"destroy": "alchemy destroy"
+	},
+	"dependencies": {
+		"dotenv": "^17.4.2",
+		"zod": "^4.4.3"
+	},
+	"devDependencies": {
+		"@linkden/config": "workspace:*",
+		"alchemy": "^0.89.0",
+		"typescript": "^5.9.3"
+	}
 }

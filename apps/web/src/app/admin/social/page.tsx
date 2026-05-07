@@ -3,19 +3,10 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-	Search,
-	Globe,
-	Save,
-	Undo2,
-	Sparkles,
-	ExternalLink,
-	CircleDot,
-	Filter,
-} from "lucide-react";
+import { Search, Globe, Save, Undo2, Sparkles, CircleDot, Filter } from "lucide-react";
 import { useTheme } from "next-themes";
 import { trpc } from "@/utils/trpc";
-import { socialBrands, socialBrandMap } from "@linkden/ui/social-brands";
+import { socialBrands } from "@linkden/ui/social-brands";
 import { getAccessibleIconFill, isLowLuminance } from "@linkden/ui/color-contrast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -254,9 +245,7 @@ export default function SocialPage() {
 				queryKey: trpc.social.list.queryOptions().queryKey,
 			});
 			setInitialized(false);
-			toast.success(
-				`${changes.length} network${changes.length > 1 ? "s" : ""} updated`,
-			);
+			toast.success(`${changes.length} network${changes.length > 1 ? "s" : ""} updated`);
 		} catch {
 			toast.error("Failed to save changes");
 		}
@@ -278,41 +267,38 @@ export default function SocialPage() {
 		}, 100);
 	}, []);
 
-	const handleSearchKeyDown = useCallback((e: React.KeyboardEvent) => {
-		if (!showSuggestions || searchSuggestions.length === 0) return;
+	const handleSearchKeyDown = useCallback(
+		(e: React.KeyboardEvent) => {
+			if (!showSuggestions || searchSuggestions.length === 0) return;
 
-		switch (e.key) {
-			case "ArrowDown":
-				e.preventDefault();
-				setHighlightedIndex((prev) =>
-					prev < searchSuggestions.length - 1 ? prev + 1 : 0,
-				);
-				break;
-			case "ArrowUp":
-				e.preventDefault();
-				setHighlightedIndex((prev) =>
-					prev > 0 ? prev - 1 : searchSuggestions.length - 1,
-				);
-				break;
-			case "Enter":
-				e.preventDefault();
-				if (highlightedIndex >= 0 && highlightedIndex < searchSuggestions.length) {
-					handleSuggestionClick(searchSuggestions[highlightedIndex].slug);
-				}
-				break;
-			case "Escape":
-				e.preventDefault();
-				setShowSuggestions(false);
-				setHighlightedIndex(-1);
-				break;
-		}
-	}, [showSuggestions, searchSuggestions, highlightedIndex, handleSuggestionClick]);
+			switch (e.key) {
+				case "ArrowDown":
+					e.preventDefault();
+					setHighlightedIndex((prev) => (prev < searchSuggestions.length - 1 ? prev + 1 : 0));
+					break;
+				case "ArrowUp":
+					e.preventDefault();
+					setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : searchSuggestions.length - 1));
+					break;
+				case "Enter":
+					e.preventDefault();
+					if (highlightedIndex >= 0 && highlightedIndex < searchSuggestions.length) {
+						handleSuggestionClick(searchSuggestions[highlightedIndex].slug);
+					}
+					break;
+				case "Escape":
+					e.preventDefault();
+					setShowSuggestions(false);
+					setHighlightedIndex(-1);
+					break;
+			}
+		},
+		[showSuggestions, searchSuggestions, highlightedIndex, handleSuggestionClick],
+	);
 
 	useUnsavedChanges(hasChanges);
 
-	const activeCount = Object.values(drafts).filter(
-		(d) => d.isActive && d.url,
-	).length;
+	const activeCount = Object.values(drafts).filter((d) => d.isActive && d.url).length;
 
 	const suggestionsListboxId = "social-search-suggestions";
 
@@ -344,11 +330,15 @@ export default function SocialPage() {
 							disabled={!hasChanges || updateBulk.isPending}
 							className={cn(
 								"transition-all duration-300",
-								hasChanges && !updateBulk.isPending && "shadow-lg shadow-primary/25 ring-2 ring-primary/20",
+								hasChanges &&
+									!updateBulk.isPending &&
+									"shadow-lg shadow-primary/25 ring-2 ring-primary/20",
 							)}
 						>
 							<Save className="mr-1.5 h-3.5 w-3.5" />
-							<span className="hidden sm:inline">{updateBulk.isPending ? "Saving..." : "Save All Changes"}</span>
+							<span className="hidden sm:inline">
+								{updateBulk.isPending ? "Saving..." : "Save All Changes"}
+							</span>
 							<span className="sm:hidden">{updateBulk.isPending ? "..." : "Save"}</span>
 						</Button>
 					</>
@@ -378,7 +368,11 @@ export default function SocialPage() {
 							aria-expanded={showSuggestions && searchSuggestions.length > 0}
 							aria-haspopup="listbox"
 							aria-controls={suggestionsListboxId}
-							aria-activedescendant={highlightedIndex >= 0 ? `suggestion-${searchSuggestions[highlightedIndex]?.slug}` : undefined}
+							aria-activedescendant={
+								highlightedIndex >= 0
+									? `suggestion-${searchSuggestions[highlightedIndex]?.slug}`
+									: undefined
+							}
 						/>
 						{/* Live region for suggestion count */}
 						<div className="sr-only" aria-live="polite" aria-atomic="true">
@@ -450,7 +444,11 @@ export default function SocialPage() {
 							)}
 						>
 							<Filter className="h-3.5 w-3.5 shrink-0" />
-							<span className="hidden sm:inline truncate max-w-[100px]">{activeCategory === "all" ? "Filter" : CATEGORY_LABELS[activeCategory] || activeCategory}</span>
+							<span className="hidden sm:inline truncate max-w-[100px]">
+								{activeCategory === "all"
+									? "Filter"
+									: CATEGORY_LABELS[activeCategory] || activeCategory}
+							</span>
 						</DropdownMenuTrigger>
 						<DropdownMenuContent className="min-w-[160px] sm:min-w-[180px]">
 							{ALL_CATEGORIES.map((cat) => {
@@ -464,7 +462,9 @@ export default function SocialPage() {
 									>
 										{CatIcon && <CatIcon className="h-3.5 w-3.5" aria-hidden="true" />}
 										{cat === "all" ? "All Categories" : CATEGORY_LABELS[cat] || cat}
-										<span className="ml-auto text-[10px] opacity-60">{categoryCounts[cat] ?? 0}</span>
+										<span className="ml-auto text-[10px] opacity-60">
+											{categoryCounts[cat] ?? 0}
+										</span>
 									</DropdownMenuItem>
 								);
 							})}
@@ -478,8 +478,7 @@ export default function SocialPage() {
 				<Card>
 					<CardContent className="py-4 text-center">
 						<p className="text-sm text-destructive">
-							Failed to load saved networks — changes may not reflect current
-							state
+							Failed to load saved networks — changes may not reflect current state
 						</p>
 						<Button
 							variant="outline"
@@ -508,14 +507,22 @@ export default function SocialPage() {
 						count={activeNetworks.length}
 						variant="primary"
 					/>
-					<CardContent className="p-0 px-1.5 sm:px-3 pb-3" role="list" aria-label="Active social networks">
+					<CardContent
+						className="p-0 px-1.5 sm:px-3 pb-3"
+						role="list"
+						aria-label="Active social networks"
+					>
 						<div className="space-y-2.5">
 							{activeNetworks.map((social) => {
 								const draft = drafts[social.slug] ?? { url: "", isActive: false };
 								const brand = socialBrands.find((b) => b.slug === social.slug)!;
 								const delay = !hasAnimated ? rowAnimIndex++ * 40 + 250 : undefined;
 								return (
-									<div key={social.slug} id={`network-${social.slug}`} className="rounded-xl transition-all">
+									<div
+										key={social.slug}
+										id={`network-${social.slug}`}
+										className="rounded-xl transition-all"
+									>
 										<NetworkRow
 											social={brand}
 											draft={draft}
@@ -552,7 +559,8 @@ export default function SocialPage() {
 						<Card
 							key={group.category}
 							className={cn(
-								!hasAnimated && "animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both",
+								!hasAnimated &&
+									"animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both",
 							)}
 							style={cardDelay !== undefined ? { animationDelay: `${cardDelay}ms` } : undefined}
 						>
@@ -575,7 +583,11 @@ export default function SocialPage() {
 										const brand = socialBrands.find((b) => b.slug === social.slug)!;
 										const delay = !hasAnimated ? rowAnimIndex++ * 40 + 300 : undefined;
 										return (
-											<div key={social.slug} id={`network-${social.slug}`} className="rounded-xl transition-all">
+											<div
+												key={social.slug}
+												id={`network-${social.slug}`}
+												className="rounded-xl transition-all"
+											>
 												<NetworkRow
 													social={brand}
 													draft={draft}

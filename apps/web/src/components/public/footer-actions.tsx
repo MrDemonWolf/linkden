@@ -19,12 +19,7 @@ export function FooterActions({ walletEnabled, vcardEnabled }: FooterActionsProp
 	const both = walletEnabled && vcardEnabled;
 
 	return (
-		<div
-			className={cn(
-				"mt-6 flex pb-4 gap-3",
-				both ? "grid grid-cols-2" : "justify-center",
-			)}
-		>
+		<div className={cn("mt-6 flex pb-4 gap-3", both ? "grid grid-cols-2" : "justify-center")}>
 			{walletEnabled && (
 				<a
 					href="/api/wallet-pass"

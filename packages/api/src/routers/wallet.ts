@@ -28,11 +28,7 @@ const walletKeys = [
 ];
 
 // Cryptographic credentials — masked in API responses, never returned in plaintext
-const WALLET_SECRET_KEYS = new Set([
-	"wallet_signer_cert",
-	"wallet_signer_key",
-	"wallet_wwdr_cert",
-]);
+const WALLET_SECRET_KEYS = new Set(["wallet_signer_cert", "wallet_signer_key", "wallet_wwdr_cert"]);
 
 export const walletRouter = router({
 	getConfig: protectedProcedure.query(async () => {
@@ -40,9 +36,7 @@ export const walletRouter = router({
 		const config: Record<string, string> = {};
 		for (const row of results) {
 			if (walletKeys.includes(row.key)) {
-				config[row.key] = WALLET_SECRET_KEYS.has(row.key) && row.value
-					? "••••••"
-					: row.value;
+				config[row.key] = WALLET_SECRET_KEYS.has(row.key) && row.value ? "••••••" : row.value;
 			}
 		}
 		return config;
@@ -57,21 +51,9 @@ export const walletRouter = router({
 				showQrCode: z.boolean().optional(),
 				organizationName: z.string().max(100).optional(),
 				passDescription: z.string().max(200).optional(),
-				backgroundColor: z
-					.string()
-					.regex(hexColorRegex)
-					.optional()
-					.or(z.literal("")),
-				foregroundColor: z
-					.string()
-					.regex(hexColorRegex)
-					.optional()
-					.or(z.literal("")),
-				labelColor: z
-					.string()
-					.regex(hexColorRegex)
-					.optional()
-					.or(z.literal("")),
+				backgroundColor: z.string().regex(hexColorRegex).optional().or(z.literal("")),
+				foregroundColor: z.string().regex(hexColorRegex).optional().or(z.literal("")),
+				labelColor: z.string().regex(hexColorRegex).optional().or(z.literal("")),
 				logoUrl: z.string().url().optional().or(z.literal("")),
 			}),
 		)
@@ -143,11 +125,27 @@ export const walletRouter = router({
 			teamId: !!settingsMap.wallet_team_id || !!env.WALLET_TEAM_ID,
 			passTypeId: !!settingsMap.wallet_pass_type_id || !!env.WALLET_PASS_TYPE_ID,
 			source: {
-				signerCert: settingsMap.wallet_signer_cert ? "settings" : env.WALLET_SIGNER_CERT ? "env" : "missing",
-				signerKey: settingsMap.wallet_signer_key ? "settings" : env.WALLET_SIGNER_KEY ? "env" : "missing",
-				wwdrCert: settingsMap.wallet_wwdr_cert ? "settings" : env.WALLET_WWDR_CERT ? "env" : "missing",
+				signerCert: settingsMap.wallet_signer_cert
+					? "settings"
+					: env.WALLET_SIGNER_CERT
+						? "env"
+						: "missing",
+				signerKey: settingsMap.wallet_signer_key
+					? "settings"
+					: env.WALLET_SIGNER_KEY
+						? "env"
+						: "missing",
+				wwdrCert: settingsMap.wallet_wwdr_cert
+					? "settings"
+					: env.WALLET_WWDR_CERT
+						? "env"
+						: "missing",
 				teamId: settingsMap.wallet_team_id ? "settings" : env.WALLET_TEAM_ID ? "env" : "missing",
-				passTypeId: settingsMap.wallet_pass_type_id ? "settings" : env.WALLET_PASS_TYPE_ID ? "env" : "missing",
+				passTypeId: settingsMap.wallet_pass_type_id
+					? "settings"
+					: env.WALLET_PASS_TYPE_ID
+						? "env"
+						: "missing",
 			},
 		};
 	}),
@@ -175,8 +173,7 @@ export const walletRouter = router({
 		)
 		.mutation(async ({ input }) => {
 			const updates: { key: string; value: string }[] = [];
-			if (input.teamId !== undefined)
-				updates.push({ key: "wallet_team_id", value: input.teamId });
+			if (input.teamId !== undefined) updates.push({ key: "wallet_team_id", value: input.teamId });
 			if (input.passTypeId !== undefined)
 				updates.push({ key: "wallet_pass_type_id", value: input.passTypeId });
 			if (input.signerCert !== undefined)
@@ -210,9 +207,7 @@ export const walletRouter = router({
 						image: profile.image,
 					}
 				: null,
-			links: blocks
-				.filter((b) => b.type === "link")
-				.map((b) => ({ title: b.title, url: b.url })),
+			links: blocks.filter((b) => b.type === "link").map((b) => ({ title: b.title, url: b.url })),
 			qrUrl: null,
 			organizationName: settingsMap.wallet_organization_name || "",
 			passDescription: settingsMap.wallet_pass_description || "",

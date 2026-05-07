@@ -67,9 +67,7 @@ function Toggle({
 				<span className="text-xs font-medium group-hover:text-foreground transition-colors">
 					{label}
 				</span>
-				<p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
-					{description}
-				</p>
+				<p className="text-[11px] text-muted-foreground leading-tight mt-0.5">{description}</p>
 			</div>
 			<button
 				id={id}
@@ -181,9 +179,7 @@ export function BrandingSection({
 			<div className="grid gap-6 sm:grid-cols-2">
 				<div className="space-y-1.5">
 					<p className="text-xs font-medium">Logo</p>
-					<p className="text-[11px] text-muted-foreground">
-						Shown on login page and admin sidebar
-					</p>
+					<p className="text-[11px] text-muted-foreground">Shown on login page and admin sidebar</p>
 					<ImageUploadField
 						value={logoUrl}
 						purpose="logo"
@@ -370,9 +366,7 @@ export function BrandingSection({
 			{/* Legal Links */}
 			<div className="space-y-3">
 				<p className="text-xs font-medium">Legal Links</p>
-				<p className="text-[11px] text-muted-foreground -mt-2">
-					Shown in the login page footer
-				</p>
+				<p className="text-[11px] text-muted-foreground -mt-2">Shown in the login page footer</p>
 				<div className="grid gap-3 sm:grid-cols-2">
 					<div className="space-y-1.5">
 						<div className="flex items-center gap-2">

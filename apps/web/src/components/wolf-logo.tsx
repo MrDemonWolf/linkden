@@ -24,20 +24,9 @@ export function WolfLogo({ className }: WolfLogoProps) {
 				<circle cx="-9" cy="5" r="1.5" fill="#fff" />
 				<ellipse cx="10" cy="6" rx="4" ry="3.5" fill="#091533" />
 				<circle cx="11" cy="5" r="1.5" fill="#fff" />
-				<path
-					d="M-4 12 L0 10 L4 12"
-					fill="none"
-					stroke="#091533"
-					strokeWidth="0.8"
-					opacity="0.2"
-				/>
+				<path d="M-4 12 L0 10 L4 12" fill="none" stroke="#091533" strokeWidth="0.8" opacity="0.2" />
 				<path d="M0 16 L-4 20 Q0 23 4 20Z" fill="#091533" />
-				<path
-					d="M0 22 L0 26"
-					stroke="#091533"
-					strokeWidth="1.2"
-					strokeLinecap="round"
-				/>
+				<path d="M0 22 L0 26" stroke="#091533" strokeWidth="1.2" strokeLinecap="round" />
 				<path
 					d="M-4 26 Q0 30 4 26"
 					fill="none"

@@ -99,7 +99,8 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 			} ${radiusClasses[borderRadius] || "rounded-2xl"} ${shadowClasses[shadow || "none"]} ${animation && animationClasses[animation] ? animationClasses[animation] : ""}`;
 
 	const style: React.CSSProperties = {
-		transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, transform 0.3s cubic-bezier(0.4,0,0.2,1)",
+		transition:
+			"background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, transform 0.3s cubic-bezier(0.4,0,0.2,1)",
 	};
 
 	if (isHighlighted && themeColors) {
@@ -116,18 +117,18 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 	}
 
 	if (!isHighlighted && !customBgColor && !isOutlined) {
-		style.backgroundColor = colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.7)";
+		style.backgroundColor =
+			colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.7)";
 		style.borderColor = colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.6)";
 		style.color = colorMode === "dark" ? "#ffffff" : "#0f172a";
 	}
 
-	const glassClasses = !isHighlighted && !customBgColor && !isOutlined
-		? "hover:brightness-110 backdrop-blur-2xl border shadow-lg shadow-black/5"
-		: "";
+	const glassClasses =
+		!isHighlighted && !customBgColor && !isOutlined
+			? "hover:brightness-110 backdrop-blur-2xl border shadow-lg shadow-black/5"
+			: "";
 
-	const colorClasses = isHighlighted || customBgColor || isOutlined
-		? ""
-		: glassClasses;
+	const colorClasses = isHighlighted || customBgColor || isOutlined ? "" : glassClasses;
 
 	return (
 		<div role="listitem" className="ld-link-block">
@@ -142,7 +143,9 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 				{hasRichContent ? (
 					<span className="flex items-center gap-2">
 						{emoji && emojiPosition === "left" && (
-							<span className="shrink-0" aria-hidden="true">{emoji}</span>
+							<span className="shrink-0" aria-hidden="true">
+								{emoji}
+							</span>
 						)}
 						<span className="flex-1 min-w-0">
 							<span className="block">{block.title || "Untitled Link"}</span>
@@ -156,26 +159,31 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 							)}
 						</span>
 						{emoji && emojiPosition === "right" && (
-							<span className="shrink-0" aria-hidden="true">{emoji}</span>
+							<span className="shrink-0" aria-hidden="true">
+								{emoji}
+							</span>
 						)}
 						{thumbnail && (
-							<img
-								src={thumbnail}
-								alt=""
-								className="h-12 w-12 shrink-0 rounded-md object-cover"
-							/>
+							<img src={thumbnail} alt="" className="h-12 w-12 shrink-0 rounded-md object-cover" />
 						)}
 					</span>
 				) : (
 					<span className="inline-flex items-center gap-2 pr-12 overflow-hidden">
 						{emoji && emojiPosition === "left" && (
-							<span className="shrink-0" aria-hidden="true">{emoji}</span>
+							<span className="shrink-0" aria-hidden="true">
+								{emoji}
+							</span>
 						)}
 						<span className="truncate">{block.title || "Untitled Link"}</span>
 						{emoji && emojiPosition === "right" && (
-							<span className="shrink-0" aria-hidden="true">{emoji}</span>
+							<span className="shrink-0" aria-hidden="true">
+								{emoji}
+							</span>
 						)}
-						<ArrowRight className="absolute right-4 h-4 w-4 shrink-0 opacity-30 group-hover:opacity-70 group-hover:translate-x-0.5 transition-all duration-300" aria-hidden="true" />
+						<ArrowRight
+							className="absolute right-4 h-4 w-4 shrink-0 opacity-30 group-hover:opacity-70 group-hover:translate-x-0.5 transition-all duration-300"
+							aria-hidden="true"
+						/>
 					</span>
 				)}
 			</a>

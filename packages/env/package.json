@@ -1,26 +1,26 @@
 {
-  "name": "@linkden/env",
-  "version": "0.0.0",
-  "private": true,
-  "type": "module",
-  "exports": {
-    "./server": "./src/server.ts",
-    "./web": "./src/web.ts"
-  },
-  "dependencies": {
-    "@cloudflare/workers-types": "^4.20260507.1",
-    "@t3-oss/env-nextjs": "^0.13.11",
-    "@tailwindcss/postcss": "^4.2.4",
-    "dotenv": "^17.4.2",
-    "tailwindcss": "^4.2.4",
-    "turbo": "^2.9.9",
-    "vitest": "^4.1.5",
-    "zod": "^4.4.3"
-  },
-  "devDependencies": {
-    "@linkden/config": "workspace:*",
-    "@linkden/infra": "workspace:*",
-    "@types/node": "^25.6.0",
-    "typescript": "^5.9.3"
-  }
+	"name": "@linkden/env",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		"./server": "./src/server.ts",
+		"./web": "./src/web.ts"
+	},
+	"dependencies": {
+		"@cloudflare/workers-types": "^4.20260507.1",
+		"@t3-oss/env-nextjs": "^0.13.11",
+		"@tailwindcss/postcss": "^4.2.4",
+		"dotenv": "^17.4.2",
+		"tailwindcss": "^4.2.4",
+		"turbo": "^2.9.9",
+		"vitest": "^4.1.5",
+		"zod": "^4.4.3"
+	},
+	"devDependencies": {
+		"@linkden/config": "workspace:*",
+		"@linkden/infra": "workspace:*",
+		"@types/node": "^25.6.0",
+		"typescript": "^5.9.3"
+	}
 }

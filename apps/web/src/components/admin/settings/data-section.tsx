@@ -1,4 +1,4 @@
-import { type RefObject } from "react";
+import type { RefObject } from "react";
 import { Download, Upload, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -29,12 +29,7 @@ export function DataSection({
 	return (
 		<div className="space-y-4">
 			<div className="flex gap-2">
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={onExport}
-					disabled={isExporting}
-				>
+				<Button variant="outline" size="sm" onClick={onExport} disabled={isExporting}>
 					<Download className="mr-1.5 h-3 w-3" />
 					{isExporting ? "Exporting..." : "Export"}
 				</Button>
@@ -60,16 +55,10 @@ export function DataSection({
 			<div className="flex items-center justify-between">
 				<div>
 					<p className="text-[11px] text-muted-foreground">Current Version</p>
-					<p className="text-sm font-semibold tabular-nums">
-						{versionCheck?.current ?? "0.1.0"}
-					</p>
+					<p className="text-sm font-semibold tabular-nums">{versionCheck?.current ?? "0.1.0"}</p>
 				</div>
 				{versionCheck?.hasUpdate ? (
-					<a
-						href={versionCheck.releaseUrl ?? "#"}
-						target="_blank"
-						rel="noopener noreferrer"
-					>
+					<a href={versionCheck.releaseUrl ?? "#"} target="_blank" rel="noopener noreferrer">
 						<Button size="sm">
 							Update to {versionCheck.latest}
 							<ExternalLink className="ml-1.5 h-3 w-3" />

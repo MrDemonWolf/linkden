@@ -82,9 +82,7 @@ export const publicRouter = router({
 				seoDescription: settings.seo_description || null,
 				seoOgImage: settings.seo_og_image || null,
 				brandingEnabled: settings.branding_enabled !== "false",
-				brandingText:
-					settings.branding_text ||
-					"Powered by LinkDen made by MrDemonWolf, Inc.",
+				brandingText: settings.branding_text || "Powered by LinkDen made by MrDemonWolf, Inc.",
 				defaultColorMode: settings.default_color_mode || "system",
 				walletPassEnabled: settings.wallet_pass_enabled === "true",
 				vcardEnabled: settings.vcard_enabled === "true",
@@ -161,8 +159,7 @@ export const publicRouter = router({
 
 				let verifyUrl: string;
 				if (captchaProvider.value === "turnstile") {
-					verifyUrl =
-						"https://challenges.cloudflare.com/turnstile/v0/siteverify";
+					verifyUrl = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 				} else {
 					verifyUrl = "https://www.google.com/recaptcha/api/siteverify";
 				}
@@ -254,13 +251,7 @@ export const publicRouter = router({
 		const [vcardBlock] = await db
 			.select()
 			.from(block)
-			.where(
-				and(
-					eq(block.type, "vcard"),
-					eq(block.isEnabled, true),
-					eq(block.status, "published"),
-				),
-			)
+			.where(and(eq(block.type, "vcard"), eq(block.isEnabled, true), eq(block.status, "published")))
 			.orderBy(asc(block.position))
 			.limit(1);
 
@@ -294,7 +285,8 @@ export const publicRouter = router({
 			tosMode: (settings.branding_tos_mode as "url" | "text") || "url",
 			tosText: settings.branding_tos_text || null,
 			loginLogoUrl: settings.branding_login_logo_url || null,
-			loginBgMode: (settings.branding_login_bg_mode as "default" | "preset" | "custom") || "default",
+			loginBgMode:
+				(settings.branding_login_bg_mode as "default" | "preset" | "custom") || "default",
 			loginBgPreset: settings.branding_login_bg_preset || null,
 			loginBgCustomUrl: settings.branding_login_bg_custom_url || null,
 		};

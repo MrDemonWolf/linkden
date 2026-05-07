@@ -49,7 +49,9 @@ export function ThemePresetsSection({
 								{/* Theme preview mini-card */}
 								<div
 									className="relative h-20 w-full overflow-hidden"
-									style={{ background: `linear-gradient(135deg, ${light["--ld-background"]} 50%, ${dark["--ld-background"]} 50%)` }}
+									style={{
+										background: `linear-gradient(135deg, ${light["--ld-background"]} 50%, ${dark["--ld-background"]} 50%)`,
+									}}
 								>
 									{/* Light side elements */}
 									<div className="absolute left-2 top-2 flex flex-col gap-1">
@@ -124,9 +126,7 @@ export function ThemePresetsSection({
 											style={{ backgroundColor: light["--ld-background"] }}
 										/>
 									</div>
-									<span className="text-[11px] font-semibold truncate">
-										{theme.label}
-									</span>
+									<span className="text-[11px] font-semibold truncate">{theme.label}</span>
 								</div>
 							</button>
 						);

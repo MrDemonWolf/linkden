@@ -1,37 +1,37 @@
 {
-  "name": "@linkden/docs",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "build": "next build",
-    "dev": "next dev --port=3002",
-    "start": "serve out",
-    "check-types": "fumadocs-mdx && next typegen && tsc --noEmit",
-    "postinstall": "fumadocs-mdx"
-  },
-  "dependencies": {
-    "@linkden/email": "workspace:*",
-    "@orama/orama": "^3.1.18",
-    "@react-email/components": "^1.0.12",
-    "@react-email/render": "^2.0.6",
-    "fumadocs-core": "16.6.16",
-    "fumadocs-mdx": "14.2.9",
-    "fumadocs-ui": "16.6.16",
-    "lucide-react": "^0.577.0",
-    "next": "16.2.0",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
-    "zod": "4.3.6"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4.2.1",
-    "@types/mdx": "^2.0.13",
-    "@types/node": "^25.6.0",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "postcss": "^8.5.9",
-    "serve": "^14.2.6",
-    "tailwindcss": "^4.2.1",
-    "typescript": "^5.9.3"
-  }
+	"name": "@linkden/docs",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"build": "next build",
+		"dev": "next dev --port=3002",
+		"start": "serve out",
+		"check-types": "fumadocs-mdx && next typegen && tsc --noEmit",
+		"postinstall": "fumadocs-mdx"
+	},
+	"dependencies": {
+		"@linkden/email": "workspace:*",
+		"@orama/orama": "^3.1.18",
+		"@react-email/components": "^1.0.12",
+		"@react-email/render": "^2.0.6",
+		"fumadocs-core": "16.6.16",
+		"fumadocs-mdx": "14.2.9",
+		"fumadocs-ui": "16.6.16",
+		"lucide-react": "^0.577.0",
+		"next": "16.2.0",
+		"react": "^19.2.5",
+		"react-dom": "^19.2.5",
+		"zod": "4.3.6"
+	},
+	"devDependencies": {
+		"@tailwindcss/postcss": "^4.2.1",
+		"@types/mdx": "^2.0.13",
+		"@types/node": "^25.6.0",
+		"@types/react": "^19.2.14",
+		"@types/react-dom": "^19.2.3",
+		"postcss": "^8.5.9",
+		"serve": "^14.2.6",
+		"tailwindcss": "^4.2.1",
+		"typescript": "^5.9.3"
+	}
 }

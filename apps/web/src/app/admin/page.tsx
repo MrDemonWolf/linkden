@@ -103,9 +103,7 @@ export default function AdminDashboardPage() {
 		const name = session?.user?.name ?? "";
 		const first = name.split(" ")[0] || "there";
 		try {
-			const hour = new Date(
-				now.toLocaleString("en-US", { timeZone: timezone }),
-			).getHours();
+			const hour = new Date(now.toLocaleString("en-US", { timeZone: timezone })).getHours();
 			const date = now.toLocaleDateString("en-US", {
 				timeZone: timezone,
 				weekday: "short",
@@ -165,13 +163,20 @@ export default function AdminDashboardPage() {
 	}, [viewsOverTime.data, clicksOverTime.data]);
 
 	const totalReferrerCount = (referrers.data ?? []).reduce(
-		(sum, r) => sum + (r.count as number), 0,
+		(sum, r) => sum + (r.count as number),
+		0,
 	);
 
 	const calloutText = useMemo(() => {
 		if (overview.isLoading) return "Loading recent activity…";
 		const periodWord =
-			period === "7d" ? "7 days" : period === "30d" ? "30 days" : period === "90d" ? "90 days" : "all time";
+			period === "7d"
+				? "7 days"
+				: period === "30d"
+					? "30 days"
+					: period === "90d"
+						? "90 days"
+						: "all time";
 		const trendBit =
 			previousViews === 0
 				? totalViews > 0
@@ -237,10 +242,7 @@ export default function AdminDashboardPage() {
 	return (
 		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
 			{/* Greeting + period selector */}
-			<div
-				{...getAnimationProps(0)}
-				className="flex flex-wrap items-center justify-between gap-3"
-			>
+			<div {...getAnimationProps(0)} className="flex flex-wrap items-center justify-between gap-3">
 				<div className="flex items-center gap-3 flex-wrap">
 					<h1 className="text-2xl font-bold tracking-tight">
 						<span className="text-base font-medium text-muted-foreground">{greeting}, </span>
@@ -427,7 +429,10 @@ export default function AdminDashboardPage() {
 								role="img"
 							>
 								<ResponsiveContainer width="100%" height="100%">
-									<AreaChart data={areaChartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+									<AreaChart
+										data={areaChartData}
+										margin={{ top: 4, right: 4, bottom: 0, left: -20 }}
+									>
 										<defs>
 											<linearGradient id="viewsGradient" x1="0" y1="0" x2="0" y2="1">
 												<stop offset="0%" stopColor="var(--color-views)" stopOpacity={0.3} />
@@ -438,9 +443,23 @@ export default function AdminDashboardPage() {
 												<stop offset="100%" stopColor="var(--color-clicks)" stopOpacity={0.02} />
 											</linearGradient>
 										</defs>
-										<CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
-										<XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 10 }} />
-										<YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
+										<CartesianGrid
+											strokeDasharray="3 3"
+											stroke="currentColor"
+											strokeOpacity={0.1}
+										/>
+										<XAxis
+											dataKey="label"
+											tickLine={false}
+											axisLine={false}
+											tick={{ fontSize: 10 }}
+										/>
+										<YAxis
+											tickLine={false}
+											axisLine={false}
+											tick={{ fontSize: 10 }}
+											allowDecimals={false}
+										/>
 										<Tooltip content={<ChartTooltipContent labelFormatter={(label) => label} />} />
 										<Legend
 											verticalAlign="top"
@@ -516,10 +535,26 @@ export default function AdminDashboardPage() {
 								>
 									<ResponsiveContainer width="100%" height="100%">
 										<BarChart data={clicksData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-											<CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
-											<XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 10 }} />
-											<YAxis tickLine={false} axisLine={false} tick={{ fontSize: 10 }} allowDecimals={false} />
-											<Tooltip content={<ChartTooltipContent labelFormatter={(label) => label} />} />
+											<CartesianGrid
+												strokeDasharray="3 3"
+												stroke="currentColor"
+												strokeOpacity={0.1}
+											/>
+											<XAxis
+												dataKey="label"
+												tickLine={false}
+												axisLine={false}
+												tick={{ fontSize: 10 }}
+											/>
+											<YAxis
+												tickLine={false}
+												axisLine={false}
+												tick={{ fontSize: 10 }}
+												allowDecimals={false}
+											/>
+											<Tooltip
+												content={<ChartTooltipContent labelFormatter={(label) => label} />}
+											/>
 											<Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
 										</BarChart>
 									</ResponsiveContainer>
@@ -539,14 +574,12 @@ export default function AdminDashboardPage() {
 						</CardHeader>
 						<CardContent>
 							<TopLinksList
-								data={
-									topLinks.data?.map((l) => ({
-										id: l.id,
-										title: (l.title as string | null) ?? null,
-										url: (l.url as string | null) ?? null,
-										clicks: (l.clicks as number) ?? 0,
-									}))
-								}
+								data={topLinks.data?.map((l) => ({
+									id: l.id,
+									title: (l.title as string | null) ?? null,
+									url: (l.url as string | null) ?? null,
+									clicks: (l.clicks as number) ?? 0,
+								}))}
 								isLoading={topLinks.isLoading}
 							/>
 						</CardContent>
@@ -664,9 +697,7 @@ export default function AdminDashboardPage() {
 									))}
 								</div>
 							) : clicks.length === 0 ? (
-								<p className="text-xs text-muted-foreground py-6 text-center">
-									No recent clicks
-								</p>
+								<p className="text-xs text-muted-foreground py-6 text-center">No recent clicks</p>
 							) : (
 								<div className="divide-y divide-dashed divide-border/60">
 									{clicks.slice(0, 6).map((click) => (

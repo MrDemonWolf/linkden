@@ -85,9 +85,7 @@ export function VCardSection() {
 		}
 	}, [configQuery.data]);
 
-	const isDirty =
-		enabled !== savedEnabled ||
-		JSON.stringify(data) !== JSON.stringify(savedData);
+	const isDirty = enabled !== savedEnabled || JSON.stringify(data) !== JSON.stringify(savedData);
 
 	const updateField = (field: keyof Omit<VCardData, "urls">, value: string) => {
 		setData((prev) => ({ ...prev, [field]: value }));
@@ -110,9 +108,7 @@ export function VCardSection() {
 	const updateUrl = (index: number, field: "label" | "url", value: string) => {
 		setData((prev) => ({
 			...prev,
-			urls: prev.urls.map((u, i) =>
-				i === index ? { ...u, [field]: value } : u,
-			),
+			urls: prev.urls.map((u, i) => (i === index ? { ...u, [field]: value } : u)),
 		}));
 	};
 
@@ -165,11 +161,7 @@ export function VCardSection() {
 						Allow visitors to download your contact information as a vCard
 					</p>
 				</div>
-				<Switch
-					checked={enabled}
-					onCheckedChange={setEnabled}
-					aria-label="Enable vCard"
-				/>
+				<Switch checked={enabled} onCheckedChange={setEnabled} aria-label="Enable vCard" />
 			</div>
 
 			{enabled && (
@@ -354,11 +346,7 @@ export function VCardSection() {
 			)}
 
 			{isDirty && (
-				<Button
-					size="sm"
-					onClick={handleSave}
-					disabled={updateConfig.isPending}
-				>
+				<Button size="sm" onClick={handleSave} disabled={updateConfig.isPending}>
 					<Save className="mr-1.5 h-3.5 w-3.5" />
 					{updateConfig.isPending ? "Saving..." : "Save vCard Settings"}
 				</Button>

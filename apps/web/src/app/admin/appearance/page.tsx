@@ -53,8 +53,7 @@ function buildSavedState(settings: Record<string, string>): SavedState {
 		bannerMode: (settings.banner_mode as "preset" | "custom") || "preset",
 		bannerCustomUrl: settings.banner_custom_url ?? "",
 		verifiedBadge: settings.verified_badge === "true",
-		socialIconShape:
-			(settings.social_icon_shape as SocialIconShape) || "circle",
+		socialIconShape: (settings.social_icon_shape as SocialIconShape) || "circle",
 	};
 }
 
@@ -66,11 +65,17 @@ export default function AppearancePage() {
 	const settings = settingsQuery.data ?? {};
 
 	const [savedState, setSavedState] = useState<SavedState>({
-		theme: "default", colorMode: "light",
-		primaryColor: "#0FACED", secondaryColor: "#E2E8F0",
-		accentColor: "#38BDF8", bgColor: "#FFFFFF",
-		customCss: "", bannerEnabled: false, bannerPreset: "",
-		bannerMode: "preset", bannerCustomUrl: "",
+		theme: "default",
+		colorMode: "light",
+		primaryColor: "#0FACED",
+		secondaryColor: "#E2E8F0",
+		accentColor: "#38BDF8",
+		bgColor: "#FFFFFF",
+		customCss: "",
+		bannerEnabled: false,
+		bannerPreset: "",
+		bannerMode: "preset",
+		bannerCustomUrl: "",
 		verifiedBadge: false,
 		socialIconShape: "circle",
 	});
@@ -88,8 +93,7 @@ export default function AppearancePage() {
 	const [bannerMode, setBannerMode] = useState<"preset" | "custom">("preset");
 	const [bannerCustomUrl, setBannerCustomUrl] = useState("");
 	const [verifiedBadge, setVerifiedBadge] = useState(false);
-	const [socialIconShape, setSocialIconShape] =
-		useState<SocialIconShape>("circle");
+	const [socialIconShape, setSocialIconShape] = useState<SocialIconShape>("circle");
 	const [showMobilePreview, setShowMobilePreview] = useState(false);
 
 	const [systemPrefersDark, setSystemPrefersDark] = useState(false);
@@ -178,11 +182,19 @@ export default function AppearancePage() {
 				{ key: "banner_custom_url", value: bannerCustomUrl },
 				{ key: "verified_badge", value: String(verifiedBadge) },
 				{ key: "social_icon_shape", value: socialIconShape },
-				]);
+			]);
 			setSavedState({
-				theme: selectedTheme, colorMode,
-				primaryColor, secondaryColor, accentColor, bgColor,
-				customCss, bannerEnabled, bannerPreset, bannerMode, bannerCustomUrl,
+				theme: selectedTheme,
+				colorMode,
+				primaryColor,
+				secondaryColor,
+				accentColor,
+				bgColor,
+				customCss,
+				bannerEnabled,
+				bannerPreset,
+				bannerMode,
+				bannerCustomUrl,
 				verifiedBadge,
 				socialIconShape,
 			});
@@ -232,7 +244,12 @@ export default function AppearancePage() {
 
 	if (settingsQuery.isLoading) {
 		return (
-			<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6" aria-busy="true" role="status" aria-label="Loading appearance settings">
+			<div
+				className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6"
+				aria-busy="true"
+				role="status"
+				aria-label="Loading appearance settings"
+			>
 				<Skeleton className="h-8 w-48" />
 				<div className="flex gap-6">
 					<div className="flex-1 space-y-4">
@@ -281,7 +298,12 @@ export default function AppearancePage() {
 			<div className="flex items-center justify-between gap-3">
 				<div className="min-w-0">
 					<h1 className="text-base font-semibold tracking-tight">Appearance</h1>
-					<p className={cn("text-xs transition-colors", isDirty ? "text-amber-500" : "text-muted-foreground")}>
+					<p
+						className={cn(
+							"text-xs transition-colors",
+							isDirty ? "text-amber-500" : "text-muted-foreground",
+						)}
+					>
 						{isDirty ? "Unpublished changes" : "All changes are live"}
 					</p>
 				</div>
@@ -301,10 +323,7 @@ export default function AppearancePage() {
 			<div className="flex gap-6">
 				{/* Settings column */}
 				<div className="flex-1 min-w-0 space-y-5">
-					<ThemePresetsSection
-						selectedTheme={selectedTheme}
-						onThemeSelect={handleThemeSelect}
-					/>
+					<ThemePresetsSection selectedTheme={selectedTheme} onThemeSelect={handleThemeSelect} />
 
 					<ColorsSection
 						colorMode={colorMode}
@@ -331,20 +350,14 @@ export default function AppearancePage() {
 						onBannerCustomUrlChange={setBannerCustomUrl}
 					/>
 
-					<SocialIconShapeSection
-						shape={socialIconShape}
-						onShapeChange={setSocialIconShape}
-					/>
+					<SocialIconShapeSection shape={socialIconShape} onShapeChange={setSocialIconShape} />
 
 					<VerifiedBadgeSection
 						verifiedBadge={verifiedBadge}
 						onVerifiedBadgeChange={setVerifiedBadge}
 					/>
 
-					<CustomCssSection
-						customCss={customCss}
-						onCustomCssChange={setCustomCss}
-					/>
+					<CustomCssSection customCss={customCss} onCustomCssChange={setCustomCss} />
 
 					{/* Spacer for sticky publish bar */}
 					{isDirty && <div className="h-16" />}
@@ -363,10 +376,7 @@ export default function AppearancePage() {
 			</div>
 
 			{/* Mobile preview sheet */}
-			<MobilePreviewSheet
-				open={showMobilePreview}
-				onOpenChange={setShowMobilePreview}
-			>
+			<MobilePreviewSheet open={showMobilePreview} onOpenChange={setShowMobilePreview}>
 				<PreviewRenderer
 					overrides={previewOverrides}
 					mode={previewDark ? "dark" : "light"}
@@ -378,9 +388,7 @@ export default function AppearancePage() {
 			{/* Sticky bottom publish bar */}
 			{isDirty && (
 				<div className="fixed bottom-16 md:bottom-0 inset-x-0 md:left-56 z-30 border-t border-border/50 bg-background/80 backdrop-blur-xl px-4 py-3 flex items-center justify-between shadow-lg animate-in slide-in-from-bottom-2 duration-200">
-					<span className="text-sm text-muted-foreground">
-						Unpublished changes
-					</span>
+					<span className="text-sm text-muted-foreground">Unpublished changes</span>
 					<div className="flex gap-2">
 						<Button variant="ghost" size="sm" onClick={handleDiscard}>
 							<Undo2 className="mr-1.5 h-3.5 w-3.5" />

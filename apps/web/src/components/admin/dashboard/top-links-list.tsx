@@ -36,11 +36,7 @@ export function TopLinksList({ data, isLoading }: TopLinksListProps) {
 	}
 
 	if (!data?.length) {
-		return (
-			<p className="text-xs text-muted-foreground py-8 text-center">
-				No clicks yet
-			</p>
-		);
+		return <p className="text-xs text-muted-foreground py-8 text-center">No clicks yet</p>;
 	}
 
 	const max = Math.max(...data.map((l) => l.clicks ?? 0), 1);
@@ -51,14 +47,9 @@ export function TopLinksList({ data, isLoading }: TopLinksListProps) {
 				const count = link.clicks ?? 0;
 				const pct = Math.round((count / max) * 100);
 				return (
-					<div
-						key={String(link.id ?? i)}
-						className="flex items-center gap-3 py-2.5"
-					>
+					<div key={String(link.id ?? i)} className="flex items-center gap-3 py-2.5">
 						<div className="min-w-0 flex-1">
-							<p className="text-xs font-medium truncate">
-								{link.title || "Untitled"}
-							</p>
+							<p className="text-xs font-medium truncate">{link.title || "Untitled"}</p>
 							<p className="text-[10px] text-muted-foreground font-mono truncate flex items-center gap-1">
 								<ExternalLink className="h-2.5 w-2.5 shrink-0" />
 								{extractDomain(link.url)}

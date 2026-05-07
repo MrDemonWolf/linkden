@@ -11,11 +11,7 @@ interface MobilePreviewSheetProps {
 	children: React.ReactNode;
 }
 
-export function MobilePreviewSheet({
-	open,
-	onOpenChange,
-	children,
-}: MobilePreviewSheetProps) {
+export function MobilePreviewSheet({ open, onOpenChange, children }: MobilePreviewSheetProps) {
 	const sheetRef = useRef<HTMLDivElement>(null);
 
 	const handleKeyDown = useCallback(
@@ -68,9 +64,7 @@ export function MobilePreviewSheet({
 						className="fixed inset-x-0 bottom-0 z-10 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-white/15 dark:border-white/10 bg-white dark:bg-neutral-900 backdrop-blur-2xl p-4 pb-8 shadow-xl animate-in slide-in-from-bottom duration-300"
 					>
 						<div className="mb-3 flex items-center justify-between">
-							<span className="text-xs font-medium text-muted-foreground">
-								Preview
-							</span>
+							<span className="text-xs font-medium text-muted-foreground">Preview</span>
 							<Button
 								variant="ghost"
 								size="icon-xs"

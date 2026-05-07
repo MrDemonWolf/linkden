@@ -24,16 +24,12 @@ export default function AdminError({
 				<div className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
 					<AlertTriangle className="h-6 w-6" />
 				</div>
-				<h2 className="text-xl font-semibold tracking-tight text-foreground">
-					Admin error
-				</h2>
+				<h2 className="text-xl font-semibold tracking-tight text-foreground">Admin error</h2>
 				<p className="mt-2 text-sm text-muted-foreground">
 					Something broke while rendering this admin page. Try again, or reload if it persists.
 				</p>
 				{error.digest ? (
-					<p className="mt-3 font-mono text-[11px] text-muted-foreground/60">
-						ref: {error.digest}
-					</p>
+					<p className="mt-3 font-mono text-[11px] text-muted-foreground/60">ref: {error.digest}</p>
 				) : null}
 				<div className="mt-6 flex items-center justify-center gap-3">
 					<Button onClick={reset} className="h-10 px-5 text-sm">
