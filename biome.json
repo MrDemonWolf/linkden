@@ -59,7 +59,10 @@
 			"!**/dist",
 			"!**/.turbo",
 			"!**/*.generated.*",
-			"!**/bun.lock"
+			"!**/bun.lock",
+			"!**/.source",
+			"!apps/docs/.source/**",
+			"!apps/web/.next/types/**"
 		]
 	},
 	"css": {
