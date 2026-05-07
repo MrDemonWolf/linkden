@@ -1,0 +1,80 @@
+---
+title: Connections
+description: View and manage contact form submissions from your visitors in the Connections inbox.
+---
+
+# 🤝 Connections
+
+When visitors fill out your contact form, their messages land in the **Connections inbox** at `/admin/connections`. Think of it as a simple read-only inbox built into your admin panel — no external tools required.
+
+### ⚡ TL;DR
+- Messages from your contact form appear here automatically.
+- Filter by **All**, **Unread**, or **Read**.
+- Select any message to read the full details.
+- Bulk-delete or mark-all-read in one click.
+
+---
+
+## 📬 What You'll See
+
+Each connection card shows:
+- **Name** and **email** of the visitor.
+- **Message preview** (first line).
+- **Timestamp** of when it was submitted.
+- **Read/Unread indicator** — bold title = unread.
+
+Clicking a card opens the full message in a side panel (desktop) or a slide-up sheet (mobile).
+
+---
+
+## 🔍 Filtering
+
+Use the filter buttons at the top of the list:
+
+| Filter | Shows |
+|--------|-------|
+| **All** | Every submission |
+| **Unread** | Only messages you haven't opened yet |
+| **Read** | Messages you've already viewed |
+
+> Selecting a connection auto-marks it as **read**.
+
+---
+
+## ✅ Actions
+
+### Single Connection
+- **Mark as read / unread** — Toggle the read state manually.
+- **Delete** — Permanently removes the connection. Cannot be undone.
+
+### Bulk Actions
+1. Check the checkbox on one or more connections to enter bulk mode.
+2. Use the toolbar that appears:
+   - **Mark all read** — Marks every visible connection as read.
+   - **Delete selected** — Permanently deletes checked connections.
+
+> **Warning:** Deletion is permanent. There is no recycle bin.
+
+---
+
+## ⚙️ Prerequisites
+
+Connections only appear here if the **Contact Form** is enabled and visitors have submitted it.
+
+1. Go to `/admin/settings` → **Contact Form**.
+2. Toggle the form on.
+3. Optionally set a **delivery mode** (database only, email, or both).
+
+See the [Contact Form guide](/docs/guide/contact-form) for full setup.
+
+---
+
+## 📧 Email Notifications (Optional)
+
+If you'd rather get an email for each new submission than check this inbox:
+
+1. Go to `/admin/settings` → **Email**.
+2. Set your email provider (Resend or Cloudflare Email Workers).
+3. Under **Contact Form**, set delivery to **Email notification** or **Database + email**.
+
+See [Email Templates](/docs/guide/email-templates) for what the notification looks like.

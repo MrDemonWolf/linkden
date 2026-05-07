@@ -1,13 +1,14 @@
 ---
 title: Blocks
-description: Add links, headers, embeds, social icons, forms, and vCard download buttons to your page with the drag-and-drop builder.
+description: Add links, headers, embeds, social icons, forms, vCard buttons, and location maps to your page with the drag-and-drop builder.
 ---
 
 # 🧱 Blocks
 
-Build your page by adding blocks in the builder at `/admin/builder`. LinkDen supports **6 block types** that you can mix, match, and reorder however you like.
+Build your page by adding blocks in the builder at `/admin/builder`. LinkDen supports **7 block types** that you can mix, match, and reorder however you like.
 
 ### ⚡ Summary
+- **7 types:** Link, Header, Social Icons, Embed, Form, vCard, Location.
 - **Drag & Drop:** Reorder anything.
 - **Preview:** Live phone frame on the right.
 - **Schedule:** Show/hide blocks automatically by date.
@@ -47,6 +48,13 @@ An inline contact form. Visitors message you directly.
 A **"Download Contact"** button.
 - **Action:** Generates a `.vcf` file for visitors.
 - **Data:** Pulls from your profile settings.
+
+### 📍 Location
+An embedded map showing a physical address.
+- **Includes:** Address text, optional label.
+- **Provider:** Apple Maps (via MapKit JS) when configured, Google Maps embed otherwise.
+- **Styles:** Height, zoom level.
+> **Note:** MapKit JS token is optional. See `/admin/settings` → **Map** to enable Apple Maps.
 
 ---
 

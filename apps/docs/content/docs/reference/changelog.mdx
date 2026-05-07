@@ -9,6 +9,48 @@ All notable changes to LinkDen are documented here. For the full commit history,
 
 ---
 
+## v0.3.0
+
+**May 2026**
+
+### Analytics
+
+- Full analytics admin page (`/admin/analytics`) with stat cards, views-over-time chart, period selector, top links, referrers, and country breakdown
+- Shared `StatCard`, `PeriodSelector`, and chart widgets extracted for reuse across dashboard and analytics page
+
+### Admin
+
+- **Setup wizard** — split-panel onboarding flow at `/admin/setup` (Account → Profile → Theme → Done)
+- **Login page** — split-panel layout with custom login branding support
+- **Dashboard** — Classic Grid layout with stat cards, mini chart, and action shortcuts
+
+### Appearance
+
+- **Social icon shape** picker (Circle vs. Rounded Square) added to `/admin/appearance`
+- **Consent banner** — optional privacy/cookie notice for the public page (text configurable in admin)
+
+### Blocks
+
+- **Location block** (7th block type) — embeds a map showing a physical address; supports Apple Maps via MapKit JS when configured
+
+### Connections
+
+- Renamed from "Forms" to "Connections" in navigation
+- Read/unread auto-mark on selection; filter by All / Unread / Read
+
+### Settings
+
+- **MapKit** token support for Apple Maps in Location blocks
+- **Admin branding** toggle — show or hide LinkDen branding inside the admin panel
+- **Consent banner** text configurable in settings
+
+### Infrastructure
+
+- Rate limiting via Cloudflare Rate Limiting on four bindings (`RL_AUTH`, `RL_STRICT`, `RL_UPLOAD`, `RL_PUBLIC`)
+- `WALLET_*` env vars (`WALLET_SIGNER_CERT`, `WALLET_SIGNER_KEY`, `WALLET_WWDR_CERT`, `WALLET_TEAM_ID`, `WALLET_PASS_TYPE_ID`) for Apple Wallet pass signing
+
+---
+
 ## v0.2.0
 
 **March 2026**
