@@ -40,7 +40,7 @@
         "next": "16.2.0",
         "react": "^19.2.5",
         "react-dom": "^19.2.5",
-        "zod": "^4.3.6",
+        "zod": "4.3.6",
       },
       "devDependencies": {
         "@tailwindcss/postcss": "^4.2.1",
@@ -265,8 +265,8 @@
         "typescript": "^5.9.3",
       },
       "peerDependencies": {
-        "react": "^19.2.5",
-        "react-dom": "^19.2.5",
+        "react": "^19.2.6",
+        "react-dom": "^19.2.6",
       },
     },
     "packages/validators": {
@@ -2895,6 +2895,8 @@
     "@inquirer/core/wrap-ansi": ["wrap-ansi@6.2.0", "", { "dependencies": { "ansi-styles": "^4.0.0", "string-width": "^4.1.0", "strip-ansi": "^6.0.0" } }, "sha512-r6lPcBGxZXlIcymEu7InxDMhdW0KDxpLgoFLcguasxCaJ/SOIZwINatK9KY/tf+ZrlywOKU0UDj3ATXUBfxJXA=="],
 
     "@isaacs/cliui/strip-ansi": ["strip-ansi@7.2.0", "", { "dependencies": { "ansi-regex": "^6.2.2" } }, "sha512-yDPMNjp4WyfYBkHnjIRLfca1i6KMyGCtsVgoKe/z1+6vukgaENdgGBZt+ZmKPc4gavvEZ5OgHfHdrazhgNyG7w=="],
+
+    "@linkden/docs/zod": ["zod@4.3.6", "", {}, "sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg=="],
 
     "@modelcontextprotocol/sdk/hono": ["hono@4.12.7", "", {}, "sha512-jq9l1DM0zVIvsm3lv9Nw9nlJnMNPOcAtsbsgiUhWcFzPE99Gvo6yRTlszSLLYacMeQ6quHD6hMfId8crVHvexw=="],
 
