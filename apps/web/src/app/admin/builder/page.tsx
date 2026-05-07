@@ -11,19 +11,28 @@ import {
 	Rocket,
 	User,
 	Globe,
+	Smartphone,
 } from "lucide-react";
 import {
 	DndContext,
 	DragOverlay,
 	closestCenter,
 	PointerSensor,
+	MouseSensor,
 	KeyboardSensor,
 	TouchSensor,
+	MeasuringStrategy,
+	defaultDropAnimationSideEffects,
 	useSensor,
 	useSensors,
 	type DragEndEvent,
 	type DragStartEvent,
+	type DropAnimation,
 } from "@dnd-kit/core";
+import {
+	restrictToVerticalAxis,
+	restrictToParentElement,
+} from "@dnd-kit/modifiers";
 import {
 	SortableContext,
 	sortableKeyboardCoordinates,
@@ -32,11 +41,14 @@ import {
 } from "@dnd-kit/sortable";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/admin/empty-state";
 import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
 import { SharedPreview } from "@/components/admin/shared-preview";
+import { PageHeader } from "@/components/admin/page-header";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { BlockEditPanel } from "@/components/admin/builder/block-edit-panel";
 import { BlockRow } from "@/components/admin/builder/block-row";
@@ -51,6 +63,14 @@ const TABS = [
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
+
+const dropAnimation: DropAnimation = {
+	duration: 220,
+	easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)",
+	sideEffects: defaultDropAnimationSideEffects({
+		styles: { active: { opacity: "0.4" } },
+	}),
+};
 
 export default function BuilderPage() {
 	const qc = useQueryClient();
@@ -194,10 +214,21 @@ export default function BuilderPage() {
 		}
 	};
 
-	// dnd-kit sensors
+	const handlePublishAll = useCallback(async () => {
+		try {
+			await publishAll.mutateAsync();
+			invalidate();
+			toast.success("All changes published");
+		} catch {
+			toast.error("Failed to publish");
+		}
+	}, [publishAll, invalidate]);
+
+	// dnd-kit sensors — Mouse + Pointer + Touch + Keyboard for full coverage and smooth mobile feel
 	const sensors = useSensors(
+		useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
 		useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-		useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
+		useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
 		useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
 	);
 
@@ -248,86 +279,71 @@ export default function BuilderPage() {
 
 	const activeBlock = activeId ? blocks.find((b) => b.id === activeId) : null;
 	const blockIds = blocks.map((b) => b.id);
+	const draftCount = blocks.filter((b) => b.status === "draft").length;
 
 	return (
 		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
 			{/* Header bar */}
-			<div className="mb-6 flex items-center justify-between gap-4">
-				<div className="min-w-0">
-					<h1 className="text-lg font-semibold tracking-tight">Page Builder</h1>
-					<p className={cn(
-						"text-xs mt-0.5",
-						hasDrafts ? "text-amber-400" : "text-muted-foreground",
-					)}>
-						{hasDrafts
-							? `Unpublished changes \u00b7 ${blocks.filter((b) => b.status === "draft").length} draft${blocks.filter((b) => b.status === "draft").length !== 1 ? "s" : ""}`
-							: "All changes are live"
-						}
-					</p>
-				</div>
-				{activeTab === "blocks" && (
-					<Button
-						size="sm"
-						disabled={!hasDrafts || publishAll.isPending}
-						onClick={async () => {
-							try {
-								await publishAll.mutateAsync();
-								invalidate();
-								toast.success("All changes published");
-							} catch {
-								toast.error("Failed to publish");
-							}
-						}}
-						className={cn(
-							"gap-2 transition-all",
-							hasDrafts
-								? "bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/25"
-								: "opacity-50",
-						)}
-					>
-						{publishAll.isPending ? (
-							<>
-								<Upload className="h-3.5 w-3.5 animate-pulse" />
-								Publishing...
-							</>
-						) : (
-							<>
-								<Rocket className="h-3.5 w-3.5" />
-								Publish
-							</>
-						)}
-					</Button>
-				)}
-			</div>
+			<PageHeader
+				title="Page Builder"
+				description={hasDrafts ? `Unpublished changes · ${draftCount} draft${draftCount !== 1 ? "s" : ""}` : "All changes are live"}
+				badge={
+					hasDrafts ? (
+						<Badge variant="outline" className="border-amber-400/40 bg-amber-400/10 text-amber-400">
+							{draftCount} draft{draftCount !== 1 ? "s" : ""}
+						</Badge>
+					) : null
+				}
+				actions={
+					activeTab === "blocks" ? (
+						<Button
+							size="sm"
+							disabled={!hasDrafts || publishAll.isPending}
+							onClick={handlePublishAll}
+							className={cn(
+								"gap-2 transition-all",
+								hasDrafts
+									? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25"
+									: "opacity-50",
+							)}
+						>
+							{publishAll.isPending ? (
+								<>
+									<Upload className="h-3.5 w-3.5 animate-pulse" />
+									Publishing...
+								</>
+							) : (
+								<>
+									<Rocket className="h-3.5 w-3.5" />
+									Publish
+								</>
+							)}
+						</Button>
+					) : null
+				}
+			/>
 
-			{/* Tab bar */}
-			<div className="mb-6 flex gap-1 rounded-lg border border-border/50 bg-muted/30 p-1" role="tablist">
-				{TABS.map((tab) => (
-					<button
-						key={tab.id}
-						type="button"
-						role="tab"
-						aria-selected={activeTab === tab.id}
-						onClick={() => {
-							setActiveTab(tab.id);
-							// Close edit panel when switching tabs
-							if (tab.id !== "blocks") {
-								setEditingBlock(null);
-								setEditingOverrides(null);
-							}
-						}}
-						className={cn(
-							"flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
-							activeTab === tab.id
-								? "bg-background text-foreground shadow-sm"
-								: "text-muted-foreground hover:text-foreground",
-						)}
-					>
-						<tab.icon className="h-3.5 w-3.5" />
-						{tab.label}
-					</button>
-				))}
-			</div>
+			{/* Tab bar — shadcn Tabs, themed */}
+			<Tabs
+				value={activeTab}
+				onValueChange={(v) => {
+					const tab = v as TabId;
+					setActiveTab(tab);
+					if (tab !== "blocks") {
+						setEditingBlock(null);
+						setEditingOverrides(null);
+					}
+				}}
+			>
+				<TabsList className="bg-muted/30 border border-border/50">
+					{TABS.map((tab) => (
+						<TabsTrigger key={tab.id} value={tab.id} className="gap-1.5 text-xs">
+							<tab.icon className="h-3.5 w-3.5" />
+							{tab.label}
+						</TabsTrigger>
+					))}
+				</TabsList>
+			</Tabs>
 
 			{/* Main layout */}
 			<div className="flex gap-6 items-start">
@@ -335,9 +351,43 @@ export default function BuilderPage() {
 				<div className="flex-1 min-w-0 space-y-4">
 					{activeTab === "blocks" && (
 						<>
+							{/* Inline draft banner — wireframe Variant A */}
+							{hasDrafts && (
+								<div className="flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/[0.06] px-4 py-3 animate-in fade-in-0 slide-in-from-top-1 duration-200">
+									<div className="flex items-center gap-2 min-w-0">
+										<Rocket className="h-4 w-4 shrink-0 text-primary" />
+										<p className="text-sm text-foreground truncate">
+											You have {draftCount} unpublished change{draftCount !== 1 ? "s" : ""}
+										</p>
+									</div>
+									<Button
+										size="sm"
+										onClick={handlePublishAll}
+										disabled={publishAll.isPending}
+										className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
+									>
+										{publishAll.isPending ? "Publishing…" : "Publish now"}
+									</Button>
+								</div>
+							)}
+
+							{/* List label */}
+							<div className="flex items-center justify-between">
+								<p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-mono">
+									Blocks · drag to reorder
+								</p>
+								{blocks.length > 0 && (
+									<p className="text-[10px] text-muted-foreground">
+										{blocks.length} block{blocks.length !== 1 ? "s" : ""}
+									</p>
+								)}
+							</div>
+
 							<DndContext
 								sensors={sensors}
 								collisionDetection={closestCenter}
+								modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+								measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
 								onDragStart={handleDragStart}
 								onDragEnd={handleDragEnd}
 							>
@@ -361,6 +411,7 @@ export default function BuilderPage() {
 														onToggle={() => handleToggle(block.id, block.isEnabled)}
 														onEdit={() => setEditingBlock(block)}
 														onDelete={() => handleDelete(block.id)}
+														accent={editingBlock?.id === block.id}
 													/>
 												</div>
 											))}
@@ -368,9 +419,9 @@ export default function BuilderPage() {
 									</SortableContext>
 								)}
 
-								<DragOverlay>
+								<DragOverlay dropAnimation={dropAnimation}>
 									{activeBlock && (
-										<div className="rounded-xl bg-card border border-primary/30 shadow-2xl opacity-90 pointer-events-none">
+										<div className="rounded-xl bg-card border border-primary/40 shadow-2xl shadow-primary/20 ring-2 ring-primary/30 pointer-events-none rotate-[0.5deg]">
 											<BlockRow
 												block={activeBlock}
 												onToggle={() => {}}
@@ -390,8 +441,8 @@ export default function BuilderPage() {
 									className={cn(
 										"w-full rounded-xl border-2 border-dashed p-4 text-sm transition-all flex items-center justify-center gap-2",
 										showPicker
-											? "border-blue-500/40 text-blue-400 bg-blue-500/5"
-											: "border-border/60 text-muted-foreground hover:border-blue-500/30 hover:text-blue-400 hover:bg-blue-500/5",
+											? "border-primary/40 text-primary bg-primary/5"
+											: "border-border/60 text-muted-foreground hover:border-primary/30 hover:text-primary hover:bg-primary/5",
 									)}
 								>
 									<Plus className={cn("h-4 w-4 transition-transform duration-200", showPicker && "rotate-45")} />
@@ -405,13 +456,13 @@ export default function BuilderPage() {
 												key={item.type}
 												type="button"
 												onClick={() => { handleAddBlock(item.type); setShowPicker(false); }}
-												className="group/picker flex flex-col items-start gap-2 rounded-xl border border-white/10 bg-card/60 backdrop-blur-sm p-3 text-left hover:border-blue-500/30 hover:bg-blue-500/5 transition-all"
+												className="group/picker flex flex-col items-start gap-2 rounded-xl border border-white/10 bg-card/60 backdrop-blur-sm p-3 text-left hover:border-primary/30 hover:bg-primary/5 transition-all"
 											>
 												<div className={cn("flex h-8 w-8 items-center justify-center rounded-lg transition-colors", TYPE_BADGE_BG[item.type])}>
 													<item.icon className="h-4 w-4" />
 												</div>
 												<div>
-													<div className="text-xs font-semibold group-hover/picker:text-blue-400 transition-colors">{item.label}</div>
+													<div className="text-xs font-semibold group-hover/picker:text-primary transition-colors">{item.label}</div>
 													<div className="text-[10px] text-muted-foreground leading-tight mt-0.5">{item.description}</div>
 												</div>
 											</button>
@@ -471,6 +522,17 @@ export default function BuilderPage() {
 					</div>
 				</div>
 			</div>
+
+			{/* Mobile preview FAB */}
+			<Button
+				type="button"
+				size="icon"
+				onClick={() => setShowMobilePreview(true)}
+				className="fixed bottom-20 right-4 z-40 h-12 w-12 rounded-full shadow-lg shadow-primary/30 bg-primary hover:bg-primary/90 text-primary-foreground lg:hidden"
+				aria-label="Open live preview"
+			>
+				<Smartphone className="h-5 w-5" />
+			</Button>
 
 			{/* Mobile preview sheet */}
 			<MobilePreviewSheet

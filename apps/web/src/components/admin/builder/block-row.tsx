@@ -17,11 +17,13 @@ export function BlockRow({
 	onToggle,
 	onEdit,
 	onDelete,
+	accent = false,
 }: {
 	block: Block;
 	onToggle: () => void;
 	onEdit: () => void;
 	onDelete: () => void;
+	accent?: boolean;
 }) {
 	const Icon = blockTypeIcon(block.type);
 	const typeLabel = block.type === "connect" ? "Connect" : block.type.replace(/_/g, " ");
@@ -33,11 +35,13 @@ export function BlockRow({
 		transform,
 		transition,
 		isDragging,
+		isSorting,
 	} = useSortable({ id: block.id });
 
-	const style = {
-		transform: CSS.Transform.toString(transform),
+	const style: React.CSSProperties = {
+		transform: CSS.Transform.toString(transform ? { ...transform, x: 0, scaleX: 1, scaleY: 1 } : null),
 		transition,
+		willChange: isSorting ? "transform" : undefined,
 	};
 
 	const accentClass = TYPE_ACCENT[block.type] ?? "bg-muted";
@@ -47,16 +51,20 @@ export function BlockRow({
 		<div
 			ref={setNodeRef}
 			style={style}
+			aria-roledescription="sortable"
 			className={cn(
-				"group flex items-center gap-0 rounded-xl bg-card/80 backdrop-blur-xl border border-white/10 shadow-sm overflow-hidden transition-all hover:shadow-md hover:border-white/15 min-h-[56px]",
-				isDragging && "opacity-50 shadow-lg scale-[1.01]",
-				!block.isEnabled && "opacity-50",
+				"group flex items-center gap-0 rounded-xl bg-card/80 backdrop-blur-xl border shadow-sm overflow-hidden transition-all hover:shadow-md min-h-[56px]",
+				accent
+					? "border-primary/40 bg-primary/[0.04] hover:border-primary/60"
+					: "border-white/10 hover:border-white/15",
+				isDragging && "opacity-30 ring-2 ring-primary/40",
+				!block.isEnabled && !isDragging && "opacity-50",
 			)}
 		>
-			{/* Drag handle */}
+			{/* Drag handle — wider on mobile (44px), prevents page scroll on grab */}
 			<button
 				type="button"
-				className="flex w-9 shrink-0 items-center justify-center border-r border-white/8 text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing transition-colors self-stretch focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+				className="flex w-11 sm:w-9 shrink-0 items-center justify-center border-r border-white/8 text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing transition-colors self-stretch focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring touch-none"
 				aria-label="Drag to reorder"
 				{...attributes}
 				{...listeners}
@@ -65,7 +73,7 @@ export function BlockRow({
 			</button>
 
 			{/* Left accent bar */}
-			<div className={cn("w-[3px] self-stretch shrink-0", accentClass)} />
+			<div className={cn("w-[3px] self-stretch shrink-0", accent ? "bg-primary" : accentClass)} />
 
 			{/* Icon circle */}
 			<div className={cn(
