@@ -1,10 +1,14 @@
 "use client";
 
+import { Check, Sparkles, Upload, Image as ImageIcon } from "lucide-react";
+import type { BannerPreset } from "@linkden/ui";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
+import { ShaderBanner } from "@/components/public/shader-banner";
 import { cn } from "@/lib/utils";
 import { replaceTemplateVars } from "@/lib/format";
+import { getLoginBgPresets } from "@/lib/login-bg";
 
 interface BrandingSectionProps {
 	siteName: string;
@@ -21,6 +25,10 @@ interface BrandingSectionProps {
 	footerBrandingText: string;
 	footerBrandingLink: string;
 	profileName: string;
+	loginLogoUrl: string;
+	loginBgMode: string;
+	loginBgPreset: string;
+	loginBgCustomUrl: string;
 	onSiteNameChange: (v: string) => void;
 	onLogoUrlChange: (v: string) => void;
 	onFaviconUrlChange: (v: string) => void;
@@ -34,6 +42,10 @@ interface BrandingSectionProps {
 	onFooterBrandingEnabledChange: (v: boolean) => void;
 	onFooterBrandingTextChange: (v: string) => void;
 	onFooterBrandingLinkChange: (v: string) => void;
+	onLoginLogoUrlChange: (v: string) => void;
+	onLoginBgModeChange: (v: string) => void;
+	onLoginBgPresetChange: (v: string) => void;
+	onLoginBgCustomUrlChange: (v: string) => void;
 }
 
 function Toggle({
@@ -124,6 +136,10 @@ export function BrandingSection({
 	footerBrandingText,
 	footerBrandingLink,
 	profileName,
+	loginLogoUrl,
+	loginBgMode,
+	loginBgPreset,
+	loginBgCustomUrl,
 	onSiteNameChange,
 	onLogoUrlChange,
 	onFaviconUrlChange,
@@ -137,7 +153,13 @@ export function BrandingSection({
 	onFooterBrandingEnabledChange,
 	onFooterBrandingTextChange,
 	onFooterBrandingLinkChange,
+	onLoginLogoUrlChange,
+	onLoginBgModeChange,
+	onLoginBgPresetChange,
+	onLoginBgCustomUrlChange,
 }: BrandingSectionProps) {
+	const loginBgPresets = getLoginBgPresets();
+	const resolvedBgMode = loginBgMode || "default";
 	return (
 		<div className="space-y-6">
 			{/* Site Name */}
@@ -180,6 +202,113 @@ export function BrandingSection({
 						onUploadComplete={onFaviconUrlChange}
 						aspectRatio="square"
 					/>
+				</div>
+			</div>
+
+			{/* Login Page customization */}
+			<div className="space-y-4 rounded-lg border border-border/60 bg-muted/20 p-4">
+				<div>
+					<p className="text-xs font-medium">Login Page</p>
+					<p className="text-[11px] text-muted-foreground">
+						Customize the login + setup screens with a dedicated logo and background
+					</p>
+				</div>
+
+				<div className="space-y-1.5">
+					<p className="text-[11px] font-medium text-muted-foreground">Login Logo</p>
+					<p className="text-[11px] text-muted-foreground">
+						Optional — falls back to the main logo above when empty
+					</p>
+					<ImageUploadField
+						value={loginLogoUrl}
+						purpose="login_logo"
+						onUploadComplete={onLoginLogoUrlChange}
+						aspectRatio="logo"
+					/>
+				</div>
+
+				<div className="space-y-2">
+					<p className="text-[11px] font-medium text-muted-foreground">Login Background</p>
+					<div
+						className="inline-flex flex-wrap gap-1 rounded-lg border border-border/60 bg-background p-1"
+						role="tablist"
+						aria-label="Login background mode"
+					>
+						{(
+							[
+								{ id: "default", label: "Default", icon: Sparkles },
+								{ id: "preset", label: "Preset", icon: ImageIcon },
+								{ id: "custom", label: "Custom", icon: Upload },
+							] as const
+						).map(({ id, label, icon: Icon }) => (
+							<button
+								key={id}
+								type="button"
+								role="tab"
+								aria-selected={resolvedBgMode === id}
+								onClick={() => onLoginBgModeChange(id)}
+								className={cn(
+									"flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
+									resolvedBgMode === id
+										? "bg-primary/10 text-primary shadow-sm"
+										: "text-muted-foreground hover:text-foreground",
+								)}
+							>
+								<Icon className="h-3 w-3" />
+								{label}
+							</button>
+						))}
+					</div>
+
+					{resolvedBgMode === "default" && (
+						<p className="text-[11px] text-muted-foreground">
+							Theme-aware glow over the base background — adapts to the active theme.
+						</p>
+					)}
+
+					{resolvedBgMode === "preset" && (
+						<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+							{loginBgPresets.map((preset: BannerPreset) => (
+								<button
+									key={preset.id}
+									type="button"
+									onClick={() => onLoginBgPresetChange(preset.id)}
+									className={cn(
+										"group relative h-16 overflow-hidden rounded-lg border-2 transition-all",
+										loginBgPreset === preset.id
+											? "border-primary ring-2 ring-primary/20 shadow-md"
+											: "border-transparent hover:border-muted-foreground/30",
+									)}
+								>
+									{preset.type === "css" ? (
+										<div
+											className={`absolute inset-0 ${preset.className ?? ""}`}
+											style={preset.style}
+										/>
+									) : (
+										<ShaderBanner preset={preset} staticPreview />
+									)}
+									{loginBgPreset === preset.id && (
+										<div className="absolute inset-0 flex items-center justify-center bg-black/25 backdrop-blur-[1px]">
+											<Check className="h-4 w-4 text-white drop-shadow-lg" />
+										</div>
+									)}
+									<span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-1.5 py-1 text-[10px] font-medium text-white truncate">
+										{preset.name}
+									</span>
+								</button>
+							))}
+						</div>
+					)}
+
+					{resolvedBgMode === "custom" && (
+						<ImageUploadField
+							value={loginBgCustomUrl}
+							purpose="login_background"
+							onUploadComplete={onLoginBgCustomUrlChange}
+							aspectRatio="banner"
+						/>
+					)}
 				</div>
 			</div>
 
