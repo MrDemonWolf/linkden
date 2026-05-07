@@ -127,7 +127,7 @@ export type { ThemePreset } from "./themes";
 export { themePresets } from "./themes";
 
 // Banner presets
-export type { BannerPreset } from "./banner-presets";
+export type { BannerPreset, CssBannerPreset, ShaderBannerPreset } from "./banner-presets";
 export { bannerPresets, getPresetById, getBannerPresetsForTheme } from "./banner-presets";
 
 // Social brands

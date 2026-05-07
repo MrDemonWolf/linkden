@@ -19,6 +19,10 @@ import { ColorsSection } from "@/components/admin/appearance/colors-section";
 import { BannerSection } from "@/components/admin/appearance/banner-section";
 import { VerifiedBadgeSection } from "@/components/admin/appearance/branding-section";
 import { CustomCssSection } from "@/components/admin/appearance/custom-css-section";
+import {
+	SocialIconShapeSection,
+	type SocialIconShape,
+} from "@/components/admin/appearance/social-icon-shape-section";
 
 interface SavedState {
 	profileName: string;
@@ -36,6 +40,7 @@ interface SavedState {
 	bannerMode: "preset" | "custom";
 	bannerCustomUrl: string;
 	verifiedBadge: boolean;
+	socialIconShape: SocialIconShape;
 }
 
 function buildSavedState(settings: Record<string, string>): SavedState {
@@ -55,6 +60,7 @@ function buildSavedState(settings: Record<string, string>): SavedState {
 		bannerMode: (settings.banner_mode as "preset" | "custom") || "preset",
 		bannerCustomUrl: settings.banner_custom_url ?? "",
 		verifiedBadge: settings.verified_badge === "true",
+		socialIconShape: (settings.social_icon_shape as SocialIconShape) || "circle",
 	};
 }
 
@@ -81,6 +87,7 @@ export default function AppearancePage() {
 		bannerMode: "preset",
 		bannerCustomUrl: "",
 		verifiedBadge: false,
+		socialIconShape: "circle",
 	});
 
 	const [profileName, setProfileName] = useState("");
@@ -99,6 +106,7 @@ export default function AppearancePage() {
 	const [bannerMode, setBannerMode] = useState<"preset" | "custom">("preset");
 	const [bannerCustomUrl, setBannerCustomUrl] = useState("");
 	const [verifiedBadge, setVerifiedBadge] = useState(false);
+	const [socialIconShape, setSocialIconShape] = useState<SocialIconShape>("circle");
 	const [showMobilePreview, setShowMobilePreview] = useState(false);
 
 	const [systemPrefersDark, setSystemPrefersDark] = useState(false);
@@ -135,8 +143,9 @@ export default function AppearancePage() {
 			setBannerMode(s.bannerMode);
 			setBannerCustomUrl(s.bannerCustomUrl);
 			setVerifiedBadge(s.verifiedBadge);
+			setSocialIconShape(s.socialIconShape);
 		}
-	}, [settingsQuery.data, settings]);
+	}, [settingsQuery.data]);
 
 	const isDirty =
 		profileName !== savedState.profileName ||
@@ -153,7 +162,8 @@ export default function AppearancePage() {
 		bannerPreset !== savedState.bannerPreset ||
 		bannerMode !== savedState.bannerMode ||
 		bannerCustomUrl !== savedState.bannerCustomUrl ||
-		verifiedBadge !== savedState.verifiedBadge;
+		verifiedBadge !== savedState.verifiedBadge ||
+		socialIconShape !== savedState.socialIconShape;
 
 	useUnsavedChanges(isDirty);
 
@@ -193,6 +203,7 @@ export default function AppearancePage() {
 				{ key: "banner_mode", value: bannerMode },
 				{ key: "banner_custom_url", value: bannerCustomUrl },
 				{ key: "verified_badge", value: String(verifiedBadge) },
+				{ key: "social_icon_shape", value: socialIconShape },
 			]);
 			setSavedState({
 				profileName,
@@ -210,6 +221,7 @@ export default function AppearancePage() {
 				bannerMode,
 				bannerCustomUrl,
 				verifiedBadge,
+				socialIconShape,
 			});
 			invalidate();
 			toast.success("Appearance published");
@@ -234,6 +246,7 @@ export default function AppearancePage() {
 		setBannerMode(savedState.bannerMode);
 		setBannerCustomUrl(savedState.bannerCustomUrl);
 		setVerifiedBadge(savedState.verifiedBadge);
+		setSocialIconShape(savedState.socialIconShape);
 	};
 
 	const resolvedThemeVars = useMemo(() => {
@@ -303,6 +316,7 @@ export default function AppearancePage() {
 			bannerPreset: bannerEnabled && bannerMode === "preset" ? bannerPreset : null,
 			bannerMode,
 			bannerCustomUrl: bannerEnabled && bannerMode === "custom" ? bannerCustomUrl : undefined,
+			socialIconShape,
 		},
 	};
 
@@ -372,6 +386,8 @@ export default function AppearancePage() {
 						onBannerPresetChange={setBannerPreset}
 						onBannerCustomUrlChange={setBannerCustomUrl}
 					/>
+
+					<SocialIconShapeSection shape={socialIconShape} onShapeChange={setSocialIconShape} />
 
 					<VerifiedBadgeSection
 						verifiedBadge={verifiedBadge}

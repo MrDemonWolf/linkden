@@ -58,6 +58,7 @@ export interface PageContentProps {
 		bannerCustomUrl?: string | null;
 		customCss?: string | null;
 		brandingPpUrl?: string | null;
+		socialIconShape?: "circle" | "rounded-square" | null;
 	};
 	themeColors: ThemeColors;
 	colorMode: "light" | "dark";
@@ -333,6 +334,7 @@ export function PageContent({
 							networks={socialNetworks}
 							colorMode={colorMode}
 							themeColors={themeColors}
+							shape={settings.socialIconShape ?? "circle"}
 						/>
 					)}
 				</ProfileWrapper>

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
 	Save,
 	Undo2,
+	Globe,
 	Search,
 	Mail,
 	Shield,
@@ -17,7 +18,9 @@ import {
 import { trpc } from "@/utils/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/admin/page-header";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { SeoSection } from "@/components/admin/settings/seo-section";
@@ -180,6 +183,18 @@ export default function SettingsPage() {
 	const importData = useMutation(trpc.backup.import.mutationOptions());
 
 	const fileInputRef = useRef<HTMLInputElement>(null);
+
+	// Active tab (persisted to localStorage so navigations land back where you were)
+	const [activeTab, setActiveTab] = useState<string>("seo");
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const stored = window.localStorage.getItem("admin.settings.tab");
+		if (stored) setActiveTab(stored);
+	}, []);
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		window.localStorage.setItem("admin.settings.tab", activeTab);
+	}, [activeTab]);
 
 	// Saved state for dirty tracking
 	const [savedState, setSavedState] = useState<SavedState>({
@@ -533,202 +548,242 @@ export default function SettingsPage() {
 			<PageHeader
 				title="Settings"
 				description={isDirty ? "You have unsaved changes" : "Configure your LinkDen instance"}
+				badge={
+					isDirty ? (
+						<Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-amber-500">
+							Unsaved
+						</Badge>
+					) : undefined
+				}
 				actions={
-					<>
-						{isDirty && (
+					<Button
+						size="sm"
+						variant={isDirty ? "default" : "outline"}
+						disabled={!isDirty || updateSettings.isPending}
+						onClick={handleSave}
+					>
+						<Save className="mr-1.5 h-3.5 w-3.5" />
+						{updateSettings.isPending ? "Saving…" : "Save"}
+					</Button>
+				}
+			/>
+
+			<Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+				<TabsList className="grid h-auto w-full grid-cols-5 sm:inline-flex sm:w-auto">
+					<TabsTrigger value="seo">SEO</TabsTrigger>
+					<TabsTrigger value="branding">Branding</TabsTrigger>
+					<TabsTrigger value="email">Email</TabsTrigger>
+					<TabsTrigger value="features">Features</TabsTrigger>
+					<TabsTrigger value="privacy">Privacy</TabsTrigger>
+				</TabsList>
+
+				{/* SEO */}
+				<TabsContent value="seo" className="space-y-6 mt-0">
+					<SectionCard
+						icon={Search}
+						title="SEO & Open Graph"
+						description="Control how your page appears in search results and social media shares"
+					>
+						<SeoSection
+							seoTitle={seoTitle}
+							seoDescription={seoDescription}
+							seoOgImage={seoOgImage}
+							seoOgMode={seoOgMode}
+							seoOgTemplate={seoOgTemplate}
+							profileName={settingsQuery.data?.profile_name ?? ""}
+							bio={settingsQuery.data?.bio ?? ""}
+							primaryColor={settingsQuery.data?.custom_primary ?? "#6366f1"}
+							avatarUrl={settingsQuery.data?.avatar_url ?? ""}
+							onSeoTitleChange={setSeoTitle}
+							onSeoDescriptionChange={setSeoDescription}
+							onSeoOgImageChange={setSeoOgImage}
+							onSeoOgModeChange={setSeoOgMode}
+							onSeoOgTemplateChange={setSeoOgTemplate}
+						/>
+					</SectionCard>
+				</TabsContent>
+
+				{/* Branding */}
+				<TabsContent value="branding" className="space-y-6 mt-0">
+					<SectionCard
+						icon={Palette}
+						title="Branding"
+						description="Customize your site name, logo, favicon, and footer"
+					>
+						<BrandingSection
+							siteName={siteName}
+							logoUrl={logoUrl}
+							faviconUrl={faviconUrl}
+							ppUrl={ppUrl}
+							tosUrl={tosUrl}
+							ppMode={ppMode}
+							tosMode={tosMode}
+							ppText={ppText}
+							tosText={tosText}
+							adminBrandingEnabled={adminBrandingEnabled}
+							footerBrandingEnabled={footerBrandingEnabled}
+							footerBrandingText={footerBrandingText}
+							footerBrandingLink={footerBrandingLink}
+							profileName={settingsQuery.data?.profile_name ?? ""}
+							loginLogoUrl={loginLogoUrl}
+							loginBgMode={loginBgMode}
+							loginBgPreset={loginBgPreset}
+							loginBgCustomUrl={loginBgCustomUrl}
+							onSiteNameChange={setSiteName}
+							onLogoUrlChange={setLogoUrl}
+							onFaviconUrlChange={setFaviconUrl}
+							onPpUrlChange={setPpUrl}
+							onTosUrlChange={setTosUrl}
+							onPpModeChange={setPpMode}
+							onTosModeChange={setTosMode}
+							onPpTextChange={setPpText}
+							onTosTextChange={setTosText}
+							onAdminBrandingEnabledChange={setAdminBrandingEnabled}
+							onFooterBrandingEnabledChange={setFooterBrandingEnabled}
+							onFooterBrandingTextChange={setFooterBrandingText}
+							onFooterBrandingLinkChange={setFooterBrandingLink}
+							onLoginLogoUrlChange={setLoginLogoUrl}
+							onLoginBgModeChange={setLoginBgMode}
+							onLoginBgPresetChange={setLoginBgPreset}
+							onLoginBgCustomUrlChange={setLoginBgCustomUrl}
+						/>
+					</SectionCard>
+
+					<SectionCard
+						icon={Settings2}
+						title="Site Configuration"
+						description="Timezone and regional preferences"
+					>
+						<div className="space-y-1.5">
+							<label
+								htmlFor="timezone-select"
+								className="text-xs font-medium text-muted-foreground"
+							>
+								Timezone
+							</label>
+							<select
+								id="timezone-select"
+								value={timezone}
+								onChange={(e) => setTimezone(e.target.value)}
+								className="dark:bg-input/30 border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
+							>
+								<option value="">
+									Browser default ({Intl.DateTimeFormat().resolvedOptions().timeZone})
+								</option>
+								{COMMON_TIMEZONES.map((tz) => (
+									<option key={tz.value} value={tz.value}>
+										{tz.label}
+									</option>
+								))}
+							</select>
+							<p className="text-[11px] text-muted-foreground">
+								Used for timestamps on the dashboard. Defaults to your browser&apos;s timezone.
+							</p>
+						</div>
+					</SectionCard>
+				</TabsContent>
+
+				{/* Email */}
+				<TabsContent value="email" className="space-y-6 mt-0">
+					<SectionCard
+						icon={Mail}
+						title="Email Provider"
+						description="Configure the email service for notifications and auth emails"
+					>
+						<EmailSection
+							emailProvider={emailProvider}
+							emailApiKey={emailApiKey}
+							emailFrom={emailFrom}
+							onEmailProviderChange={setEmailProvider}
+							onEmailApiKeyChange={setEmailApiKey}
+							onEmailFromChange={setEmailFrom}
+						/>
+					</SectionCard>
+				</TabsContent>
+
+				{/* Features */}
+				<TabsContent value="features" className="space-y-6 mt-0">
+					<SectionCard
+						icon={Database}
+						title="Data & Info"
+						description="Export, import, and version information"
+					>
+						<DataSection
+							onExport={handleExport}
+							onImport={handleImport}
+							isExporting={exportData.isFetching}
+							isImporting={importData.isPending}
+							fileInputRef={fileInputRef}
+							versionCheck={versionCheck.data ?? null}
+							onCheckUpdates={() =>
+								qc.invalidateQueries({
+									queryKey: trpc.version.checkUpdate.queryOptions().queryKey,
+								})
+							}
+						/>
+					</SectionCard>
+
+					<SectionCard
+						icon={ArrowDownUp}
+						title="Migration"
+						description="Import data from other link-in-bio platforms"
+					>
+						<MigrationSection onImportComplete={invalidate} />
+					</SectionCard>
+				</TabsContent>
+
+				{/* Privacy */}
+				<TabsContent value="privacy" className="space-y-6 mt-0">
+					<SectionCard
+						icon={Cookie}
+						title="Cookie & Consent"
+						description="Configure the GDPR consent banner and cookie categories"
+					>
+						<ConsentSection
+							enabled={consentBannerEnabled}
+							bannerText={consentBannerText}
+							privacyUrl={consentPrivacyUrl}
+							categories={JSON.parse(consentCategories)}
+							onEnabledChange={setConsentBannerEnabled}
+							onBannerTextChange={setConsentBannerText}
+							onPrivacyUrlChange={setConsentPrivacyUrl}
+							onCategoriesChange={(v) => setConsentCategories(JSON.stringify(v))}
+						/>
+					</SectionCard>
+
+					<SectionCard
+						icon={Shield}
+						title="Security"
+						description="CAPTCHA and bot protection settings"
+					>
+						<CaptchaSection
+							captchaProvider={captchaProvider}
+							captchaSiteKey={captchaSiteKey}
+							captchaSecretKey={captchaSecretKey}
+							onCaptchaProviderChange={setCaptchaProvider}
+							onCaptchaSiteKeyChange={setCaptchaSiteKey}
+							onCaptchaSecretKeyChange={setCaptchaSecretKey}
+						/>
+					</SectionCard>
+				</TabsContent>
+
+				{/* Sticky save bar — visible across tabs while dirty */}
+				{isDirty && (
+					<div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-lg border border-primary/60 bg-background/95 px-4 py-2.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.4)] backdrop-blur">
+						<span className="text-xs text-muted-foreground">You have unsaved changes</span>
+						<div className="flex gap-2">
 							<Button variant="ghost" size="sm" onClick={handleDiscard}>
 								<Undo2 className="mr-1.5 h-3.5 w-3.5" />
 								Discard
 							</Button>
-						)}
-						<Button
-							size="sm"
-							variant={isDirty ? "default" : "outline"}
-							disabled={!isDirty || updateSettings.isPending}
-							onClick={handleSave}
-						>
-							<Save className="mr-1.5 h-3.5 w-3.5" />
-							{updateSettings.isPending ? "Saving…" : "Save"}
-						</Button>
-					</>
-				}
-			/>
-
-			{/* SEO & Open Graph */}
-			<SectionCard
-				icon={Search}
-				title="SEO & Open Graph"
-				description="Control how your page appears in search results and social media shares"
-			>
-				<SeoSection
-					seoTitle={seoTitle}
-					seoDescription={seoDescription}
-					seoOgImage={seoOgImage}
-					seoOgMode={seoOgMode}
-					seoOgTemplate={seoOgTemplate}
-					profileName={settingsQuery.data?.profile_name ?? ""}
-					bio={settingsQuery.data?.bio ?? ""}
-					primaryColor={settingsQuery.data?.custom_primary ?? "#6366f1"}
-					avatarUrl={settingsQuery.data?.avatar_url ?? ""}
-					onSeoTitleChange={setSeoTitle}
-					onSeoDescriptionChange={setSeoDescription}
-					onSeoOgImageChange={setSeoOgImage}
-					onSeoOgModeChange={setSeoOgMode}
-					onSeoOgTemplateChange={setSeoOgTemplate}
-				/>
-			</SectionCard>
-
-			{/* Cookie & Consent */}
-			<SectionCard
-				icon={Cookie}
-				title="Cookie & Consent"
-				description="Configure the GDPR consent banner and cookie categories"
-			>
-				<ConsentSection
-					enabled={consentBannerEnabled}
-					bannerText={consentBannerText}
-					privacyUrl={consentPrivacyUrl}
-					categories={JSON.parse(consentCategories)}
-					onEnabledChange={setConsentBannerEnabled}
-					onBannerTextChange={setConsentBannerText}
-					onPrivacyUrlChange={setConsentPrivacyUrl}
-					onCategoriesChange={(v) => setConsentCategories(JSON.stringify(v))}
-				/>
-			</SectionCard>
-
-			{/* Site Configuration */}
-			<SectionCard
-				icon={Settings2}
-				title="Site Configuration"
-				description="Timezone and regional preferences"
-			>
-				<div className="space-y-1.5">
-					<label htmlFor="timezone-select" className="text-xs font-medium text-muted-foreground">
-						Timezone
-					</label>
-					<select
-						id="timezone-select"
-						value={timezone}
-						onChange={(e) => setTimezone(e.target.value)}
-						className="dark:bg-input/30 border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
-					>
-						<option value="">
-							Browser default ({Intl.DateTimeFormat().resolvedOptions().timeZone})
-						</option>
-						{COMMON_TIMEZONES.map((tz) => (
-							<option key={tz.value} value={tz.value}>
-								{tz.label}
-							</option>
-						))}
-					</select>
-					<p className="text-[11px] text-muted-foreground">
-						Used for timestamps on the dashboard. Defaults to your browser&apos;s timezone.
-					</p>
-				</div>
-			</SectionCard>
-
-			{/* Branding */}
-			<SectionCard
-				icon={Palette}
-				title="Branding"
-				description="Customize your site name, logo, favicon, and footer"
-			>
-				<BrandingSection
-					siteName={siteName}
-					logoUrl={logoUrl}
-					faviconUrl={faviconUrl}
-					ppUrl={ppUrl}
-					tosUrl={tosUrl}
-					ppMode={ppMode}
-					tosMode={tosMode}
-					ppText={ppText}
-					tosText={tosText}
-					adminBrandingEnabled={adminBrandingEnabled}
-					footerBrandingEnabled={footerBrandingEnabled}
-					footerBrandingText={footerBrandingText}
-					footerBrandingLink={footerBrandingLink}
-					profileName={settingsQuery.data?.profile_name ?? ""}
-					loginLogoUrl={loginLogoUrl}
-					loginBgMode={loginBgMode}
-					loginBgPreset={loginBgPreset}
-					loginBgCustomUrl={loginBgCustomUrl}
-					onSiteNameChange={setSiteName}
-					onLogoUrlChange={setLogoUrl}
-					onFaviconUrlChange={setFaviconUrl}
-					onPpUrlChange={setPpUrl}
-					onTosUrlChange={setTosUrl}
-					onPpModeChange={setPpMode}
-					onTosModeChange={setTosMode}
-					onPpTextChange={setPpText}
-					onTosTextChange={setTosText}
-					onAdminBrandingEnabledChange={setAdminBrandingEnabled}
-					onFooterBrandingEnabledChange={setFooterBrandingEnabled}
-					onFooterBrandingTextChange={setFooterBrandingText}
-					onFooterBrandingLinkChange={setFooterBrandingLink}
-					onLoginLogoUrlChange={setLoginLogoUrl}
-					onLoginBgModeChange={setLoginBgMode}
-					onLoginBgPresetChange={setLoginBgPreset}
-					onLoginBgCustomUrlChange={setLoginBgCustomUrl}
-				/>
-			</SectionCard>
-
-			{/* Email Provider */}
-			<SectionCard
-				icon={Mail}
-				title="Email Provider"
-				description="Configure the email service for notifications and auth emails"
-			>
-				<EmailSection
-					emailProvider={emailProvider}
-					emailApiKey={emailApiKey}
-					emailFrom={emailFrom}
-					onEmailProviderChange={setEmailProvider}
-					onEmailApiKeyChange={setEmailApiKey}
-					onEmailFromChange={setEmailFrom}
-				/>
-			</SectionCard>
-
-			{/* Security */}
-			<SectionCard icon={Shield} title="Security" description="CAPTCHA and bot protection settings">
-				<CaptchaSection
-					captchaProvider={captchaProvider}
-					captchaSiteKey={captchaSiteKey}
-					captchaSecretKey={captchaSecretKey}
-					onCaptchaProviderChange={setCaptchaProvider}
-					onCaptchaSiteKeyChange={setCaptchaSiteKey}
-					onCaptchaSecretKeyChange={setCaptchaSecretKey}
-				/>
-			</SectionCard>
-
-			{/* Data & Info */}
-			<SectionCard
-				icon={Database}
-				title="Data & Info"
-				description="Export, import, and version information"
-			>
-				<DataSection
-					onExport={handleExport}
-					onImport={handleImport}
-					isExporting={exportData.isFetching}
-					isImporting={importData.isPending}
-					fileInputRef={fileInputRef}
-					versionCheck={versionCheck.data ?? null}
-					onCheckUpdates={() =>
-						qc.invalidateQueries({
-							queryKey: trpc.version.checkUpdate.queryOptions().queryKey,
-						})
-					}
-				/>
-			</SectionCard>
-
-			{/* Migration */}
-			<SectionCard
-				icon={ArrowDownUp}
-				title="Migration"
-				description="Import data from other link-in-bio platforms"
-			>
-				<MigrationSection onImportComplete={invalidate} />
-			</SectionCard>
+							<Button size="sm" disabled={updateSettings.isPending} onClick={handleSave}>
+								<Save className="mr-1.5 h-3.5 w-3.5" />
+								{updateSettings.isPending ? "Saving…" : "Save changes"}
+							</Button>
+						</div>
+					</div>
+				)}
+			</Tabs>
 		</div>
 	);
 }

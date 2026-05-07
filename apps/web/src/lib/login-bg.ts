@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { bannerPresets, type BannerPreset } from "@linkden/ui";
+import { bannerPresets, type BannerPreset, type ShaderBannerPreset } from "@linkden/ui";
 
 export interface LoginBranding {
 	loginBgMode?: "default" | "preset" | "custom" | null;
@@ -69,7 +69,7 @@ export function isCustomLoginBg(branding: LoginBranding | null | undefined): boo
 
 export function getLoginShaderPreset(
 	branding: LoginBranding | null | undefined,
-): BannerPreset | null {
+): ShaderBannerPreset | null {
 	if (!branding || branding.loginBgMode !== "preset") return null;
 	const preset = findLoginBgPreset(branding.loginBgPreset);
 	if (preset && preset.type === "shader") return preset;
