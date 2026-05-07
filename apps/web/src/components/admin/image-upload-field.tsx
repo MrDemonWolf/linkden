@@ -56,7 +56,7 @@ async function processSquareImage(file: File, maxSize: number): Promise<File> {
 interface ImageUploadFieldProps {
 	label?: string;
 	value: string;
-	purpose: "avatar" | "banner" | "og_image" | "wallet_logo" | "logo" | "favicon";
+	purpose: "avatar" | "banner" | "og_image" | "wallet_logo" | "logo" | "favicon" | "login_logo" | "login_background";
 	onUploadComplete: (url: string) => void;
 	aspectRatio?: "square" | "banner" | "logo";
 }

@@ -26,6 +26,13 @@ import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/utils";
 import { themePresets } from "@linkden/ui/themes";
+import { ShaderBanner } from "@/components/public/shader-banner";
+import { WolfLogo } from "@/components/wolf-logo";
+import {
+	getLoginBgStyle,
+	getLoginShaderPreset,
+	isCustomLoginBg,
+} from "@/lib/login-bg";
 
 // ─── Setup Wizard ──────────────────────────────────────────────────────────
 // Four-step first-run wizard: Account → Profile → Customize → Done.
@@ -86,6 +93,90 @@ const STEPS = [
 	{ label: "Theme", icon: Palette },
 	{ label: "Launch", icon: Rocket },
 ] as const;
+
+function SetupSidebar({
+	currentStep,
+	siteName,
+	logoUrl,
+}: {
+	currentStep: number;
+	siteName: string;
+	logoUrl: string | null;
+}) {
+	const percent = Math.min(100, Math.round(((currentStep - 1) / (STEPS.length - 1)) * 100));
+	return (
+		<aside className="hidden lg:flex lg:w-[240px] lg:flex-col lg:shrink-0 border-r border-border/60 bg-muted/20 p-6">
+			<div className="flex items-center gap-2.5 mb-8">
+				{logoUrl ? (
+					<img
+						src={logoUrl}
+						alt=""
+						className="h-8 w-8 rounded-lg object-cover ring-1 ring-white/10"
+					/>
+				) : (
+					<WolfLogo className="h-8 w-8" />
+				)}
+				<span className="text-sm font-semibold tracking-tight">
+					{siteName}
+				</span>
+			</div>
+
+			<div className="mb-1 flex items-baseline justify-between">
+				<span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+					Setup
+				</span>
+				<span className="data-mono text-[11px] text-muted-foreground">
+					{percent}%
+				</span>
+			</div>
+			<div className="mb-6 h-1 overflow-hidden rounded-full bg-border">
+				<div
+					className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500"
+					style={{ width: `${percent}%` }}
+				/>
+			</div>
+
+			<nav aria-label="Setup steps">
+				<ol className="space-y-1">
+					{STEPS.map(({ label, icon: Icon }, i) => {
+						const num = i + 1;
+						const isComplete = num < currentStep;
+						const isActive = num === currentStep;
+						return (
+							<li key={label}>
+								<div
+									className={cn(
+										"flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors",
+										isActive && "bg-primary/10 text-primary",
+										isComplete && "text-foreground",
+										!isActive && !isComplete && "text-muted-foreground",
+									)}
+									aria-current={isActive ? "step" : undefined}
+								>
+									<span
+										className={cn(
+											"flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-colors",
+											isComplete && "border-primary bg-primary text-white",
+											isActive && "border-primary bg-primary/15 text-primary",
+											!isActive && !isComplete && "border-border bg-background text-muted-foreground",
+										)}
+									>
+										{isComplete ? (
+											<Check className="h-3 w-3 stroke-[3]" />
+										) : (
+											<Icon className="h-3 w-3" />
+										)}
+									</span>
+									{label}
+								</div>
+							</li>
+						);
+					})}
+				</ol>
+			</nav>
+		</aside>
+	);
+}
 
 function StepIndicator({ currentStep }: { currentStep: number }) {
 	return (
@@ -705,6 +796,13 @@ export default function SetupPage() {
 	const { data: hasUsersData, isLoading } = useQuery(
 		trpc.public.hasUsers.queryOptions(),
 	);
+	const setupStatus = useQuery(trpc.public.getSetupStatus.queryOptions());
+	const branding = setupStatus.data?.branding;
+	const loginBgStyle = getLoginBgStyle(branding);
+	const loginShaderPreset = getLoginShaderPreset(branding);
+	const hasCustomBg = isCustomLoginBg(branding);
+	const siteName = branding?.siteName || "LinkDen";
+	const loginLogoUrl = branding?.loginLogoUrl || branding?.logoUrl || null;
 	const updateBulk = useMutation(trpc.settings.updateBulk.mutationOptions());
 
 	const [testMode] = useState(
@@ -837,15 +935,54 @@ export default function SetupPage() {
 	};
 
 	return (
-		<div className="login-bg relative flex min-h-screen flex-col items-center justify-center p-4 sm:p-6">
+		<div
+			className="login-bg relative min-h-screen overflow-hidden"
+			style={loginBgStyle}
+		>
+			{loginShaderPreset && (
+				<div className="absolute inset-0">
+					<ShaderBanner preset={loginShaderPreset} />
+				</div>
+			)}
+			{hasCustomBg && (
+				<div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
+			)}
 			{/* Theme toggle */}
 			<div className="absolute right-4 top-4 z-20">
 				<ThemeToggle />
 			</div>
-			<div className="login-card-enter w-full max-w-[480px]">
-				{step < 4 && <StepIndicator currentStep={step} />}
 
-				<div className="login-glass-card overflow-hidden rounded-2xl shadow-2xl">
+			<div className="relative z-10 flex min-h-screen items-center justify-center p-4 sm:p-6">
+				<div
+					className={cn(
+						"login-card-enter w-full",
+						step < 4
+							? "lg:flex lg:w-[820px] lg:max-w-full lg:overflow-hidden lg:rounded-2xl lg:shadow-2xl lg:bg-card lg:border lg:border-border"
+							: "max-w-[480px]",
+					)}
+				>
+					{step < 4 && (
+						<SetupSidebar
+							currentStep={step}
+							siteName={siteName}
+							logoUrl={loginLogoUrl}
+						/>
+					)}
+
+					<div className={cn("flex-1 min-w-0", step < 4 && "lg:flex lg:flex-col")}>
+						{/* Mobile / small-screen stepper — hidden once sidebar shows */}
+						{step < 4 && (
+							<div className="lg:hidden mb-6 max-w-[480px] mx-auto">
+								<StepIndicator currentStep={step} />
+							</div>
+						)}
+
+						<div
+							className={cn(
+								"login-glass-card overflow-hidden rounded-2xl shadow-2xl mx-auto w-full max-w-[480px]",
+								step < 4 && "lg:rounded-none lg:border-0 lg:shadow-none lg:bg-transparent lg:max-w-none lg:flex-1",
+							)}
+						>
 					{step === 1 && (
 						<Step1Account
 							name={name}
@@ -914,6 +1051,8 @@ export default function SetupPage() {
 						</button>
 					</p>
 				)}
+				</div>
+				</div>
 			</div>
 		</div>
 	);
