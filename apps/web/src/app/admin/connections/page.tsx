@@ -61,9 +61,9 @@ export default function ConnectionsPage() {
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
-		selectedConnection.isRead,
+		selectedConnection?.isRead,
 		invalidate,
-		selectedConnection.id,
+		selectedConnection?.id,
 		markRead.mutateAsync,
 		selectedConnection,
 	]);

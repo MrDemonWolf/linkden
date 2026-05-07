@@ -66,9 +66,9 @@ export default function FormsPage() {
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
-		selectedContact.isRead,
+		selectedContact?.isRead,
 		invalidate,
-		selectedContact.id,
+		selectedContact?.id,
 		markRead.mutateAsync,
 		selectedContact,
 	]);

@@ -62,7 +62,10 @@
 			"!**/bun.lock",
 			"!**/.source",
 			"!apps/docs/.source/**",
-			"!apps/web/.next/types/**"
+			"!apps/docs/out/**",
+			"!apps/web/.next/types/**",
+			"!**/out",
+			"!**/.next"
 		]
 	},
 	"css": {
