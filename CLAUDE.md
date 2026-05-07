@@ -20,10 +20,16 @@ Self-hosted link-in-bio application built for Cloudflare-first deployment.
 ## Commands
 
 - `bun dev` — Start all apps in development mode (web :3001, server :3000, docs :3002)
+- `bun dev:web` — Start Next.js frontend only
+- `bun dev:server` — Start Cloudflare Workers API only
+- `bun dev:docs` — Start docs site only
 - `bun run build` — Build all apps and packages
 - `bun run check-types` — TypeScript type checking
+- `bun test` — Run Vitest test suite
+- `bun test:watch` — Run tests in watch mode
 - `bun run db:generate` — Generate Drizzle migrations
 - `bun run db:push` — Push schema to database
+- `bun db:reset` — Wipe local DB state (`.wrangler/state`)
 - `bun ship` — Build and deploy to Cloudflare via Alchemy IaC
 - `bun run destroy` — Tear down Cloudflare resources
 - `bun reset:password` — Reset admin password via CLI

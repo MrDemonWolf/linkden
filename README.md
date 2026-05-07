@@ -1,12 +1,14 @@
 # LinkDen - Self-Hosted Link-in-Bio Platform
 
-LinkDen is a fully self-hosted, open-source link-in-bio platform
-built for the modern web. It gives you a single page to share your
-links, socials, and contact info — all under your own domain, on
-your own infrastructure, without giving your data to anyone else.
+LinkDen is a fully self-hosted, open-source link-in-bio platform built
+for Cloudflare's edge network. It gives you a drag-and-drop block
+builder, full theme control, analytics, Apple Wallet pass generation,
+and a contact inbox — all running on Cloudflare Workers + D1 with
+near-zero cold starts. Designed for privacy-conscious users who want
+full ownership of their profile page without giving their data to
+anyone else.
 
-Designed to run on Cloudflare's edge network, LinkDen is fast,
-private, and yours to own completely.
+Own your presence. Host your own link page.
 
 ## Features
 
@@ -55,13 +57,32 @@ Quick start:
    ```bash
    cp .env.example .env
    ```
-3. Generate migrations and start all services:
+3. Generate and push the database schema:
    ```bash
    bun db:generate
+   bun db:push
+   ```
+4. Start all apps:
+   ```bash
    bun dev
    ```
-4. Open `http://localhost:3001/admin/setup` to create your admin
+5. Open `http://localhost:3001/admin/setup` to create your admin
    account.
+
+## Usage
+
+Once running, the following local URLs are available:
+
+| Service      | URL                            |
+|--------------|--------------------------------|
+| Public page  | `http://localhost:3001`        |
+| Admin panel  | `http://localhost:3001/admin`  |
+| API          | `http://localhost:3000`        |
+| Docs site    | `http://localhost:3002`        |
+
+The setup wizard at `/admin/setup` walks through account creation,
+profile configuration, and theme selection. After setup, all content
+is managed from the admin panel.
 
 ## Tech Stack
 
