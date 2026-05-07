@@ -9,9 +9,12 @@ import { ConnectBlock } from "./connect-block";
 import { VCardBlock } from "./vcard-block";
 import { LocationBlock } from "./location-block";
 import { WhitelabelFooter } from "./whitelabel-footer";
+import { FooterActions } from "./footer-actions";
 import { usePreview } from "./preview-context";
 import { ProfileSocialIcons } from "./profile-social-icons";
 import type { ThemeColors } from "./public-page";
+import { themePresets } from "@linkden/ui";
+import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 
 interface SocialNetwork {
 	slug: string;
@@ -225,15 +228,32 @@ export function PageContent({
 	// Filter out social_icons blocks — social icons now render in the profile header
 	const contentBlocks = blocks.filter((b) => b.type !== "social_icons");
 	const groupedBlocks = groupBlocksWithInlineRows(contentBlocks);
+	const hasVcardBlock = contentBlocks.some((b) => b.type === "vcard");
+
+	// Stagger entrance animation on block stream (Variant A: 50ms cascade)
+	const { getAnimationProps } = useEntranceAnimation({ baseDelay: 0, stagger: 50 });
+
+	// Project resolved theme into CSS variables so shared @linkden/ui components
+	// (which read var(--ld-*)) inherit the live theme without prop threading.
+	const cssVarStyle = {
+		"--ld-primary": themeColors.primary,
+		"--ld-accent": themeColors.accent,
+		"--ld-background": themeColors.bg,
+		"--ld-foreground": themeColors.fg,
+		"--ld-card": themeColors.card,
+		"--ld-card-foreground": themeColors.cardFg,
+		"--ld-border": themeColors.border,
+		"--ld-muted": themeColors.muted,
+		"--ld-muted-foreground": themeColors.mutedFg,
+		backgroundColor: themeColors.bg,
+		color: themeColors.fg,
+		transition: "background-color 0.5s ease, color 0.5s ease",
+	} as React.CSSProperties;
 
 	return (
 		<div
 			className="ld-page min-h-dvh"
-			style={{
-				backgroundColor: themeColors.bg,
-				color: themeColors.fg,
-				transition: "background-color 0.5s ease, color 0.5s ease",
-			}}
+			style={cssVarStyle}
 		>
 			{settings.customCss && <style>{settings.customCss}</style>}
 
@@ -304,54 +324,39 @@ export function PageContent({
 					)}
 				</ProfileWrapper>
 
-				{/* Blocks with inline row support */}
+				{/* Blocks with inline row support — stagger fade-in (50ms cascade) */}
 				<div className="ld-blocks space-y-3.5 pb-8 w-[90%] sm:w-full mx-auto" role="list" aria-label="Links and content">
-					{groupedBlocks.map((group) => {
+					{groupedBlocks.map((group, index) => {
+						const animProps = getAnimationProps(index);
 						if (group.type === "inline-row") {
 							const key = group.blocks.map((b) => b.id).join("-");
 							return (
-								<div key={key} role="listitem" className="ld-inline-row grid grid-cols-2 gap-3">
+								<div
+									key={key}
+									role="listitem"
+									className="ld-inline-row grid grid-cols-2 gap-3"
+									style={animProps.style}
+								>
 									{group.blocks.map((blockData) =>
 										renderBlock(blockData, { colorMode, themeColors, socialNetworks, settings }),
 									)}
 								</div>
 							);
 						}
-						return renderBlock(group.block, { colorMode, themeColors, socialNetworks, settings });
+						return (
+							<div key={group.block.id} style={animProps.style}>
+								{renderBlock(group.block, { colorMode, themeColors, socialNetworks, settings })}
+							</div>
+						);
 					})}
 				</div>
 
-				{/* Wallet Button — only on public page */}
-				{!isPreview && settings.walletPassEnabled && (
-					<div className="mt-6 flex justify-center pb-4">
-						<a
-							href="/api/wallet-pass"
-							className="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
-							style={{
-								backgroundColor: colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.7)",
-								color: themeColors.fg,
-								border: `1px solid ${themeColors.border}`,
-								backdropFilter: "blur(20px)",
-								transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, transform 0.3s ease, box-shadow 0.3s ease",
-							}}
-						>
-							<svg
-								className="h-4 w-4"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke="currentColor"
-								strokeWidth={2}
-								aria-hidden="true"
-							>
-								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-								/>
-							</svg>
-							Add to Wallet
-						</a>
-					</div>
+				{/* Wallet + vCard footer pair — only on public page */}
+				{!isPreview && (
+					<FooterActions
+						walletEnabled={!!settings.walletPassEnabled}
+						vcardEnabled={!!settings.vcardEnabled && !hasVcardBlock}
+					/>
 				)}
 			</Wrapper>
 
