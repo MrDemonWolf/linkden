@@ -14,12 +14,7 @@ interface EmptyStateProps {
 	};
 }
 
-export function EmptyState({
-	icon: Icon,
-	title,
-	description,
-	action,
-}: EmptyStateProps) {
+export function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps) {
 	return (
 		<Card>
 			<CardContent className="py-16 text-center">
@@ -32,12 +27,7 @@ export function EmptyState({
 					{description}
 				</p>
 				{action && (
-					<Button
-						variant="outline"
-						size="sm"
-						className="mt-5"
-						onClick={action.onClick}
-					>
+					<Button variant="outline" size="sm" className="mt-5" onClick={action.onClick}>
 						{action.label}
 					</Button>
 				)}

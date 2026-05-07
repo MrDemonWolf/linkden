@@ -1,25 +1,25 @@
 {
-  "name": "linkden-server",
-  "main": "src/index.ts",
-  "compatibility_date": "2025-01-01",
-  "compatibility_flags": ["nodejs_compat"],
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "linkden-db",
-      "database_id": "local"
-    }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "IMAGES_BUCKET",
-      "bucket_name": "linkden-images"
-    }
-  ],
-  "rate_limits": [
-    { "binding": "RL_AUTH", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
-    { "binding": "RL_STRICT", "namespace_id": "1002", "simple": { "limit": 5, "period": 60 } },
-    { "binding": "RL_UPLOAD", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } },
-    { "binding": "RL_PUBLIC", "namespace_id": "1004", "simple": { "limit": 60, "period": 60 } }
-  ]
+	"name": "linkden-server",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-01-01",
+	"compatibility_flags": ["nodejs_compat"],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "linkden-db",
+			"database_id": "local"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "IMAGES_BUCKET",
+			"bucket_name": "linkden-images"
+		}
+	],
+	"rate_limits": [
+		{ "binding": "RL_AUTH", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
+		{ "binding": "RL_STRICT", "namespace_id": "1002", "simple": { "limit": 5, "period": 60 } },
+		{ "binding": "RL_UPLOAD", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } },
+		{ "binding": "RL_PUBLIC", "namespace_id": "1004", "simple": { "limit": 60, "period": 60 } }
+	]
 }

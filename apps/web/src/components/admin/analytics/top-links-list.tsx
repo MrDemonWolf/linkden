@@ -52,9 +52,7 @@ export function TopLinksList({
 						))}
 					</div>
 				) : data.length === 0 ? (
-					<p className="text-xs text-muted-foreground py-6 text-center">
-						No clicks yet
-					</p>
+					<p className="text-xs text-muted-foreground py-6 text-center">No clicks yet</p>
 				) : (
 					<div className="space-y-2.5">
 						{data.map((link, i) => {
@@ -67,9 +65,7 @@ export function TopLinksList({
 												#{String(i + 1).padStart(2, "0")}
 											</span>
 											<div className="min-w-0">
-												<p className="text-xs font-medium truncate">
-													{link.title || "Untitled"}
-												</p>
+												<p className="text-xs font-medium truncate">{link.title || "Untitled"}</p>
 												<p className="text-[10px] text-muted-foreground truncate flex items-center gap-1">
 													<ExternalLink className="h-2.5 w-2.5 shrink-0" />
 													{extractDomain(link.url)}

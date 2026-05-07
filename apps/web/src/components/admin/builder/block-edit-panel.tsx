@@ -47,9 +47,7 @@ function ToggleSwitch({
 		<div className="flex items-center justify-between">
 			<div className="space-y-0.5">
 				<Label>{label}</Label>
-				{description && (
-					<p className="text-[11px] text-muted-foreground">{description}</p>
-				)}
+				{description && <p className="text-[11px] text-muted-foreground">{description}</p>}
 			</div>
 			<button
 				type="button"
@@ -153,12 +151,24 @@ export function BlockEditPanel({
 			scheduledStart: scheduledStart ? new Date(scheduledStart) : null,
 			scheduledEnd: scheduledEnd ? new Date(scheduledEnd) : null,
 		});
-	}, [title, url, icon, config, embedType, embedUrl, scheduledStart, scheduledEnd]);
+	}, [
+		title,
+		url,
+		icon,
+		config,
+		embedType,
+		embedUrl,
+		scheduledStart,
+		scheduledEnd,
+		onChange,
+		block.id,
+	]);
 
 	// Auto-focus first input when panel opens
 	useEffect(() => {
 		const timer = setTimeout(() => {
-			const firstInput = panelRef.current?.querySelector<HTMLInputElement>("input, textarea, select");
+			const firstInput =
+				panelRef.current?.querySelector<HTMLInputElement>("input, textarea, select");
 			firstInput?.focus();
 		}, 100);
 		return () => clearTimeout(timer);
@@ -197,7 +207,10 @@ export function BlockEditPanel({
 	const hasSchedule = !!(scheduledStart || scheduledEnd);
 
 	return (
-		<div ref={panelRef} className="flex h-full flex-col rounded-xl border border-white/10 bg-card/80 backdrop-blur-xl shadow-xl">
+		<div
+			ref={panelRef}
+			className="flex h-full flex-col rounded-xl border border-white/10 bg-card/80 backdrop-blur-xl shadow-xl"
+		>
 			{/* Header */}
 			<div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
 				<h3 className="text-sm font-medium">
@@ -272,11 +285,12 @@ export function BlockEditPanel({
 									value={embedUrl}
 									onChange={(e) => setEmbedUrl(e.target.value)}
 									placeholder={EMBED_URL_PATTERNS[embedType]?.placeholder ?? "https://..."}
-									className={cn("dark:bg-input/30 border-white/15", embedUrlError && "border-destructive")}
+									className={cn(
+										"dark:bg-input/30 border-white/15",
+										embedUrlError && "border-destructive",
+									)}
 								/>
-								{embedUrlError && (
-									<p className="text-[11px] text-destructive">{embedUrlError}</p>
-								)}
+								{embedUrlError && <p className="text-[11px] text-destructive">{embedUrlError}</p>}
 							</div>
 						</>
 					)}
@@ -290,11 +304,46 @@ export function BlockEditPanel({
 									value={parsedConfig.preset ?? "contact"}
 									onChange={(v) => {
 										updateConfigField("preset", v);
-										const presetDefaults: Record<string, { buttonText: string; buttonEmoji?: string; successMessage?: string; showPhone?: boolean; showCompany?: boolean; showWhereMet?: boolean; showRating?: boolean; showAttending?: boolean; showGuests?: boolean }> = {
-											contact: { buttonText: "Contact Me", buttonEmoji: "", successMessage: "Thanks for reaching out!" },
-											connect: { buttonText: "Connect with Me", buttonEmoji: "", successMessage: "Thanks for connecting!", showPhone: true, showCompany: true, showWhereMet: true },
-											feedback: { buttonText: "Leave Feedback", buttonEmoji: "", successMessage: "Thanks for your feedback!", showRating: true },
-											rsvp: { buttonText: "RSVP", buttonEmoji: "", successMessage: "Your RSVP has been received!", showAttending: true, showGuests: true },
+										const presetDefaults: Record<
+											string,
+											{
+												buttonText: string;
+												buttonEmoji?: string;
+												successMessage?: string;
+												showPhone?: boolean;
+												showCompany?: boolean;
+												showWhereMet?: boolean;
+												showRating?: boolean;
+												showAttending?: boolean;
+												showGuests?: boolean;
+											}
+										> = {
+											contact: {
+												buttonText: "Contact Me",
+												buttonEmoji: "",
+												successMessage: "Thanks for reaching out!",
+											},
+											connect: {
+												buttonText: "Connect with Me",
+												buttonEmoji: "",
+												successMessage: "Thanks for connecting!",
+												showPhone: true,
+												showCompany: true,
+												showWhereMet: true,
+											},
+											feedback: {
+												buttonText: "Leave Feedback",
+												buttonEmoji: "",
+												successMessage: "Thanks for your feedback!",
+												showRating: true,
+											},
+											rsvp: {
+												buttonText: "RSVP",
+												buttonEmoji: "",
+												successMessage: "Your RSVP has been received!",
+												showAttending: true,
+												showGuests: true,
+											},
 										};
 										const defaults = presetDefaults[v];
 										if (defaults) {
@@ -388,109 +437,195 @@ export function BlockEditPanel({
 							</div>
 
 							<div className="pt-2">
-								<Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Personal</Label>
+								<Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+									Personal
+								</Label>
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="vc-fullname">Full Name</Label>
-								<Input id="vc-fullname" value={parsedConfig.fullName ?? ""} onChange={(e) => updateConfigField("fullName", e.target.value)} placeholder="John Doe" className="dark:bg-input/30 border-white/15" />
+								<Input
+									id="vc-fullname"
+									value={parsedConfig.fullName ?? ""}
+									onChange={(e) => updateConfigField("fullName", e.target.value)}
+									placeholder="John Doe"
+									className="dark:bg-input/30 border-white/15"
+								/>
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="vc-nickname">Nickname</Label>
-								<Input id="vc-nickname" value={parsedConfig.nickname ?? ""} onChange={(e) => updateConfigField("nickname", e.target.value)} placeholder="Johnny" className="dark:bg-input/30 border-white/15" />
+								<Input
+									id="vc-nickname"
+									value={parsedConfig.nickname ?? ""}
+									onChange={(e) => updateConfigField("nickname", e.target.value)}
+									placeholder="Johnny"
+									className="dark:bg-input/30 border-white/15"
+								/>
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="vc-birthday">Birthday</Label>
-								<Input id="vc-birthday" type="date" value={parsedConfig.birthday ?? ""} onChange={(e) => updateConfigField("birthday", e.target.value)} className="dark:bg-input/30 border-white/15" />
+								<Input
+									id="vc-birthday"
+									type="date"
+									value={parsedConfig.birthday ?? ""}
+									onChange={(e) => updateConfigField("birthday", e.target.value)}
+									className="dark:bg-input/30 border-white/15"
+								/>
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="vc-photo">Photo URL</Label>
-								<Input id="vc-photo" value={parsedConfig.photo ?? ""} onChange={(e) => updateConfigField("photo", e.target.value)} placeholder="https://example.com/photo.jpg" className="dark:bg-input/30 border-white/15" />
+								<Input
+									id="vc-photo"
+									value={parsedConfig.photo ?? ""}
+									onChange={(e) => updateConfigField("photo", e.target.value)}
+									placeholder="https://example.com/photo.jpg"
+									className="dark:bg-input/30 border-white/15"
+								/>
 							</div>
 
 							<div className="pt-2">
-								<Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Organization</Label>
+								<Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+									Organization
+								</Label>
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="vc-org">Organization</Label>
-								<Input id="vc-org" value={parsedConfig.org ?? ""} onChange={(e) => updateConfigField("org", e.target.value)} placeholder="Acme Inc." className="dark:bg-input/30 border-white/15" />
+								<Input
+									id="vc-org"
+									value={parsedConfig.org ?? ""}
+									onChange={(e) => updateConfigField("org", e.target.value)}
+									placeholder="Acme Inc."
+									className="dark:bg-input/30 border-white/15"
+								/>
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="vc-jobtitle">Job Title</Label>
-								<Input id="vc-jobtitle" value={parsedConfig.title ?? ""} onChange={(e) => updateConfigField("title", e.target.value)} placeholder="Software Engineer" className="dark:bg-input/30 border-white/15" />
+								<Input
+									id="vc-jobtitle"
+									value={parsedConfig.title ?? ""}
+									onChange={(e) => updateConfigField("title", e.target.value)}
+									placeholder="Software Engineer"
+									className="dark:bg-input/30 border-white/15"
+								/>
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="vc-department">Department</Label>
-								<Input id="vc-department" value={parsedConfig.department ?? ""} onChange={(e) => updateConfigField("department", e.target.value)} placeholder="Engineering" className="dark:bg-input/30 border-white/15" />
+								<Input
+									id="vc-department"
+									value={parsedConfig.department ?? ""}
+									onChange={(e) => updateConfigField("department", e.target.value)}
+									placeholder="Engineering"
+									className="dark:bg-input/30 border-white/15"
+								/>
 							</div>
 
 							<div className="pt-2">
-								<Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Contact</Label>
+								<Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+									Contact
+								</Label>
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="vc-email">Personal Email</Label>
-								<Input id="vc-email" type="email" value={parsedConfig.email ?? ""} onChange={(e) => updateConfigField("email", e.target.value)} placeholder="john@example.com" className="dark:bg-input/30 border-white/15" />
+								<Input
+									id="vc-email"
+									type="email"
+									value={parsedConfig.email ?? ""}
+									onChange={(e) => updateConfigField("email", e.target.value)}
+									placeholder="john@example.com"
+									className="dark:bg-input/30 border-white/15"
+								/>
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="vc-work-email">Work Email</Label>
-								<Input id="vc-work-email" type="email" value={parsedConfig.workEmail ?? ""} onChange={(e) => updateConfigField("workEmail", e.target.value)} placeholder="john@company.com" className="dark:bg-input/30 border-white/15" />
+								<Input
+									id="vc-work-email"
+									type="email"
+									value={parsedConfig.workEmail ?? ""}
+									onChange={(e) => updateConfigField("workEmail", e.target.value)}
+									placeholder="john@company.com"
+									className="dark:bg-input/30 border-white/15"
+								/>
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="vc-phone">Personal Phone</Label>
-								<Input id="vc-phone" type="tel" value={parsedConfig.phone ?? ""} onChange={(e) => updateConfigField("phone", e.target.value)} placeholder="+1 555-0123" className="dark:bg-input/30 border-white/15" />
+								<Input
+									id="vc-phone"
+									type="tel"
+									value={parsedConfig.phone ?? ""}
+									onChange={(e) => updateConfigField("phone", e.target.value)}
+									placeholder="+1 555-0123"
+									className="dark:bg-input/30 border-white/15"
+								/>
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="vc-work-phone">Work Phone</Label>
-								<Input id="vc-work-phone" type="tel" value={parsedConfig.workPhone ?? ""} onChange={(e) => updateConfigField("workPhone", e.target.value)} placeholder="+1 555-0456" className="dark:bg-input/30 border-white/15" />
+								<Input
+									id="vc-work-phone"
+									type="tel"
+									value={parsedConfig.workPhone ?? ""}
+									onChange={(e) => updateConfigField("workPhone", e.target.value)}
+									placeholder="+1 555-0456"
+									className="dark:bg-input/30 border-white/15"
+								/>
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="vc-address">Address</Label>
-								<Input id="vc-address" value={parsedConfig.address ?? ""} onChange={(e) => updateConfigField("address", e.target.value)} placeholder="123 Main St, City, State" className="dark:bg-input/30 border-white/15" />
+								<Input
+									id="vc-address"
+									value={parsedConfig.address ?? ""}
+									onChange={(e) => updateConfigField("address", e.target.value)}
+									placeholder="123 Main St, City, State"
+									className="dark:bg-input/30 border-white/15"
+								/>
 							</div>
 
 							<div className="pt-2">
-								<Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">URLs</Label>
+								<Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+									URLs
+								</Label>
 							</div>
-							{(parsedConfig.urls as Array<{ label: string; url: string }> ?? []).map((urlItem: { label: string; url: string }, idx: number) => (
-								<div key={idx} className="flex gap-2 items-end">
-									<div className="flex-1 space-y-1">
-										<Label className="text-[11px]">Label</Label>
-										<Input
-											value={urlItem.label}
-											onChange={(e) => {
+							{((parsedConfig.urls as Array<{ label: string; url: string }>) ?? []).map(
+								(urlItem: { label: string; url: string }, idx: number) => (
+									<div key={idx} className="flex gap-2 items-end">
+										<div className="flex-1 space-y-1">
+											<Label className="text-[11px]">Label</Label>
+											<Input
+												value={urlItem.label}
+												onChange={(e) => {
+													const urls = [...(parsedConfig.urls ?? [])];
+													urls[idx] = { ...urls[idx], label: e.target.value };
+													updateConfigField("urls", urls);
+												}}
+												placeholder="Website"
+												className="dark:bg-input/30 border-white/15 h-8 text-xs"
+											/>
+										</div>
+										<div className="flex-[2] space-y-1">
+											<Label className="text-[11px]">URL</Label>
+											<Input
+												value={urlItem.url}
+												onChange={(e) => {
+													const urls = [...(parsedConfig.urls ?? [])];
+													urls[idx] = { ...urls[idx], url: e.target.value };
+													updateConfigField("urls", urls);
+												}}
+												placeholder="https://example.com"
+												className="dark:bg-input/30 border-white/15 h-8 text-xs"
+											/>
+										</div>
+										<button
+											type="button"
+											onClick={() => {
 												const urls = [...(parsedConfig.urls ?? [])];
-												urls[idx] = { ...urls[idx], label: e.target.value };
+												urls.splice(idx, 1);
 												updateConfigField("urls", urls);
 											}}
-											placeholder="Website"
-											className="dark:bg-input/30 border-white/15 h-8 text-xs"
-										/>
+											className="flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground hover:text-destructive"
+										>
+											<Trash2 className="h-3.5 w-3.5" />
+										</button>
 									</div>
-									<div className="flex-[2] space-y-1">
-										<Label className="text-[11px]">URL</Label>
-										<Input
-											value={urlItem.url}
-											onChange={(e) => {
-												const urls = [...(parsedConfig.urls ?? [])];
-												urls[idx] = { ...urls[idx], url: e.target.value };
-												updateConfigField("urls", urls);
-											}}
-											placeholder="https://example.com"
-											className="dark:bg-input/30 border-white/15 h-8 text-xs"
-										/>
-									</div>
-									<button
-										type="button"
-										onClick={() => {
-											const urls = [...(parsedConfig.urls ?? [])];
-											urls.splice(idx, 1);
-											updateConfigField("urls", urls);
-										}}
-										className="flex h-8 w-8 shrink-0 items-center justify-center text-muted-foreground hover:text-destructive"
-									>
-										<Trash2 className="h-3.5 w-3.5" />
-									</button>
-								</div>
-							))}
+								),
+							)}
 							<button
 								type="button"
 								onClick={() => {
@@ -542,16 +677,17 @@ export function BlockEditPanel({
 									/>
 								</div>
 							)}
-							{(parsedConfig.linkType === "google" || parsedConfig.linkType === "apple") && parsedConfig.address && (
-								<div className="space-y-1">
-									<Label className="text-[11px] text-muted-foreground">Generated URL</Label>
-									<p className="text-[11px] font-mono text-muted-foreground break-all">
-										{parsedConfig.linkType === "google"
-											? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parsedConfig.address as string)}`
-											: `https://maps.apple.com/?q=${encodeURIComponent(parsedConfig.address as string)}`}
-									</p>
-								</div>
-							)}
+							{(parsedConfig.linkType === "google" || parsedConfig.linkType === "apple") &&
+								parsedConfig.address && (
+									<div className="space-y-1">
+										<Label className="text-[11px] text-muted-foreground">Generated URL</Label>
+										<p className="text-[11px] font-mono text-muted-foreground break-all">
+											{parsedConfig.linkType === "google"
+												? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parsedConfig.address as string)}`
+												: `https://maps.apple.com/?q=${encodeURIComponent(parsedConfig.address as string)}`}
+										</p>
+									</div>
+								)}
 						</>
 					)}
 				</div>
@@ -589,7 +725,10 @@ export function BlockEditPanel({
 							/>
 							<div className="space-y-1.5">
 								<Label>Animation</Label>
-								<GlassSelect value={parsedConfig.animation ?? "none"} onChange={(v) => updateConfigField("animation", v)}>
+								<GlassSelect
+									value={parsedConfig.animation ?? "none"}
+									onChange={(v) => updateConfigField("animation", v)}
+								>
 									<option value="none">None</option>
 									<option value="pulse">Pulse</option>
 									<option value="shake">Shake</option>
@@ -616,7 +755,10 @@ export function BlockEditPanel({
 							/>
 							<div className="space-y-1.5">
 								<Label>Animation</Label>
-								<GlassSelect value={parsedConfig.animation ?? "none"} onChange={(v) => updateConfigField("animation", v)}>
+								<GlassSelect
+									value={parsedConfig.animation ?? "none"}
+									onChange={(v) => updateConfigField("animation", v)}
+								>
 									<option value="none">None</option>
 									<option value="pulse">Pulse</option>
 									<option value="shake">Shake</option>
@@ -629,7 +771,10 @@ export function BlockEditPanel({
 						<>
 							<div className="space-y-1.5">
 								<Label>Aspect Ratio</Label>
-								<GlassSelect value={parsedConfig.aspectRatio ?? "16:9"} onChange={(v) => updateConfigField("aspectRatio", v)}>
+								<GlassSelect
+									value={parsedConfig.aspectRatio ?? "16:9"}
+									onChange={(v) => updateConfigField("aspectRatio", v)}
+								>
 									<option value="16:9">16:9</option>
 									<option value="4:3">4:3</option>
 									<option value="1:1">1:1</option>
@@ -637,7 +782,10 @@ export function BlockEditPanel({
 							</div>
 							<div className="space-y-1.5">
 								<Label>Max Width</Label>
-								<GlassSelect value={parsedConfig.maxWidth ?? "full"} onChange={(v) => updateConfigField("maxWidth", v)}>
+								<GlassSelect
+									value={parsedConfig.maxWidth ?? "full"}
+									onChange={(v) => updateConfigField("maxWidth", v)}
+								>
 									<option value="sm">Small</option>
 									<option value="md">Medium</option>
 									<option value="lg">Large</option>
@@ -658,9 +806,7 @@ export function BlockEditPanel({
 					<CollapsibleSection label="Form Fields" defaultOpen>
 						<div className="space-y-1.5">
 							<Label htmlFor="edit-delivery">Delivery mode</Label>
-							<p className="text-[11px] text-muted-foreground">
-								How form submissions are handled
-							</p>
+							<p className="text-[11px] text-muted-foreground">How form submissions are handled</p>
 							<SegmentedControl
 								value={contactDelivery}
 								options={[
@@ -672,7 +818,9 @@ export function BlockEditPanel({
 							/>
 						</div>
 						<div className="mt-2 space-y-3">
-							<Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Optional Fields</Label>
+							<Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+								Optional Fields
+							</Label>
 							<ToggleSwitch
 								checked={!!parsedConfig.showPhone}
 								onToggle={() => updateConfigField("showPhone", !parsedConfig.showPhone)}

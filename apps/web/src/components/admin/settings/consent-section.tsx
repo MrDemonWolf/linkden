@@ -3,7 +3,6 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@linkden/ui";
-import { FieldGroup } from "./field-group";
 
 interface ConsentCategories {
 	analytics: boolean;
@@ -107,9 +106,7 @@ export function ConsentSection({
 								</div>
 								<Switch
 									checked={categories.analytics}
-									onCheckedChange={(v) =>
-										onCategoriesChange({ ...categories, analytics: v })
-									}
+									onCheckedChange={(v) => onCategoriesChange({ ...categories, analytics: v })}
 								/>
 							</div>
 
@@ -125,9 +122,7 @@ export function ConsentSection({
 								</div>
 								<Switch
 									checked={categories.marketing}
-									onCheckedChange={(v) =>
-										onCategoriesChange({ ...categories, marketing: v })
-									}
+									onCheckedChange={(v) => onCategoriesChange({ ...categories, marketing: v })}
 								/>
 							</div>
 
@@ -143,9 +138,7 @@ export function ConsentSection({
 								</div>
 								<Switch
 									checked={categories.functional}
-									onCheckedChange={(v) =>
-										onCategoriesChange({ ...categories, functional: v })
-									}
+									onCheckedChange={(v) => onCategoriesChange({ ...categories, functional: v })}
 								/>
 							</div>
 						</div>

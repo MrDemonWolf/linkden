@@ -7,12 +7,7 @@ interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
 	max?: number;
 }
 
-function Progress({
-	className,
-	value = 0,
-	max = 100,
-	...props
-}: ProgressProps) {
+function Progress({ className, value = 0, max = 100, ...props }: ProgressProps) {
 	const percentage = Math.min(100, Math.max(0, (value / max) * 100));
 
 	return (
@@ -21,10 +16,7 @@ function Progress({
 			aria-valuemin={0}
 			aria-valuemax={max}
 			aria-valuenow={value}
-			className={cn(
-				"relative h-2 w-full overflow-hidden rounded-full bg-muted",
-				className,
-			)}
+			className={cn("relative h-2 w-full overflow-hidden rounded-full bg-muted", className)}
 			{...props}
 		>
 			<div

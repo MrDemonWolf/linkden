@@ -1,15 +1,15 @@
 {
-  "title": "Using LinkDen",
-  "pages": [
-    "blocks",
-    "appearance",
-    "analytics",
-    "contact-form",
-    "email-templates",
-    "social-networks",
-    "security",
-    "vcard",
-    "apple-wallet",
-    "export-import"
-  ]
+	"title": "Using LinkDen",
+	"pages": [
+		"blocks",
+		"appearance",
+		"analytics",
+		"contact-form",
+		"email-templates",
+		"social-networks",
+		"security",
+		"vcard",
+		"apple-wallet",
+		"export-import"
+	]
 }

@@ -50,7 +50,16 @@ export async function GET(req: NextRequest) {
 					{Array.from({ length: 8 }).map((_, i) => (
 						<div key={i} style={{ display: "flex", flexDirection: "column", marginRight: 24 }}>
 							{Array.from({ length: 5 }).map((_, j) => (
-								<div key={j} style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#000", marginBottom: 24 }} />
+								<div
+									key={j}
+									style={{
+										width: 6,
+										height: 6,
+										borderRadius: "50%",
+										backgroundColor: "#000",
+										marginBottom: 24,
+									}}
+								/>
 							))}
 						</div>
 					))}
@@ -289,8 +298,7 @@ export async function GET(req: NextRequest) {
 						backgroundColor: "#fff",
 						borderRadius: 28,
 						padding: "56px 80px",
-						boxShadow:
-							"0 8px 40px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04)",
+						boxShadow: "0 8px 40px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04)",
 					}}
 				>
 					{/* Avatar */}

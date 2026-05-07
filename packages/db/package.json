@@ -1,29 +1,29 @@
 {
-  "name": "@linkden/db",
-  "type": "module",
-  "exports": {
-    ".": {
-      "default": "./src/index.ts"
-    },
-    "./*": {
-      "default": "./src/*.ts"
-    }
-  },
-  "scripts": {
-    "db:push": "drizzle-kit push",
-    "db:generate": "drizzle-kit generate"
-  },
-  "dependencies": {
-    "@libsql/client": "0.17.0",
-    "@linkden/env": "workspace:*",
-    "dotenv": "^17.4.2",
-    "drizzle-orm": "^0.45.2",
-    "libsql": "0.5.22",
-    "zod": "^4.3.6"
-  },
-  "devDependencies": {
-    "@linkden/config": "workspace:*",
-    "drizzle-kit": "^0.31.10",
-    "typescript": "^5.9.3"
-  }
+	"name": "@linkden/db",
+	"type": "module",
+	"exports": {
+		".": {
+			"default": "./src/index.ts"
+		},
+		"./*": {
+			"default": "./src/*.ts"
+		}
+	},
+	"scripts": {
+		"db:push": "drizzle-kit push",
+		"db:generate": "drizzle-kit generate"
+	},
+	"dependencies": {
+		"@libsql/client": "0.17.0",
+		"@linkden/env": "workspace:*",
+		"dotenv": "^17.4.2",
+		"drizzle-orm": "^0.45.2",
+		"libsql": "0.5.22",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@linkden/config": "workspace:*",
+		"drizzle-kit": "^0.31.10",
+		"typescript": "^5.9.3"
+	}
 }

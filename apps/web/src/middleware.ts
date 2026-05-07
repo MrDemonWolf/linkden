@@ -17,7 +17,7 @@ export function middleware(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
 	// Allow public admin routes through without auth check
-	if (PUBLIC_ADMIN_ROUTES.some((route) => pathname === route || pathname.startsWith(route + "/"))) {
+	if (PUBLIC_ADMIN_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {
 		return NextResponse.next();
 	}
 

@@ -1,22 +1,22 @@
 {
-  "name": "@linkden/email",
-  "type": "module",
-  "exports": {
-    ".": {
-      "default": "./src/index.ts"
-    },
-    "./*": {
-      "default": "./src/*.ts"
-    }
-  },
-  "dependencies": {
-    "@react-email/components": "^1.0.12",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5"
-  },
-  "devDependencies": {
-    "@linkden/config": "workspace:*",
-    "@types/react": "^19.2.14",
-    "typescript": "^5.9.3"
-  }
+	"name": "@linkden/email",
+	"type": "module",
+	"exports": {
+		".": {
+			"default": "./src/index.ts"
+		},
+		"./*": {
+			"default": "./src/*.ts"
+		}
+	},
+	"dependencies": {
+		"@react-email/components": "^1.0.12",
+		"react": "^19.2.5",
+		"react-dom": "^19.2.5"
+	},
+	"devDependencies": {
+		"@linkden/config": "workspace:*",
+		"@types/react": "^19.2.14",
+		"typescript": "^5.9.3"
+	}
 }

@@ -3,19 +3,10 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-	Mail,
-	MailOpen,
-	MailCheck,
-	Trash2,
-	Filter,
-	X,
-	Handshake,
-} from "lucide-react";
+import { MailCheck, Trash2, Filter, X, Handshake } from "lucide-react";
 import { trpc } from "@/utils/trpc";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { SkeletonRows } from "@/components/admin/skeleton-rows";
@@ -63,10 +54,19 @@ export default function ConnectionsPage() {
 	// Auto-mark as read when selecting an unread connection
 	useEffect(() => {
 		if (selectedConnection && !selectedConnection.isRead) {
-			markRead.mutateAsync({ id: selectedConnection.id }).then(invalidate).catch(() => {});
+			markRead
+				.mutateAsync({ id: selectedConnection.id })
+				.then(invalidate)
+				.catch(() => {});
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [selectedId]);
+	}, [
+		selectedConnection.isRead,
+		invalidate,
+		selectedConnection.id,
+		markRead.mutateAsync,
+		selectedConnection,
+	]);
 
 	const handleSelect = (id: string) => {
 		setSelectedId(id);
@@ -215,11 +215,7 @@ export default function ConnectionsPage() {
 						aria-label="Select all"
 					/>
 					<span className="text-xs font-medium text-blue-500">{checkedIds.size} selected</span>
-					<Button
-						variant="ghost"
-						size="xs"
-						onClick={handleBulkMarkRead}
-					>
+					<Button variant="ghost" size="xs" onClick={handleBulkMarkRead}>
 						<MailCheck className="mr-1 h-3.5 w-3.5" />
 						Mark Read
 					</Button>
@@ -233,11 +229,7 @@ export default function ConnectionsPage() {
 						<Trash2 className="mr-1 h-3.5 w-3.5" />
 						Delete
 					</Button>
-					<Button
-						variant="ghost"
-						size="xs"
-						onClick={() => setCheckedIds(new Set())}
-					>
+					<Button variant="ghost" size="xs" onClick={() => setCheckedIds(new Set())}>
 						Clear
 					</Button>
 				</div>

@@ -37,45 +37,35 @@ export const formsRouter = router({
 			return results;
 		}),
 
-	get: protectedProcedure
-		.input(z.object({ id: z.string() }))
-		.query(async ({ input }) => {
-			const [result] = await db
-				.select()
-				.from(contactSubmission)
-				.where(eq(contactSubmission.id, input.id));
-			return result ?? null;
-		}),
+	get: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
+		const [result] = await db
+			.select()
+			.from(contactSubmission)
+			.where(eq(contactSubmission.id, input.id));
+		return result ?? null;
+	}),
 
-	markRead: protectedProcedure
-		.input(z.object({ id: z.string() }))
-		.mutation(async ({ input }) => {
-			await db
-				.update(contactSubmission)
-				.set({ isRead: true, updatedAt: new Date() })
-				.where(eq(contactSubmission.id, input.id));
-			return { success: true };
-		}),
+	markRead: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
+		await db
+			.update(contactSubmission)
+			.set({ isRead: true, updatedAt: new Date() })
+			.where(eq(contactSubmission.id, input.id));
+		return { success: true };
+	}),
 
-	markUnread: protectedProcedure
-		.input(z.object({ id: z.string() }))
-		.mutation(async ({ input }) => {
-			await db
-				.update(contactSubmission)
-				.set({ isRead: false, updatedAt: new Date() })
-				.where(eq(contactSubmission.id, input.id));
-			return { success: true };
-		}),
+	markUnread: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
+		await db
+			.update(contactSubmission)
+			.set({ isRead: false, updatedAt: new Date() })
+			.where(eq(contactSubmission.id, input.id));
+		return { success: true };
+	}),
 
-	delete: protectedProcedure
-		.input(z.object({ id: z.string() }))
-		.mutation(async ({ input }) => {
-			await db
-				.delete(contactSubmission)
-				.where(eq(contactSubmission.id, input.id));
-			void logAudit("contact.delete", "contact", input.id);
-			return { success: true };
-		}),
+	delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
+		await db.delete(contactSubmission).where(eq(contactSubmission.id, input.id));
+		void logAudit("contact.delete", "contact", input.id);
+		return { success: true };
+	}),
 
 	markAllRead: protectedProcedure.mutation(async () => {
 		await db
@@ -88,9 +78,7 @@ export const formsRouter = router({
 	deleteMultiple: protectedProcedure
 		.input(z.object({ ids: z.array(z.string()).min(1).max(100) }))
 		.mutation(async ({ input }) => {
-			await db
-				.delete(contactSubmission)
-				.where(inArray(contactSubmission.id, input.ids));
+			await db.delete(contactSubmission).where(inArray(contactSubmission.id, input.ids));
 			await logAudit("contact.deleteMultiple", "contact", undefined, { count: input.ids.length });
 			return { success: true };
 		}),

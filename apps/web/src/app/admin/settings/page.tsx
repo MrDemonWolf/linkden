@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import {
 	Save,
 	Undo2,
-	Globe,
 	Search,
 	Mail,
 	Shield,
@@ -132,7 +131,9 @@ function buildSavedState(s: Record<string, string>): SavedState {
 		consentBannerEnabled: s.consent_banner_enabled !== "false",
 		consentBannerText: s.consent_banner_text ?? "",
 		consentPrivacyUrl: s.consent_privacy_url ?? "",
-		consentCategories: s.consent_categories ?? JSON.stringify({ analytics: true, marketing: false, functional: false }),
+		consentCategories:
+			s.consent_categories ??
+			JSON.stringify({ analytics: true, marketing: false, functional: false }),
 	};
 }
 
@@ -157,9 +158,7 @@ function SectionCard({
 					<div className="min-w-0">
 						<h2 className="text-sm font-semibold">{title}</h2>
 						{description && (
-							<p className="mt-0.5 text-[11px] text-muted-foreground">
-								{description}
-							</p>
+							<p className="mt-0.5 text-[11px] text-muted-foreground">{description}</p>
 						)}
 					</div>
 				</div>
@@ -172,9 +171,7 @@ function SectionCard({
 export default function SettingsPage() {
 	const qc = useQueryClient();
 	const settingsQuery = useQuery(trpc.settings.getAll.queryOptions());
-	const updateSettings = useMutation(
-		trpc.settings.updateBulk.mutationOptions(),
-	);
+	const updateSettings = useMutation(trpc.settings.updateBulk.mutationOptions());
 	const versionCheck = useQuery(trpc.version.checkUpdate.queryOptions());
 	const exportData = useQuery({
 		...trpc.backup.export.queryOptions(),
@@ -183,7 +180,6 @@ export default function SettingsPage() {
 	const importData = useMutation(trpc.backup.import.mutationOptions());
 
 	const fileInputRef = useRef<HTMLInputElement>(null);
-
 
 	// Saved state for dirty tracking
 	const [savedState, setSavedState] = useState<SavedState>({
@@ -322,28 +318,28 @@ export default function SettingsPage() {
 		emailProvider !== savedState.emailProvider ||
 		emailApiKey !== savedState.emailApiKey ||
 		emailFrom !== savedState.emailFrom ||
-		adminBrandingEnabled !== savedState.adminBrandingEnabled
-		|| siteName !== savedState.siteName
-		|| logoUrl !== savedState.logoUrl
-		|| faviconUrl !== savedState.faviconUrl
-		|| ppUrl !== savedState.ppUrl
-		|| tosUrl !== savedState.tosUrl
-		|| ppMode !== savedState.ppMode
-		|| tosMode !== savedState.tosMode
-		|| ppText !== savedState.ppText
-		|| tosText !== savedState.tosText
-		|| footerBrandingEnabled !== savedState.footerBrandingEnabled
-		|| footerBrandingText !== savedState.footerBrandingText
-		|| footerBrandingLink !== savedState.footerBrandingLink
-		|| loginLogoUrl !== savedState.loginLogoUrl
-		|| loginBgMode !== savedState.loginBgMode
-		|| loginBgPreset !== savedState.loginBgPreset
-		|| loginBgCustomUrl !== savedState.loginBgCustomUrl
-		|| timezone !== savedState.timezone
-		|| consentBannerEnabled !== savedState.consentBannerEnabled
-		|| consentBannerText !== savedState.consentBannerText
-		|| consentPrivacyUrl !== savedState.consentPrivacyUrl
-		|| consentCategories !== savedState.consentCategories;
+		adminBrandingEnabled !== savedState.adminBrandingEnabled ||
+		siteName !== savedState.siteName ||
+		logoUrl !== savedState.logoUrl ||
+		faviconUrl !== savedState.faviconUrl ||
+		ppUrl !== savedState.ppUrl ||
+		tosUrl !== savedState.tosUrl ||
+		ppMode !== savedState.ppMode ||
+		tosMode !== savedState.tosMode ||
+		ppText !== savedState.ppText ||
+		tosText !== savedState.tosText ||
+		footerBrandingEnabled !== savedState.footerBrandingEnabled ||
+		footerBrandingText !== savedState.footerBrandingText ||
+		footerBrandingLink !== savedState.footerBrandingLink ||
+		loginLogoUrl !== savedState.loginLogoUrl ||
+		loginBgMode !== savedState.loginBgMode ||
+		loginBgPreset !== savedState.loginBgPreset ||
+		loginBgCustomUrl !== savedState.loginBgCustomUrl ||
+		timezone !== savedState.timezone ||
+		consentBannerEnabled !== savedState.consentBannerEnabled ||
+		consentBannerText !== savedState.consentBannerText ||
+		consentPrivacyUrl !== savedState.consentPrivacyUrl ||
+		consentCategories !== savedState.consentCategories;
 
 	useUnsavedChanges(isDirty);
 
@@ -442,10 +438,27 @@ export default function SettingsPage() {
 				emailApiKey,
 				emailFrom,
 				adminBrandingEnabled,
-				siteName, logoUrl, faviconUrl, ppUrl, tosUrl, ppMode, tosMode, ppText, tosText,
-				footerBrandingEnabled, footerBrandingText, footerBrandingLink,
-				loginLogoUrl, loginBgMode, loginBgPreset, loginBgCustomUrl,
-			timezone, consentBannerEnabled, consentBannerText, consentPrivacyUrl, consentCategories,
+				siteName,
+				logoUrl,
+				faviconUrl,
+				ppUrl,
+				tosUrl,
+				ppMode,
+				tosMode,
+				ppText,
+				tosText,
+				footerBrandingEnabled,
+				footerBrandingText,
+				footerBrandingLink,
+				loginLogoUrl,
+				loginBgMode,
+				loginBgPreset,
+				loginBgCustomUrl,
+				timezone,
+				consentBannerEnabled,
+				consentBannerText,
+				consentPrivacyUrl,
+				consentCategories,
 			});
 			invalidate();
 			qc.invalidateQueries({
@@ -599,7 +612,9 @@ export default function SettingsPage() {
 						onChange={(e) => setTimezone(e.target.value)}
 						className="dark:bg-input/30 border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
 					>
-						<option value="">Browser default ({Intl.DateTimeFormat().resolvedOptions().timeZone})</option>
+						<option value="">
+							Browser default ({Intl.DateTimeFormat().resolvedOptions().timeZone})
+						</option>
 						{COMMON_TIMEZONES.map((tz) => (
 							<option key={tz.value} value={tz.value}>
 								{tz.label}
@@ -674,11 +689,7 @@ export default function SettingsPage() {
 			</SectionCard>
 
 			{/* Security */}
-			<SectionCard
-				icon={Shield}
-				title="Security"
-				description="CAPTCHA and bot protection settings"
-			>
+			<SectionCard icon={Shield} title="Security" description="CAPTCHA and bot protection settings">
 				<CaptchaSection
 					captchaProvider={captchaProvider}
 					captchaSiteKey={captchaSiteKey}

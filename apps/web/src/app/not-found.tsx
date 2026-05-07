@@ -9,9 +9,7 @@ export default function NotFound() {
 				<div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-card ring-1 ring-border">
 					<WolfLogo className="h-12 w-12" />
 				</div>
-				<p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-					404
-				</p>
+				<p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">404</p>
 				<h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
 					Page not found
 				</h1>

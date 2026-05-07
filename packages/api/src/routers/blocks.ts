@@ -30,7 +30,10 @@ function sanitizeBlockInput<T extends Record<string, unknown>>(input: T): T {
 	}
 	if (typeof sanitized.socialIcons === "string") {
 		try {
-			const icons = JSON.parse(sanitized.socialIcons as string) as Array<{ platform: string; url: string }>;
+			const icons = JSON.parse(sanitized.socialIcons as string) as Array<{
+				platform: string;
+				url: string;
+			}>;
 			const sanitizedIcons = icons.map((icon) => ({
 				platform: stripHtml(icon.platform || ""),
 				url: sanitizeUrl(icon.url || ""),
@@ -49,28 +52,16 @@ export const blocksRouter = router({
 		return db.select().from(block).orderBy(asc(block.position));
 	}),
 
-	get: protectedProcedure
-		.input(z.object({ id: z.string() }))
-		.query(async ({ input }) => {
-			const [result] = await db
-				.select()
-				.from(block)
-				.where(eq(block.id, input.id));
-			return result ?? null;
-		}),
+	get: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
+		const [result] = await db.select().from(block).where(eq(block.id, input.id));
+		return result ?? null;
+	}),
 
 	create: protectedProcedure
 		.input(
 			z.object({
 				id: z.string(),
-				type: z.enum([
-					"link",
-					"header",
-					"embed",
-					"connect",
-					"vcard",
-					"location",
-				]),
+				type: z.enum(["link", "header", "embed", "connect", "vcard", "location"]),
 				title: z.string().max(200).optional(),
 				url: z.string().max(2048).optional(),
 				icon: z.string().max(100).optional(),
@@ -127,21 +118,21 @@ export const blocksRouter = router({
 			return result;
 		}),
 
-	delete: protectedProcedure
-		.input(z.object({ id: z.string() }))
-		.mutation(async ({ input }) => {
-			await db.delete(block).where(eq(block.id, input.id));
-			return { success: true };
-		}),
+	delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
+		await db.delete(block).where(eq(block.id, input.id));
+		return { success: true };
+	}),
 
 	reorder: protectedProcedure
 		.input(
-			z.array(
-				z.object({
-					id: z.string(),
-					position: z.number(),
-				}),
-			).max(200),
+			z
+				.array(
+					z.object({
+						id: z.string(),
+						position: z.number(),
+					}),
+				)
+				.max(200),
 		)
 		.mutation(async ({ input }) => {
 			for (const item of input) {

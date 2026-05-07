@@ -45,7 +45,8 @@ export function getConsent(): ConsentCategories {
 	try {
 		const stored = localStorage.getItem(CONSENT_KEY);
 		if (!stored) return DEFAULT_CONSENT;
-		if (stored === "accepted") return { essential: true, analytics: true, marketing: true, functional: true };
+		if (stored === "accepted")
+			return { essential: true, analytics: true, marketing: true, functional: true };
 		if (stored === "declined") return { ...DEFAULT_CONSENT };
 		return JSON.parse(stored) as ConsentCategories;
 	} catch {
@@ -219,9 +220,7 @@ export function ConsentBanner({ settings }: ConsentBannerProps) {
 								<input
 									type="checkbox"
 									checked={selections.analytics}
-									onChange={(e) =>
-										setSelections((s) => ({ ...s, analytics: e.target.checked }))
-									}
+									onChange={(e) => setSelections((s) => ({ ...s, analytics: e.target.checked }))}
 									className="h-3.5 w-3.5 rounded accent-primary"
 								/>
 								<span className="font-medium">Analytics</span>
@@ -236,9 +235,7 @@ export function ConsentBanner({ settings }: ConsentBannerProps) {
 								<input
 									type="checkbox"
 									checked={selections.marketing}
-									onChange={(e) =>
-										setSelections((s) => ({ ...s, marketing: e.target.checked }))
-									}
+									onChange={(e) => setSelections((s) => ({ ...s, marketing: e.target.checked }))}
 									className="h-3.5 w-3.5 rounded accent-primary"
 								/>
 								<span className="font-medium">Marketing</span>

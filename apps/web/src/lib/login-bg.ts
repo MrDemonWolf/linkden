@@ -20,9 +20,7 @@ export const LOGIN_BG_PRESET_IDS = [
 ] as const;
 
 export function getLoginBgPresets(): BannerPreset[] {
-	return bannerPresets.filter((p) =>
-		(LOGIN_BG_PRESET_IDS as readonly string[]).includes(p.id),
-	);
+	return bannerPresets.filter((p) => (LOGIN_BG_PRESET_IDS as readonly string[]).includes(p.id));
 }
 
 export function findLoginBgPreset(id: string | null | undefined): BannerPreset | null {
@@ -34,7 +32,9 @@ export function findLoginBgPreset(id: string | null | undefined): BannerPreset |
  * Wrapper-level inline style for login/setup background.
  * Returns undefined when default — caller relies on `.login-bg` CSS class instead.
  */
-export function getLoginBgStyle(branding: LoginBranding | null | undefined): CSSProperties | undefined {
+export function getLoginBgStyle(
+	branding: LoginBranding | null | undefined,
+): CSSProperties | undefined {
 	if (!branding) return undefined;
 	const mode = branding.loginBgMode ?? "default";
 
@@ -67,7 +67,9 @@ export function isCustomLoginBg(branding: LoginBranding | null | undefined): boo
 	return false;
 }
 
-export function getLoginShaderPreset(branding: LoginBranding | null | undefined): BannerPreset | null {
+export function getLoginShaderPreset(
+	branding: LoginBranding | null | undefined,
+): BannerPreset | null {
 	if (!branding || branding.loginBgMode !== "preset") return null;
 	const preset = findLoginBgPreset(branding.loginBgPreset);
 	if (preset && preset.type === "shader") return preset;

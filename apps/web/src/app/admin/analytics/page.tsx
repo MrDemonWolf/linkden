@@ -13,10 +13,7 @@ import { CountriesList } from "@/components/admin/analytics/countries-list";
 import { ReferrersList } from "@/components/admin/analytics/referrers-list";
 import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 
-function computeTrend(
-	current: number,
-	previous: number,
-): { value: number; label: string } {
+function computeTrend(current: number, previous: number): { value: number; label: string } {
 	if (previous === 0) {
 		return {
 			value: current > 0 ? 100 : 0,
@@ -35,19 +32,11 @@ export default function AnalyticsPage() {
 	});
 
 	const overview = useQuery(trpc.analytics.overview.queryOptions({ period }));
-	const viewsOverTime = useQuery(
-		trpc.analytics.viewsOverTime.queryOptions({ period }),
-	);
-	const clicksOverTime = useQuery(
-		trpc.analytics.clicksOverTime.queryOptions({ period }),
-	);
+	const viewsOverTime = useQuery(trpc.analytics.viewsOverTime.queryOptions({ period }));
+	const clicksOverTime = useQuery(trpc.analytics.clicksOverTime.queryOptions({ period }));
 	const topLinks = useQuery(trpc.analytics.topLinks.queryOptions({ period }));
-	const countries = useQuery(
-		trpc.analytics.countries.queryOptions({ period }),
-	);
-	const referrers = useQuery(
-		trpc.analytics.referrers.queryOptions({ period }),
-	);
+	const countries = useQuery(trpc.analytics.countries.queryOptions({ period }));
+	const referrers = useQuery(trpc.analytics.referrers.queryOptions({ period }));
 
 	const totalViews = (overview.data?.totalViews ?? 0) as number;
 	const totalClicks = (overview.data?.totalClicks ?? 0) as number;
@@ -56,19 +45,15 @@ export default function AnalyticsPage() {
 	const activeLinks = (overview.data?.activeLinks ?? 0) as number;
 
 	const ctr = totalViews > 0 ? (totalClicks / totalViews) * 100 : 0;
-	const prevCtr =
-		previousViews > 0 ? (previousClicks / previousViews) * 100 : 0;
+	const prevCtr = previousViews > 0 ? (previousClicks / previousViews) * 100 : 0;
 
 	const viewsTrend = overview.data ? computeTrend(totalViews, previousViews) : null;
-	const clicksTrend = overview.data
-		? computeTrend(totalClicks, previousClicks)
-		: null;
+	const clicksTrend = overview.data ? computeTrend(totalClicks, previousClicks) : null;
 	const ctrTrend = overview.data
 		? computeTrend(Math.round(ctr * 10), Math.round(prevCtr * 10))
 		: null;
 
-	const periodLabel =
-		period === "all" ? "All time" : `Last ${period.replace("d", "")} days`;
+	const periodLabel = period === "all" ? "All time" : `Last ${period.replace("d", "")} days`;
 
 	return (
 		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
@@ -147,19 +132,13 @@ export default function AnalyticsPage() {
 					<TopLinksList items={topLinks.data} isLoading={topLinks.isLoading} />
 				</div>
 				<div {...getAnimationProps(7)}>
-					<CountriesList
-						items={countries.data}
-						isLoading={countries.isLoading}
-					/>
+					<CountriesList items={countries.data} isLoading={countries.isLoading} />
 				</div>
 			</div>
 
 			{/* Referrers */}
 			<div {...getAnimationProps(8)}>
-				<ReferrersList
-					items={referrers.data}
-					isLoading={referrers.isLoading}
-				/>
+				<ReferrersList items={referrers.data} isLoading={referrers.isLoading} />
 			</div>
 
 			{/* Retention note */}

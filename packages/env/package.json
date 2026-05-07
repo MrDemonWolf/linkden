@@ -1,21 +1,21 @@
 {
-  "name": "@linkden/env",
-  "version": "0.0.0",
-  "private": true,
-  "type": "module",
-  "exports": {
-    "./server": "./src/server.ts",
-    "./web": "./src/web.ts"
-  },
-  "dependencies": {
-    "@t3-oss/env-nextjs": "^0.13.11",
-    "dotenv": "^17.4.2",
-    "zod": "^4.3.6"
-  },
-  "devDependencies": {
-    "@linkden/config": "workspace:*",
-    "@linkden/infra": "workspace:*",
-    "@types/node": "^25.6.0",
-    "typescript": "^5.9.3"
-  }
+	"name": "@linkden/env",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		"./server": "./src/server.ts",
+		"./web": "./src/web.ts"
+	},
+	"dependencies": {
+		"@t3-oss/env-nextjs": "^0.13.11",
+		"dotenv": "^17.4.2",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@linkden/config": "workspace:*",
+		"@linkden/infra": "workspace:*",
+		"@types/node": "^25.6.0",
+		"typescript": "^5.9.3"
+	}
 }

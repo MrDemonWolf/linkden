@@ -119,9 +119,31 @@ function sanitizeCss(css: string): string {
 }
 
 // Keys that should be sanitized as plain text (no HTML)
-const TEXT_KEYS = ["profile_name", "bio", "branding_text", "seo_title", "seo_description", "seo_og_mode", "seo_og_template", "branding_site_name", "branding_pp_mode", "branding_tos_mode", "branding_pp_text", "branding_tos_text"];
+const TEXT_KEYS = [
+	"profile_name",
+	"bio",
+	"branding_text",
+	"seo_title",
+	"seo_description",
+	"seo_og_mode",
+	"seo_og_template",
+	"branding_site_name",
+	"branding_pp_mode",
+	"branding_tos_mode",
+	"branding_pp_text",
+	"branding_tos_text",
+];
 // Keys that should be validated as URLs
-const URL_KEYS = ["branding_link", "seo_og_image", "avatar_url", "banner_custom_url", "branding_logo_url", "branding_favicon_url", "branding_pp_url", "branding_tos_url"];
+const URL_KEYS = [
+	"branding_link",
+	"seo_og_image",
+	"avatar_url",
+	"banner_custom_url",
+	"branding_logo_url",
+	"branding_favicon_url",
+	"branding_pp_url",
+	"branding_tos_url",
+];
 // Keys that should be validated as hex colors
 const COLOR_KEYS = ["custom_primary", "custom_secondary", "custom_accent", "custom_background"];
 // Keys with length limits
@@ -211,27 +233,20 @@ function sanitizeSetting(key: string, value: string): string {
 }
 
 export const settingsRouter = router({
-	get: protectedProcedure
-		.input(z.object({ key: settingKeySchema }))
-		.query(async ({ input }) => {
-			const [result] = await db
-				.select()
-				.from(siteSettings)
-				.where(eq(siteSettings.key, input.key));
-			if (!result) return null;
-			if (SECRET_SETTING_KEYS.has(result.key) && result.value) {
-				return { ...result, value: "••••••" };
-			}
-			return result;
-		}),
+	get: protectedProcedure.input(z.object({ key: settingKeySchema })).query(async ({ input }) => {
+		const [result] = await db.select().from(siteSettings).where(eq(siteSettings.key, input.key));
+		if (!result) return null;
+		if (SECRET_SETTING_KEYS.has(result.key) && result.value) {
+			return { ...result, value: "••••••" };
+		}
+		return result;
+	}),
 
 	getAll: protectedProcedure.query(async () => {
 		const results = await db.select().from(siteSettings);
 		const map: Record<string, string> = {};
 		for (const row of results) {
-			map[row.key] = SECRET_SETTING_KEYS.has(row.key) && row.value
-				? "••••••"
-				: row.value;
+			map[row.key] = SECRET_SETTING_KEYS.has(row.key) && row.value ? "••••••" : row.value;
 		}
 		return map;
 	}),
@@ -249,7 +264,7 @@ export const settingsRouter = router({
 			}
 			const sanitizedValue = sanitizeSetting(input.key, input.value);
 			await upsertSetting(input.key, sanitizedValue);
-		await logAudit("settings.update", "setting", input.key);
+			await logAudit("settings.update", "setting", input.key);
 
 			return { success: true };
 		}),
@@ -264,7 +279,7 @@ export const settingsRouter = router({
 				const sanitizedValue = sanitizeSetting(key, value);
 				await upsertSetting(key, sanitizedValue);
 			}
-		await logAudit("settings.updateBulk", "setting");
+			await logAudit("settings.updateBulk", "setting");
 
 			return { success: true };
 		}),

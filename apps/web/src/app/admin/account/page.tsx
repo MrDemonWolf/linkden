@@ -3,15 +3,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-	Eye,
-	EyeOff,
-	Loader2,
-	QrCode,
-	Shield,
-	ShieldOff,
-	Key,
-} from "lucide-react";
+import { Eye, EyeOff, Loader2, QrCode, Shield, ShieldOff, Key } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
 import { Card, CardContent } from "@/components/ui/card";
@@ -183,10 +175,10 @@ export default function AccountPage() {
 	const handleMagicLinkToggle = async (enabled: boolean) => {
 		setMagicLinkEnabled(enabled);
 		try {
-			await updateSettingsMl.mutateAsync([
-				{ key: "magic_link_enabled", value: String(enabled) },
-			]);
-			qc.invalidateQueries({ queryKey: trpc.settings.get.queryOptions({ key: "magic_link_enabled" }).queryKey });
+			await updateSettingsMl.mutateAsync([{ key: "magic_link_enabled", value: String(enabled) }]);
+			qc.invalidateQueries({
+				queryKey: trpc.settings.get.queryOptions({ key: "magic_link_enabled" }).queryKey,
+			});
 			toast.success(`Magic link sign-in ${enabled ? "enabled" : "disabled"}`);
 		} catch {
 			setMagicLinkEnabled(!enabled);
@@ -208,7 +200,9 @@ export default function AccountPage() {
 					<CardContent className="space-y-3">
 						<form onSubmit={handleChangePassword} className="space-y-3">
 							<div className="space-y-1.5">
-								<Label htmlFor="currentPw" className="text-xs text-muted-foreground">Current Password</Label>
+								<Label htmlFor="currentPw" className="text-xs text-muted-foreground">
+									Current Password
+								</Label>
 								<div className="relative">
 									<Input
 										id="currentPw"
@@ -224,13 +218,19 @@ export default function AccountPage() {
 										onClick={() => setShowCurrentPw(!showCurrentPw)}
 										aria-label={showCurrentPw ? "Hide password" : "Show password"}
 									>
-										{showCurrentPw ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+										{showCurrentPw ? (
+											<EyeOff className="h-3.5 w-3.5" />
+										) : (
+											<Eye className="h-3.5 w-3.5" />
+										)}
 									</button>
 								</div>
 							</div>
 
 							<div className="space-y-1.5">
-								<Label htmlFor="newPw" className="text-xs text-muted-foreground">New Password</Label>
+								<Label htmlFor="newPw" className="text-xs text-muted-foreground">
+									New Password
+								</Label>
 								<div className="relative">
 									<Input
 										id="newPw"
@@ -246,13 +246,19 @@ export default function AccountPage() {
 										onClick={() => setShowNewPw(!showNewPw)}
 										aria-label={showNewPw ? "Hide password" : "Show password"}
 									>
-										{showNewPw ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+										{showNewPw ? (
+											<EyeOff className="h-3.5 w-3.5" />
+										) : (
+											<Eye className="h-3.5 w-3.5" />
+										)}
 									</button>
 								</div>
 							</div>
 
 							<div className="space-y-1.5">
-								<Label htmlFor="confirmPw" className="text-xs text-muted-foreground">Confirm New Password</Label>
+								<Label htmlFor="confirmPw" className="text-xs text-muted-foreground">
+									Confirm New Password
+								</Label>
 								<Input
 									id="confirmPw"
 									type="password"
@@ -268,7 +274,9 @@ export default function AccountPage() {
 								disabled={isChangingPw || !currentPassword || !newPassword || !confirmPassword}
 							>
 								{isChangingPw ? (
-									<><Loader2 className="h-4 w-4 animate-spin" /> Updating...</>
+									<>
+										<Loader2 className="h-4 w-4 animate-spin" /> Updating...
+									</>
 								) : (
 									"Update Password"
 								)}
@@ -283,9 +291,13 @@ export default function AccountPage() {
 					<CardContent className="space-y-4">
 						<div className="flex items-center justify-between">
 							<p className="text-[11px] text-muted-foreground">
-								Add an extra layer of security by requiring a code from your authenticator app when signing in.
+								Add an extra layer of security by requiring a code from your authenticator app when
+								signing in.
 							</p>
-							<Badge variant={is2faEnabled ? "default" : "secondary"} className="text-[10px] shrink-0 ml-4">
+							<Badge
+								variant={is2faEnabled ? "default" : "secondary"}
+								className="text-[10px] shrink-0 ml-4"
+							>
 								{is2faEnabled ? "Enabled" : "Disabled"}
 							</Badge>
 						</div>
@@ -293,7 +305,9 @@ export default function AccountPage() {
 						{!showTwoFaSetup ? (
 							<div className="space-y-3">
 								<div className="space-y-1.5">
-									<Label htmlFor="twoFaPw" className="text-xs text-muted-foreground">Current Password</Label>
+									<Label htmlFor="twoFaPw" className="text-xs text-muted-foreground">
+										Current Password
+									</Label>
 									<Input
 										id="twoFaPw"
 										type="password"
@@ -304,13 +318,31 @@ export default function AccountPage() {
 									/>
 								</div>
 								{is2faEnabled ? (
-									<Button variant="destructive" size="sm" onClick={handleDisable2FA} disabled={is2faLoading || !twoFaPassword}>
-										{is2faLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldOff className="h-4 w-4" />}
+									<Button
+										variant="destructive"
+										size="sm"
+										onClick={handleDisable2FA}
+										disabled={is2faLoading || !twoFaPassword}
+									>
+										{is2faLoading ? (
+											<Loader2 className="h-4 w-4 animate-spin" />
+										) : (
+											<ShieldOff className="h-4 w-4" />
+										)}
 										Disable 2FA
 									</Button>
 								) : (
-									<Button variant="outline" size="sm" onClick={handleEnable2FA} disabled={is2faLoading || !twoFaPassword}>
-										{is2faLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={handleEnable2FA}
+										disabled={is2faLoading || !twoFaPassword}
+									>
+										{is2faLoading ? (
+											<Loader2 className="h-4 w-4 animate-spin" />
+										) : (
+											<Shield className="h-4 w-4" />
+										)}
 										Enable 2FA
 									</Button>
 								)}
@@ -331,8 +363,12 @@ export default function AccountPage() {
 									)}
 									{totpUri && (
 										<details className="text-xs">
-											<summary className="cursor-pointer text-muted-foreground hover:text-foreground">Manual entry key</summary>
-											<code className="mt-1 block break-all rounded bg-muted px-2 py-1 text-[10px]">{totpUri}</code>
+											<summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+												Manual entry key
+											</summary>
+											<code className="mt-1 block break-all rounded bg-muted px-2 py-1 text-[10px]">
+												{totpUri}
+											</code>
 										</details>
 									)}
 								</div>
@@ -345,14 +381,18 @@ export default function AccountPage() {
 										</p>
 										<div className="grid grid-cols-2 gap-1">
 											{backupCodes.map((code) => (
-												<code key={code} className="text-[10px] font-mono text-muted-foreground">{code}</code>
+												<code key={code} className="text-[10px] font-mono text-muted-foreground">
+													{code}
+												</code>
 											))}
 										</div>
 									</div>
 								)}
 
 								<div className="space-y-1.5">
-									<Label htmlFor="twoFaCode" className="text-xs text-muted-foreground">Verification Code</Label>
+									<Label htmlFor="twoFaCode" className="text-xs text-muted-foreground">
+										Verification Code
+									</Label>
 									<Input
 										id="twoFaCode"
 										type="text"
@@ -365,7 +405,11 @@ export default function AccountPage() {
 								</div>
 
 								<div className="flex gap-2">
-									<Button size="sm" onClick={handleVerify2FA} disabled={is2faLoading || twoFaCode.length !== 6}>
+									<Button
+										size="sm"
+										onClick={handleVerify2FA}
+										disabled={is2faLoading || twoFaCode.length !== 6}
+									>
 										{is2faLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
 										Verify & Activate
 									</Button>
@@ -396,7 +440,8 @@ export default function AccountPage() {
 							<div className="space-y-1">
 								<p className="text-xs font-medium">Allow Magic Link Login</p>
 								<p className="text-[11px] text-muted-foreground">
-									Allow signing in via a one-time email link instead of a password. Requires email to be configured in Settings.
+									Allow signing in via a one-time email link instead of a password. Requires email
+									to be configured in Settings.
 								</p>
 							</div>
 							<Switch

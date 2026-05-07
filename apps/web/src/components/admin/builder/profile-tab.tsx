@@ -46,9 +46,7 @@ export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
 	}, [settingsQuery.data]);
 
 	const profileDirty =
-		profileName !== savedProfileName ||
-		bio !== savedBio ||
-		avatarUrl !== savedAvatarUrl;
+		profileName !== savedProfileName || bio !== savedBio || avatarUrl !== savedAvatarUrl;
 
 	useEffect(() => {
 		onDirtyChange(profileDirty);
@@ -88,7 +86,10 @@ export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
 					/>
 
 					<div className="space-y-1.5">
-						<Label htmlFor="profileName" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+						<Label
+							htmlFor="profileName"
+							className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+						>
 							Display Name
 						</Label>
 						<Input
@@ -102,7 +103,10 @@ export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
 					</div>
 
 					<div className="space-y-1.5">
-						<Label htmlFor="bio" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+						<Label
+							htmlFor="bio"
+							className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+						>
 							Bio
 						</Label>
 						<Textarea

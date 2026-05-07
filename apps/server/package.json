@@ -1,34 +1,34 @@
 {
-  "name": "server",
-  "type": "module",
-  "main": "src/index.ts",
-  "scripts": {
-    "dev:standalone": "wrangler dev --port 3000",
-    "build": "tsdown",
-    "check-types": "tsc -b",
-    "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server"
-  },
-  "dependencies": {
-    "@hono-rate-limiter/cloudflare": "^0.2.2",
-    "@hono/trpc-server": "^0.4.2",
-    "@linkden/api": "workspace:*",
-    "@linkden/auth": "workspace:*",
-    "@linkden/db": "workspace:*",
-    "@linkden/env": "workspace:*",
-    "drizzle-orm": "^0.45.2",
-    "@trpc/server": "^11.16.0",
-    "better-auth": "^1.6.3",
-    "dotenv": "^17.4.2",
-    "hono": "^4.12.14",
-    "zod": "^4.3.6"
-  },
-  "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260415.1",
-    "@linkden/config": "workspace:*",
-    "@types/node": "^25.6.0",
-    "alchemy": "^0.89.0",
-    "tsdown": "^0.21.8",
-    "typescript": "^5.9.3",
-    "wrangler": "^4.83.0"
-  }
+	"name": "server",
+	"type": "module",
+	"main": "src/index.ts",
+	"scripts": {
+		"dev:standalone": "wrangler dev --port 3000",
+		"build": "tsdown",
+		"check-types": "tsc -b",
+		"compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server"
+	},
+	"dependencies": {
+		"@hono-rate-limiter/cloudflare": "^0.2.2",
+		"@hono/trpc-server": "^0.4.2",
+		"@linkden/api": "workspace:*",
+		"@linkden/auth": "workspace:*",
+		"@linkden/db": "workspace:*",
+		"@linkden/env": "workspace:*",
+		"drizzle-orm": "^0.45.2",
+		"@trpc/server": "^11.16.0",
+		"better-auth": "^1.6.3",
+		"dotenv": "^17.4.2",
+		"hono": "^4.12.14",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20260415.1",
+		"@linkden/config": "workspace:*",
+		"@types/node": "^25.6.0",
+		"alchemy": "^0.89.0",
+		"tsdown": "^0.21.8",
+		"typescript": "^5.9.3",
+		"wrangler": "^4.83.0"
+	}
 }

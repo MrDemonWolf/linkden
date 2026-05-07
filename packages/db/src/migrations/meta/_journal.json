@@ -1,55 +1,55 @@
 {
-  "version": "7",
-  "dialect": "sqlite",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "6",
-      "when": 1771865956451,
-      "tag": "0000_public_yellow_claw",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1771870814801,
-      "tag": "0001_misty_synch",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1771881167080,
-      "tag": "0002_busy_wallflower",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1772244174738,
-      "tag": "0003_motionless_mac_gargan",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1772325037536,
-      "tag": "0004_legal_loners",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1775162918163,
-      "tag": "0005_talented_shotgun",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "6",
-      "when": 1775977542210,
-      "tag": "0006_watery_kulan_gath",
-      "breakpoints": true
-    }
-  ]
+	"version": "7",
+	"dialect": "sqlite",
+	"entries": [
+		{
+			"idx": 0,
+			"version": "6",
+			"when": 1771865956451,
+			"tag": "0000_public_yellow_claw",
+			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "6",
+			"when": 1771870814801,
+			"tag": "0001_misty_synch",
+			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "6",
+			"when": 1771881167080,
+			"tag": "0002_busy_wallflower",
+			"breakpoints": true
+		},
+		{
+			"idx": 3,
+			"version": "6",
+			"when": 1772244174738,
+			"tag": "0003_motionless_mac_gargan",
+			"breakpoints": true
+		},
+		{
+			"idx": 4,
+			"version": "6",
+			"when": 1772325037536,
+			"tag": "0004_legal_loners",
+			"breakpoints": true
+		},
+		{
+			"idx": 5,
+			"version": "6",
+			"when": 1775162918163,
+			"tag": "0005_talented_shotgun",
+			"breakpoints": true
+		},
+		{
+			"idx": 6,
+			"version": "6",
+			"when": 1775977542210,
+			"tag": "0006_watery_kulan_gath",
+			"breakpoints": true
+		}
+	]
 }

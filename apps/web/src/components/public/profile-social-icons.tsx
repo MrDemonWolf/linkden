@@ -29,9 +29,10 @@ export function ProfileSocialIcons({ networks, colorMode, themeColors }: Profile
 		>
 			{networks.map((network) => {
 				const contrastBg = themeColors.bg;
-				const fill = network.hex && contrastBg && themeColors.fg
-					? getAccessibleIconFill(network.hex, contrastBg, themeColors.fg)
-					: network.hex || "currentColor";
+				const fill =
+					network.hex && contrastBg && themeColors.fg
+						? getAccessibleIconFill(network.hex, contrastBg, themeColors.fg)
+						: network.hex || "currentColor";
 
 				return (
 					<a
@@ -47,7 +48,8 @@ export function ProfileSocialIcons({ networks, colorMode, themeColors }: Profile
 							borderColor: colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
 							border: `1px solid ${colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}`,
 							backdropFilter: "blur(12px)",
-							transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, transform 0.3s ease",
+							transition:
+								"background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, transform 0.3s ease",
 						}}
 						aria-label={network.name}
 						title={network.name}

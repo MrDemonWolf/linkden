@@ -5,9 +5,7 @@ describe("getMapUrl", () => {
 	describe("Google Maps", () => {
 		it("generates URL from address", () => {
 			const url = getMapUrl("google", "San Francisco, CA");
-			expect(url).toBe(
-				"https://www.google.com/maps/search/?api=1&query=San%20Francisco%2C%20CA",
-			);
+			expect(url).toBe("https://www.google.com/maps/search/?api=1&query=San%20Francisco%2C%20CA");
 		});
 
 		it("generates URL from coordinates when provided", () => {
@@ -15,9 +13,7 @@ describe("getMapUrl", () => {
 				lat: 37.7749,
 				lng: -122.4194,
 			});
-			expect(url).toBe(
-				"https://www.google.com/maps/search/?api=1&query=37.7749,-122.4194",
-			);
+			expect(url).toBe("https://www.google.com/maps/search/?api=1&query=37.7749,-122.4194");
 		});
 
 		it("encodes special characters in address", () => {
@@ -37,20 +33,13 @@ describe("getMapUrl", () => {
 				lat: 40.7128,
 				lng: -74.006,
 			});
-			expect(url).toBe(
-				"https://maps.apple.com/?q=New%20York%2C%20NY&ll=40.7128,-74.006",
-			);
+			expect(url).toBe("https://maps.apple.com/?q=New%20York%2C%20NY&ll=40.7128,-74.006");
 		});
 	});
 
 	describe("Custom", () => {
 		it("returns custom URL", () => {
-			const url = getMapUrl(
-				"custom",
-				"",
-				undefined,
-				"https://my-map.com/location/123",
-			);
+			const url = getMapUrl("custom", "", undefined, "https://my-map.com/location/123");
 			expect(url).toBe("https://my-map.com/location/123");
 		});
 

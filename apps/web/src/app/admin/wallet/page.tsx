@@ -9,10 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/admin/page-header";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
-import {
-	WalletSection,
-	type WalletLivePreview,
-} from "@/components/admin/settings/wallet-section";
+import { WalletSection, type WalletLivePreview } from "@/components/admin/settings/wallet-section";
 import { WalletPassPreview } from "@/components/admin/wallet-pass-preview";
 import { DeviceFrame } from "@/components/admin/device-frame";
 
@@ -22,9 +19,7 @@ export default function WalletPage() {
 	const previewQuery = useQuery(trpc.wallet.generatePreview.queryOptions());
 	const signingQuery = useQuery(trpc.wallet.getSigningStatus.queryOptions());
 
-	const [livePreview, setLivePreview] = useState<WalletLivePreview | null>(
-		null,
-	);
+	const [livePreview, setLivePreview] = useState<WalletLivePreview | null>(null);
 	const handlePreviewChange = useCallback((state: WalletLivePreview) => {
 		setLivePreview(state);
 	}, []);
@@ -61,26 +56,22 @@ export default function WalletPage() {
 		signingQuery.data?.passTypeId
 	);
 
-	const publicProfileUrl =
-		typeof window !== "undefined"
-			? `${window.location.origin}`
-			: undefined;
+	const publicProfileUrl = typeof window !== "undefined" ? `${window.location.origin}` : undefined;
 
 	return (
 		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
 			<PageHeader
 				title="Wallet Pass"
 				description={
-					isDirty
-						? "You have unsaved changes"
-						: "Generate Apple Wallet passes for your page"
+					isDirty ? "You have unsaved changes" : "Generate Apple Wallet passes for your page"
 				}
 				badge={
 					<Badge
 						variant="outline"
-						className={isConfigured
-							? "gap-1 border-emerald-500/30 text-emerald-500"
-							: "gap-1 border-amber-500/30 text-amber-500"
+						className={
+							isConfigured
+								? "gap-1 border-emerald-500/30 text-emerald-500"
+								: "gap-1 border-amber-500/30 text-amber-500"
 						}
 					>
 						<Settings2 className="h-3 w-3" />
@@ -90,11 +81,7 @@ export default function WalletPage() {
 				actions={
 					<>
 						{isDirty && (
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={handleDiscard}
-							>
+							<Button variant="ghost" size="sm" onClick={handleDiscard}>
 								<Undo2 className="mr-1.5 h-3.5 w-3.5" />
 								Discard
 							</Button>
@@ -144,10 +131,7 @@ export default function WalletPage() {
 								<p className="mb-4 text-xs font-medium text-muted-foreground">
 									Your wallet pass is ready to download
 								</p>
-								<a
-									href="/api/wallet-pass"
-									className="transition-opacity hover:opacity-80"
-								>
+								<a href="/api/wallet-pass" className="transition-opacity hover:opacity-80">
 									<svg
 										xmlns="http://www.w3.org/2000/svg"
 										width="240"
@@ -156,12 +140,7 @@ export default function WalletPage() {
 										role="img"
 										aria-label="Add to Apple Wallet"
 									>
-										<rect
-											width="240"
-											height="40"
-											rx="6"
-											className="fill-black dark:fill-white"
-										/>
+										<rect width="240" height="40" rx="6" className="fill-black dark:fill-white" />
 										<rect
 											x="0.75"
 											y="0.75"
@@ -192,8 +171,7 @@ export default function WalletPage() {
 							<div className="flex items-start gap-2.5 pl-1.5">
 								<Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
 								<p className="text-xs leading-relaxed text-muted-foreground">
-									Complete the configuration above to enable
-									wallet pass generation.
+									Complete the configuration above to enable wallet pass generation.
 								</p>
 							</div>
 						</div>
@@ -222,51 +200,26 @@ export default function WalletPage() {
 									<div className="px-3 pt-1 pb-4">
 										<WalletPassPreview
 											backgroundColor={
-												livePreview?.backgroundColor ??
-												previewQuery.data?.backgroundColor
+												livePreview?.backgroundColor ?? previewQuery.data?.backgroundColor
 											}
 											foregroundColor={
-												livePreview?.foregroundColor ??
-												previewQuery.data?.foregroundColor
+												livePreview?.foregroundColor ?? previewQuery.data?.foregroundColor
 											}
-											labelColor={
-												livePreview?.labelColor ?? previewQuery.data?.labelColor
-											}
-											logoUrl={
-												livePreview?.logoUrl ??
-												previewQuery.data?.logoUrl ??
-												undefined
-											}
+											labelColor={livePreview?.labelColor ?? previewQuery.data?.labelColor}
+											logoUrl={livePreview?.logoUrl ?? previewQuery.data?.logoUrl ?? undefined}
 											organizationName={
-												livePreview?.organizationName ??
-												previewQuery.data?.organizationName
+												livePreview?.organizationName ?? previewQuery.data?.organizationName
 											}
-											profileName={
-												previewQuery.data?.profile?.name ?? undefined
-											}
-											profileEmail={
-												previewQuery.data?.profile?.email ?? undefined
-											}
-											profileImage={
-												previewQuery.data?.profile?.image ?? undefined
-											}
+											profileName={previewQuery.data?.profile?.name ?? undefined}
+											profileEmail={previewQuery.data?.profile?.email ?? undefined}
+											profileImage={previewQuery.data?.profile?.image ?? undefined}
 											passDescription={
-												livePreview?.passDescription ??
-												previewQuery.data?.passDescription
+												livePreview?.passDescription ?? previewQuery.data?.passDescription
 											}
 											qrUrl={publicProfileUrl}
-											showEmail={
-												livePreview?.showEmail ??
-												previewQuery.data?.showEmail
-											}
-											showName={
-												livePreview?.showName ??
-												previewQuery.data?.showName
-											}
-											showQrCode={
-												livePreview?.showQrCode ??
-												previewQuery.data?.showQrCode
-											}
+											showEmail={livePreview?.showEmail ?? previewQuery.data?.showEmail}
+											showName={livePreview?.showName ?? previewQuery.data?.showName}
+											showQrCode={livePreview?.showQrCode ?? previewQuery.data?.showQrCode}
 										/>
 									</div>
 								</DeviceFrame>

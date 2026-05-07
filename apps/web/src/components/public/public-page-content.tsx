@@ -13,7 +13,6 @@ import { FooterActions } from "./footer-actions";
 import { usePreview } from "./preview-context";
 import { ProfileSocialIcons } from "./profile-social-icons";
 import type { ThemeColors } from "./public-page";
-import { themePresets } from "@linkden/ui";
 import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 
 interface SocialNetwork {
@@ -95,8 +94,14 @@ export function PageSkeleton() {
 /** Group consecutive blocks with layout:"inline" into 50/50 pairs */
 function groupBlocksWithInlineRows(
 	blocks: PageContentProps["blocks"],
-): Array<{ type: "single"; block: PageContentProps["blocks"][number] } | { type: "inline-row"; blocks: PageContentProps["blocks"] }> {
-	const result: Array<{ type: "single"; block: PageContentProps["blocks"][number] } | { type: "inline-row"; blocks: PageContentProps["blocks"] }> = [];
+): Array<
+	| { type: "single"; block: PageContentProps["blocks"][number] }
+	| { type: "inline-row"; blocks: PageContentProps["blocks"] }
+> {
+	const result: Array<
+		| { type: "single"; block: PageContentProps["blocks"][number] }
+		| { type: "inline-row"; blocks: PageContentProps["blocks"] }
+	> = [];
 	let inlineBuffer: PageContentProps["blocks"] = [];
 
 	for (const block of blocks) {
@@ -174,7 +179,7 @@ function renderBlock(
 					themeColors={themeColors}
 				/>
 			);
-		
+
 		case "connect":
 			return (
 				<ConnectBlock
@@ -220,7 +225,9 @@ export function PageContent({
 	colorMode,
 }: PageContentProps) {
 	const { isPreview } = usePreview();
-	const hasBanner = settings.bannerEnabled && (settings.bannerPreset || (settings.bannerMode === "custom" && settings.bannerCustomUrl));
+	const hasBanner =
+		settings.bannerEnabled &&
+		(settings.bannerPreset || (settings.bannerMode === "custom" && settings.bannerCustomUrl));
 
 	const Wrapper = isPreview ? "div" : "main";
 	const ProfileWrapper = isPreview ? "div" : "header";
@@ -251,10 +258,7 @@ export function PageContent({
 	} as React.CSSProperties;
 
 	return (
-		<div
-			className="ld-page min-h-dvh"
-			style={cssVarStyle}
-		>
+		<div className="ld-page min-h-dvh" style={cssVarStyle}>
 			{settings.customCss && <style>{settings.customCss}</style>}
 
 			{hasBanner && (
@@ -273,7 +277,9 @@ export function PageContent({
 				className={`mx-auto max-w-lg px-4 ${hasBanner ? "py-0" : "py-10 md:py-16"}`}
 			>
 				{/* Profile Section: Avatar -> Name -> Bio -> Social Icons */}
-				<ProfileWrapper className={`ld-profile relative z-10 mb-10 text-center ${hasBanner ? "-mt-20" : ""}`}>
+				<ProfileWrapper
+					className={`ld-profile relative z-10 mb-10 text-center ${hasBanner ? "-mt-20" : ""}`}
+				>
 					<Avatar
 						src={profile.image}
 						name={profile.name}
@@ -289,7 +295,10 @@ export function PageContent({
 						{profile.isVerified && (
 							<svg
 								className="h-6 w-6 shrink-0"
-								style={{ color: themeColors.primary, filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.15))" }}
+								style={{
+									color: themeColors.primary,
+									filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.15))",
+								}}
 								viewBox="0 0 24 24"
 								fill="currentColor"
 								aria-hidden="true"
@@ -297,7 +306,11 @@ export function PageContent({
 								aria-label="Verified account"
 							>
 								<title>Verified</title>
-								<path fillRule="evenodd" d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-1.549 3.397 4.491 4.491 0 01-1.307 3.497 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clipRule="evenodd" />
+								<path
+									fillRule="evenodd"
+									d="M8.603 3.799A4.49 4.49 0 0112 2.25c1.357 0 2.573.6 3.397 1.549a4.49 4.49 0 013.498 1.307 4.491 4.491 0 011.307 3.497A4.49 4.49 0 0121.75 12a4.49 4.49 0 01-1.549 3.397 4.491 4.491 0 01-1.307 3.497 4.491 4.491 0 01-3.497 1.307A4.49 4.49 0 0112 21.75a4.49 4.49 0 01-3.397-1.549 4.49 4.49 0 01-3.498-1.306 4.491 4.491 0 01-1.307-3.498A4.49 4.49 0 012.25 12c0-1.357.6-2.573 1.549-3.397a4.49 4.49 0 011.307-3.497 4.49 4.49 0 013.497-1.307zm7.007 6.387a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z"
+									clipRule="evenodd"
+								/>
 							</svg>
 						)}
 					</h1>
@@ -325,7 +338,11 @@ export function PageContent({
 				</ProfileWrapper>
 
 				{/* Blocks with inline row support — stagger fade-in (50ms cascade) */}
-				<div className="ld-blocks space-y-3.5 pb-8 w-[90%] sm:w-full mx-auto" role="list" aria-label="Links and content">
+				<div
+					className="ld-blocks space-y-3.5 pb-8 w-[90%] sm:w-full mx-auto"
+					role="list"
+					aria-label="Links and content"
+				>
 					{groupedBlocks.map((group, index) => {
 						const animProps = getAnimationProps(index);
 						if (group.type === "inline-row") {

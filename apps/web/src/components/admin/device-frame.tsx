@@ -152,10 +152,7 @@ export function DeviceFrame({
 	}, [onScroll]);
 
 	return (
-		<div
-			className={cn("relative mx-auto", className)}
-			style={{ width }}
-		>
+		<div className={cn("relative mx-auto", className)} style={{ width }}>
 			<div
 				className="overflow-hidden rounded-[2rem] border-[6px]"
 				style={{
@@ -171,11 +168,7 @@ export function DeviceFrame({
 				<div
 					ref={scrollRef}
 					onScroll={scrollable ? handleScroll : undefined}
-					className={cn(
-						scrollable
-							? "overflow-y-auto overflow-x-hidden"
-							: "overflow-hidden",
-					)}
+					className={cn(scrollable ? "overflow-y-auto overflow-x-hidden" : "overflow-hidden")}
 					style={scrollable ? { height } : undefined}
 				>
 					<div

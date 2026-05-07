@@ -111,11 +111,17 @@ export default function ResetPasswordPage() {
 								<div className="mx-auto flex h-10 w-10 items-center justify-center bg-primary/90 text-primary-foreground text-sm font-bold rounded-xl">
 									LD
 								</div>
-								<h1 className="mt-4 text-2xl font-bold text-white tracking-tight">Reset Password</h1>
+								<h1 className="mt-4 text-2xl font-bold text-white tracking-tight">
+									Reset Password
+								</h1>
 								<p className="mt-1 text-sm text-slate-400">Enter a new password for your account</p>
 							</div>
 
-							<form onSubmit={handleSubmit} className="space-y-4" aria-describedby={formError ? "reset-error" : undefined}>
+							<form
+								onSubmit={handleSubmit}
+								className="space-y-4"
+								aria-describedby={formError ? "reset-error" : undefined}
+							>
 								<div aria-live="polite" aria-atomic="true">
 									{formError && (
 										<div
@@ -225,7 +231,10 @@ export default function ResetPasswordPage() {
 					{!success && (
 						<p className="mt-4 text-center text-xs text-slate-500">
 							Remember your password?{" "}
-							<a href="/admin/login" className="text-primary hover:text-primary/80 transition-colors">
+							<a
+								href="/admin/login"
+								className="text-primary hover:text-primary/80 transition-colors"
+							>
 								Sign in
 							</a>
 						</p>

@@ -21,12 +21,7 @@ interface PhoneFrameProps {
  */
 export function PhoneFrame({ children, previewDark, isLoading }: PhoneFrameProps) {
 	return (
-		<DeviceFrame
-			width={340}
-			height={570}
-			previewDark={previewDark}
-			isLoading={isLoading}
-		>
+		<DeviceFrame width={340} height={570} previewDark={previewDark} isLoading={isLoading}>
 			<div
 				style={{
 					width: FULL_WIDTH,

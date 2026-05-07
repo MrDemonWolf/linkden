@@ -54,10 +54,7 @@ export default function QRPage() {
 			<p className="mt-4 text-xs text-muted-foreground font-mono">
 				{url || "Point your camera at this code to open the link"}
 			</p>
-			<a
-				href="/"
-				className="mt-6 text-sm text-primary hover:underline"
-			>
+			<a href="/" className="mt-6 text-sm text-primary hover:underline">
 				Back to page
 			</a>
 		</div>

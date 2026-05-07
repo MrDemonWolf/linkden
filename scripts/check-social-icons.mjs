@@ -5,14 +5,14 @@
  * and adds candidates to data/social-networks.json
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const dataPath = resolve(__dirname, "../data/social-networks.json");
 
-const socialKeywords = [
+const _socialKeywords = [
 	"social",
 	"chat",
 	"messenger",
@@ -33,9 +33,7 @@ async function main() {
 	const existingSlugs = new Set(existing.map((s) => s.slug));
 
 	// Check npm for latest simple-icons
-	const response = await fetch(
-		"https://registry.npmjs.org/simple-icons/latest",
-	);
+	const response = await fetch("https://registry.npmjs.org/simple-icons/latest");
 	const pkg = await response.json();
 	console.log(`Latest simple-icons version: ${pkg.version}`);
 

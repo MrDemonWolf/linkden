@@ -38,9 +38,7 @@ export function ConnectionListItem({
 			onClick={onSelect}
 			className={cn(
 				"relative flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors",
-				isSelected
-					? "bg-primary/5 dark:bg-primary/10"
-					: "hover:bg-muted/30",
+				isSelected ? "bg-primary/5 dark:bg-primary/10" : "hover:bg-muted/30",
 				!connection.isRead && "bg-blue-500/5",
 			)}
 		>
@@ -67,21 +65,14 @@ export function ConnectionListItem({
 			<div
 				className={cn(
 					"flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
-					connection.isRead
-						? "bg-muted text-muted-foreground"
-						: "bg-blue-500/10 text-blue-500",
+					connection.isRead ? "bg-muted text-muted-foreground" : "bg-blue-500/10 text-blue-500",
 				)}
 			>
 				{initials(connection.name)}
 			</div>
 			<div className="min-w-0 flex-1">
 				<div className="flex items-baseline gap-2">
-					<p
-						className={cn(
-							"truncate text-xs",
-							!connection.isRead && "font-semibold",
-						)}
-					>
+					<p className={cn("truncate text-xs", !connection.isRead && "font-semibold")}>
 						{connection.name || "Anonymous"}
 					</p>
 					<span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
@@ -89,9 +80,7 @@ export function ConnectionListItem({
 					</span>
 				</div>
 				<div className="flex items-center gap-1.5">
-					<p className="truncate text-[11px] text-muted-foreground">
-						{connection.email}
-					</p>
+					<p className="truncate text-[11px] text-muted-foreground">{connection.email}</p>
 				</div>
 				<div className="flex items-center gap-1.5">
 					{connection.whereMet && (

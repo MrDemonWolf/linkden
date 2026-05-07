@@ -28,11 +28,7 @@ import { cn } from "@/lib/utils";
 import { themePresets } from "@linkden/ui/themes";
 import { ShaderBanner } from "@/components/public/shader-banner";
 import { WolfLogo } from "@/components/wolf-logo";
-import {
-	getLoginBgStyle,
-	getLoginShaderPreset,
-	isCustomLoginBg,
-} from "@/lib/login-bg";
+import { getLoginBgStyle, getLoginShaderPreset, isCustomLoginBg } from "@/lib/login-bg";
 
 // ─── Setup Wizard ──────────────────────────────────────────────────────────
 // Four-step first-run wizard: Account → Profile → Customize → Done.
@@ -71,10 +67,7 @@ function saveProgress(data: Partial<SetupProgress>) {
 	if (typeof window === "undefined") return;
 	try {
 		const current = loadProgress();
-		localStorage.setItem(
-			PROGRESS_KEY,
-			JSON.stringify({ ...current, ...data }),
-		);
+		localStorage.setItem(PROGRESS_KEY, JSON.stringify({ ...current, ...data }));
 	} catch {
 		// ignore
 	}
@@ -116,18 +109,14 @@ function SetupSidebar({
 				) : (
 					<WolfLogo className="h-8 w-8" />
 				)}
-				<span className="text-sm font-semibold tracking-tight">
-					{siteName}
-				</span>
+				<span className="text-sm font-semibold tracking-tight">{siteName}</span>
 			</div>
 
 			<div className="mb-1 flex items-baseline justify-between">
 				<span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
 					Setup
 				</span>
-				<span className="data-mono text-[11px] text-muted-foreground">
-					{percent}%
-				</span>
+				<span className="data-mono text-[11px] text-muted-foreground">{percent}%</span>
 			</div>
 			<div className="mb-6 h-1 overflow-hidden rounded-full bg-border">
 				<div
@@ -158,7 +147,9 @@ function SetupSidebar({
 											"flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-colors",
 											isComplete && "border-primary bg-primary text-white",
 											isActive && "border-primary bg-primary/15 text-primary",
-											!isActive && !isComplete && "border-border bg-background text-muted-foreground",
+											!isActive &&
+												!isComplete &&
+												"border-border bg-background text-muted-foreground",
 										)}
 									>
 										{isComplete ? (
@@ -187,10 +178,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 					const isComplete = num < currentStep;
 					const isActive = num === currentStep;
 					return (
-						<li
-							key={label}
-							className="flex flex-1 items-center last:flex-none"
-						>
+						<li key={label} className="flex flex-1 items-center last:flex-none">
 							<div className="flex flex-col items-center gap-2">
 								<div
 									className={cn(
@@ -199,9 +187,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 											"border-primary bg-primary text-white shadow-lg shadow-primary/30",
 										isActive &&
 											"border-primary bg-primary/10 text-primary shadow-lg shadow-primary/20",
-										!isComplete &&
-											!isActive &&
-											"border-border bg-muted text-muted-foreground",
+										!isComplete && !isActive && "border-border bg-muted text-muted-foreground",
 									)}
 									aria-current={isActive ? "step" : undefined}
 								>
@@ -211,7 +197,10 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 										<Icon className="h-4 w-4" />
 									)}
 									{isActive && (
-										<span className="absolute inset-0 rounded-full animate-ping border border-primary/30" style={{ animationDuration: "2s" }} />
+										<span
+											className="absolute inset-0 rounded-full animate-ping border border-primary/30"
+											style={{ animationDuration: "2s" }}
+										/>
 									)}
 								</div>
 								<span
@@ -278,23 +267,13 @@ function StepHeader({
 					<Icon className="h-5 w-5 text-primary" />
 				</div>
 			)}
-			<h1 className="text-xl font-bold tracking-tight text-foreground">
-				{title}
-			</h1>
-			<p className="mt-1.5 text-sm text-muted-foreground">
-				{description}
-			</p>
+			<h1 className="text-xl font-bold tracking-tight text-foreground">{title}</h1>
+			<p className="mt-1.5 text-sm text-muted-foreground">{description}</p>
 		</div>
 	);
 }
 
-function StepFooter({
-	left,
-	right,
-}: {
-	left?: React.ReactNode;
-	right: React.ReactNode;
-}) {
+function StepFooter({ left, right }: { left?: React.ReactNode; right: React.ReactNode }) {
 	return (
 		<div className="mt-7 flex items-center justify-between border-t border-border pt-5">
 			<div>{left}</div>
@@ -351,10 +330,7 @@ function Step1Account({
 
 			<div className="space-y-4">
 				<div className="space-y-1.5">
-					<Label
-						htmlFor="setup-name"
-						className="text-sm font-medium text-foreground"
-					>
+					<Label htmlFor="setup-name" className="text-sm font-medium text-foreground">
 						Full Name
 					</Label>
 					<Input
@@ -372,10 +348,7 @@ function Step1Account({
 				</div>
 
 				<div className="space-y-1.5">
-					<Label
-						htmlFor="setup-email"
-						className="text-sm font-medium text-foreground"
-					>
+					<Label htmlFor="setup-email" className="text-sm font-medium text-foreground">
 						Email Address
 					</Label>
 					<Input
@@ -394,10 +367,7 @@ function Step1Account({
 				</div>
 
 				<div className="space-y-1.5">
-					<Label
-						htmlFor="setup-password"
-						className="text-sm font-medium text-foreground"
-					>
+					<Label htmlFor="setup-password" className="text-sm font-medium text-foreground">
 						Password
 					</Label>
 					<div className="relative">
@@ -420,11 +390,7 @@ function Step1Account({
 							aria-label={showPassword ? "Hide password" : "Show password"}
 							aria-pressed={showPassword}
 						>
-							{showPassword ? (
-								<EyeOff className="h-3.5 w-3.5" />
-							) : (
-								<Eye className="h-3.5 w-3.5" />
-							)}
+							{showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
 						</button>
 					</div>
 					<FieldError message={formErrors.password} />
@@ -489,10 +455,7 @@ function Step2Profile({
 
 			<div className="space-y-5">
 				<div className="space-y-1.5">
-					<Label
-						htmlFor="profile-display-name"
-						className="text-sm font-medium text-foreground"
-					>
+					<Label htmlFor="profile-display-name" className="text-sm font-medium text-foreground">
 						Display Name
 					</Label>
 					<Input
@@ -506,10 +469,7 @@ function Step2Profile({
 
 				<div>
 					<div className="mb-1.5 flex items-center justify-between">
-						<Label
-							htmlFor="profile-bio"
-							className="text-sm font-medium text-foreground"
-						>
+						<Label htmlFor="profile-bio" className="text-sm font-medium text-foreground">
 							Short Bio
 						</Label>
 						<span
@@ -607,18 +567,9 @@ function ThemeCard({
 			title={preset.label}
 		>
 			{/* Preview */}
-			<div
-				className="flex h-14 w-full flex-col gap-1 p-2"
-				style={{ backgroundColor: bg }}
-			>
-				<div
-					className="h-2 w-3/4 rounded-full opacity-60"
-					style={{ backgroundColor: card }}
-				/>
-				<div
-					className="h-5 w-full rounded"
-					style={{ backgroundColor: card }}
-				/>
+			<div className="flex h-14 w-full flex-col gap-1 p-2" style={{ backgroundColor: bg }}>
+				<div className="h-2 w-3/4 rounded-full opacity-60" style={{ backgroundColor: card }} />
+				<div className="h-5 w-full rounded" style={{ backgroundColor: card }} />
 				<div
 					className="h-2 rounded-full"
 					style={{
@@ -629,12 +580,8 @@ function ThemeCard({
 
 			{/* Label */}
 			<div className="bg-muted px-2 py-1.5 flex items-center justify-between">
-				<span className="truncate text-[10px] font-semibold text-foreground">
-					{preset.label}
-				</span>
-				{selected && (
-					<Check className="h-3 w-3 shrink-0 text-primary stroke-[3]" />
-				)}
+				<span className="truncate text-[10px] font-semibold text-foreground">{preset.label}</span>
+				{selected && <Check className="h-3 w-3 shrink-0 text-primary stroke-[3]" />}
 			</div>
 
 			{/* Color dots */}
@@ -732,13 +679,7 @@ function Step3Customize({
 
 // ─── Step 4: Done ─────────────────────────────────────────────────────────────
 
-function Step4Done({
-	displayName,
-	onContinue,
-}: {
-	displayName: string;
-	onContinue: () => void;
-}) {
+function Step4Done({ displayName, onContinue }: { displayName: string; onContinue: () => void }) {
 	const firstName = displayName.trim().split(" ")[0] || "there";
 	return (
 		<div className="p-6 sm:p-10 text-center">
@@ -756,8 +697,7 @@ function Step4Done({
 				You&apos;re all set, {firstName}!
 			</h1>
 			<p className="mx-auto mt-2 mb-8 max-w-xs text-sm text-muted-foreground">
-				Your LinkDen is ready. Start building your page, adding links, and
-				making it yours.
+				Your LinkDen is ready. Start building your page, adding links, and making it yours.
 			</p>
 
 			<Button
@@ -793,9 +733,7 @@ export default function SetupPage() {
 	const [themePreset, setThemePreset] = useState("default");
 	const [hydrated, setHydrated] = useState(false);
 
-	const { data: hasUsersData, isLoading } = useQuery(
-		trpc.public.hasUsers.queryOptions(),
-	);
+	const { data: hasUsersData, isLoading } = useQuery(trpc.public.hasUsers.queryOptions());
 	const setupStatus = useQuery(trpc.public.getSetupStatus.queryOptions());
 	const branding = setupStatus.data?.branding;
 	const loginBgStyle = getLoginBgStyle(branding);
@@ -865,8 +803,7 @@ export default function SetupPage() {
 		if (!name.trim()) errors.name = "What should we call you?";
 		if (!email.trim()) errors.email = "We need your email to set up your account";
 		if (!password) errors.password = "Pick a password to secure your account";
-		else if (password.length < 8)
-			errors.password = "A bit short — use at least 8 characters";
+		else if (password.length < 8) errors.password = "A bit short — use at least 8 characters";
 
 		setFormErrors(errors);
 		if (Object.keys(errors).length > 0) return;
@@ -899,8 +836,7 @@ export default function SetupPage() {
 		try {
 			type BulkInput = Parameters<typeof updateBulk.mutateAsync>[0];
 			const updates: BulkInput = [];
-			if (displayName.trim())
-				updates.push({ key: "profile_name", value: displayName.trim() });
+			if (displayName.trim()) updates.push({ key: "profile_name", value: displayName.trim() });
 			if (bio.trim()) updates.push({ key: "bio", value: bio.trim() });
 			if (updates.length > 0) await updateBulk.mutateAsync(updates);
 		} catch {
@@ -916,9 +852,7 @@ export default function SetupPage() {
 		setIsSubmitting(true);
 		try {
 			type BulkInput = Parameters<typeof updateBulk.mutateAsync>[0];
-			await updateBulk.mutateAsync([
-				{ key: "theme_preset", value: themePreset },
-			] as BulkInput);
+			await updateBulk.mutateAsync([{ key: "theme_preset", value: themePreset }] as BulkInput);
 		} catch {
 			// non-blocking
 		} finally {
@@ -935,18 +869,13 @@ export default function SetupPage() {
 	};
 
 	return (
-		<div
-			className="login-bg relative min-h-screen overflow-hidden"
-			style={loginBgStyle}
-		>
+		<div className="login-bg relative min-h-screen overflow-hidden" style={loginBgStyle}>
 			{loginShaderPreset && (
 				<div className="absolute inset-0">
 					<ShaderBanner preset={loginShaderPreset} />
 				</div>
 			)}
-			{hasCustomBg && (
-				<div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
-			)}
+			{hasCustomBg && <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />}
 			{/* Theme toggle */}
 			<div className="absolute right-4 top-4 z-20">
 				<ThemeToggle />
@@ -962,11 +891,7 @@ export default function SetupPage() {
 					)}
 				>
 					{step < 4 && (
-						<SetupSidebar
-							currentStep={step}
-							siteName={siteName}
-							logoUrl={loginLogoUrl}
-						/>
+						<SetupSidebar currentStep={step} siteName={siteName} logoUrl={loginLogoUrl} />
 					)}
 
 					<div className={cn("flex-1 min-w-0", step < 4 && "lg:flex lg:flex-col")}>
@@ -980,78 +905,76 @@ export default function SetupPage() {
 						<div
 							className={cn(
 								"login-glass-card overflow-hidden rounded-2xl shadow-2xl mx-auto w-full max-w-[480px]",
-								step < 4 && "lg:rounded-none lg:border-0 lg:shadow-none lg:bg-transparent lg:max-w-none lg:flex-1",
+								step < 4 &&
+									"lg:rounded-none lg:border-0 lg:shadow-none lg:bg-transparent lg:max-w-none lg:flex-1",
 							)}
 						>
-					{step === 1 && (
-						<Step1Account
-							name={name}
-							setName={setName}
-							email={email}
-							setEmail={setEmail}
-							password={password}
-							setPassword={setPassword}
-							showPassword={showPassword}
-							setShowPassword={setShowPassword}
-							formErrors={formErrors}
-							setFormErrors={setFormErrors}
-							isSubmitting={isSubmitting}
-							onSubmit={handleAccountSubmit}
-						/>
-					)}
-					{step === 2 && (
-						<Step2Profile
-							displayName={displayName}
-							setDisplayName={setDisplayName}
-							bio={bio}
-							setBio={setBio}
-							isSubmitting={isSubmitting}
-							onBack={() => goStep(1)}
-							onSkip={() => goStep(3)}
-							onSubmit={handleProfileSubmit}
-						/>
-					)}
-					{step === 3 && (
-						<Step3Customize
-							themePreset={themePreset}
-							setThemePreset={(v) => {
-								setThemePreset(v);
-								saveProgress({ themePreset: v });
-							}}
-							isSubmitting={isSubmitting}
-							onBack={() => goStep(2)}
-							onSkip={() => {
-								clearProgress();
-								goStep(4);
-							}}
-							onSubmit={handleCustomizeSubmit}
-						/>
-					)}
-					{step === 4 && (
-						<Step4Done
-							displayName={displayName || name}
-							onContinue={handleDone}
-						/>
-					)}
-				</div>
+							{step === 1 && (
+								<Step1Account
+									name={name}
+									setName={setName}
+									email={email}
+									setEmail={setEmail}
+									password={password}
+									setPassword={setPassword}
+									showPassword={showPassword}
+									setShowPassword={setShowPassword}
+									formErrors={formErrors}
+									setFormErrors={setFormErrors}
+									isSubmitting={isSubmitting}
+									onSubmit={handleAccountSubmit}
+								/>
+							)}
+							{step === 2 && (
+								<Step2Profile
+									displayName={displayName}
+									setDisplayName={setDisplayName}
+									bio={bio}
+									setBio={setBio}
+									isSubmitting={isSubmitting}
+									onBack={() => goStep(1)}
+									onSkip={() => goStep(3)}
+									onSubmit={handleProfileSubmit}
+								/>
+							)}
+							{step === 3 && (
+								<Step3Customize
+									themePreset={themePreset}
+									setThemePreset={(v) => {
+										setThemePreset(v);
+										saveProgress({ themePreset: v });
+									}}
+									isSubmitting={isSubmitting}
+									onBack={() => goStep(2)}
+									onSkip={() => {
+										clearProgress();
+										goStep(4);
+									}}
+									onSubmit={handleCustomizeSubmit}
+								/>
+							)}
+							{step === 4 && (
+								<Step4Done displayName={displayName || name} onContinue={handleDone} />
+							)}
+						</div>
 
-				{/* Resume notice — shown when progress was restored mid-wizard */}
-				{step > 1 && step < 4 && hydrated && (
-					<p className="mt-3 text-center text-[11px] text-muted-foreground">
-						Progress saved —{" "}
-						<button
-							type="button"
-							className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
-							onClick={() => {
-								clearProgress();
-								goStep(1);
-							}}
-						>
-							start over
-						</button>
-					</p>
-				)}
-				</div>
+						{/* Resume notice — shown when progress was restored mid-wizard */}
+						{step > 1 && step < 4 && hydrated && (
+							<p className="mt-3 text-center text-[11px] text-muted-foreground">
+								Progress saved —{" "}
+								<button
+									type="button"
+									className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
+									onClick={() => {
+										clearProgress();
+										goStep(1);
+									}}
+								>
+									start over
+								</button>
+							</p>
+						)}
+					</div>
 				</div>
 			</div>
 		</div>

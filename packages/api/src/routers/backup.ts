@@ -1,11 +1,6 @@
 import { router, protectedProcedure } from "../index";
 import { db } from "@linkden/db";
-import {
-	block,
-	siteSettings,
-	socialNetwork,
-	contactSubmission,
-} from "@linkden/db/schema/index";
+import { block, siteSettings, socialNetwork, contactSubmission } from "@linkden/db/schema/index";
 import { logAudit } from "../utils/audit";
 import { eq, asc, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -28,15 +23,9 @@ import {
 
 export const backupRouter = router({
 	export: protectedProcedure.query(async () => {
-		const blocks = await db
-			.select()
-			.from(block)
-			.orderBy(asc(block.position));
+		const blocks = await db.select().from(block).orderBy(asc(block.position));
 		const settings = await db.select().from(siteSettings);
-		const socials = await db
-			.select()
-			.from(socialNetwork)
-			.orderBy(asc(socialNetwork.slug));
+		const socials = await db.select().from(socialNetwork).orderBy(asc(socialNetwork.slug));
 		const contacts = await db.select().from(contactSubmission);
 
 		// Exclude secrets from backup — credentials should never leave the database
@@ -105,10 +94,7 @@ export const backupRouter = router({
 				for (const b of data.blocks) {
 					const blockId = b.id;
 					if (mode === "merge") {
-						const [existing] = await db
-							.select()
-							.from(block)
-							.where(eq(block.id, blockId));
+						const [existing] = await db.select().from(block).where(eq(block.id, blockId));
 						if (existing) {
 							await db
 								.update(block)
@@ -136,13 +122,10 @@ export const backupRouter = router({
 
 					if (!url) continue;
 
-					await db
-						.insert(socialNetwork)
-						.values({ slug, url, isActive })
-						.onConflictDoUpdate({
-							target: socialNetwork.slug,
-							set: { url, isActive },
-						});
+					await db.insert(socialNetwork).values({ slug, url, isActive }).onConflictDoUpdate({
+						target: socialNetwork.slug,
+						set: { url, isActive },
+					});
 				}
 			}
 
@@ -173,17 +156,21 @@ export const backupRouter = router({
 					littlelink_description: z.string().optional(),
 					theme: z.string().optional(),
 					profile_image: z.string().optional(),
-					links: z.array(z.object({
-						button_id: z.string().optional(),
-						link: z.string().optional(),
-						title: z.string().optional(),
-						order: z.number().optional(),
-						click_number: z.number().optional(),
-						custom_css: z.string().optional(),
-						custom_icon: z.string().optional(),
-						type: z.number().optional(),
-						type_params: z.string().optional(),
-					})).optional(),
+					links: z
+						.array(
+							z.object({
+								button_id: z.string().optional(),
+								link: z.string().optional(),
+								title: z.string().optional(),
+								order: z.number().optional(),
+								click_number: z.number().optional(),
+								custom_css: z.string().optional(),
+								custom_icon: z.string().optional(),
+								type: z.number().optional(),
+								type_params: z.string().optional(),
+							}),
+						)
+						.optional(),
 				}),
 				options: z.object({
 					importLinks: z.boolean(),

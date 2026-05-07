@@ -36,9 +36,7 @@ export function ContactListItem({
 			onClick={onSelect}
 			className={cn(
 				"relative flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors",
-				isSelected
-					? "bg-primary/5 dark:bg-primary/10"
-					: "hover:bg-muted/30",
+				isSelected ? "bg-primary/5 dark:bg-primary/10" : "hover:bg-muted/30",
 				!contact.isRead && "bg-amber-500/5",
 			)}
 		>
@@ -65,21 +63,14 @@ export function ContactListItem({
 			<div
 				className={cn(
 					"flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
-					contact.isRead
-						? "bg-muted text-muted-foreground"
-						: "bg-amber-500/10 text-amber-500",
+					contact.isRead ? "bg-muted text-muted-foreground" : "bg-amber-500/10 text-amber-500",
 				)}
 			>
 				{initials(contact.name)}
 			</div>
 			<div className="min-w-0 flex-1">
 				<div className="flex items-baseline gap-2">
-					<p
-						className={cn(
-							"truncate text-xs",
-							!contact.isRead && "font-semibold",
-						)}
-					>
+					<p className={cn("truncate text-xs", !contact.isRead && "font-semibold")}>
 						{contact.name || "Anonymous"}
 					</p>
 					<span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
@@ -87,9 +78,7 @@ export function ContactListItem({
 					</span>
 				</div>
 				<div className="flex items-center gap-1.5">
-					<p className="truncate text-[11px] text-muted-foreground">
-						{contact.email}
-					</p>
+					<p className="truncate text-[11px] text-muted-foreground">{contact.email}</p>
 					{contact.blockTitle && (
 						<span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">
 							{contact.blockTitle}

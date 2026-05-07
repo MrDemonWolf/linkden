@@ -118,9 +118,7 @@ function SidebarContent({
 
 	function renderNavItem(item: { href: string; label: string; icon: React.ElementType }) {
 		const isActive =
-			item.href === "/admin"
-				? pathname === "/admin"
-				: pathname.startsWith(item.href);
+			item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
 		const Icon = item.icon;
 
 		return (
@@ -129,7 +127,11 @@ function SidebarContent({
 				href={item.href as never}
 				onClick={onNavClick}
 				aria-current={isActive ? "page" : undefined}
-				aria-label={item.label === "Connections" && unreadCount > 0 ? `Connections, ${unreadCount} unread` : undefined}
+				aria-label={
+					item.label === "Connections" && unreadCount > 0
+						? `Connections, ${unreadCount} unread`
+						: undefined
+				}
 				className={cn(
 					"relative flex items-center gap-2.5 rounded-lg px-3 py-2 min-h-[44px] text-xs font-medium transition-all",
 					isActive
@@ -178,9 +180,9 @@ function SidebarContent({
 						<p className="px-3 pt-1 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
 							{group.label}
 						</p>
-						{(group.items as readonly { href: string; label: string; icon: React.ElementType }[]).map((item) =>
-							renderNavItem(item),
-						)}
+						{(
+							group.items as readonly { href: string; label: string; icon: React.ElementType }[]
+						).map((item) => renderNavItem(item))}
 					</div>
 				))}
 			</nav>
@@ -234,11 +236,7 @@ function SidebarContent({
 	);
 }
 
-export default function AdminLayout({
-	children,
-}: {
-	children: React.ReactNode;
-}) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const { data: session, isPending } = authClient.useSession();
@@ -270,7 +268,10 @@ export default function AdminLayout({
 	const siteName = siteNameQuery.data?.value || "LinkDen";
 
 	const isPublicRoute =
-		pathname === "/admin/login" || pathname === "/admin/setup" || pathname === "/admin/reset-password" || pathname.startsWith("/admin/reset-password");
+		pathname === "/admin/login" ||
+		pathname === "/admin/setup" ||
+		pathname === "/admin/reset-password" ||
+		pathname.startsWith("/admin/reset-password");
 
 	useEffect(() => {
 		if (!isPending && !session?.user && !isPublicRoute) {
@@ -284,7 +285,11 @@ export default function AdminLayout({
 
 	if (isPending) {
 		return (
-			<div className="flex min-h-screen items-center justify-center" role="status" aria-label="Loading">
+			<div
+				className="flex min-h-screen items-center justify-center"
+				role="status"
+				aria-label="Loading"
+			>
 				<div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
 			</div>
 		);
@@ -309,7 +314,10 @@ export default function AdminLayout({
 			</a>
 
 			{/* Desktop sidebar */}
-			<aside aria-label="Sidebar" className="hidden w-56 shrink-0 border-r border-white/20 dark:border-white/10 bg-white/30 dark:bg-black/40 backdrop-blur-2xl z-20 md:block">
+			<aside
+				aria-label="Sidebar"
+				className="hidden w-56 shrink-0 border-r border-white/20 dark:border-white/10 bg-white/30 dark:bg-black/40 backdrop-blur-2xl z-20 md:block"
+			>
 				<div className="sticky top-0 h-screen overflow-y-auto">
 					<SidebarContent
 						pathname={pathname}
@@ -345,11 +353,7 @@ export default function AdminLayout({
 					aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
 					aria-expanded={mobileMenuOpen}
 				>
-					{mobileMenuOpen ? (
-						<X className="h-4 w-4" />
-					) : (
-						<Menu className="h-4 w-4" />
-					)}
+					{mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
 				</button>
 			</div>
 
@@ -375,8 +379,17 @@ export default function AdminLayout({
 									<p className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
 										{group.label}
 									</p>
-									{(group.items as readonly { href: string; label: string; icon: React.ElementType }[]).map((item) => {
-										const isActive = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
+									{(
+										group.items as readonly {
+											href: string;
+											label: string;
+											icon: React.ElementType;
+										}[]
+									).map((item) => {
+										const isActive =
+											item.href === "/admin"
+												? pathname === "/admin"
+												: pathname.startsWith(item.href);
 										const Icon = item.icon;
 										return (
 											<Link
@@ -408,7 +421,10 @@ export default function AdminLayout({
 							<div className="flex items-center gap-2">
 								<Avatar className="h-6 w-6 shrink-0">
 									<AvatarImage
-										src={sessionUser?.image ?? (sessionUser?.email ? getGravatarUrl(sessionUser.email, 48) : undefined)}
+										src={
+											sessionUser?.image ??
+											(sessionUser?.email ? getGravatarUrl(sessionUser.email, 48) : undefined)
+										}
 										alt={sessionUser?.name ?? "Admin"}
 									/>
 									<AvatarFallback className="text-xs font-semibold">
@@ -434,12 +450,13 @@ export default function AdminLayout({
 			)}
 
 			{/* Mobile bottom nav */}
-			<nav aria-label="Quick navigation" className="fixed inset-x-0 bottom-0 z-40 flex border-t border-white/20 dark:border-white/10 backdrop-blur-2xl bg-white/70 dark:bg-black/40 md:hidden">
+			<nav
+				aria-label="Quick navigation"
+				className="fixed inset-x-0 bottom-0 z-40 flex border-t border-white/20 dark:border-white/10 backdrop-blur-2xl bg-white/70 dark:bg-black/40 md:hidden"
+			>
 				{BOTTOM_NAV_ITEMS.map((item) => {
 					const isActive =
-						item.href === "/admin"
-							? pathname === "/admin"
-							: pathname.startsWith(item.href);
+						item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
 					const Icon = item.icon;
 
 					return (
@@ -449,9 +466,7 @@ export default function AdminLayout({
 							aria-current={isActive ? "page" : undefined}
 							className={cn(
 								"flex flex-1 flex-col items-center justify-center gap-1 min-h-[48px] text-xs font-medium transition-colors",
-								isActive
-									? "text-primary"
-									: "text-muted-foreground",
+								isActive ? "text-primary" : "text-muted-foreground",
 							)}
 						>
 							<Icon className="h-5 w-5" />
