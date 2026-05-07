@@ -5,21 +5,24 @@ description: Deploy LinkDen on Cloudflare Workers and D1 — the recommended hos
 
 # ☁️ Cloudflare Deployment
 
-Deploy LinkDen to Cloudflare's free tier with two Workers and a D1 database. LinkDen was built for this.
+Deploy LinkDen to Cloudflare's **free tier** with two Workers and a D1 database. LinkDen was purpose-built for this — one command does everything.
 
 ### ⚡ TL;DR
-- **Hosting:** Cloudflare Workers (Free tier is plenty).
-- **Database:** Cloudflare D1 (SQLite).
-- **Tooling:** Alchemy (IaC) handles the heavy lifting.
-- **Command:** `bun ship` deploys everything.
+1. Get a free Cloudflare account → create an API token.
+2. Fill in `.env` with your token, account ID, and secrets.
+3. Run `bun ship`. *(Deploy everything in one shot.)*
+4. Copy the real URLs from the output → update `.env` → run `bun ship` again.
+5. Go to `/admin/setup` and create your account. Done.
 
 ---
 
-## 1. ✅ Prerequisites
+## ✅ Step 0 — Prerequisites
 
-- [ ] A **Cloudflare account** (free tier works).
-- [ ] **Node.js 20+** and **[Bun](https://bun.sh)** installed.
-- [ ] Your LinkDen repo cloned:
+Before you start, make sure you have:
+
+- [ ] A [Cloudflare account](https://dash.cloudflare.com/sign-up) (free tier is fine)
+- [ ] [Bun](https://bun.sh) installed (`bun --version` should work)
+- [ ] The repo cloned and dependencies installed:
 
 ```bash
 git clone https://github.com/mrdemonwolf/linkden.git
@@ -29,90 +32,170 @@ bun install
 
 ---
 
-## 2. 🔑 Step 1: Cloudflare API Token
+## 🔑 Step 1 — Create a Cloudflare API Token
 
-Create a token so LinkDen can manage your resources.
+LinkDen uses Alchemy (IaC) to provision your Workers, D1 database, and R2 storage automatically. It needs an API token to do that.
 
-1. Go to **Profile > My Profile > API Tokens** in the Cloudflare dashboard.
-2. Click **Create Token** > **Custom token**.
-3. Add these **Edit** permissions:
-   - `Account` -> `Cloudflare Workers Scripts`
-   - `Account` -> `D1`
-   - `Account` -> `Workers KV Storage`
-4. Select your **Account** under Account Resources.
-5. **Copy the token!** (It's only shown once).
+1. Log in to the [Cloudflare dashboard](https://dash.cloudflare.com).
+2. Click your profile icon (top right) → **My Profile**.
+3. Go to **API Tokens** → **Create Token** → **Custom token**.
+4. Add the following **Edit** permissions:
+
+   | Resource | Permission |
+   |----------|-----------|
+   | Account → Cloudflare Workers Scripts | Edit |
+   | Account → D1 | Edit |
+   | Account → Workers KV Storage | Edit |
+   | Account → Workers Rate Limiting | Edit |
+   | Account → Cloudflare Images | Edit |
+   | Account → R2 Storage | Edit |
+   | User → Memberships | Read |
+
+5. Under **Account Resources**, select your account.
+6. Click **Continue to summary** → **Create Token**.
+7. **Copy the token immediately** — it's only shown once.
+
+> 💡 **Where's my Account ID?** Find it on the main Cloudflare dashboard in the right sidebar, or run `npx wrangler whoami`.
 
 ---
 
-## 3. 🆔 Step 2: Account ID
+## ⚙️ Step 2 — Configure `.env`
 
-1. Find your **Account ID** on the Cloudflare dashboard overview page (right sidebar).
-2. Or run: `npx wrangler whoami`.
-
----
-
-## 4. ⚙️ Step 3: Configure `.env`
-
-Create a `.env` file in the project root:
+Create a `.env` file in the **project root** (not inside `apps/`):
 
 ```bash
-# Cloudflare Credentials
-CLOUDFLARE_API_TOKEN=your-api-token
-CLOUDFLARE_ACCOUNT_ID=your-account-id
+# ── Cloudflare ─────────────────────────────────────────────
+CLOUDFLARE_API_TOKEN=paste-your-token-here
+CLOUDFLARE_ACCOUNT_ID=paste-your-account-id-here
 
-# App URLs (Use placeholders first, update after deploy)
+# ── App URLs ────────────────────────────────────────────────
+# Use placeholder values for now — you'll get real URLs after first deploy.
+# Your subdomain is your Cloudflare account name (shown in the dashboard).
 NEXT_PUBLIC_SERVER_URL=https://linkden-server.<your-subdomain>.workers.dev
 CORS_ORIGIN=https://linkden-web.<your-subdomain>.workers.dev
 
-# Better Auth
-BETTER_AUTH_SECRET=your-random-secret
+# ── Better Auth ─────────────────────────────────────────────
+BETTER_AUTH_SECRET=paste-a-random-secret-here
 BETTER_AUTH_URL=https://linkden-server.<your-subdomain>.workers.dev
+
+# ── Apple Wallet (optional — skip if you don't need Wallet passes) ──
+# WALLET_SIGNER_CERT=base64encodedcert...
+# WALLET_SIGNER_KEY=base64encodedkey...
+# WALLET_WWDR_CERT=base64encodedwwdr...
+# WALLET_TEAM_ID=ABC12DEF34
+# WALLET_PASS_TYPE_ID=pass.com.yourname.linkden
 ```
 
-> **Tip:** Generate a secret with `openssl rand -base64 32`.
+**Generate a secret:**
+```bash
+openssl rand -base64 32
+```
+
+> 💡 **What's my subdomain?** It's the account name shown in the Cloudflare dashboard sidebar (e.g. `myname` → `linkden-server.myname.workers.dev`). You can also find it after the first deploy in the command output.
 
 ---
 
-## 5. 🚀 Step 4: Deploy
+## 🚀 Step 3 — First Deploy
 
 ```bash
 bun ship
 ```
 
-**What happens?**
-Alchemy automatically creates your D1 database, runs migrations, sets up R2 storage, and deploys your Workers.
+This single command:
+1. Creates your **D1 database** and runs schema migrations.
+2. Creates your **R2 bucket** for image storage.
+3. Deploys the **API Worker** (`linkden-server`).
+4. Deploys the **Web Worker** (`linkden-web`).
 
-### 🔄 Important: Update URLs
-Once the command finishes, it will output your real Worker URLs. **Update your `.env`** with these URLs and run `bun ship` one more time to sync them.
-
----
-
-## 6. 👤 Step 5: Setup Admin
-
-1. Visit: `https://linkden-web.<subdomain>.workers.dev/admin/setup`.
-2. Create your account.
-3. **First user becomes admin.** Registration locks automatically after that.
+At the end, the terminal prints your **real Worker URLs**, like:
+```
+Web    -> https://linkden-web.myname.workers.dev
+Server -> https://linkden-server.myname.workers.dev
+```
 
 ---
 
-## 7. 🌐 Step 6: Custom Domains (Optional)
+## 🔄 Step 4 — Update URLs and Redeploy
 
-1. Go to **Workers & Pages** in Cloudflare.
-2. Select your Worker > **Settings > Domains & Routes** > **Add Custom Domain**.
-3. Update your `.env` URLs and run `bun ship` again.
+> **This step is required.** Workers need to know their own URLs to handle auth and CORS correctly.
+
+1. Copy the URLs from the Step 3 output.
+2. Update `.env` with the real URLs (replace the placeholder `<your-subdomain>` values):
+
+```bash
+NEXT_PUBLIC_SERVER_URL=https://linkden-server.myname.workers.dev
+CORS_ORIGIN=https://linkden-web.myname.workers.dev
+BETTER_AUTH_URL=https://linkden-server.myname.workers.dev
+```
+
+3. Run deploy again:
+
+```bash
+bun ship
+```
+
+---
+
+## 👤 Step 5 — Create Your Admin Account
+
+1. Open your web Worker URL: `https://linkden-web.myname.workers.dev/admin/setup`
+2. Fill in your email and password.
+3. Click **Create Account**.
+
+> **First user is admin.** Registration permanently locks after this — no one else can sign up.
+
+---
+
+## 🌐 Step 6 — Custom Domain (Optional)
+
+Want `links.yourdomain.com` instead of `.workers.dev`?
+
+1. Go to **Workers & Pages** in the Cloudflare dashboard.
+2. Open your **linkden-web** Worker → **Settings** → **Domains & Routes** → **Add Custom Domain**.
+3. Repeat for **linkden-server** with your API subdomain.
+4. Update `.env` with the new URLs.
+5. Run `bun ship` one more time.
+
+See the [Custom Domain guide](/docs/self-hosting/custom-domain) for more details.
 
 ---
 
 ## 🛠️ Common Commands
 
-- `bun ship` - Update/Redeploy.
-- `wrangler tail linkden-server` - See live API logs.
-- `bun destroy` - **Irreversible.** Delete all Cloudflare resources.
+| Command | What it does |
+|---------|-------------|
+| `bun ship` | Build and deploy (safe to run repeatedly) |
+| `bun destroy` | ⚠️ **Irreversible.** Deletes all Cloudflare resources |
+| `wrangler tail linkden-server` | Stream live API logs |
+| `bun db:generate` | Generate a migration from schema changes |
+| `bun db:push` | Push schema to local dev D1 |
 
 ---
 
 ## 💰 Cost Check
-For a typical single user, LinkDen stays **100% within the Free Tier**.
-- **Requests:** 100k/day free.
-- **Database:** 5M reads/day free.
-- **Storage:** 5GB free.
+
+For a typical single-user LinkDen instance, you will stay **100% within Cloudflare's free tier**:
+
+| Resource | Free Tier Limit | Typical Usage |
+|----------|----------------|---------------|
+| Workers requests | 100,000 / day | ~100s / day |
+| D1 reads | 5,000,000 / day | ~1,000s / day |
+| D1 writes | 100,000 / day | ~10s / day |
+| R2 storage | 10 GB | Depends on uploads |
+| R2 requests | 10,000,000 / month | Low |
+
+---
+
+## 🧯 Troubleshooting
+
+### "Missing CORS_ORIGIN" or auth errors after deploy
+You skipped Step 4. Update `.env` with the real URLs and run `bun ship` again.
+
+### "Registration is closed" on `/admin/setup`
+An account already exists. Go to `/admin/login` instead. If you've lost access, run `bun reset:password` locally.
+
+### Worker returns 500 on all routes
+Check your `BETTER_AUTH_SECRET` — it must be set and match what was used on the previous deploy. Run `wrangler tail linkden-server` to see the error.
+
+### D1 binding not found
+Alchemy provisions bindings at deploy time. If you deleted and re-created resources manually, run `bun destroy` then `bun ship` to start fresh.
