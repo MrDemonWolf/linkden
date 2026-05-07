@@ -1,6 +1,5 @@
 import type { CSSProperties } from "react";
-import { bannerPresets, type BannerPreset } from "@linkden/ui";
-import type { ShaderBannerPreset } from "@linkden/ui/banner-presets";
+import { bannerPresets, type BannerPreset, type ShaderBannerPreset } from "@linkden/ui";
 
 export interface LoginBranding {
 	loginBgMode?: "default" | "preset" | "custom" | null;
