@@ -67,7 +67,7 @@ export function isCustomLoginBg(branding: LoginBranding | null | undefined): boo
 	return false;
 }
 
-export function getLoginShaderPreset(branding: LoginBranding | null | undefined): BannerPreset | null {
+export function getLoginShaderPreset(branding: LoginBranding | null | undefined): Extract<BannerPreset, { type: "shader" }> | null {
 	if (!branding || branding.loginBgMode !== "preset") return null;
 	const preset = findLoginBgPreset(branding.loginBgPreset);
 	if (preset && preset.type === "shader") return preset;

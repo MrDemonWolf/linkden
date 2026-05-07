@@ -13,7 +13,6 @@ import { cn } from "@/lib/utils";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
 import { PreviewRenderer } from "@/components/admin/preview-renderer";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
-import { ProfileSection } from "@/components/admin/appearance/profile-section";
 import { ThemePresetsSection } from "@/components/admin/appearance/theme-presets-section";
 import { ColorsSection } from "@/components/admin/appearance/colors-section";
 import { BannerSection } from "@/components/admin/appearance/banner-section";
@@ -21,9 +20,6 @@ import { VerifiedBadgeSection } from "@/components/admin/appearance/branding-sec
 import { CustomCssSection } from "@/components/admin/appearance/custom-css-section";
 
 interface SavedState {
-	profileName: string;
-	profileBio: string;
-	profileAvatar: string;
 	theme: string;
 	colorMode: string;
 	primaryColor: string;
@@ -40,9 +36,6 @@ interface SavedState {
 
 function buildSavedState(settings: Record<string, string>): SavedState {
 	return {
-		profileName: settings.profile_name ?? "",
-		profileBio: settings.bio ?? "",
-		profileAvatar: settings.avatar_url ?? "",
 		theme: settings.theme_preset ?? "default",
 		colorMode: settings.default_color_mode ?? "light",
 		primaryColor: settings.custom_primary ?? "#0FACED",
@@ -66,7 +59,6 @@ export default function AppearancePage() {
 	const settings = settingsQuery.data ?? {};
 
 	const [savedState, setSavedState] = useState<SavedState>({
-		profileName: "", profileBio: "", profileAvatar: "",
 		theme: "default", colorMode: "light",
 		primaryColor: "#0FACED", secondaryColor: "#E2E8F0",
 		accentColor: "#38BDF8", bgColor: "#FFFFFF",
@@ -75,9 +67,6 @@ export default function AppearancePage() {
 		verifiedBadge: false,
 	});
 
-	const [profileName, setProfileName] = useState("");
-	const [profileBio, setProfileBio] = useState("");
-	const [profileAvatar, setProfileAvatar] = useState("");
 	const [selectedTheme, setSelectedTheme] = useState("default");
 	const [colorMode, setColorMode] = useState("light");
 	const [primaryColor, setPrimaryColor] = useState("#0FACED");
@@ -112,9 +101,6 @@ export default function AppearancePage() {
 		if (settingsQuery.data) {
 			const s = buildSavedState(settings);
 			setSavedState(s);
-			setProfileName(s.profileName);
-			setProfileBio(s.profileBio);
-			setProfileAvatar(s.profileAvatar);
 			setSelectedTheme(s.theme);
 			setColorMode(s.colorMode);
 			setPrimaryColor(s.primaryColor);
@@ -131,9 +117,6 @@ export default function AppearancePage() {
 	}, [settingsQuery.data]);
 
 	const isDirty =
-		profileName !== savedState.profileName ||
-		profileBio !== savedState.profileBio ||
-		profileAvatar !== savedState.profileAvatar ||
 		selectedTheme !== savedState.theme ||
 		colorMode !== savedState.colorMode ||
 		primaryColor !== savedState.primaryColor ||
@@ -170,9 +153,6 @@ export default function AppearancePage() {
 	const handlePublish = async () => {
 		try {
 			await updateSettings.mutateAsync([
-				{ key: "profile_name", value: profileName },
-				{ key: "bio", value: profileBio },
-				{ key: "avatar_url", value: profileAvatar },
 				{ key: "theme_preset", value: selectedTheme },
 				{ key: "default_color_mode", value: colorMode },
 				{ key: "custom_primary", value: primaryColor },
@@ -187,7 +167,6 @@ export default function AppearancePage() {
 				{ key: "verified_badge", value: String(verifiedBadge) },
 				]);
 			setSavedState({
-				profileName, profileBio, profileAvatar,
 				theme: selectedTheme, colorMode,
 				primaryColor, secondaryColor, accentColor, bgColor,
 				customCss, bannerEnabled, bannerPreset, bannerMode, bannerCustomUrl,
@@ -201,9 +180,6 @@ export default function AppearancePage() {
 	};
 
 	const handleDiscard = () => {
-		setProfileName(savedState.profileName);
-		setProfileBio(savedState.profileBio);
-		setProfileAvatar(savedState.profileAvatar);
 		setSelectedTheme(savedState.theme);
 		setColorMode(savedState.colorMode);
 		setPrimaryColor(savedState.primaryColor);
@@ -259,9 +235,9 @@ export default function AppearancePage() {
 
 	const previewOverrides = {
 		profile: {
-			name: profileName || "Your Name",
-			bio: profileBio || null,
-			image: profileAvatar || null,
+			name: settings.profile_name || "Your Name",
+			bio: settings.bio || null,
+			image: settings.avatar_url || null,
 			isVerified: verifiedBadge,
 		},
 		themeColors: {
@@ -309,15 +285,6 @@ export default function AppearancePage() {
 			<div className="flex gap-6">
 				{/* Settings column */}
 				<div className="flex-1 min-w-0 space-y-5">
-					<ProfileSection
-						profileName={profileName}
-						profileBio={profileBio}
-						profileAvatar={profileAvatar}
-						onNameChange={setProfileName}
-						onBioChange={setProfileBio}
-						onAvatarChange={setProfileAvatar}
-					/>
-
 					<ThemePresetsSection
 						selectedTheme={selectedTheme}
 						onThemeSelect={handleThemeSelect}

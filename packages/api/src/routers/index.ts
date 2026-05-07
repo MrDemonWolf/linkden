@@ -9,6 +9,7 @@ import { vcardRouter } from "./vcard";
 import { backupRouter } from "./backup";
 import { versionRouter } from "./version";
 import { publicRouter } from "./public";
+import { dangerRouter } from "./danger";
 
 export const appRouter = router({
 	healthCheck: publicProcedure.query(() => {
@@ -24,6 +25,7 @@ export const appRouter = router({
 	backup: backupRouter,
 	version: versionRouter,
 	public: publicRouter,
+	danger: dangerRouter,
 });
 
 export type AppRouter = typeof appRouter;
