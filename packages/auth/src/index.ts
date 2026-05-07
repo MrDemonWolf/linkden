@@ -48,6 +48,31 @@ export const auth = betterAuth({
       });
     },
   },
+  user: {
+    changeEmail: {
+      enabled: true,
+      sendChangeEmailVerification: async ({ user, newEmail, url }: { user: { email: string }; newEmail: string; url: string }) => {
+        const { apiKey, from } = await getEmailSettings();
+        if (!apiKey) {
+          console.warn("No email API key configured; skipping email-change verification");
+          return;
+        }
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            from,
+            to: user.email,
+            subject: "Confirm your new LinkDen email",
+            html: `<p>You requested to change your LinkDen email to <strong>${newEmail}</strong>.</p><p>Click the link below to confirm:</p><p><a href="${url}">${url}</a></p><p>If you didn't request this, ignore this email.</p>`,
+          }),
+        });
+      },
+    },
+  },
   // uncomment cookieCache setting when ready to deploy to Cloudflare using *.workers.dev domains
   // session: {
   //   cookieCache: {

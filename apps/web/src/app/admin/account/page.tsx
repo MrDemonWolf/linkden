@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -9,8 +10,11 @@ import {
 	Loader2,
 	QrCode,
 	Shield,
-	ShieldOff,
 	Key,
+	Lock,
+	AlertTriangle,
+	Mail,
+	X,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
@@ -20,15 +24,110 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/admin/page-header";
 import { SectionHeader } from "@/components/admin/section-header";
+import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { ProfileSection } from "@/components/admin/appearance/profile-section";
+import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+import { cn } from "@/lib/utils";
+
+// ─── Account Page — Stacked Sections ───────────────────────────────────────
+// Single-column layout: Profile → Login & Security → Danger zone.
+// Profile fields persist via the same site_settings keys used by the public
+// page renderer (profile_name, bio, avatar_url) so changes propagate live.
+
+function relativeDays(date: Date | null | undefined): string {
+	if (!date) return "never changed";
+	const days = Math.max(0, Math.floor((Date.now() - date.getTime()) / 86_400_000));
+	if (days === 0) return "changed today";
+	if (days === 1) return "changed yesterday";
+	return `last changed ${days} days ago`;
+}
 
 export default function AccountPage() {
 	const qc = useQueryClient();
+	const router = useRouter();
 	const { data: session } = authClient.useSession();
 	const user = session?.user;
+	const { getAnimationProps } = useEntranceAnimation();
 
-	// ─── Change Password ─────────────────────────────────────────────────
+	// ─── Profile (settings-backed) ───────────────────────────────────────
+	const settingsQuery = useQuery(trpc.settings.getAll.queryOptions());
+	const updateSettings = useMutation(trpc.settings.updateBulk.mutationOptions());
+	const settings = settingsQuery.data ?? {};
+
+	const [profileName, setProfileName] = useState("");
+	const [profileBio, setProfileBio] = useState("");
+	const [profileAvatar, setProfileAvatar] = useState("");
+	const [savedProfile, setSavedProfile] = useState({ name: "", bio: "", avatar: "" });
+
+	useEffect(() => {
+		if (settingsQuery.data) {
+			const name = settings.profile_name ?? "";
+			const bio = settings.bio ?? "";
+			const avatar = settings.avatar_url ?? "";
+			setProfileName(name);
+			setProfileBio(bio);
+			setProfileAvatar(avatar);
+			setSavedProfile({ name, bio, avatar });
+		}
+	}, [settingsQuery.data]);
+
+	const profileDirty =
+		profileName !== savedProfile.name ||
+		profileBio !== savedProfile.bio ||
+		profileAvatar !== savedProfile.avatar;
+
+	useUnsavedChanges(profileDirty);
+
+	const handleSaveProfile = async () => {
+		try {
+			await updateSettings.mutateAsync([
+				{ key: "profile_name", value: profileName },
+				{ key: "bio", value: profileBio },
+				{ key: "avatar_url", value: profileAvatar },
+			]);
+			setSavedProfile({ name: profileName, bio: profileBio, avatar: profileAvatar });
+			qc.invalidateQueries({ queryKey: trpc.settings.getAll.queryOptions().queryKey });
+			toast.success("Profile saved");
+		} catch {
+			toast.error("Failed to save profile");
+		}
+	};
+
+	// ─── Email change ────────────────────────────────────────────────────
+	const [emailEditing, setEmailEditing] = useState(false);
+	const [newEmail, setNewEmail] = useState("");
+	const [isChangingEmail, setIsChangingEmail] = useState(false);
+
+	const handleChangeEmail = async () => {
+		if (!newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+			toast.error("Enter a valid email address");
+			return;
+		}
+		setIsChangingEmail(true);
+		try {
+			await (authClient as unknown as {
+				changeEmail: (args: { newEmail: string; callbackURL: string }) => Promise<{ error?: { message?: string } }>;
+			}).changeEmail({
+				newEmail,
+				callbackURL: "/admin/account",
+			});
+			toast.success("Verification email sent to your current address");
+			setEmailEditing(false);
+			setNewEmail("");
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : "Failed to change email";
+			toast.error(msg);
+		} finally {
+			setIsChangingEmail(false);
+		}
+	};
+
+	// ─── Password change ─────────────────────────────────────────────────
+	const [passwordOpen, setPasswordOpen] = useState(false);
 	const [currentPassword, setCurrentPassword] = useState("");
 	const [newPassword, setNewPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
@@ -56,6 +155,7 @@ export default function AccountPage() {
 						setCurrentPassword("");
 						setNewPassword("");
 						setConfirmPassword("");
+						setPasswordOpen(false);
 					},
 					onError: (err) => {
 						toast.error(err.error.message || "Failed to update password");
@@ -67,7 +167,7 @@ export default function AccountPage() {
 		}
 	};
 
-	// ─── Two-Factor Auth ─────────────────────────────────────────────────
+	// ─── 2FA ──────────────────────────────────────────────────────────────
 	const [twoFaPassword, setTwoFaPassword] = useState("");
 	const [twoFaCode, setTwoFaCode] = useState("");
 	const [totpUri, setTotpUri] = useState<string | null>(null);
@@ -75,7 +175,8 @@ export default function AccountPage() {
 	const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 	const [is2faEnabled, setIs2faEnabled] = useState(false);
 	const [is2faLoading, setIs2faLoading] = useState(false);
-	const [showTwoFaSetup, setShowTwoFaSetup] = useState(false);
+	const [twoFaModalOpen, setTwoFaModalOpen] = useState(false);
+	const [twoFaMode, setTwoFaMode] = useState<"enable" | "disable" | "verify">("enable");
 
 	useEffect(() => {
 		if (user && "twoFactorEnabled" in user) {
@@ -93,6 +194,15 @@ export default function AccountPage() {
 		});
 	}, [totpUri]);
 
+	const open2faModal = (mode: "enable" | "disable") => {
+		setTwoFaMode(mode);
+		setTwoFaPassword("");
+		setTwoFaCode("");
+		setTotpUri(null);
+		setBackupCodes([]);
+		setTwoFaModalOpen(true);
+	};
+
 	const handleEnable2FA = async () => {
 		if (!twoFaPassword) {
 			toast.error("Enter your current password to enable 2FA");
@@ -105,7 +215,7 @@ export default function AccountPage() {
 				const data = result.data as Record<string, unknown>;
 				setTotpUri((data.totpURI as string | null) ?? null);
 				setBackupCodes((data.backupCodes as string[]) ?? []);
-				setShowTwoFaSetup(true);
+				setTwoFaMode("verify");
 				toast.success("Scan the QR code with your authenticator app");
 			}
 		} catch {
@@ -117,7 +227,7 @@ export default function AccountPage() {
 
 	const handleVerify2FA = async () => {
 		if (!twoFaCode) {
-			toast.error("Enter the 6-digit code from your authenticator");
+			toast.error("Enter the 6-digit code");
 			return;
 		}
 		setIs2faLoading(true);
@@ -127,7 +237,7 @@ export default function AccountPage() {
 				{
 					onSuccess: () => {
 						setIs2faEnabled(true);
-						setShowTwoFaSetup(false);
+						setTwoFaModalOpen(false);
 						setTotpUri(null);
 						setBackupCodes([]);
 						setTwoFaPassword("");
@@ -157,6 +267,7 @@ export default function AccountPage() {
 					onSuccess: () => {
 						setIs2faEnabled(false);
 						setTwoFaPassword("");
+						setTwoFaModalOpen(false);
 						toast.success("Two-factor authentication disabled");
 					},
 					onError: (err) => {
@@ -169,7 +280,7 @@ export default function AccountPage() {
 		}
 	};
 
-	// ─── Magic Link Toggle ─────────────────────────────────────────────
+	// ─── Magic Link Toggle ──────────────────────────────────────────────
 	const magicLinkQuery = useQuery(trpc.settings.get.queryOptions({ key: "magic_link_enabled" }));
 	const updateSettingsMl = useMutation(trpc.settings.updateBulk.mutationOptions());
 	const [magicLinkEnabled, setMagicLinkEnabled] = useState(false);
@@ -194,138 +305,354 @@ export default function AccountPage() {
 		}
 	};
 
+	// ─── Danger zone ─────────────────────────────────────────────────────
+	const deleteAllContent = useMutation(trpc.danger.deleteAllContent.mutationOptions());
+	const resetEverything = useMutation(trpc.danger.resetEverything.mutationOptions());
+	const [deleteContentOpen, setDeleteContentOpen] = useState(false);
+	const [resetConfirm, setResetConfirm] = useState("");
+	const [resetDialogOpen, setResetDialogOpen] = useState(false);
+
+	const handleDeleteAllContent = async () => {
+		try {
+			await deleteAllContent.mutateAsync();
+			toast.success("All content removed");
+			qc.invalidateQueries();
+			setDeleteContentOpen(false);
+		} catch {
+			toast.error("Failed to delete content");
+		}
+	};
+
+	const handleResetEverything = async () => {
+		try {
+			await resetEverything.mutateAsync();
+			await authClient.signOut();
+			toast.success("LinkDen reset — restarting setup");
+			router.push("/admin/setup");
+		} catch {
+			toast.error("Failed to reset");
+		}
+	};
+
+	// updatedAt as a proxy for "last password change" — auth doesn't track this separately.
+	const userUpdatedAt = user?.updatedAt ? new Date(user.updatedAt) : null;
+
+	if (settingsQuery.isLoading) {
+		return (
+			<div className="space-y-6 max-w-2xl" aria-busy="true" role="status" aria-label="Loading account">
+				<Skeleton className="h-12 w-64" />
+				<Skeleton className="h-48" />
+				<Skeleton className="h-64" />
+				<Skeleton className="h-40" />
+			</div>
+		);
+	}
+
 	return (
-		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
+		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6 max-w-2xl">
 			<PageHeader
 				title="Account"
-				description="Manage your password, two-factor authentication, and sign-in methods"
+				description="Manage your profile, sign-in, and destructive operations"
+				actions={
+					profileDirty ? (
+						<Button
+							size="sm"
+							onClick={handleSaveProfile}
+							disabled={updateSettings.isPending}
+						>
+							{updateSettings.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+							Save
+						</Button>
+					) : undefined
+				}
 			/>
 
-			<div className="space-y-6">
-				{/* Change Password */}
-				<Card>
-					<SectionHeader icon={Shield} title="Change Password" variant="muted" />
-					<CardContent className="space-y-3">
-						<form onSubmit={handleChangePassword} className="space-y-3">
-							<div className="space-y-1.5">
-								<Label htmlFor="currentPw" className="text-xs text-muted-foreground">Current Password</Label>
-								<div className="relative">
-									<Input
-										id="currentPw"
-										type={showCurrentPw ? "text" : "password"}
-										value={currentPassword}
-										onChange={(e) => setCurrentPassword(e.target.value)}
-										autoComplete="current-password"
-										className="pr-10"
-									/>
-									<button
-										type="button"
-										className="absolute right-0.5 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground"
-										onClick={() => setShowCurrentPw(!showCurrentPw)}
-										aria-label={showCurrentPw ? "Hide password" : "Show password"}
-									>
-										{showCurrentPw ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-									</button>
-								</div>
-							</div>
+			<div className="space-y-5">
+				{/* ─── Profile ─── */}
+				<div {...getAnimationProps(0)}>
+					<ProfileSection
+						profileName={profileName}
+						profileBio={profileBio}
+						profileAvatar={profileAvatar}
+						onNameChange={setProfileName}
+						onBioChange={setProfileBio}
+						onAvatarChange={setProfileAvatar}
+					/>
+				</div>
 
-							<div className="space-y-1.5">
-								<Label htmlFor="newPw" className="text-xs text-muted-foreground">New Password</Label>
-								<div className="relative">
-									<Input
-										id="newPw"
-										type={showNewPw ? "text" : "password"}
-										value={newPassword}
-										onChange={(e) => setNewPassword(e.target.value)}
-										autoComplete="new-password"
-										className="pr-10"
-									/>
-									<button
-										type="button"
-										className="absolute right-0.5 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground"
-										onClick={() => setShowNewPw(!showNewPw)}
-										aria-label={showNewPw ? "Hide password" : "Show password"}
-									>
-										{showNewPw ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-									</button>
+				{/* ─── Login & Security ─── */}
+				<div {...getAnimationProps(1)}>
+					<Card>
+						<SectionHeader icon={Lock} title="Login & Security" variant="muted" />
+						<CardContent className="space-y-0 pt-0">
+							{/* Email row */}
+							<div className="grid grid-cols-[1fr_auto] gap-3 items-center py-3 border-b border-dashed border-border">
+								<div className="min-w-0">
+									<div className="text-xs font-medium flex items-center gap-1.5">
+										<Mail className="h-3 w-3 text-muted-foreground" />
+										Email
+									</div>
+									<div className="text-[11px] font-mono text-muted-foreground truncate">
+										{user?.email ?? "—"}
+									</div>
 								</div>
+								{!emailEditing ? (
+									<Button size="sm" variant="outline" onClick={() => setEmailEditing(true)}>
+										Change
+									</Button>
+								) : (
+									<Button size="sm" variant="ghost" onClick={() => { setEmailEditing(false); setNewEmail(""); }}>
+										<X className="h-3.5 w-3.5" />
+									</Button>
+								)}
 							</div>
+							{emailEditing && (
+								<div className="py-3 space-y-2 border-b border-dashed border-border">
+									<Label htmlFor="newEmail" className="text-xs text-muted-foreground">New email address</Label>
+									<div className="flex gap-2">
+										<Input
+											id="newEmail"
+											type="email"
+											value={newEmail}
+											onChange={(e) => setNewEmail(e.target.value)}
+											placeholder="you@example.com"
+											autoComplete="email"
+										/>
+										<Button size="sm" onClick={handleChangeEmail} disabled={isChangingEmail || !newEmail}>
+											{isChangingEmail ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Send"}
+										</Button>
+									</div>
+									<p className="text-[10px] text-muted-foreground">
+										A verification link will be sent to your current email.
+									</p>
+								</div>
+							)}
 
-							<div className="space-y-1.5">
-								<Label htmlFor="confirmPw" className="text-xs text-muted-foreground">Confirm New Password</Label>
-								<Input
-									id="confirmPw"
-									type="password"
-									value={confirmPassword}
-									onChange={(e) => setConfirmPassword(e.target.value)}
-									autoComplete="new-password"
+							{/* Password row */}
+							<div className="grid grid-cols-[1fr_auto] gap-3 items-center py-3 border-b border-dashed border-border">
+								<div className="min-w-0">
+									<div className="text-xs font-medium">Password</div>
+									<div className="text-[11px] text-muted-foreground">
+										{relativeDays(userUpdatedAt)}
+									</div>
+								</div>
+								<Button
+									size="sm"
+									variant={passwordOpen ? "ghost" : "outline"}
+									onClick={() => setPasswordOpen((v) => !v)}
+								>
+									{passwordOpen ? <X className="h-3.5 w-3.5" /> : "Change"}
+								</Button>
+							</div>
+							{passwordOpen && (
+								<form onSubmit={handleChangePassword} className="space-y-3 py-3 border-b border-dashed border-border">
+									<div className="space-y-1.5">
+										<Label htmlFor="currentPw" className="text-xs text-muted-foreground">Current password</Label>
+										<div className="relative">
+											<Input
+												id="currentPw"
+												type={showCurrentPw ? "text" : "password"}
+												value={currentPassword}
+												onChange={(e) => setCurrentPassword(e.target.value)}
+												autoComplete="current-password"
+												className="pr-10"
+											/>
+											<button
+												type="button"
+												className="absolute right-0.5 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground"
+												onClick={() => setShowCurrentPw(!showCurrentPw)}
+												aria-label={showCurrentPw ? "Hide password" : "Show password"}
+											>
+												{showCurrentPw ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+											</button>
+										</div>
+									</div>
+									<div className="space-y-1.5">
+										<Label htmlFor="newPw" className="text-xs text-muted-foreground">New password</Label>
+										<div className="relative">
+											<Input
+												id="newPw"
+												type={showNewPw ? "text" : "password"}
+												value={newPassword}
+												onChange={(e) => setNewPassword(e.target.value)}
+												autoComplete="new-password"
+												className="pr-10"
+											/>
+											<button
+												type="button"
+												className="absolute right-0.5 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground"
+												onClick={() => setShowNewPw(!showNewPw)}
+												aria-label={showNewPw ? "Hide password" : "Show password"}
+											>
+												{showNewPw ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+											</button>
+										</div>
+									</div>
+									<div className="space-y-1.5">
+										<Label htmlFor="confirmPw" className="text-xs text-muted-foreground">Confirm new password</Label>
+										<Input
+											id="confirmPw"
+											type="password"
+											value={confirmPassword}
+											onChange={(e) => setConfirmPassword(e.target.value)}
+											autoComplete="new-password"
+										/>
+									</div>
+									<Button
+										type="submit"
+										size="sm"
+										disabled={isChangingPw || !currentPassword || !newPassword || !confirmPassword}
+									>
+										{isChangingPw ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+										Update password
+									</Button>
+								</form>
+							)}
+
+							{/* 2FA row */}
+							<div className="grid grid-cols-[1fr_auto_auto] gap-3 items-center py-3 border-b border-dashed border-border">
+								<div className="min-w-0">
+									<div className="text-xs font-medium">Two-factor authentication</div>
+									<div className="text-[11px] text-muted-foreground">TOTP via authenticator app</div>
+								</div>
+								<Badge variant={is2faEnabled ? "default" : "secondary"} className="text-[10px]">
+									{is2faEnabled ? "enabled" : "disabled"}
+								</Badge>
+								<Switch
+									checked={is2faEnabled}
+									onCheckedChange={(checked) => open2faModal(checked ? "enable" : "disable")}
 								/>
 							</div>
 
-							<Button
-								type="submit"
-								size="sm"
-								disabled={isChangingPw || !currentPassword || !newPassword || !confirmPassword}
-							>
-								{isChangingPw ? (
-									<><Loader2 className="h-4 w-4 animate-spin" /> Updating...</>
-								) : (
-									"Update Password"
-								)}
-							</Button>
-						</form>
-					</CardContent>
-				</Card>
+							{/* Magic link row */}
+							<div className="grid grid-cols-[1fr_auto] gap-3 items-center py-3">
+								<div className="min-w-0">
+									<div className="text-xs font-medium">Magic link sign-in</div>
+									<div className="text-[11px] text-muted-foreground">passwordless · email-only</div>
+								</div>
+								<Switch
+									checked={magicLinkEnabled}
+									onCheckedChange={handleMagicLinkToggle}
+									disabled={updateSettingsMl.isPending}
+								/>
+							</div>
+						</CardContent>
+					</Card>
+				</div>
 
-				{/* Two-Factor Auth */}
-				<Card>
-					<SectionHeader icon={Key} title="Two-Factor Authentication" variant="muted" />
-					<CardContent className="space-y-4">
-						<div className="flex items-center justify-between">
-							<p className="text-[11px] text-muted-foreground">
-								Add an extra layer of security by requiring a code from your authenticator app when signing in.
-							</p>
-							<Badge variant={is2faEnabled ? "default" : "secondary"} className="text-[10px] shrink-0 ml-4">
-								{is2faEnabled ? "Enabled" : "Disabled"}
-							</Badge>
+				{/* ─── Danger zone ─── */}
+				<div {...getAnimationProps(2)}>
+					<Card className="border-destructive/40 bg-destructive/5">
+						<SectionHeader icon={AlertTriangle} title="Danger zone" variant="muted" />
+						<CardContent className="space-y-3 pt-0">
+							<div className="grid grid-cols-[1fr_auto] gap-3 items-center">
+								<div className="min-w-0">
+									<div className="text-xs font-medium">Delete all content</div>
+									<div className="text-[11px] text-muted-foreground">removes blocks + analytics · keeps account</div>
+								</div>
+								<Button size="sm" variant="outline" onClick={() => setDeleteContentOpen(true)}>
+									Delete
+								</Button>
+							</div>
+
+							<div className="grid grid-cols-[1fr_auto] gap-3 items-center pt-3 border-t border-dashed border-destructive/30">
+								<div className="min-w-0">
+									<div className="text-xs font-medium">Reset everything</div>
+									<div className="text-[11px] text-muted-foreground">full wipe · returns to setup wizard</div>
+								</div>
+								<Button
+									size="sm"
+									variant="destructive"
+									disabled={resetConfirm !== "CONFIRM"}
+									onClick={() => setResetDialogOpen(true)}
+								>
+									Reset…
+								</Button>
+							</div>
+
+							<div className="flex gap-2 items-center pt-1">
+								<span className="text-[11px] text-muted-foreground shrink-0">type "CONFIRM" to enable:</span>
+								<Input
+									value={resetConfirm}
+									onChange={(e) => setResetConfirm(e.target.value)}
+									placeholder="CONFIRM"
+									className={cn("flex-1 font-mono text-xs", resetConfirm === "CONFIRM" && "border-destructive")}
+								/>
+							</div>
+						</CardContent>
+					</Card>
+				</div>
+			</div>
+
+			{/* ─── 2FA Modal ─── */}
+			{twoFaModalOpen && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center">
+					<div
+						className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+						onClick={() => !is2faLoading && setTwoFaModalOpen(false)}
+					/>
+					<div className="relative z-10 w-full max-w-md mx-4 rounded-2xl border border-white/15 dark:border-white/10 bg-white dark:bg-neutral-900 p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+						<div className="flex items-center justify-between mb-4">
+							<h2 className="text-sm font-semibold flex items-center gap-1.5">
+								<Key className="h-4 w-4" />
+								{twoFaMode === "disable"
+									? "Disable two-factor"
+									: twoFaMode === "verify"
+										? "Verify authenticator"
+										: "Enable two-factor"}
+							</h2>
+							<Button size="sm" variant="ghost" onClick={() => setTwoFaModalOpen(false)} disabled={is2faLoading}>
+								<X className="h-3.5 w-3.5" />
+							</Button>
 						</div>
 
-						{!showTwoFaSetup ? (
-							<div className="space-y-3">
+						{twoFaMode !== "verify" && (
+							<div className="space-y-4">
+								<p className="text-xs text-muted-foreground">
+									{twoFaMode === "disable"
+										? "Confirm your password to disable two-factor authentication."
+										: "Add an extra layer of security by requiring a code from your authenticator app when signing in."}
+								</p>
 								<div className="space-y-1.5">
-									<Label htmlFor="twoFaPw" className="text-xs text-muted-foreground">Current Password</Label>
+									<Label htmlFor="twoFaPw" className="text-xs text-muted-foreground">Current password</Label>
 									<Input
 										id="twoFaPw"
 										type="password"
 										value={twoFaPassword}
 										onChange={(e) => setTwoFaPassword(e.target.value)}
 										autoComplete="current-password"
-										placeholder="Required to change 2FA settings"
 									/>
 								</div>
-								{is2faEnabled ? (
-									<Button variant="destructive" size="sm" onClick={handleDisable2FA} disabled={is2faLoading || !twoFaPassword}>
-										{is2faLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldOff className="h-4 w-4" />}
-										Disable 2FA
+								<div className="flex justify-end gap-2">
+									<Button variant="outline" size="sm" onClick={() => setTwoFaModalOpen(false)} disabled={is2faLoading}>
+										Cancel
 									</Button>
-								) : (
-									<Button variant="outline" size="sm" onClick={handleEnable2FA} disabled={is2faLoading || !twoFaPassword}>
-										{is2faLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}
-										Enable 2FA
-									</Button>
-								)}
+									{twoFaMode === "disable" ? (
+										<Button variant="destructive" size="sm" onClick={handleDisable2FA} disabled={is2faLoading || !twoFaPassword}>
+											{is2faLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+											Disable
+										</Button>
+									) : (
+										<Button size="sm" onClick={handleEnable2FA} disabled={is2faLoading || !twoFaPassword}>
+											{is2faLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Shield className="h-3.5 w-3.5" />}
+											Continue
+										</Button>
+									)}
+								</div>
 							</div>
-						) : (
+						)}
+
+						{twoFaMode === "verify" && (
 							<div className="space-y-4">
 								<div className="rounded-lg border border-border/50 bg-muted/30 p-4 space-y-3">
 									<p className="text-xs font-medium flex items-center gap-1.5">
 										<QrCode className="h-3.5 w-3.5" />
-										Scan this QR code with your authenticator app
+										Scan with your authenticator app
 									</p>
 									{qrDataUrl ? (
-										<img src={qrDataUrl} alt="TOTP QR code" className="rounded-md" />
+										<img src={qrDataUrl} alt="TOTP QR code" className="rounded-md mx-auto" />
 									) : (
-										<div className="h-[200px] w-[200px] flex items-center justify-center">
+										<div className="h-[200px] w-[200px] mx-auto flex items-center justify-center">
 											<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
 										</div>
 									)}
@@ -336,7 +663,6 @@ export default function AccountPage() {
 										</details>
 									)}
 								</div>
-
 								{backupCodes.length > 0 && (
 									<div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
 										<p className="text-xs font-medium text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
@@ -350,9 +676,8 @@ export default function AccountPage() {
 										</div>
 									</div>
 								)}
-
 								<div className="space-y-1.5">
-									<Label htmlFor="twoFaCode" className="text-xs text-muted-foreground">Verification Code</Label>
+									<Label htmlFor="twoFaCode" className="text-xs text-muted-foreground">Verification code</Label>
 									<Input
 										id="twoFaCode"
 										type="text"
@@ -363,51 +688,43 @@ export default function AccountPage() {
 										placeholder="123456"
 									/>
 								</div>
-
-								<div className="flex gap-2">
-									<Button size="sm" onClick={handleVerify2FA} disabled={is2faLoading || twoFaCode.length !== 6}>
-										{is2faLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-										Verify & Activate
-									</Button>
-									<Button
-										size="sm"
-										variant="ghost"
-										onClick={() => {
-											setShowTwoFaSetup(false);
-											setTotpUri(null);
-											setBackupCodes([]);
-											setTwoFaCode("");
-											setTwoFaPassword("");
-										}}
-									>
+								<div className="flex justify-end gap-2">
+									<Button variant="outline" size="sm" onClick={() => setTwoFaModalOpen(false)} disabled={is2faLoading}>
 										Cancel
+									</Button>
+									<Button size="sm" onClick={handleVerify2FA} disabled={is2faLoading || twoFaCode.length !== 6}>
+										{is2faLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+										Verify & activate
 									</Button>
 								</div>
 							</div>
 						)}
-					</CardContent>
-				</Card>
+					</div>
+				</div>
+			)}
 
-				{/* Magic Link */}
-				<Card>
-					<SectionHeader icon={Shield} title="Magic Link Sign-In" variant="muted" />
-					<CardContent>
-						<div className="flex items-start justify-between gap-4">
-							<div className="space-y-1">
-								<p className="text-xs font-medium">Allow Magic Link Login</p>
-								<p className="text-[11px] text-muted-foreground">
-									Allow signing in via a one-time email link instead of a password. Requires email to be configured in Settings.
-								</p>
-							</div>
-							<Switch
-								checked={magicLinkEnabled}
-								onCheckedChange={handleMagicLinkToggle}
-								disabled={updateSettingsMl.isPending}
-							/>
-						</div>
-					</CardContent>
-				</Card>
-			</div>
+			{/* ─── Confirm dialogs ─── */}
+			<ConfirmDialog
+				open={deleteContentOpen}
+				onOpenChange={setDeleteContentOpen}
+				title="Delete all content?"
+				description="This permanently removes every block, analytics row, and form submission. Your account, settings, and theme stay intact. This cannot be undone."
+				confirmLabel="Delete content"
+				variant="destructive"
+				isPending={deleteAllContent.isPending}
+				onConfirm={handleDeleteAllContent}
+			/>
+
+			<ConfirmDialog
+				open={resetDialogOpen}
+				onOpenChange={setResetDialogOpen}
+				title="Reset LinkDen completely?"
+				description="This wipes all content, analytics, settings, social links, AND your user account. You will be signed out and the setup wizard will start fresh. This cannot be undone."
+				confirmLabel="Reset everything"
+				variant="destructive"
+				isPending={resetEverything.isPending}
+				onConfirm={handleResetEverything}
+			/>
 		</div>
 	);
 }
