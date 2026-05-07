@@ -19,6 +19,12 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { ShaderBanner } from "@/components/public/shader-banner";
+import {
+	getLoginBgStyle,
+	getLoginShaderPreset,
+	isCustomLoginBg,
+} from "@/lib/login-bg";
 
 export default function AdminLoginPage() {
 	const router = useRouter();
@@ -41,6 +47,11 @@ export default function AdminLoginPage() {
 	const hasUsersQuery = useQuery(trpc.public.hasUsers.queryOptions());
 	const branding = setupStatus.data?.branding;
 	const magicLinkEnabled = setupStatus.data?.magicLinkEnabled ?? false;
+	const loginBgStyle = getLoginBgStyle(branding);
+	const loginShaderPreset = getLoginShaderPreset(branding);
+	const hasCustomBg = isCustomLoginBg(branding);
+	const siteName = branding?.siteName || "LinkDen";
+	const loginLogoUrl = branding?.loginLogoUrl || branding?.logoUrl || null;
 
 	// If no users exist yet, redirect to setup
 	useEffect(() => {
@@ -165,8 +176,61 @@ export default function AdminLoginPage() {
 	);
 
 	return (
-		<div className="login-bg relative min-h-screen flex flex-col overflow-hidden">
-			{/* Main */}
+		<div
+			className="login-bg relative min-h-screen overflow-hidden"
+			style={loginBgStyle}
+		>
+			{/* Shader background — full-bleed when a shader preset is selected */}
+			{loginShaderPreset && (
+				<div className="absolute inset-0">
+					<ShaderBanner preset={loginShaderPreset} />
+				</div>
+			)}
+			{/* Legibility overlay for custom + preset images */}
+			{hasCustomBg && (
+				<div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
+			)}
+
+			<div className="relative z-10 min-h-screen lg:grid lg:grid-cols-2">
+				{/* Brand panel — lg+ only */}
+				<aside className="hidden lg:flex flex-col justify-between p-10 xl:p-14 bg-primary/[0.06] border-r border-white/[0.08]">
+					<div className="flex items-center gap-3">
+						{loginLogoUrl ? (
+							<img
+								src={loginLogoUrl}
+								alt=""
+								className="h-10 w-10 rounded-xl object-cover ring-1 ring-white/10"
+							/>
+						) : (
+							<WolfLogo className="h-10 w-10" />
+						)}
+						<span className="text-sm font-semibold tracking-tight text-foreground">
+							{siteName}
+						</span>
+					</div>
+
+					<div className="max-w-md">
+						<h2 className="text-3xl xl:text-4xl font-bold tracking-tight text-foreground leading-[1.1]">
+							Your link-in-bio,
+							<br />
+							<span className="bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent">
+								self-hosted.
+							</span>
+						</h2>
+						<p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+							Owns its data. No accounts, no sync.
+							<br />
+							One person. One page.
+						</p>
+					</div>
+
+					<div className="data-mono text-[11px] text-muted-foreground/70">
+						v0.1.0 · self-hosted
+					</div>
+				</aside>
+
+				{/* Form column */}
+				<div className="flex flex-col min-h-screen lg:min-h-0">
 			<main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6">
 				<div className="w-full max-w-[420px] login-card-enter">
 					{loginSuccess ? (
@@ -197,8 +261,8 @@ export default function AdminLoginPage() {
 						<div className="login-glass-card relative rounded-2xl p-8 sm:p-10 transition-shadow duration-300">
 							{/* Header */}
 							<div className="text-center mb-8">
-								{branding?.logoUrl ? (
-									<img src={branding.logoUrl} alt="" className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-white/10" />
+								{loginLogoUrl ? (
+									<img src={loginLogoUrl} alt="" className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-white/10" />
 								) : (
 									<WolfLogo className="mx-auto h-22 w-22" />
 								)}
@@ -265,8 +329,8 @@ export default function AdminLoginPage() {
 						<div className="login-glass-card relative rounded-2xl p-8 sm:p-10 transition-shadow duration-300">
 							{/* Header */}
 							<div className="text-center mb-8">
-								{branding?.logoUrl ? (
-									<img src={branding.logoUrl} alt="" className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-white/10" />
+								{loginLogoUrl ? (
+									<img src={loginLogoUrl} alt="" className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-white/10" />
 								) : (
 									<WolfLogo className="mx-auto h-22 w-22" />
 								)}
@@ -444,6 +508,8 @@ export default function AdminLoginPage() {
 					) : null}
 				</footer>
 			)}
+				</div>
+			</div>
 
 			{branding?.ppText && (
 				<Dialog open={ppDialogOpen} onOpenChange={setPpDialogOpen}>

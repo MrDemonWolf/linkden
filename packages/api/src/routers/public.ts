@@ -293,6 +293,10 @@ export const publicRouter = router({
 			ppText: settings.branding_pp_text || null,
 			tosMode: (settings.branding_tos_mode as "url" | "text") || "url",
 			tosText: settings.branding_tos_text || null,
+			loginLogoUrl: settings.branding_login_logo_url || null,
+			loginBgMode: (settings.branding_login_bg_mode as "default" | "preset" | "custom") || "default",
+			loginBgPreset: settings.branding_login_bg_preset || null,
+			loginBgCustomUrl: settings.branding_login_bg_custom_url || null,
 		};
 	}),
 
@@ -318,6 +322,10 @@ export const publicRouter = router({
 				ppText: s.branding_pp_text || null,
 				tosMode: (s.branding_tos_mode as "url" | "text") || "url",
 				tosText: s.branding_tos_text || null,
+				loginLogoUrl: s.branding_login_logo_url || null,
+				loginBgMode: (s.branding_login_bg_mode as "default" | "preset" | "custom") || "default",
+				loginBgPreset: s.branding_login_bg_preset || null,
+				loginBgCustomUrl: s.branding_login_bg_custom_url || null,
 			},
 		};
 	}),
