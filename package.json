@@ -10,6 +10,10 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "check-types": "turbo check-types",
+    "typecheck": "turbo check-types",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
     "dev:web": "turbo -F web dev:bare",
     "dev:server": "turbo -F server dev:standalone",
     "dev:docs": "turbo -F docs dev",
@@ -30,6 +34,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
     "@cloudflare/workers-types": "^4.20260415.1",
     "@linkden/config": "workspace:*",
     "@tailwindcss/postcss": "^4.2.2",
