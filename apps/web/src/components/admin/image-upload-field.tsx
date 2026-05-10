@@ -1,72 +1,20 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { Upload, X, Image as ImageIcon, Crop } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-async function processSquareImage(file: File, maxSize: number): Promise<File> {
-	return new Promise((resolve, reject) => {
-		const url = URL.createObjectURL(file);
-		const img = new Image();
-		img.onload = () => {
-			URL.revokeObjectURL(url);
-			const { naturalWidth: w, naturalHeight: h } = img;
-
-			if (w === h && w <= maxSize) {
-				resolve(file);
-				return;
-			}
-
-			const size = Math.min(Math.max(w, h), maxSize);
-			const scale = Math.min(size / w, size / h);
-			const scaledW = Math.round(w * scale);
-			const scaledH = Math.round(h * scale);
-
-			const canvas = document.createElement("canvas");
-			canvas.width = size;
-			canvas.height = size;
-			const ctx = canvas.getContext("2d")!;
-			ctx.clearRect(0, 0, size, size);
-			ctx.drawImage(
-				img,
-				Math.round((size - scaledW) / 2),
-				Math.round((size - scaledH) / 2),
-				scaledW,
-				scaledH,
-			);
-
-			canvas.toBlob((blob) => {
-				if (!blob) {
-					reject(new Error("Canvas export failed"));
-					return;
-				}
-				resolve(new File([blob], file.name.replace(/\.\w+$/, ".png"), { type: "image/png" }));
-			}, "image/png");
-		};
-		img.onerror = () => {
-			URL.revokeObjectURL(url);
-			reject(new Error("Failed to load image"));
-		};
-		img.src = url;
-	});
-}
+import { CROP_PRESETS, type ImagePurpose } from "@/lib/image-crop-presets";
+import { ImageCropDialog } from "./image-crop-dialog";
 
 interface ImageUploadFieldProps {
 	label?: string;
 	value: string;
-	purpose:
-		| "avatar"
-		| "banner"
-		| "og_image"
-		| "wallet_logo"
-		| "logo"
-		| "favicon"
-		| "login_logo"
-		| "login_background";
+	purpose: ImagePurpose;
 	onUploadComplete: (url: string) => void;
 	aspectRatio?: "square" | "banner" | "logo";
+	hint?: string;
 }
 
 export function ImageUploadField({
@@ -75,43 +23,33 @@ export function ImageUploadField({
 	purpose,
 	onUploadComplete,
 	aspectRatio = "square",
+	hint,
 }: ImageUploadFieldProps) {
 	const [preview, setPreview] = useState<string | null>(null);
 	const [uploading, setUploading] = useState(false);
 	const [dragActive, setDragActive] = useState(false);
+	const [cropOpen, setCropOpen] = useState(false);
+	const [cropSource, setCropSource] = useState<string | null>(null);
+	const [cropFileName, setCropFileName] = useState<string | undefined>(undefined);
 	const inputRef = useRef<HTMLInputElement>(null);
+	const objectUrlRef = useRef<string | null>(null);
 
-	const handleFile = useCallback(
+	const preset = CROP_PRESETS[purpose];
+
+	useEffect(() => {
+		return () => {
+			if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+		};
+	}, []);
+
+	const upload = useCallback(
 		async (file: File) => {
-			if (!file.type.startsWith("image/")) {
-				toast.error("Please select an image file");
-				return;
-			}
-
-			if (file.size > 5 * 1024 * 1024) {
-				toast.error("File must be under 5MB");
-				return;
-			}
-
-			// Process wallet logos into square images
-			let fileToUpload = file;
-			if (purpose === "wallet_logo" || purpose === "favicon") {
-				try {
-					fileToUpload = await processSquareImage(file, 512);
-				} catch {
-					toast.error("Failed to process image");
-					return;
-				}
-			}
-
-			// Show local preview immediately
-			const localUrl = URL.createObjectURL(fileToUpload);
+			const localUrl = URL.createObjectURL(file);
 			setPreview(localUrl);
-
 			setUploading(true);
 			try {
 				const formData = new FormData();
-				formData.append("file", fileToUpload);
+				formData.append("file", file);
 				formData.append("purpose", purpose);
 
 				const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "";
@@ -121,9 +59,7 @@ export function ImageUploadField({
 					credentials: "include",
 				});
 
-				if (!res.ok) {
-					throw new Error("Upload failed");
-				}
+				if (!res.ok) throw new Error("Upload failed");
 
 				const data = (await res.json()) as { publicUrl: string };
 				const fullUrl = data.publicUrl.startsWith("http")
@@ -139,6 +75,30 @@ export function ImageUploadField({
 			}
 		},
 		[purpose, onUploadComplete],
+	);
+
+	const openCropper = useCallback((source: string, name?: string) => {
+		if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+		objectUrlRef.current = source.startsWith("blob:") ? source : null;
+		setCropSource(source);
+		setCropFileName(name);
+		setCropOpen(true);
+	}, []);
+
+	const handleFile = useCallback(
+		(file: File) => {
+			if (!file.type.startsWith("image/")) {
+				toast.error("Please select an image file");
+				return;
+			}
+			if (file.size > 5 * 1024 * 1024) {
+				toast.error("File must be under 5MB");
+				return;
+			}
+			const url = URL.createObjectURL(file);
+			openCropper(url, file.name);
+		},
+		[openCropper],
 	);
 
 	const handleDrop = useCallback(
@@ -157,6 +117,19 @@ export function ImageUploadField({
 		if (inputRef.current) inputRef.current.value = "";
 	};
 
+	const handleRecrop = useCallback(async () => {
+		const src = preview || value;
+		if (!src) return;
+		try {
+			const res = await fetch(src, { credentials: "include" });
+			const blob = await res.blob();
+			const url = URL.createObjectURL(blob);
+			openCropper(url, "image");
+		} catch {
+			toast.error("Could not load image for re-crop");
+		}
+	}, [preview, value, openCropper]);
+
 	const displayUrl = preview || value;
 	const isBanner = aspectRatio === "banner";
 	const isLogo = aspectRatio === "logo";
@@ -170,95 +143,142 @@ export function ImageUploadField({
 	const imgClass = isBanner || isLogo ? "h-full w-full rounded-lg" : "h-full w-full rounded-full";
 
 	return (
-		<div className={cn("space-y-1.5", !isBanner && "flex flex-col items-center")}>
-			{label && <label className="text-sm font-medium">{label}</label>}
-			<div
-				onDragOver={(e) => {
-					e.preventDefault();
-					setDragActive(true);
-				}}
-				onDragLeave={() => setDragActive(false)}
-				onDrop={handleDrop}
-				className={cn(
-					"relative flex items-center justify-center border-2 border-dashed transition-colors cursor-pointer",
-					zoneClass,
-					dragActive
-						? "border-primary bg-primary/5"
-						: "border-muted-foreground/25 hover:border-muted-foreground/50",
+		<>
+			<div className={cn("space-y-1.5", !isBanner && "flex flex-col items-center")}>
+				{label && (
+					<label className="flex items-center gap-2 text-sm font-medium">
+						{label}
+						{hint && (
+							<span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
+								{hint}
+							</span>
+						)}
+					</label>
 				)}
-				onClick={() => inputRef.current?.click()}
-				onKeyDown={(e) => {
-					if (e.key === "Enter" || e.key === " ") inputRef.current?.click();
-				}}
-				role="button"
-				tabIndex={0}
-			>
-				{displayUrl ? (
-					<>
-						<img
-							src={displayUrl}
-							alt={label || "Upload"}
-							className={cn("object-cover", imgClass)}
-						/>
-						{uploading && (
-							<div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-inherit">
-								<div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-							</div>
-						)}
-					</>
-				) : (
-					<div className="flex flex-col items-center gap-1 text-muted-foreground">
-						{uploading ? (
-							<div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-						) : (
-							<>
-								<ImageIcon className="h-5 w-5" />
-								<span className="text-[10px]">
-									{isBanner ? "Drop banner image" : isLogo ? "Drop logo" : "Upload"}
-								</span>
-							</>
-						)}
+				<div
+					onDragOver={(e) => {
+						e.preventDefault();
+						setDragActive(true);
+					}}
+					onDragLeave={() => setDragActive(false)}
+					onDrop={handleDrop}
+					className={cn(
+						"relative flex items-center justify-center border-2 border-dashed transition-all cursor-pointer",
+						zoneClass,
+						dragActive
+							? "scale-[1.01] border-solid border-primary bg-primary/5"
+							: "border-muted-foreground/25 hover:border-muted-foreground/50",
+					)}
+					onClick={() => inputRef.current?.click()}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") inputRef.current?.click();
+					}}
+					role="button"
+					tabIndex={0}
+				>
+					{displayUrl ? (
+						<>
+							<img
+								src={displayUrl}
+								alt={label || "Upload"}
+								className={cn("object-cover", imgClass)}
+							/>
+							{uploading && (
+								<div className="absolute inset-0 flex items-center justify-center rounded-inherit bg-black/40">
+									<div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+								</div>
+							)}
+						</>
+					) : (
+						<div className="flex flex-col items-center gap-1 text-muted-foreground">
+							{uploading ? (
+								<div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+							) : (
+								<>
+									<ImageIcon className="h-5 w-5" />
+									<span className="text-[10px]">
+										{isBanner ? "Drop banner image" : isLogo ? "Drop logo" : "Upload"}
+									</span>
+								</>
+							)}
+						</div>
+					)}
+
+					<input
+						ref={inputRef}
+						type="file"
+						accept="image/*"
+						onChange={handleChange}
+						className="hidden"
+					/>
+				</div>
+
+				{displayUrl && !uploading && (
+					<div className="flex flex-wrap items-center justify-center gap-1">
+						<Button
+							type="button"
+							variant="ghost"
+							size="xs"
+							onClick={(e) => {
+								e.stopPropagation();
+								inputRef.current?.click();
+							}}
+						>
+							<Upload className="mr-1 h-3 w-3" />
+							Replace
+						</Button>
+						<Button
+							type="button"
+							variant="ghost"
+							size="xs"
+							onClick={(e) => {
+								e.stopPropagation();
+								handleRecrop();
+							}}
+						>
+							<Crop className="mr-1 h-3 w-3" />
+							Re-crop
+						</Button>
+						<Button
+							type="button"
+							variant="ghost"
+							size="xs"
+							onClick={(e) => {
+								e.stopPropagation();
+								setPreview(null);
+								onUploadComplete("");
+							}}
+						>
+							<X className="mr-1 h-3 w-3" />
+							Remove
+						</Button>
 					</div>
 				)}
-
-				<input
-					ref={inputRef}
-					type="file"
-					accept="image/*"
-					onChange={handleChange}
-					className="hidden"
-				/>
 			</div>
 
-			{displayUrl && !uploading && (
-				<div className="flex items-center justify-center gap-1">
-					<Button
-						type="button"
-						variant="ghost"
-						size="xs"
-						onClick={(e) => {
-							e.stopPropagation();
-							inputRef.current?.click();
-						}}
-					>
-						<Upload className="mr-1 h-3 w-3" />
-						Replace
-					</Button>
-					<Button
-						type="button"
-						variant="ghost"
-						size="xs"
-						onClick={(e) => {
-							e.stopPropagation();
-							setPreview(null);
-							onUploadComplete("");
-						}}
-					>
-						<X className="mr-1 h-3 w-3" />
-						Remove
-					</Button>
-				</div>
-			)}
-		</div>
+			<ImageCropDialog
+				open={cropOpen}
+				source={cropSource}
+				preset={preset}
+				fileName={cropFileName}
+				onCancel={() => {
+					setCropOpen(false);
+					if (objectUrlRef.current) {
+						URL.revokeObjectURL(objectUrlRef.current);
+						objectUrlRef.current = null;
+					}
+					setCropSource(null);
+				}}
+				onConfirm={(file) => {
+					setCropOpen(false);
+					if (objectUrlRef.current) {
+						URL.revokeObjectURL(objectUrlRef.current);
+						objectUrlRef.current = null;
+					}
+					setCropSource(null);
+					upload(file);
+				}}
+			/>
+		</>
 	);
 }
