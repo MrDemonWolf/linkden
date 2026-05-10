@@ -1,4 +1,5 @@
 import "@linkden/env/web";
+import path from "node:path";
 import type { NextConfig } from "next";
 
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
@@ -7,6 +8,11 @@ const nextConfig: NextConfig = {
 	typedRoutes: true,
 	reactCompiler: true,
 	transpilePackages: ["@linkden/ui"],
+	turbopack: {
+		// Pin workspace root to the monorepo containing this app's bun.lock,
+		// avoiding ambiguity when Claude Code worktrees create extra lockfiles.
+		root: path.resolve(__dirname, "../.."),
+	},
 	async headers() {
 		return [
 			{

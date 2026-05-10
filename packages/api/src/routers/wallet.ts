@@ -6,6 +6,14 @@ import { env } from "@linkden/env/server";
 import { z } from "zod";
 import { stripHtml } from "../utils/sanitize";
 import { upsertSetting, buildSettingsMap } from "../utils/settings";
+import {
+	passFieldSchema,
+	seedFromPreset,
+	PASS_TEMPLATE_PRESETS,
+	PASS_FIELD_LIMITS,
+	type PassField,
+	type PassTemplatePreset,
+} from "@linkden/validators/wallet";
 
 const hexColorRegex = /^#[0-9a-fA-F]{6}$/;
 
@@ -14,12 +22,21 @@ const walletKeys = [
 	"wallet_show_email",
 	"wallet_show_name",
 	"wallet_show_qr_code",
+	"wallet_template_preset",
 	"wallet_organization_name",
 	"wallet_pass_description",
 	"wallet_background_color",
 	"wallet_foreground_color",
 	"wallet_label_color",
 	"wallet_logo_url",
+	"wallet_icon_url",
+	"wallet_thumbnail_url",
+	"wallet_strip_url",
+	"wallet_header_fields",
+	"wallet_primary_fields",
+	"wallet_secondary_fields",
+	"wallet_auxiliary_fields",
+	"wallet_back_fields",
 	"wallet_signer_cert",
 	"wallet_signer_key",
 	"wallet_wwdr_cert",
@@ -27,8 +44,39 @@ const walletKeys = [
 	"wallet_pass_type_id",
 ];
 
-// Cryptographic credentials — masked in API responses, never returned in plaintext
 const WALLET_SECRET_KEYS = new Set(["wallet_signer_cert", "wallet_signer_key", "wallet_wwdr_cert"]);
+
+function parseFields(raw: string | undefined): PassField[] {
+	if (!raw) return [];
+	try {
+		const parsed = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return [];
+		return parsed
+			.filter(
+				(f): f is PassField =>
+					typeof f === "object" &&
+					f !== null &&
+					typeof f.key === "string" &&
+					typeof f.label === "string" &&
+					typeof f.value === "string",
+			)
+			.map((f) => ({
+				key: f.key.slice(0, 64),
+				label: f.label.slice(0, 40),
+				value: f.value.slice(0, 200),
+			}));
+	} catch {
+		return [];
+	}
+}
+
+function clampFields(fields: PassField[], max: number): PassField[] {
+	return fields.slice(0, max).map((f) => ({
+		key: stripHtml(f.key).slice(0, 64),
+		label: stripHtml(f.label).slice(0, 40),
+		value: stripHtml(f.value).slice(0, 200),
+	}));
+}
 
 export const walletRouter = router({
 	getConfig: protectedProcedure.query(async () => {
@@ -49,71 +97,87 @@ export const walletRouter = router({
 				showEmail: z.boolean().optional(),
 				showName: z.boolean().optional(),
 				showQrCode: z.boolean().optional(),
+				templatePreset: z.enum(PASS_TEMPLATE_PRESETS).optional(),
 				organizationName: z.string().max(100).optional(),
 				passDescription: z.string().max(200).optional(),
 				backgroundColor: z.string().regex(hexColorRegex).optional().or(z.literal("")),
 				foregroundColor: z.string().regex(hexColorRegex).optional().or(z.literal("")),
 				labelColor: z.string().regex(hexColorRegex).optional().or(z.literal("")),
 				logoUrl: z.string().url().optional().or(z.literal("")),
+				iconUrl: z.string().url().optional().or(z.literal("")),
+				thumbnailUrl: z.string().url().optional().or(z.literal("")),
+				stripUrl: z.string().url().optional().or(z.literal("")),
+				headerFields: z.array(passFieldSchema).max(PASS_FIELD_LIMITS.header).optional(),
+				primaryFields: z.array(passFieldSchema).max(PASS_FIELD_LIMITS.primary).optional(),
+				secondaryFields: z.array(passFieldSchema).max(PASS_FIELD_LIMITS.secondary).optional(),
+				auxiliaryFields: z.array(passFieldSchema).max(PASS_FIELD_LIMITS.auxiliary).optional(),
+				backFields: z.array(passFieldSchema).max(PASS_FIELD_LIMITS.back).optional(),
 			}),
 		)
 		.mutation(async ({ input }) => {
 			const updates: { key: string; value: string }[] = [];
-			if (input.enabled !== undefined)
-				updates.push({
-					key: "wallet_pass_enabled",
-					value: JSON.stringify(input.enabled),
-				});
-			if (input.showEmail !== undefined)
-				updates.push({
-					key: "wallet_show_email",
-					value: JSON.stringify(input.showEmail),
-				});
-			if (input.showName !== undefined)
-				updates.push({
-					key: "wallet_show_name",
-					value: JSON.stringify(input.showName),
-				});
+			const push = (key: string, value: string) => updates.push({ key, value });
+
+			if (input.enabled !== undefined) push("wallet_pass_enabled", JSON.stringify(input.enabled));
+			if (input.showEmail !== undefined) push("wallet_show_email", JSON.stringify(input.showEmail));
+			if (input.showName !== undefined) push("wallet_show_name", JSON.stringify(input.showName));
 			if (input.showQrCode !== undefined)
-				updates.push({
-					key: "wallet_show_qr_code",
-					value: JSON.stringify(input.showQrCode),
-				});
+				push("wallet_show_qr_code", JSON.stringify(input.showQrCode));
+			if (input.templatePreset !== undefined) push("wallet_template_preset", input.templatePreset);
 			if (input.organizationName !== undefined)
-				updates.push({
-					key: "wallet_organization_name",
-					value: stripHtml(input.organizationName),
-				});
+				push("wallet_organization_name", stripHtml(input.organizationName));
 			if (input.passDescription !== undefined)
-				updates.push({
-					key: "wallet_pass_description",
-					value: stripHtml(input.passDescription),
-				});
-			if (input.backgroundColor !== undefined)
-				updates.push({
-					key: "wallet_background_color",
-					value: input.backgroundColor,
-				});
-			if (input.foregroundColor !== undefined)
-				updates.push({
-					key: "wallet_foreground_color",
-					value: input.foregroundColor,
-				});
-			if (input.labelColor !== undefined)
-				updates.push({
-					key: "wallet_label_color",
-					value: input.labelColor,
-				});
-			if (input.logoUrl !== undefined)
-				updates.push({
-					key: "wallet_logo_url",
-					value: input.logoUrl,
-				});
+				push("wallet_pass_description", stripHtml(input.passDescription));
+			if (input.backgroundColor !== undefined) push("wallet_background_color", input.backgroundColor);
+			if (input.foregroundColor !== undefined) push("wallet_foreground_color", input.foregroundColor);
+			if (input.labelColor !== undefined) push("wallet_label_color", input.labelColor);
+			if (input.logoUrl !== undefined) push("wallet_logo_url", input.logoUrl);
+			if (input.iconUrl !== undefined) push("wallet_icon_url", input.iconUrl);
+			if (input.thumbnailUrl !== undefined) push("wallet_thumbnail_url", input.thumbnailUrl);
+			if (input.stripUrl !== undefined) push("wallet_strip_url", input.stripUrl);
+			if (input.headerFields !== undefined)
+				push(
+					"wallet_header_fields",
+					JSON.stringify(clampFields(input.headerFields, PASS_FIELD_LIMITS.header)),
+				);
+			if (input.primaryFields !== undefined)
+				push(
+					"wallet_primary_fields",
+					JSON.stringify(clampFields(input.primaryFields, PASS_FIELD_LIMITS.primary)),
+				);
+			if (input.secondaryFields !== undefined)
+				push(
+					"wallet_secondary_fields",
+					JSON.stringify(clampFields(input.secondaryFields, PASS_FIELD_LIMITS.secondary)),
+				);
+			if (input.auxiliaryFields !== undefined)
+				push(
+					"wallet_auxiliary_fields",
+					JSON.stringify(clampFields(input.auxiliaryFields, PASS_FIELD_LIMITS.auxiliary)),
+				);
+			if (input.backFields !== undefined)
+				push(
+					"wallet_back_fields",
+					JSON.stringify(clampFields(input.backFields, PASS_FIELD_LIMITS.back)),
+				);
 
 			for (const { key, value } of updates) {
 				await upsertSetting(key, value);
 			}
 			return { success: true };
+		}),
+
+	applyPreset: protectedProcedure
+		.input(z.object({ preset: z.enum(PASS_TEMPLATE_PRESETS) }))
+		.mutation(async ({ input }) => {
+			const seed = seedFromPreset(input.preset as PassTemplatePreset);
+			await upsertSetting("wallet_template_preset", seed.templatePreset);
+			await upsertSetting("wallet_header_fields", JSON.stringify(seed.headerFields));
+			await upsertSetting("wallet_primary_fields", JSON.stringify(seed.primaryFields));
+			await upsertSetting("wallet_secondary_fields", JSON.stringify(seed.secondaryFields));
+			await upsertSetting("wallet_auxiliary_fields", JSON.stringify(seed.auxiliaryFields));
+			await upsertSetting("wallet_back_fields", JSON.stringify(seed.backFields));
+			return { success: true, seed };
 		}),
 
 	getSigningStatus: protectedProcedure.query(async () => {
@@ -199,6 +263,30 @@ export const walletRouter = router({
 
 		const settingsMap = await buildSettingsMap();
 
+		// Backwards-compat: if new field arrays empty, derive from old toggles + profile
+		const headerFields = parseFields(settingsMap.wallet_header_fields);
+		const primaryFieldsStored = parseFields(settingsMap.wallet_primary_fields);
+		const secondaryFieldsStored = parseFields(settingsMap.wallet_secondary_fields);
+		const auxiliaryFields = parseFields(settingsMap.wallet_auxiliary_fields);
+		const backFields = parseFields(settingsMap.wallet_back_fields);
+
+		const showEmail = settingsMap.wallet_show_email !== "false";
+		const showName = settingsMap.wallet_show_name !== "false";
+
+		const primaryFields =
+			primaryFieldsStored.length > 0
+				? primaryFieldsStored
+				: showName
+					? [{ key: "name", label: "Name", value: profile?.name ?? "" }]
+					: [];
+
+		const secondaryFields =
+			secondaryFieldsStored.length > 0
+				? secondaryFieldsStored
+				: showEmail && profile?.email
+					? [{ key: "email", label: "Email", value: profile.email }]
+					: [];
+
 		return {
 			profile: profile
 				? {
@@ -209,14 +297,24 @@ export const walletRouter = router({
 				: null,
 			links: blocks.filter((b) => b.type === "link").map((b) => ({ title: b.title, url: b.url })),
 			qrUrl: null,
+			templatePreset:
+				(settingsMap.wallet_template_preset as PassTemplatePreset) || "contact-card",
 			organizationName: settingsMap.wallet_organization_name || "",
 			passDescription: settingsMap.wallet_pass_description || "",
 			backgroundColor: settingsMap.wallet_background_color || "#091533",
 			foregroundColor: settingsMap.wallet_foreground_color || "#FFFFFF",
 			labelColor: settingsMap.wallet_label_color || "#0FACED",
 			logoUrl: settingsMap.wallet_logo_url || null,
-			showEmail: settingsMap.wallet_show_email !== "false",
-			showName: settingsMap.wallet_show_name !== "false",
+			iconUrl: settingsMap.wallet_icon_url || null,
+			thumbnailUrl: settingsMap.wallet_thumbnail_url || null,
+			stripUrl: settingsMap.wallet_strip_url || null,
+			headerFields,
+			primaryFields,
+			secondaryFields,
+			auxiliaryFields,
+			backFields,
+			showEmail,
+			showName,
 			showQrCode: settingsMap.wallet_show_qr_code !== "false",
 		};
 	}),
