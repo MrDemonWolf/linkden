@@ -81,17 +81,7 @@ async function renderCrop(
 	if (!octx) throw new Error("Canvas context unavailable");
 	octx.imageSmoothingEnabled = true;
 	octx.imageSmoothingQuality = "high";
-	octx.drawImage(
-		rotCanvas,
-		area.x,
-		area.y,
-		area.width,
-		area.height,
-		0,
-		0,
-		out.width,
-		out.height,
-	);
+	octx.drawImage(rotCanvas, area.x, area.y, area.width, area.height, 0, 0, out.width, out.height);
 
 	const mime = preset.format === "webp" ? "image/webp" : "image/png";
 	const quality = preset.format === "webp" ? 0.92 : undefined;
@@ -175,9 +165,7 @@ export function ImageCropDialog({
 		<Dialog open={open} onOpenChange={(v) => !v && !exporting && onCancel()}>
 			<DialogContent className="max-w-3xl gap-0 overflow-hidden border-border/60 bg-background p-0">
 				<DialogHeader className="border-b border-border/60 px-6 py-4">
-					<DialogTitle className="text-base font-semibold tracking-tight">
-						Adjust image
-					</DialogTitle>
+					<DialogTitle className="text-base font-semibold tracking-tight">Adjust image</DialogTitle>
 					<DialogDescription className="text-xs text-muted-foreground">
 						Drag to reposition · pinch or scroll to zoom · output{" "}
 						<span className="font-mono text-[10.5px]">{preset.dimensions}</span> · {aspectLabel}

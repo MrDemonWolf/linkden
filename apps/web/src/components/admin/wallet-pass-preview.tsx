@@ -137,11 +137,7 @@ export function WalletPassPreview({
 			<div className={`flex items-center justify-between px-4 pt-4 pb-0.5 ${zoneRing("header")}`}>
 				<div className="flex items-center gap-2">
 					{logoUrl ? (
-						<img
-							src={logoUrl}
-							alt="Logo"
-							className="h-[22px] w-auto max-w-[60px] object-contain"
-						/>
+						<img src={logoUrl} alt="Logo" className="h-[22px] w-auto max-w-[60px] object-contain" />
 					) : (
 						<div
 							className="flex h-[22px] w-[22px] items-center justify-center rounded-md text-[9px] font-bold"
@@ -352,10 +348,7 @@ export function WalletPassPreview({
 							</div>
 						)}
 					</div>
-					<p
-						className="mt-2 text-[8px] font-medium tracking-wide"
-						style={{ color: `${fg}50` }}
-					>
+					<p className="mt-2 text-[8px] font-medium tracking-wide" style={{ color: `${fg}50` }}>
 						Scan to view profile
 					</p>
 				</div>

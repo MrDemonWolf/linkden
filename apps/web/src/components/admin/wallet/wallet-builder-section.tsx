@@ -200,10 +200,8 @@ export function WalletBuilderSection({
 		}
 	};
 
-	const updateImage = (
-		key: "logoUrl" | "iconUrl" | "thumbnailUrl" | "stripUrl",
-		url: string,
-	) => setState((s) => ({ ...s, [key]: url }));
+	const updateImage = (key: "logoUrl" | "iconUrl" | "thumbnailUrl" | "stripUrl", url: string) =>
+		setState((s) => ({ ...s, [key]: url }));
 
 	return (
 		<div className="space-y-6">
@@ -351,9 +349,7 @@ function Section({
 				<h3 className="text-[11px] font-semibold uppercase tracking-wider text-foreground/80">
 					{title}
 				</h3>
-				{hint && (
-					<span className="text-[10.5px] text-muted-foreground/60">· {hint}</span>
-				)}
+				{hint && <span className="text-[10.5px] text-muted-foreground/60">· {hint}</span>}
 			</div>
 			{children}
 		</div>

@@ -178,7 +178,11 @@ export function SigningKeysSection() {
 				/>
 				<div className="flex flex-wrap gap-x-4 gap-y-1 pl-1.5">
 					{[
-						{ label: "Signer Certificate", ok: status?.signerCert, src: status?.source?.signerCert },
+						{
+							label: "Signer Certificate",
+							ok: status?.signerCert,
+							src: status?.source?.signerCert,
+						},
 						{ label: "Signer Key", ok: status?.signerKey, src: status?.source?.signerKey },
 						{ label: "WWDR Certificate", ok: status?.wwdrCert, src: status?.source?.wwdrCert },
 						{ label: "Team ID", ok: status?.teamId, src: status?.source?.teamId },

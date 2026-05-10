@@ -100,9 +100,7 @@ export function seedFromPreset(preset: PassTemplatePreset): PresetSeed {
 					{ key: "validTo", label: "Valid To", value: "" },
 				],
 				auxiliaryFields: [{ key: "zone", label: "Zone", value: "" }],
-				backFields: [
-					{ key: "rules", label: "Rules", value: "Pass must be presented on entry." },
-				],
+				backFields: [{ key: "rules", label: "Rules", value: "Pass must be presented on entry." }],
 			};
 		case "custom":
 			return {

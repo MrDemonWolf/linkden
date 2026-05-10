@@ -128,8 +128,10 @@ export const walletRouter = router({
 				push("wallet_organization_name", stripHtml(input.organizationName));
 			if (input.passDescription !== undefined)
 				push("wallet_pass_description", stripHtml(input.passDescription));
-			if (input.backgroundColor !== undefined) push("wallet_background_color", input.backgroundColor);
-			if (input.foregroundColor !== undefined) push("wallet_foreground_color", input.foregroundColor);
+			if (input.backgroundColor !== undefined)
+				push("wallet_background_color", input.backgroundColor);
+			if (input.foregroundColor !== undefined)
+				push("wallet_foreground_color", input.foregroundColor);
 			if (input.labelColor !== undefined) push("wallet_label_color", input.labelColor);
 			if (input.logoUrl !== undefined) push("wallet_logo_url", input.logoUrl);
 			if (input.iconUrl !== undefined) push("wallet_icon_url", input.iconUrl);
@@ -297,8 +299,7 @@ export const walletRouter = router({
 				: null,
 			links: blocks.filter((b) => b.type === "link").map((b) => ({ title: b.title, url: b.url })),
 			qrUrl: null,
-			templatePreset:
-				(settingsMap.wallet_template_preset as PassTemplatePreset) || "contact-card",
+			templatePreset: (settingsMap.wallet_template_preset as PassTemplatePreset) || "contact-card",
 			organizationName: settingsMap.wallet_organization_name || "",
 			passDescription: settingsMap.wallet_pass_description || "",
 			backgroundColor: settingsMap.wallet_background_color || "#091533",

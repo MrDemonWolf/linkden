@@ -20,7 +20,10 @@ import { PageHeader } from "@/components/admin/page-header";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { DeviceFrame } from "@/components/admin/device-frame";
 import { WalletPassPreview, type PassZone } from "@/components/admin/wallet-pass-preview";
-import { WalletBuilderSection, type WalletLiveState } from "@/components/admin/wallet/wallet-builder-section";
+import {
+	WalletBuilderSection,
+	type WalletLiveState,
+} from "@/components/admin/wallet/wallet-builder-section";
 import { SigningKeysSection } from "@/components/admin/wallet/signing-keys-section";
 
 export default function WalletPage() {
@@ -170,8 +173,7 @@ export default function WalletPage() {
 						<div className="flex items-start gap-2.5 pl-1.5">
 							<AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
 							<p className="text-xs leading-relaxed text-muted-foreground">
-								Pass <span className="font-mono">.pkpass</span> generation runs on the server and
-								is{" "}
+								Pass <span className="font-mono">.pkpass</span> generation runs on the server and is{" "}
 								<span className="font-medium text-foreground">not yet wired up</span>. The design
 								you save here is stored and ready — once the signing endpoint ships you can issue
 								passes from this page.

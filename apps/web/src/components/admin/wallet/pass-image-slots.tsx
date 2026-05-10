@@ -7,10 +7,7 @@ interface Props {
 	iconUrl: string;
 	thumbnailUrl: string;
 	stripUrl: string;
-	onChange: (
-		key: "logoUrl" | "iconUrl" | "thumbnailUrl" | "stripUrl",
-		url: string,
-	) => void;
+	onChange: (key: "logoUrl" | "iconUrl" | "thumbnailUrl" | "stripUrl", url: string) => void;
 }
 
 export function PassImageSlots({ logoUrl, iconUrl, thumbnailUrl, stripUrl, onChange }: Props) {

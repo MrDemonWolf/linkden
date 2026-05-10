@@ -45,10 +45,7 @@ export function TemplatePresetPicker({ value, onChange, disabled }: Props) {
 					>
 						<div className="flex w-full items-center justify-between">
 							<Icon
-								className={cn(
-									"h-3.5 w-3.5",
-									active ? "text-primary" : "text-muted-foreground",
-								)}
+								className={cn("h-3.5 w-3.5", active ? "text-primary" : "text-muted-foreground")}
 							/>
 							<span className="font-mono text-[8.5px] uppercase tracking-wider text-muted-foreground/70">
 								{p.tag}
