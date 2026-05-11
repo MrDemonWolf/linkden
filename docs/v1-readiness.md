@@ -17,7 +17,7 @@ status columns are placeholders — fill in as work lands.
 | TypeScript strict, zero `any`/`ts-ignore` | ✅ | grep confirms zero |
 | Biome lint runs clean in CI (warnings allowed) | ✅ | CI gate in place |
 | Biome format check passes | ✅ | except gitignored `.claude/` |
-| Unit tests cover validators, sanitize, upload, presets | ✅ | 136 tests, 7 files |
+| Unit tests cover validators, sanitize, upload, presets | ✅ | 137 tests, 7 files |
 | `bun run check-types` green | ✅ | turbo gate |
 | `bun run build` green | ✅ | all 3 apps |
 | Coverage report renders (`bun run test:coverage`) | ✅ | v8 provider |
