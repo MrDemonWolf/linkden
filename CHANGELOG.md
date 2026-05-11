@@ -63,7 +63,7 @@ Canonical version: [`version.json`](./version.json) — workspace
 - CI workflow: lint / type-check / test / format / build gate
   ([#27](https://github.com/MrDemonWolf/linkden/pull/27)).
 - Unit tests for `wallet` + `settings` validators, sanitize utilities,
-  upload validation, and image-crop presets — 136 tests across 7 files.
+  and upload validation — focused on security and data contracts.
 - `vitest` v8 coverage configuration + `bun run test:coverage` script.
 
 #### Changed

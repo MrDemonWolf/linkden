@@ -94,22 +94,7 @@ describe("walletConfigSchema", () => {
 });
 
 describe("seedFromPreset", () => {
-	it.each(PASS_TEMPLATE_PRESETS)("returns a parseable seed for %s", (preset) => {
-		const seed = seedFromPreset(preset);
-		expect(seed.templatePreset).toBeDefined();
-		expect(() =>
-			walletConfigSchema.parse({
-				templatePreset: seed.templatePreset,
-				headerFields: seed.headerFields,
-				primaryFields: seed.primaryFields,
-				secondaryFields: seed.secondaryFields,
-				auxiliaryFields: seed.auxiliaryFields,
-				backFields: seed.backFields,
-			}),
-		).not.toThrow();
-	});
-
-	it("respects HIG field count limits", () => {
+	it("every preset's seed satisfies walletConfigSchema and HIG field caps", () => {
 		for (const preset of PASS_TEMPLATE_PRESETS) {
 			const seed = seedFromPreset(preset);
 			expect(seed.headerFields.length).toBeLessThanOrEqual(PASS_FIELD_LIMITS.header);
@@ -117,6 +102,7 @@ describe("seedFromPreset", () => {
 			expect(seed.secondaryFields.length).toBeLessThanOrEqual(PASS_FIELD_LIMITS.secondary);
 			expect(seed.auxiliaryFields.length).toBeLessThanOrEqual(PASS_FIELD_LIMITS.auxiliary);
 			expect(seed.backFields.length).toBeLessThanOrEqual(PASS_FIELD_LIMITS.back);
+			expect(() => walletConfigSchema.parse(seed)).not.toThrow();
 		}
 	});
 

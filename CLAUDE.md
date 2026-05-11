@@ -59,7 +59,6 @@ This prevents context loss! Update this file IMMEDIATELY when creating important
 
 ## Release Planning
 
-- v1.0.0 readiness checklist: `docs/v1-readiness.md`
 - Changelog (dual-audience: ✨ user / 🔧 technical): `CHANGELOG.md`
 
 ## Design Patterns
