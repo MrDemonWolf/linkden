@@ -173,11 +173,14 @@ app.post("/api/upload", async (c) => {
 	}
 
 	const formData = await c.req.formData();
-	const file = formData.get("file") as File | null;
-	const purpose = formData.get("purpose") as string | null;
+	const file = formData.get("file");
+	const purpose = formData.get("purpose");
 
 	if (!file) {
 		return c.json({ error: "No file provided" }, 400);
+	}
+	if (!(file instanceof File)) {
+		return c.json({ error: "Invalid file provided" }, 400);
 	}
 
 	const result = validateUpload({

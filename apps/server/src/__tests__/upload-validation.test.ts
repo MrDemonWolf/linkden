@@ -73,6 +73,7 @@ describe("validateUpload", () => {
 		"image/gif",
 		"image/webp",
 		"image/x-icon",
+		"image/vnd.microsoft.icon",
 	])("accepts MIME %s", (mimeType) => {
 		const extByMime: Record<string, string> = {
 			"image/jpeg": "jpg",
@@ -80,6 +81,7 @@ describe("validateUpload", () => {
 			"image/gif": "gif",
 			"image/webp": "webp",
 			"image/x-icon": "ico",
+			"image/vnd.microsoft.icon": "ico",
 		};
 		const r = validateUpload({
 			...good,

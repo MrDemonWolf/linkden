@@ -121,7 +121,7 @@ describe("seedFromPreset", () => {
 	});
 
 	it("falls back to contact-card for unknown preset", () => {
-		const seed = seedFromPreset("contact-card");
+		const seed = seedFromPreset("unknown-preset" as Parameters<typeof seedFromPreset>[0]);
 		expect(seed.templatePreset).toBe("contact-card");
 	});
 });

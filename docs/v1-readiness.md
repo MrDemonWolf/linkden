@@ -100,9 +100,11 @@ verified for protected mutations; ≥ 1 rate-limit hit assertion.
 - Steps:
   1. Checkout.
   2. Build Docker image (`Dockerfile` already in repo), push to GHCR with
-     `:latest` + `:v0.4.0` tags.
+     `:latest` + `:<release-version>` tags (derive from `GITHUB_REF` /
+     pushed tag or a `VERSION` env var — never hardcode).
   3. Build `linkden-cli-*` binary via `bun build --compile` for
-     linux-x64, linux-arm64, macos-arm64 (admin reset scripts).
+     linux-x64, linux-arm64, macos-arm64 (admin reset scripts), tagged
+     with the same derived version.
   4. `gh release create` with body sourced from the matching CHANGELOG
      section.
 - Stretch: SBOM + image signing via cosign.
