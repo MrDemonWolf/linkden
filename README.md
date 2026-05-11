@@ -181,6 +181,11 @@ linkden/
 └── package.json      # Root workspace config (Bun + Turborepo)
 ```
 
+## Changelog
+
+See [`CHANGELOG.md`](./CHANGELOG.md) for the full release history. The canonical
+version number lives in [`version.json`](./version.json).
+
 ## License
 
 ![GitHub license](https://img.shields.io/github/license/mrdemonwolf/linkden.svg?style=for-the-badge&logo=github)

@@ -57,6 +57,11 @@ This prevents context loss! Update this file IMMEDIATELY when creating important
 - GDPR compliance audit (2026-03-31): `docs/gdpr-audit.md`
 - ISO 27001:2022 gap analysis (2026-03-31): `docs/iso27001-gap-analysis.md`
 
+## Release Planning
+
+- v1.0.0 readiness checklist: `docs/v1-readiness.md`
+- Changelog (dual-audience: ✨ user / 🔧 technical): `CHANGELOG.md`
+
 ## Design Patterns
 
 ### File Storage (R2)
