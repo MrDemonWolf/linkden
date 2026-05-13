@@ -1,4 +1,4 @@
 {
 	"title": "Documentation",
-	"pages": ["getting-started", "guide", "self-hosting", "reference"]
+	"pages": ["getting-started", "guide", "self-hosting", "reference", "changelog"]
 }
