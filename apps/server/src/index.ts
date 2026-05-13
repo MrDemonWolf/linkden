@@ -28,18 +28,7 @@ import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-
-// File upload validation constants
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_EXTENSIONS = new Set(["jpg", "jpeg", "png", "gif", "webp", "ico"]);
-const ALLOWED_MIME_TYPES = new Set([
-	"image/jpeg",
-	"image/png",
-	"image/gif",
-	"image/webp",
-	"image/x-icon",
-	"image/vnd.microsoft.icon",
-]);
+import { buildR2Key, validateUpload } from "./lib/upload-validation";
 
 type Bindings = {
 	CORS_ORIGIN?: string;
@@ -184,53 +173,27 @@ app.post("/api/upload", async (c) => {
 	}
 
 	const formData = await c.req.formData();
-	const file = formData.get("file") as File | null;
-	const purpose = formData.get("purpose") as string | null;
+	const file = formData.get("file");
+	const purpose = formData.get("purpose");
 
 	if (!file) {
 		return c.json({ error: "No file provided" }, 400);
 	}
-
-	// Validate file size
-	if (file.size > MAX_FILE_SIZE) {
-		return c.json({ error: "File too large. Maximum size is 5MB." }, 413);
+	if (!(file instanceof File)) {
+		return c.json({ error: "Invalid file provided" }, 400);
 	}
 
-	// Validate file extension
-	const ext = (file.name.split(".").pop() || "").toLowerCase();
-	if (!ALLOWED_EXTENSIONS.has(ext)) {
-		return c.json(
-			{ error: `File type not allowed. Allowed types: ${[...ALLOWED_EXTENSIONS].join(", ")}` },
-			400,
-		);
+	const result = validateUpload({
+		fileName: file.name,
+		fileSize: file.size,
+		mimeType: file.type,
+		purpose,
+	});
+	if (!result.ok) {
+		return c.json({ error: result.error }, result.status);
 	}
 
-	// Validate MIME type
-	if (!ALLOWED_MIME_TYPES.has(file.type)) {
-		return c.json({ error: `MIME type not allowed: ${file.type}` }, 400);
-	}
-
-	const validPurposes = [
-		"avatar",
-		"banner",
-		"og_image",
-		"wallet_logo",
-		"wallet_icon",
-		"wallet_thumbnail",
-		"wallet_strip",
-		"logo",
-		"favicon",
-		"login_logo",
-		"login_background",
-	];
-	if (!purpose || !validPurposes.includes(purpose)) {
-		return c.json(
-			{ error: `Invalid upload purpose. Allowed purposes: ${validPurposes.join(", ")}` },
-			400,
-		);
-	}
-	const filePurpose = purpose;
-	const key = `${filePurpose}/${crypto.randomUUID()}.${ext}`;
+	const key = buildR2Key(result.purpose, result.ext, crypto.randomUUID());
 
 	await bucket.put(key, file.stream(), {
 		httpMetadata: { contentType: file.type },

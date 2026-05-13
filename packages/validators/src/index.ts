@@ -3,6 +3,7 @@ export * from "./contacts";
 export * from "./settings";
 export * from "./analytics";
 export * from "./pages";
+export * from "./uploads";
 export type { VcardData } from "./vcard";
 export {
 	walletConfigSchema,

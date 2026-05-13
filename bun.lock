@@ -28,7 +28,7 @@
     },
     "apps/docs": {
       "name": "@linkden/docs",
-      "version": "0.1.0",
+      "version": "0.4.0",
       "dependencies": {
         "@linkden/email": "workspace:*",
         "@orama/orama": "^3.1.18",
@@ -57,6 +57,7 @@
     },
     "apps/server": {
       "name": "server",
+      "version": "0.4.0",
       "dependencies": {
         "@hono-rate-limiter/cloudflare": "^0.2.2",
         "@hono/trpc-server": "^0.4.2",
@@ -64,6 +65,7 @@
         "@linkden/auth": "workspace:*",
         "@linkden/db": "workspace:*",
         "@linkden/env": "workspace:*",
+        "@linkden/validators": "workspace:*",
         "@trpc/server": "^11.17.0",
         "better-auth": "^1.6.9",
         "dotenv": "^17.4.2",
@@ -83,7 +85,7 @@
     },
     "apps/web": {
       "name": "web",
-      "version": "0.1.0",
+      "version": "0.4.0",
       "dependencies": {
         "@base-ui/react": "^1.4.1",
         "@codemirror/autocomplete": "^6.20.2",

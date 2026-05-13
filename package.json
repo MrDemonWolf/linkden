@@ -1,5 +1,6 @@
 {
 	"name": "linkden",
+	"version": "0.4.0",
 	"private": true,
 	"workspaces": [
 		"apps/*",
@@ -26,7 +27,8 @@
 		"reset:password": "bun scripts/reset-password.ts",
 		"reset:factory": "bun scripts/factory-reset.ts",
 		"test": "vitest run",
-		"test:watch": "vitest"
+		"test:watch": "vitest",
+		"test:coverage": "vitest run --coverage"
 	},
 	"dependencies": {
 		"@linkden/env": "workspace:*",

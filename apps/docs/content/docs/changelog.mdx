@@ -1,0 +1,113 @@
+---
+title: Changelog
+description: What changed in LinkDen. Each release has a plain-language summary for site owners and a technical section for developers.
+---
+
+## TL;DR
+
+- **Latest release:** **0.4.0** (2026-05-10)
+- **Format:** **✨ What's new** for site owners + **🔧 Technical** for
+  developers and self-hosters.
+- **Source of truth:** [`CHANGELOG.md`](https://github.com/MrDemonWolf/linkden/blob/main/CHANGELOG.md)
+  in the repository root.
+
+Each release below has two sections:
+
+- **✨ What's new** — plain-language summary for site owners.
+- **🔧 Technical** — internal changes, refactors, security details for
+  developers and self-hosters.
+
+The canonical version number lives in `version.json` at the repository
+root. This page mirrors
+[`CHANGELOG.md`](https://github.com/MrDemonWolf/linkden/blob/main/CHANGELOG.md) —
+that file is the source of truth.
+
+## Unreleased
+
+_No unreleased changes yet._
+
+## 0.4.0 — 2026-05-10
+
+### ✨ What's new
+
+- **Build a proper Apple Wallet pass.** New pass builder lays out your
+  card like a real membership pass — header, primary line, secondary
+  fields, image slots, signing keys, and a live preview as you type.
+- **Crop every image you upload.** Drag a photo in for your avatar,
+  banner, OG image, or wallet logo — a built-in cropper opens with the
+  right shape pre-set so nothing comes out stretched.
+- **Cleaner settings page.** Settings are now organised into tabs at the
+  top with a sticky save bar at the bottom — no more scrolling to find
+  the save button.
+- **Round or rounded-square social icons.** Pick which shape suits your
+  page in Appearance.
+- **Big-photo "hero card" layout.** New public-page layout puts a tall
+  avatar card up top and stacks your blocks beneath it.
+- **Analytics page inside the admin.** See views and clicks without
+  leaving the dashboard.
+- **Custom login screen.** The split-panel login is now fully
+  whitelabel — your logo, your colours, your background image.
+- **Setup wizard.** First-time admins get walked through account,
+  profile, and theme on a single guided screen.
+- **Contact-form inbox.** All visitor messages land in a new
+  `/admin/connections` panel with read/unread state.
+- **Account page redesign.** Profile, email, password, and danger zone
+  are now in calm stacked sections instead of one long form.
+
+### 🔧 Technical
+
+**Added**
+
+- Wallet pass builder (pass.mk-style) with Apple HIG field limits
+  (header / primary / secondary / auxiliary / back), template presets,
+  image slots, signing-keys section.
+- Universal `ImageCropDialog` wired into `ImageUploadField` with
+  per-purpose presets.
+- Admin settings UX: top tabs + sticky save bar.
+- `social_icon_shape` setting (`circle` | `rounded-square`).
+- Hero-card public-page layout, single-column blocks.
+- `/admin/analytics` page + shared analytics widgets.
+- Split-panel login, sidebar setup wizard, custom login branding.
+- `/admin/connections` contact-form inbox.
+- CI workflow: lint / type-check / test / format / build gate.
+- Unit tests for wallet + settings validators, sanitize utilities, and
+  upload validation — focused on security and data contracts.
+- Vitest v8 coverage config + `bun run test:coverage` script.
+
+**Changed**
+
+- `/admin/account` redesigned as stacked sections.
+- README + `CLAUDE.md` refreshed for the current monorepo layout.
+- Upload validation extracted into
+  `apps/server/src/lib/upload-validation.ts` for unit testing.
+- Patched + minor dependency upgrades across workspaces.
+
+**Fixed**
+
+- Narrowed `getLoginShaderPreset` return type to `ShaderBannerPreset`.
+
+**Security**
+
+- Per-route Cloudflare rate limiting (`RL_AUTH`, `RL_STRICT`,
+  `RL_UPLOAD`, `RL_PUBLIC`).
+- Triple-check upload validation: size ≤ 5 MB, extension allow-list,
+  MIME allow-list, purpose allow-list.
+- Single-user signup lock on `/api/auth/sign-up`.
+- Magic-link runtime gate via `magic_link_enabled` setting.
+- Security headers on every response (HSTS, `X-Content-Type-Options`,
+  `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`).
+- R2 image-serving path-traversal guard.
+
+## 0.3.0
+
+### ✨ What's new
+
+Baseline release. Public profile page, six block types (link, header,
+embed, connect, vCard, location), block-level analytics, admin
+appearance / SEO / branding panels, vCard export, Apple Wallet pass MVP,
+Apple Maps embed for Location blocks, Cloudflare Workers + D1 hosting.
+
+### 🔧 Technical
+
+Documentation sync at commit `1691cc5`. Stack: Hono on Workers, tRPC
+v11, Drizzle ORM on D1, Better Auth, Alchemy IaC for deployment.
