@@ -119,9 +119,6 @@ export type { SheetContentProps } from "./components/sheet";
 
 export { Label } from "./components/label";
 
-export { FormField } from "./components/form-field";
-export type { FormFieldProps } from "./components/form-field";
-
 // Theme system
 export type { ThemePreset } from "./themes";
 export { themePresets } from "./themes";
@@ -131,5 +128,5 @@ export type { BannerPreset, CssBannerPreset, ShaderBannerPreset } from "./banner
 export { bannerPresets, getPresetById, getBannerPresetsForTheme } from "./banner-presets";
 
 // Social brands
-export type { SocialBrand } from "./social-brands";
-export { socialBrands, socialBrandMap } from "./social-brands";
+export type { SocialBrand, SocialCategory } from "./social-brands";
+export { socialBrands, socialBrandMap, SOCIAL_CATEGORIES } from "./social-brands";

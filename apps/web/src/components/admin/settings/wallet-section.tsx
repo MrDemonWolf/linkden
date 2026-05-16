@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FieldGroup } from "./field-group";
 import { ImageUploadField } from "../image-upload-field";
+import { ColorField } from "../color-field";
 
 function fileToBase64(file: File): Promise<string> {
 	return new Promise((resolve, reject) => {
@@ -485,60 +486,27 @@ export function WalletSection({ onPreviewChange, onDirtyChange, saveRef }: Walle
 				<div className="grid gap-4 lg:grid-cols-[3fr_2fr_2fr]">
 					{/* Colors */}
 					<div className="space-y-3">
-						<div className="space-y-1.5">
-							<Label htmlFor="s-wallet-bg-color">Background Color</Label>
-							<div className="flex gap-2">
-								<Input
-									id="s-wallet-bg-color"
-									value={backgroundColor}
-									onChange={(e) => setBackgroundColor(e.target.value)}
-									placeholder="#091533"
-									className="flex-1"
-								/>
-								<input
-									type="color"
-									value={backgroundColor || "#091533"}
-									onChange={(e) => setBackgroundColor(e.target.value.toUpperCase())}
-									className="h-8 w-10 shrink-0 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
-								/>
-							</div>
-						</div>
-						<div className="space-y-1.5">
-							<Label htmlFor="s-wallet-fg-color">Foreground Color</Label>
-							<div className="flex gap-2">
-								<Input
-									id="s-wallet-fg-color"
-									value={foregroundColor}
-									onChange={(e) => setForegroundColor(e.target.value)}
-									placeholder="#FFFFFF"
-									className="flex-1"
-								/>
-								<input
-									type="color"
-									value={foregroundColor || "#FFFFFF"}
-									onChange={(e) => setForegroundColor(e.target.value.toUpperCase())}
-									className="h-8 w-10 shrink-0 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
-								/>
-							</div>
-						</div>
-						<div className="space-y-1.5">
-							<Label htmlFor="s-wallet-label-color">Label Color</Label>
-							<div className="flex gap-2">
-								<Input
-									id="s-wallet-label-color"
-									value={labelColor}
-									onChange={(e) => setLabelColor(e.target.value)}
-									placeholder="#0FACED"
-									className="flex-1"
-								/>
-								<input
-									type="color"
-									value={labelColor || "#0FACED"}
-									onChange={(e) => setLabelColor(e.target.value.toUpperCase())}
-									className="h-8 w-10 shrink-0 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
-								/>
-							</div>
-						</div>
+						<ColorField
+							id="s-wallet-bg-color"
+							label="Background Color"
+							value={backgroundColor}
+							onChange={setBackgroundColor}
+							placeholder="#091533"
+						/>
+						<ColorField
+							id="s-wallet-fg-color"
+							label="Foreground Color"
+							value={foregroundColor}
+							onChange={setForegroundColor}
+							placeholder="#FFFFFF"
+						/>
+						<ColorField
+							id="s-wallet-label-color"
+							label="Label Color"
+							value={labelColor}
+							onChange={setLabelColor}
+							placeholder="#0FACED"
+						/>
 					</div>
 
 					{/* Toggles */}
