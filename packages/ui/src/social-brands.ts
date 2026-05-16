@@ -1,10 +1,22 @@
+export const SOCIAL_CATEGORIES = [
+	"social",
+	"messaging",
+	"developer",
+	"business",
+	"content",
+	"music",
+	"gaming",
+] as const;
+
+export type SocialCategory = (typeof SOCIAL_CATEGORIES)[number];
+
 export interface SocialBrand {
 	slug: string;
 	name: string;
 	hex: string;
 	svgPath: string;
 	urlTemplate: string;
-	category: "social" | "messaging" | "developer" | "business" | "content" | "music" | "gaming";
+	category: SocialCategory;
 }
 
 export const socialBrands: SocialBrand[] = [

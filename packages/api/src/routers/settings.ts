@@ -3,9 +3,10 @@ import { db } from "@linkden/db";
 import { siteSettings } from "@linkden/db/schema/index";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { stripHtml } from "../utils/sanitize";
+import { sanitizeUrl, stripHtml } from "../utils/sanitize";
 import { upsertSetting } from "../utils/settings";
 import { logAudit } from "../utils/audit";
+import { settingKeySchema } from "@linkden/validators/settings";
 
 // ─── Settings Router ───────────────────────────────────────────────────────
 // Settings are key-value pairs stored in site_settings. The key whitelist below
@@ -25,81 +26,13 @@ import { logAudit } from "../utils/audit";
 // type-appropriate validation — HTML stripping for text, URL validation,
 // hex color format checks, and CSS injection mitigation.
 
-// All valid setting keys — prevents arbitrary key injection
-const VALID_SETTING_KEYS = [
-	"profile_name",
-	"bio",
-	"avatar_url",
-	"banner_preset",
-	"banner_enabled",
-	"banner_mode",
-	"banner_custom_url",
-	"theme_preset",
-	"theme",
-	"custom_primary",
-	"custom_secondary",
-	"custom_accent",
-	"custom_background",
-	"custom_css",
-	"seo_title",
-	"seo_description",
-	"seo_og_image",
-	"seo_og_mode",
-	"seo_og_template",
-	"branding_enabled",
-	"branding_text",
-	"branding_link",
-	"branding_logo_url",
-	"branding_login_logo_url",
-	"branding_login_bg_mode",
-	"branding_login_bg_preset",
-	"branding_login_bg_custom_url",
-	"branding_favicon_url",
-	"branding_site_name",
-	"branding_pp_url",
-	"branding_tos_url",
-	"branding_pp_mode",
-	"branding_pp_text",
-	"branding_tos_mode",
-	"branding_tos_text",
-	"default_color_mode",
-	"verified_badge",
-	"wallet_pass_enabled",
-	"vcard_enabled",
-	"contact_form_enabled",
-	"captcha_provider",
-	"captcha_site_key",
-	"captcha_secret_key",
-	"social_icon_shape",
-	"magic_link_enabled",
-	"timezone",
-	"email_provider",
-	"email_api_key",
-	"email_from",
-	"admin_branding_enabled",
-	"mapkit_enabled",
-	"mapkit_token",
-	"contact_delivery",
-	"consent_banner_enabled",
-	"consent_banner_text",
-	"consent_privacy_url",
-	"consent_categories",
-] as const;
-
-const settingKeySchema = z.enum(VALID_SETTING_KEYS);
-
 // Keys containing secrets — masked in API responses, never exposed in plaintext
 const SECRET_SETTING_KEYS = new Set(["email_api_key", "captcha_secret_key", "mapkit_token"]);
 
-// Sanitization utilities
+// Empty values are allowed; non-empty values must be http(s) URLs.
 function isValidUrl(url: string): boolean {
 	if (!url) return true;
-	try {
-		const parsed = new URL(url);
-		return parsed.protocol === "http:" || parsed.protocol === "https:";
-	} catch {
-		return false;
-	}
+	return sanitizeUrl(url) !== "";
 }
 
 function isValidHexColor(color: string): boolean {
