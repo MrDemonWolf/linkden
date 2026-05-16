@@ -3,7 +3,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "alchemy dev",
+		"dev": "node --watch alchemy.run.ts --dev",
 		"deploy": "alchemy deploy",
 		"destroy": "alchemy destroy"
 	},
@@ -13,7 +13,7 @@
 	},
 	"devDependencies": {
 		"@linkden/config": "workspace:*",
-		"alchemy": "^0.89.0",
+		"alchemy": "^0.93.7",
 		"typescript": "^5.9.3"
 	}
 }
