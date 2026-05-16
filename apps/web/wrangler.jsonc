@@ -13,7 +13,7 @@
 	"vars": {
 		"NEXT_PUBLIC_SERVER_URL": "http://localhost:3000",
 		"CORS_ORIGIN": "http://localhost:3001",
-		"BETTER_AUTH_SECRET": "fzphXtrCi8tyveYzHpWQosAQ7ulpJCtm",
+		"BETTER_AUTH_SECRET": "",
 		"BETTER_AUTH_URL": "http://localhost:3000"
 	},
 	"r2_buckets": [
