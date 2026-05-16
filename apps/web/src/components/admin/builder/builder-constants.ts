@@ -1,35 +1,40 @@
 import { Link as LinkIcon, Type, Code, Contact, MapPin, Users } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { blockTypeSchema, type BlockType } from "@linkden/validators/blocks";
 
-export const BLOCK_TYPES = [
-	{ type: "link" as const, label: "Link", icon: LinkIcon, description: "A clickable link button" },
-	{ type: "header" as const, label: "Header", icon: Type, description: "A text header/divider" },
+export type { BlockType };
+
+export const BLOCK_TYPES: ReadonlyArray<{
+	type: BlockType;
+	label: string;
+	icon: LucideIcon;
+	description: string;
+}> = [
+	{ type: "link", label: "Link", icon: LinkIcon, description: "A clickable link button" },
+	{ type: "header", label: "Header", icon: Type, description: "A text header/divider" },
+	{ type: "embed", label: "Embed", icon: Code, description: "YouTube, Spotify, or other embed" },
 	{
-		type: "embed" as const,
-		label: "Embed",
-		icon: Code,
-		description: "YouTube, Spotify, or other embed",
-	},
-	{
-		type: "connect" as const,
+		type: "connect",
 		label: "Connect With Me",
 		icon: Users,
 		description: "Contact form with presets",
 	},
+	{ type: "vcard", label: "vCard", icon: Contact, description: "Download contact card button" },
 	{
-		type: "vcard" as const,
-		label: "vCard",
-		icon: Contact,
-		description: "Download contact card button",
-	},
-	{
-		type: "location" as const,
+		type: "location",
 		label: "Location",
 		icon: MapPin,
 		description: "Show your location on a map",
 	},
-] as const;
+];
 
-export type BlockType = (typeof BLOCK_TYPES)[number]["type"];
+// Runtime sanity: BLOCK_TYPES must list every BlockType from the validator enum.
+if (process.env.NODE_ENV !== "production") {
+	const declared = new Set(BLOCK_TYPES.map((b) => b.type));
+	for (const t of blockTypeSchema.options) {
+		if (!declared.has(t)) throw new Error(`BLOCK_TYPES missing entry for "${t}"`);
+	}
+}
 
 export interface Block {
 	id: string;
