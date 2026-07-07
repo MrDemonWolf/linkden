@@ -150,6 +150,7 @@ function sanitizeSetting(key: string, value: string): string {
 	}
 	// API keys / tokens: strip control chars, enforce length limit
 	if (key === "email_api_key" || key === "mapkit_token") {
+		// biome-ignore lint/suspicious/noControlCharactersInRegex: intentionally strips control characters
 		const cleaned = value.replace(/[\x00-\x1f\x7f]/g, "");
 		if (cleaned.length > 512) {
 			return cleaned.slice(0, 512);

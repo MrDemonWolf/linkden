@@ -16,7 +16,7 @@ interface BannerSectionProps {
 
 export function BannerSection({
 	bannerPreset,
-	colorMode,
+	colorMode: _colorMode,
 	bgColor,
 	themeColors,
 	bannerMode = "preset",

@@ -33,6 +33,7 @@ export function ThemePresetsSection({
 						const light = theme.cssVars.light;
 						const dark = theme.cssVars.dark;
 						return (
+							// biome-ignore lint/a11y/useSemanticElements: radio option carries rich preview children; <input type="radio"> cannot contain child elements
 							<button
 								key={theme.name}
 								type="button"

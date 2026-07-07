@@ -411,9 +411,9 @@ export default function BuilderPage() {
 									/>
 								) : (
 									<SortableContext items={blockIds} strategy={verticalListSortingStrategy}>
-										<div className="flex flex-col gap-2" role="list" aria-label="Page blocks">
+										<ul className="flex flex-col gap-2" aria-label="Page blocks">
 											{blocks.map((block) => (
-												<div key={block.id} role="listitem" data-block-id={block.id}>
+												<li key={block.id} data-block-id={block.id}>
 													<BlockRow
 														block={block}
 														onToggle={() => handleToggle(block.id, block.isEnabled)}
@@ -421,9 +421,9 @@ export default function BuilderPage() {
 														onDelete={() => handleDelete(block.id)}
 														accent={editingBlock?.id === block.id}
 													/>
-												</div>
+												</li>
 											))}
-										</div>
+										</ul>
 									</SortableContext>
 								)}
 

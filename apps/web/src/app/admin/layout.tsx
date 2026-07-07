@@ -360,7 +360,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 			{/* Mobile dropdown menu */}
 			{mobileMenuOpen && (
 				<>
-					<div
+					<button
+						type="button"
+						aria-label="Close menu"
 						className="fixed inset-0 top-12 z-40 md:hidden"
 						onClick={() => setMobileMenuOpen(false)}
 					/>

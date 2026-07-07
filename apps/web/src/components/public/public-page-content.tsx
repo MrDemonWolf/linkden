@@ -98,12 +98,10 @@ function renderBlock(
 	{
 		colorMode,
 		themeColors,
-		socialNetworks,
 		settings,
 	}: {
 		colorMode: "light" | "dark";
 		themeColors: ThemeColors;
-		socialNetworks?: SocialNetwork[];
 		settings: PageContentProps["settings"];
 	},
 ) {
@@ -321,13 +319,13 @@ export function PageContent({
 				</ProfileWrapper>
 
 				{/* Single-column block stream — 50ms staggered fade-in */}
-				<div className="ld-blocks space-y-3.5 pb-8" role="list" aria-label="Links and content">
+				<ul className="ld-blocks space-y-3.5 pb-8" aria-label="Links and content">
 					{contentBlocks.map((blockData, index) => (
-						<div key={blockData.id} style={getAnimationProps(index).style}>
-							{renderBlock(blockData, { colorMode, themeColors, socialNetworks, settings })}
-						</div>
+						<li key={blockData.id} style={getAnimationProps(index).style}>
+							{renderBlock(blockData, { colorMode, themeColors, settings })}
+						</li>
 					))}
-				</div>
+				</ul>
 
 				{!isPreview && (
 					<FooterActions

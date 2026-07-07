@@ -73,7 +73,7 @@ export default function AccountPage() {
 			setProfileAvatar(avatar);
 			setSavedProfile({ name, bio, avatar });
 		}
-	}, [settingsQuery.data]);
+	}, [settingsQuery.data, settings.profile_name, settings.bio, settings.avatar_url]);
 
 	const profileDirty =
 		profileName !== savedProfile.name ||
@@ -634,7 +634,9 @@ export default function AccountPage() {
 			{/* ─── 2FA Modal ─── */}
 			{twoFaModalOpen && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center">
-					<div
+					<button
+						type="button"
+						aria-label="Close"
 						className="fixed inset-0 bg-black/40 backdrop-blur-sm"
 						onClick={() => !is2faLoading && setTwoFaModalOpen(false)}
 					/>
