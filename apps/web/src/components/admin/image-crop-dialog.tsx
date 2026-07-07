@@ -112,6 +112,7 @@ export function ImageCropDialog({
 	const [exporting, setExporting] = useState(false);
 	const areaRef = useRef<Area | null>(null);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: source intentionally re-triggers the reset when a new image is loaded while the dialog stays open
 	useEffect(() => {
 		if (open) {
 			setCrop({ x: 0, y: 0 });

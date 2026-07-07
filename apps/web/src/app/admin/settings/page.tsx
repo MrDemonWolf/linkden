@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import {
 	Save,
 	Undo2,
-	Globe,
 	Search,
 	Mail,
 	Shield,

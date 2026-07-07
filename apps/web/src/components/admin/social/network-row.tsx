@@ -22,7 +22,6 @@ export function NetworkRow({
 	draft,
 	onUrlChange,
 	onToggle,
-	animationDelay,
 }: {
 	social: SocialBrand;
 	draft: NetworkDraft;
@@ -46,8 +45,7 @@ export function NetworkRow({
 	const toggleDescriptionId = `toggle-desc-${social.slug}`;
 
 	return (
-		<div
-			role="listitem"
+		<li
 			className={cn(
 				"flex rounded-xl px-2 sm:px-4 py-2.5 sm:py-3.5 transition-all",
 				draft.isActive
@@ -130,6 +128,6 @@ export function NetworkRow({
 					)}
 				</div>
 			</div>
-		</div>
+		</li>
 	);
 }

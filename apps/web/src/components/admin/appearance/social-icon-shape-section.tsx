@@ -48,6 +48,7 @@ export function SocialIconShapeSection({
 					{OPTIONS.map((opt) => {
 						const selected = shape === opt.value;
 						return (
+							// biome-ignore lint/a11y/useSemanticElements: styled radio-card button holds icon + label children; <input type="radio"> cannot contain content
 							<button
 								key={opt.value}
 								type="button"

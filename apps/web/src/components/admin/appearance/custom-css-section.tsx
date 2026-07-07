@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import type { EditorView } from "@codemirror/view";
 import { Code2, Info, ChevronDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -9,8 +10,7 @@ import { cn } from "@/lib/utils";
 
 function CssEditor({ value, onChange }: { value: string; onChange: (value: string) => void }) {
 	const editorRef = useRef<HTMLDivElement>(null);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const viewRef = useRef<any>(null);
+	const viewRef = useRef<EditorView | null>(null);
 	const [loaded, setLoaded] = useState(false);
 
 	// Keep a ref to the latest onChange so the editor extension stays stable

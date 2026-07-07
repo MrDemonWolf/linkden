@@ -9,11 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { FieldGroup } from "@/components/admin/settings/field-group";
-import {
-	PASS_TEMPLATE_PRESETS,
-	type PassField,
-	type PassTemplatePreset,
-} from "@linkden/validators/wallet";
+import type { PassField, PassTemplatePreset } from "@linkden/validators/wallet";
 import { TemplatePresetPicker } from "./template-preset-picker";
 import { PassImageSlots } from "./pass-image-slots";
 import { PassFieldEditor } from "./pass-field-editor";

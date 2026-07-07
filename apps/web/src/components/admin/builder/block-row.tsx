@@ -37,9 +37,11 @@ export function BlockRow({
 	const badgeClass = TYPE_BADGE_BG[block.type] ?? "bg-muted/10 text-muted-foreground";
 
 	return (
+		// biome-ignore lint/a11y/useSemanticElements: non-semantic container required for dnd-kit sortable ref (setNodeRef)
 		<div
 			ref={setNodeRef}
 			style={style}
+			role="group"
 			aria-roledescription="sortable"
 			className={cn(
 				"group flex items-center gap-0 rounded-xl bg-card/80 backdrop-blur-xl border shadow-sm overflow-hidden transition-all hover:shadow-md min-h-[56px]",
@@ -88,6 +90,7 @@ export function BlockRow({
 							<span
 								className="inline-block h-2 w-2 shrink-0 rounded-full bg-amber-400 animate-pulse"
 								title="Unpublished changes"
+								role="img"
 								aria-label="Unpublished changes"
 							/>
 						)}

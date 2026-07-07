@@ -214,6 +214,7 @@ function WhereMetSelect({
 					viewBox="0 0 24 24"
 					stroke="currentColor"
 					strokeWidth={2}
+					aria-hidden="true"
 				>
 					<path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
 				</svg>
@@ -245,8 +246,6 @@ function ConnectForm({
 	colorMode,
 	themeColors,
 	isPreview,
-	onClose,
-	isModal = false,
 	ppUrl,
 }: {
 	blockId: string;
@@ -591,19 +590,20 @@ function ConnectModal({
 	}, []);
 
 	return (
-		<div
-			className="fixed inset-0 z-50 flex items-center justify-center p-4"
-			style={{ backgroundColor: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}
-			onClick={(e) => {
-				if (e.target === e.currentTarget) onClose();
-			}}
-		>
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+			<button
+				type="button"
+				aria-label="Close"
+				className="absolute inset-0 h-full w-full cursor-default"
+				style={{ backgroundColor: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}
+				onClick={onClose}
+			/>
 			<div
 				ref={modalRef}
 				role="dialog"
 				aria-modal="true"
 				aria-label={modalTitle}
-				className="w-full max-w-md rounded-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+				className="relative w-full max-w-md rounded-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
 				style={cardStyle}
 			>
 				{/* Header */}
@@ -621,6 +621,7 @@ function ConnectModal({
 							viewBox="0 0 24 24"
 							stroke="currentColor"
 							strokeWidth={2}
+							aria-hidden="true"
 						>
 							<path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
 						</svg>
@@ -679,7 +680,7 @@ export function ConnectBlock({ block, config, colorMode, themeColors, ppUrl }: C
 					};
 
 		return (
-			<div role="listitem" className="ld-connect-block">
+			<li className="ld-connect-block">
 				<div
 					className="rounded-2xl border p-5 backdrop-blur-xl"
 					style={{
@@ -700,7 +701,7 @@ export function ConnectBlock({ block, config, colorMode, themeColors, ppUrl }: C
 						ppUrl={ppUrl}
 					/>
 				</div>
-			</div>
+			</li>
 		);
 	}
 
@@ -762,7 +763,7 @@ export function ConnectBlock({ block, config, colorMode, themeColors, ppUrl }: C
 					: "bg-white text-gray-900 border border-gray-200 shadow-sm hover:shadow-md";
 
 	return (
-		<div role="listitem" className="ld-connect-block">
+		<li className="ld-connect-block">
 			<button
 				type="button"
 				onClick={() => setModalOpen(true)}
@@ -792,6 +793,6 @@ export function ConnectBlock({ block, config, colorMode, themeColors, ppUrl }: C
 					ppUrl={ppUrl}
 				/>
 			)}
-		</div>
+		</li>
 	);
 }

@@ -9,7 +9,8 @@ export interface CheckboxProps
 
 const Checkbox = React.forwardRef<React.ComponentRef<typeof CheckboxPrimitive.Root>, CheckboxProps>(
 	({ className, label, id, ...props }, ref) => {
-		const checkboxId = id || React.useId();
+		const generatedId = React.useId();
+		const checkboxId = id || generatedId;
 
 		const checkbox = (
 			<CheckboxPrimitive.Root
@@ -27,6 +28,7 @@ const Checkbox = React.forwardRef<React.ComponentRef<typeof CheckboxPrimitive.Ro
 			>
 				<CheckboxPrimitive.Indicator className="flex items-center justify-center text-current">
 					<svg
+						aria-hidden="true"
 						xmlns="http://www.w3.org/2000/svg"
 						width="14"
 						height="14"

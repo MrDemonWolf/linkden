@@ -70,6 +70,7 @@ export function Avatar({
 				...ringStyle,
 				transition: `background 0.5s ease, color 0.5s ease${ringStyle.transition ? `, ${ringStyle.transition}` : ", box-shadow 0.5s ease"}`,
 			}}
+			role="img"
 			aria-label={name}
 		>
 			{initials}
