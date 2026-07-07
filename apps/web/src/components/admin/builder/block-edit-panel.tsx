@@ -94,7 +94,7 @@ function SegmentedControl({
 					)}
 				>
 					{opt.svg && (
-						<svg viewBox="0 0 24 24" className="h-5 w-5">
+						<svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
 							{opt.svg}
 						</svg>
 					)}

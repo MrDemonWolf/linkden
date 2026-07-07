@@ -129,7 +129,7 @@ export default function AppearancePage() {
 			setVerifiedBadge(s.verifiedBadge);
 			setSocialIconShape(s.socialIconShape);
 		}
-	}, [settingsQuery.data]);
+	}, [settingsQuery.data, settings]);
 
 	const isDirty =
 		selectedTheme !== savedState.theme ||

@@ -17,7 +17,7 @@ interface LocationBlockProps {
 	themeColors?: ThemeColors;
 }
 
-export function LocationBlock({ block, config, colorMode, themeColors }: LocationBlockProps) {
+export function LocationBlock({ block, config, themeColors }: LocationBlockProps) {
 	const { isPreview } = usePreview();
 	const address = (config.address as string) || block.title || "";
 	const linkType = (config.linkType as string) || "none";
@@ -46,7 +46,7 @@ export function LocationBlock({ block, config, colorMode, themeColors }: Locatio
 
 	if (mapUrl) {
 		return (
-			<div role="listitem" className="ld-location-block flex justify-center py-1">
+			<li className="ld-location-block flex justify-center py-1">
 				<a
 					href={isPreview ? undefined : mapUrl}
 					target={isPreview ? undefined : "_blank"}
@@ -57,15 +57,15 @@ export function LocationBlock({ block, config, colorMode, themeColors }: Locatio
 				>
 					{content}
 				</a>
-			</div>
+			</li>
 		);
 	}
 
 	return (
-		<div role="listitem" className="ld-location-block flex justify-center py-1">
+		<li className="ld-location-block flex justify-center py-1">
 			<span className="text-sm" style={style}>
 				{content}
 			</span>
-		</div>
+		</li>
 	);
 }

@@ -57,6 +57,7 @@ export function ColorsSection({
 						{COLOR_MODE_OPTIONS.map((opt) => {
 							const Icon = opt.icon;
 							return (
+								// biome-ignore lint/a11y/useSemanticElements: styled segmented toggle button holds icon + label children; <input type="radio"> cannot contain content
 								<button
 									key={opt.value}
 									type="button"
