@@ -46,6 +46,7 @@ export default function QRPage() {
 				) : (
 					<div
 						className="h-64 w-64 animate-pulse rounded-lg bg-muted"
+						role="img"
 						aria-label="Generating QR code"
 					/>
 				)}

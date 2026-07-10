@@ -62,6 +62,7 @@ export default function ConnectionsPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
 		selectedConnection?.isRead,
+		// biome-ignore lint/correctness/useExhaustiveDependencies: invalidate is a fresh closure each render; the effect only needs to re-run on selection/read-state change
 		invalidate,
 		selectedConnection?.id,
 		markRead.mutateAsync,
@@ -252,7 +253,7 @@ export default function ConnectionsPage() {
 					<div className="flex gap-4">
 						{/* List panel */}
 						<Card className="flex-1 min-w-0 overflow-hidden">
-							<div className="divide-y" role="list" aria-label="Connections">
+							<ul className="divide-y" aria-label="Connections">
 								{connections.map((connection) => (
 									<ConnectionListItem
 										key={connection.id}
@@ -264,7 +265,7 @@ export default function ConnectionsPage() {
 										showCheckbox={showBulkActions}
 									/>
 								))}
-							</div>
+							</ul>
 						</Card>
 
 						{/* Desktop detail panel */}
@@ -292,9 +293,11 @@ export default function ConnectionsPage() {
 			{/* Mobile detail overlay */}
 			{mobileDetailOpen && selectedConnection && (
 				<div className="fixed inset-0 z-50 md:hidden">
-					<div
+					<button
+						type="button"
 						className="fixed inset-0 bg-black/40 backdrop-blur-sm"
 						onClick={() => setMobileDetailOpen(false)}
+						aria-label="Close"
 					/>
 					<div className="fixed inset-x-0 bottom-0 z-10 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t bg-background shadow-xl animate-in slide-in-from-bottom duration-200">
 						<div className="sticky top-0 flex items-center justify-between border-b bg-background px-4 py-2">

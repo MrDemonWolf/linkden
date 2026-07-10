@@ -26,12 +26,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - run: bun install --frozen-lockfile
 
       - name: Build docs
-        run: bun run turbo build --filter=docs
+        run: bun run turbo build --filter=@linkden/docs
 
       - uses: actions/configure-pages@v5
 

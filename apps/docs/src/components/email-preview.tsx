@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, createElement } from "react";
+import { useState, useEffect, useId, createElement } from "react";
 import { render } from "@react-email/render";
 import { ContactNotification } from "@linkden/email";
 
@@ -25,10 +25,14 @@ function Field({
 	onChange: (v: string) => void;
 	placeholder?: string;
 }) {
+	const id = useId();
 	return (
 		<div>
-			<label className="block text-sm font-medium text-fd-foreground mb-1.5">{label}</label>
+			<label htmlFor={id} className="block text-sm font-medium text-fd-foreground mb-1.5">
+				{label}
+			</label>
 			<input
+				id={id}
 				type="text"
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
@@ -42,6 +46,7 @@ function Field({
 export function EmailPreview() {
 	const [data, setData] = useState(defaultData);
 	const [html, setHtml] = useState("");
+	const messageId = useId();
 
 	useEffect(() => {
 		let cancelled = false;
@@ -103,8 +108,14 @@ export function EmailPreview() {
 						placeholder="Optional"
 					/>
 					<div>
-						<label className="block text-sm font-medium text-fd-foreground mb-1.5">Message</label>
+						<label
+							htmlFor={messageId}
+							className="block text-sm font-medium text-fd-foreground mb-1.5"
+						>
+							Message
+						</label>
 						<textarea
+							id={messageId}
 							value={data.message}
 							onChange={(e) => setData({ ...data, message: e.target.value })}
 							rows={4}

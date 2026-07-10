@@ -24,7 +24,7 @@ export function PageHeader({
 	style,
 }: PageHeaderProps) {
 	return (
-		<div role="banner" aria-label={title} style={style} className={cn(className)}>
+		<header style={style} className={cn(className)}>
 			<div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
 				<div className="min-w-0">
 					{kicker && (
@@ -41,6 +41,6 @@ export function PageHeader({
 				{actions && <div className="flex items-center gap-2 shrink-0 mt-2 sm:mt-0">{actions}</div>}
 			</div>
 			{children && <div className="mt-3">{children}</div>}
-		</div>
+		</header>
 	);
 }

@@ -1,21 +1,13 @@
 import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
+import { hexToRgb } from "@linkden/ui/color-contrast";
 
 export const runtime = "edge";
 
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-	const h = hex.replace("#", "");
-	return {
-		r: parseInt(h.substring(0, 2), 16),
-		g: parseInt(h.substring(2, 4), 16),
-		b: parseInt(h.substring(4, 6), 16),
-	};
-}
-
 function darken(hex: string, amount: number): string {
-	const { r, g, b } = hexToRgb(hex);
+	const rgb = hexToRgb(hex) ?? { r: 99, g: 102, b: 241 };
 	const f = 1 - amount;
-	return `rgb(${Math.round(r * f)}, ${Math.round(g * f)}, ${Math.round(b * f)})`;
+	return `rgb(${Math.round(rgb.r * f)}, ${Math.round(rgb.g * f)}, ${Math.round(rgb.b * f)})`;
 }
 
 export async function GET(req: NextRequest) {

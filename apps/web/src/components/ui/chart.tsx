@@ -65,6 +65,7 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 
 	return (
 		<style
+			// biome-ignore lint/security/noDangerouslySetInnerHtml: injects per-chart CSS custom properties from theme config, not user-controlled HTML
 			dangerouslySetInnerHTML={{
 				__html: `
 [data-chart=${id}] {

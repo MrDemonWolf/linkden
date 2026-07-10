@@ -161,6 +161,7 @@ export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolea
 						viewBox="0 0 24 24"
 						stroke="currentColor"
 						strokeWidth={2}
+						aria-hidden="true"
 					>
 						<path
 							strokeLinecap="round"
