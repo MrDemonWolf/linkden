@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { getReadableTextColor } from "@linkden/ui/color-contrast";
 import { trpc } from "@/utils/trpc";
 import type { ThemeColors } from "./public-page";
 import { usePreview } from "./preview-context";
@@ -15,6 +16,9 @@ const WHERE_MET_OPTIONS = [
 	"Other",
 ] as const;
 
+// Public blocks style inline from the resolved themeColors instead of CSS design
+// tokens: the public page renders under a per-page theme preset, not the app's
+// global .dark class, so tokens like var(--card) would resolve to the admin theme.
 interface ConnectBlockProps {
 	block: {
 		id: string;
@@ -24,15 +28,6 @@ interface ConnectBlockProps {
 	colorMode: "light" | "dark";
 	themeColors?: ThemeColors;
 	ppUrl?: string;
-}
-
-function getContrastColor(hex: string): string {
-	const r = parseInt(hex.slice(1, 3), 16) / 255;
-	const g = parseInt(hex.slice(3, 5), 16) / 255;
-	const b = parseInt(hex.slice(5, 7), 16) / 255;
-	const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
-	const L = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
-	return L > 0.179 ? "#000000" : "#FFFFFF";
 }
 
 function FloatingField({
@@ -45,6 +40,7 @@ function FloatingField({
 	error,
 	themeColors,
 	multiline = false,
+	submitAttempted = false,
 }: {
 	id: string;
 	label: string;
@@ -55,8 +51,12 @@ function FloatingField({
 	error?: string;
 	themeColors?: ThemeColors;
 	multiline?: boolean;
+	submitAttempted?: boolean;
 }) {
 	const [touched, setTouched] = useState(false);
+	// Show the error once the field is blurred OR the form has been submitted, so
+	// an untouched-but-invalid field is never a silent dead-end.
+	const showError = !!error && (touched || submitAttempted);
 
 	const fieldStyle: React.CSSProperties = themeColors
 		? {
@@ -66,7 +66,9 @@ function FloatingField({
 			}
 		: {};
 
-	const errorBorderStyle: React.CSSProperties = error && touched ? { borderColor: "#f87171" } : {};
+	const errorBorderStyle: React.CSSProperties = showError
+		? { borderColor: "var(--destructive)" }
+		: {};
 
 	const baseClasses =
 		"peer w-full rounded-xl border px-4 pt-5 pb-2 text-sm outline-none transition-all duration-200 placeholder-transparent focus:ring-1 focus:ring-current/20";
@@ -96,14 +98,14 @@ function FloatingField({
 					onBlur={() => setTouched(true)}
 					className={`${baseClasses} pt-6 resize-none`}
 					style={{ ...fieldStyle, ...errorBorderStyle }}
-					aria-describedby={error && touched ? `${id}-error` : undefined}
-					aria-invalid={error && touched ? true : undefined}
+					aria-describedby={showError ? `${id}-error` : undefined}
+					aria-invalid={showError ? true : undefined}
 				/>
 				<label htmlFor={id} className={labelClassesMultiline} style={labelStyle}>
 					{label}
 				</label>
-				{error && touched && (
-					<span id={`${id}-error`} className="mt-1 block text-xs text-red-400" role="alert">
+				{showError && (
+					<span id={`${id}-error`} className="mt-1 block text-sm text-destructive" role="alert">
 						{error}
 					</span>
 				)}
@@ -123,14 +125,14 @@ function FloatingField({
 				onBlur={() => setTouched(true)}
 				className={baseClasses}
 				style={{ ...fieldStyle, ...errorBorderStyle }}
-				aria-describedby={error && touched ? `${id}-error` : undefined}
-				aria-invalid={error && touched ? true : undefined}
+				aria-describedby={showError ? `${id}-error` : undefined}
+				aria-invalid={showError ? true : undefined}
 			/>
 			<label htmlFor={id} className={labelClasses} style={labelStyle}>
 				{label}
 			</label>
-			{error && touched && (
-				<span id={`${id}-error`} className="mt-1 block text-xs text-red-400" role="alert">
+			{showError && (
+				<span id={`${id}-error`} className="mt-1 block text-sm text-destructive" role="alert">
 					{error}
 				</span>
 			)}
@@ -144,27 +146,39 @@ function WhereMetSelect({
 	onChange,
 	error,
 	themeColors,
+	submitAttempted = false,
 }: {
 	id: string;
 	value: string;
 	onChange: (val: string) => void;
 	error?: string;
 	themeColors?: ThemeColors;
+	submitAttempted?: boolean;
 }) {
 	const [touched, setTouched] = useState(false);
 	const [showOtherInput, setShowOtherInput] = useState(false);
+	const showError = !!error && (touched || submitAttempted);
+
+	// The native <option> popup inherits the <select>'s background/color. A
+	// translucent bg makes the popup unreadable on dark presets, so use a SOLID
+	// surface here (and set each option explicitly for cross-browser safety).
+	const solidBg = themeColors?.card ?? "#ffffff";
+	const solidFg = themeColors?.cardFg ?? "#111827";
 
 	const fieldStyle: React.CSSProperties = themeColors
 		? {
 				borderColor: themeColors.border,
-				backgroundColor: `${themeColors.bg}40`,
-				color: themeColors.cardFg,
+				backgroundColor: solidBg,
+				color: solidFg,
 			}
+		: { backgroundColor: solidBg, color: solidFg };
+
+	const errorBorderStyle: React.CSSProperties = showError
+		? { borderColor: "var(--destructive)" }
 		: {};
 
-	const errorBorderStyle: React.CSSProperties = error && touched ? { borderColor: "#f87171" } : {};
-
 	const labelStyle: React.CSSProperties = themeColors ? { color: themeColors.mutedFg } : {};
+	const optionStyle: React.CSSProperties = { backgroundColor: solidBg, color: solidFg };
 
 	const handleSelectChange = (val: string) => {
 		if (val === "Other") {
@@ -184,14 +198,16 @@ function WhereMetSelect({
 					value={showOtherInput ? "Other" : value}
 					onChange={(e) => handleSelectChange(e.target.value)}
 					onBlur={() => setTouched(true)}
-					className="peer w-full rounded-xl border px-4 pt-5 pb-2 text-sm outline-none transition-all duration-200 focus:ring-1 focus:ring-current/20 appearance-none bg-transparent"
+					className="peer w-full rounded-xl border px-4 pt-5 pb-2 text-sm outline-none transition-all duration-200 focus:ring-1 focus:ring-current/20 appearance-none"
 					style={{ ...fieldStyle, ...errorBorderStyle }}
-					aria-describedby={error && touched ? `${id}-error` : undefined}
-					aria-invalid={error && touched ? true : undefined}
+					aria-describedby={showError ? `${id}-error` : undefined}
+					aria-invalid={showError ? true : undefined}
 				>
-					<option value="">Select...</option>
+					<option value="" style={optionStyle}>
+						Select...
+					</option>
 					{WHERE_MET_OPTIONS.map((opt) => (
-						<option key={opt} value={opt}>
+						<option key={opt} value={opt} style={optionStyle}>
 							{opt}
 						</option>
 					))}
@@ -202,7 +218,7 @@ function WhereMetSelect({
 					style={labelStyle}
 				>
 					Where did we meet?{" "}
-					<span className="text-red-400" aria-hidden="true">
+					<span className="text-destructive" aria-hidden="true">
 						*
 					</span>
 				</label>
@@ -226,12 +242,13 @@ function WhereMetSelect({
 					required
 					value={value}
 					onChange={onChange}
-					error={!value && touched ? "Please specify where we met" : undefined}
+					error={!value ? "Please specify where we met" : undefined}
 					themeColors={themeColors}
+					submitAttempted={submitAttempted}
 				/>
 			)}
-			{error && touched && !showOtherInput && (
-				<span id={`${id}-error`} className="mt-1 block text-xs text-red-400" role="alert">
+			{showError && !showOtherInput && (
+				<span id={`${id}-error`} className="mt-1 block text-sm text-destructive" role="alert">
 					{error}
 				</span>
 			)}
@@ -271,6 +288,9 @@ function ConnectForm({
 	});
 	const [submitted, setSubmitted] = useState(false);
 	const [errors, setErrors] = useState<Record<string, string>>({});
+	// Once the visitor tries to submit, reveal errors on every field — even ones
+	// they never focused — so an untouched-empty form isn't a silent dead-end.
+	const [submitAttempted, setSubmitAttempted] = useState(false);
 
 	const submitContact = useMutation({
 		...trpc.public.submitContact.mutationOptions(),
@@ -304,9 +324,28 @@ function ConnectForm({
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (isPreview) return;
+		setSubmitAttempted(true);
 		const errs = validate();
 		setErrors(errs);
-		if (Object.keys(errs).length > 0) return;
+		if (Object.keys(errs).length > 0) {
+			// Move focus to the first invalid control so keyboard/screen-reader users
+			// land on the problem instead of a form that silently refuses to submit.
+			const firstInvalidId = errs.firstName
+				? `connect-fname-${blockId}`
+				: errs.lastName
+					? `connect-lname-${blockId}`
+					: errs.email
+						? `connect-email-${blockId}`
+						: errs.whereMet
+							? `connect-wheremet-${blockId}`
+							: errs.consent
+								? `connect-consent-${blockId}`
+								: null;
+			if (firstInvalidId) {
+				document.getElementById(firstInvalidId)?.focus();
+			}
+			return;
+		}
 
 		submitContact.mutate({
 			firstName: formData.firstName,
@@ -385,6 +424,7 @@ function ConnectForm({
 					onChange={updateField("firstName")}
 					error={errors.firstName}
 					themeColors={themeColors}
+					submitAttempted={submitAttempted}
 				/>
 				<FloatingField
 					id={`connect-lname-${blockId}`}
@@ -394,6 +434,7 @@ function ConnectForm({
 					onChange={updateField("lastName")}
 					error={errors.lastName}
 					themeColors={themeColors}
+					submitAttempted={submitAttempted}
 				/>
 			</div>
 
@@ -406,6 +447,7 @@ function ConnectForm({
 				onChange={updateField("email")}
 				error={errors.email}
 				themeColors={themeColors}
+				submitAttempted={submitAttempted}
 			/>
 
 			<WhereMetSelect
@@ -414,6 +456,7 @@ function ConnectForm({
 				onChange={updateField("whereMet")}
 				error={errors.whereMet}
 				themeColors={themeColors}
+				submitAttempted={submitAttempted}
 			/>
 
 			<FloatingField
@@ -428,6 +471,7 @@ function ConnectForm({
 			<div className="flex flex-col gap-1">
 				<label className="flex items-start gap-2.5 cursor-pointer">
 					<input
+						id={`connect-consent-${blockId}`}
 						type="checkbox"
 						checked={formData.consent}
 						onChange={(e) => {
@@ -441,6 +485,7 @@ function ConnectForm({
 						}}
 						className="mt-0.5 h-4 w-4 shrink-0 rounded"
 						aria-describedby={errors.consent ? "consent-error" : undefined}
+						aria-invalid={errors.consent ? true : undefined}
 					/>
 					<span
 						className="text-xs leading-relaxed"
@@ -466,7 +511,7 @@ function ConnectForm({
 					</span>
 				</label>
 				{errors.consent && (
-					<span id="consent-error" className="text-xs text-red-400" role="alert">
+					<span id="consent-error" className="text-sm text-destructive" role="alert">
 						{errors.consent}
 					</span>
 				)}
@@ -478,7 +523,7 @@ function ConnectForm({
 				className="w-full rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 hover:brightness-110"
 				style={{
 					backgroundColor: primaryColor,
-					color: getContrastColor(primaryColor),
+					color: getReadableTextColor(primaryColor),
 					outlineColor: primaryColor,
 				}}
 			>
@@ -512,7 +557,7 @@ function ConnectForm({
 			</button>
 
 			{submitContact.isError && (
-				<p className="text-center text-sm text-red-400" role="alert">
+				<p className="text-center text-sm text-destructive" role="alert">
 					Failed to send. Please try again.
 				</p>
 			)}
@@ -680,7 +725,7 @@ export function ConnectBlock({ block, config, colorMode, themeColors, ppUrl }: C
 					};
 
 		return (
-			<li className="ld-connect-block">
+			<div className="ld-connect-block">
 				<div
 					className="rounded-2xl border p-5 backdrop-blur-xl"
 					style={{
@@ -701,7 +746,7 @@ export function ConnectBlock({ block, config, colorMode, themeColors, ppUrl }: C
 						ppUrl={ppUrl}
 					/>
 				</div>
-			</li>
+			</div>
 		);
 	}
 
@@ -747,7 +792,7 @@ export function ConnectBlock({ block, config, colorMode, themeColors, ppUrl }: C
 			style.backgroundColor = "transparent";
 		} else {
 			style.backgroundColor = themeColors.primary;
-			style.color = getContrastColor(themeColors.primary);
+			style.color = getReadableTextColor(themeColors.primary);
 		}
 	}
 
@@ -763,7 +808,7 @@ export function ConnectBlock({ block, config, colorMode, themeColors, ppUrl }: C
 					: "bg-white text-gray-900 border border-gray-200 shadow-sm hover:shadow-md";
 
 	return (
-		<li className="ld-connect-block">
+		<div className="ld-connect-block">
 			<button
 				type="button"
 				onClick={() => setModalOpen(true)}
@@ -793,6 +838,6 @@ export function ConnectBlock({ block, config, colorMode, themeColors, ppUrl }: C
 					ppUrl={ppUrl}
 				/>
 			)}
-		</li>
+		</div>
 	);
 }

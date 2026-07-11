@@ -47,7 +47,7 @@ export function HeaderBlock({ block, config, colorMode, themeColors }: HeaderBlo
 	);
 
 	return (
-		<li className="ld-header-block py-2">
+		<div className="ld-header-block py-2">
 			<HeadingTag
 				className={`${sizeClasses[headingLevel] || "text-xl"} ${fontWeightClasses[fontWeight] || "font-bold"} ${textAlignClasses[textAlign] || "text-center"}`}
 			>
@@ -62,6 +62,6 @@ export function HeaderBlock({ block, config, colorMode, themeColors }: HeaderBlo
 					}}
 				/>
 			)}
-		</li>
+		</div>
 	);
 }
