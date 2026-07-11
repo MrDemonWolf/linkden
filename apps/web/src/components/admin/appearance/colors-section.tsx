@@ -18,6 +18,7 @@ export function ColorsSection({
 	secondaryColor,
 	accentColor,
 	bgColor,
+	previewDark = false,
 	onColorModeChange,
 	onPrimaryChange,
 	onSecondaryChange,
@@ -29,6 +30,7 @@ export function ColorsSection({
 	secondaryColor: string;
 	accentColor: string;
 	bgColor: string;
+	previewDark?: boolean;
 	onColorModeChange: (value: string) => void;
 	onPrimaryChange: (value: string) => void;
 	onSecondaryChange: (value: string) => void;
@@ -49,23 +51,18 @@ export function ColorsSection({
 				{/* Color mode toggle */}
 				<div>
 					<Label className="mb-2 block text-xs">Default Color Mode</Label>
-					<div
-						className="inline-flex rounded-lg border border-border/50 p-0.5 bg-muted/30"
-						role="radiogroup"
-						aria-label="Default color mode"
-					>
+					<div className="inline-flex rounded-lg border border-border/50 p-0.5 bg-muted/30">
 						{COLOR_MODE_OPTIONS.map((opt) => {
 							const Icon = opt.icon;
 							return (
-								// biome-ignore lint/a11y/useSemanticElements: styled segmented toggle button holds icon + label children; <input type="radio"> cannot contain content
 								<button
 									key={opt.value}
 									type="button"
-									role="radio"
-									aria-checked={colorMode === opt.value}
+									aria-pressed={colorMode === opt.value}
 									onClick={() => onColorModeChange(opt.value)}
 									className={cn(
 										"flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
+										"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 										colorMode === opt.value
 											? "bg-background text-foreground shadow-sm"
 											: "text-muted-foreground hover:text-foreground",
@@ -88,6 +85,23 @@ export function ColorsSection({
 					<div className="flex-1 transition-colors" style={{ backgroundColor: accentColor }} />
 					<div className="flex-1 transition-colors" style={{ backgroundColor: bgColor }} />
 				</div>
+
+				{/* Custom color pickers — light mode only */}
+				<div className="flex items-center justify-between gap-2">
+					<Label className="text-xs">Custom colors</Label>
+					<span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+						Light mode only
+					</span>
+				</div>
+				<p className="text-[11px] text-muted-foreground -mt-2">
+					These override the preset&apos;s light palette. Dark mode always uses the selected
+					preset&apos;s built-in dark colors.
+				</p>
+				{previewDark && (
+					<p className="flex items-center gap-1.5 rounded-md border border-warning/30 bg-warning/10 px-2.5 py-1.5 text-[11px] text-warning">
+						You&apos;re previewing dark mode — changes below won&apos;t affect this preview.
+					</p>
+				)}
 
 				{/* Color pickers grid */}
 				<div className="grid gap-3 sm:grid-cols-2">

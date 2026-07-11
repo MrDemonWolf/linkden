@@ -38,10 +38,8 @@ export function MapKitSection() {
 
 	return (
 		<div className="space-y-3">
-			<h2 className="text-sm font-semibold">Apple MapKit JS</h2>
 			<p className="text-[11px] text-muted-foreground">
-				Enable MapKit JS for address autocomplete in location blocks. Requires an Apple Developer
-				account and a MapKit JS JWT token.
+				Requires an Apple Developer account and a MapKit JS JWT token.
 			</p>
 
 			<div className="flex items-center gap-3">
