@@ -1,6 +1,7 @@
 "use client";
 
-import { Trophy, ExternalLink } from "lucide-react";
+import { ExternalLink, Trophy } from "lucide-react";
+import { QueryError } from "@/components/admin/dashboard/query-error";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -14,6 +15,8 @@ interface TopLinkItem {
 interface TopLinksListProps {
 	items: TopLinkItem[] | undefined;
 	isLoading?: boolean;
+	isError?: boolean;
+	onRetry?: () => void;
 	limit?: number;
 	title?: string;
 }
@@ -30,6 +33,8 @@ function extractDomain(url: string | null): string {
 export function TopLinksList({
 	items,
 	isLoading,
+	isError,
+	onRetry,
 	limit = 5,
 	title = "Top Links",
 }: TopLinksListProps) {
@@ -45,7 +50,9 @@ export function TopLinksList({
 				</CardTitle>
 			</CardHeader>
 			<CardContent>
-				{isLoading ? (
+				{isError ? (
+					<QueryError onRetry={onRetry} />
+				) : isLoading ? (
 					<div className="space-y-2">
 						{Array.from({ length: limit }).map((_, i) => (
 							<Skeleton key={`tl-sk-${i}`} className="h-10 w-full" />

@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Eye, MousePointerClick, Percent, Link2 } from "lucide-react";
-import { trpc } from "@/utils/trpc";
-import { PageHeader } from "@/components/admin/page-header";
-import { StatCard } from "@/components/admin/stat-card";
-import { PeriodSelector, type Period } from "@/components/admin/period-selector";
-import { ViewsClicksChart } from "@/components/admin/analytics/views-clicks-chart";
-import { TopLinksList } from "@/components/admin/analytics/top-links-list";
+import { Eye, Link2, MousePointerClick, Percent } from "lucide-react";
+import { useState } from "react";
 import { CountriesList } from "@/components/admin/analytics/countries-list";
 import { ReferrersList } from "@/components/admin/analytics/referrers-list";
+import { TopLinksList } from "@/components/admin/analytics/top-links-list";
+import { ViewsClicksChart } from "@/components/admin/analytics/views-clicks-chart";
+import { PageHeader } from "@/components/admin/page-header";
+import { type Period, PeriodSelector } from "@/components/admin/period-selector";
+import { StatCard } from "@/components/admin/stat-card";
 import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
+import { trpc } from "@/utils/trpc";
 
 function computeTrend(current: number, previous: number): { value: number; label: string } {
 	if (previous === 0) {
@@ -67,13 +67,16 @@ export default function AnalyticsPage() {
 			</div>
 
 			{/* Stat cards */}
-			<div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+			<div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
 				<div {...getAnimationProps(1)}>
 					<StatCard
 						icon={Eye}
-						label="Total Views"
+						label="Views"
 						value={totalViews}
+						gradient="from-primary/10 via-primary/5 to-transparent"
 						isLoading={overview.isLoading}
+						isError={overview.isError}
+						onRetry={() => overview.refetch()}
 						trend={viewsTrend}
 						subtitle={periodLabel}
 					/>
@@ -81,11 +84,14 @@ export default function AnalyticsPage() {
 				<div {...getAnimationProps(2)}>
 					<StatCard
 						icon={MousePointerClick}
-						label="Total Clicks"
+						label="Clicks"
 						value={totalClicks}
 						iconColor="text-emerald-400"
 						iconBg="bg-emerald-500/10"
+						gradient="from-emerald-500/10 via-emerald-500/5 to-transparent"
 						isLoading={overview.isLoading}
+						isError={overview.isError}
+						onRetry={() => overview.refetch()}
 						trend={clicksTrend}
 						subtitle={periodLabel}
 					/>
@@ -97,7 +103,10 @@ export default function AnalyticsPage() {
 						value={`${ctr.toFixed(1)}%`}
 						iconColor="text-violet-400"
 						iconBg="bg-violet-500/10"
+						gradient="from-violet-500/10 via-violet-500/5 to-transparent"
 						isLoading={overview.isLoading}
+						isError={overview.isError}
+						onRetry={() => overview.refetch()}
 						trend={ctrTrend}
 						subtitle="Clicks ÷ Views"
 					/>
@@ -109,7 +118,10 @@ export default function AnalyticsPage() {
 						value={activeLinks}
 						iconColor="text-amber-400"
 						iconBg="bg-amber-500/10"
+						gradient="from-amber-500/10 via-amber-500/5 to-transparent"
 						isLoading={overview.isLoading}
+						isError={overview.isError}
+						onRetry={() => overview.refetch()}
 						href="/admin/builder"
 						subtitle="Published & enabled"
 					/>
@@ -122,6 +134,11 @@ export default function AnalyticsPage() {
 					views={viewsOverTime.data}
 					clicks={clicksOverTime.data}
 					isLoading={viewsOverTime.isLoading || clicksOverTime.isLoading}
+					isError={viewsOverTime.isError || clicksOverTime.isError}
+					onRetry={() => {
+						viewsOverTime.refetch();
+						clicksOverTime.refetch();
+					}}
 					title="Views vs Clicks"
 				/>
 			</div>
@@ -129,16 +146,31 @@ export default function AnalyticsPage() {
 			{/* Top Links + Countries */}
 			<div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
 				<div {...getAnimationProps(6)}>
-					<TopLinksList items={topLinks.data} isLoading={topLinks.isLoading} />
+					<TopLinksList
+						items={topLinks.data}
+						isLoading={topLinks.isLoading}
+						isError={topLinks.isError}
+						onRetry={() => topLinks.refetch()}
+					/>
 				</div>
 				<div {...getAnimationProps(7)}>
-					<CountriesList items={countries.data} isLoading={countries.isLoading} />
+					<CountriesList
+						items={countries.data}
+						isLoading={countries.isLoading}
+						isError={countries.isError}
+						onRetry={() => countries.refetch()}
+					/>
 				</div>
 			</div>
 
 			{/* Referrers */}
 			<div {...getAnimationProps(8)}>
-				<ReferrersList items={referrers.data} isLoading={referrers.isLoading} />
+				<ReferrersList
+					items={referrers.data}
+					isLoading={referrers.isLoading}
+					isError={referrers.isError}
+					onRetry={() => referrers.refetch()}
+				/>
 			</div>
 
 			{/* Retention note */}

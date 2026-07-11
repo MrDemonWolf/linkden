@@ -1,25 +1,29 @@
 "use client";
 
-import { useMemo } from "react";
 import { Eye } from "lucide-react";
+import { useMemo } from "react";
 import {
-	AreaChart,
 	Area,
+	AreaChart,
+	CartesianGrid,
 	Legend,
+	ResponsiveContainer,
+	Tooltip,
 	XAxis,
 	YAxis,
-	CartesianGrid,
-	Tooltip,
-	ResponsiveContainer,
 } from "recharts";
+import { QueryError } from "@/components/admin/dashboard/query-error";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { type ChartConfig, ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 
 const areaChartConfig: ChartConfig = {
-	views: { label: "Views", color: "var(--primary, #0FACED)" },
-	clicks: { label: "Clicks", color: "#22c55e" },
+	views: { label: "Views", color: "var(--primary, #00ACED)" },
+	clicks: { label: "Clicks", color: "var(--data-up)" },
 };
+
+// Fixed skeleton bar heights — avoids Math.random() in render (hydration mismatch + reflow churn).
+const SKELETON_BAR_HEIGHTS = [48, 72, 40, 84, 56, 68, 44];
 
 interface SeriesPoint {
 	date: string;
@@ -30,6 +34,8 @@ interface ViewsClicksChartProps {
 	views: SeriesPoint[] | undefined;
 	clicks: SeriesPoint[] | undefined;
 	isLoading?: boolean;
+	isError?: boolean;
+	onRetry?: () => void;
 	title?: string;
 	height?: number;
 }
@@ -38,6 +44,8 @@ export function ViewsClicksChart({
 	views,
 	clicks,
 	isLoading,
+	isError,
+	onRetry,
 	title = "Views & Clicks",
 	height = 240,
 }: ViewsClicksChartProps) {
@@ -67,7 +75,11 @@ export function ViewsClicksChart({
 				</CardTitle>
 			</CardHeader>
 			<CardContent>
-				{isLoading ? (
+				{isError ? (
+					<div className="flex items-center justify-center" style={{ height }}>
+						<QueryError onRetry={onRetry} message="Couldn't load chart data" />
+					</div>
+				) : isLoading ? (
 					<div
 						className="flex items-end gap-1"
 						style={{ height }}
@@ -75,12 +87,8 @@ export function ViewsClicksChart({
 						role="status"
 						aria-label="Loading chart data"
 					>
-						{Array.from({ length: 7 }).map((_, i) => (
-							<Skeleton
-								key={`vc-sk-${i}`}
-								className="flex-1"
-								style={{ height: `${20 + Math.random() * 80}%` }}
-							/>
+						{SKELETON_BAR_HEIGHTS.map((h, i) => (
+							<Skeleton key={`vc-sk-${i}`} className="flex-1" style={{ height: `${h}%` }} />
 						))}
 					</div>
 				) : data.length === 0 ? (
@@ -111,7 +119,14 @@ export function ViewsClicksChart({
 									</linearGradient>
 								</defs>
 								<CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
-								<XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 10 }} />
+								<XAxis
+									dataKey="label"
+									tickLine={false}
+									axisLine={false}
+									tick={{ fontSize: 11 }}
+									interval="preserveStartEnd"
+									minTickGap={24}
+								/>
 								<YAxis
 									tickLine={false}
 									axisLine={false}

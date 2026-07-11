@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowUpRight } from "lucide-react";
+import { QueryError } from "@/components/admin/dashboard/query-error";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -12,10 +13,18 @@ interface ReferrerItem {
 interface ReferrersListProps {
 	items: ReferrerItem[] | undefined;
 	isLoading?: boolean;
+	isError?: boolean;
+	onRetry?: () => void;
 	title?: string;
 }
 
-export function ReferrersList({ items, isLoading, title = "Referrers" }: ReferrersListProps) {
+export function ReferrersList({
+	items,
+	isLoading,
+	isError,
+	onRetry,
+	title = "Referrers",
+}: ReferrersListProps) {
 	const data = items ?? [];
 	const total = data.reduce((sum, r) => sum + r.count, 0);
 
@@ -28,7 +37,9 @@ export function ReferrersList({ items, isLoading, title = "Referrers" }: Referre
 				</CardTitle>
 			</CardHeader>
 			<CardContent>
-				{isLoading ? (
+				{isError ? (
+					<QueryError onRetry={onRetry} />
+				) : isLoading ? (
 					<div className="grid gap-2 sm:grid-cols-2">
 						{Array.from({ length: 6 }).map((_, i) => (
 							<Skeleton key={`rf-sk-${i}`} className="h-9" />
