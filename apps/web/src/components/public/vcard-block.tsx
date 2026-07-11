@@ -90,7 +90,7 @@ export function VCardBlock({ block, config, colorMode, themeColors }: VCardBlock
 					: "bg-white text-gray-900 border border-gray-200 shadow-sm hover:shadow-md";
 
 	return (
-		<div role="listitem" className="ld-vcard-block">
+		<li className="ld-vcard-block">
 			<a
 				href={isPreview ? undefined : "/api/vcard"}
 				download={isPreview ? undefined : "contact.vcf"}
@@ -108,6 +108,6 @@ export function VCardBlock({ block, config, colorMode, themeColors }: VCardBlock
 					)}
 				</span>
 			</a>
-		</div>
+		</li>
 	);
 }

@@ -6,20 +6,20 @@
 export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
 	const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
 	if (!result) return null;
+	const [, r, g, b] = result;
+	if (r === undefined || g === undefined || b === undefined) return null;
 	return {
-		r: parseInt(result[1], 16),
-		g: parseInt(result[2], 16),
-		b: parseInt(result[3], 16),
+		r: parseInt(r, 16),
+		g: parseInt(g, 16),
+		b: parseInt(b, 16),
 	};
 }
 
 export function getRelativeLuminance(hex: string): number {
 	const rgb = hexToRgb(hex);
 	if (!rgb) return 1;
-	const [rs, gs, bs] = [rgb.r / 255, rgb.g / 255, rgb.b / 255].map((c) =>
-		c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4,
-	);
-	return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+	const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+	return 0.2126 * lin(rgb.r / 255) + 0.7152 * lin(rgb.g / 255) + 0.0722 * lin(rgb.b / 255);
 }
 
 /** Returns the WCAG contrast ratio (1–21) between two hex colors. */

@@ -284,12 +284,12 @@ export function SocialTab({ onDirtyChange }: SocialTabProps) {
 							</p>
 						</div>
 					) : (
-						<div className="space-y-2.5" role="list" aria-label="Active social networks">
+						<ul className="space-y-2.5" aria-label="Active social networks">
 							{activeNetworks.map((social) => {
 								const draft = drafts[social.slug] ?? { url: "", isActive: false };
 								const brand = socialBrands.find((b) => b.slug === social.slug)!;
 								return (
-									<div
+									<li
 										key={social.slug}
 										id={`network-${social.slug}`}
 										className="group relative rounded-xl transition-all"
@@ -308,10 +308,10 @@ export function SocialTab({ onDirtyChange }: SocialTabProps) {
 										>
 											<Trash2 className="h-3 w-3" />
 										</button>
-									</div>
+									</li>
 								);
 							})}
-						</div>
+						</ul>
 					)}
 
 					{socialDirty && (

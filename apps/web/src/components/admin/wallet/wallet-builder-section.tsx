@@ -9,14 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { FieldGroup } from "@/components/admin/settings/field-group";
-import {
-	PASS_TEMPLATE_PRESETS,
-	type PassField,
-	type PassTemplatePreset,
-} from "@linkden/validators/wallet";
+import type { PassField, PassTemplatePreset } from "@linkden/validators/wallet";
 import { TemplatePresetPicker } from "./template-preset-picker";
 import { PassImageSlots } from "./pass-image-slots";
 import { PassFieldEditor } from "./pass-field-editor";
+import { ColorField } from "@/components/admin/color-field";
 import type { PassZone } from "@/components/admin/wallet-pass-preview";
 
 export interface WalletLiveState {
@@ -352,45 +349,6 @@ function Section({
 				{hint && <span className="text-[10.5px] text-muted-foreground/60">· {hint}</span>}
 			</div>
 			{children}
-		</div>
-	);
-}
-
-function ColorField({
-	id,
-	label,
-	value,
-	onChange,
-	placeholder,
-}: {
-	id: string;
-	label: string;
-	value: string;
-	onChange: (v: string) => void;
-	placeholder: string;
-}) {
-	return (
-		<div className="space-y-1.5">
-			<Label htmlFor={id} className="text-[11px]">
-				{label}
-			</Label>
-			<div className="flex gap-1.5">
-				<Input
-					id={id}
-					value={value}
-					onChange={(e) => onChange(e.target.value)}
-					placeholder={placeholder}
-					className="font-mono text-[11px]"
-					maxLength={7}
-				/>
-				<input
-					type="color"
-					value={value || placeholder}
-					onChange={(e) => onChange(e.target.value.toUpperCase())}
-					className="h-8 w-8 shrink-0 cursor-pointer rounded border border-border bg-transparent"
-					aria-label={`${label} color`}
-				/>
-			</div>
 		</div>
 	);
 }

@@ -131,7 +131,7 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 	const colorClasses = isHighlighted || customBgColor || isOutlined ? "" : glassClasses;
 
 	return (
-		<div role="listitem" className="ld-link-block">
+		<li className="ld-link-block">
 			<a
 				href={block.url || "#"}
 				target={openInNewTab ? "_blank" : "_self"}
@@ -187,6 +187,6 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 					</span>
 				)}
 			</a>
-		</div>
+		</li>
 	);
 }

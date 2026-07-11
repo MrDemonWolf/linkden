@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.4.14/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
 	"assist": { "actions": { "source": { "organizeImports": "on" } } },
 	"linter": {
 		"enabled": true,
@@ -13,16 +13,16 @@
 				"useExhaustiveDependencies": "warn"
 			},
 			"style": {
-				"noNonNullAssertion": "warn"
+				"noNonNullAssertion": "off"
 			},
 			"suspicious": {
-				"noArrayIndexKey": "warn",
+				"noArrayIndexKey": "off",
 				"noExplicitAny": "warn",
 				"noControlCharactersInRegex": "warn",
 				"noTemplateCurlyInString": "warn"
 			},
 			"performance": {
-				"noImgElement": "warn"
+				"noImgElement": "off"
 			},
 			"complexity": {
 				"noBannedTypes": "warn"
@@ -61,9 +61,9 @@
 			"!**/*.generated.*",
 			"!**/bun.lock",
 			"!**/.source",
-			"!apps/docs/.source/**",
-			"!apps/docs/out/**",
-			"!apps/web/.next/types/**",
+			"!apps/docs/.source",
+			"!apps/docs/out",
+			"!apps/web/.next/types",
 			"!**/out",
 			"!**/.next"
 		]

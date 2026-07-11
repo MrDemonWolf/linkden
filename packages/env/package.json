@@ -8,19 +8,15 @@
 		"./web": "./src/web.ts"
 	},
 	"dependencies": {
-		"@cloudflare/workers-types": "^4.20260507.1",
+		"@cloudflare/workers-types": "catalog:",
 		"@t3-oss/env-nextjs": "^0.13.11",
-		"@tailwindcss/postcss": "^4.2.4",
-		"dotenv": "^17.4.2",
-		"tailwindcss": "^4.2.4",
-		"turbo": "^2.9.9",
-		"vitest": "^4.1.5",
-		"zod": "^4.4.3"
+		"dotenv": "catalog:",
+		"zod": "catalog:"
 	},
 	"devDependencies": {
 		"@linkden/config": "workspace:*",
 		"@linkden/infra": "workspace:*",
 		"@types/node": "^25.6.0",
-		"typescript": "^5.9.3"
+		"typescript": "catalog:"
 	}
 }

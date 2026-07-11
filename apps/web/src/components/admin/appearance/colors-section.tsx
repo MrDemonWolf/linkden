@@ -2,52 +2,15 @@
 
 import { Paintbrush, Sun, Moon, Monitor } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { ColorField } from "../color-field";
 
 const COLOR_MODE_OPTIONS = [
 	{ value: "light", label: "Light", icon: Sun },
 	{ value: "dark", label: "Dark", icon: Moon },
 	{ value: "system", label: "System", icon: Monitor },
 ];
-
-function ColorField({
-	id,
-	label,
-	value,
-	onChange,
-}: {
-	id: string;
-	label: string;
-	value: string;
-	onChange: (value: string) => void;
-}) {
-	return (
-		<div className="space-y-1.5">
-			<Label htmlFor={id} className="text-xs">
-				{label}
-			</Label>
-			<div className="flex gap-2">
-				<div className="relative">
-					<input
-						type="color"
-						id={id}
-						value={value}
-						onChange={(e) => onChange(e.target.value)}
-						className="h-9 w-11 cursor-pointer appearance-none rounded-lg border border-border/60 bg-transparent p-0.5 transition-shadow hover:shadow-md [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
-					/>
-				</div>
-				<Input
-					value={value}
-					onChange={(e) => onChange(e.target.value)}
-					className="flex-1 font-mono text-xs uppercase"
-					placeholder="#000000"
-				/>
-			</div>
-		</div>
-	);
-}
 
 export function ColorsSection({
 	colorMode,
@@ -94,6 +57,7 @@ export function ColorsSection({
 						{COLOR_MODE_OPTIONS.map((opt) => {
 							const Icon = opt.icon;
 							return (
+								// biome-ignore lint/a11y/useSemanticElements: styled segmented toggle button holds icon + label children; <input type="radio"> cannot contain content
 								<button
 									key={opt.value}
 									type="button"

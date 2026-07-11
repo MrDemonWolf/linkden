@@ -79,7 +79,8 @@ export function PassFieldEditor({ zone, fields, onChange, onZoneFocus }: FieldEd
 	};
 
 	return (
-		<div
+		<fieldset
+			aria-label={`${meta.name} fields`}
 			className="rounded-lg border border-border/60 bg-card/40"
 			onFocus={() => onZoneFocus?.(zone)}
 			onBlur={(e) => {
@@ -131,7 +132,7 @@ export function PassFieldEditor({ zone, fields, onChange, onZoneFocus }: FieldEd
 					</SortableContext>
 				</DndContext>
 			)}
-		</div>
+		</fieldset>
 	);
 }
 

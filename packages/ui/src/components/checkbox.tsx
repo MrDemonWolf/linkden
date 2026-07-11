@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
+import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 import { cn } from "../utils";
 
 export interface CheckboxProps
@@ -9,7 +9,8 @@ export interface CheckboxProps
 
 const Checkbox = React.forwardRef<React.ComponentRef<typeof CheckboxPrimitive.Root>, CheckboxProps>(
 	({ className, label, id, ...props }, ref) => {
-		const checkboxId = id || React.useId();
+		const generatedId = React.useId();
+		const checkboxId = id || generatedId;
 
 		const checkbox = (
 			<CheckboxPrimitive.Root
@@ -20,13 +21,14 @@ const Checkbox = React.forwardRef<React.ComponentRef<typeof CheckboxPrimitive.Ro
 					"peer h-4 w-4 shrink-0 rounded-sm border border-[var(--ld-border)] shadow-sm transition-colors",
 					"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ld-primary)] focus-visible:ring-offset-2",
 					"disabled:cursor-not-allowed disabled:opacity-50",
-					"data-[state=checked]:bg-[var(--ld-primary)] data-[state=checked]:border-[var(--ld-primary)] data-[state=checked]:text-white",
+					"data-[checked]:bg-[var(--ld-primary)] data-[checked]:border-[var(--ld-primary)] data-[checked]:text-white",
 					className,
 				)}
 				{...props}
 			>
 				<CheckboxPrimitive.Indicator className="flex items-center justify-center text-current">
 					<svg
+						aria-hidden="true"
 						xmlns="http://www.w3.org/2000/svg"
 						width="14"
 						height="14"
