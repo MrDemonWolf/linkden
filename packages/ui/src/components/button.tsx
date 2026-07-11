@@ -7,14 +7,10 @@ const buttonVariants = cva(
 	{
 		variants: {
 			variant: {
-				default:
-					"bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring",
-				primary:
-					"bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring",
-				secondary:
-					"bg-secondary text-foreground hover:bg-secondary/80 focus-visible:ring-ring",
-				ghost:
-					"hover:bg-muted hover:text-foreground focus-visible:ring-ring",
+				default: "bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring",
+				primary: "bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring",
+				secondary: "bg-secondary text-foreground hover:bg-secondary/80 focus-visible:ring-ring",
+				ghost: "hover:bg-muted hover:text-foreground focus-visible:ring-ring",
 				danger: "bg-red-600 text-primary-foreground hover:bg-red-700 focus-visible:ring-red-600",
 				outline:
 					"border border-border bg-transparent hover:bg-muted hover:text-foreground focus-visible:ring-ring",
