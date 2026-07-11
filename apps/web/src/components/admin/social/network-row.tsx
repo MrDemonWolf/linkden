@@ -27,7 +27,6 @@ export function NetworkRow({
 	draft: NetworkDraft;
 	onUrlChange: (slug: string, url: string) => void;
 	onToggle: (slug: string) => void;
-	animationDelay?: number;
 }) {
 	const { resolvedTheme } = useTheme();
 	const template = social.urlTemplate;
@@ -45,11 +44,12 @@ export function NetworkRow({
 	const toggleDescriptionId = `toggle-desc-${social.slug}`;
 
 	return (
-		<li
+		// Neutral container — callers own the list semantics (<li>/role="listitem").
+		<div
 			className={cn(
 				"flex rounded-xl px-2 sm:px-4 py-2.5 sm:py-3.5 transition-all",
 				draft.isActive
-					? "border border-primary/20 bg-white/[0.03] backdrop-blur-sm shadow-sm"
+					? "border border-primary/20 bg-card/80 backdrop-blur-sm shadow-sm"
 					: "group border border-transparent hover:bg-accent/60",
 			)}
 		>
@@ -128,6 +128,6 @@ export function NetworkRow({
 					)}
 				</div>
 			</div>
-		</li>
+		</div>
 	);
 }

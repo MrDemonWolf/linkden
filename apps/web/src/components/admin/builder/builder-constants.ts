@@ -122,11 +122,13 @@ export const TYPE_ACCENT: Record<string, string> = {
 	location: "bg-sky-500",
 };
 
+// Badge/icon-chip tints. Text uses -700 in light (AA-legible on the -500/10
+// tint) and -400 in dark; background tint kept identical across modes.
 export const TYPE_BADGE_BG: Record<string, string> = {
-	link: "bg-blue-500/10 text-blue-400",
-	header: "bg-violet-500/10 text-violet-400",
-	embed: "bg-emerald-500/10 text-emerald-400",
-	connect: "bg-amber-500/10 text-amber-400",
-	vcard: "bg-pink-500/10 text-pink-400",
-	location: "bg-sky-500/10 text-sky-400",
+	link: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+	header: "bg-violet-500/10 text-violet-700 dark:text-violet-400",
+	embed: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+	connect: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+	vcard: "bg-pink-500/10 text-pink-700 dark:text-pink-400",
+	location: "bg-sky-500/10 text-sky-700 dark:text-sky-400",
 };
