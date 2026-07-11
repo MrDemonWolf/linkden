@@ -18,7 +18,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 		return (
 			<div className="flex flex-col gap-1.5">
 				{label && (
-					<label htmlFor={inputId} className="text-sm font-medium text-[var(--ld-foreground)]">
+					<label htmlFor={inputId} className="text-sm font-medium text-foreground">
 						{label}
 					</label>
 				)}
@@ -30,9 +30,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 					aria-invalid={error ? true : undefined}
 					aria-describedby={describedBy}
 					className={cn(
-						"flex h-9 w-full rounded-md border border-[var(--ld-border)] bg-transparent px-3 py-1 text-sm shadow-sm transition-colors",
-						"placeholder:text-[var(--ld-muted-foreground)]",
-						"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ld-primary)] focus-visible:border-[var(--ld-primary)]",
+						"flex h-9 w-full rounded-md border border-border bg-transparent px-3 py-1 text-sm shadow-sm transition-colors",
+						"placeholder:text-muted-foreground",
+						"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary",
 						"disabled:cursor-not-allowed disabled:opacity-50",
 						"file:border-0 file:bg-transparent file:text-sm file:font-medium",
 						error && "border-red-500 focus-visible:ring-red-500",
@@ -46,7 +46,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 					</p>
 				)}
 				{helperText && !error && (
-					<p id={helperId} className="text-xs text-[var(--ld-muted-foreground)]">
+					<p id={helperId} className="text-xs text-muted-foreground">
 						{helperText}
 					</p>
 				)}

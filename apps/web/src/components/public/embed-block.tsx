@@ -85,7 +85,7 @@ export function EmbedBlock({ block, config, colorMode, themeColors }: EmbedBlock
 	if (!src) return null;
 
 	return (
-		<li className={`ld-embed-block mx-auto ${maxWidthClasses[maxWidth] || "max-w-full"}`}>
+		<div className={`ld-embed-block mx-auto ${maxWidthClasses[maxWidth] || "max-w-full"}`}>
 			{showTitle && block.title && (
 				<h3
 					className="mb-2 text-sm font-medium"
@@ -125,6 +125,6 @@ export function EmbedBlock({ block, config, colorMode, themeColors }: EmbedBlock
 					/>
 				)}
 			</div>
-		</li>
+		</div>
 	);
 }

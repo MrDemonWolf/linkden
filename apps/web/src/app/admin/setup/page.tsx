@@ -2,33 +2,33 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { themePresets } from "@linkden/ui/themes";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
-	ArrowRight,
 	ArrowLeft,
+	ArrowRight,
 	Check,
-	Loader2,
 	Eye,
 	EyeOff,
-	Rocket,
+	Loader2,
 	Palette,
-	User,
-	Type,
+	Rocket,
 	Sparkles,
+	Type,
+	User,
 } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
-import { trpc } from "@/utils/trpc";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { ShaderBanner } from "@/components/public/shader-banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { cn } from "@/lib/utils";
-import { themePresets } from "@linkden/ui/themes";
-import { ShaderBanner } from "@/components/public/shader-banner";
 import { WolfLogo } from "@/components/wolf-logo";
+import { authClient } from "@/lib/auth-client";
 import { getLoginBgStyle, getLoginShaderPreset, isCustomLoginBg } from "@/lib/login-bg";
+import { cn } from "@/lib/utils";
+import { trpc } from "@/utils/trpc";
 
 // ─── Setup Wizard ──────────────────────────────────────────────────────────
 // Four-step first-run wizard: Account → Profile → Customize → Done.
@@ -235,17 +235,17 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 
 function FieldError({ message }: { message?: string }) {
 	if (!message) return null;
-	return <p className="mt-1 text-[11px] text-red-400">{message}</p>;
+	return <p className="mt-1 text-[11px] text-destructive">{message}</p>;
 }
 
 function FormError({ message }: { message?: string }) {
 	if (!message) return null;
 	return (
 		<div
-			className="mb-5 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/[0.08] px-3.5 py-2.5 text-xs text-red-400"
+			className="mb-5 flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3.5 py-2.5 text-xs text-destructive"
 			role="alert"
 		>
-			<span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-red-400" />
+			<span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-destructive" />
 			{message}
 		</div>
 	);
@@ -291,8 +291,12 @@ function Step1Account({
 	setEmail,
 	password,
 	setPassword,
+	confirmPassword,
+	setConfirmPassword,
 	showPassword,
 	setShowPassword,
+	showConfirmPassword,
+	setShowConfirmPassword,
 	formErrors,
 	setFormErrors,
 	isSubmitting,
@@ -304,8 +308,12 @@ function Step1Account({
 	setEmail: (v: string) => void;
 	password: string;
 	setPassword: (v: string) => void;
+	confirmPassword: string;
+	setConfirmPassword: (v: string) => void;
 	showPassword: boolean;
 	setShowPassword: (v: boolean) => void;
+	showConfirmPassword: boolean;
+	setShowConfirmPassword: (v: boolean) => void;
 	formErrors: Record<string, string>;
 	setFormErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>;
 	isSubmitting: boolean;
@@ -343,6 +351,7 @@ function Step1Account({
 						placeholder="Your name"
 						className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
 						aria-invalid={!!formErrors.name}
+						autoFocus
 					/>
 					<FieldError message={formErrors.name} />
 				</div>
@@ -393,7 +402,47 @@ function Step1Account({
 							{showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
 						</button>
 					</div>
-					<FieldError message={formErrors.password} />
+					{formErrors.password ? (
+						<FieldError message={formErrors.password} />
+					) : (
+						<p className="mt-1 text-[11px] text-muted-foreground">
+							Use at least 8 characters. This secures your admin account.
+						</p>
+					)}
+				</div>
+
+				<div className="space-y-1.5">
+					<Label htmlFor="setup-confirm-password" className="text-sm font-medium text-foreground">
+						Confirm Password
+					</Label>
+					<div className="relative">
+						<Input
+							id="setup-confirm-password"
+							type={showConfirmPassword ? "text" : "password"}
+							value={confirmPassword}
+							onChange={(e) => {
+								setConfirmPassword(e.target.value);
+								clear("confirmPassword");
+							}}
+							placeholder="Re-enter your password"
+							className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary pr-11"
+							aria-invalid={!!formErrors.confirmPassword}
+						/>
+						<button
+							type="button"
+							onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+							className="absolute right-0.5 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+							aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+							aria-pressed={showConfirmPassword}
+						>
+							{showConfirmPassword ? (
+								<EyeOff className="h-3.5 w-3.5" />
+							) : (
+								<Eye className="h-3.5 w-3.5" />
+							)}
+						</button>
+					</div>
+					<FieldError message={formErrors.confirmPassword} />
 				</div>
 			</div>
 
@@ -475,7 +524,7 @@ function Step2Profile({
 						<span
 							className={cn(
 								"font-mono text-[10px] tabular-nums transition-colors",
-								bio.length > BIO_MAX ? "text-red-400" : "text-muted-foreground",
+								bio.length > BIO_MAX ? "text-destructive" : "text-muted-foreground",
 							)}
 						>
 							{bio.length}/{BIO_MAX}
@@ -484,11 +533,24 @@ function Step2Profile({
 					<textarea
 						id="profile-bio"
 						value={bio}
-						onChange={(e) => setBio(e.target.value.slice(0, BIO_MAX))}
+						onChange={(e) => setBio(e.target.value)}
 						placeholder="A short description of what you do..."
 						rows={4}
-						className="w-full resize-none rounded-md border border-border bg-input px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30"
+						aria-invalid={bio.length > BIO_MAX}
+						aria-describedby={bio.length > BIO_MAX ? "profile-bio-error" : undefined}
+						className={cn(
+							"w-full resize-none rounded-md border bg-input px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:outline-none focus:ring-2",
+							bio.length > BIO_MAX
+								? "border-destructive focus:border-destructive focus:ring-destructive/30"
+								: "border-border focus:border-ring focus:ring-ring/30",
+						)}
 					/>
+					{bio.length > BIO_MAX && (
+						<p id="profile-bio-error" className="mt-1 text-[11px] text-destructive">
+							Bio is {bio.length - BIO_MAX} character{bio.length - BIO_MAX === 1 ? "" : "s"} over
+							the {BIO_MAX} limit.
+						</p>
+					)}
 				</div>
 			</div>
 
@@ -722,12 +784,14 @@ export default function SetupPage() {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 	const [showPassword, setShowPassword] = useState(false);
+	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
 	// Initialize with defaults; restore from localStorage in useEffect to avoid SSR mismatch
 	const [step, setStep] = useState<number>(1);
 	const [name, setName] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
+	const [confirmPassword, setConfirmPassword] = useState("");
 	const [displayName, setDisplayName] = useState("");
 	const [bio, setBio] = useState("");
 	const [themePreset, setThemePreset] = useState("default");
@@ -756,6 +820,7 @@ export default function SetupPage() {
 			setName("Dev User");
 			setEmail("dev@linkden.local");
 			setPassword("password123");
+			setConfirmPassword("password123");
 			setDisplayName("Dev User");
 			setBio("Just a dev testing things out.");
 			setHydrated(true);
@@ -804,6 +869,9 @@ export default function SetupPage() {
 		if (!email.trim()) errors.email = "We need your email to set up your account";
 		if (!password) errors.password = "Pick a password to secure your account";
 		else if (password.length < 8) errors.password = "A bit short — use at least 8 characters";
+		if (!confirmPassword) errors.confirmPassword = "Re-enter your password to confirm";
+		else if (password && password !== confirmPassword)
+			errors.confirmPassword = "Passwords don't match";
 
 		setFormErrors(errors);
 		if (Object.keys(errors).length > 0) return;
@@ -917,8 +985,12 @@ export default function SetupPage() {
 									setEmail={setEmail}
 									password={password}
 									setPassword={setPassword}
+									confirmPassword={confirmPassword}
+									setConfirmPassword={setConfirmPassword}
 									showPassword={showPassword}
 									setShowPassword={setShowPassword}
+									showConfirmPassword={showConfirmPassword}
+									setShowConfirmPassword={setShowConfirmPassword}
 									formErrors={formErrors}
 									setFormErrors={setFormErrors}
 									isSubmitting={isSubmitting}

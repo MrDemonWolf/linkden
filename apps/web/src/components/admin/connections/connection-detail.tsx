@@ -1,19 +1,20 @@
 "use client";
 
 import {
+	Building2,
+	CalendarCheck,
 	Mail,
 	MailOpen,
-	Trash2,
-	Reply,
-	Phone,
-	Building2,
-	Star,
-	CalendarCheck,
-	Users,
 	MapPin,
+	Phone,
+	Reply,
+	Star,
+	Trash2,
+	Users,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface Connection {
 	id: string;
@@ -105,12 +106,16 @@ export function ConnectionDetail({
 						<p className="text-sm font-semibold truncate">{connection.name || "Anonymous"}</p>
 						<p className="text-[11px] text-muted-foreground truncate">{connection.email}</p>
 					</div>
-					<Badge
-						variant={connection.isRead ? "secondary" : "default"}
-						className="shrink-0 text-[10px]"
-					>
-						{connection.isRead ? "Read" : "New"}
-					</Badge>
+					{connection.isRead ? (
+						<Badge variant="secondary" className="shrink-0 text-[10px]">
+							Read
+						</Badge>
+					) : (
+						<Badge variant="outline" className="shrink-0 gap-1 text-[10px]">
+							<span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
+							Unread
+						</Badge>
+					)}
 				</div>
 				<div className="flex items-center gap-2">
 					<p className="text-[11px] text-muted-foreground">
@@ -128,7 +133,7 @@ export function ConnectionDetail({
 							Where You Met
 						</h3>
 						<div className="flex items-center gap-2 text-xs">
-							<MapPin className="h-3.5 w-3.5 text-blue-500" />
+							<MapPin className="h-3.5 w-3.5 text-primary" />
 							<span className="font-medium">{connection.whereMet}</span>
 						</div>
 					</div>
@@ -228,11 +233,12 @@ export function ConnectionDetail({
 						Mark Read
 					</Button>
 				)}
-				<a href={`mailto:${connection.email}`}>
-					<Button variant="outline" size="xs">
-						<Reply className="mr-1 h-3 w-3" />
-						Reply
-					</Button>
+				<a
+					href={`mailto:${connection.email}`}
+					className={cn(buttonVariants({ variant: "outline", size: "xs" }))}
+				>
+					<Reply className="mr-1 h-3 w-3" />
+					Reply
 				</a>
 				<Button variant="destructive" size="xs" onClick={onDelete}>
 					<Trash2 className="mr-1 h-3 w-3" />

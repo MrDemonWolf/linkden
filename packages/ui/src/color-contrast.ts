@@ -44,3 +44,13 @@ export function getAccessibleIconFill(brandHex: string, bgHex: string, fgHex: st
 export function isLowLuminance(hex: string): boolean {
 	return getRelativeLuminance(hex) < 0.3;
 }
+
+/**
+ * Picks black or white text for maximum legibility on `bgHex`.
+ * 0.179 is the luminance crossover where #000 and #fff each hit ~4.5:1 (WCAG
+ * AA) against the background, so the returned color always clears AA. Used for
+ * text sitting on a user-chosen brand color (link buttons, avatar rings, etc.).
+ */
+export function getReadableTextColor(bgHex: string, dark = "#000000", light = "#ffffff"): string {
+	return getRelativeLuminance(bgHex) > 0.179 ? dark : light;
+}

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Upload, Undo2, Eye } from "lucide-react";
+import { Save, Undo2, Eye } from "lucide-react";
 import { themePresets } from "@linkden/ui/themes";
 import { getBannerPresetsForTheme } from "@linkden/ui/banner-presets";
 import { trpc } from "@/utils/trpc";
@@ -166,7 +166,7 @@ export default function AppearancePage() {
 		}
 	};
 
-	const handlePublish = async () => {
+	const handleSave = async () => {
 		try {
 			await updateSettings.mutateAsync([
 				{ key: "theme_preset", value: selectedTheme },
@@ -199,9 +199,9 @@ export default function AppearancePage() {
 				socialIconShape,
 			});
 			invalidate();
-			toast.success("Appearance published");
+			toast.success("Appearance saved");
 		} catch {
-			toast.error("Failed to publish appearance");
+			toast.error("Failed to save appearance");
 		}
 	};
 
@@ -301,10 +301,10 @@ export default function AppearancePage() {
 					<p
 						className={cn(
 							"text-xs transition-colors",
-							isDirty ? "text-amber-500" : "text-muted-foreground",
+							isDirty ? "text-warning" : "text-muted-foreground",
 						)}
 					>
-						{isDirty ? "Unpublished changes" : "All changes are live"}
+						{isDirty ? "Unsaved changes" : "All changes saved"}
 					</p>
 				</div>
 				{/* Mobile preview button */}
@@ -331,6 +331,7 @@ export default function AppearancePage() {
 						secondaryColor={secondaryColor}
 						accentColor={accentColor}
 						bgColor={bgColor}
+						previewDark={previewDark}
 						onColorModeChange={setColorMode}
 						onPrimaryChange={setPrimaryColor}
 						onSecondaryChange={setSecondaryColor}
@@ -385,10 +386,10 @@ export default function AppearancePage() {
 				/>
 			</MobilePreviewSheet>
 
-			{/* Sticky bottom publish bar */}
+			{/* Sticky bottom save bar */}
 			{isDirty && (
 				<div className="fixed bottom-16 md:bottom-0 inset-x-0 md:left-56 z-30 border-t border-border/50 bg-background/80 backdrop-blur-xl px-4 py-3 flex items-center justify-between shadow-lg animate-in slide-in-from-bottom-2 duration-200">
-					<span className="text-sm text-muted-foreground">Unpublished changes</span>
+					<span className="text-sm text-muted-foreground">You have unsaved changes</span>
 					<div className="flex gap-2">
 						<Button variant="ghost" size="sm" onClick={handleDiscard}>
 							<Undo2 className="mr-1.5 h-3.5 w-3.5" />
@@ -397,11 +398,11 @@ export default function AppearancePage() {
 						<Button
 							size="sm"
 							disabled={updateSettings.isPending}
-							onClick={handlePublish}
+							onClick={handleSave}
 							className="shadow-sm"
 						>
-							<Upload className="mr-1.5 h-3.5 w-3.5" />
-							{updateSettings.isPending ? "Publishing..." : "Publish"}
+							<Save className="mr-1.5 h-3.5 w-3.5" />
+							{updateSettings.isPending ? "Saving…" : "Save changes"}
 						</Button>
 					</div>
 				</div>

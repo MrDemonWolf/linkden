@@ -18,10 +18,10 @@ const Checkbox = React.forwardRef<React.ComponentRef<typeof CheckboxPrimitive.Ro
 				id={checkboxId}
 				data-slot="checkbox"
 				className={cn(
-					"peer h-4 w-4 shrink-0 rounded-sm border border-[var(--ld-border)] shadow-sm transition-colors",
-					"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ld-primary)] focus-visible:ring-offset-2",
+					"peer h-4 w-4 shrink-0 rounded-sm border border-border shadow-sm transition-colors",
+					"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 					"disabled:cursor-not-allowed disabled:opacity-50",
-					"data-[checked]:bg-[var(--ld-primary)] data-[checked]:border-[var(--ld-primary)] data-[checked]:text-white",
+					"data-[checked]:bg-primary data-[checked]:border-primary data-[checked]:text-primary-foreground",
 					className,
 				)}
 				{...props}
@@ -51,7 +51,7 @@ const Checkbox = React.forwardRef<React.ComponentRef<typeof CheckboxPrimitive.Ro
 					{checkbox}
 					<label
 						htmlFor={checkboxId}
-						className="text-sm font-medium leading-none text-[var(--ld-foreground)] peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+						className="text-sm font-medium leading-none text-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 					>
 						{label}
 					</label>

@@ -1,16 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { getReadableTextColor } from "@linkden/ui/color-contrast";
 import { getGravatarUrl } from "@/lib/gravatar";
-
-function getContrastColor(hex: string): string {
-	const r = parseInt(hex.slice(1, 3), 16) / 255;
-	const g = parseInt(hex.slice(3, 5), 16) / 255;
-	const b = parseInt(hex.slice(5, 7), 16) / 255;
-	const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
-	const L = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
-	return L > 0.179 ? "#000000" : "#FFFFFF";
-}
 
 interface AvatarProps {
 	src: string | null;
@@ -20,7 +12,7 @@ interface AvatarProps {
 	className?: string;
 	hasBanner?: boolean;
 	ringColor?: string;
-	themeColors?: { primary: string; accent: string };
+	themeColors?: { primary: string; accent: string; bg?: string };
 }
 
 const sizeClasses = {
@@ -57,16 +49,26 @@ export function Avatar({
 				}
 			: {};
 
+	// The 2px ring offset must match the resolved page background, not the global
+	// .dark token — otherwise a light-preset page shows a navy gap around the avatar.
+	const ringOffsetStyle: React.CSSProperties =
+		!hasBanner && themeColors?.bg
+			? ({ "--tw-ring-offset-color": themeColors.bg } as React.CSSProperties)
+			: {};
+
+	const ringClasses = hasBanner ? "" : "ring-2 ring-white/30 ring-offset-2";
+
 	const fallbackDiv = (
 		<div
-			className={`${sizeClasses[size]} flex items-center justify-center rounded-full font-bold shadow-xl ${hasBanner ? "" : "ring-2 ring-white/30 ring-offset-2 ring-offset-background"} ${className ?? ""}`}
+			className={`${sizeClasses[size]} flex items-center justify-center rounded-full font-bold shadow-xl ${ringClasses} ${className ?? ""}`}
 			style={{
 				...(themeColors
 					? {
 							background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.accent})`,
-							color: getContrastColor(themeColors.primary),
+							color: getReadableTextColor(themeColors.primary),
 						}
 					: { background: "linear-gradient(135deg, #0FACED, #38BDF8)", color: "#FFFFFF" }),
+				...ringOffsetStyle,
 				...ringStyle,
 				transition: `background 0.5s ease, color 0.5s ease${ringStyle.transition ? `, ${ringStyle.transition}` : ", box-shadow 0.5s ease"}`,
 			}}
@@ -86,8 +88,8 @@ export function Avatar({
 				<img
 					src={imageSrc}
 					alt={name}
-					className={`${sizeClasses[size]} rounded-full object-cover shadow-xl ${hasBanner ? "" : "ring-2 ring-white/30 ring-offset-2 ring-offset-background"} ${className ?? ""}`}
-					style={ringStyle}
+					className={`${sizeClasses[size]} rounded-full object-cover shadow-xl ${ringClasses} ${className ?? ""}`}
+					style={{ ...ringOffsetStyle, ...ringStyle }}
 					onError={() => setImgError(true)}
 				/>
 			) : (
