@@ -279,6 +279,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 		}
 	}, [isPending, session, isPublicRoute, router]);
 
+	// Register the admin PWA service worker (public/sw.js, scoped to /admin).
+	// ponytail: prod-only — a dev service worker caches stale HMR assets.
+	useEffect(() => {
+		if (process.env.NODE_ENV !== "production") return;
+		if (!("serviceWorker" in navigator)) return;
+		navigator.serviceWorker.register("/sw.js", { scope: "/admin" }).catch(() => {});
+	}, []);
+
 	if (isPublicRoute) {
 		return <>{children}</>;
 	}
