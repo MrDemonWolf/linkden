@@ -19,7 +19,7 @@ const TabsList = React.forwardRef<
 			className={cn(
 				variant === "pills"
 					? "flex gap-2 overflow-x-auto scrollbar-none bg-transparent p-0"
-					: "inline-flex h-10 items-center justify-center rounded-md bg-[var(--ld-muted)] p-1 text-[var(--ld-muted-foreground)]",
+					: "inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground",
 				className,
 			)}
 			{...props}
@@ -54,10 +54,10 @@ const TabsTrigger = React.forwardRef<
 				variant === "pills"
 					? pillsClasses
 					: [
-							"inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-[var(--ld-background)] transition-all",
-							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ld-primary)] focus-visible:ring-offset-2",
+							"inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all",
+							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 							"disabled:pointer-events-none disabled:opacity-50",
-							"data-[selected]:bg-[var(--ld-card)] data-[selected]:text-[var(--ld-foreground)] data-[selected]:shadow-sm",
+							"data-[selected]:bg-card data-[selected]:text-foreground data-[selected]:shadow-sm",
 						],
 				className,
 			)}
@@ -75,8 +75,8 @@ const TabsContent = React.forwardRef<
 		ref={ref}
 		data-slot="tabs-content"
 		className={cn(
-			"mt-2 ring-offset-[var(--ld-background)]",
-			"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ld-primary)] focus-visible:ring-offset-2",
+			"mt-2 ring-offset-background",
+			"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 			className,
 		)}
 		{...props}

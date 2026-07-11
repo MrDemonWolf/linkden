@@ -8,18 +8,18 @@ const buttonVariants = cva(
 		variants: {
 			variant: {
 				default:
-					"bg-[var(--ld-primary)] text-white hover:bg-[var(--ld-primary)]/90 focus-visible:ring-[var(--ld-primary)]",
+					"bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring",
 				primary:
-					"bg-[var(--ld-primary)] text-white hover:bg-[var(--ld-primary)]/90 focus-visible:ring-[var(--ld-primary)]",
+					"bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring",
 				secondary:
-					"bg-[var(--ld-secondary)] text-[var(--ld-foreground)] hover:bg-[var(--ld-secondary)]/80 focus-visible:ring-[var(--ld-secondary)]",
+					"bg-secondary text-foreground hover:bg-secondary/80 focus-visible:ring-ring",
 				ghost:
-					"hover:bg-[var(--ld-muted)] hover:text-[var(--ld-foreground)] focus-visible:ring-[var(--ld-muted)]",
-				danger: "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600",
+					"hover:bg-muted hover:text-foreground focus-visible:ring-ring",
+				danger: "bg-red-600 text-primary-foreground hover:bg-red-700 focus-visible:ring-red-600",
 				outline:
-					"border border-[var(--ld-border)] bg-transparent hover:bg-[var(--ld-muted)] hover:text-[var(--ld-foreground)] focus-visible:ring-[var(--ld-border)]",
+					"border border-border bg-transparent hover:bg-muted hover:text-foreground focus-visible:ring-ring",
 				gradient:
-					"bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 focus-visible:ring-blue-500 shadow-lg shadow-blue-500/20",
+					"bg-gradient-to-r from-blue-500 to-indigo-600 text-primary-foreground hover:from-blue-600 hover:to-indigo-700 focus-visible:ring-blue-500 shadow-lg shadow-blue-500/20",
 			},
 			size: {
 				sm: "h-8 px-3 text-xs",
