@@ -1,16 +1,8 @@
 "use client";
 
+import { getReadableTextColor } from "@linkden/ui/color-contrast";
 import type { ThemeColors } from "./public-page";
 import { usePreview } from "./preview-context";
-
-function getContrastColor(hex: string): string {
-	const r = parseInt(hex.slice(1, 3), 16) / 255;
-	const g = parseInt(hex.slice(3, 5), 16) / 255;
-	const b = parseInt(hex.slice(5, 7), 16) / 255;
-	const toLinear = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
-	const L = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
-	return L > 0.179 ? "#000000" : "#FFFFFF";
-}
 
 interface VCardBlockProps {
 	block: {
@@ -74,7 +66,7 @@ export function VCardBlock({ block, config, colorMode, themeColors }: VCardBlock
 			style.backgroundColor = "transparent";
 		} else {
 			style.backgroundColor = themeColors.primary;
-			style.color = getContrastColor(themeColors.primary);
+			style.color = getReadableTextColor(themeColors.primary);
 		}
 	}
 
@@ -90,24 +82,22 @@ export function VCardBlock({ block, config, colorMode, themeColors }: VCardBlock
 					: "bg-white text-gray-900 border border-gray-200 shadow-sm hover:shadow-md";
 
 	return (
-		<li className="ld-vcard-block">
-			<a
-				href={isPreview ? undefined : "/api/vcard"}
-				download={isPreview ? undefined : "contact.vcf"}
-				onClick={isPreview ? (e: React.MouseEvent) => e.preventDefault() : undefined}
-				className={`${baseClasses} ${colorClasses} cursor-pointer hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 no-underline`}
-				style={{ ...style, outlineColor: themeColors?.primary || "#3b82f6" }}
-			>
-				<span className="flex items-center justify-center gap-2">
-					{buttonEmoji && buttonEmojiPosition === "left" && (
-						<span aria-hidden="true">{buttonEmoji}</span>
-					)}
-					<span>{buttonText}</span>
-					{buttonEmoji && buttonEmojiPosition === "right" && (
-						<span aria-hidden="true">{buttonEmoji}</span>
-					)}
-				</span>
-			</a>
-		</li>
+		<a
+			href={isPreview ? undefined : "/api/vcard"}
+			download={isPreview ? undefined : "contact.vcf"}
+			onClick={isPreview ? (e: React.MouseEvent) => e.preventDefault() : undefined}
+			className={`ld-vcard-block ${baseClasses} ${colorClasses} cursor-pointer hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 no-underline`}
+			style={{ ...style, outlineColor: themeColors?.primary || "#3b82f6" }}
+		>
+			<span className="flex items-center justify-center gap-2">
+				{buttonEmoji && buttonEmojiPosition === "left" && (
+					<span aria-hidden="true">{buttonEmoji}</span>
+				)}
+				<span>{buttonText}</span>
+				{buttonEmoji && buttonEmojiPosition === "right" && (
+					<span aria-hidden="true">{buttonEmoji}</span>
+				)}
+			</span>
+		</a>
 	);
 }

@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import { useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
-import { PublicPage } from "@/components/public/public-page";
+import { PublicPage, getThemeColors } from "@/components/public/public-page";
 import { WolfLogo } from "@/components/wolf-logo";
 import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 import { ConsentBanner, hasAnalyticsConsent } from "@/components/public/consent-banner";
@@ -58,12 +58,42 @@ export default function Home() {
 			}
 		: undefined;
 
+	// Resolve the same theme the public page will show so the cookie bar (rendered
+	// outside PublicPage's themed container) matches a light-preset page.
+	const pageSettings = pageData.data?.settings;
+	const bannerColorMode = resolveColorMode(pageSettings?.defaultColorMode ?? "system");
+	const bannerThemeColors = pageSettings
+		? getThemeColors(pageSettings.themePreset, bannerColorMode, {
+				primary: pageSettings.customPrimary,
+				accent: pageSettings.customAccent,
+				background: pageSettings.customBackground,
+			})
+		: undefined;
+
 	return (
 		<>
-			<ConsentBanner settings={consentSettings} />
+			<ConsentBanner
+				settings={consentSettings}
+				themeColors={bannerThemeColors}
+				colorMode={bannerColorMode}
+			/>
 			<AuthenticatedPublicPage data={pageData.data as Parameters<typeof PublicPage>[0]["data"]} />
 		</>
 	);
+}
+
+/** Mirrors PublicPage.getInitialColorMode so the consent banner picks the same mode. */
+function resolveColorMode(defaultColorMode: string): "light" | "dark" {
+	if (typeof window === "undefined") {
+		return defaultColorMode === "dark" ? "dark" : "light";
+	}
+	const saved = localStorage.getItem("linkden-color-mode");
+	if (saved === "light" || saved === "dark") return saved;
+	if (defaultColorMode === "dark") return "dark";
+	if (defaultColorMode === "system") {
+		return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+	}
+	return "light";
 }
 
 function AuthenticatedPublicPage({ data }: { data: Parameters<typeof PublicPage>[0]["data"] }) {
@@ -147,11 +177,11 @@ function WelcomePage() {
 
 				{/* Sign in link */}
 				<div {...getAnimationProps(4)}>
-					<p className="mt-8 text-xs text-muted-foreground/50">
+					<p className="mt-8 text-xs text-muted-foreground">
 						Already set up?{" "}
 						<a
 							href="/admin/login"
-							className="text-primary/70 underline underline-offset-2 transition-colors duration-200 hover:text-primary"
+							className="text-primary underline underline-offset-2 transition-colors duration-200 hover:text-primary/80"
 						>
 							Sign in
 						</a>

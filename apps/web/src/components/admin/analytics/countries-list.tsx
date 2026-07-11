@@ -1,6 +1,7 @@
 "use client";
 
 import { Globe } from "lucide-react";
+import { QueryError } from "@/components/admin/dashboard/query-error";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -12,6 +13,8 @@ interface CountryItem {
 interface CountriesListProps {
 	items: CountryItem[] | undefined;
 	isLoading?: boolean;
+	isError?: boolean;
+	onRetry?: () => void;
 	limit?: number;
 	title?: string;
 }
@@ -29,6 +32,8 @@ function flagFromCountry(input: string | null): string {
 export function CountriesList({
 	items,
 	isLoading,
+	isError,
+	onRetry,
 	limit = 8,
 	title = "Countries",
 }: CountriesListProps) {
@@ -44,7 +49,9 @@ export function CountriesList({
 				</CardTitle>
 			</CardHeader>
 			<CardContent>
-				{isLoading ? (
+				{isError ? (
+					<QueryError onRetry={onRetry} />
+				) : isLoading ? (
 					<div className="space-y-2">
 						{Array.from({ length: limit }).map((_, i) => (
 							<Skeleton key={`co-sk-${i}`} className="h-8 w-full" />

@@ -44,19 +44,19 @@ export function SocialIconShapeSection({
 				</h2>
 			</CardHeader>
 			<CardContent>
-				<div className="grid grid-cols-2 gap-2.5" role="radiogroup" aria-label="Social icon shape">
+				<div className="grid grid-cols-2 gap-2.5">
 					{OPTIONS.map((opt) => {
 						const selected = shape === opt.value;
 						return (
-							// biome-ignore lint/a11y/useSemanticElements: styled radio-card button holds icon + label children; <input type="radio"> cannot contain content
 							<button
 								key={opt.value}
 								type="button"
-								role="radio"
-								aria-checked={selected}
+								aria-pressed={selected}
+								aria-label={opt.label}
 								onClick={() => onShapeChange(opt.value)}
 								className={cn(
 									"group relative flex flex-col items-center gap-2 rounded-lg border p-3 text-center transition-all",
+									"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 									selected
 										? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-sm"
 										: "border-border/50 hover:border-border",

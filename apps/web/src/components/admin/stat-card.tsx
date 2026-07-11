@@ -1,8 +1,9 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
+import { AlertCircle, ArrowUpRight, RotateCw, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { ArrowUpRight, TrendingUp, TrendingDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -15,8 +16,12 @@ interface StatCardProps {
 	iconBg?: string;
 	href?: string;
 	isLoading?: boolean;
+	isError?: boolean;
+	onRetry?: () => void;
 	trend?: { value: number; label: string } | null;
 	subtitle?: string;
+	/** Optional gradient wash, e.g. "from-primary/10 via-primary/5 to-transparent" */
+	gradient?: string;
 }
 
 export function StatCard({
@@ -27,12 +32,21 @@ export function StatCard({
 	iconBg = "bg-primary/10",
 	href,
 	isLoading,
+	isError,
+	onRetry,
 	trend,
 	subtitle,
+	gradient,
 }: StatCardProps) {
 	return (
 		<Card size="sm" className="group relative overflow-hidden">
-			<CardContent className="flex items-center gap-3">
+			{gradient && (
+				<div
+					className={cn("pointer-events-none absolute inset-0 bg-gradient-to-br", gradient)}
+					aria-hidden="true"
+				/>
+			)}
+			<CardContent className="relative flex items-center gap-3">
 				<div
 					className={cn(
 						"flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/30",
@@ -46,7 +60,27 @@ export function StatCard({
 					<p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-mono">
 						{label}
 					</p>
-					{isLoading ? (
+					{/* Error is checked before loading/value so a failed (re)fetch surfaces
+					    Retry in place of the metric — never a stale number or a spinner. */}
+					{isError ? (
+						<div className="mt-1 flex items-center gap-2">
+							<span className="inline-flex items-center gap-1 text-xs text-destructive">
+								<AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
+								Failed to load
+							</span>
+							{onRetry && (
+								<Button
+									size="sm"
+									variant="outline"
+									onClick={onRetry}
+									className="h-6 gap-1 px-2 text-[11px]"
+								>
+									<RotateCw className="h-3 w-3" />
+									Retry
+								</Button>
+							)}
+						</div>
+					) : isLoading ? (
 						<Skeleton className="mt-1 h-5 w-12" />
 					) : (
 						<div className="flex items-center gap-2">
@@ -57,8 +91,8 @@ export function StatCard({
 								<span
 									className={cn(
 										"inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-medium",
-										trend.value > 0 && "bg-green-500/10 text-green-500",
-										trend.value < 0 && "bg-red-500/10 text-red-500",
+										trend.value > 0 && "bg-success/15 text-success",
+										trend.value < 0 && "bg-destructive/15 text-destructive",
 										trend.value === 0 && "bg-muted text-muted-foreground",
 									)}
 								>
@@ -73,14 +107,14 @@ export function StatCard({
 							)}
 						</div>
 					)}
-					{subtitle && !isLoading && (
+					{subtitle && !isLoading && !isError && (
 						<p className="text-[10px] text-muted-foreground mt-0.5">{subtitle}</p>
 					)}
 				</div>
-				{href && (
+				{href && !isError && (
 					<Link
 						href={href as never}
-						className="ml-auto rounded-md p-1 transition-colors hover:bg-muted"
+						className="relative ml-auto rounded-md p-1 transition-colors hover:bg-muted"
 						aria-label={`Go to ${label}`}
 					>
 						<ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />

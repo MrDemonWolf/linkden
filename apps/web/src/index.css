@@ -5,29 +5,46 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* Midnight Studio — light "day" mode. Branded, not generic grey. */
   --background: oklch(0.98 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0 / 85%);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(0.98 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.55 0.17 220);
+  /* Deep cerulean: white-on ~5.4:1, as-text ~4.6:1 (was 4.03/3.92 — sub-AA) */
+  --primary: oklch(0.47 0.16 233);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.516 0 0);
+  /* AAA body text on white (~7.3:1); was oklch(0.516) = ~5.6:1 AA-only */
+  --muted-foreground: oklch(0.44 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.58 0.22 27);
-  --border: oklch(0.85 0 0 / 30%);
+  /* Deep red: white-on-solid ~5.9:1, as-text on /10 tint ~4.6:1 */
+  --destructive: oklch(0.51 0.2 27);
+  --destructive-foreground: oklch(0.985 0 0);
+  --success: oklch(0.52 0.13 160);
+  --success-foreground: oklch(0.985 0 0);
+  --warning: oklch(0.55 0.13 70);
+  --warning-foreground: oklch(0.985 0 0);
+  /* Solid ~3:1 border on white (was 30%-alpha ~1.08:1) */
+  --border: oklch(0.8 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.65 0.17 220);
+  --ring: oklch(0.55 0.16 233);
   --chart-1: oklch(0.809 0.105 251.813);
   --chart-2: oklch(0.623 0.214 259.815);
   --chart-3: oklch(0.546 0.245 262.881);
   --chart-4: oklch(0.488 0.243 264.376);
   --chart-5: oklch(0.424 0.199 265.638);
+  /* Light-mode counterparts of the dark-only admin tokens (were undefined) */
+  --glass-tint-1: #00aced;
+  --glass-tint-2: #6b8bf5;
+  --sidebar: rgba(255, 255, 255, 0.72);
+  --data-up: oklch(0.52 0.13 160);
+  --data-down: oklch(0.51 0.2 27);
+  --dim: oklch(0.55 0 0);
   --radius: 1rem;
 }
 
@@ -35,7 +52,8 @@
   /* V1 Midnight Studio — Black Pearl bg, Cerulean accent */
   --background: #091533;
   --foreground: #e7ecf7;
-  --card: rgba(255, 255, 255, 0.03);
+  /* 5% fill + 14% border reach ~3:1 card/border edge over the aurora (was 3%/8% ~1.2:1) */
+  --card: rgba(255, 255, 255, 0.05);
   --card-foreground: #e7ecf7;
   --popover: #0e1b40;
   --popover-foreground: #e7ecf7;
@@ -43,12 +61,18 @@
   --primary-foreground: #091533;
   --secondary: #142352;
   --secondary-foreground: #e7ecf7;
-  --muted: rgba(255, 255, 255, 0.04);
+  --muted: rgba(255, 255, 255, 0.07);
   --muted-foreground: #8293b1;
   --accent: #6B8BF5;
   --accent-foreground: #091533;
   --destructive: #ff9aa8;
-  --border: rgba(255, 255, 255, 0.08);
+  /* Navy ink on salmon = 8.95:1 (was implicit white = 2.01:1) */
+  --destructive-foreground: #091533;
+  --success: #6be0a8;
+  --success-foreground: #091533;
+  --warning: #fbbf24;
+  --warning-foreground: #091533;
+  --border: rgba(255, 255, 255, 0.14);
   --input: rgba(255, 255, 255, 0.06);
   --ring: #00ACED;
   --chart-1: #00ACED;
@@ -77,6 +101,11 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -91,6 +120,7 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
+  --color-sidebar: var(--sidebar);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -134,8 +164,19 @@
   }
 }
 
-/* V1 Midnight Studio aurora — cerulean/cornflower over Black Pearl */
+/* Midnight Studio aurora — light "day" tint keeps the cerulean/cornflower
+   identity over a light surface so the light foreground palette is legible. */
 .admin-glass-bg {
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #e4ecfb 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, color-mix(in srgb, var(--glass-tint-2, #6B8BF5) 10%, transparent), transparent 55%),
+    radial-gradient(ellipse at 20% 90%, color-mix(in srgb, var(--glass-tint-1, #00ACED) 8%, transparent), transparent 55%),
+    linear-gradient(160deg, #f6f8fd 0%, #eef2fb 100%);
+  background-attachment: fixed;
+}
+
+/* V1 Midnight Studio aurora — cerulean/cornflower over Black Pearl (dark) */
+.dark .admin-glass-bg {
   background:
     radial-gradient(1200px 600px at 10% -10%, #142352 0%, transparent 50%),
     radial-gradient(ellipse at 80% 20%, color-mix(in srgb, var(--glass-tint-2, #6B8BF5) 14%, transparent), transparent 55%),

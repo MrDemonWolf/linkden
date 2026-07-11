@@ -47,7 +47,7 @@ export function BlockRow({
 				"group flex items-center gap-0 rounded-xl bg-card/80 backdrop-blur-xl border shadow-sm overflow-hidden transition-all hover:shadow-md min-h-[56px]",
 				accent
 					? "border-primary/40 bg-primary/[0.04] hover:border-primary/60"
-					: "border-white/10 hover:border-white/15",
+					: "border-border hover:border-foreground/20",
 				isDragging && "opacity-30 ring-2 ring-primary/40",
 				!block.isEnabled && !isDragging && "opacity-50",
 			)}
@@ -55,7 +55,7 @@ export function BlockRow({
 			{/* Drag handle — wider on mobile (44px), prevents page scroll on grab */}
 			<button
 				type="button"
-				className="flex w-11 sm:w-9 shrink-0 items-center justify-center border-r border-white/8 text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing transition-colors self-stretch focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring touch-none"
+				className="flex w-11 sm:w-9 shrink-0 items-center justify-center border-r border-border text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing transition-colors self-stretch focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring touch-none"
 				aria-label="Drag to reorder"
 				{...attributes}
 				{...listeners}
@@ -88,7 +88,7 @@ export function BlockRow({
 						<p className="truncate text-sm font-medium">{block.title || "Untitled"}</p>
 						{block.status === "draft" && (
 							<span
-								className="inline-block h-2 w-2 shrink-0 rounded-full bg-amber-400 animate-pulse"
+								className="inline-block h-2 w-2 shrink-0 rounded-full bg-warning animate-pulse"
 								title="Unpublished changes"
 								role="img"
 								aria-label="Unpublished changes"
@@ -115,9 +115,9 @@ export function BlockRow({
 						onToggle();
 					}}
 					className={cn(
-						"flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
+						"flex h-8 w-8 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
 						block.isEnabled
-							? "text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10"
+							? "text-success hover:bg-success/10"
 							: "text-muted-foreground hover:text-foreground hover:bg-muted",
 					)}
 					aria-label={block.isEnabled ? "Disable block" : "Enable block"}
@@ -141,7 +141,7 @@ export function BlockRow({
 						e.stopPropagation();
 						onDelete();
 					}}
-					className="hidden sm:flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
+					className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all opacity-60 hover:text-destructive hover:bg-destructive/10 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:opacity-70 group-hover:opacity-100"
 					aria-label="Delete block"
 				>
 					<Trash2 className="h-3.5 w-3.5" />

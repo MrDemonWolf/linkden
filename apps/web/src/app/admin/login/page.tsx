@@ -1,21 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { Checkbox, Separator } from "@linkden/ui";
 import { useQuery } from "@tanstack/react-query";
+import { AlertCircle, ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Eye, EyeOff, AlertCircle, Loader2, Mail, Lock, ArrowRight } from "lucide-react";
-import { WolfLogo } from "@/components/wolf-logo";
-import { authClient } from "@/lib/auth-client";
-import { trpc } from "@/utils/trpc";
+import { ShaderBanner } from "@/components/public/shader-banner";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@linkden/ui";
-import { Separator } from "@linkden/ui";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ShaderBanner } from "@/components/public/shader-banner";
+import { WolfLogo } from "@/components/wolf-logo";
+import { authClient } from "@/lib/auth-client";
 import { getLoginBgStyle, getLoginShaderPreset, isCustomLoginBg } from "@/lib/login-bg";
+import { trpc } from "@/utils/trpc";
 
 export default function AdminLoginPage() {
 	const router = useRouter();
@@ -155,11 +154,11 @@ export default function AdminLoginPage() {
 		action?: React.ReactNode;
 	}) => (
 		<div className="login-glass-card relative rounded-2xl p-8 sm:p-10 text-center space-y-4">
-			<div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-500/10 ring-1 ring-blue-500/20">
+			<div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20">
 				{icon}
 			</div>
-			<h2 className="text-base font-semibold text-white tracking-tight">{title}</h2>
-			<p className="text-sm text-slate-400 leading-relaxed">{description}</p>
+			<h2 className="text-base font-semibold text-foreground tracking-tight">{title}</h2>
+			<p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
 			{action}
 		</div>
 	);
@@ -167,7 +166,7 @@ export default function AdminLoginPage() {
 	const BackLink = ({ onClick }: { onClick: () => void }) => (
 		<button
 			type="button"
-			className="text-sm text-blue-400 hover:text-blue-300 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
+			className="text-sm text-primary hover:text-primary/80 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
 			onClick={onClick}
 		>
 			Back to sign in
@@ -187,13 +186,13 @@ export default function AdminLoginPage() {
 
 			<div className="relative z-10 min-h-screen lg:grid lg:grid-cols-2">
 				{/* Brand panel — lg+ only */}
-				<aside className="hidden lg:flex flex-col justify-between p-10 xl:p-14 bg-primary/[0.06] border-r border-white/[0.08]">
+				<aside className="hidden lg:flex flex-col justify-between p-10 xl:p-14 bg-primary/[0.06] border-r border-border">
 					<div className="flex items-center gap-3">
 						{loginLogoUrl ? (
 							<img
 								src={loginLogoUrl}
 								alt=""
-								className="h-10 w-10 rounded-xl object-cover ring-1 ring-white/10"
+								className="h-10 w-10 rounded-xl object-cover ring-1 ring-border"
 							/>
 						) : (
 							<WolfLogo className="h-10 w-10" />
@@ -205,7 +204,7 @@ export default function AdminLoginPage() {
 						<h2 className="text-3xl xl:text-4xl font-bold tracking-tight text-foreground leading-[1.1]">
 							Your link-in-bio,
 							<br />
-							<span className="bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent">
+							<span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
 								self-hosted.
 							</span>
 						</h2>
@@ -225,18 +224,18 @@ export default function AdminLoginPage() {
 						<div className="w-full max-w-[420px] login-card-enter">
 							{loginSuccess ? (
 								<StatusCard
-									icon={<Loader2 className="h-5 w-5 animate-spin text-blue-400" />}
+									icon={<Loader2 className="h-5 w-5 animate-spin text-primary" />}
 									title="Welcome back"
-									description={<span className="text-slate-300">Signing you in...</span>}
+									description={<span className="text-muted-foreground">Signing you in...</span>}
 								/>
 							) : magicLinkSent ? (
 								<StatusCard
-									icon={<Mail className="h-5 w-5 text-blue-400" />}
+									icon={<Mail className="h-5 w-5 text-primary" />}
 									title="Check your inbox"
 									description={
 										<>
 											We sent a magic link to{" "}
-											<span className="font-medium text-slate-200">{email}</span>. Click it to sign
+											<span className="font-medium text-foreground">{email}</span>. Click it to sign
 											in.
 										</>
 									}
@@ -251,13 +250,13 @@ export default function AdminLoginPage() {
 								/>
 							) : resetLinkSent ? (
 								<StatusCard
-									icon={<Mail className="h-5 w-5 text-blue-400" />}
+									icon={<Mail className="h-5 w-5 text-primary" />}
 									title="Check your inbox"
 									description={
 										<>
 											We sent a reset link to{" "}
-											<span className="font-medium text-slate-200">{email}</span>. Click it to reset
-											your password.
+											<span className="font-medium text-foreground">{email}</span>. Click it to
+											reset your password.
 										</>
 									}
 									action={
@@ -278,15 +277,15 @@ export default function AdminLoginPage() {
 											<img
 												src={loginLogoUrl}
 												alt=""
-												className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-white/10"
+												className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-border"
 											/>
 										) : (
 											<WolfLogo className="mx-auto h-22 w-22" />
 										)}
-										<h1 className="mt-5 text-2xl font-bold text-white tracking-tight">
+										<h1 className="mt-5 text-2xl font-bold text-foreground tracking-tight">
 											Reset password
 										</h1>
-										<p className="mt-2 text-sm text-slate-400">
+										<p className="mt-2 text-sm text-muted-foreground">
 											Enter your email and we&apos;ll send a reset link
 										</p>
 									</div>
@@ -300,7 +299,7 @@ export default function AdminLoginPage() {
 											{formError && (
 												<div
 													id="login-error"
-													className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-xs text-red-400"
+													className="flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2.5 text-xs text-destructive"
 												>
 													<AlertCircle className="h-3.5 w-3.5 shrink-0" />
 													<span>{formError}</span>
@@ -309,11 +308,14 @@ export default function AdminLoginPage() {
 										</div>
 
 										<div className="space-y-2">
-											<Label htmlFor="forgot-email" className="text-sm font-medium text-slate-300">
+											<Label
+												htmlFor="forgot-email"
+												className="text-sm font-medium text-muted-foreground"
+											>
 												Email
 											</Label>
 											<div className="relative login-input rounded-lg">
-												<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+												<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
 												<Input
 													id="forgot-email"
 													type="email"
@@ -321,7 +323,7 @@ export default function AdminLoginPage() {
 													value={email}
 													onChange={(e) => setEmail(e.target.value)}
 													autoComplete="email"
-													className="bg-white/[0.04] border-white/[0.08] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500/40 focus-visible:border-blue-500/30 pl-10 h-11"
+													className="pl-10 h-11"
 													required
 												/>
 											</div>
@@ -363,15 +365,15 @@ export default function AdminLoginPage() {
 											<img
 												src={loginLogoUrl}
 												alt=""
-												className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-white/10"
+												className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-border"
 											/>
 										) : (
 											<WolfLogo className="mx-auto h-22 w-22" />
 										)}
-										<h1 className="mt-5 text-2xl font-bold text-white tracking-tight">
+										<h1 className="mt-5 text-2xl font-bold text-foreground tracking-tight">
 											Welcome back
 										</h1>
-										<p className="mt-2 text-sm text-slate-400">Sign in to your dashboard</p>
+										<p className="mt-2 text-sm text-muted-foreground">Sign in to your dashboard</p>
 									</div>
 
 									<form
@@ -383,7 +385,7 @@ export default function AdminLoginPage() {
 											{formError && (
 												<div
 													id="login-error"
-													className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-xs text-red-400"
+													className="flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2.5 text-xs text-destructive"
 												>
 													<AlertCircle className="h-3.5 w-3.5 shrink-0" />
 													<span>{formError}</span>
@@ -392,11 +394,11 @@ export default function AdminLoginPage() {
 										</div>
 
 										<div className="space-y-2">
-											<Label htmlFor="email" className="text-sm font-medium text-slate-300">
+											<Label htmlFor="email" className="text-sm font-medium text-muted-foreground">
 												Email
 											</Label>
 											<div className="relative login-input rounded-lg">
-												<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+												<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
 												<Input
 													id="email"
 													type="email"
@@ -404,15 +406,19 @@ export default function AdminLoginPage() {
 													value={email}
 													onChange={(e) => setEmail(e.target.value)}
 													autoComplete="email"
-													className="bg-white/[0.04] border-white/[0.08] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500/40 focus-visible:border-blue-500/30 pl-10 h-11"
+													className="pl-10 h-11"
 													required
+													autoFocus
 												/>
 											</div>
 										</div>
 
 										<div className="space-y-2">
 											<div className="flex items-center justify-between">
-												<Label htmlFor="password" className="text-sm font-medium text-slate-300">
+												<Label
+													htmlFor="password"
+													className="text-sm font-medium text-muted-foreground"
+												>
 													Password
 												</Label>
 												<button
@@ -421,13 +427,13 @@ export default function AdminLoginPage() {
 														setForgotMode(true);
 														setFormError("");
 													}}
-													className="text-xs text-blue-400 cursor-pointer hover:text-blue-300 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
+													className="text-xs text-primary cursor-pointer hover:text-primary/80 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
 												>
 													Forgot password?
 												</button>
 											</div>
 											<div className="relative login-input rounded-lg">
-												<Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 pointer-events-none" />
+												<Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
 												<Input
 													id="password"
 													type={showPassword ? "text" : "password"}
@@ -435,12 +441,13 @@ export default function AdminLoginPage() {
 													value={password}
 													onChange={(e) => setPassword(e.target.value)}
 													autoComplete="current-password"
-													className="bg-white/[0.04] border-white/[0.08] text-slate-100 placeholder:text-slate-500 focus-visible:ring-blue-500/40 focus-visible:border-blue-500/30 pl-10 h-11"
+													className="pl-10 h-11"
+													required
 												/>
 												<button
 													type="button"
 													onClick={() => setShowPassword(!showPassword)}
-													className="absolute right-0.5 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center text-slate-500 hover:text-slate-300 transition-colors"
+													className="absolute right-0.5 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
 													aria-label={showPassword ? "Hide password" : "Show password"}
 													aria-pressed={showPassword}
 												>
@@ -461,7 +468,7 @@ export default function AdminLoginPage() {
 											/>
 											<Label
 												htmlFor="remember-me"
-												className="text-xs text-slate-400 cursor-pointer"
+												className="text-xs text-muted-foreground cursor-pointer"
 											>
 												Keep me signed in
 											</Label>
@@ -489,8 +496,8 @@ export default function AdminLoginPage() {
 									{magicLinkEnabled && (
 										<div className="mt-6 space-y-4">
 											<div className="relative">
-												<Separator className="bg-white/[0.06]" />
-												<span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0f1726] px-3 text-[10px] font-medium uppercase tracking-wider text-slate-500">
+												<Separator className="bg-border" />
+												<span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
 													or
 												</span>
 											</div>
@@ -498,7 +505,7 @@ export default function AdminLoginPage() {
 											<Button
 												type="button"
 												variant="outline"
-												className="w-full h-11 border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.06] text-slate-200 transition-all"
+												className="w-full h-11 transition-all"
 												disabled={isMagicLinkSubmitting}
 												onClick={handleMagicLink}
 											>
@@ -521,11 +528,11 @@ export default function AdminLoginPage() {
 
 							{/* Below-card link */}
 							{!loginSuccess && !magicLinkSent && !resetLinkSent && (
-								<p className="mt-5 text-center text-xs text-slate-500">
+								<p className="mt-5 text-center text-xs text-muted-foreground">
 									Don&apos;t have an account?{" "}
 									<a
 										href="/admin/setup"
-										className="text-blue-400 hover:text-blue-300 transition-colors"
+										className="text-primary hover:text-primary/80 transition-colors"
 									>
 										Set up LinkDen
 									</a>
@@ -543,7 +550,7 @@ export default function AdminLoginPage() {
 										href={branding.ppUrl}
 										target="_blank"
 										rel="noopener noreferrer"
-										className="text-xs text-slate-500 hover:text-blue-400 transition-colors"
+										className="text-xs text-muted-foreground hover:text-primary transition-colors"
 									>
 										Privacy Policy
 									</a>
@@ -551,7 +558,7 @@ export default function AdminLoginPage() {
 									<button
 										type="button"
 										onClick={() => setPpDialogOpen(true)}
-										className="text-xs text-slate-500 hover:text-blue-400 transition-colors"
+										className="text-xs text-muted-foreground hover:text-primary transition-colors"
 									>
 										Privacy Policy
 									</button>
@@ -561,7 +568,7 @@ export default function AdminLoginPage() {
 										href={branding.tosUrl}
 										target="_blank"
 										rel="noopener noreferrer"
-										className="text-xs text-slate-500 hover:text-blue-400 transition-colors"
+										className="text-xs text-muted-foreground hover:text-primary transition-colors"
 									>
 										Terms of Service
 									</a>
@@ -569,7 +576,7 @@ export default function AdminLoginPage() {
 									<button
 										type="button"
 										onClick={() => setTosDialogOpen(true)}
-										className="text-xs text-slate-500 hover:text-blue-400 transition-colors"
+										className="text-xs text-muted-foreground hover:text-primary transition-colors"
 									>
 										Terms of Service
 									</button>

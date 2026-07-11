@@ -96,6 +96,10 @@ export default function BuilderPage() {
 	const [showPicker, setShowPicker] = useState(false);
 	const [profileDirty, setProfileDirty] = useState(false);
 	const [socialDirty, setSocialDirty] = useState(false);
+	// Track the lg breakpoint so the block edit panel mounts in exactly one place
+	// (inline sidebar at lg+, bottom sheet below) — never both, which would
+	// duplicate the panel's input IDs.
+	const [isLg, setIsLg] = useState(true);
 
 	const blocksQuery = useQuery(trpc.blocks.list.queryOptions());
 	const blocks: Block[] = (blocksQuery.data as Block[] | undefined) ?? [];
@@ -183,15 +187,88 @@ export default function BuilderPage() {
 		}
 	};
 
-	const handleDelete = async (id: string) => {
+	const handleDelete = async (block: Block) => {
 		try {
-			await deleteBlock.mutateAsync({ id });
+			await deleteBlock.mutateAsync({ id: block.id });
 			invalidate();
-			toast.success("Block deleted");
+			toast.success("Block deleted", {
+				action: {
+					label: "Undo",
+					onClick: async () => {
+						try {
+							await createBlock.mutateAsync({
+								id: block.id,
+								type: block.type as BlockType,
+								title: block.title ?? undefined,
+								url: block.url ?? undefined,
+								icon: block.icon ?? undefined,
+								embedType: block.embedType ?? undefined,
+								embedUrl: block.embedUrl ?? undefined,
+								socialIcons: block.socialIcons ?? undefined,
+								isEnabled: block.isEnabled,
+								position: block.position,
+								scheduledStart: block.scheduledStart ?? undefined,
+								scheduledEnd: block.scheduledEnd ?? undefined,
+								config: block.config ?? undefined,
+							});
+							invalidate();
+							toast.success("Block restored");
+						} catch {
+							toast.error("Failed to restore block");
+						}
+					},
+				},
+			});
 		} catch {
 			toast.error("Failed to delete block");
 		}
 	};
+
+	const closeEdit = useCallback(() => {
+		setEditingBlock(null);
+		setEditingOverrides(null);
+	}, []);
+
+	const handleDeliveryChange = useCallback(
+		async (value: string) => {
+			try {
+				await updateSettings.mutateAsync([{ key: "contact_delivery", value }]);
+				qc.invalidateQueries({ queryKey: trpc.settings.getAll.queryOptions().queryKey });
+				toast.success("Delivery mode updated");
+			} catch {
+				toast.error("Failed to update delivery mode");
+			}
+		},
+		[updateSettings, qc],
+	);
+
+	// Keep isLg in sync with the lg breakpoint (1024px).
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const mq = window.matchMedia("(min-width: 1024px)");
+		const update = () => setIsLg(mq.matches);
+		update();
+		mq.addEventListener("change", update);
+		return () => mq.removeEventListener("change", update);
+	}, []);
+
+	// Below lg the edit panel is presented as a full-screen bottom sheet. Lock
+	// body scroll + wire Escape only while that sheet is actually mounted.
+	const mobileEditOpen = activeTab === "blocks" && !!editingBlock;
+	const mobileSheetOpen = mobileEditOpen && !isLg;
+	useEffect(() => {
+		if (!mobileSheetOpen) return;
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === "Escape") closeEdit();
+		};
+		document.addEventListener("keydown", onKey);
+		const prevOverflow = document.body.style.overflow;
+		document.body.style.overflow = "hidden";
+		return () => {
+			document.removeEventListener("keydown", onKey);
+			document.body.style.overflow = prevOverflow;
+		};
+	}, [mobileSheetOpen, closeEdit]);
 
 	const handleSaveEdit = async (data: Partial<Block>) => {
 		try {
@@ -285,20 +362,28 @@ export default function BuilderPage() {
 	const blockIds = blocks.map((b) => b.id);
 	const draftCount = blocks.filter((b) => b.status === "draft").length;
 
+	// Header status must reflect the *current* tab, not just block drafts —
+	// otherwise Profile/Social read "All changes are live" while dirty.
+	const currentTabDirty =
+		activeTab === "blocks" ? hasDrafts : activeTab === "profile" ? profileDirty : socialDirty;
+	const headerDescription = currentTabDirty
+		? activeTab === "blocks"
+			? `Unpublished changes · ${draftCount} draft${draftCount !== 1 ? "s" : ""}`
+			: "You have unsaved changes"
+		: "All changes are live";
+
 	return (
 		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
 			{/* Header bar */}
 			<PageHeader
 				title="Page Builder"
-				description={
-					hasDrafts
-						? `Unpublished changes · ${draftCount} draft${draftCount !== 1 ? "s" : ""}`
-						: "All changes are live"
-				}
+				description={headerDescription}
 				badge={
-					hasDrafts ? (
-						<Badge variant="outline" className="border-amber-400/40 bg-amber-400/10 text-amber-400">
-							{draftCount} draft{draftCount !== 1 ? "s" : ""}
+					currentTabDirty ? (
+						<Badge variant="outline" className="border-warning/40 bg-warning/10 text-warning">
+							{activeTab === "blocks"
+								? `${draftCount} draft${draftCount !== 1 ? "s" : ""}`
+								: "Unsaved"}
 						</Badge>
 					) : null
 				}
@@ -359,23 +444,15 @@ export default function BuilderPage() {
 				<div className="flex-1 min-w-0 space-y-4">
 					{activeTab === "blocks" && (
 						<>
-							{/* Inline draft banner — wireframe Variant A */}
+							{/* Inline draft banner — informational only; the single Publish
+							    control lives in the page header to avoid duplicate CTAs. */}
 							{hasDrafts && (
-								<div className="flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/[0.06] px-4 py-3 animate-in fade-in-0 slide-in-from-top-1 duration-200">
-									<div className="flex items-center gap-2 min-w-0">
-										<Rocket className="h-4 w-4 shrink-0 text-primary" />
-										<p className="text-sm text-foreground truncate">
-											You have {draftCount} unpublished change{draftCount !== 1 ? "s" : ""}
-										</p>
-									</div>
-									<Button
-										size="sm"
-										onClick={handlePublishAll}
-										disabled={publishAll.isPending}
-										className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
-									>
-										{publishAll.isPending ? "Publishing…" : "Publish now"}
-									</Button>
+								<div className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/[0.06] px-4 py-3 animate-in fade-in-0 slide-in-from-top-1 duration-200">
+									<Rocket className="h-4 w-4 shrink-0 text-primary" />
+									<p className="text-sm text-foreground truncate">
+										You have {draftCount} unpublished change{draftCount !== 1 ? "s" : ""} — use
+										Publish above to make them live.
+									</p>
 								</div>
 							)}
 
@@ -403,6 +480,20 @@ export default function BuilderPage() {
 									<div className="flex flex-col gap-2">
 										<SkeletonRows count={4} />
 									</div>
+								) : blocksQuery.isError ? (
+									<div className="rounded-xl border border-border py-8 text-center">
+										<p className="text-sm text-destructive">
+											Failed to load blocks — your page may be out of date
+										</p>
+										<Button
+											variant="outline"
+											size="sm"
+											className="mt-2"
+											onClick={() => blocksQuery.refetch()}
+										>
+											Retry
+										</Button>
+									</div>
 								) : blocks.length === 0 ? (
 									<EmptyState
 										icon={Blocks}
@@ -418,7 +509,7 @@ export default function BuilderPage() {
 														block={block}
 														onToggle={() => handleToggle(block.id, block.isEnabled)}
 														onEdit={() => setEditingBlock(block)}
-														onDelete={() => handleDelete(block.id)}
+														onDelete={() => handleDelete(block)}
 														accent={editingBlock?.id === block.id}
 													/>
 												</li>
@@ -472,7 +563,7 @@ export default function BuilderPage() {
 													handleAddBlock(item.type);
 													setShowPicker(false);
 												}}
-												className="group/picker flex flex-col items-start gap-2 rounded-xl border border-white/10 bg-card/60 backdrop-blur-sm p-3 text-left hover:border-primary/30 hover:bg-primary/5 transition-all"
+												className="group/picker flex flex-col items-start gap-2 rounded-xl border border-border bg-card/60 backdrop-blur-sm p-3 text-left hover:border-primary/30 hover:bg-primary/5 transition-all"
 											>
 												<div
 													className={cn(
@@ -505,30 +596,23 @@ export default function BuilderPage() {
 
 				{/* Right side: Edit panel and/or Preview */}
 				<div className="hidden lg:flex lg:gap-4 shrink-0">
-					{/* Edit panel — slides in when editing blocks */}
-					{activeTab === "blocks" && editingBlock && (
+					{/* Edit panel — inline at lg+ only; below lg it renders inside the
+						    bottom sheet instead (never both, to avoid duplicate input IDs) */}
+					{activeTab === "blocks" && editingBlock && isLg && (
 						<div className="w-[340px] shrink-0 animate-in slide-in-from-right-4 fade-in-0 duration-200">
 							<BlockEditPanel
 								block={editingBlock}
-								onClose={() => {
-									setEditingBlock(null);
-									setEditingOverrides(null);
-								}}
+								onClose={closeEdit}
 								onChange={setEditingOverrides}
 								onSave={handleSaveEdit}
+								onDelete={() => {
+									const b = editingBlock;
+									closeEdit();
+									handleDelete(b);
+								}}
 								isSaving={updateBlock.isPending}
 								contactDelivery={contactDelivery}
-								onDeliveryChange={async (value) => {
-									try {
-										await updateSettings.mutateAsync([{ key: "contact_delivery", value }]);
-										qc.invalidateQueries({
-											queryKey: trpc.settings.getAll.queryOptions().queryKey,
-										});
-										toast.success("Delivery mode updated");
-									} catch {
-										toast.error("Failed to update delivery mode");
-									}
-								}}
+								onDeliveryChange={handleDeliveryChange}
 							/>
 						</div>
 					)}
@@ -564,6 +648,39 @@ export default function BuilderPage() {
 			<MobilePreviewSheet open={showMobilePreview} onOpenChange={setShowMobilePreview}>
 				<SharedPreview overrides={{ blocks: previewBlocksData }} showHeader={false} />
 			</MobilePreviewSheet>
+
+			{/* Mobile block edit sheet — below lg the edit panel is impossible to
+			    reach inline, so present it as a full-screen bottom sheet. */}
+			{mobileSheetOpen && editingBlock && (
+				<div className="fixed inset-0 z-50 lg:hidden">
+					<div
+						className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+						onClick={closeEdit}
+						aria-hidden="true"
+					/>
+					<div
+						role="dialog"
+						aria-modal="true"
+						aria-label="Edit block"
+						className="fixed inset-x-0 bottom-0 z-10 flex h-[90vh] flex-col overflow-hidden rounded-t-2xl border-t border-border bg-card shadow-xl animate-in slide-in-from-bottom duration-300"
+					>
+						<BlockEditPanel
+							block={editingBlock}
+							onClose={closeEdit}
+							onChange={setEditingOverrides}
+							onSave={handleSaveEdit}
+							onDelete={() => {
+								const b = editingBlock;
+								closeEdit();
+								handleDelete(b);
+							}}
+							isSaving={updateBlock.isPending}
+							contactDelivery={contactDelivery}
+							onDeliveryChange={handleDeliveryChange}
+						/>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

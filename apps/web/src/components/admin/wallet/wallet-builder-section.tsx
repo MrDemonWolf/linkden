@@ -251,7 +251,7 @@ export function WalletBuilderSection({
 			{/* Colors */}
 			<Section icon={Palette} title="Colors" hint="Background · Foreground · Label">
 				<FieldGroup columns={1}>
-					<div className="grid grid-cols-3 gap-3">
+					<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
 						<ColorField
 							id="w-bg"
 							label="Background"

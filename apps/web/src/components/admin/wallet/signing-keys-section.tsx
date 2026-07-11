@@ -46,9 +46,9 @@ function CertFileInput({
 			<div className="flex items-center gap-2">
 				<Label>{label}</Label>
 				{hasValue ? (
-					<CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+					<CheckCircle2 className="h-3.5 w-3.5 text-success" />
 				) : (
-					<CircleAlert className="h-3.5 w-3.5 text-amber-400" />
+					<CircleAlert className="h-3.5 w-3.5 text-warning" />
 				)}
 			</div>
 			<div className="flex gap-2">
@@ -85,7 +85,7 @@ function CertFileInput({
 						onChange={(e) => setPasteValue(e.target.value)}
 						placeholder="Paste PEM content here..."
 						rows={4}
-						className="w-full rounded-lg border border-white/15 bg-transparent px-2.5 py-1.5 text-xs font-mono outline-none focus:ring-1 focus:ring-ring dark:bg-input/30"
+						className="w-full rounded-lg border border-border bg-transparent px-2.5 py-1.5 text-xs font-mono outline-none focus:ring-1 focus:ring-ring dark:bg-input/30"
 					/>
 					<Button
 						type="button"
@@ -172,9 +172,9 @@ export function SigningKeysSection() {
 
 	return (
 		<div className="space-y-3">
-			<div className="relative overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-xs">
+			<div className="relative overflow-hidden rounded-lg border border-border bg-muted px-3.5 py-2.5 text-xs">
 				<div
-					className={`absolute inset-y-0 left-0 w-0.5 ${allSet ? "bg-emerald-500" : "bg-amber-400"}`}
+					className={`absolute inset-y-0 left-0 w-0.5 ${allSet ? "bg-success" : "bg-warning"}`}
 				/>
 				<div className="flex flex-wrap gap-x-4 gap-y-1 pl-1.5">
 					{[
@@ -190,9 +190,9 @@ export function SigningKeysSection() {
 					].map((item) => (
 						<span key={item.label} className="inline-flex items-center gap-1">
 							{item.ok ? (
-								<CheckCircle2 className="h-3 w-3 text-emerald-500" />
+								<CheckCircle2 className="h-3 w-3 text-success" />
 							) : (
-								<CircleAlert className="h-3 w-3 text-amber-400" />
+								<CircleAlert className="h-3 w-3 text-warning" />
 							)}
 							<span className="text-muted-foreground">
 								{item.label}

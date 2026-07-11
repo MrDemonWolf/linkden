@@ -1,63 +1,69 @@
 "use client";
 
-import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
 import {
-	Eye,
-	MousePointerClick,
-	Users,
-	Link2,
+	ArrowUpRight,
 	BarChart3,
 	Clock,
 	ExternalLink,
+	Eye,
+	Globe,
+	Link2,
+	MousePointerClick,
 	Plus,
 	Share2,
-	Trophy,
-	Globe,
-	ArrowUpRight,
 	Sparkles,
+	Trophy,
+	Users,
 } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import {
-	BarChart,
-	Bar,
-	AreaChart,
 	Area,
+	AreaChart,
+	Bar,
+	BarChart,
+	CartesianGrid,
 	Legend,
+	ResponsiveContainer,
+	Tooltip,
 	XAxis,
 	YAxis,
-	CartesianGrid,
-	Tooltip,
-	ResponsiveContainer,
 } from "recharts";
-import { trpc } from "@/utils/trpc";
+import { toast } from "sonner";
+import { QueryError } from "@/components/admin/dashboard/query-error";
+import { TopLinksList } from "@/components/admin/dashboard/top-links-list";
+import { type Period, PeriodSelector } from "@/components/admin/period-selector";
+import { StatCard } from "@/components/admin/stat-card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { type ChartConfig, ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 import { authClient } from "@/lib/auth-client";
 import { relativeTime } from "@/lib/format";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ChartContainer, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
-import { PeriodSelector, type Period } from "@/components/admin/period-selector";
-import { TopLinksList } from "@/components/admin/dashboard/top-links-list";
-import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
+import { trpc } from "@/utils/trpc";
 
 const barChartConfig: ChartConfig = {
 	count: {
 		label: "Clicks",
-		color: "var(--primary, #0FACED)",
+		color: "var(--data-up)",
 	},
 };
 
 const areaChartConfig: ChartConfig = {
 	views: {
 		label: "Views",
-		color: "var(--primary, #0FACED)",
+		color: "var(--primary, #00ACED)",
 	},
 	clicks: {
 		label: "Clicks",
-		color: "#22c55e",
+		color: "var(--data-up)",
 	},
 };
+
+// Fixed skeleton bar heights — avoids Math.random() in render (hydration mismatch + reflow churn).
+const SKELETON_BAR_HEIGHTS = [48, 72, 40, 84, 56, 68, 44];
 
 function computeTrend(current: number, previous: number): { value: number; label: string } {
 	if (previous === 0) {
@@ -186,41 +192,47 @@ export default function AdminDashboardPage() {
 		return `Your page got ${totalViews.toLocaleString()} ${totalViews === 1 ? "view" : "views"} in the last ${periodWord}${trendBit}`;
 	}, [overview.isLoading, period, totalViews, previousViews, viewsTrend]);
 
-	const statCards = [
+	const periodSubtitle = `Last ${periodLabel}${periodLabel === "all" ? "" : " days"}`;
+
+	const statCards: {
+		icon: typeof Eye;
+		label: string;
+		value: number;
+		iconColor: string;
+		iconBg: string;
+		gradient: string;
+		trend: { value: number; label: string } | null;
+		subtitle: string;
+		href?: string;
+	}[] = [
 		{
 			icon: Eye,
-			label: "Page Views",
+			label: "Views",
 			value: totalViews,
-			gradient: "from-blue-500/10 via-blue-500/5 to-transparent",
-			iconColor: "text-blue-400",
-			iconGlow: "shadow-blue-500/20",
-			borderAccent: "border-blue-500/20",
-			isLoading: overview.isLoading,
+			iconColor: "text-primary",
+			iconBg: "bg-primary/10",
+			gradient: "from-primary/10 via-primary/5 to-transparent",
 			trend: overview.data ? viewsTrend : null,
-			subtitle: `Last ${periodLabel}${periodLabel === "all" ? "" : " days"}`,
+			subtitle: periodSubtitle,
 		},
 		{
 			icon: MousePointerClick,
-			label: "Link Clicks",
+			label: "Clicks",
 			value: totalClicks,
-			gradient: "from-emerald-500/10 via-emerald-500/5 to-transparent",
 			iconColor: "text-emerald-400",
-			iconGlow: "shadow-emerald-500/20",
-			borderAccent: "border-emerald-500/20",
-			isLoading: overview.isLoading,
+			iconBg: "bg-emerald-500/10",
+			gradient: "from-emerald-500/10 via-emerald-500/5 to-transparent",
 			trend: overview.data ? clicksTrend : null,
-			subtitle: `Last ${periodLabel}${periodLabel === "all" ? "" : " days"}`,
+			subtitle: periodSubtitle,
 		},
 		{
 			icon: Link2,
 			label: "Active Links",
 			value: activeLinks,
-			gradient: "from-sky-500/10 via-sky-500/5 to-transparent",
 			iconColor: "text-sky-400",
-			iconGlow: "shadow-sky-500/20",
-			borderAccent: "border-sky-500/20",
-			isLoading: overview.isLoading,
-			trend: null as null | { value: number; label: string },
+			iconBg: "bg-sky-500/10",
+			gradient: "from-sky-500/10 via-sky-500/5 to-transparent",
+			trend: null,
 			subtitle: "Published & enabled",
 			href: "/admin/builder",
 		},
@@ -228,16 +240,23 @@ export default function AdminDashboardPage() {
 			icon: Users,
 			label: "New Contacts",
 			value: totalConnections,
-			gradient: "from-amber-500/10 via-amber-500/5 to-transparent",
 			iconColor: "text-amber-400",
-			iconGlow: "shadow-amber-500/20",
-			borderAccent: "border-amber-500/20",
-			isLoading: overview.isLoading,
-			trend: null as null | { value: number; label: string },
-			subtitle: `Last ${periodLabel}${periodLabel === "all" ? "" : " days"}`,
-			href: "/admin/forms",
+			iconBg: "bg-amber-500/10",
+			gradient: "from-amber-500/10 via-amber-500/5 to-transparent",
+			trend: null,
+			subtitle: periodSubtitle,
+			href: "/admin/connections",
 		},
 	];
+
+	async function handleShare() {
+		try {
+			await navigator.clipboard.writeText(window.location.origin);
+			toast.success("Link copied");
+		} catch {
+			toast.error("Couldn't copy link");
+		}
+	}
 
 	return (
 		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
@@ -277,20 +296,22 @@ export default function AdminDashboardPage() {
 						className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-blue-500/5 to-transparent pointer-events-none"
 						aria-hidden="true"
 					/>
-					<CardContent className="relative flex items-center gap-3">
-						<div
-							className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400 shadow-lg shadow-blue-500/20"
-							aria-hidden="true"
-						>
-							<Sparkles className="h-4 w-4" />
+					<CardContent className="relative flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+						<div className="flex min-w-0 items-center gap-3">
+							<div
+								className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400 shadow-lg shadow-blue-500/20"
+								aria-hidden="true"
+							>
+								<Sparkles className="h-4 w-4" />
+							</div>
+							<p className="min-w-0 text-sm text-foreground/90">{calloutText}</p>
 						</div>
-						<p className="text-sm text-foreground/90">{calloutText}</p>
-						<div className="ml-auto flex items-center gap-2">
-							<Link href="/admin/builder">
+						<div className="flex w-full items-center gap-2 sm:ml-auto sm:w-auto">
+							<Link href="/admin/builder" className="flex-1 sm:flex-none">
 								<Button
 									variant="outline"
 									size="sm"
-									className="gap-1.5 border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 hover:border-blue-500/50 text-blue-400 hover:text-blue-300"
+									className="w-full gap-1.5 border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 hover:border-blue-500/50 text-blue-400 hover:text-blue-300 sm:w-auto"
 								>
 									<Plus className="h-3.5 w-3.5" />
 									Add block
@@ -299,10 +320,8 @@ export default function AdminDashboardPage() {
 							<Button
 								variant="outline"
 								size="sm"
-								className="gap-1.5 border-violet-500/30 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500/50 text-violet-400 hover:text-violet-300"
-								onClick={() => {
-									navigator.clipboard.writeText(window.location.origin);
-								}}
+								className="w-full flex-1 gap-1.5 border-violet-500/30 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500/50 text-violet-400 hover:text-violet-300 sm:w-auto sm:flex-none"
+								onClick={handleShare}
 							>
 								<Share2 className="h-3.5 w-3.5" />
 								Share
@@ -314,78 +333,24 @@ export default function AdminDashboardPage() {
 
 			{/* Stat Cards */}
 			<div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-				{statCards.map((card, index) => {
-					const Icon = card.icon;
-					const inner = (
-						<Card
-							size="sm"
-							className={`group relative overflow-hidden border ${card.borderAccent} backdrop-blur-sm h-full`}
-						>
-							<div
-								className={`absolute inset-0 bg-gradient-to-br ${card.gradient} pointer-events-none`}
-								aria-hidden="true"
-							/>
-							<CardContent className="relative flex items-center gap-3">
-								<div
-									className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background/50 shadow-lg ${card.iconGlow}`}
-									aria-hidden="true"
-								>
-									<Icon className={`h-4.5 w-4.5 ${card.iconColor}`} />
-								</div>
-								<div className="min-w-0 flex-1">
-									<p className="text-[11px] text-muted-foreground font-medium">{card.label}</p>
-									{card.isLoading ? (
-										<Skeleton className="mt-1 h-6 w-14" />
-									) : (
-										<div className="flex items-center gap-2">
-											<p className="text-2xl font-bold font-mono leading-tight tabular-nums tracking-tight">
-												{typeof card.value === "number" ? card.value.toLocaleString() : card.value}
-											</p>
-											{card.trend != null && (
-												<span
-													className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
-														card.trend.value > 0
-															? "bg-emerald-500/15 text-emerald-400"
-															: card.trend.value < 0
-																? "bg-red-500/15 text-red-400"
-																: "bg-muted text-muted-foreground"
-													}`}
-												>
-													{card.trend.value > 0 ? "+" : ""}
-													{card.trend.value}%
-												</span>
-											)}
-										</div>
-									)}
-									{card.subtitle && !card.isLoading && (
-										<p className="text-[10px] text-muted-foreground mt-0.5">{card.subtitle}</p>
-									)}
-								</div>
-								{card.href && (
-									<ArrowUpRight
-										className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors"
-										aria-hidden="true"
-									/>
-								)}
-							</CardContent>
-						</Card>
-					);
-					return (
-						<div key={card.label} {...getAnimationProps(index + 2)}>
-							{card.href ? (
-								<Link
-									href={card.href as never}
-									aria-label={`Go to ${card.label}`}
-									className="block h-full"
-								>
-									{inner}
-								</Link>
-							) : (
-								inner
-							)}
-						</div>
-					);
-				})}
+				{statCards.map((card, index) => (
+					<div key={card.label} {...getAnimationProps(index + 2)}>
+						<StatCard
+							icon={card.icon}
+							label={card.label}
+							value={card.value}
+							iconColor={card.iconColor}
+							iconBg={card.iconBg}
+							gradient={card.gradient}
+							href={card.href}
+							isLoading={overview.isLoading}
+							isError={overview.isError}
+							onRetry={() => overview.refetch()}
+							trend={card.trend}
+							subtitle={card.subtitle}
+						/>
+					</div>
+				))}
 			</div>
 
 			{/* Views vs Clicks — full row */}
@@ -402,19 +367,25 @@ export default function AdminDashboardPage() {
 						</span>
 					</CardHeader>
 					<CardContent>
-						{viewsOverTime.isLoading || clicksOverTime.isLoading ? (
+						{viewsOverTime.isError || clicksOverTime.isError ? (
+							<div className="flex h-56 items-center justify-center">
+								<QueryError
+									message="Couldn't load chart data"
+									onRetry={() => {
+										viewsOverTime.refetch();
+										clicksOverTime.refetch();
+									}}
+								/>
+							</div>
+						) : viewsOverTime.isLoading || clicksOverTime.isLoading ? (
 							<div
 								className="flex h-56 items-end gap-1"
 								aria-busy="true"
 								role="status"
 								aria-label="Loading chart data"
 							>
-								{Array.from({ length: 7 }).map((_, i) => (
-									<Skeleton
-										key={`vc-sk-${i}`}
-										className="flex-1"
-										style={{ height: `${20 + Math.random() * 80}%` }}
-									/>
+								{SKELETON_BAR_HEIGHTS.map((h, i) => (
+									<Skeleton key={`vc-sk-${i}`} className="flex-1" style={{ height: `${h}%` }} />
 								))}
 							</div>
 						) : areaChartData.length === 0 ? (
@@ -452,7 +423,9 @@ export default function AdminDashboardPage() {
 											dataKey="label"
 											tickLine={false}
 											axisLine={false}
-											tick={{ fontSize: 10 }}
+											tick={{ fontSize: 11 }}
+											interval="preserveStartEnd"
+											minTickGap={24}
 										/>
 										<YAxis
 											tickLine={false}
@@ -507,19 +480,22 @@ export default function AdminDashboardPage() {
 							</CardTitle>
 						</CardHeader>
 						<CardContent>
-							{clicksOverTime.isLoading ? (
+							{clicksOverTime.isError ? (
+								<div className="flex h-48 items-center justify-center">
+									<QueryError
+										message="Couldn't load clicks data"
+										onRetry={() => clicksOverTime.refetch()}
+									/>
+								</div>
+							) : clicksOverTime.isLoading ? (
 								<div
 									className="flex h-48 items-end gap-1"
 									aria-busy="true"
 									role="status"
 									aria-label="Loading chart data"
 								>
-									{Array.from({ length: 7 }).map((_, i) => (
-										<Skeleton
-											key={`cpd-sk-${i}`}
-											className="flex-1"
-											style={{ height: `${20 + Math.random() * 80}%` }}
-										/>
+									{SKELETON_BAR_HEIGHTS.map((h, i) => (
+										<Skeleton key={`cpd-sk-${i}`} className="flex-1" style={{ height: `${h}%` }} />
 									))}
 								</div>
 							) : clicksData.length === 0 ? (
@@ -544,7 +520,9 @@ export default function AdminDashboardPage() {
 												dataKey="label"
 												tickLine={false}
 												axisLine={false}
-												tick={{ fontSize: 10 }}
+												tick={{ fontSize: 11 }}
+												interval="preserveStartEnd"
+												minTickGap={24}
 											/>
 											<YAxis
 												tickLine={false}
@@ -573,15 +551,19 @@ export default function AdminDashboardPage() {
 							</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<TopLinksList
-								data={topLinks.data?.map((l) => ({
-									id: l.id,
-									title: (l.title as string | null) ?? null,
-									url: (l.url as string | null) ?? null,
-									clicks: (l.clicks as number) ?? 0,
-								}))}
-								isLoading={topLinks.isLoading}
-							/>
+							{topLinks.isError ? (
+								<QueryError onRetry={() => topLinks.refetch()} />
+							) : (
+								<TopLinksList
+									data={topLinks.data?.map((l) => ({
+										id: l.id,
+										title: (l.title as string | null) ?? null,
+										url: (l.url as string | null) ?? null,
+										clicks: (l.clicks as number) ?? 0,
+									}))}
+									isLoading={topLinks.isLoading}
+								/>
+							)}
 						</CardContent>
 					</Card>
 				</div>
@@ -598,7 +580,9 @@ export default function AdminDashboardPage() {
 							</CardTitle>
 						</CardHeader>
 						<CardContent>
-							{countries.isLoading ? (
+							{countries.isError ? (
+								<QueryError onRetry={() => countries.refetch()} />
+							) : countries.isLoading ? (
 								<div className="space-y-2">
 									{Array.from({ length: 5 }).map((_, i) => (
 										<Skeleton key={`co-sk-${i}`} className="h-6 w-full" />
@@ -638,7 +622,9 @@ export default function AdminDashboardPage() {
 							</CardTitle>
 						</CardHeader>
 						<CardContent>
-							{referrers.isLoading ? (
+							{referrers.isError ? (
+								<QueryError onRetry={() => referrers.refetch()} />
+							) : referrers.isLoading ? (
 								<div className="space-y-2">
 									{Array.from({ length: 5 }).map((_, i) => (
 										<Skeleton key={`ref-sk-${i}`} className="h-6 w-full" />
@@ -690,7 +676,9 @@ export default function AdminDashboardPage() {
 							</CardTitle>
 						</CardHeader>
 						<CardContent>
-							{recentClicks.isLoading ? (
+							{recentClicks.isError ? (
+								<QueryError onRetry={() => recentClicks.refetch()} />
+							) : recentClicks.isLoading ? (
 								<div className="space-y-2">
 									{Array.from({ length: 5 }).map((_, i) => (
 										<Skeleton key={`rc-sk-${i}`} className="h-8 w-full" />
