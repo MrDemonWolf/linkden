@@ -246,7 +246,10 @@ function parsePassFields(raw: string | undefined): PassField[] {
 		return parsed
 			.filter(
 				(f): f is PassField =>
-					f && typeof f.key === "string" && typeof f.label === "string" && typeof f.value === "string",
+					f &&
+					typeof f.key === "string" &&
+					typeof f.label === "string" &&
+					typeof f.value === "string",
 			)
 			.map((f) => ({ key: f.key, label: f.label, value: f.value }));
 	} catch {

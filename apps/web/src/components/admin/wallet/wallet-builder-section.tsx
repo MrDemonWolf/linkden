@@ -341,7 +341,11 @@ export function WalletBuilderSection({
 			</Section>
 
 			{/* Context-aware relevance */}
-			<Section icon={MapPin} title="Context-Aware" hint="Surface on the Lock Screen by time + place">
+			<Section
+				icon={MapPin}
+				title="Context-Aware"
+				hint="Surface on the Lock Screen by time + place"
+			>
 				<div className="space-y-4">
 					<div className="space-y-1.5">
 						<Label htmlFor="w-reldate">Relevant date</Label>
@@ -578,4 +582,3 @@ function PalettePicker({
 		</div>
 	);
 }
-

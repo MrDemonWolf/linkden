@@ -257,7 +257,10 @@ export function WalletPassPreview({
 								{primaryFields[0].value || "Your Name"}
 							</p>
 						) : (
-							<p className="text-[19px] font-bold leading-[1.1] tracking-tight" style={{ color: fg }}>
+							<p
+								className="text-[19px] font-bold leading-[1.1] tracking-tight"
+								style={{ color: fg }}
+							>
 								Your Name
 							</p>
 						)}
@@ -342,7 +345,9 @@ export function WalletPassPreview({
 				<div className="relative mt-4 flex flex-col items-center px-5 pb-5">
 					<div
 						className="rounded-2xl bg-white p-3"
-						style={{ boxShadow: "0 6px 18px -6px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(0,0,0,0.06)" }}
+						style={{
+							boxShadow: "0 6px 18px -6px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(0,0,0,0.06)",
+						}}
 					>
 						{qrDataUrl ? (
 							<img src={qrDataUrl} alt="QR Code" className="h-[104px] w-[104px]" />
