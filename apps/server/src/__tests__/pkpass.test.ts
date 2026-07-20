@@ -49,6 +49,22 @@ describe("buildPassJson", () => {
 		const p = JSON.parse(buildPassJson({ ...baseInput, barcodeMessage: null }));
 		expect(p.barcodes).toBeUndefined();
 	});
+	it("includes relevantDate + locations when provided (context-aware)", () => {
+		const p = JSON.parse(
+			buildPassJson({
+				...baseInput,
+				relevantDate: "2026-07-20T00:00:00.000Z",
+				locations: [{ latitude: 37.7749, longitude: -122.4194, relevantText: "Save my contact" }],
+			}),
+		);
+		expect(p.relevantDate).toBe("2026-07-20T00:00:00.000Z");
+		expect(p.locations[0].latitude).toBe(37.7749);
+		expect(p.locations[0].relevantText).toBe("Save my contact");
+	});
+	it("omits relevance keys when absent", () => {
+		expect(pass.relevantDate).toBeUndefined();
+		expect(pass.locations).toBeUndefined();
+	});
 });
 
 describe("solidPng", () => {

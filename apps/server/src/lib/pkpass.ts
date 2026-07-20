@@ -29,6 +29,8 @@ export interface PkpassInput {
 	labelColor: string;
 	logoText?: string;
 	barcodeMessage?: string | null; // QR content; omit to hide the barcode
+	relevantDate?: string | null; // ISO 8601 — Wallet surfaces the pass around then
+	locations?: { latitude: number; longitude: number; relevantText?: string }[];
 	headerFields: PassField[];
 	primaryFields: PassField[];
 	secondaryFields: PassField[];
@@ -85,6 +87,14 @@ export function buildPassJson(input: PkpassInput): string {
 		},
 	};
 	if (input.logoText) pass.logoText = input.logoText;
+	if (input.relevantDate) pass.relevantDate = input.relevantDate;
+	if (input.locations && input.locations.length > 0) {
+		pass.locations = input.locations.map((l) => ({
+			latitude: l.latitude,
+			longitude: l.longitude,
+			...(l.relevantText ? { relevantText: l.relevantText } : {}),
+		}));
+	}
 	if (input.barcodeMessage) {
 		const barcode = {
 			format: "PKBarcodeFormatQR",

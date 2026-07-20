@@ -254,6 +254,26 @@ function parsePassFields(raw: string | undefined): PassField[] {
 	}
 }
 
+function parsePassLocations(
+	raw: string | undefined,
+): { latitude: number; longitude: number; relevantText?: string }[] {
+	if (!raw) return [];
+	try {
+		const parsed = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return [];
+		return parsed
+			.filter((l) => l && typeof l.latitude === "number" && typeof l.longitude === "number")
+			.slice(0, 10)
+			.map((l) => ({
+				latitude: l.latitude,
+				longitude: l.longitude,
+				relevantText: typeof l.relevantText === "string" ? l.relevantText : undefined,
+			}));
+	} catch {
+		return [];
+	}
+}
+
 async function fetchPassImage(
 	bucket: R2Bucket | undefined,
 	url: string | undefined,
@@ -327,6 +347,8 @@ app.get("/api/wallet-pass", async (c) => {
 				labelColor: s.wallet_label_color || "#0FACED",
 				logoText: s.wallet_organization_name || undefined,
 				barcodeMessage: s.wallet_show_qr_code !== "false" ? c.env.CORS_ORIGIN || null : null,
+				relevantDate: s.wallet_relevant_date || null,
+				locations: parsePassLocations(s.wallet_locations),
 				headerFields: parsePassFields(s.wallet_header_fields),
 				primaryFields,
 				secondaryFields,

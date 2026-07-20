@@ -3,15 +3,18 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Layers, Image as ImageIcon, Type, Palette } from "lucide-react";
+import { Layers, Image as ImageIcon, Type, Palette, MapPin, Plus, Trash2 } from "lucide-react";
 import { trpc } from "@/utils/trpc";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/admin/settings/field-group";
 import {
 	PASS_TEMPLATE_PRESETS,
+	PASS_LOCATION_LIMIT,
 	type PassField,
+	type PassLocation,
 	type PassTemplatePreset,
 } from "@linkden/validators/wallet";
 import { TemplatePresetPicker } from "./template-preset-picker";
@@ -36,6 +39,22 @@ export interface WalletLiveState {
 	auxiliaryFields: PassField[];
 	backFields: PassField[];
 	showQrCode: boolean;
+	relevantDate: string; // datetime-local string ("" when unset)
+	locations: PassLocation[];
+}
+
+// datetime-local <-> ISO (stored as UTC ISO so Wallet gets an unambiguous time)
+function isoToLocal(iso: string | undefined): string {
+	if (!iso) return "";
+	const d = new Date(iso);
+	if (Number.isNaN(d.getTime())) return "";
+	const p = (n: number) => String(n).padStart(2, "0");
+	return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function localToIso(local: string): string {
+	if (!local) return "";
+	const d = new Date(local);
+	return Number.isNaN(d.getTime()) ? "" : d.toISOString();
 }
 
 interface Props {
@@ -62,6 +81,8 @@ const DEFAULTS = {
 	auxiliaryFields: [] as PassField[],
 	backFields: [] as PassField[],
 	showQrCode: true,
+	relevantDate: "",
+	locations: [] as PassLocation[],
 };
 
 function safeParse<T>(raw: string | undefined, fallback: T): T {
@@ -112,6 +133,8 @@ export function WalletBuilderSection({
 			auxiliaryFields: safeParse<PassField[]>(d.wallet_auxiliary_fields, []),
 			backFields: safeParse<PassField[]>(d.wallet_back_fields, []),
 			showQrCode: d.wallet_show_qr_code !== "false",
+			relevantDate: isoToLocal(d.wallet_relevant_date),
+			locations: safeParse<PassLocation[]>(d.wallet_locations, []),
 		};
 		setState(next);
 		setSaved(next);
@@ -130,6 +153,8 @@ export function WalletBuilderSection({
 			state.thumbnailUrl !== saved.thumbnailUrl ||
 			state.stripUrl !== saved.stripUrl ||
 			state.showQrCode !== saved.showQrCode ||
+			state.relevantDate !== saved.relevantDate ||
+			JSON.stringify(state.locations) !== JSON.stringify(saved.locations) ||
 			!fieldsEqual(state.headerFields, saved.headerFields) ||
 			!fieldsEqual(state.primaryFields, saved.primaryFields) ||
 			!fieldsEqual(state.secondaryFields, saved.secondaryFields) ||
@@ -165,6 +190,10 @@ export function WalletBuilderSection({
 				auxiliaryFields: state.auxiliaryFields,
 				backFields: state.backFields,
 				showQrCode: state.showQrCode,
+				relevantDate: localToIso(state.relevantDate),
+				locations: state.locations.filter(
+					(l) => Number.isFinite(l.latitude) && Number.isFinite(l.longitude),
+				),
 			});
 			setSaved(state);
 			qc.invalidateQueries({ queryKey: trpc.wallet.getConfig.queryOptions().queryKey });
@@ -310,6 +339,28 @@ export function WalletBuilderSection({
 				</div>
 			</Section>
 
+			{/* Context-aware relevance */}
+			<Section icon={MapPin} title="Context-Aware" hint="Surface on the Lock Screen by time + place">
+				<div className="space-y-4">
+					<div className="space-y-1.5">
+						<Label htmlFor="w-reldate">Relevant date</Label>
+						<Input
+							id="w-reldate"
+							type="datetime-local"
+							value={state.relevantDate}
+							onChange={(e) => setState((s) => ({ ...s, relevantDate: e.target.value }))}
+						/>
+						<p className="text-[10.5px] text-muted-foreground/60">
+							Wallet floats the pass on the Lock Screen around this time. Leave empty to disable.
+						</p>
+					</div>
+					<LocationEditor
+						locations={state.locations}
+						onChange={(locs) => setState((s) => ({ ...s, locations: locs }))}
+					/>
+				</div>
+			</Section>
+
 			{/* Field editor — Pass.mk-style spatial editor */}
 			<Section title="Fields" hint="Drag to reorder · empty values render as placeholder">
 				<div className="space-y-3">
@@ -370,6 +421,85 @@ function Section({
 				{hint && <span className="text-[10.5px] text-muted-foreground/60">· {hint}</span>}
 			</div>
 			{children}
+		</div>
+	);
+}
+
+function LocationEditor({
+	locations,
+	onChange,
+}: {
+	locations: PassLocation[];
+	onChange: (l: PassLocation[]) => void;
+}) {
+	const update = (i: number, patch: Partial<PassLocation>) =>
+		onChange(locations.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
+	const add = () => onChange([...locations, { latitude: 0, longitude: 0, relevantText: "" }]);
+	const remove = (i: number) => onChange(locations.filter((_, idx) => idx !== i));
+
+	return (
+		<div className="space-y-2">
+			<div className="flex items-center justify-between">
+				<Label className="text-[11px]">Locations</Label>
+				<span className="text-[10px] text-muted-foreground/60">
+					{locations.length}/{PASS_LOCATION_LIMIT}
+				</span>
+			</div>
+			{locations.length === 0 && (
+				<p className="text-[10.5px] text-muted-foreground/60">
+					No locations. Add coordinates so the pass appears when someone is nearby.
+				</p>
+			)}
+			{locations.map((loc, i) => (
+				<div key={i} className="space-y-2 rounded-lg border border-border/60 bg-card/40 p-2.5">
+					<div className="grid grid-cols-2 gap-2">
+						<div className="space-y-1">
+							<Label className="text-[10px]">Latitude</Label>
+							<Input
+								type="number"
+								step="any"
+								value={Number.isFinite(loc.latitude) ? loc.latitude : ""}
+								placeholder="37.7749"
+								onChange={(e) => update(i, { latitude: parseFloat(e.target.value) })}
+								className="text-[11px]"
+							/>
+						</div>
+						<div className="space-y-1">
+							<Label className="text-[10px]">Longitude</Label>
+							<Input
+								type="number"
+								step="any"
+								value={Number.isFinite(loc.longitude) ? loc.longitude : ""}
+								placeholder="-122.4194"
+								onChange={(e) => update(i, { longitude: parseFloat(e.target.value) })}
+								className="text-[11px]"
+							/>
+						</div>
+					</div>
+					<div className="space-y-1">
+						<Label className="text-[10px]">Lock Screen text</Label>
+						<Input
+							value={loc.relevantText ?? ""}
+							maxLength={100}
+							placeholder="Save my contact"
+							onChange={(e) => update(i, { relevantText: e.target.value })}
+							className="text-[11px]"
+						/>
+					</div>
+					<button
+						type="button"
+						onClick={() => remove(i)}
+						className="inline-flex items-center gap-1 text-[10px] text-destructive hover:underline"
+					>
+						<Trash2 className="h-3 w-3" /> Remove
+					</button>
+				</div>
+			))}
+			{locations.length < PASS_LOCATION_LIMIT && (
+				<Button type="button" variant="outline" size="sm" onClick={add} className="w-full">
+					<Plus className="h-3.5 w-3.5" /> Add location
+				</Button>
+			)}
 		</div>
 	);
 }
