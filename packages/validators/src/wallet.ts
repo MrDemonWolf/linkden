@@ -17,6 +17,16 @@ export const passFieldSchema = z.object({
 });
 export type PassField = z.infer<typeof passFieldSchema>;
 
+// Context-aware relevance: Wallet surfaces the pass on the Lock Screen near
+// these coordinates or around relevantDate. Apple allows up to 10 locations.
+export const PASS_LOCATION_LIMIT = 10;
+export const passLocationSchema = z.object({
+	latitude: z.number().min(-90).max(90),
+	longitude: z.number().min(-180).max(180),
+	relevantText: z.string().max(100).optional().or(z.literal("")),
+});
+export type PassLocation = z.infer<typeof passLocationSchema>;
+
 // HIG: generic style field counts
 export const PASS_FIELD_LIMITS = {
 	header: 3,
@@ -62,6 +72,8 @@ export const walletConfigSchema = z.object({
 	secondaryFields: secondaryFieldsSchema.optional(),
 	auxiliaryFields: auxiliaryFieldsSchema.optional(),
 	backFields: backFieldsSchema.optional(),
+	relevantDate: z.string().max(40).optional().or(z.literal("")),
+	locations: z.array(passLocationSchema).max(PASS_LOCATION_LIMIT).optional(),
 });
 export type WalletConfig = z.infer<typeof walletConfigSchema>;
 

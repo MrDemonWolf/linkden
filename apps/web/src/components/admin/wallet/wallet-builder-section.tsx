@@ -3,13 +3,20 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Layers, Image as ImageIcon, Type, Palette } from "lucide-react";
+import { Layers, Image as ImageIcon, Type, Palette, MapPin, Plus, Trash2 } from "lucide-react";
 import { trpc } from "@/utils/trpc";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/admin/settings/field-group";
-import type { PassField, PassTemplatePreset } from "@linkden/validators/wallet";
+import {
+	PASS_TEMPLATE_PRESETS,
+	PASS_LOCATION_LIMIT,
+	type PassField,
+	type PassLocation,
+	type PassTemplatePreset,
+} from "@linkden/validators/wallet";
 import { TemplatePresetPicker } from "./template-preset-picker";
 import { PassImageSlots } from "./pass-image-slots";
 import { PassFieldEditor } from "./pass-field-editor";
@@ -33,6 +40,22 @@ export interface WalletLiveState {
 	auxiliaryFields: PassField[];
 	backFields: PassField[];
 	showQrCode: boolean;
+	relevantDate: string; // datetime-local string ("" when unset)
+	locations: PassLocation[];
+}
+
+// datetime-local <-> ISO (stored as UTC ISO so Wallet gets an unambiguous time)
+function isoToLocal(iso: string | undefined): string {
+	if (!iso) return "";
+	const d = new Date(iso);
+	if (Number.isNaN(d.getTime())) return "";
+	const p = (n: number) => String(n).padStart(2, "0");
+	return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function localToIso(local: string): string {
+	if (!local) return "";
+	const d = new Date(local);
+	return Number.isNaN(d.getTime()) ? "" : d.toISOString();
 }
 
 interface Props {
@@ -59,6 +82,8 @@ const DEFAULTS = {
 	auxiliaryFields: [] as PassField[],
 	backFields: [] as PassField[],
 	showQrCode: true,
+	relevantDate: "",
+	locations: [] as PassLocation[],
 };
 
 function safeParse<T>(raw: string | undefined, fallback: T): T {
@@ -109,6 +134,8 @@ export function WalletBuilderSection({
 			auxiliaryFields: safeParse<PassField[]>(d.wallet_auxiliary_fields, []),
 			backFields: safeParse<PassField[]>(d.wallet_back_fields, []),
 			showQrCode: d.wallet_show_qr_code !== "false",
+			relevantDate: isoToLocal(d.wallet_relevant_date),
+			locations: safeParse<PassLocation[]>(d.wallet_locations, []),
 		};
 		setState(next);
 		setSaved(next);
@@ -127,6 +154,8 @@ export function WalletBuilderSection({
 			state.thumbnailUrl !== saved.thumbnailUrl ||
 			state.stripUrl !== saved.stripUrl ||
 			state.showQrCode !== saved.showQrCode ||
+			state.relevantDate !== saved.relevantDate ||
+			JSON.stringify(state.locations) !== JSON.stringify(saved.locations) ||
 			!fieldsEqual(state.headerFields, saved.headerFields) ||
 			!fieldsEqual(state.primaryFields, saved.primaryFields) ||
 			!fieldsEqual(state.secondaryFields, saved.secondaryFields) ||
@@ -162,6 +191,10 @@ export function WalletBuilderSection({
 				auxiliaryFields: state.auxiliaryFields,
 				backFields: state.backFields,
 				showQrCode: state.showQrCode,
+				relevantDate: localToIso(state.relevantDate),
+				locations: state.locations.filter(
+					(l) => Number.isFinite(l.latitude) && Number.isFinite(l.longitude),
+				),
 			});
 			setSaved(state);
 			qc.invalidateQueries({ queryKey: trpc.wallet.getConfig.queryOptions().queryKey });
@@ -249,32 +282,50 @@ export function WalletBuilderSection({
 			</Section>
 
 			{/* Colors */}
-			<Section icon={Palette} title="Colors" hint="Background · Foreground · Label">
-				<FieldGroup columns={1}>
-					<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-						<ColorField
-							id="w-bg"
-							label="Background"
-							value={state.backgroundColor}
-							onChange={(v) => setState((s) => ({ ...s, backgroundColor: v }))}
-							placeholder="#091533"
-						/>
-						<ColorField
-							id="w-fg"
-							label="Foreground"
-							value={state.foregroundColor}
-							onChange={(v) => setState((s) => ({ ...s, foregroundColor: v }))}
-							placeholder="#FFFFFF"
-						/>
-						<ColorField
-							id="w-label"
-							label="Label"
-							value={state.labelColor}
-							onChange={(v) => setState((s) => ({ ...s, labelColor: v }))}
-							placeholder="#0FACED"
-						/>
-					</div>
-				</FieldGroup>
+			<Section icon={Palette} title="Colors" hint="Pick a palette or set your own">
+				<div className="space-y-3">
+					<PalettePicker
+						bg={state.backgroundColor}
+						fg={state.foregroundColor}
+						label={state.labelColor}
+						onPick={(p) =>
+							setState((s) => ({
+								...s,
+								backgroundColor: p.bg,
+								foregroundColor: p.fg,
+								labelColor: p.label,
+							}))
+						}
+					/>
+					<details className="group">
+						<summary className="cursor-pointer select-none text-[10.5px] text-muted-foreground/70 hover:text-muted-foreground">
+							Custom colors
+						</summary>
+						<div className="grid grid-cols-3 gap-3 pt-3">
+							<ColorField
+								id="w-bg"
+								label="Background"
+								value={state.backgroundColor}
+								onChange={(v) => setState((s) => ({ ...s, backgroundColor: v }))}
+								placeholder="#091533"
+							/>
+							<ColorField
+								id="w-fg"
+								label="Foreground"
+								value={state.foregroundColor}
+								onChange={(v) => setState((s) => ({ ...s, foregroundColor: v }))}
+								placeholder="#FFFFFF"
+							/>
+							<ColorField
+								id="w-label"
+								label="Label"
+								value={state.labelColor}
+								onChange={(v) => setState((s) => ({ ...s, labelColor: v }))}
+								placeholder="#0FACED"
+							/>
+						</div>
+					</details>
+				</div>
 			</Section>
 
 			{/* QR toggle */}
@@ -285,6 +336,32 @@ export function WalletBuilderSection({
 						aria-label="Show QR code"
 						checked={state.showQrCode}
 						onCheckedChange={(v) => setState((s) => ({ ...s, showQrCode: v }))}
+					/>
+				</div>
+			</Section>
+
+			{/* Context-aware relevance */}
+			<Section
+				icon={MapPin}
+				title="Context-Aware"
+				hint="Surface on the Lock Screen by time + place"
+			>
+				<div className="space-y-4">
+					<div className="space-y-1.5">
+						<Label htmlFor="w-reldate">Relevant date</Label>
+						<Input
+							id="w-reldate"
+							type="datetime-local"
+							value={state.relevantDate}
+							onChange={(e) => setState((s) => ({ ...s, relevantDate: e.target.value }))}
+						/>
+						<p className="text-[10.5px] text-muted-foreground/60">
+							Wallet floats the pass on the Lock Screen around this time. Leave empty to disable.
+						</p>
+					</div>
+					<LocationEditor
+						locations={state.locations}
+						onChange={(locs) => setState((s) => ({ ...s, locations: locs }))}
 					/>
 				</div>
 			</Section>
@@ -349,6 +426,159 @@ function Section({
 				{hint && <span className="text-[10.5px] text-muted-foreground/60">· {hint}</span>}
 			</div>
 			{children}
+		</div>
+	);
+}
+
+function LocationEditor({
+	locations,
+	onChange,
+}: {
+	locations: PassLocation[];
+	onChange: (l: PassLocation[]) => void;
+}) {
+	const update = (i: number, patch: Partial<PassLocation>) =>
+		onChange(locations.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
+	const add = () => onChange([...locations, { latitude: 0, longitude: 0, relevantText: "" }]);
+	const remove = (i: number) => onChange(locations.filter((_, idx) => idx !== i));
+
+	return (
+		<div className="space-y-2">
+			<div className="flex items-center justify-between">
+				<Label className="text-[11px]">Locations</Label>
+				<span className="text-[10px] text-muted-foreground/60">
+					{locations.length}/{PASS_LOCATION_LIMIT}
+				</span>
+			</div>
+			{locations.length === 0 && (
+				<p className="text-[10.5px] text-muted-foreground/60">
+					No locations. Add coordinates so the pass appears when someone is nearby.
+				</p>
+			)}
+			{locations.map((loc, i) => (
+				<div key={i} className="space-y-2 rounded-lg border border-border/60 bg-card/40 p-2.5">
+					<div className="grid grid-cols-2 gap-2">
+						<div className="space-y-1">
+							<Label className="text-[10px]">Latitude</Label>
+							<Input
+								type="number"
+								step="any"
+								value={Number.isFinite(loc.latitude) ? loc.latitude : ""}
+								placeholder="37.7749"
+								onChange={(e) => update(i, { latitude: parseFloat(e.target.value) })}
+								className="text-[11px]"
+							/>
+						</div>
+						<div className="space-y-1">
+							<Label className="text-[10px]">Longitude</Label>
+							<Input
+								type="number"
+								step="any"
+								value={Number.isFinite(loc.longitude) ? loc.longitude : ""}
+								placeholder="-122.4194"
+								onChange={(e) => update(i, { longitude: parseFloat(e.target.value) })}
+								className="text-[11px]"
+							/>
+						</div>
+					</div>
+					<div className="space-y-1">
+						<Label className="text-[10px]">Lock Screen text</Label>
+						<Input
+							value={loc.relevantText ?? ""}
+							maxLength={100}
+							placeholder="Save my contact"
+							onChange={(e) => update(i, { relevantText: e.target.value })}
+							className="text-[11px]"
+						/>
+					</div>
+					<button
+						type="button"
+						onClick={() => remove(i)}
+						className="inline-flex items-center gap-1 text-[10px] text-destructive hover:underline"
+					>
+						<Trash2 className="h-3 w-3" /> Remove
+					</button>
+				</div>
+			))}
+			{locations.length < PASS_LOCATION_LIMIT && (
+				<Button type="button" variant="outline" size="sm" onClick={add} className="w-full">
+					<Plus className="h-3.5 w-3.5" /> Add location
+				</Button>
+			)}
+		</div>
+	);
+}
+
+interface WalletPalette {
+	name: string;
+	bg: string;
+	fg: string;
+	label: string;
+}
+
+// Curated palettes — one tap sets background/foreground/label together.
+const WALLET_PALETTES: WalletPalette[] = [
+	{ name: "Midnight", bg: "#0E1116", fg: "#FFFFFF", label: "#3AD2A6" },
+	{ name: "Navy", bg: "#091533", fg: "#FFFFFF", label: "#0FACED" },
+	{ name: "Indigo", bg: "#241A52", fg: "#FFFFFF", label: "#C7B6FF" },
+	{ name: "Graphite", bg: "#17181A", fg: "#F5F5F5", label: "#C0C0C0" },
+	{ name: "Forest", bg: "#10241C", fg: "#F2FBF6", label: "#6FE0B4" },
+	{ name: "Ocean", bg: "#04283A", fg: "#EAF6FF", label: "#38C6E8" },
+	{ name: "Wine", bg: "#2A0F1B", fg: "#FBE9F0", label: "#E6779F" },
+	{ name: "Slate", bg: "#1C2530", fg: "#FFFFFF", label: "#7FB4E8" },
+	{ name: "Sand", bg: "#F4EFE6", fg: "#241F1A", label: "#B56A2E" },
+	{ name: "Coral", bg: "#FBF3EF", fg: "#3A1E14", label: "#D85A30" },
+	{ name: "Paper", bg: "#FAFAF7", fg: "#1A1A1A", label: "#3B6D11" },
+	{ name: "Blush", bg: "#FBEAF0", fg: "#3A1526", label: "#B23A5F" },
+];
+
+const eqColor = (a: string, b: string) => (a || "").toUpperCase() === b.toUpperCase();
+
+function PalettePicker({
+	bg,
+	fg,
+	label,
+	onPick,
+}: {
+	bg: string;
+	fg: string;
+	label: string;
+	onPick: (p: WalletPalette) => void;
+}) {
+	return (
+		<div
+			role="radiogroup"
+			aria-label="Color palettes"
+			className="grid grid-cols-4 gap-2 sm:grid-cols-6"
+		>
+			{WALLET_PALETTES.map((p) => {
+				const active = eqColor(bg, p.bg) && eqColor(fg, p.fg) && eqColor(label, p.label);
+				return (
+					<button
+						key={p.name}
+						type="button"
+						role="radio"
+						aria-checked={active}
+						aria-label={p.name}
+						title={p.name}
+						onClick={() => onPick(p)}
+						className={`group relative flex h-12 flex-col justify-between overflow-hidden rounded-lg p-1.5 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+							active
+								? "ring-2 ring-primary ring-offset-1 ring-offset-background"
+								: "ring-1 ring-border/60 hover:ring-border"
+						}`}
+						style={{ backgroundColor: p.bg }}
+					>
+						<span
+							className="text-[9px] font-semibold uppercase tracking-wider"
+							style={{ color: p.label }}
+						>
+							{p.name}
+						</span>
+						<span className="h-1 w-5 rounded-full" style={{ backgroundColor: p.fg }} />
+					</button>
+				);
+			})}
 		</div>
 	);
 }
