@@ -29,6 +29,8 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { buildR2Key, validateUpload } from "./lib/upload-validation";
+import { generatePkpass } from "./lib/pkpass";
+import type { PassField } from "@linkden/validators/wallet";
 
 type Bindings = {
 	CORS_ORIGIN?: string;
@@ -37,6 +39,12 @@ type Bindings = {
 	RL_STRICT: RateLimit;
 	RL_UPLOAD: RateLimit;
 	RL_PUBLIC: RateLimit;
+	WALLET_SIGNER_CERT?: string;
+	WALLET_SIGNER_KEY?: string;
+	WALLET_WWDR_CERT?: string;
+	WALLET_TEAM_ID?: string;
+	WALLET_PASS_TYPE_ID?: string;
+	WALLET_SIGNER_KEY_PASSPHRASE?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -226,6 +234,129 @@ app.get("/api/images/*", async (c) => {
 	headers.set("Cache-Control", "public, max-age=31536000, immutable");
 
 	return new Response(object.body, { headers });
+});
+
+// ─── Apple Wallet pass (.pkpass) ─────────────────────────────────────────────
+// Public download. Assembles a signed pass from the wallet_* settings + profile.
+function parsePassFields(raw: string | undefined): PassField[] {
+	if (!raw) return [];
+	try {
+		const parsed = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return [];
+		return parsed
+			.filter(
+				(f): f is PassField =>
+					f && typeof f.key === "string" && typeof f.label === "string" && typeof f.value === "string",
+			)
+			.map((f) => ({ key: f.key, label: f.label, value: f.value }));
+	} catch {
+		return [];
+	}
+}
+
+async function fetchPassImage(
+	bucket: R2Bucket | undefined,
+	url: string | undefined,
+): Promise<Uint8Array | undefined> {
+	if (!bucket || !url) return undefined;
+	// Only R2-hosted PNGs are usable — Wallet rejects non-PNG pass images.
+	const match = /\/api\/images\/(.+)$/.exec(url);
+	const key = match?.[1];
+	if (!key || key.includes("..")) return undefined;
+	const object = await bucket.get(key);
+	if (!object) return undefined;
+	if ((object.httpMetadata?.contentType || "") !== "image/png") return undefined;
+	return new Uint8Array(await object.arrayBuffer());
+}
+
+app.get("/api/wallet-pass", async (c) => {
+	const settingsRows = await db.select().from(siteSettings);
+	const s: Record<string, string> = {};
+	for (const row of settingsRows) s[row.key] = row.value;
+
+	if (s.wallet_pass_enabled !== "true") return c.notFound();
+
+	const signerCertPem = s.wallet_signer_cert || c.env.WALLET_SIGNER_CERT;
+	const signerKeyPem = s.wallet_signer_key || c.env.WALLET_SIGNER_KEY;
+	const wwdrCertPem = s.wallet_wwdr_cert || c.env.WALLET_WWDR_CERT;
+	const teamIdentifier = s.wallet_team_id || c.env.WALLET_TEAM_ID;
+	const passTypeIdentifier = s.wallet_pass_type_id || c.env.WALLET_PASS_TYPE_ID;
+	if (!signerCertPem || !signerKeyPem || !wwdrCertPem || !teamIdentifier || !passTypeIdentifier) {
+		return c.text("Wallet pass is not available yet.", 503);
+	}
+
+	const [profile] = await db.select().from(user).limit(1);
+
+	const showName = s.wallet_show_name !== "false";
+	const showEmail = s.wallet_show_email !== "false";
+	const primaryStored = parsePassFields(s.wallet_primary_fields);
+	const secondaryStored = parsePassFields(s.wallet_secondary_fields);
+	const primaryFields =
+		primaryStored.length > 0
+			? primaryStored
+			: showName && profile?.name
+				? [{ key: "name", label: "Name", value: profile.name }]
+				: [];
+	const secondaryFields =
+		secondaryStored.length > 0
+			? secondaryStored
+			: showEmail && profile?.email
+				? [{ key: "email", label: "Email", value: profile.email }]
+				: [];
+
+	const bucket = c.env.IMAGES_BUCKET;
+	const [icon, logo, thumbnail, strip] = await Promise.all([
+		fetchPassImage(bucket, s.wallet_icon_url),
+		fetchPassImage(bucket, s.wallet_logo_url),
+		fetchPassImage(bucket, s.wallet_thumbnail_url),
+		fetchPassImage(bucket, s.wallet_strip_url),
+	]);
+
+	try {
+		const bundle = await generatePkpass(
+			{
+				passTypeIdentifier,
+				teamIdentifier,
+				serialNumber: profile?.id || "linkden-pass",
+				organizationName: s.wallet_organization_name || "LinkDen",
+				description:
+					s.wallet_pass_description ||
+					(profile?.name ? `${profile.name} — contact card` : "Contact card"),
+				backgroundColor: s.wallet_background_color || "#091533",
+				foregroundColor: s.wallet_foreground_color || "#FFFFFF",
+				labelColor: s.wallet_label_color || "#0FACED",
+				logoText: s.wallet_organization_name || undefined,
+				barcodeMessage: s.wallet_show_qr_code !== "false" ? c.env.CORS_ORIGIN || null : null,
+				headerFields: parsePassFields(s.wallet_header_fields),
+				primaryFields,
+				secondaryFields,
+				auxiliaryFields: parsePassFields(s.wallet_auxiliary_fields),
+				backFields: parsePassFields(s.wallet_back_fields),
+				images: { icon, logo, thumbnail, strip },
+			},
+			{
+				signerCertPem,
+				signerKeyPem,
+				wwdrCertPem,
+				signerKeyPassphrase: c.env.WALLET_SIGNER_KEY_PASSPHRASE,
+			},
+		);
+
+		const slug = (s.wallet_organization_name || profile?.name || "linkden")
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, "-")
+			.replace(/^-|-$/g, "");
+		return new Response(bundle as unknown as BodyInit, {
+			headers: {
+				"Content-Type": "application/vnd.apple.pkpass",
+				"Content-Disposition": `attachment; filename="${slug || "linkden"}.pkpass"`,
+				"Cache-Control": "no-store",
+			},
+		});
+	} catch (err) {
+		console.error("pkpass generation failed", err);
+		return c.text("Wallet pass is not available yet.", 503);
+	}
 });
 
 app.get("/", (c) => {

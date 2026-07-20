@@ -87,8 +87,13 @@ This prevents context loss! Update this file IMMEDIATELY when creating important
 
 ### Wallet Pass
 - Apple HIG generic pass layout (header → primary + thumbnail → secondary → QR)
-- QR generation via `qrcode` library (`QRCode.toDataURL`)
-- Preview component: `WalletPassPreview` with live color/content props
+- QR generation via `qrcode` library (`QRCode.toDataURL`) — preview only
+- Preview component: `WalletPassPreview` with live color/content props (business-card style: gradient/texture surface, org kicker, avatar, big QR)
+- Palette picker: `WALLET_PALETTES` in `wallet-builder-section.tsx` — one tap sets bg/fg/label; custom hex under `<details>`
+- **`.pkpass` generator:** `apps/server/src/lib/pkpass.ts` — signed bundle built entirely in the Workers runtime (`node-forge` PKCS#7 detached sig, `fflate` zip, Web Crypto SHA-1, hand-rolled solid-PNG icon fallback). Colors → `rgb()` (Apple requires it, not hex). QR = `barcodes[]` (Wallet renders it; not embedded).
+- **Route:** `GET /api/wallet-pass` in `apps/server/src/index.ts` — public download; gated on `wallet_pass_enabled`, 503 if signing certs missing. Footer button (`footer-actions.tsx`) points at `NEXT_PUBLIC_SERVER_URL` (served by Hono, not Next).
+- **Signing certs:** settings (`wallet_signer_cert/key`, `wallet_wwdr_cert`) or env (`WALLET_SIGNER_CERT/KEY`, `WALLET_WWDR_CERT`, `WALLET_TEAM_ID`, `WALLET_PASS_TYPE_ID`); optional `WALLET_SIGNER_KEY_PASSPHRASE` env for encrypted keys.
+- Context-aware relevance (`relevantDate`/`locations` → Lock Screen surfacing) NOT yet built.
 
 ### Admin Panel
 - Wrap sections in `Card` / `CardContent`

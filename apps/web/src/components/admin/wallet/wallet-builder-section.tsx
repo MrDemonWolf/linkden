@@ -252,32 +252,50 @@ export function WalletBuilderSection({
 			</Section>
 
 			{/* Colors */}
-			<Section icon={Palette} title="Colors" hint="Background · Foreground · Label">
-				<FieldGroup columns={1}>
-					<div className="grid grid-cols-3 gap-3">
-						<ColorField
-							id="w-bg"
-							label="Background"
-							value={state.backgroundColor}
-							onChange={(v) => setState((s) => ({ ...s, backgroundColor: v }))}
-							placeholder="#091533"
-						/>
-						<ColorField
-							id="w-fg"
-							label="Foreground"
-							value={state.foregroundColor}
-							onChange={(v) => setState((s) => ({ ...s, foregroundColor: v }))}
-							placeholder="#FFFFFF"
-						/>
-						<ColorField
-							id="w-label"
-							label="Label"
-							value={state.labelColor}
-							onChange={(v) => setState((s) => ({ ...s, labelColor: v }))}
-							placeholder="#0FACED"
-						/>
-					</div>
-				</FieldGroup>
+			<Section icon={Palette} title="Colors" hint="Pick a palette or set your own">
+				<div className="space-y-3">
+					<PalettePicker
+						bg={state.backgroundColor}
+						fg={state.foregroundColor}
+						label={state.labelColor}
+						onPick={(p) =>
+							setState((s) => ({
+								...s,
+								backgroundColor: p.bg,
+								foregroundColor: p.fg,
+								labelColor: p.label,
+							}))
+						}
+					/>
+					<details className="group">
+						<summary className="cursor-pointer select-none text-[10.5px] text-muted-foreground/70 hover:text-muted-foreground">
+							Custom colors
+						</summary>
+						<div className="grid grid-cols-3 gap-3 pt-3">
+							<ColorField
+								id="w-bg"
+								label="Background"
+								value={state.backgroundColor}
+								onChange={(v) => setState((s) => ({ ...s, backgroundColor: v }))}
+								placeholder="#091533"
+							/>
+							<ColorField
+								id="w-fg"
+								label="Foreground"
+								value={state.foregroundColor}
+								onChange={(v) => setState((s) => ({ ...s, foregroundColor: v }))}
+								placeholder="#FFFFFF"
+							/>
+							<ColorField
+								id="w-label"
+								label="Label"
+								value={state.labelColor}
+								onChange={(v) => setState((s) => ({ ...s, labelColor: v }))}
+								placeholder="#0FACED"
+							/>
+						</div>
+					</details>
+				</div>
 			</Section>
 
 			{/* QR toggle */}
@@ -352,6 +370,80 @@ function Section({
 				{hint && <span className="text-[10.5px] text-muted-foreground/60">· {hint}</span>}
 			</div>
 			{children}
+		</div>
+	);
+}
+
+interface WalletPalette {
+	name: string;
+	bg: string;
+	fg: string;
+	label: string;
+}
+
+// Curated palettes — one tap sets background/foreground/label together.
+const WALLET_PALETTES: WalletPalette[] = [
+	{ name: "Midnight", bg: "#0E1116", fg: "#FFFFFF", label: "#3AD2A6" },
+	{ name: "Navy", bg: "#091533", fg: "#FFFFFF", label: "#0FACED" },
+	{ name: "Indigo", bg: "#241A52", fg: "#FFFFFF", label: "#C7B6FF" },
+	{ name: "Graphite", bg: "#17181A", fg: "#F5F5F5", label: "#C0C0C0" },
+	{ name: "Forest", bg: "#10241C", fg: "#F2FBF6", label: "#6FE0B4" },
+	{ name: "Ocean", bg: "#04283A", fg: "#EAF6FF", label: "#38C6E8" },
+	{ name: "Wine", bg: "#2A0F1B", fg: "#FBE9F0", label: "#E6779F" },
+	{ name: "Slate", bg: "#1C2530", fg: "#FFFFFF", label: "#7FB4E8" },
+	{ name: "Sand", bg: "#F4EFE6", fg: "#241F1A", label: "#B56A2E" },
+	{ name: "Coral", bg: "#FBF3EF", fg: "#3A1E14", label: "#D85A30" },
+	{ name: "Paper", bg: "#FAFAF7", fg: "#1A1A1A", label: "#3B6D11" },
+	{ name: "Blush", bg: "#FBEAF0", fg: "#3A1526", label: "#B23A5F" },
+];
+
+const eqColor = (a: string, b: string) => (a || "").toUpperCase() === b.toUpperCase();
+
+function PalettePicker({
+	bg,
+	fg,
+	label,
+	onPick,
+}: {
+	bg: string;
+	fg: string;
+	label: string;
+	onPick: (p: WalletPalette) => void;
+}) {
+	return (
+		<div
+			role="radiogroup"
+			aria-label="Color palettes"
+			className="grid grid-cols-4 gap-2 sm:grid-cols-6"
+		>
+			{WALLET_PALETTES.map((p) => {
+				const active = eqColor(bg, p.bg) && eqColor(fg, p.fg) && eqColor(label, p.label);
+				return (
+					<button
+						key={p.name}
+						type="button"
+						role="radio"
+						aria-checked={active}
+						aria-label={p.name}
+						title={p.name}
+						onClick={() => onPick(p)}
+						className={`group relative flex h-12 flex-col justify-between overflow-hidden rounded-lg p-1.5 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+							active
+								? "ring-2 ring-primary ring-offset-1 ring-offset-background"
+								: "ring-1 ring-border/60 hover:ring-border"
+						}`}
+						style={{ backgroundColor: p.bg }}
+					>
+						<span
+							className="text-[9px] font-semibold uppercase tracking-wider"
+							style={{ color: p.label }}
+						>
+							{p.name}
+						</span>
+						<span className="h-1 w-5 rounded-full" style={{ backgroundColor: p.fg }} />
+					</button>
+				);
+			})}
 		</div>
 	);
 }
