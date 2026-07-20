@@ -61,6 +61,7 @@ export function BannerSection({
 						onClick={() => onBannerEnabledChange(!bannerEnabled)}
 						className={cn(
 							"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 							bannerEnabled ? "bg-primary" : "bg-muted",
 						)}
 					>
@@ -76,16 +77,15 @@ export function BannerSection({
 				{/* Banner options (when enabled) */}
 				{bannerEnabled && (
 					<div className="space-y-3 animate-in fade-in-0 slide-in-from-top-1 duration-200">
-						{/* Mode tabs */}
-						<div className="flex gap-2" role="tablist">
+						{/* Mode toggle */}
+						<div className="flex gap-2">
 							<button
 								type="button"
-								role="tab"
-								id="tab-banner-preset"
-								aria-selected={bannerMode === "preset"}
+								aria-pressed={bannerMode === "preset"}
 								onClick={() => onBannerModeChange("preset")}
 								className={cn(
 									"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
+									"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 									bannerMode === "preset"
 										? "border-primary/60 bg-primary/10 text-primary shadow-sm"
 										: "border-border/50 text-muted-foreground hover:text-foreground hover:border-border",
@@ -96,12 +96,11 @@ export function BannerSection({
 							</button>
 							<button
 								type="button"
-								role="tab"
-								id="tab-banner-custom"
-								aria-selected={bannerMode === "custom"}
+								aria-pressed={bannerMode === "custom"}
 								onClick={() => onBannerModeChange("custom")}
 								className={cn(
 									"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
+									"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 									bannerMode === "custom"
 										? "border-primary/60 bg-primary/10 text-primary shadow-sm"
 										: "border-border/50 text-muted-foreground hover:text-foreground hover:border-border",
@@ -114,18 +113,17 @@ export function BannerSection({
 
 						{/* Preset grid or upload */}
 						{bannerMode === "preset" ? (
-							<div
-								className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5"
-								role="tabpanel"
-								aria-labelledby="tab-banner-preset"
-							>
+							<div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
 								{themedBannerPresets.map((preset: BannerPreset) => (
 									<button
 										key={preset.id}
 										type="button"
+										aria-pressed={bannerPreset === preset.id}
+										aria-label={preset.name}
 										onClick={() => onBannerPresetChange(preset.id)}
 										className={cn(
 											"group relative h-14 overflow-hidden rounded-lg border-2 transition-all",
+											"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 											bannerPreset === preset.id
 												? "border-primary ring-2 ring-primary/20 shadow-md"
 												: "border-transparent hover:border-muted-foreground/30 hover:shadow-sm",
@@ -151,7 +149,7 @@ export function BannerSection({
 								))}
 							</div>
 						) : (
-							<div role="tabpanel" aria-labelledby="tab-banner-custom">
+							<div>
 								<ImageUploadField
 									label="Banner Image"
 									value={bannerCustomUrl}

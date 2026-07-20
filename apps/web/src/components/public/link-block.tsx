@@ -2,6 +2,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
+import { getReadableTextColor } from "@linkden/ui/color-contrast";
 import { trpc } from "@/utils/trpc";
 import type { ThemeColors } from "./public-page";
 import { usePreview } from "./preview-context";
@@ -105,7 +106,8 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 
 	if (isHighlighted && themeColors) {
 		style.backgroundColor = themeColors.primary;
-		style.color = "#ffffff";
+		// White-on-bright-primary fails contrast (1.37–2.58:1); pick the legible one.
+		style.color = getReadableTextColor(themeColors.primary);
 		style.boxShadow = `0 10px 25px -5px ${themeColors.primary}33`;
 	} else if (customBgColor) {
 		style.backgroundColor = customBgColor;
@@ -117,10 +119,19 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 	}
 
 	if (!isHighlighted && !customBgColor && !isOutlined) {
-		style.backgroundColor =
-			colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.7)";
-		style.borderColor = colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.6)";
-		style.color = colorMode === "dark" ? "#ffffff" : "#0f172a";
+		if (themeColors) {
+			// Solid theme card surface — reads as a tappable button over the flat page
+			// background instead of relying on a blur backdrop that has nothing behind it.
+			style.backgroundColor = themeColors.card;
+			style.borderColor = themeColors.border;
+			style.color = themeColors.cardFg;
+			style.boxShadow = `0 8px 20px -12px ${themeColors.primary}26`;
+		} else {
+			style.backgroundColor =
+				colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.7)";
+			style.borderColor = colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.6)";
+			style.color = colorMode === "dark" ? "#ffffff" : "#0f172a";
+		}
 	}
 
 	const glassClasses =
@@ -131,62 +142,60 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 	const colorClasses = isHighlighted || customBgColor || isOutlined ? "" : glassClasses;
 
 	return (
-		<div role="listitem" className="ld-link-block">
-			<a
-				href={block.url || "#"}
-				target={openInNewTab ? "_blank" : "_self"}
-				rel={openInNewTab ? "noopener noreferrer" : undefined}
-				onClick={handleClick}
-				className={`${baseClasses} ${colorClasses} focus-visible:outline-2 focus-visible:outline-offset-2`}
-				style={{ ...style, outlineColor: themeColors?.primary || "#3b82f6" }}
-			>
-				{hasRichContent ? (
-					<span className="flex items-center gap-2">
-						{emoji && emojiPosition === "left" && (
-							<span className="shrink-0" aria-hidden="true">
-								{emoji}
-							</span>
-						)}
-						<span className="flex-1 min-w-0">
-							<span className="block">{block.title || "Untitled Link"}</span>
-							{description && (
-								<span
-									className="block text-xs font-normal opacity-70 truncate mt-0.5"
-									title={description}
-								>
-									{description}
-								</span>
-							)}
+		<a
+			href={block.url || "#"}
+			target={openInNewTab ? "_blank" : "_self"}
+			rel={openInNewTab ? "noopener noreferrer" : undefined}
+			onClick={handleClick}
+			className={`ld-link-block ${baseClasses} ${colorClasses} focus-visible:outline-2 focus-visible:outline-offset-2`}
+			style={{ ...style, outlineColor: themeColors?.primary || "#3b82f6" }}
+		>
+			{hasRichContent ? (
+				<span className="flex items-center gap-2">
+					{emoji && emojiPosition === "left" && (
+						<span className="shrink-0" aria-hidden="true">
+							{emoji}
 						</span>
-						{emoji && emojiPosition === "right" && (
-							<span className="shrink-0" aria-hidden="true">
-								{emoji}
+					)}
+					<span className="flex-1 min-w-0">
+						<span className="block">{block.title || "Untitled Link"}</span>
+						{description && (
+							<span
+								className="block text-xs font-normal opacity-70 truncate mt-0.5"
+								title={description}
+							>
+								{description}
 							</span>
-						)}
-						{thumbnail && (
-							<img src={thumbnail} alt="" className="h-12 w-12 shrink-0 rounded-md object-cover" />
 						)}
 					</span>
-				) : (
-					<span className="inline-flex items-center gap-2 pr-12 overflow-hidden">
-						{emoji && emojiPosition === "left" && (
-							<span className="shrink-0" aria-hidden="true">
-								{emoji}
-							</span>
-						)}
-						<span className="truncate">{block.title || "Untitled Link"}</span>
-						{emoji && emojiPosition === "right" && (
-							<span className="shrink-0" aria-hidden="true">
-								{emoji}
-							</span>
-						)}
-						<ArrowRight
-							className="absolute right-4 h-4 w-4 shrink-0 opacity-30 group-hover:opacity-70 group-hover:translate-x-0.5 transition-all duration-300"
-							aria-hidden="true"
-						/>
-					</span>
-				)}
-			</a>
-		</div>
+					{emoji && emojiPosition === "right" && (
+						<span className="shrink-0" aria-hidden="true">
+							{emoji}
+						</span>
+					)}
+					{thumbnail && (
+						<img src={thumbnail} alt="" className="h-12 w-12 shrink-0 rounded-md object-cover" />
+					)}
+				</span>
+			) : (
+				<span className="inline-flex items-center gap-2 pr-12 overflow-hidden">
+					{emoji && emojiPosition === "left" && (
+						<span className="shrink-0" aria-hidden="true">
+							{emoji}
+						</span>
+					)}
+					<span className="truncate">{block.title || "Untitled Link"}</span>
+					{emoji && emojiPosition === "right" && (
+						<span className="shrink-0" aria-hidden="true">
+							{emoji}
+						</span>
+					)}
+					<ArrowRight
+						className="absolute right-4 h-4 w-4 shrink-0 opacity-30 group-hover:opacity-70 group-hover:translate-x-0.5 transition-all duration-300"
+						aria-hidden="true"
+					/>
+				</span>
+			)}
+		</a>
 	);
 }

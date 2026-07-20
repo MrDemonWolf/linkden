@@ -98,12 +98,10 @@ function renderBlock(
 	{
 		colorMode,
 		themeColors,
-		socialNetworks,
 		settings,
 	}: {
 		colorMode: "light" | "dark";
 		themeColors: ThemeColors;
-		socialNetworks?: SocialNetwork[];
 		settings: PageContentProps["settings"];
 	},
 ) {
@@ -219,9 +217,12 @@ export function PageContent({
 		transition: "background-color 0.5s ease, color 0.5s ease",
 	} as React.CSSProperties;
 
+	// Derive the hero surface from resolved theme values so the card reads as a
+	// solid, tappable panel over a flat background (no blur backdrop to rely on).
 	const heroCardStyle: React.CSSProperties = {
-		backgroundColor: colorMode === "dark" ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.7)",
-		borderColor: colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)",
+		backgroundColor: themeColors.card,
+		borderColor: themeColors.border,
+		boxShadow: `0 12px 32px -16px ${themeColors.primary}33`,
 		transition: "background-color 0.5s ease, border-color 0.5s ease",
 	};
 
@@ -272,7 +273,11 @@ export function PageContent({
 										: "rgba(255,255,255,1)"
 									: undefined
 							}
-							themeColors={{ primary: themeColors.primary, accent: themeColors.accent }}
+							themeColors={{
+								primary: themeColors.primary,
+								accent: themeColors.accent,
+								bg: themeColors.bg,
+							}}
 						/>
 
 						<h1 className="mt-4 inline-flex items-center justify-center gap-1.5 text-2xl font-bold tracking-tight">
@@ -286,7 +291,6 @@ export function PageContent({
 									}}
 									viewBox="0 0 24 24"
 									fill="currentColor"
-									aria-hidden="true"
 									role="img"
 									aria-label="Verified account"
 								>
@@ -321,13 +325,17 @@ export function PageContent({
 				</ProfileWrapper>
 
 				{/* Single-column block stream — 50ms staggered fade-in */}
-				<div className="ld-blocks space-y-3.5 pb-8" role="list" aria-label="Links and content">
+				<ul className="ld-blocks space-y-3.5 pb-8" aria-label="Links and content">
 					{contentBlocks.map((blockData, index) => (
-						<div key={blockData.id} style={getAnimationProps(index).style}>
-							{renderBlock(blockData, { colorMode, themeColors, socialNetworks, settings })}
-						</div>
+						// The wrapper <li> owns both the list semantics and the per-index
+						// stagger delay, so each block renders a plain <a>/<div>. Letting a
+						// block emit its own <li> would nest <li> in <li>, and a bare block
+						// element as a direct <ul> child is equally invalid HTML.
+						<li key={blockData.id} style={getAnimationProps(index).style}>
+							{renderBlock(blockData, { colorMode, themeColors, settings })}
+						</li>
 					))}
-				</div>
+				</ul>
 
 				{!isPreview && (
 					<FooterActions

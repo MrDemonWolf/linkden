@@ -2,9 +2,9 @@
 
 import { Paintbrush, Sun, Moon, Monitor } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { ColorField } from "../color-field";
 
 const COLOR_MODE_OPTIONS = [
 	{ value: "light", label: "Light", icon: Sun },
@@ -12,49 +12,13 @@ const COLOR_MODE_OPTIONS = [
 	{ value: "system", label: "System", icon: Monitor },
 ];
 
-function ColorField({
-	id,
-	label,
-	value,
-	onChange,
-}: {
-	id: string;
-	label: string;
-	value: string;
-	onChange: (value: string) => void;
-}) {
-	return (
-		<div className="space-y-1.5">
-			<Label htmlFor={id} className="text-xs">
-				{label}
-			</Label>
-			<div className="flex gap-2">
-				<div className="relative">
-					<input
-						type="color"
-						id={id}
-						value={value}
-						onChange={(e) => onChange(e.target.value)}
-						className="h-9 w-11 cursor-pointer appearance-none rounded-lg border border-border/60 bg-transparent p-0.5 transition-shadow hover:shadow-md [&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
-					/>
-				</div>
-				<Input
-					value={value}
-					onChange={(e) => onChange(e.target.value)}
-					className="flex-1 font-mono text-xs uppercase"
-					placeholder="#000000"
-				/>
-			</div>
-		</div>
-	);
-}
-
 export function ColorsSection({
 	colorMode,
 	primaryColor,
 	secondaryColor,
 	accentColor,
 	bgColor,
+	previewDark = false,
 	onColorModeChange,
 	onPrimaryChange,
 	onSecondaryChange,
@@ -66,6 +30,7 @@ export function ColorsSection({
 	secondaryColor: string;
 	accentColor: string;
 	bgColor: string;
+	previewDark?: boolean;
 	onColorModeChange: (value: string) => void;
 	onPrimaryChange: (value: string) => void;
 	onSecondaryChange: (value: string) => void;
@@ -86,22 +51,18 @@ export function ColorsSection({
 				{/* Color mode toggle */}
 				<div>
 					<Label className="mb-2 block text-xs">Default Color Mode</Label>
-					<div
-						className="inline-flex rounded-lg border border-border/50 p-0.5 bg-muted/30"
-						role="radiogroup"
-						aria-label="Default color mode"
-					>
+					<div className="inline-flex rounded-lg border border-border/50 p-0.5 bg-muted/30">
 						{COLOR_MODE_OPTIONS.map((opt) => {
 							const Icon = opt.icon;
 							return (
 								<button
 									key={opt.value}
 									type="button"
-									role="radio"
-									aria-checked={colorMode === opt.value}
+									aria-pressed={colorMode === opt.value}
 									onClick={() => onColorModeChange(opt.value)}
 									className={cn(
 										"flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
+										"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 										colorMode === opt.value
 											? "bg-background text-foreground shadow-sm"
 											: "text-muted-foreground hover:text-foreground",
@@ -124,6 +85,23 @@ export function ColorsSection({
 					<div className="flex-1 transition-colors" style={{ backgroundColor: accentColor }} />
 					<div className="flex-1 transition-colors" style={{ backgroundColor: bgColor }} />
 				</div>
+
+				{/* Custom color pickers — light mode only */}
+				<div className="flex items-center justify-between gap-2">
+					<Label className="text-xs">Custom colors</Label>
+					<span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+						Light mode only
+					</span>
+				</div>
+				<p className="text-[11px] text-muted-foreground -mt-2">
+					These override the preset&apos;s light palette. Dark mode always uses the selected
+					preset&apos;s built-in dark colors.
+				</p>
+				{previewDark && (
+					<p className="flex items-center gap-1.5 rounded-md border border-warning/30 bg-warning/10 px-2.5 py-1.5 text-[11px] text-warning">
+						You&apos;re previewing dark mode — changes below won&apos;t affect this preview.
+					</p>
+				)}
 
 				{/* Color pickers grid */}
 				<div className="grid gap-3 sm:grid-cols-2">

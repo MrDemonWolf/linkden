@@ -15,6 +15,8 @@ import {
 	AlertTriangle,
 	Mail,
 	X,
+	Save,
+	Undo2,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
@@ -27,11 +29,10 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/admin/page-header";
 import { SectionHeader } from "@/components/admin/section-header";
-import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { DangerConfirmDialog } from "./danger-confirm-dialog";
 import { ProfileSection } from "@/components/admin/appearance/profile-section";
 import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
-import { cn } from "@/lib/utils";
 
 // ─── Account Page — Stacked Sections ───────────────────────────────────────
 // Single-column layout: Profile → Login & Security → Danger zone.
@@ -73,7 +74,7 @@ export default function AccountPage() {
 			setProfileAvatar(avatar);
 			setSavedProfile({ name, bio, avatar });
 		}
-	}, [settingsQuery.data]);
+	}, [settingsQuery.data, settings.profile_name, settings.bio, settings.avatar_url]);
 
 	const profileDirty =
 		profileName !== savedProfile.name ||
@@ -97,16 +98,31 @@ export default function AccountPage() {
 		}
 	};
 
+	const handleDiscardProfile = () => {
+		setProfileName(savedProfile.name);
+		setProfileBio(savedProfile.bio);
+		setProfileAvatar(savedProfile.avatar);
+	};
+
 	// ─── Email change ────────────────────────────────────────────────────
 	const [emailEditing, setEmailEditing] = useState(false);
 	const [newEmail, setNewEmail] = useState("");
+	const [emailError, setEmailError] = useState<string | null>(null);
 	const [isChangingEmail, setIsChangingEmail] = useState(false);
 
+	const validateEmail = (value: string): string | null => {
+		if (!value.trim()) return "Enter an email address";
+		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Enter a valid email address";
+		return null;
+	};
+
 	const handleChangeEmail = async () => {
-		if (!newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
-			toast.error("Enter a valid email address");
+		const err = validateEmail(newEmail);
+		if (err) {
+			setEmailError(err);
 			return;
 		}
+		setEmailError(null);
 		setIsChangingEmail(true);
 		try {
 			await (
@@ -123,6 +139,7 @@ export default function AccountPage() {
 			toast.success("Verification email sent to your current address");
 			setEmailEditing(false);
 			setNewEmail("");
+			setEmailError(null);
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : "Failed to change email";
 			toast.error(msg);
@@ -139,17 +156,16 @@ export default function AccountPage() {
 	const [showCurrentPw, setShowCurrentPw] = useState(false);
 	const [showNewPw, setShowNewPw] = useState(false);
 	const [isChangingPw, setIsChangingPw] = useState(false);
+	const [newPwError, setNewPwError] = useState<string | null>(null);
+	const [confirmPwError, setConfirmPwError] = useState<string | null>(null);
 
 	const handleChangePassword = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (newPassword !== confirmPassword) {
-			toast.error("New passwords do not match");
-			return;
-		}
-		if (newPassword.length < 8) {
-			toast.error("Password must be at least 8 characters");
-			return;
-		}
+		const newErr = newPassword.length < 8 ? "Password must be at least 8 characters" : null;
+		const confirmErr = newPassword !== confirmPassword ? "Passwords do not match" : null;
+		setNewPwError(newErr);
+		setConfirmPwError(confirmErr);
+		if (newErr || confirmErr) return;
 		setIsChangingPw(true);
 		try {
 			await authClient.changePassword(
@@ -160,6 +176,8 @@ export default function AccountPage() {
 						setCurrentPassword("");
 						setNewPassword("");
 						setConfirmPassword("");
+						setNewPwError(null);
+						setConfirmPwError(null);
 						setPasswordOpen(false);
 					},
 					onError: (err) => {
@@ -314,7 +332,6 @@ export default function AccountPage() {
 	const deleteAllContent = useMutation(trpc.danger.deleteAllContent.mutationOptions());
 	const resetEverything = useMutation(trpc.danger.resetEverything.mutationOptions());
 	const [deleteContentOpen, setDeleteContentOpen] = useState(false);
-	const [resetConfirm, setResetConfirm] = useState("");
 	const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
 	const handleDeleteAllContent = async () => {
@@ -362,14 +379,28 @@ export default function AccountPage() {
 		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6 max-w-2xl">
 			<PageHeader
 				title="Account"
-				description="Manage your profile, sign-in, and destructive operations"
-				actions={
+				description={
+					profileDirty
+						? "You have unsaved profile changes"
+						: "Manage your profile, sign-in, and destructive operations"
+				}
+				badge={
 					profileDirty ? (
-						<Button size="sm" onClick={handleSaveProfile} disabled={updateSettings.isPending}>
-							{updateSettings.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-							Save
-						</Button>
+						<Badge variant="outline" className="border-warning/40 bg-warning/10 text-warning">
+							Unsaved
+						</Badge>
 					) : undefined
+				}
+				actions={
+					<Button
+						size="sm"
+						variant={profileDirty ? "default" : "outline"}
+						onClick={handleSaveProfile}
+						disabled={!profileDirty || updateSettings.isPending}
+					>
+						<Save className="mr-1.5 h-3.5 w-3.5" />
+						{updateSettings.isPending ? "Saving…" : "Save changes"}
+					</Button>
 				}
 			/>
 
@@ -429,9 +460,15 @@ export default function AccountPage() {
 											id="newEmail"
 											type="email"
 											value={newEmail}
-											onChange={(e) => setNewEmail(e.target.value)}
+											onChange={(e) => {
+												setNewEmail(e.target.value);
+												if (emailError) setEmailError(null);
+											}}
+											onBlur={() => setEmailError(newEmail ? validateEmail(newEmail) : null)}
 											placeholder="you@example.com"
 											autoComplete="email"
+											aria-invalid={emailError ? true : undefined}
+											aria-describedby={emailError ? "newEmail-error" : undefined}
 										/>
 										<Button
 											size="sm"
@@ -441,9 +478,15 @@ export default function AccountPage() {
 											{isChangingEmail ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Send"}
 										</Button>
 									</div>
-									<p className="text-[10px] text-muted-foreground">
-										A verification link will be sent to your current email.
-									</p>
+									{emailError ? (
+										<p id="newEmail-error" role="alert" className="text-[11px] text-destructive">
+											{emailError}
+										</p>
+									) : (
+										<p className="text-[10px] text-muted-foreground">
+											A verification link will be sent to your current email.
+										</p>
+									)}
 								</div>
 							)}
 
@@ -504,8 +547,20 @@ export default function AccountPage() {
 												id="newPw"
 												type={showNewPw ? "text" : "password"}
 												value={newPassword}
-												onChange={(e) => setNewPassword(e.target.value)}
+												onChange={(e) => {
+													setNewPassword(e.target.value);
+													if (newPwError) setNewPwError(null);
+												}}
+												onBlur={() =>
+													setNewPwError(
+														newPassword && newPassword.length < 8
+															? "Password must be at least 8 characters"
+															: null,
+													)
+												}
 												autoComplete="new-password"
+												aria-invalid={newPwError ? true : undefined}
+												aria-describedby={newPwError ? "newPw-error" : undefined}
 												className="pr-10"
 											/>
 											<button
@@ -521,6 +576,11 @@ export default function AccountPage() {
 												)}
 											</button>
 										</div>
+										{newPwError && (
+											<p id="newPw-error" role="alert" className="text-[11px] text-destructive">
+												{newPwError}
+											</p>
+										)}
 									</div>
 									<div className="space-y-1.5">
 										<Label htmlFor="confirmPw" className="text-xs text-muted-foreground">
@@ -530,9 +590,26 @@ export default function AccountPage() {
 											id="confirmPw"
 											type="password"
 											value={confirmPassword}
-											onChange={(e) => setConfirmPassword(e.target.value)}
+											onChange={(e) => {
+												setConfirmPassword(e.target.value);
+												if (confirmPwError) setConfirmPwError(null);
+											}}
+											onBlur={() =>
+												setConfirmPwError(
+													confirmPassword && confirmPassword !== newPassword
+														? "Passwords do not match"
+														: null,
+												)
+											}
 											autoComplete="new-password"
+											aria-invalid={confirmPwError ? true : undefined}
+											aria-describedby={confirmPwError ? "confirmPw-error" : undefined}
 										/>
+										{confirmPwError && (
+											<p id="confirmPw-error" role="alert" className="text-[11px] text-destructive">
+												{confirmPwError}
+											</p>
+										)}
 									</div>
 									<Button
 										type="submit"
@@ -602,43 +679,42 @@ export default function AccountPage() {
 										full wipe · returns to setup wizard
 									</div>
 								</div>
-								<Button
-									size="sm"
-									variant="destructive"
-									disabled={resetConfirm !== "CONFIRM"}
-									onClick={() => setResetDialogOpen(true)}
-								>
+								<Button size="sm" variant="destructive" onClick={() => setResetDialogOpen(true)}>
 									Reset…
 								</Button>
-							</div>
-
-							<div className="flex gap-2 items-center pt-1">
-								<span className="text-[11px] text-muted-foreground shrink-0">
-									type "CONFIRM" to enable:
-								</span>
-								<Input
-									value={resetConfirm}
-									onChange={(e) => setResetConfirm(e.target.value)}
-									placeholder="CONFIRM"
-									className={cn(
-										"flex-1 font-mono text-xs",
-										resetConfirm === "CONFIRM" && "border-destructive",
-									)}
-								/>
 							</div>
 						</CardContent>
 					</Card>
 				</div>
+
+				{/* Sticky profile save bar — mirrors the Settings sticky-pill pattern */}
+				{profileDirty && (
+					<div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-lg border border-primary/60 bg-background/95 px-4 py-2.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.4)] backdrop-blur">
+						<span className="text-xs text-muted-foreground">You have unsaved profile changes</span>
+						<div className="flex gap-2">
+							<Button variant="ghost" size="sm" onClick={handleDiscardProfile}>
+								<Undo2 className="mr-1.5 h-3.5 w-3.5" />
+								Discard
+							</Button>
+							<Button size="sm" disabled={updateSettings.isPending} onClick={handleSaveProfile}>
+								<Save className="mr-1.5 h-3.5 w-3.5" />
+								{updateSettings.isPending ? "Saving…" : "Save changes"}
+							</Button>
+						</div>
+					</div>
+				)}
 			</div>
 
 			{/* ─── 2FA Modal ─── */}
 			{twoFaModalOpen && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center">
-					<div
+					<button
+						type="button"
+						aria-label="Close"
 						className="fixed inset-0 bg-black/40 backdrop-blur-sm"
 						onClick={() => !is2faLoading && setTwoFaModalOpen(false)}
 					/>
-					<div className="relative z-10 w-full max-w-md mx-4 rounded-2xl border border-white/15 dark:border-white/10 bg-white dark:bg-neutral-900 p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+					<div className="relative z-10 w-full max-w-md mx-4 rounded-2xl border border-border bg-white dark:bg-neutral-900 p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
 						<div className="flex items-center justify-between mb-4">
 							<h2 className="text-sm font-semibold flex items-center gap-1.5">
 								<Key className="h-4 w-4" />
@@ -740,8 +816,8 @@ export default function AccountPage() {
 									)}
 								</div>
 								{backupCodes.length > 0 && (
-									<div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
-										<p className="text-xs font-medium text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+									<div className="rounded-lg border border-warning/30 bg-warning/10 p-3 space-y-2">
+										<p className="text-xs font-medium text-warning flex items-center gap-1.5">
 											<Key className="h-3.5 w-3.5" />
 											Save your backup codes
 										</p>
@@ -792,25 +868,25 @@ export default function AccountPage() {
 				</div>
 			)}
 
-			{/* ─── Confirm dialogs ─── */}
-			<ConfirmDialog
+			{/* ─── Danger-zone confirm dialogs (identical type-to-confirm ceremony) ─── */}
+			<DangerConfirmDialog
 				open={deleteContentOpen}
 				onOpenChange={setDeleteContentOpen}
 				title="Delete all content?"
 				description="This permanently removes every block, analytics row, and form submission. Your account, settings, and theme stay intact. This cannot be undone."
+				confirmWord="DELETE"
 				confirmLabel="Delete content"
-				variant="destructive"
 				isPending={deleteAllContent.isPending}
 				onConfirm={handleDeleteAllContent}
 			/>
 
-			<ConfirmDialog
+			<DangerConfirmDialog
 				open={resetDialogOpen}
 				onOpenChange={setResetDialogOpen}
 				title="Reset LinkDen completely?"
 				description="This wipes all content, analytics, settings, social links, AND your user account. You will be signed out and the setup wizard will start fresh. This cannot be undone."
+				confirmWord="RESET"
 				confirmLabel="Reset everything"
-				variant="destructive"
 				isPending={resetEverything.isPending}
 				onConfirm={handleResetEverything}
 			/>

@@ -25,7 +25,7 @@ function GlassSelect({
 			id={id}
 			value={value}
 			onChange={(e) => onChange(e.target.value)}
-			className="dark:bg-input/30 border-white/15 h-8 w-full rounded-lg border bg-transparent px-2.5 text-xs outline-none focus:ring-1 focus:ring-ring appearance-none cursor-pointer"
+			className="dark:bg-input/30 border-input h-8 w-full rounded-lg border bg-transparent px-2.5 text-xs outline-none focus:ring-1 focus:ring-ring appearance-none cursor-pointer"
 		>
 			{children}
 		</select>
@@ -80,7 +80,7 @@ function SegmentedControl({
 	onChange: (value: string) => void;
 }) {
 	return (
-		<div className="flex rounded-lg border border-white/15 overflow-hidden">
+		<div className="flex rounded-lg border border-input overflow-hidden">
 			{options.map((opt) => (
 				<button
 					key={opt.value}
@@ -94,7 +94,7 @@ function SegmentedControl({
 					)}
 				>
 					{opt.svg && (
-						<svg viewBox="0 0 24 24" className="h-5 w-5">
+						<svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
 							{opt.svg}
 						</svg>
 					)}
@@ -109,6 +109,7 @@ export function BlockEditPanel({
 	block,
 	onClose,
 	onSave,
+	onDelete,
 	isSaving,
 	contactDelivery,
 	onDeliveryChange,
@@ -117,6 +118,7 @@ export function BlockEditPanel({
 	block: Block;
 	onClose: () => void;
 	onSave: (data: Partial<Block>) => void;
+	onDelete?: () => void;
 	isSaving: boolean;
 	contactDelivery: string;
 	onDeliveryChange: (value: string) => void;
@@ -174,6 +176,19 @@ export function BlockEditPanel({
 		return () => clearTimeout(timer);
 	}, []);
 
+	// Validate the raw config JSON. When invalid we surface an inline error and
+	// block saving so a typo in the Advanced editor can't silently wipe the
+	// structured fields (which fall back to {} on parse failure).
+	const configError = (() => {
+		if (!config.trim()) return null;
+		try {
+			JSON.parse(config);
+			return null;
+		} catch {
+			return "Invalid JSON — fix or clear this to save.";
+		}
+	})();
+
 	const parsedConfig = (() => {
 		try {
 			return JSON.parse(config);
@@ -209,10 +224,10 @@ export function BlockEditPanel({
 	return (
 		<div
 			ref={panelRef}
-			className="flex h-full flex-col rounded-xl border border-white/10 bg-card/80 backdrop-blur-xl shadow-xl"
+			className="flex h-full flex-col rounded-xl border border-border bg-card/80 backdrop-blur-xl shadow-xl"
 		>
 			{/* Header */}
-			<div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+			<div className="flex items-center justify-between border-b border-border px-4 py-3">
 				<h3 className="text-sm font-medium">
 					Edit {block.type === "connect" ? "Connect With Me" : block.type.replace("_", " ")}
 				</h3>
@@ -237,7 +252,7 @@ export function BlockEditPanel({
 							value={title}
 							onChange={(e) => setTitle(e.target.value)}
 							placeholder="Block title"
-							className="dark:bg-input/30 border-white/15"
+							className="dark:bg-input/30 border-input"
 						/>
 					</div>
 
@@ -250,7 +265,7 @@ export function BlockEditPanel({
 									value={url}
 									onChange={(e) => setUrl(e.target.value)}
 									placeholder="https://example.com"
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -260,7 +275,7 @@ export function BlockEditPanel({
 									value={parsedConfig.description ?? ""}
 									onChange={(e) => updateConfigField("description", e.target.value)}
 									placeholder="Brief description of the link"
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 						</>
@@ -286,7 +301,7 @@ export function BlockEditPanel({
 									onChange={(e) => setEmbedUrl(e.target.value)}
 									placeholder={EMBED_URL_PATTERNS[embedType]?.placeholder ?? "https://..."}
 									className={cn(
-										"dark:bg-input/30 border-white/15",
+										"dark:bg-input/30 border-input",
 										embedUrlError && "border-destructive",
 									)}
 								/>
@@ -365,7 +380,7 @@ export function BlockEditPanel({
 									value={parsedConfig.buttonText ?? "Contact Me"}
 									onChange={(e) => updateConfigField("buttonText", e.target.value)}
 									placeholder="Contact Me"
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -375,7 +390,7 @@ export function BlockEditPanel({
 									value={parsedConfig.buttonEmoji ?? ""}
 									onChange={(e) => updateConfigField("buttonEmoji", e.target.value)}
 									placeholder="e.g. envelope"
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -396,7 +411,7 @@ export function BlockEditPanel({
 									value={parsedConfig.successMessage ?? "Thanks for reaching out!"}
 									onChange={(e) => updateConfigField("successMessage", e.target.value)}
 									placeholder="Thanks for reaching out!"
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 						</>
@@ -411,7 +426,7 @@ export function BlockEditPanel({
 									value={parsedConfig.buttonText ?? "Download Contact"}
 									onChange={(e) => updateConfigField("buttonText", e.target.value)}
 									placeholder="Download Contact"
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -421,7 +436,7 @@ export function BlockEditPanel({
 									value={parsedConfig.buttonEmoji ?? ""}
 									onChange={(e) => updateConfigField("buttonEmoji", e.target.value)}
 									placeholder="e.g. contact"
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -448,7 +463,7 @@ export function BlockEditPanel({
 									value={parsedConfig.fullName ?? ""}
 									onChange={(e) => updateConfigField("fullName", e.target.value)}
 									placeholder="John Doe"
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -458,7 +473,7 @@ export function BlockEditPanel({
 									value={parsedConfig.nickname ?? ""}
 									onChange={(e) => updateConfigField("nickname", e.target.value)}
 									placeholder="Johnny"
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -468,7 +483,7 @@ export function BlockEditPanel({
 									type="date"
 									value={parsedConfig.birthday ?? ""}
 									onChange={(e) => updateConfigField("birthday", e.target.value)}
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -478,7 +493,7 @@ export function BlockEditPanel({
 									value={parsedConfig.photo ?? ""}
 									onChange={(e) => updateConfigField("photo", e.target.value)}
 									placeholder="https://example.com/photo.jpg"
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 
@@ -494,7 +509,7 @@ export function BlockEditPanel({
 									value={parsedConfig.org ?? ""}
 									onChange={(e) => updateConfigField("org", e.target.value)}
 									placeholder="Acme Inc."
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -504,7 +519,7 @@ export function BlockEditPanel({
 									value={parsedConfig.title ?? ""}
 									onChange={(e) => updateConfigField("title", e.target.value)}
 									placeholder="Software Engineer"
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -514,7 +529,7 @@ export function BlockEditPanel({
 									value={parsedConfig.department ?? ""}
 									onChange={(e) => updateConfigField("department", e.target.value)}
 									placeholder="Engineering"
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 
@@ -531,7 +546,7 @@ export function BlockEditPanel({
 									value={parsedConfig.email ?? ""}
 									onChange={(e) => updateConfigField("email", e.target.value)}
 									placeholder="john@example.com"
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -542,7 +557,7 @@ export function BlockEditPanel({
 									value={parsedConfig.workEmail ?? ""}
 									onChange={(e) => updateConfigField("workEmail", e.target.value)}
 									placeholder="john@company.com"
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -553,7 +568,7 @@ export function BlockEditPanel({
 									value={parsedConfig.phone ?? ""}
 									onChange={(e) => updateConfigField("phone", e.target.value)}
 									placeholder="+1 555-0123"
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -564,7 +579,7 @@ export function BlockEditPanel({
 									value={parsedConfig.workPhone ?? ""}
 									onChange={(e) => updateConfigField("workPhone", e.target.value)}
 									placeholder="+1 555-0456"
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -574,7 +589,7 @@ export function BlockEditPanel({
 									value={parsedConfig.address ?? ""}
 									onChange={(e) => updateConfigField("address", e.target.value)}
 									placeholder="123 Main St, City, State"
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 
@@ -596,7 +611,7 @@ export function BlockEditPanel({
 													updateConfigField("urls", urls);
 												}}
 												placeholder="Website"
-												className="dark:bg-input/30 border-white/15 h-8 text-xs"
+												className="dark:bg-input/30 border-input h-8 text-xs"
 											/>
 										</div>
 										<div className="flex-[2] space-y-1">
@@ -609,7 +624,7 @@ export function BlockEditPanel({
 													updateConfigField("urls", urls);
 												}}
 												placeholder="https://example.com"
-												className="dark:bg-input/30 border-white/15 h-8 text-xs"
+												className="dark:bg-input/30 border-input h-8 text-xs"
 											/>
 										</div>
 										<button
@@ -632,7 +647,7 @@ export function BlockEditPanel({
 									const urls = [...(parsedConfig.urls ?? []), { label: "", url: "" }];
 									updateConfigField("urls", urls);
 								}}
-								className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-white/15 dark:bg-input/30 px-3 py-2 text-xs font-medium transition-colors hover:bg-accent"
+								className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-input dark:bg-input/30 px-3 py-2 text-xs font-medium transition-colors hover:bg-accent"
 							>
 								<Plus className="h-3 w-3" />
 								Add URL
@@ -649,7 +664,7 @@ export function BlockEditPanel({
 									value={parsedConfig.address ?? ""}
 									onChange={(e) => updateConfigField("address", e.target.value)}
 									placeholder="San Francisco, CA"
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -673,7 +688,7 @@ export function BlockEditPanel({
 										value={parsedConfig.customLinkUrl ?? ""}
 										onChange={(e) => updateConfigField("customLinkUrl", e.target.value)}
 										placeholder="https://maps.example.com/..."
-										className="dark:bg-input/30 border-white/15"
+										className="dark:bg-input/30 border-input"
 									/>
 								</div>
 							)}
@@ -701,7 +716,7 @@ export function BlockEditPanel({
 							value={icon}
 							onChange={(e) => setIcon(e.target.value)}
 							placeholder="e.g. globe, github, twitter"
-							className="dark:bg-input/30 border-white/15"
+							className="dark:bg-input/30 border-input"
 						/>
 					</div>
 
@@ -740,7 +755,7 @@ export function BlockEditPanel({
 									value={parsedConfig.thumbnail ?? ""}
 									onChange={(e) => updateConfigField("thumbnail", e.target.value)}
 									placeholder="https://example.com/thumb.jpg"
-									className="dark:bg-input/30 border-white/15"
+									className="dark:bg-input/30 border-input"
 								/>
 							</div>
 						</>
@@ -805,8 +820,16 @@ export function BlockEditPanel({
 				{block.type === "connect" && (
 					<CollapsibleSection label="Form Fields" defaultOpen>
 						<div className="space-y-1.5">
-							<Label htmlFor="edit-delivery">Delivery mode</Label>
-							<p className="text-[11px] text-muted-foreground">How form submissions are handled</p>
+							<div className="flex items-center gap-2">
+								<Label htmlFor="edit-delivery">Delivery mode</Label>
+								<span className="rounded-full bg-warning/10 px-1.5 py-0.5 text-[10px] font-medium text-warning">
+									Site-wide
+								</span>
+							</div>
+							<p className="text-[11px] text-muted-foreground">
+								Applies to every contact form on your page — changing it here updates the global
+								Features setting immediately.
+							</p>
 							<SegmentedControl
 								value={contactDelivery}
 								options={[
@@ -879,7 +902,7 @@ export function BlockEditPanel({
 							type="datetime-local"
 							value={scheduledStart}
 							onChange={(e) => setScheduledStart(e.target.value)}
-							className="dark:bg-input/30 border-white/15"
+							className="dark:bg-input/30 border-input"
 						/>
 					</div>
 					<div className="space-y-1.5">
@@ -889,7 +912,7 @@ export function BlockEditPanel({
 							type="datetime-local"
 							value={scheduledEnd}
 							onChange={(e) => setScheduledEnd(e.target.value)}
-							className="dark:bg-input/30 border-white/15"
+							className="dark:bg-input/30 border-input"
 						/>
 					</div>
 					{hasSchedule && (
@@ -916,15 +939,39 @@ export function BlockEditPanel({
 							onChange={(e) => setConfig(e.target.value)}
 							rows={6}
 							placeholder='{"style":"outline","animation":"none"}'
-							className="dark:bg-input/30 border-white/15 w-full rounded-lg border bg-transparent backdrop-blur-sm px-2.5 py-1.5 text-xs font-mono outline-none focus:ring-1 focus:ring-ring"
+							aria-invalid={!!configError}
+							aria-describedby={configError ? "edit-config-error" : undefined}
+							className={cn(
+								"dark:bg-input/30 w-full rounded-lg border bg-transparent backdrop-blur-sm px-2.5 py-1.5 text-xs font-mono outline-none focus:ring-1 focus:ring-ring",
+								configError ? "border-destructive" : "border-input",
+							)}
 						/>
+						{configError && (
+							<p id="edit-config-error" className="text-[11px] text-destructive">
+								{configError}
+							</p>
+						)}
 					</div>
 				</CollapsibleSection>
 			</div>
 
 			{/* Footer */}
-			<div className="border-t border-white/10 px-4 py-3">
-				<Button className="w-full" onClick={handleSave} disabled={isSaving}>
+			<div className="flex gap-2 border-t border-border px-4 py-3">
+				{onDelete && (
+					<Button
+						variant="outline"
+						className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+						onClick={onDelete}
+						aria-label="Delete block"
+					>
+						<Trash2 className="h-4 w-4" />
+					</Button>
+				)}
+				<Button
+					className="flex-1"
+					onClick={handleSave}
+					disabled={isSaving || !!configError || !!embedUrlError}
+				>
 					{isSaving ? "Saving..." : "Save Changes"}
 				</Button>
 			</div>

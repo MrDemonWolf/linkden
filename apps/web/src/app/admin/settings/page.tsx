@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import {
 	Save,
 	Undo2,
-	Globe,
 	Search,
 	Mail,
 	Shield,
@@ -14,14 +13,18 @@ import {
 	ArrowDownUp,
 	Settings2,
 	Palette,
+	Contact,
+	MessageSquare,
+	MapPin,
+	Cookie,
 } from "lucide-react";
 import { trpc } from "@/utils/trpc";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/admin/page-header";
+import { SectionCard } from "@/components/admin/section-header";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { SeoSection } from "@/components/admin/settings/seo-section";
 import { CaptchaSection } from "@/components/admin/settings/captcha-section";
@@ -30,7 +33,9 @@ import { BrandingSection } from "@/components/admin/settings/branding-section";
 import { DataSection } from "@/components/admin/settings/data-section";
 import { MigrationSection } from "@/components/admin/settings/migration-section";
 import { ConsentSection } from "@/components/admin/settings/consent-section";
-import { Cookie } from "lucide-react";
+import { VCardSection } from "@/components/admin/settings/vcard-section";
+import { ContactFormSection } from "@/components/admin/settings/contact-form-section";
+import { MapKitSection } from "@/components/admin/settings/mapkit-section";
 
 const COMMON_TIMEZONES = [
 	// Americas
@@ -98,6 +103,7 @@ interface SavedState {
 	consentBannerText: string;
 	consentPrivacyUrl: string;
 	consentCategories: string;
+	contactFormEnabled: boolean;
 }
 
 function buildSavedState(s: Record<string, string>): SavedState {
@@ -137,38 +143,8 @@ function buildSavedState(s: Record<string, string>): SavedState {
 		consentCategories:
 			s.consent_categories ??
 			JSON.stringify({ analytics: true, marketing: false, functional: false }),
+		contactFormEnabled: s.contact_form_enabled === "true",
 	};
-}
-
-function SectionCard({
-	icon: Icon,
-	title,
-	description,
-	children,
-}: {
-	icon: React.ElementType;
-	title: string;
-	description?: string;
-	children: React.ReactNode;
-}) {
-	return (
-		<Card className="overflow-hidden">
-			<CardContent className="pt-0">
-				<div className="flex items-start gap-3 border-b border-border/50 py-4 -mx-6 px-6 mb-4">
-					<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400">
-						<Icon className="h-4 w-4" />
-					</div>
-					<div className="min-w-0">
-						<h2 className="text-sm font-semibold">{title}</h2>
-						{description && (
-							<p className="mt-0.5 text-[11px] text-muted-foreground">{description}</p>
-						)}
-					</div>
-				</div>
-				{children}
-			</CardContent>
-		</Card>
-	);
 }
 
 export default function SettingsPage() {
@@ -231,6 +207,7 @@ export default function SettingsPage() {
 		consentBannerText: "",
 		consentPrivacyUrl: "",
 		consentCategories: JSON.stringify({ analytics: true, marketing: false, functional: false }),
+		contactFormEnabled: false,
 	});
 
 	// SEO
@@ -280,6 +257,9 @@ export default function SettingsPage() {
 		JSON.stringify({ analytics: true, marketing: false, functional: false }),
 	);
 
+	// Features
+	const [contactFormEnabled, setContactFormEnabled] = useState(false);
+
 	// Load settings
 	useEffect(() => {
 		if (settingsQuery.data) {
@@ -318,6 +298,7 @@ export default function SettingsPage() {
 			setConsentBannerText(s.consentBannerText);
 			setConsentPrivacyUrl(s.consentPrivacyUrl);
 			setConsentCategories(s.consentCategories);
+			setContactFormEnabled(s.contactFormEnabled);
 		}
 	}, [settingsQuery.data]);
 
@@ -354,7 +335,8 @@ export default function SettingsPage() {
 		consentBannerEnabled !== savedState.consentBannerEnabled ||
 		consentBannerText !== savedState.consentBannerText ||
 		consentPrivacyUrl !== savedState.consentPrivacyUrl ||
-		consentCategories !== savedState.consentCategories;
+		consentCategories !== savedState.consentCategories ||
+		contactFormEnabled !== savedState.contactFormEnabled;
 
 	useUnsavedChanges(isDirty);
 
@@ -398,6 +380,7 @@ export default function SettingsPage() {
 		setConsentBannerText(savedState.consentBannerText);
 		setConsentPrivacyUrl(savedState.consentPrivacyUrl);
 		setConsentCategories(savedState.consentCategories);
+		setContactFormEnabled(savedState.contactFormEnabled);
 	};
 
 	const handleSave = async () => {
@@ -439,6 +422,7 @@ export default function SettingsPage() {
 				{ key: "consent_banner_text", value: consentBannerText },
 				{ key: "consent_privacy_url", value: consentPrivacyUrl },
 				{ key: "consent_categories", value: consentCategories },
+				{ key: "contact_form_enabled", value: String(contactFormEnabled) },
 			]);
 			setSavedState({
 				seoTitle,
@@ -474,6 +458,7 @@ export default function SettingsPage() {
 				consentBannerText,
 				consentPrivacyUrl,
 				consentCategories,
+				contactFormEnabled,
 			});
 			invalidate();
 			qc.invalidateQueries({
@@ -550,7 +535,7 @@ export default function SettingsPage() {
 				description={isDirty ? "You have unsaved changes" : "Configure your LinkDen instance"}
 				badge={
 					isDirty ? (
-						<Badge variant="outline" className="border-amber-500/40 bg-amber-500/10 text-amber-500">
+						<Badge variant="outline" className="border-warning/40 bg-warning/10 text-warning">
 							Unsaved
 						</Badge>
 					) : undefined
@@ -563,17 +548,18 @@ export default function SettingsPage() {
 						onClick={handleSave}
 					>
 						<Save className="mr-1.5 h-3.5 w-3.5" />
-						{updateSettings.isPending ? "Saving…" : "Save"}
+						{updateSettings.isPending ? "Saving…" : "Save changes"}
 					</Button>
 				}
 			/>
 
 			<Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-				<TabsList className="grid h-auto w-full grid-cols-5 sm:inline-flex sm:w-auto">
+				<TabsList className="grid h-auto w-full grid-cols-3 sm:inline-flex sm:w-auto">
 					<TabsTrigger value="seo">SEO</TabsTrigger>
 					<TabsTrigger value="branding">Branding</TabsTrigger>
 					<TabsTrigger value="email">Email</TabsTrigger>
 					<TabsTrigger value="features">Features</TabsTrigger>
+					<TabsTrigger value="data">Data</TabsTrigger>
 					<TabsTrigger value="privacy">Privacy</TabsTrigger>
 				</TabsList>
 
@@ -701,12 +687,42 @@ export default function SettingsPage() {
 					</SectionCard>
 				</TabsContent>
 
-				{/* Features */}
+				{/* Features — visitor-facing features backed by the public page */}
 				<TabsContent value="features" className="space-y-6 mt-0">
 					<SectionCard
+						icon={Contact}
+						title="Digital business card (vCard)"
+						description="Let visitors save your contact details to their phone with one tap"
+					>
+						<VCardSection />
+					</SectionCard>
+
+					<SectionCard
+						icon={MessageSquare}
+						title="Contact form"
+						description="Collect messages from visitors via a form on your public page"
+					>
+						<ContactFormSection
+							contactFormEnabled={contactFormEnabled}
+							onContactFormEnabledChange={setContactFormEnabled}
+						/>
+					</SectionCard>
+
+					<SectionCard
+						icon={MapPin}
+						title="Apple Maps (MapKit JS)"
+						description="Enable address autocomplete for Location blocks"
+					>
+						<MapKitSection />
+					</SectionCard>
+				</TabsContent>
+
+				{/* Data — backup, import/export, version + platform migration */}
+				<TabsContent value="data" className="space-y-6 mt-0">
+					<SectionCard
 						icon={Database}
-						title="Data & Info"
-						description="Export, import, and version information"
+						title="Backup & version"
+						description="Export or import your data and check for updates"
 					>
 						<DataSection
 							onExport={handleExport}
