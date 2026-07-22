@@ -20,7 +20,7 @@ export function CollapsibleSection({
 	return (
 		<div
 			className={cn(
-				"border-t border-white/10 transition-colors",
+				"border-t border-border transition-colors",
 				open && "border-l-2 border-l-primary/40",
 			)}
 		>

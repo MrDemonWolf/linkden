@@ -4,19 +4,26 @@ import { Worker } from "alchemy/cloudflare";
 import { D1Database } from "alchemy/cloudflare";
 import { R2Bucket } from "alchemy/cloudflare";
 import { RateLimit } from "alchemy/cloudflare";
+import { D1StateStore } from "alchemy/state";
 import { config } from "dotenv";
 
 config({ path: "./.env" });
 config({ path: "../../apps/web/.env" });
 config({ path: "../../apps/server/.env" });
 
-const app = await alchemy("linkden");
+const app = await alchemy("linkden", {
+	// Shared account-wide state store: the `alchemy-state` D1 (default name).
+	// Alchemy namespaces state by app, so linkden's state lives under the
+	// "linkden" scope alongside the other MrDemonWolf Alchemy apps.
+	stateStore: (scope) => new D1StateStore(scope),
+});
 
 const db = await D1Database("database", {
+	adopt: true,
 	migrationsDir: "../../packages/db/src/migrations",
 });
 
-const imagesBucket = await R2Bucket("images");
+const imagesBucket = await R2Bucket("images", { adopt: true });
 
 const rlAuth = RateLimit({ namespace_id: 1001, simple: { limit: 10, period: 60 } });
 const rlStrict = RateLimit({ namespace_id: 1002, simple: { limit: 5, period: 60 } });
@@ -24,6 +31,7 @@ const rlUpload = RateLimit({ namespace_id: 1003, simple: { limit: 20, period: 60
 const rlPublic = RateLimit({ namespace_id: 1004, simple: { limit: 60, period: 60 } });
 
 export const web = await Nextjs("linkden", {
+	adopt: true,
 	cwd: "../../apps/web",
 	bindings: {
 		NEXT_PUBLIC_SERVER_URL: alchemy.env.NEXT_PUBLIC_SERVER_URL!,
@@ -56,6 +64,7 @@ export const web = await Nextjs("linkden", {
 });
 
 export const server = await Worker("server", {
+	adopt: true,
 	name: "linkden-api",
 	cwd: "../../apps/server",
 	entrypoint: "src/index.ts",

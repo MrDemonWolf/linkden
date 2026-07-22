@@ -1,32 +1,39 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Filter, Handshake, MailCheck, MessageSquare, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { MailCheck, Trash2, Filter, X, Handshake } from "lucide-react";
-import { trpc } from "@/utils/trpc";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/admin/page-header";
-import { EmptyState } from "@/components/admin/empty-state";
-import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
-import { ConnectionListItem } from "@/components/admin/connections/connection-list-item";
 import { ConnectionDetail } from "@/components/admin/connections/connection-detail";
+import { ConnectionListItem } from "@/components/admin/connections/connection-list-item";
+import { EmptyState } from "@/components/admin/empty-state";
+import { PageHeader } from "@/components/admin/page-header";
+import { SkeletonRows } from "@/components/admin/skeleton-rows";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { trpc } from "@/utils/trpc";
 
 type FilterMode = "all" | "unread" | "read";
 
 export default function ConnectionsPage() {
 	const qc = useQueryClient();
 	const [filter, setFilter] = useState<FilterMode>("all");
+	const [formBlockFilter, setFormBlockFilter] = useState<string | null>(null);
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 	const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
 	const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
 	const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
 
+	// Form blocks power the per-form filter pills (a page can have several connect blocks)
+	const blocksQuery = useQuery(trpc.blocks.list.queryOptions());
+	const formBlocks = (blocksQuery.data ?? []).filter((b: { type: string }) => b.type === "connect");
+
 	const listParams = {
 		...(filter !== "all" ? { isRead: filter === "read" } : {}),
+		...(formBlockFilter ? { blockId: formBlockFilter } : {}),
 	};
 	const hasParams = Object.keys(listParams).length > 0;
 	const connectionsQuery = useQuery(
@@ -62,6 +69,7 @@ export default function ConnectionsPage() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [
 		selectedConnection?.isRead,
+		// biome-ignore lint/correctness/useExhaustiveDependencies: invalidate is a fresh closure each render; the effect only needs to re-run on selection/read-state change
 		invalidate,
 		selectedConnection?.id,
 		markRead.mutateAsync,
@@ -204,17 +212,58 @@ export default function ConnectionsPage() {
 				}
 			/>
 
+			{/* Form block filter pills */}
+			{formBlocks.length > 1 && (
+				<div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+					<span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+						Form:
+					</span>
+					<button
+						type="button"
+						onClick={() => setFormBlockFilter(null)}
+						className={cn(
+							"inline-flex h-11 shrink-0 items-center rounded-full px-3 text-[11px] font-medium transition-colors md:h-auto md:py-1",
+							formBlockFilter === null
+								? "bg-primary text-primary-foreground"
+								: "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
+						)}
+						aria-pressed={formBlockFilter === null}
+					>
+						All Forms
+					</button>
+					{formBlocks.map((fb) => (
+						<button
+							key={fb.id}
+							type="button"
+							onClick={() => setFormBlockFilter(fb.id)}
+							className={cn(
+								"inline-flex h-11 shrink-0 items-center gap-1 rounded-full px-3 text-[11px] font-medium transition-colors md:h-auto md:py-1",
+								formBlockFilter === fb.id
+									? "bg-primary text-primary-foreground"
+									: "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
+							)}
+							aria-pressed={formBlockFilter === fb.id}
+						>
+							<MessageSquare className="h-3 w-3" />
+							{fb.title || "Untitled Form"}
+						</button>
+					))}
+				</div>
+			)}
+
 			{/* Bulk action bar */}
 			{showBulkActions && (
-				<div className="flex items-center gap-3 px-3 py-2 bg-blue-500/5 border border-blue-500/20 rounded-lg">
-					<input
-						type="checkbox"
-						checked={checkedIds.size === connections.length}
-						onChange={toggleSelectAll}
-						className="h-3.5 w-3.5 rounded border-border accent-primary"
-						aria-label="Select all"
-					/>
-					<span className="text-xs font-medium text-blue-500">{checkedIds.size} selected</span>
+				<div className="flex items-center gap-3 px-3 py-2 bg-primary/5 border border-primary/20 rounded-lg">
+					<span className="-my-2 flex h-11 w-11 shrink-0 items-center justify-center md:my-0 md:h-6 md:w-6">
+						<input
+							type="checkbox"
+							checked={checkedIds.size === connections.length}
+							onChange={toggleSelectAll}
+							className="h-4 w-4 rounded border-border accent-primary"
+							aria-label="Select all"
+						/>
+					</span>
+					<span className="text-xs font-medium text-primary">{checkedIds.size} selected</span>
 					<Button variant="ghost" size="xs" onClick={handleBulkMarkRead}>
 						<MailCheck className="mr-1 h-3.5 w-3.5" />
 						Mark Read
@@ -243,7 +292,7 @@ export default function ConnectionsPage() {
 						icon={Handshake}
 						title="No connections yet"
 						description={
-							filter !== "all"
+							filter !== "all" || formBlockFilter
 								? "No matching connections found. Try a different filter."
 								: "When people connect with you through your page, they'll appear here."
 						}
@@ -252,7 +301,7 @@ export default function ConnectionsPage() {
 					<div className="flex gap-4">
 						{/* List panel */}
 						<Card className="flex-1 min-w-0 overflow-hidden">
-							<div className="divide-y" role="list" aria-label="Connections">
+							<ul className="divide-y" aria-label="Connections">
 								{connections.map((connection) => (
 									<ConnectionListItem
 										key={connection.id}
@@ -264,7 +313,7 @@ export default function ConnectionsPage() {
 										showCheckbox={showBulkActions}
 									/>
 								))}
-							</div>
+							</ul>
 						</Card>
 
 						{/* Desktop detail panel */}
@@ -292,9 +341,11 @@ export default function ConnectionsPage() {
 			{/* Mobile detail overlay */}
 			{mobileDetailOpen && selectedConnection && (
 				<div className="fixed inset-0 z-50 md:hidden">
-					<div
+					<button
+						type="button"
 						className="fixed inset-0 bg-black/40 backdrop-blur-sm"
 						onClick={() => setMobileDetailOpen(false)}
+						aria-label="Close"
 					/>
 					<div className="fixed inset-x-0 bottom-0 z-10 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t bg-background shadow-xl animate-in slide-in-from-bottom duration-200">
 						<div className="sticky top-0 flex items-center justify-between border-b bg-background px-4 py-2">

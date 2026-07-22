@@ -7,7 +7,11 @@ import { FieldGroup } from "./field-group";
 import { OG_TEMPLATES } from "@/lib/og-templates";
 import { OgPreviewCard } from "./og-preview-card";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
+import { SectionLabel } from "@/components/admin/section-header";
 import { Check, Layout, Image } from "lucide-react";
+
+const focusRing =
+	"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 interface SeoSectionProps {
 	seoTitle: string;
@@ -51,9 +55,7 @@ export function SeoSection({
 		<div className="space-y-6">
 			{/* Page Title & Meta Description */}
 			<div className="space-y-4">
-				<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-					Meta Tags
-				</p>
+				<SectionLabel>Meta Tags</SectionLabel>
 				<FieldGroup columns={2}>
 					<div className="space-y-1.5">
 						<Label htmlFor="s-seo-title">Page Title</Label>
@@ -86,21 +88,19 @@ export function SeoSection({
 
 			{/* OG Image section */}
 			<div className="space-y-4">
-				<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-					Open Graph Image
-				</p>
+				<SectionLabel>Open Graph Image</SectionLabel>
 
 				{/* Mode toggle */}
-				<div className="flex gap-2" role="tablist">
+				<div className="flex gap-2">
 					<button
 						type="button"
-						role="tab"
-						aria-selected={seoOgMode === "template"}
+						aria-pressed={seoOgMode === "template"}
 						onClick={() => onSeoOgModeChange("template")}
 						className={cn(
 							"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+							focusRing,
 							seoOgMode === "template"
-								? "border-blue-500/50 bg-blue-500/10 text-blue-400"
+								? "border-primary/50 bg-primary/10 text-primary"
 								: "border-border text-muted-foreground hover:text-foreground",
 						)}
 					>
@@ -109,13 +109,13 @@ export function SeoSection({
 					</button>
 					<button
 						type="button"
-						role="tab"
-						aria-selected={seoOgMode === "custom"}
+						aria-pressed={seoOgMode === "custom"}
 						onClick={() => onSeoOgModeChange("custom")}
 						className={cn(
 							"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+							focusRing,
 							seoOgMode === "custom"
-								? "border-blue-500/50 bg-blue-500/10 text-blue-400"
+								? "border-primary/50 bg-primary/10 text-primary"
 								: "border-border text-muted-foreground hover:text-foreground",
 						)}
 					>
@@ -133,16 +133,18 @@ export function SeoSection({
 								<button
 									key={t.id}
 									type="button"
+									aria-pressed={isSelected}
 									onClick={() => onSeoOgTemplateChange(t.id)}
 									className={cn(
 										"relative rounded-lg border p-3 text-left transition-all",
+										focusRing,
 										isSelected
-											? "border-blue-500/50 bg-blue-500/5 ring-1 ring-blue-500/50"
+											? "border-primary/50 bg-primary/5 ring-1 ring-primary/50"
 											: "border-border/50 hover:border-border hover:bg-muted/30",
 									)}
 								>
 									{isSelected && (
-										<div className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-white">
+										<div className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
 											<Check className="h-2.5 w-2.5" />
 										</div>
 									)}
@@ -172,9 +174,7 @@ export function SeoSection({
 
 			{/* Live Social Preview */}
 			<div className="space-y-3">
-				<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-					Social Media Preview
-				</p>
+				<SectionLabel>Social Media Preview</SectionLabel>
 				<p className="text-[11px] text-muted-foreground -mt-2">
 					How your page will look when shared on social media
 				</p>

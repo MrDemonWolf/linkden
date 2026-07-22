@@ -1,23 +1,23 @@
 import * as React from "react";
-import * as LabelPrimitive from "@radix-ui/react-label";
 import { cn } from "../utils";
 
-const Label = React.forwardRef<
-	React.ComponentRef<typeof LabelPrimitive.Root>,
-	React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
->(({ className, ...props }, ref) => (
-	<LabelPrimitive.Root
-		ref={ref}
-		data-slot="label"
-		className={cn(
-			"text-sm font-medium leading-none text-[var(--ld-foreground)]",
-			"peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
-			className,
-		)}
-		{...props}
-	/>
-));
-Label.displayName = LabelPrimitive.Root.displayName;
+// Base UI has no standalone Label primitive (it lives inside Field); a native
+// <label htmlFor> gives the same click-to-focus behavior with zero deps.
+const Label = React.forwardRef<HTMLLabelElement, React.LabelHTMLAttributes<HTMLLabelElement>>(
+	({ className, ...props }, ref) => (
+		<label
+			ref={ref}
+			data-slot="label"
+			className={cn(
+				"text-sm font-medium leading-none text-foreground",
+				"peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+				className,
+			)}
+			{...props}
+		/>
+	),
+);
+Label.displayName = "Label";
 
 export { Label };
 export default Label;

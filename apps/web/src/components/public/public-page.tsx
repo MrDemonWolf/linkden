@@ -25,6 +25,13 @@ interface PageData {
 		config: string | null;
 		position: number;
 	}>;
+	socialNetworks?: Array<{
+		slug: string;
+		name: string;
+		url: string;
+		hex: string;
+		svgPath: string;
+	}>;
 	theme: {
 		preset?: string;
 		customColors?: Record<string, string>;
@@ -139,7 +146,9 @@ export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolea
 		>
 			<a
 				href="#main-content"
-				className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground"
+				className={`sr-only focus:not-sr-only focus:fixed focus:left-4 focus:z-[60] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground ${
+					isAdmin ? "focus:top-16" : "focus:top-4"
+				}`}
 			>
 				Skip to content
 			</a>
@@ -161,6 +170,7 @@ export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolea
 						viewBox="0 0 24 24"
 						stroke="currentColor"
 						strokeWidth={2}
+						aria-hidden="true"
 					>
 						<path
 							strokeLinecap="round"
@@ -182,6 +192,7 @@ export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolea
 			<PublicPageContent
 				profile={data.profile}
 				blocks={data.blocks}
+				socialNetworks={data.socialNetworks}
 				settings={{
 					brandingEnabled: data.settings.brandingEnabled,
 					brandingText: data.settings.brandingText,

@@ -2,7 +2,8 @@
 	"extends": "@linkden/config/tsconfig.base.json",
 	"compilerOptions": {
 		"jsx": "react-jsx",
-		"outDir": "dist"
+		"lib": ["ESNext", "DOM", "DOM.Iterable"],
+		"types": []
 	},
 	"include": ["src"]
 }

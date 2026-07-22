@@ -13,6 +13,9 @@ const pillClass = cn(
 	"rounded-full backdrop-blur-2xl bg-white/5 dark:bg-white/5 border-white/20 hover:bg-white/10 hover:-translate-y-0.5 transition-all duration-300 no-underline",
 );
 
+// Wallet pass + vCard are served by the Hono API, not the Next app.
+const apiBase = process.env.NEXT_PUBLIC_SERVER_URL ?? "";
+
 export function FooterActions({ walletEnabled, vcardEnabled }: FooterActionsProps) {
 	if (!walletEnabled && !vcardEnabled) return null;
 
@@ -22,7 +25,7 @@ export function FooterActions({ walletEnabled, vcardEnabled }: FooterActionsProp
 		<div className={cn("mt-6 flex pb-4 gap-3", both ? "grid grid-cols-2" : "justify-center")}>
 			{walletEnabled && (
 				<a
-					href="/api/wallet-pass"
+					href={`${apiBase}/api/wallet-pass`}
 					className={cn(pillClass, both && "w-full")}
 					aria-label="Add to Apple Wallet"
 				>
@@ -32,7 +35,7 @@ export function FooterActions({ walletEnabled, vcardEnabled }: FooterActionsProp
 			)}
 			{vcardEnabled && (
 				<a
-					href="/api/vcard"
+					href={`${apiBase}/api/vcard`}
 					download="contact.vcf"
 					className={cn(pillClass, both && "w-full")}
 					aria-label="Download vCard"

@@ -5,11 +5,13 @@ import {
 	user,
 	block,
 	siteSettings,
+	socialNetwork,
 	contactSubmission,
 	pageView,
 	linkClick,
 } from "@linkden/db/schema/index";
 import { eq, asc, and } from "drizzle-orm";
+import { socialBrandMap } from "@linkden/ui/social-brands";
 import { z } from "zod";
 import { generateVCardString, vcardDataSchema } from "./vcard";
 import { buildSettingsMap } from "../utils/settings";
@@ -49,6 +51,29 @@ export const publicRouter = router({
 			return true;
 		});
 
+		// Active social networks — resolved against the icon catalog for name/hex/svgPath.
+		// social.list is a protected procedure, so the public page can't use it; this
+		// mirrors it for anonymous visitors (unknown slugs are dropped).
+		const activeSocials = await db
+			.select()
+			.from(socialNetwork)
+			.where(eq(socialNetwork.isActive, true))
+			.orderBy(asc(socialNetwork.addedAt));
+
+		const socialNetworks = activeSocials.flatMap((s) => {
+			const brand = socialBrandMap.get(s.slug);
+			if (!brand) return [];
+			return [
+				{
+					slug: s.slug,
+					name: brand.name,
+					url: s.url,
+					hex: brand.hex,
+					svgPath: brand.svgPath,
+				},
+			];
+		});
+
 		// Get all settings at once
 		const settings = await buildSettingsMap();
 
@@ -76,6 +101,7 @@ export const publicRouter = router({
 					}
 				: null,
 			blocks: visibleBlocks,
+			socialNetworks,
 			theme,
 			settings: {
 				seoTitle: settings.seo_title || null,

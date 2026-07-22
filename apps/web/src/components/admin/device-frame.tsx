@@ -50,6 +50,7 @@ function StatusBar({ dark }: { dark: boolean }) {
 					height="10"
 					viewBox="0 0 13 10"
 					style={{ fill: fgColor, transition: "fill 0.5s ease" }}
+					aria-hidden="true"
 				>
 					<rect x="0" y="7" width="2.5" height="3" rx="0.5" />
 					<rect x="3.5" y="5" width="2.5" height="5" rx="0.5" />
@@ -62,6 +63,7 @@ function StatusBar({ dark }: { dark: boolean }) {
 					height="9"
 					viewBox="0 0 16 12"
 					style={{ fill: fgColor, transition: "fill 0.5s ease" }}
+					aria-hidden="true"
 				>
 					<path d="M8 9.6a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4zM8 6c1.87 0 3.56.76 4.78 2L11.6 9.18A4.8 4.8 0 008 7.8a4.8 4.8 0 00-3.6 1.38L3.22 8A6.57 6.57 0 018 6zm0-3.6c2.87 0 5.47 1.16 7.36 3.04L14.18 6.6A8.37 8.37 0 008 4.2a8.37 8.37 0 00-6.18 2.4L.64 5.44A10.16 10.16 0 018 2.4z" />
 				</svg>
@@ -71,6 +73,7 @@ function StatusBar({ dark }: { dark: boolean }) {
 					height="9"
 					viewBox="0 0 25 12"
 					style={{ fill: fgColor, transition: "fill 0.5s ease" }}
+					aria-hidden="true"
 				>
 					<rect
 						x="0"

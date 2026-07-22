@@ -23,11 +23,7 @@ export function ThemePresetsSection({
 				</h2>
 			</CardHeader>
 			<CardContent>
-				<div
-					className="grid grid-cols-2 gap-3 sm:grid-cols-3"
-					role="radiogroup"
-					aria-label="Theme presets"
-				>
+				<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
 					{themePresets.map((theme) => {
 						const isSelected = selectedTheme === theme.name;
 						const light = theme.cssVars.light;
@@ -36,11 +32,12 @@ export function ThemePresetsSection({
 							<button
 								key={theme.name}
 								type="button"
-								role="radio"
-								aria-checked={isSelected}
+								aria-pressed={isSelected}
+								aria-label={theme.label}
 								onClick={() => onThemeSelect(theme.name)}
 								className={cn(
 									"group relative flex flex-col overflow-hidden rounded-xl border-2 transition-all duration-200",
+									"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 									isSelected
 										? "border-primary ring-2 ring-primary/20 shadow-lg shadow-primary/10"
 										: "border-border/50 hover:border-muted-foreground/40 hover:shadow-md",

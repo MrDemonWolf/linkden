@@ -1,5 +1,5 @@
 import * as React from "react";
-import * as AvatarPrimitive from "@radix-ui/react-avatar";
+import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar";
 import { cn } from "../utils";
 
 const Avatar = React.forwardRef<
@@ -13,7 +13,7 @@ const Avatar = React.forwardRef<
 		{...props}
 	/>
 ));
-Avatar.displayName = AvatarPrimitive.Root.displayName;
+Avatar.displayName = "Avatar";
 
 const AvatarImage = React.forwardRef<
 	React.ComponentRef<typeof AvatarPrimitive.Image>,
@@ -26,7 +26,7 @@ const AvatarImage = React.forwardRef<
 		{...props}
 	/>
 ));
-AvatarImage.displayName = AvatarPrimitive.Image.displayName;
+AvatarImage.displayName = "AvatarImage";
 
 const AvatarFallback = React.forwardRef<
 	React.ComponentRef<typeof AvatarPrimitive.Fallback>,
@@ -36,12 +36,12 @@ const AvatarFallback = React.forwardRef<
 		ref={ref}
 		data-slot="avatar-fallback"
 		className={cn(
-			"flex h-full w-full items-center justify-center rounded-full bg-[var(--ld-muted)] text-sm font-medium text-[var(--ld-muted-foreground)]",
+			"flex h-full w-full items-center justify-center rounded-full bg-muted text-sm font-medium text-muted-foreground",
 			className,
 		)}
 		{...props}
 	/>
 ));
-AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName;
+AvatarFallback.displayName = "AvatarFallback";
 
 export { Avatar, AvatarImage, AvatarFallback };

@@ -62,7 +62,7 @@ export function ProfileSocialIcons({
 						title={network.name}
 					>
 						{network.svgPath ? (
-							<svg viewBox="0 0 24 24" className="h-[18px] w-[18px]">
+							<svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" aria-hidden="true">
 								<path d={network.svgPath} fill={fill} />
 							</svg>
 						) : (

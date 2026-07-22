@@ -1,32 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { WolfLogo } from "@/components/wolf-logo";
-import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
-	LayoutDashboard,
+	BarChart3,
 	Blocks,
+	Globe,
 	Handshake,
+	LayoutDashboard,
+	LogOut,
+	Menu,
 	Palette,
 	Settings,
-	Wallet,
-	Menu,
-	X,
-	Globe,
 	UserCog,
-	LogOut,
-	BarChart3,
+	Wallet,
+	X,
 } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
-import { trpc } from "@/utils/trpc";
-import { cn } from "@/lib/utils";
-import { getGravatarUrl } from "@/lib/gravatar";
-import { initials } from "@/lib/format";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { WolfLogo } from "@/components/wolf-logo";
+import { authClient } from "@/lib/auth-client";
+import { initials } from "@/lib/format";
+import { getGravatarUrl } from "@/lib/gravatar";
+import { cn } from "@/lib/utils";
+import { trpc } from "@/utils/trpc";
 
 const NAV_GROUPS = [
 	{
@@ -60,8 +60,11 @@ const BOTTOM_NAV_ITEMS = [
 	{ href: "/admin" as const, label: "Dashboard", icon: LayoutDashboard },
 	{ href: "/admin/builder" as const, label: "Builder", icon: Blocks },
 	{ href: "/admin/analytics" as const, label: "Analytics", icon: BarChart3 },
+	{ href: "/admin/connections" as const, label: "Connections", icon: Handshake },
 	{ href: "/admin/settings" as const, label: "Settings", icon: Settings },
 ];
+
+const MOBILE_MENU_ID = "admin-mobile-nav";
 
 function DesktopTopBar({ pathname, siteName }: { pathname: string; siteName: string }) {
 	const currentPageLabel =
@@ -70,7 +73,7 @@ function DesktopTopBar({ pathname, siteName }: { pathname: string; siteName: str
 		)?.label ?? "";
 
 	return (
-		<div className="hidden md:flex h-14 shrink-0 items-center justify-between border-b border-white/10 px-6">
+		<div className="hidden md:flex h-14 shrink-0 items-center justify-between border-b border-border px-6">
 			<div className="flex items-center gap-3">
 				<h2 className="text-sm font-semibold">{currentPageLabel}</h2>
 				<span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5">
@@ -136,7 +139,7 @@ function SidebarContent({
 					"relative flex items-center gap-2.5 rounded-lg px-3 py-2 min-h-[44px] text-xs font-medium transition-all",
 					isActive
 						? "bg-primary/10 text-foreground"
-						: "text-muted-foreground hover:text-foreground hover:bg-white/5",
+						: "text-muted-foreground hover:text-foreground hover:bg-muted",
 				)}
 			>
 				{isActive && (
@@ -148,7 +151,7 @@ function SidebarContent({
 				<Icon className={cn("h-4 w-4 shrink-0", isActive && "text-primary")} />
 				<span>{item.label}</span>
 				{item.label === "Connections" && unreadCount > 0 && (
-					<span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500 px-1 text-[11px] font-semibold text-white">
+					<span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-primary-foreground">
 						{unreadCount > 99 ? "99+" : unreadCount}
 					</span>
 				)}
@@ -159,7 +162,7 @@ function SidebarContent({
 	return (
 		<div className="flex h-full flex-col">
 			{/* Logo + subtitle */}
-			<div className="flex items-center gap-3 px-4 h-14 border-b border-white/5">
+			<div className="flex items-center gap-3 px-4 h-14 border-b border-border/50">
 				{logoUrl ? (
 					<img src={logoUrl} alt="" className="h-8 w-8 rounded-lg object-cover" />
 				) : (
@@ -207,7 +210,7 @@ function SidebarContent({
 			</div>
 
 			{/* User profile footer */}
-			<div className="border-t border-white/5 px-3 py-3">
+			<div className="border-t border-border/50 px-3 py-3">
 				<div className="flex items-center gap-2.5">
 					<Avatar className="h-8 w-8 shrink-0">
 						<AvatarImage
@@ -225,7 +228,7 @@ function SidebarContent({
 					<button
 						type="button"
 						onClick={handleSignOut}
-						className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors"
+						className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
 						aria-label="Sign out"
 					>
 						<LogOut className="h-3.5 w-3.5" />
@@ -241,6 +244,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 	const pathname = usePathname();
 	const { data: session, isPending } = authClient.useSession();
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+	const menuToggleRef = useRef<HTMLButtonElement>(null);
+	const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+	// Mobile nav a11y: move focus into the menu on open, close on Escape (document-level),
+	// and restore focus to the toggle when it closes.
+	useEffect(() => {
+		if (!mobileMenuOpen) return;
+		const first = mobileMenuRef.current?.querySelector<HTMLElement>(
+			'a, button, [tabindex]:not([tabindex="-1"])',
+		);
+		first?.focus();
+		function onKeyDown(e: KeyboardEvent) {
+			if (e.key === "Escape") setMobileMenuOpen(false);
+		}
+		document.addEventListener("keydown", onKeyDown);
+		return () => {
+			document.removeEventListener("keydown", onKeyDown);
+			menuToggleRef.current?.focus();
+		};
+	}, [mobileMenuOpen]);
 
 	const unreadQuery = useQuery({
 		...trpc.forms.unreadCount.queryOptions(),
@@ -279,6 +302,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 		}
 	}, [isPending, session, isPublicRoute, router]);
 
+	// Register the admin PWA service worker (public/sw.js, scoped to /admin).
+	// ponytail: prod-only — a dev service worker caches stale HMR assets.
+	useEffect(() => {
+		if (process.env.NODE_ENV !== "production") return;
+		if (!("serviceWorker" in navigator)) return;
+		navigator.serviceWorker.register("/sw.js", { scope: "/admin" }).catch(() => {});
+	}, []);
+
 	if (isPublicRoute) {
 		return <>{children}</>;
 	}
@@ -316,7 +347,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 			{/* Desktop sidebar */}
 			<aside
 				aria-label="Sidebar"
-				className="hidden w-56 shrink-0 border-r border-white/20 dark:border-white/10 bg-white/30 dark:bg-black/40 backdrop-blur-2xl z-20 md:block"
+				className="hidden w-56 shrink-0 border-r border-border bg-sidebar backdrop-blur-2xl z-20 md:block"
 			>
 				<div className="sticky top-0 h-screen overflow-y-auto">
 					<SidebarContent
@@ -331,7 +362,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 			</aside>
 
 			{/* Mobile header */}
-			<div className="fixed inset-x-0 top-0 z-40 flex h-12 items-center border-b border-white/20 dark:border-white/10 backdrop-blur-2xl bg-white/70 dark:bg-black/40 px-4 md:hidden">
+			<div className="fixed inset-x-0 top-0 z-40 flex h-12 items-center border-b border-border backdrop-blur-2xl bg-sidebar px-4 md:hidden">
 				<div className="flex items-center gap-2 shrink-0">
 					{logoUrl ? (
 						<img src={logoUrl} alt="" className="h-6 w-6 rounded-md object-cover" />
@@ -347,25 +378,43 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 					)?.label ?? ""}
 				</span>
 				<button
+					ref={menuToggleRef}
 					type="button"
 					onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-					className="flex h-11 w-11 items-center justify-center text-muted-foreground ml-auto"
-					aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+					className="relative flex h-11 w-11 items-center justify-center text-muted-foreground ml-auto"
+					aria-label={
+						unreadCount > 0
+							? `${mobileMenuOpen ? "Close" : "Open"} menu, ${unreadCount} unread connections`
+							: mobileMenuOpen
+								? "Close menu"
+								: "Open menu"
+					}
 					aria-expanded={mobileMenuOpen}
+					aria-controls={MOBILE_MENU_ID}
 				>
 					{mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+					{!mobileMenuOpen && unreadCount > 0 && (
+						<span
+							className="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary ring-2 ring-sidebar"
+							aria-hidden="true"
+						/>
+					)}
 				</button>
 			</div>
 
 			{/* Mobile dropdown menu */}
 			{mobileMenuOpen && (
 				<>
-					<div
+					<button
+						type="button"
+						aria-label="Close menu"
 						className="fixed inset-0 top-12 z-40 md:hidden"
 						onClick={() => setMobileMenuOpen(false)}
 					/>
 					<div
-						className="fixed inset-x-0 top-12 z-50 md:hidden bg-white/90 dark:bg-black/80 backdrop-blur-2xl border-b border-white/20 dark:border-white/10 shadow-xl"
+						ref={mobileMenuRef}
+						id={MOBILE_MENU_ID}
+						className="fixed inset-x-0 top-12 z-50 md:hidden bg-sidebar backdrop-blur-2xl border-b border-border shadow-xl"
 						role="dialog"
 						aria-modal="true"
 						aria-label="Navigation menu"
@@ -401,13 +450,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 													"flex items-center gap-3 rounded-lg px-3 py-3 min-h-[44px] text-sm font-medium transition-all",
 													isActive
 														? "bg-primary/10 text-primary"
-														: "text-muted-foreground hover:bg-black/5 dark:hover:bg-white/10 hover:text-foreground",
+														: "text-muted-foreground hover:bg-muted hover:text-foreground",
 												)}
 											>
 												<Icon className="h-4 w-4 shrink-0" />
 												{item.label}
 												{item.label === "Connections" && unreadCount > 0 && (
-													<span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500 px-1 text-[11px] font-semibold text-white">
+													<span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-primary-foreground">
 														{unreadCount > 99 ? "99+" : unreadCount}
 													</span>
 												)}
@@ -417,7 +466,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 								</div>
 							))}
 						</nav>
-						<div className="border-t border-white/10 px-4 py-2.5 flex items-center justify-between">
+						<div className="border-t border-border px-4 py-2.5 flex items-center justify-between">
 							<div className="flex items-center gap-2">
 								<Avatar className="h-6 w-6 shrink-0">
 									<AvatarImage
@@ -452,25 +501,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 			{/* Mobile bottom nav */}
 			<nav
 				aria-label="Quick navigation"
-				className="fixed inset-x-0 bottom-0 z-40 flex border-t border-white/20 dark:border-white/10 backdrop-blur-2xl bg-white/70 dark:bg-black/40 md:hidden"
+				className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border backdrop-blur-2xl bg-sidebar md:hidden"
 			>
 				{BOTTOM_NAV_ITEMS.map((item) => {
 					const isActive =
 						item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
 					const Icon = item.icon;
+					const showBadge = item.label === "Connections" && unreadCount > 0;
 
 					return (
 						<Link
 							key={item.href}
 							href={item.href as never}
 							aria-current={isActive ? "page" : undefined}
+							aria-label={showBadge ? `${item.label}, ${unreadCount} unread` : undefined}
 							className={cn(
-								"flex flex-1 flex-col items-center justify-center gap-1 min-h-[48px] text-xs font-medium transition-colors",
+								"flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 min-h-[48px] text-xs font-medium transition-colors",
 								isActive ? "text-primary" : "text-muted-foreground",
 							)}
 						>
-							<Icon className="h-5 w-5" />
-							<span>{item.label}</span>
+							<span className="relative">
+								<Icon className="h-5 w-5" />
+								{showBadge && (
+									<span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+										{unreadCount > 99 ? "99+" : unreadCount}
+									</span>
+								)}
+							</span>
+							<span className="max-w-full truncate">{item.label}</span>
 						</Link>
 					);
 				})}

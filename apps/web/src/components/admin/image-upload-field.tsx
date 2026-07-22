@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useId } from "react";
 import { Upload, X, Image as ImageIcon, Crop } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ export function ImageUploadField({
 	const [cropFileName, setCropFileName] = useState<string | undefined>(undefined);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const objectUrlRef = useRef<string | null>(null);
+	const inputId = useId();
 
 	const preset = CROP_PRESETS[purpose];
 
@@ -146,7 +147,7 @@ export function ImageUploadField({
 		<>
 			<div className={cn("space-y-1.5", !isBanner && "flex flex-col items-center")}>
 				{label && (
-					<label className="flex items-center gap-2 text-sm font-medium">
+					<label htmlFor={inputId} className="flex items-center gap-2 text-sm font-medium">
 						{label}
 						{hint && (
 							<span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
@@ -155,7 +156,8 @@ export function ImageUploadField({
 						)}
 					</label>
 				)}
-				<div
+				<button
+					type="button"
 					onDragOver={(e) => {
 						e.preventDefault();
 						setDragActive(true);
@@ -170,11 +172,6 @@ export function ImageUploadField({
 							: "border-muted-foreground/25 hover:border-muted-foreground/50",
 					)}
 					onClick={() => inputRef.current?.click()}
-					onKeyDown={(e) => {
-						if (e.key === "Enter" || e.key === " ") inputRef.current?.click();
-					}}
-					role="button"
-					tabIndex={0}
 				>
 					{displayUrl ? (
 						<>
@@ -203,15 +200,16 @@ export function ImageUploadField({
 							)}
 						</div>
 					)}
+				</button>
 
-					<input
-						ref={inputRef}
-						type="file"
-						accept="image/*"
-						onChange={handleChange}
-						className="hidden"
-					/>
-				</div>
+				<input
+					id={inputId}
+					ref={inputRef}
+					type="file"
+					accept="image/*"
+					onChange={handleChange}
+					className="hidden"
+				/>
 
 				{displayUrl && !uploading && (
 					<div className="flex flex-wrap items-center justify-center gap-1">

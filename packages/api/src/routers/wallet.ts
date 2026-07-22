@@ -8,10 +8,13 @@ import { stripHtml } from "../utils/sanitize";
 import { upsertSetting, buildSettingsMap } from "../utils/settings";
 import {
 	passFieldSchema,
+	passLocationSchema,
 	seedFromPreset,
 	PASS_TEMPLATE_PRESETS,
 	PASS_FIELD_LIMITS,
+	PASS_LOCATION_LIMIT,
 	type PassField,
+	type PassLocation,
 	type PassTemplatePreset,
 } from "@linkden/validators/wallet";
 
@@ -37,6 +40,8 @@ const walletKeys = [
 	"wallet_secondary_fields",
 	"wallet_auxiliary_fields",
 	"wallet_back_fields",
+	"wallet_relevant_date",
+	"wallet_locations",
 	"wallet_signer_cert",
 	"wallet_signer_key",
 	"wallet_wwdr_cert",
@@ -64,6 +69,27 @@ function parseFields(raw: string | undefined): PassField[] {
 				key: f.key.slice(0, 64),
 				label: f.label.slice(0, 40),
 				value: f.value.slice(0, 200),
+			}));
+	} catch {
+		return [];
+	}
+}
+
+function parseLocations(raw: string | undefined): PassLocation[] {
+	if (!raw) return [];
+	try {
+		const parsed = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return [];
+		return parsed
+			.filter(
+				(l): l is PassLocation =>
+					l && typeof l.latitude === "number" && typeof l.longitude === "number",
+			)
+			.slice(0, PASS_LOCATION_LIMIT)
+			.map((l) => ({
+				latitude: l.latitude,
+				longitude: l.longitude,
+				relevantText: stripHtml(String(l.relevantText ?? "")).slice(0, 100),
 			}));
 	} catch {
 		return [];
@@ -112,6 +138,8 @@ export const walletRouter = router({
 				secondaryFields: z.array(passFieldSchema).max(PASS_FIELD_LIMITS.secondary).optional(),
 				auxiliaryFields: z.array(passFieldSchema).max(PASS_FIELD_LIMITS.auxiliary).optional(),
 				backFields: z.array(passFieldSchema).max(PASS_FIELD_LIMITS.back).optional(),
+				relevantDate: z.string().max(40).optional().or(z.literal("")),
+				locations: z.array(passLocationSchema).max(PASS_LOCATION_LIMIT).optional(),
 			}),
 		)
 		.mutation(async ({ input }) => {
@@ -162,6 +190,9 @@ export const walletRouter = router({
 					"wallet_back_fields",
 					JSON.stringify(clampFields(input.backFields, PASS_FIELD_LIMITS.back)),
 				);
+			if (input.relevantDate !== undefined) push("wallet_relevant_date", input.relevantDate);
+			if (input.locations !== undefined)
+				push("wallet_locations", JSON.stringify(input.locations.slice(0, PASS_LOCATION_LIMIT)));
 
 			for (const { key, value } of updates) {
 				await upsertSetting(key, value);
@@ -314,6 +345,8 @@ export const walletRouter = router({
 			secondaryFields,
 			auxiliaryFields,
 			backFields,
+			relevantDate: settingsMap.wallet_relevant_date || "",
+			locations: parseLocations(settingsMap.wallet_locations),
 			showEmail,
 			showName,
 			showQrCode: settingsMap.wallet_show_qr_code !== "false",
