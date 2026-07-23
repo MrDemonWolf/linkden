@@ -57,6 +57,11 @@ This prevents context loss! Update this file IMMEDIATELY when creating important
 - GDPR compliance audit (2026-03-31): `docs/gdpr-audit.md`
 - ISO 27001:2022 gap analysis (2026-03-31): `docs/iso27001-gap-analysis.md`
 
+## UI/UX Reviews
+
+- Pre-launch NN/g review, full site (2026-07-22, 32 findings): `docs/uiux-review-2026-07-22.md`
+- Scoped re-review + adversarial code review (2026-07-23, PRs #46-#48): `docs/uiux-review-2026-07-23.md`
+
 ## Release Planning
 
 - Changelog (dual-audience: ✨ user / 🔧 technical): `CHANGELOG.md`
