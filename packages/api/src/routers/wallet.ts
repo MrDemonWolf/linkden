@@ -11,63 +11,19 @@ import { maskSecret, WALLET_SETTING_KEYS } from "@linkden/validators/settings-re
 import {
 	passFieldSchema,
 	passLocationSchema,
+	parsePassFieldsJson,
+	parsePassLocationsJson,
 	seedFromPreset,
 	PASS_TEMPLATE_PRESETS,
 	PASS_FIELD_LIMITS,
 	PASS_LOCATION_LIMIT,
 	type PassField,
-	type PassLocation,
 	type PassTemplatePreset,
 } from "@linkden/validators/wallet";
 
 const hexColorRegex = /^#[0-9a-fA-F]{6}$/;
 
 const walletKeys: readonly string[] = WALLET_SETTING_KEYS;
-
-function parseFields(raw: string | undefined): PassField[] {
-	if (!raw) return [];
-	try {
-		const parsed = JSON.parse(raw);
-		if (!Array.isArray(parsed)) return [];
-		return parsed
-			.filter(
-				(f): f is PassField =>
-					typeof f === "object" &&
-					f !== null &&
-					typeof f.key === "string" &&
-					typeof f.label === "string" &&
-					typeof f.value === "string",
-			)
-			.map((f) => ({
-				key: f.key.slice(0, 64),
-				label: f.label.slice(0, 40),
-				value: f.value.slice(0, 200),
-			}));
-	} catch {
-		return [];
-	}
-}
-
-function parseLocations(raw: string | undefined): PassLocation[] {
-	if (!raw) return [];
-	try {
-		const parsed = JSON.parse(raw);
-		if (!Array.isArray(parsed)) return [];
-		return parsed
-			.filter(
-				(l): l is PassLocation =>
-					l && typeof l.latitude === "number" && typeof l.longitude === "number",
-			)
-			.slice(0, PASS_LOCATION_LIMIT)
-			.map((l) => ({
-				latitude: l.latitude,
-				longitude: l.longitude,
-				relevantText: stripHtml(String(l.relevantText ?? "")).slice(0, 100),
-			}));
-	} catch {
-		return [];
-	}
-}
 
 function clampFields(fields: PassField[], max: number): PassField[] {
 	return fields.slice(0, max).map((f) => ({
@@ -165,7 +121,15 @@ export const walletRouter = router({
 				);
 			if (input.relevantDate !== undefined) push("wallet_relevant_date", input.relevantDate);
 			if (input.locations !== undefined)
-				push("wallet_locations", JSON.stringify(input.locations.slice(0, PASS_LOCATION_LIMIT)));
+				push(
+					"wallet_locations",
+					JSON.stringify(
+						input.locations.slice(0, PASS_LOCATION_LIMIT).map((l) => ({
+							...l,
+							relevantText: l.relevantText ? stripHtml(l.relevantText) : l.relevantText,
+						})),
+					),
+				);
 
 			await runBatch(updates.map(({ key, value }) => settingUpsertStmt(key, value)));
 			await logAudit("wallet.updateConfig", "wallet");
@@ -271,11 +235,11 @@ export const walletRouter = router({
 		const settingsMap = await buildSettingsMap();
 
 		// Backwards-compat: if new field arrays empty, derive from old toggles + profile
-		const headerFields = parseFields(settingsMap.wallet_header_fields);
-		const primaryFieldsStored = parseFields(settingsMap.wallet_primary_fields);
-		const secondaryFieldsStored = parseFields(settingsMap.wallet_secondary_fields);
-		const auxiliaryFields = parseFields(settingsMap.wallet_auxiliary_fields);
-		const backFields = parseFields(settingsMap.wallet_back_fields);
+		const headerFields = parsePassFieldsJson(settingsMap.wallet_header_fields);
+		const primaryFieldsStored = parsePassFieldsJson(settingsMap.wallet_primary_fields);
+		const secondaryFieldsStored = parsePassFieldsJson(settingsMap.wallet_secondary_fields);
+		const auxiliaryFields = parsePassFieldsJson(settingsMap.wallet_auxiliary_fields);
+		const backFields = parsePassFieldsJson(settingsMap.wallet_back_fields);
 
 		const showEmail = settingsMap.wallet_show_email !== "false";
 		const showName = settingsMap.wallet_show_name !== "false";
@@ -320,7 +284,7 @@ export const walletRouter = router({
 			auxiliaryFields,
 			backFields,
 			relevantDate: settingsMap.wallet_relevant_date || "",
-			locations: parseLocations(settingsMap.wallet_locations),
+			locations: parsePassLocationsJson(settingsMap.wallet_locations),
 			showEmail,
 			showName,
 			showQrCode: settingsMap.wallet_show_qr_code !== "false",

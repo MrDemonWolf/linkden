@@ -1,6 +1,6 @@
 import { Link as LinkIcon, Type, Code, Contact, MapPin, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { blockTypeSchema, type BlockType } from "@linkden/validators/blocks";
+import { blockTypeSchema, type BlockType, EMBED_PROVIDERS } from "@linkden/validators/blocks";
 
 export type { BlockType };
 
@@ -59,25 +59,18 @@ export function generateId() {
 	return crypto.randomUUID();
 }
 
+// Editor metadata for the embed URL field, derived from the shared provider
+// registry so patterns/labels never drift from the public renderer + validation.
 export const EMBED_URL_PATTERNS: Record<
 	string,
 	{ pattern: RegExp; placeholder: string; label: string }
 > = {
-	youtube: {
-		pattern: /(?:youtube\.com\/(?:watch|embed)|youtu\.be\/)/i,
-		placeholder: "https://youtube.com/watch?v=dQw4w9WgXcQ",
-		label: "YouTube",
-	},
-	spotify: {
-		pattern: /open\.spotify\.com\//i,
-		placeholder: "https://open.spotify.com/track/...",
-		label: "Spotify",
-	},
-	soundcloud: {
-		pattern: /soundcloud\.com\//i,
-		placeholder: "https://soundcloud.com/artist/track",
-		label: "SoundCloud",
-	},
+	...Object.fromEntries(
+		EMBED_PROVIDERS.map((p) => [
+			p.id,
+			{ pattern: p.match, placeholder: p.placeholder, label: p.label },
+		]),
+	),
 	custom: {
 		pattern: /^https?:\/\//i,
 		placeholder: "https://example.com/embed",

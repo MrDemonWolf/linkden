@@ -2,6 +2,12 @@ import * as React from "react";
 import { type VariantProps, cva } from "class-variance-authority";
 import { cn } from "../utils";
 
+// INTENTIONAL BOUNDARY: this is the design-system Button — a plain native
+// <button> used by shared @linkden/ui consumers. The web app has a *separate*
+// Button (apps/web/src/components/ui/button.tsx) that wraps @base-ui/react with
+// its own variant vocabulary (destructive/link, icon sizes, touch targets).
+// They are not merged on purpose: different runtimes and variant sets. Import
+// the one that matches your surface; don't cross-import buttonVariants.
 const buttonVariants = cva(
 	"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 select-none",
 	{

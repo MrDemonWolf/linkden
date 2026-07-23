@@ -176,6 +176,7 @@
       "name": "@linkden/auth",
       "dependencies": {
         "@linkden/db": "workspace:*",
+        "@linkden/email": "workspace:*",
         "@linkden/env": "workspace:*",
         "better-auth": "catalog:",
         "dotenv": "catalog:",

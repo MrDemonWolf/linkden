@@ -36,6 +36,63 @@ export const PASS_FIELD_LIMITS = {
 	back: 20,
 } as const;
 
+const FIELD_KEY_MAX = 64;
+const FIELD_LABEL_MAX = 40;
+const FIELD_VALUE_MAX = 200;
+const LOCATION_TEXT_MAX = 100;
+
+/**
+ * Lenient parse of a stored pass-fields JSON string into validated PassFields.
+ * Shared by the wallet router and the .pkpass generator so the shape checks and
+ * length clamps live in one place. Values are assumed already HTML-sanitized on
+ * write; malformed input yields an empty array rather than throwing.
+ */
+export function parsePassFieldsJson(raw: string | null | undefined): PassField[] {
+	if (!raw) return [];
+	try {
+		const parsed = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return [];
+		return parsed
+			.filter(
+				(f): f is PassField =>
+					typeof f === "object" &&
+					f !== null &&
+					typeof f.key === "string" &&
+					typeof f.label === "string" &&
+					typeof f.value === "string",
+			)
+			.map((f) => ({
+				key: f.key.slice(0, FIELD_KEY_MAX),
+				label: f.label.slice(0, FIELD_LABEL_MAX),
+				value: f.value.slice(0, FIELD_VALUE_MAX),
+			}));
+	} catch {
+		return [];
+	}
+}
+
+/** Lenient parse of a stored pass-locations JSON string, capped at PASS_LOCATION_LIMIT. */
+export function parsePassLocationsJson(raw: string | null | undefined): PassLocation[] {
+	if (!raw) return [];
+	try {
+		const parsed = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return [];
+		return parsed
+			.filter(
+				(l): l is PassLocation =>
+					l && typeof l.latitude === "number" && typeof l.longitude === "number",
+			)
+			.slice(0, PASS_LOCATION_LIMIT)
+			.map((l) => ({
+				latitude: l.latitude,
+				longitude: l.longitude,
+				relevantText: String(l.relevantText ?? "").slice(0, LOCATION_TEXT_MAX),
+			}));
+	} catch {
+		return [];
+	}
+}
+
 const headerFieldsSchema = z
 	.array(passFieldSchema)
 	.max(PASS_FIELD_LIMITS.header, `At most ${PASS_FIELD_LIMITS.header} header fields`);

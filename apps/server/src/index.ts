@@ -25,7 +25,7 @@ import { generateVCardString, vcardDataSchema } from "@linkden/api/routers/vcard
 import { auth } from "@linkden/auth";
 import { db } from "@linkden/db";
 import { block, siteSettings, user } from "@linkden/db/schema/index";
-import type { PassField } from "@linkden/validators/wallet";
+import { parsePassFieldsJson, parsePassLocationsJson } from "@linkden/validators/wallet";
 import { and, asc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -270,44 +270,9 @@ app.get("/api/images/*", async (c) => {
 
 // ─── Apple Wallet pass (.pkpass) ─────────────────────────────────────────────
 // Public download. Assembles a signed pass from the wallet_* settings + profile.
-function parsePassFields(raw: string | undefined): PassField[] {
-	if (!raw) return [];
-	try {
-		const parsed = JSON.parse(raw);
-		if (!Array.isArray(parsed)) return [];
-		return parsed
-			.filter(
-				(f): f is PassField =>
-					f &&
-					typeof f.key === "string" &&
-					typeof f.label === "string" &&
-					typeof f.value === "string",
-			)
-			.map((f) => ({ key: f.key, label: f.label, value: f.value }));
-	} catch {
-		return [];
-	}
-}
-
-function parsePassLocations(
-	raw: string | undefined,
-): { latitude: number; longitude: number; relevantText?: string }[] {
-	if (!raw) return [];
-	try {
-		const parsed = JSON.parse(raw);
-		if (!Array.isArray(parsed)) return [];
-		return parsed
-			.filter((l) => l && typeof l.latitude === "number" && typeof l.longitude === "number")
-			.slice(0, 10)
-			.map((l) => ({
-				latitude: l.latitude,
-				longitude: l.longitude,
-				relevantText: typeof l.relevantText === "string" ? l.relevantText : undefined,
-			}));
-	} catch {
-		return [];
-	}
-}
+// Field/location parsing is shared with the wallet router via @linkden/validators.
+const parsePassFields = parsePassFieldsJson;
+const parsePassLocations = parsePassLocationsJson;
 
 async function fetchPassImage(
 	bucket: R2Bucket | undefined,
