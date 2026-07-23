@@ -41,7 +41,7 @@
 - **Evidence:** [Visibility of System Status](https://www.nngroup.com/articles/visibility-system-status/) — accurate state communication builds trust; a saved-but-inert setting misstates system state.
 - **Fix:** ✅ payload extended + metadata reads aligned; OG template branch revived.
 
-#### 4. Custom per-block colors have no contrast guard
+#### 4. Custom per-block colors have no contrast guard — **fixed (2026-07-23, PR #47)**: `ColorField` gained a live WCAG ratio badge + one-tap Fix chip; wired into appearance custom colors and a new per-block custom bg/text editor
 - **What:** builder accepts any `customBgColor`/`customTextColor` pair; seeded white-on-yellow renders at ~1.26:1 in both modes (measured). Theme-level custom colors have the same gap.
 - **Where:** `link-block.tsx` custom-color path; builder block edit panel.
 - **Guideline:** Low-contrast text.
@@ -97,7 +97,7 @@
 - **Evidence:** [10 Usability Heuristics](https://www.nngroup.com/articles/ten-usability-heuristics/).
 - **Fix:** ✅ deps `[]` (external sync already handled by second effect).
 
-#### 12. Generic error message on setup failure
+#### 12. Generic error message on setup failure — **fixed (2026-07-23, PR #47)**: steps 2/3 surface the server message via toast + "check the server logs" hint; step 1 fallback copy extended
 - **What:** server 500 → "Something went wrong — please try again" (no cause, no recovery path). Message was accurate but useless during finding 2.
 - **Where:** setup wizard step 1.
 - **Guideline:** Error message quality.
@@ -128,24 +128,24 @@
 ### 🟨 Severity 2 — Minor
 
 #### 16. `hacker-terminal` light primary text 3.21:1 — **fixed** (→ `#15803D`, 4.89:1 on bg / 5.02:1 on card; regression test added for all 11 presets × 2 modes × 6 pairs)
-#### 17. Two different Switch implementations on the same settings page (headlessui zinc vs Base-UI themed) — **backlog**; [Maintain Consistency and Adhere to Standards](https://www.nngroup.com/articles/consistency-and-standards/)
+#### 17. Two different Switch implementations on the same settings page (headlessui zinc vs Base-UI themed) — **fixed (2026-07-23, PR #46)**: single Base UI Switch; headlessui removed, builder ToggleSwitch wraps the shared one; [Maintain Consistency and Adhere to Standards](https://www.nngroup.com/articles/consistency-and-standards/)
 #### 18. Setup wizard step 1 not a `<form>` (Enter doesn't submit); labels not programmatically associated; no autocomplete — **fixed** ([Web Form Usability](https://www.nngroup.com/articles/web-form-design/), [WCAG 1.3.5](https://www.w3.org/WAI/WCAG21/Understanding/identify-input-purpose.html))
 #### 19. Public contact form lacked autocomplete (given-name/family-name/email) — **fixed** (WCAG 1.3.5)
 #### 20. Contact form success panel had no `role="status"`/aria-live and green hardcodes washed out on light themes — **fixed**
 #### 21. Connections: checkbox nested inside row button (invalid interactive nesting); mobile detail sheet without dialog semantics/Escape; "Mark All Read" unnamed on mobile — **fixed**
-#### 22. Focus-invisible controls: wallet per-row delete visible only on hover (no `focus-visible:opacity-100`) — **backlog** (WCAG 2.4.7)
-#### 23. Mobile sheets (`mobile-preview-sheet`, builder bottom sheet) lack focus trap/restore — **backlog**
+#### 22. Focus-invisible controls: wallet per-row delete visible only on hover (no `focus-visible:opacity-100`) — **fixed (2026-07-23, PR #47)** (WCAG 2.4.7)
+#### 23. Mobile sheets (`mobile-preview-sheet`, builder bottom sheet) lack focus trap/restore — **fixed (2026-07-23, PR #47)**: shared `Sheet` on Base UI Dialog (trap/restore/Escape/scroll-lock); all three sheets migrated
 #### 24. Avatar ring `ring-white/30` invisible on light cards — **fixed** (mode-aware)
 #### 25. Skip-link and wallet/vCard footer pills used admin tokens on themed page — **fixed**
-#### 26. Dashboard first paint is a blank content area (no skeletons) — **backlog**
-#### 27. Appearance phone preview shows fake generic links while builder preview shows real content — **backlog** (consistency)
+#### 26. Dashboard first paint is a blank content area (no skeletons) — **fixed (2026-07-23, PR #47)**: greeting-name skeleton + per-widget gating (charts/stat cards already gated)
+#### 27. Appearance phone preview shows fake generic links while builder preview shows real content — **fixed (2026-07-23, PR #47)**: preview uses real `blocks.list`; dummies only back an empty page (consistency)
 
 ### ⬜ Severity 1 — Cosmetic
 
-#### 28. Two `h1` elements per admin page (topbar title + page header) — prefer one
+#### 28. Two `h1` elements per admin page (topbar title + page header) — **fixed (2026-07-23, PR #47)**: topbar label demoted to a non-heading kicker; dashboard + appearance now use `PageHeader`
 #### 29. Dead components removed: `form-section.tsx`, `onboarding-tour.tsx`, `ui/dropdown-menu.tsx`, `ui/tooltip.tsx`, public `banner-section.tsx` — **fixed**
-#### 30. `extractDomain` copy-pasted ×3; two near-duplicate TopLinksList; wallet preview reimplements luminance math differently from `color-contrast.ts` — **backlog**
-#### 31. Theme-toggle buttons expose no pressed state (color-only) — **backlog**
+#### 30. `extractDomain` copy-pasted ×3; two near-duplicate TopLinksList; wallet preview reimplements luminance math differently from `color-contrast.ts` — **fixed (2026-07-23, PR #46)**: shared `lib/format.ts` helper + single `TopLinksList` (wallet-preview luminance claim was stale — already consolidated)
+#### 31. Theme-toggle buttons expose no pressed state (color-only) — **fixed (2026-07-23, PR #47)**: `aria-pressed` + ring cue on both toggles
 #### 32. `--ld-action`/`--ld-radius` defined in all presets but never consumed — **fixed** (stripped from presets + docs)
 
 ## Unverified (needs different input)
