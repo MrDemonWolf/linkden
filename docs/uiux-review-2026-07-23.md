@@ -57,6 +57,17 @@ Scope: the surfaces changed by PRs #46 / #47 / #48 — wallet iOS-style editor, 
 
 Bonus fixes found during this pass: dashboard `text-blue-400` chrome on the day theme measured ≈2.5:1 (fails AA for text) — swapped to `primary` tokens; consent-banner "Accept Selected" was half admin-token themed; footer wallet/vCard pills were `bg-white/5` and near-invisible on light presets — both fully inline-themed now.
 
+## Adversarial code-review findings (multi-agent, all fixed in-branch)
+
+A 10-agent adversarial review (4 dimensions × refutation verifiers) over the combined diff confirmed 6 findings; all are fixed:
+
+1. **Major — Sheet stayed an active modal when CSS-hidden past its breakpoint.** The `breakpoint` prop only `md:hidden`/`lg:hidden`-hid the panel while the Base UI Dialog stayed open and modal: rotating a phone across the breakpoint left the page scroll-locked, aria-hidden, and pointer-inert behind an invisible dialog (WCAG 2.1.2). → Sheet now closes itself via `matchMedia` when the viewport crosses its breakpoint.
+2. **Major — Wallet dirty chip failed AA in light mode.** `text-warning` on `bg-warning/10` measured 4.14:1, and ~3:1 where the translucent panel composites over the dark device frame. → Solid chip background (4.7:1 light / 9:1 dark).
+3. **Minor — Backup import bypassed settings sanitization.** `backup.import` raw-upserted arbitrary keys/values, so a crafted backup could plant a non-`#RRGGBB` custom color that the new hex-alpha inline styles turn into invalid CSS. → Import now runs the whitelist + `sanitizeSetting` pipeline; invalid entries skipped and audited.
+4. **Minor — Hex-alpha concat had no format guard.** Consent-banner tinted button + footer pills now validate `#RRGGBB` before appending alpha and fall back to untinted theme colors.
+5. **Minor — ContextPanel focus fell to `<body>`** on pill-reveal, clear-date, and remove-location. → autofocus on reveal; focus returns to the replacing pill on clear/remove.
+6. **Minor — Save chip dropped keyboard focus** (native `disabled` mid-save + unmount on success). → No native disable (handler guards double-submit); focus lands on the labeled editor `<section>` after the chip unmounts.
+
 ## Unverified (needs different input to check)
 
 - Real screen-reader behavior (VoiceOver) of the wallet tab bar and keepMounted hidden panels — needs a manual SR pass.
