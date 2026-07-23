@@ -36,8 +36,10 @@ export function ConnectionListItem({
 		<li
 			className={cn(
 				"relative flex w-full items-center gap-3 px-3 py-2.5 transition-colors",
-				isSelected ? "bg-primary/5 dark:bg-primary/10" : "hover:bg-muted/30",
-				!connection.isRead && "bg-primary/5",
+				!connection.isRead && !isSelected && "bg-primary/5",
+				isSelected
+					? "bg-primary/10 ring-1 ring-inset ring-primary/30 dark:bg-primary/15"
+					: "hover:bg-muted/30",
 			)}
 		>
 			{/* Left accent bar for unread */}
@@ -61,6 +63,7 @@ export function ConnectionListItem({
 			<button
 				type="button"
 				onClick={onSelect}
+				aria-current={isSelected ? "true" : undefined}
 				className="flex min-w-0 flex-1 items-center gap-3 text-left"
 			>
 				<div

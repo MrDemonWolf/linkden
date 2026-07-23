@@ -3,9 +3,9 @@
 	"main": "src/index.ts",
 	"compatibility_date": "2025-01-01",
 	"compatibility_flags": ["nodejs_compat"],
-	// Local wrangler/miniflare dev only — Alchemy production deploys never read this
-	// file, so DEV_LOGIN stays unset (and the bypass endpoint absent) in prod.
-	"vars": { "DEV_LOGIN": "true" },
+	// DEV_LOGIN is intentionally NOT set here — top-level "vars" also applies to
+	// `wrangler deploy`, which would ship the auth bypass. Set it locally via
+	// `apps/server/.dev.vars` (gitignored, `wrangler dev`-only) instead.
 	"d1_databases": [
 		{
 			"binding": "DB",

@@ -130,7 +130,7 @@ function SidebarContent({
 						: undefined
 				}
 				className={cn(
-					"relative flex items-center gap-2.5 rounded-lg px-3 py-2 min-h-[44px] text-xs font-medium transition-all",
+					"flex items-center gap-2.5 rounded-lg px-3 py-2 min-h-[44px] text-xs font-medium transition-all",
 					isActive
 						? "bg-primary/10 text-foreground"
 						: "text-muted-foreground hover:text-foreground hover:bg-muted",
@@ -356,7 +356,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 			<div className="fixed inset-x-0 top-0 z-40 flex h-12 items-center border-b border-border backdrop-blur-2xl bg-sidebar px-4 md:hidden">
 				<div className="flex items-center shrink-0">
 					{logoUrl ? (
-						<img src={logoUrl} alt={siteName} className="h-7 w-7 rounded-md object-cover" />
+						<img src={logoUrl} alt="" className="h-7 w-7 rounded-md object-cover" />
 					) : (
 						<WolfLogo className="h-7 w-7" />
 					)}

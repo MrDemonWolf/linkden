@@ -1,21 +1,21 @@
-import { router, publicProcedure } from "../index";
-import { TRPCError } from "@trpc/server";
 import { db } from "@linkden/db";
 import {
-	user,
 	block,
+	contactSubmission,
+	linkClick,
+	pageView,
 	siteSettings,
 	socialNetwork,
-	contactSubmission,
-	pageView,
-	linkClick,
+	user,
 } from "@linkden/db/schema/index";
-import { eq, asc, and } from "drizzle-orm";
 import { socialBrandMap } from "@linkden/ui/social-brands";
+import { TRPCError } from "@trpc/server";
+import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { generateVCardString, vcardDataSchema } from "./vcard";
-import { buildSettingsMap } from "../utils/settings";
+import { publicProcedure, router } from "../index";
 import { stripHtml, truncateUserAgent } from "../utils/sanitize";
+import { buildSettingsMap } from "../utils/settings";
+import { generateVCardString, vcardDataSchema } from "./vcard";
 
 // ─── Public Router ─────────────────────────────────────────────────────────
 // These endpoints are unauthenticated — they power the public-facing link page.
@@ -80,6 +80,7 @@ export const publicRouter = router({
 		// Hide blocks for disabled features
 		const visibleBlocks = scheduledBlocks.filter((b) => {
 			if (b.type === "connect" && settings.contact_form_enabled !== "true") return false;
+			if (b.type === "vcard" && settings.vcard_enabled !== "true") return false;
 			return true;
 		});
 

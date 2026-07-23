@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { getContrastRatio, getReadableTextColor } from "@linkden/ui/color-contrast";
 import { themePresets } from "@linkden/ui/themes";
-import { ThemeToggle } from "./theme-toggle";
+import { useState } from "react";
 import { PublicPageContent } from "./public-page-content";
+import { ThemeToggle } from "./theme-toggle";
 
 interface PageData {
 	profile: {
@@ -105,7 +106,15 @@ export function getThemeColors(
 		if (customColors.primary) colors.primary = customColors.primary;
 		if (customColors.secondary) colors.secondary = customColors.secondary;
 		if (customColors.accent) colors.accent = customColors.accent;
-		if (customColors.background) colors.bg = customColors.background;
+		if (customColors.background) {
+			colors.bg = customColors.background;
+			// A custom background can leave the preset's foreground unreadable
+			// (e.g. a light custom bg paired with dark-mode's near-white fg) —
+			// re-derive fg only when the pairing actually fails AA.
+			if (getContrastRatio(colors.fg, colors.bg) < 4.5) {
+				colors.fg = getReadableTextColor(colors.bg);
+			}
+		}
 	}
 	return colors;
 }

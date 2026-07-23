@@ -1,41 +1,41 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	Save,
-	Undo2,
-	Search,
-	Mail,
-	Shield,
-	Database,
 	ArrowDownUp,
-	Settings2,
-	Palette,
 	Contact,
-	MessageSquare,
-	MapPin,
 	Cookie,
+	Database,
+	Mail,
+	MapPin,
+	MessageSquare,
+	Palette,
+	Save,
+	Search,
+	Settings2,
+	Shield,
+	Undo2,
 } from "lucide-react";
-import { trpc } from "@/utils/trpc";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/page-header";
 import { SectionCard } from "@/components/admin/section-header";
-import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
-import { SeoSection } from "@/components/admin/settings/seo-section";
-import { CaptchaSection } from "@/components/admin/settings/captcha-section";
-import { EmailSection } from "@/components/admin/settings/email-section";
 import { BrandingSection } from "@/components/admin/settings/branding-section";
-import { DataSection } from "@/components/admin/settings/data-section";
-import { MigrationSection } from "@/components/admin/settings/migration-section";
+import { CaptchaSection } from "@/components/admin/settings/captcha-section";
 import { ConsentSection } from "@/components/admin/settings/consent-section";
-import { VCardSection } from "@/components/admin/settings/vcard-section";
 import { ContactFormSection } from "@/components/admin/settings/contact-form-section";
+import { DataSection } from "@/components/admin/settings/data-section";
+import { EmailSection } from "@/components/admin/settings/email-section";
 import { MapKitSection } from "@/components/admin/settings/mapkit-section";
+import { MigrationSection } from "@/components/admin/settings/migration-section";
+import { SeoSection } from "@/components/admin/settings/seo-section";
+import { VCardSection, type VCardSectionHandle } from "@/components/admin/settings/vcard-section";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+import { trpc } from "@/utils/trpc";
 
 const COMMON_TIMEZONES = [
 	// Americas
@@ -260,9 +260,9 @@ export default function SettingsPage() {
 	// Features
 	const [contactFormEnabled, setContactFormEnabled] = useState(false);
 
-	// vCard section (saves via its own tRPC mutation, wired into the global save flow)
+	// vCard section (saves via its own tRPC mutation; the global save awaits it via the ref)
 	const [vcardDirty, setVcardDirty] = useState(false);
-	const [vcardSaveSignal, setVcardSaveSignal] = useState(0);
+	const vcardSectionRef = useRef<VCardSectionHandle>(null);
 
 	// Load settings
 	useEffect(() => {
@@ -389,9 +389,10 @@ export default function SettingsPage() {
 	};
 
 	const handleSave = async () => {
-		// Trigger the vCard section's own save (it persists via its own tRPC mutation)
-		if (vcardDirty) setVcardSaveSignal((n) => n + 1);
 		try {
+			// Awaited so a vCard save failure surfaces in this try/catch instead of
+			// racing an independent success toast (it persists via its own tRPC mutation).
+			await vcardSectionRef.current?.saveIfDirty();
 			await updateSettings.mutateAsync([
 				{ key: "seo_title", value: seoTitle },
 				{ key: "seo_description", value: seoDescription },
@@ -701,7 +702,7 @@ export default function SettingsPage() {
 						title="Digital business card (vCard)"
 						description="Let visitors save your contact details to their phone with one tap"
 					>
-						<VCardSection saveSignal={vcardSaveSignal} onDirtyChange={setVcardDirty} />
+						<VCardSection ref={vcardSectionRef} onDirtyChange={setVcardDirty} />
 					</SectionCard>
 
 					<SectionCard
