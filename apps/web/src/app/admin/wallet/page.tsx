@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Settings2, Save, Undo2, Info, Smartphone, CreditCard, KeyRound } from "lucide-react";
+import { Settings2, Save, Undo2, Smartphone, CreditCard, KeyRound } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
@@ -17,11 +17,9 @@ import {
 } from "@/components/admin/wallet/wallet-builder-section";
 import { SigningKeysSection } from "@/components/admin/wallet/signing-keys-section";
 
-// Server-side .pkpass signing/issuance is live (GET /api/wallet-pass signs and
-// serves the pass from the saved design + certs). With this flag on, the
-// cert-upload flow is shown and the "Preview only" notice is hidden. Keep the
-// flag as a kill switch in case issuance needs to be disabled again.
-const WALLET_ISSUANCE_ENABLED: boolean = true;
+// Server-side .pkpass signing/issuance is live: GET /api/wallet-pass signs and
+// serves the pass from the saved design + certs (503 if certs are missing), so
+// the cert-upload flow is always shown and there is no "coming soon" state.
 
 export default function WalletPage() {
 	const qc = useQueryClient();
@@ -89,24 +87,17 @@ export default function WalletPage() {
 						: "Design an Apple Wallet pass — pass.mk-style builder"
 				}
 				badge={
-					WALLET_ISSUANCE_ENABLED ? (
-						<Badge
-							variant="outline"
-							className={
-								isConfigured
-									? "gap-1 border-success/30 text-success"
-									: "gap-1 border-warning/30 text-warning"
-							}
-						>
-							<Settings2 className="h-3 w-3" />
-							{isConfigured ? "Ready" : "Setup Required"}
-						</Badge>
-					) : (
-						<Badge variant="outline" className="gap-1 border-border text-muted-foreground">
-							<Info className="h-3 w-3" />
-							Preview only
-						</Badge>
-					)
+					<Badge
+						variant="outline"
+						className={
+							isConfigured
+								? "gap-1 border-success/30 text-success"
+								: "gap-1 border-warning/30 text-warning"
+						}
+					>
+						<Settings2 className="h-3 w-3" />
+						{isConfigured ? "Ready" : "Setup Required"}
+					</Badge>
 				}
 				actions={
 					<>
@@ -132,22 +123,6 @@ export default function WalletPage() {
 			<div className="grid items-start gap-6 lg:grid-cols-[1fr_360px]">
 				{/* Left: Builder */}
 				<div className="space-y-6">
-					{/* Preview-only notice — only when issuance is switched off */}
-					{!WALLET_ISSUANCE_ENABLED && (
-						<div className="relative overflow-hidden rounded-lg border border-warning/30 bg-warning/10 px-3.5 py-2.5">
-							<div className="absolute inset-y-0 left-0 w-0.5 bg-warning" />
-							<div className="flex items-start gap-2.5 pl-1.5">
-								<Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
-								<p className="text-xs leading-relaxed text-muted-foreground">
-									<span className="font-medium text-foreground">Preview only.</span> Issuing a
-									signed <span className="font-mono">.pkpass</span> is coming soon. The design you
-									save here is stored and ready — you&apos;ll be able to issue passes from this page
-									once the signing endpoint ships.
-								</p>
-							</div>
-						</div>
-					)}
-
 					<SectionCard
 						icon={CreditCard}
 						title="Pass Builder"
@@ -161,16 +136,14 @@ export default function WalletPage() {
 						/>
 					</SectionCard>
 
-					{/* Signing keys / cert upload — hidden until issuance is wired up */}
-					{WALLET_ISSUANCE_ENABLED && (
-						<SectionCard
-							icon={KeyRound}
-							title="Signing Keys"
-							description="Apple Developer certs required to issue real .pkpass files"
-						>
-							<SigningKeysSection />
-						</SectionCard>
-					)}
+					{/* Signing keys / cert upload — required to issue real .pkpass files */}
+					<SectionCard
+						icon={KeyRound}
+						title="Signing Keys"
+						description="Apple Developer certs required to issue real .pkpass files"
+					>
+						<SigningKeysSection />
+					</SectionCard>
 				</div>
 
 				{/* Right: Sticky preview */}

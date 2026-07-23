@@ -5,5 +5,8 @@ export default defineConfig({
 	format: "esm",
 	outDir: "./dist",
 	clean: true,
-	noExternal: [/@linkden\/.*/],
+	// Bundle the workspace packages into the Worker output (they ship as source).
+	deps: {
+		alwaysBundle: [/@linkden\/.*/],
+	},
 });
