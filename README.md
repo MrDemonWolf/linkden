@@ -95,7 +95,7 @@ is managed from the admin panel.
 | Storage      | Cloudflare R2                                        |
 | Build system | Bun 1.3.10, Turborepo                                |
 | Testing      | Vitest, @testing-library/react                       |
-| Deployment   | Cloudflare Workers + Pages (primary), Docker (secondary) |
+| Deployment   | Cloudflare Workers + Pages |
 
 ## Development
 

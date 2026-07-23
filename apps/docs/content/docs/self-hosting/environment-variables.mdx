@@ -59,7 +59,7 @@ Only required if you want to generate Apple Wallet passes. All five variables ar
 | `WALLET_TEAM_ID` | Your Apple Developer Team ID (e.g. `ABC12DEF34`) |
 | `WALLET_PASS_TYPE_ID` | Your Pass Type Identifier (e.g. `pass.com.yourname.linkden`) |
 
-> These are **secrets** — use the "Encrypt" option in Cloudflare's dashboard, or store them as secrets in your Docker/Coolify setup. Never commit them to git.
+> These are **secrets** — use the "Encrypt" option in Cloudflare's dashboard. Never commit them to git.
 >
 > See the [Apple Wallet guide](/docs/guide/apple-wallet) for step-by-step certificate setup.
 
@@ -84,14 +84,9 @@ NEXT_PUBLIC_SERVER_URL=http://localhost:3000
 # WALLET_PASS_TYPE_ID=pass.com.yourname.linkden
 ```
 
-## Setting Variables by Platform
+## Setting Variables
 
-| Platform | How to Set |
-|----------|------------|
-| **Cloudflare** | Workers > Settings > Variables (use "Encrypt" for secrets) |
-| **Docker** | `.env` file or `docker-compose.yml` `environment` block |
-| **Coolify** | Coolify UI > Service > Environment Variables |
-| **Railway** | Railway dashboard > Service > Variables |
+Set these in the Cloudflare dashboard under **Workers > Settings > Variables** (use "Encrypt" for secrets), or as secrets in your Alchemy deployment config.
 
 ## First-Time Setup
 
@@ -112,5 +107,4 @@ LinkDen does not use environment variables or tokens for setup. After deployment
 ### Changes not taking effect
 
 - `NEXT_PUBLIC_SERVER_URL` is baked into the frontend at build time. Changing it requires a rebuild.
-- Server-side variables take effect on the next request.
-- Docker: restart the container after changing variables.
+- Server-side variables take effect on the next request (redeploy the Worker after changing them).

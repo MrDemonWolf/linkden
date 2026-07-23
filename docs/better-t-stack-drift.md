@@ -30,7 +30,7 @@ dev-friendly auth cookies (`secure` derived from URL scheme), and a standalone `
 | Exclude Next cache from Turbo artifacts: `"!.next/cache/**"` | `turbo.json` |
 | Wire `ui` into typechecking: add `check-types` script + `lib:[ESNext,DOM,DOM.Iterable]` + `types:[]` | `packages/ui/{package.json,tsconfig.json}` |
 | Fix 6 latent type errors surfaced by newly-enabled ui typecheck | `packages/ui/src/color-contrast.ts` |
-| Restore `skipValidation: !!process.env.SKIP_ENV_VALIDATION` (Docker/CI build escape hatch) | `packages/env/src/web.ts` |
+| Restore `skipValidation: !!process.env.SKIP_ENV_VALIDATION` (CI build escape hatch) | `packages/env/src/web.ts` |
 
 ---
 

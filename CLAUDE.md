@@ -41,7 +41,7 @@ Self-hosted link-in-bio application built for Cloudflare-first deployment.
 - **Backend:** Hono, tRPC v11, Cloudflare Workers
 - **Database:** Drizzle ORM, Cloudflare D1 (SQLite)
 - **Auth:** Better Auth (email/password)
-- **Deployment:** Cloudflare Workers + Pages (primary), Docker/Coolify (secondary)
+- **Deployment:** Cloudflare Workers + Pages
 
 ## 📚 CRITICAL DOCUMENTATION PATTERN
 **ALWAYS ADD IMPORTANT DOCS HERE!** When you create or discover:
