@@ -100,7 +100,11 @@ app.use(
 	rateLimit((env) => env.RL_AUTH),
 );
 app.use(
-	"/api/auth/send-password-reset-email",
+	"/api/auth/request-password-reset",
+	rateLimit((env) => env.RL_STRICT),
+);
+app.use(
+	"/api/auth/reset-password",
 	rateLimit((env) => env.RL_STRICT),
 );
 // Block magic link requests when the feature is disabled

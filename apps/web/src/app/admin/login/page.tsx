@@ -111,17 +111,12 @@ export default function AdminLoginPage() {
 		setFormError("");
 		setIsForgotSubmitting(true);
 		try {
-			const response = await fetch("/api/auth/send-password-reset-email", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					email,
-					redirectUrl: `${window.location.origin}/admin/reset-password`,
-				}),
+			const { error } = await authClient.requestPasswordReset({
+				email,
+				redirectTo: `${window.location.origin}/admin/reset-password`,
 			});
 
-			if (!response.ok) {
-				const error = (await response.json()) as { message?: string };
+			if (error) {
 				throw new Error(error.message || "Failed to send reset link");
 			}
 
