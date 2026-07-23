@@ -6,6 +6,7 @@ import { eq, asc, sql } from "drizzle-orm";
 import { z } from "zod";
 import { transformLinkStackData } from "../utils/linkstack-transformer";
 import { upsertSetting } from "../utils/settings";
+import { shouldBackup } from "@linkden/validators/settings-registry";
 import {
 	blockImportSchema,
 	socialNetworkImportSchema,
@@ -28,25 +29,17 @@ export const backupRouter = router({
 		const socials = await db.select().from(socialNetwork).orderBy(asc(socialNetwork.slug));
 		const contacts = await db.select().from(contactSubmission);
 
-		// Exclude secrets from backup — credentials should never leave the database
-		const SECRET_KEYS = new Set([
-			"email_api_key",
-			"captcha_secret_key",
-			"mapkit_token",
-			"wallet_signer_cert",
-			"wallet_signer_key",
-			"wallet_wwdr_cert",
-		]);
-
 		await logAudit("backup.export");
 		return {
 			version: "1.0",
 			exportedAt: new Date().toISOString(),
 			data: {
 				blocks,
+				// Secrets (API keys, signing certs) are excluded from backups —
+				// credentials should never leave the database. See settings-registry.
 				settings: settings.reduce(
 					(acc, s) => {
-						if (!SECRET_KEYS.has(s.key)) {
+						if (shouldBackup(s.key)) {
 							acc[s.key] = s.value;
 						}
 						return acc;

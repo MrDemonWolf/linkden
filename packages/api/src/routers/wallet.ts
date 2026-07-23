@@ -6,6 +6,7 @@ import { env } from "@linkden/env/server";
 import { z } from "zod";
 import { stripHtml } from "../utils/sanitize";
 import { upsertSetting, buildSettingsMap } from "../utils/settings";
+import { maskSecret, WALLET_SETTING_KEYS } from "@linkden/validators/settings-registry";
 import {
 	passFieldSchema,
 	passLocationSchema,
@@ -20,36 +21,7 @@ import {
 
 const hexColorRegex = /^#[0-9a-fA-F]{6}$/;
 
-const walletKeys = [
-	"wallet_pass_enabled",
-	"wallet_show_email",
-	"wallet_show_name",
-	"wallet_show_qr_code",
-	"wallet_template_preset",
-	"wallet_organization_name",
-	"wallet_pass_description",
-	"wallet_background_color",
-	"wallet_foreground_color",
-	"wallet_label_color",
-	"wallet_logo_url",
-	"wallet_icon_url",
-	"wallet_thumbnail_url",
-	"wallet_strip_url",
-	"wallet_header_fields",
-	"wallet_primary_fields",
-	"wallet_secondary_fields",
-	"wallet_auxiliary_fields",
-	"wallet_back_fields",
-	"wallet_relevant_date",
-	"wallet_locations",
-	"wallet_signer_cert",
-	"wallet_signer_key",
-	"wallet_wwdr_cert",
-	"wallet_team_id",
-	"wallet_pass_type_id",
-];
-
-const WALLET_SECRET_KEYS = new Set(["wallet_signer_cert", "wallet_signer_key", "wallet_wwdr_cert"]);
+const walletKeys: readonly string[] = WALLET_SETTING_KEYS;
 
 function parseFields(raw: string | undefined): PassField[] {
 	if (!raw) return [];
@@ -110,7 +82,7 @@ export const walletRouter = router({
 		const config: Record<string, string> = {};
 		for (const row of results) {
 			if (walletKeys.includes(row.key)) {
-				config[row.key] = WALLET_SECRET_KEYS.has(row.key) && row.value ? "••••••" : row.value;
+				config[row.key] = maskSecret(row.key, row.value);
 			}
 		}
 		return config;
