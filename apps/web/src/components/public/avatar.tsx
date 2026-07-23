@@ -12,6 +12,7 @@ interface AvatarProps {
 	className?: string;
 	hasBanner?: boolean;
 	ringColor?: string;
+	colorMode?: "light" | "dark";
 	themeColors?: { primary: string; accent: string; bg?: string };
 }
 
@@ -29,6 +30,7 @@ export function Avatar({
 	className,
 	hasBanner,
 	ringColor,
+	colorMode = "dark",
 	themeColors,
 }: AvatarProps) {
 	const [imgError, setImgError] = useState(false);
@@ -56,7 +58,10 @@ export function Avatar({
 			? ({ "--tw-ring-offset-color": themeColors.bg } as React.CSSProperties)
 			: {};
 
-	const ringClasses = hasBanner ? "" : "ring-2 ring-white/30 ring-offset-2";
+	// White ring vanishes on light backgrounds — pick ring tint by resolved mode
+	const ringClasses = hasBanner
+		? ""
+		: `ring-2 ring-offset-2 ${colorMode === "dark" ? "ring-white/30" : "ring-black/15"}`;
 
 	const fallbackDiv = (
 		<div
