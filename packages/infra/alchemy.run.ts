@@ -1,9 +1,5 @@
 import alchemy from "alchemy";
-import { Nextjs } from "alchemy/cloudflare";
-import { Worker } from "alchemy/cloudflare";
-import { D1Database } from "alchemy/cloudflare";
-import { R2Bucket } from "alchemy/cloudflare";
-import { RateLimit } from "alchemy/cloudflare";
+import { D1Database, Nextjs, R2Bucket, RateLimit, Worker } from "alchemy/cloudflare";
 import { D1StateStore } from "alchemy/state";
 import { config } from "dotenv";
 
@@ -79,11 +75,6 @@ export const server = await Worker("server", {
 		CORS_ORIGIN: alchemy.env.CORS_ORIGIN!,
 		BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
 		BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
-		// Dev-only auth bypass — only bound when explicitly set in the deploy env.
-		// Production must never set DEV_LOGIN.
-		...(process.env.DEV_LOGIN && {
-			DEV_LOGIN: alchemy.env.DEV_LOGIN!,
-		}),
 		...(process.env.WALLET_SIGNER_CERT && {
 			WALLET_SIGNER_CERT: alchemy.secret.env.WALLET_SIGNER_CERT!,
 		}),
@@ -104,6 +95,9 @@ export const server = await Worker("server", {
 		port: 3000,
 	},
 });
+// DEV_LOGIN is never bound here — Alchemy is the production deploy path.
+// Local wrangler dev gets it from apps/server/.dev.vars instead, so the auth
+// bypass can never ship regardless of what's in a developer's root .env.
 
 console.log(`Web    -> ${web.url}`);
 console.log(`Server -> ${server.url}`);

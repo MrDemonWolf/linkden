@@ -59,19 +59,18 @@ export function EmailSection({
 								className={cn(
 									"flex items-start gap-3 rounded-lg border p-3 text-left transition-all",
 									"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-									p.comingSoon
-										? "cursor-not-allowed border-border/50 opacity-60"
-										: isSelected
-											? "border-primary/50 bg-primary/5 ring-1 ring-primary/50"
+									p.comingSoon && "cursor-not-allowed",
+									isSelected
+										? "border-primary/50 bg-primary/5 ring-1 ring-primary/50"
+										: p.comingSoon
+											? "border-border/50 opacity-60"
 											: "border-border/50 hover:border-border hover:bg-muted/30",
 								)}
 							>
 								<div
 									className={cn(
 										"mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
-										isSelected && !p.comingSoon
-											? "bg-primary/10 text-primary"
-											: "bg-muted text-muted-foreground",
+										isSelected ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
 									)}
 								>
 									<Icon className="h-3.5 w-3.5" />
@@ -95,6 +94,12 @@ export function EmailSection({
 					Resend is currently the only supported provider — Cloudflare Email Workers support is
 					coming soon.
 				</p>
+				{emailProvider === "cloudflare" && (
+					<p className="text-[11px] text-warning">
+						This instance is still set to Cloudflare Email Workers, which isn't wired up yet —
+						password reset and magic-link emails won't send until you switch to Resend.
+					</p>
+				)}
 			</div>
 
 			{/* Credentials */}
