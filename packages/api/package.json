@@ -13,6 +13,7 @@
 	"dependencies": {
 		"@linkden/auth": "workspace:*",
 		"@linkden/db": "workspace:*",
+		"@linkden/email": "workspace:*",
 		"@linkden/env": "workspace:*",
 		"@linkden/ui": "workspace:*",
 		"@linkden/validators": "workspace:*",
