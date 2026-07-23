@@ -26,7 +26,8 @@ import { auth } from "@linkden/auth";
 import { db } from "@linkden/db";
 import { block, siteSettings, user } from "@linkden/db/schema/index";
 import { parsePassFieldsJson, parsePassLocationsJson } from "@linkden/validators/wallet";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
+import { APP_VERSION } from "@linkden/api/utils/version";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
@@ -422,8 +423,17 @@ app.get("/", (c) => {
 	return c.text("OK");
 });
 
-app.get("/api/health", (c) => {
-	return c.json({ status: "ok" });
+app.get("/api/health", async (c) => {
+	// Real readiness: confirm D1 is reachable and report the deployed version,
+	// so a green health check actually means the app can serve requests.
+	let database: "ok" | "error" = "ok";
+	try {
+		await db.run(sql`SELECT 1`);
+	} catch {
+		database = "error";
+	}
+	const ok = database === "ok";
+	return c.json({ status: ok ? "ok" : "degraded", database, version: APP_VERSION }, ok ? 200 : 503);
 });
 
 export default {
