@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -200,6 +200,42 @@ export default function AccountPage() {
 	const [is2faLoading, setIs2faLoading] = useState(false);
 	const [twoFaModalOpen, setTwoFaModalOpen] = useState(false);
 	const [twoFaMode, setTwoFaMode] = useState<"enable" | "disable" | "verify">("enable");
+	const twoFaDialogRef = useRef<HTMLDivElement>(null);
+	const twoFaCloseRef = useRef<HTMLButtonElement>(null);
+
+	const handleTwoFaKeyDown = useCallback(
+		(e: KeyboardEvent) => {
+			if (e.key === "Escape" && !is2faLoading) {
+				setTwoFaModalOpen(false);
+			}
+			// Focus trap
+			if (e.key === "Tab" && twoFaDialogRef.current) {
+				const focusable = twoFaDialogRef.current.querySelectorAll<HTMLElement>(
+					'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+				);
+				const first = focusable[0];
+				const last = focusable[focusable.length - 1];
+
+				if (e.shiftKey && document.activeElement === first) {
+					e.preventDefault();
+					last?.focus();
+				} else if (!e.shiftKey && document.activeElement === last) {
+					e.preventDefault();
+					first?.focus();
+				}
+			}
+		},
+		[is2faLoading],
+	);
+
+	useEffect(() => {
+		if (twoFaModalOpen) {
+			document.addEventListener("keydown", handleTwoFaKeyDown);
+			// Focus the close button on open
+			requestAnimationFrame(() => twoFaCloseRef.current?.focus());
+			return () => document.removeEventListener("keydown", handleTwoFaKeyDown);
+		}
+	}, [twoFaModalOpen, handleTwoFaKeyDown]);
 
 	useEffect(() => {
 		if (user && "twoFactorEnabled" in user) {
@@ -445,6 +481,7 @@ export default function AccountPage() {
 											setEmailEditing(false);
 											setNewEmail("");
 										}}
+										aria-label="Cancel email change"
 									>
 										<X className="h-3.5 w-3.5" />
 									</Button>
@@ -502,6 +539,7 @@ export default function AccountPage() {
 									size="sm"
 									variant={passwordOpen ? "ghost" : "outline"}
 									onClick={() => setPasswordOpen((v) => !v)}
+									aria-label={passwordOpen ? "Close password form" : undefined}
 								>
 									{passwordOpen ? <X className="h-3.5 w-3.5" /> : "Change"}
 								</Button>
@@ -636,6 +674,7 @@ export default function AccountPage() {
 								<Switch
 									checked={is2faEnabled}
 									onCheckedChange={(checked) => open2faModal(checked ? "enable" : "disable")}
+									aria-label="Two-factor authentication"
 								/>
 							</div>
 
@@ -649,6 +688,7 @@ export default function AccountPage() {
 									checked={magicLinkEnabled}
 									onCheckedChange={handleMagicLinkToggle}
 									disabled={updateSettingsMl.isPending}
+									aria-label="Magic link sign-in"
 								/>
 							</div>
 						</CardContent>
@@ -714,9 +754,15 @@ export default function AccountPage() {
 						className="fixed inset-0 bg-black/40 backdrop-blur-sm"
 						onClick={() => !is2faLoading && setTwoFaModalOpen(false)}
 					/>
-					<div className="relative z-10 w-full max-w-md mx-4 rounded-2xl border border-border bg-white dark:bg-neutral-900 p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+					<div
+						ref={twoFaDialogRef}
+						role="dialog"
+						aria-modal="true"
+						aria-labelledby="twofa-dialog-title"
+						className="relative z-10 w-full max-w-md mx-4 rounded-2xl border border-border bg-white dark:bg-neutral-900 p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto"
+					>
 						<div className="flex items-center justify-between mb-4">
-							<h2 className="text-sm font-semibold flex items-center gap-1.5">
+							<h2 id="twofa-dialog-title" className="text-sm font-semibold flex items-center gap-1.5">
 								<Key className="h-4 w-4" />
 								{twoFaMode === "disable"
 									? "Disable two-factor"
@@ -725,10 +771,12 @@ export default function AccountPage() {
 										: "Enable two-factor"}
 							</h2>
 							<Button
+								ref={twoFaCloseRef}
 								size="sm"
 								variant="ghost"
 								onClick={() => setTwoFaModalOpen(false)}
 								disabled={is2faLoading}
+								aria-label="Close dialog"
 							>
 								<X className="h-3.5 w-3.5" />
 							</Button>
@@ -838,6 +886,7 @@ export default function AccountPage() {
 										id="twoFaCode"
 										type="text"
 										inputMode="numeric"
+										autoComplete="one-time-code"
 										maxLength={6}
 										value={twoFaCode}
 										onChange={(e) => setTwoFaCode(e.target.value.replace(/\D/g, ""))}

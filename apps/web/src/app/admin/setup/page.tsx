@@ -327,7 +327,13 @@ function Step1Account({
 		});
 
 	return (
-		<div className="p-6 sm:p-8">
+		<form
+			className="p-6 sm:p-8"
+			onSubmit={(e) => {
+				e.preventDefault();
+				onSubmit();
+			}}
+		>
 			<StepHeader
 				icon={User}
 				title="Create your admin account"
@@ -349,6 +355,7 @@ function Step1Account({
 							clear("name");
 						}}
 						placeholder="Your name"
+						autoComplete="name"
 						className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
 						aria-invalid={!!formErrors.name}
 						autoFocus
@@ -369,6 +376,7 @@ function Step1Account({
 							clear("email");
 						}}
 						placeholder="you@example.com"
+						autoComplete="email"
 						className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
 						aria-invalid={!!formErrors.email}
 					/>
@@ -389,6 +397,7 @@ function Step1Account({
 								clear("password");
 							}}
 							placeholder="At least 8 characters"
+							autoComplete="new-password"
 							className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary pr-11"
 							aria-invalid={!!formErrors.password}
 						/>
@@ -425,6 +434,7 @@ function Step1Account({
 								clear("confirmPassword");
 							}}
 							placeholder="Re-enter your password"
+							autoComplete="new-password"
 							className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary pr-11"
 							aria-invalid={!!formErrors.confirmPassword}
 						/>
@@ -449,7 +459,7 @@ function Step1Account({
 			<StepFooter
 				right={
 					<Button
-						onClick={onSubmit}
+						type="submit"
 						disabled={isSubmitting}
 						className="w-full sm:w-auto shadow-lg shadow-primary/20 active:scale-[0.98]"
 					>
@@ -467,7 +477,7 @@ function Step1Account({
 					</Button>
 				}
 			/>
-		</div>
+		</form>
 	);
 }
 
@@ -495,7 +505,13 @@ function Step2Profile({
 	onSubmit: () => void;
 }) {
 	return (
-		<div className="p-6 sm:p-8">
+		<form
+			className="p-6 sm:p-8"
+			onSubmit={(e) => {
+				e.preventDefault();
+				onSubmit();
+			}}
+		>
 			<StepHeader
 				icon={Type}
 				title="Set up your profile"
@@ -576,7 +592,7 @@ function Step2Profile({
 				}
 				right={
 					<Button
-						onClick={onSubmit}
+						type="submit"
 						disabled={isSubmitting || bio.length > BIO_MAX}
 						className="shadow-lg shadow-primary/20 active:scale-[0.98]"
 					>
@@ -594,7 +610,7 @@ function Step2Profile({
 					</Button>
 				}
 			/>
-		</div>
+		</form>
 	);
 }
 
