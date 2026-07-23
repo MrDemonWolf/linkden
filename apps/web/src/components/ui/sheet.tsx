@@ -2,7 +2,13 @@
 
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { X } from "lucide-react";
+import { useEffect } from "react";
 import { cn } from "@/lib/utils";
+
+const BREAKPOINT_QUERY = {
+	md: "(min-width: 768px)",
+	lg: "(min-width: 1024px)",
+} as const;
 
 interface SheetProps {
 	open: boolean;
@@ -35,6 +41,23 @@ export function Sheet({
 	children,
 }: SheetProps) {
 	const hidden = breakpoint === "md" ? "md:hidden" : breakpoint === "lg" ? "lg:hidden" : "";
+
+	// The breakpoint classes only CSS-hide the panel, but the Base UI Dialog
+	// stays open and modal (scroll lock, focus trap, aria-hidden on the page).
+	// Actually close it when the viewport grows past the breakpoint.
+	useEffect(() => {
+		if (!breakpoint || !open) return;
+		const mq = window.matchMedia(BREAKPOINT_QUERY[breakpoint]);
+		if (mq.matches) {
+			onOpenChange(false);
+			return;
+		}
+		const onMatch = (e: MediaQueryListEvent) => {
+			if (e.matches) onOpenChange(false);
+		};
+		mq.addEventListener("change", onMatch);
+		return () => mq.removeEventListener("change", onMatch);
+	}, [breakpoint, open, onOpenChange]);
 
 	return (
 		<DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>

@@ -95,7 +95,8 @@ const LENGTH_LIMITS: Record<string, number> = {
 	branding_site_name: 50,
 };
 
-function sanitizeSetting(key: string, value: string): string {
+// Exported so backup.import runs the same pipeline instead of raw upserts.
+export function sanitizeSetting(key: string, value: string): string {
 	if (TEXT_KEYS.includes(key)) {
 		let sanitized = stripHtml(value);
 		const limit = LENGTH_LIMITS[key];

@@ -29,9 +29,12 @@ export function FooterActions({ walletEnabled, vcardEnabled, themeColors }: Foot
 
 	// Theme-aware glass: tint from the page foreground so the pills read on both
 	// light and dark presets (the hardcoded white/5 glass vanished on light themes).
-	const pillStyle: React.CSSProperties | undefined = themeColors
-		? { backgroundColor: `${themeColors.fg}0F`, borderColor: `${themeColors.fg}33` }
-		: undefined;
+	// Hex-alpha concat requires #RRGGBB; otherwise keep the class-based glass.
+	const fgIsHex6 = themeColors ? /^#[0-9a-fA-F]{6}$/.test(themeColors.fg) : false;
+	const pillStyle: React.CSSProperties | undefined =
+		themeColors && fgIsHex6
+			? { backgroundColor: `${themeColors.fg}0F`, borderColor: `${themeColors.fg}33` }
+			: undefined;
 
 	return (
 		<div className={cn("mt-6 flex pb-4 gap-3", both ? "grid grid-cols-2" : "justify-center")}>
