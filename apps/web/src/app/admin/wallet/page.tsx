@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Settings2, Save, Undo2, Info, Smartphone, CreditCard, KeyRound } from "lucide-react";
+import { Settings2, Save, Undo2, Info, KeyRound } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
@@ -129,89 +129,87 @@ export default function WalletPage() {
 				}
 			/>
 
-			<div className="grid items-start gap-6 lg:grid-cols-[1fr_360px]">
-				{/* Left: Builder */}
-				<div className="space-y-6">
-					{/* Preview-only notice — only when issuance is switched off */}
-					{!WALLET_ISSUANCE_ENABLED && (
-						<div className="relative overflow-hidden rounded-lg border border-warning/30 bg-warning/10 px-3.5 py-2.5">
-							<div className="absolute inset-y-0 left-0 w-0.5 bg-warning" />
-							<div className="flex items-start gap-2.5 pl-1.5">
-								<Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
-								<p className="text-xs leading-relaxed text-muted-foreground">
-									<span className="font-medium text-foreground">Preview only.</span> Issuing a
-									signed <span className="font-mono">.pkpass</span> is coming soon. The design you
-									save here is stored and ready — you&apos;ll be able to issue passes from this page
-									once the signing endpoint ships.
-								</p>
-							</div>
+			{/* Preview-only notice — only when issuance is switched off */}
+			{!WALLET_ISSUANCE_ENABLED && (
+				<div className="relative overflow-hidden rounded-lg border border-warning/30 bg-warning/10 px-3.5 py-2.5">
+					<div className="absolute inset-y-0 left-0 w-0.5 bg-warning" />
+					<div className="flex items-start gap-2.5 pl-1.5">
+						<Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
+						<p className="text-xs leading-relaxed text-muted-foreground">
+							<span className="font-medium text-foreground">Preview only.</span> Issuing a signed{" "}
+							<span className="font-mono">.pkpass</span> is coming soon. The design you save here
+							is stored and ready — you&apos;ll be able to issue passes from this page once the
+							signing endpoint ships.
+						</p>
+					</div>
+				</div>
+			)}
+
+			{/* Centered iOS-Wallet-style editor: pass preview hero + editing panel */}
+			<div className="mx-auto w-full max-w-[420px] lg:max-w-[460px]">
+				{/* Preview stage */}
+				<div className="flex justify-center">
+					<DeviceFrame width={300} height="auto" previewDark>
+						<div className="px-3 pb-14 pt-1">
+							<WalletPassPreview
+								backgroundColor={view.backgroundColor || undefined}
+								foregroundColor={view.foregroundColor || undefined}
+								labelColor={view.labelColor || undefined}
+								logoUrl={view.logoUrl || undefined}
+								iconUrl={view.iconUrl || undefined}
+								thumbnailUrl={view.thumbnailUrl || undefined}
+								stripUrl={view.stripUrl || undefined}
+								organizationName={view.organizationName}
+								profileImage={previewQuery.data?.profile?.image ?? undefined}
+								headerFields={view.headerFields}
+								primaryFields={view.primaryFields}
+								secondaryFields={view.secondaryFields}
+								auxiliaryFields={view.auxiliaryFields}
+								backFields={view.backFields}
+								qrUrl={publicProfileUrl}
+								showQrCode={view.showQrCode}
+								highlightedZone={highlightedZone}
+							/>
 						</div>
-					)}
-
-					<SectionCard
-						icon={CreditCard}
-						title="Pass Builder"
-						description="Template, identity, images, colors, and field zones"
-					>
-						<WalletBuilderSection
-							onPreviewChange={setLive}
-							onZoneFocus={setHighlightedZone}
-							onDirtyChange={setIsDirty}
-							saveRef={saveRef}
-						/>
-					</SectionCard>
-
-					{/* Signing keys / cert upload — hidden until issuance is wired up */}
-					{WALLET_ISSUANCE_ENABLED && (
-						<SectionCard
-							icon={KeyRound}
-							title="Signing Keys"
-							description="Apple Developer certs required to issue real .pkpass files"
-						>
-							<SigningKeysSection />
-						</SectionCard>
-					)}
+					</DeviceFrame>
 				</div>
 
-				{/* Right: Sticky preview */}
-				<div className="lg:sticky lg:top-20">
-					<SectionCard
-						icon={Smartphone}
-						title="Live Preview"
-						description="Focus a field to highlight its zone"
-					>
-						<div className="flex justify-center py-2">
-							<DeviceFrame width={300} height="auto" previewDark>
-								<div className="px-3 pb-4 pt-1">
-									<WalletPassPreview
-										backgroundColor={view.backgroundColor || undefined}
-										foregroundColor={view.foregroundColor || undefined}
-										labelColor={view.labelColor || undefined}
-										logoUrl={view.logoUrl || undefined}
-										iconUrl={view.iconUrl || undefined}
-										thumbnailUrl={view.thumbnailUrl || undefined}
-										stripUrl={view.stripUrl || undefined}
-										organizationName={view.organizationName}
-										profileImage={previewQuery.data?.profile?.image ?? undefined}
-										headerFields={view.headerFields}
-										primaryFields={view.primaryFields}
-										secondaryFields={view.secondaryFields}
-										auxiliaryFields={view.auxiliaryFields}
-										backFields={view.backFields}
-										qrUrl={publicProfileUrl}
-										showQrCode={view.showQrCode}
-										highlightedZone={highlightedZone}
-									/>
-								</div>
-							</DeviceFrame>
+				{/* Editing panel — non-modal, in-flow sheet overlapping the frame bottom */}
+				<div className="relative z-10 -mt-10 rounded-t-3xl border border-b-0 border-border bg-background/85 px-4 pb-2 pt-2 shadow-2xl backdrop-blur-xl">
+					<div className="mb-3 flex items-center justify-between">
+						{/* Grabber */}
+						<span aria-hidden="true" className="mx-auto block h-1 w-9 rounded-full bg-border" />
+					</div>
+					{isDirty && (
+						<div className="mb-3 flex items-center justify-between rounded-full border border-warning/30 bg-warning/10 py-1 pl-3 pr-1">
+							<span className="text-[11px] font-medium text-warning">Unsaved changes</span>
+							<Button size="sm" variant="default" disabled={isSaving} onClick={handleSave}>
+								{isSaving ? "Saving…" : "Save"}
+							</Button>
 						</div>
-
-						<p className="mt-2 text-center text-[11px] text-muted-foreground">
-							QR code links to your public profile page
-						</p>
-					</SectionCard>
+					)}
+					<WalletBuilderSection
+						onPreviewChange={setLive}
+						onZoneFocus={setHighlightedZone}
+						onDirtyChange={setIsDirty}
+						saveRef={saveRef}
+					/>
+					<p className="mt-4 pb-1 text-center text-[11px] text-muted-foreground">
+						QR code links to your public profile page
+					</p>
 				</div>
 			</div>
+
+			{/* Signing keys / cert upload — hidden until issuance is wired up */}
+			{WALLET_ISSUANCE_ENABLED && (
+				<SectionCard
+					icon={KeyRound}
+					title="Signing Keys"
+					description="Apple Developer certs required to issue real .pkpass files"
+				>
+					<SigningKeysSection />
+				</SectionCard>
+			)}
 		</div>
 	);
 }
