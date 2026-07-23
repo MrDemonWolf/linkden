@@ -22,11 +22,12 @@ This eliminates the need for setup tokens or invitation codes while ensuring onl
 
 Image uploads are validated server-side:
 
-- **Max file size:** 5 MB
-- **Allowed extensions:** jpg, jpeg, png, gif, webp, svg, ico
-- **Allowed MIME types:** image/jpeg, image/png, image/gif, image/webp, image/svg+xml, image/x-icon, image/vnd.microsoft.icon
+- **Max file size:** 5 MB — enforced from the `Content-Length` header **before** the body is buffered, so oversized uploads are rejected without loading them into memory.
+- **Allowed extensions:** jpg, jpeg, png, gif, webp, ico
+- **Allowed MIME types:** image/jpeg, image/png, image/gif, image/webp, image/x-icon, image/vnd.microsoft.icon
+- **Magic-byte check:** the file's actual signature must match the claimed extension — an HTML or script file renamed to `.png` is rejected even if its client MIME says `image/png`.
 
-Uploads that fail validation are rejected with descriptive error messages (400 for invalid type, 413 for oversized files).
+Uploads that fail validation are rejected with descriptive error messages (400 for invalid type or content mismatch, 413 for oversized files). When an image is replaced, the previous R2 object is deleted; a daily retention sweep removes any images no longer referenced by a setting or block.
 
 ## Settings Key Allowlist
 

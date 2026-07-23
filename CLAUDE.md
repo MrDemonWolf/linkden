@@ -62,6 +62,39 @@ This prevents context loss! Update this file IMMEDIATELY when creating important
 
 - Changelog (dual-audience: ✨ user / 🔧 technical): `CHANGELOG.md`
 
+## Production Hardening (invariants to preserve)
+
+Key production-readiness invariants added in the hardening pass — don't regress these:
+
+- **Single admin, enforced in the DB.** A `BEFORE INSERT` trigger on `user`
+  (`packages/db/src/migrations/0007_single_admin_trigger.sql`) aborts a second
+  insert; middleware 403 is just a nicer message. Not middleware-only.
+- **Atomic multi-writes.** Backup import, block reorder, bulk settings, wallet
+  config, and danger resets run in a single `db.batch([...])` via
+  `runBatch`/`settingUpsertStmt` (`packages/api/src/utils/settings.ts`). Never
+  reintroduce sequential-await write loops.
+- **Canonical settings registry.** `packages/validators/src/settings-registry.ts`
+  is the single source for each key's sanitizer kind, max length, secret/mask, and
+  backup policy. Settings/wallet/backup routers derive from it — don't add drifting
+  key lists.
+- **Server-derived request data.** Analytics/CAPTCHA use `requestMeta`
+  (`cf-connecting-ip`/`cf-ipcountry`/UA/referer) — never client-supplied. CAPTCHA
+  provider is an enum, fails closed, times out, sends `remoteip`, verifies
+  hostname/action (`packages/api/src/utils/captcha.ts`). Better Auth IP header =
+  `cf-connecting-ip`.
+- **Uploads:** magic-byte signature check + `Content-Length` precheck + delete on
+  replace (`apps/server/src/lib/upload-validation.ts`).
+- **Retention cron:** daily `scheduled()` handler prunes analytics/sessions/
+  contacts/audit + sweeps orphan R2 images (`apps/server/src/lib/retention-sweep.ts`,
+  `packages/db/src/retention.ts`). `audit_log` IS included in full/factory resets.
+- **Version:** single source `version.json` + `compareSemver`
+  (`packages/api/src/utils/version.ts`). No hardcoded versions.
+- **Deployment is Cloudflare-only** (Docker/Coolify/Railway removed). CI actions
+  are SHA-pinned with minimal permissions; `/api/health` checks D1 + reports version.
+- **Test DB:** integration tests use the in-memory libsql helper
+  `@linkden/db/testing` (`createTestDb`). Coverage floor is enforced in
+  `vitest.config.ts` — run `bun run test` / `bun run test:coverage` (NOT `bun test`).
+
 ## Design Patterns
 
 ### File Storage (R2)
@@ -69,8 +102,9 @@ This prevents context loss! Update this file IMMEDIATELY when creating important
 - **Upload endpoint:** `POST /api/upload` — accepts `file` + `purpose` form fields, returns `{ publicUrl }`
 - **Serving endpoint:** `GET /api/images/*` — serves from R2 with immutable cache headers
 - **Valid purposes:** `avatar`, `banner`, `og_image`, `wallet_logo`
-- **Client component:** `ImageUploadField` — drag-and-drop upload with preview, replace, and remove buttons
-- **Max file size:** 5MB, images only
+- **Client component:** `ImageUploadField` — drag-and-drop upload with preview, replace, and remove buttons (sends the prior URL as `replaces` so the server deletes the old R2 object)
+- **Max file size:** 5MB, images only — `Content-Length` rejected before buffering; magic-byte signature must match the extension (`signatureMatchesExt`)
+- **Cleanup:** replaced objects deleted immediately; unreferenced orphans swept by the daily retention cron
 
 ### UI/UX Patterns
 - **Color pickers:** hex `<Input>` + native `<input type="color">` swatch side by side
@@ -104,7 +138,7 @@ This prevents context loss! Update this file IMMEDIATELY when creating important
 - Login page: `/admin/login` — split-panel layout; left side customizable via branding settings (`branding_login_*`)
 
 ### Settings Key Groups
-All settings stored as key-value in `site_settings` table. Key whitelist enforced in `packages/api/src/routers/settings.ts`.
+All settings stored as key-value in `site_settings` table. Per-key metadata (whitelist, sanitizer kind, max length, secret/mask, backup policy) is centralized in `packages/validators/src/settings-registry.ts` — the settings/wallet/backup routers all derive from it. Add new keys there, not in ad-hoc lists.
 - **Profile:** `profile_name`, `bio`, `avatar_url`, `verified_badge`
 - **Appearance:** `theme_preset`, `theme`, `custom_primary/secondary/accent/background`, `custom_css`, `banner_*`, `social_icon_shape`
 - **SEO:** `seo_title`, `seo_description`, `seo_og_image`, `seo_og_mode`, `seo_og_template`
