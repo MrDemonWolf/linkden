@@ -16,10 +16,16 @@ describe("isDevLoginEnabled", () => {
 		expect(isDevLoginEnabled("true")).toBe(true);
 	});
 
-	it.each([undefined, "", "false", "1", "TRUE", "True", "yes", "0"])(
-		"is false for %j (default-deny)",
-		(value) => {
-			expect(isDevLoginEnabled(value as string | undefined)).toBe(false);
-		},
-	);
+	it.each([
+		undefined,
+		"",
+		"false",
+		"1",
+		"TRUE",
+		"True",
+		"yes",
+		"0",
+	])("is false for %j (default-deny)", (value) => {
+		expect(isDevLoginEnabled(value as string | undefined)).toBe(false);
+	});
 });

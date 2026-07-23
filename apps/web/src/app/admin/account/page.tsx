@@ -762,7 +762,10 @@ export default function AccountPage() {
 						className="relative z-10 w-full max-w-md mx-4 rounded-2xl border border-border bg-white dark:bg-neutral-900 p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto"
 					>
 						<div className="flex items-center justify-between mb-4">
-							<h2 id="twofa-dialog-title" className="text-sm font-semibold flex items-center gap-1.5">
+							<h2
+								id="twofa-dialog-title"
+								className="text-sm font-semibold flex items-center gap-1.5"
+							>
 								<Key className="h-4 w-4" />
 								{twoFaMode === "disable"
 									? "Disable two-factor"

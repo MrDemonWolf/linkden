@@ -125,7 +125,6 @@ export default function BuilderPage() {
 		}
 	}, [newlyAddedId, blocks]);
 
-
 	// Feature toggles gate public rendering server-side: connect blocks only
 	// render when the contact form is enabled, vcard blocks when vCard is.
 	// Surface that on the row so a block never silently no-renders. Only warn
@@ -242,7 +241,6 @@ export default function BuilderPage() {
 		setEditingBlock(null);
 		setEditingOverrides(null);
 	}, []);
-
 
 	// Keep isLg in sync with the lg breakpoint (1024px).
 	useEffect(() => {

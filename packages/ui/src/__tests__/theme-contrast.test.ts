@@ -11,7 +11,12 @@ import { themePresets } from "../themes";
  */
 const TEXT_PAIRS = [
 	{ label: "foreground on background", fg: "--ld-foreground", bg: "--ld-background", min: 4.5 },
-	{ label: "muted-foreground on background", fg: "--ld-muted-foreground", bg: "--ld-background", min: 4.5 },
+	{
+		label: "muted-foreground on background",
+		fg: "--ld-muted-foreground",
+		bg: "--ld-background",
+		min: 4.5,
+	},
 	{ label: "card-foreground on card", fg: "--ld-card-foreground", bg: "--ld-card", min: 4.5 },
 	{ label: "muted-foreground on card", fg: "--ld-muted-foreground", bg: "--ld-card", min: 4.5 },
 	{ label: "primary as text on background", fg: "--ld-primary", bg: "--ld-background", min: 4.5 },
