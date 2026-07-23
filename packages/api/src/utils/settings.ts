@@ -1,17 +1,32 @@
 import { db } from "@linkden/db";
 import { siteSettings } from "@linkden/db/schema/index";
-import { eq } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
 
 /**
- * Upsert a single site setting (insert or update by key).
+ * Build an atomic upsert statement for a single site setting. Single round-trip
+ * (INSERT … ON CONFLICT DO UPDATE) so it can be composed into a db.batch().
+ */
+export function settingUpsertStmt(key: string, value: string) {
+	return db
+		.insert(siteSettings)
+		.values({ key, value })
+		.onConflictDoUpdate({ target: siteSettings.key, set: { value } });
+}
+
+/**
+ * Upsert a single site setting (insert or update by key), atomically.
  */
 export async function upsertSetting(key: string, value: string): Promise<void> {
-	const [existing] = await db.select().from(siteSettings).where(eq(siteSettings.key, key));
-	if (existing) {
-		await db.update(siteSettings).set({ value }).where(eq(siteSettings.key, key));
-	} else {
-		await db.insert(siteSettings).values({ key, value });
-	}
+	await settingUpsertStmt(key, value);
+}
+
+/**
+ * Run a set of write statements in a single D1 transactional batch. A failure
+ * in any statement rolls back the whole set. No-op for an empty list.
+ */
+export async function runBatch(stmts: BatchItem<"sqlite">[]): Promise<void> {
+	if (stmts.length === 0) return;
+	await db.batch(stmts as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
 }
 
 /**

@@ -4,6 +4,7 @@ import { block } from "@linkden/db/schema/index";
 import { eq, asc, sql } from "drizzle-orm";
 import { z } from "zod";
 import { stripHtml, sanitizeUrl } from "../utils/sanitize";
+import { runBatch } from "../utils/settings";
 
 // ─── Block Router ──────────────────────────────────────────────────────────
 // Blocks are the core content units on the public page. Each block has a type
@@ -135,12 +136,16 @@ export const blocksRouter = router({
 				.max(200),
 		)
 		.mutation(async ({ input }) => {
-			for (const item of input) {
-				await db
-					.update(block)
-					.set({ position: item.position, status: "draft", updatedAt: new Date() })
-					.where(eq(block.id, item.id));
-			}
+			// One transactional batch — a partial failure must not leave blocks in
+			// an inconsistent order.
+			await runBatch(
+				input.map((item) =>
+					db
+						.update(block)
+						.set({ position: item.position, status: "draft", updatedAt: new Date() })
+						.where(eq(block.id, item.id)),
+				),
+			);
 			return { success: true };
 		}),
 

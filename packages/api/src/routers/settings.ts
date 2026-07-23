@@ -4,7 +4,7 @@ import { siteSettings } from "@linkden/db/schema/index";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { sanitizeUrl, stripHtml } from "../utils/sanitize";
-import { upsertSetting } from "../utils/settings";
+import { runBatch, settingUpsertStmt, upsertSetting } from "../utils/settings";
 import { logAudit } from "../utils/audit";
 import { settingKeySchema, VALID_SETTING_KEYS } from "@linkden/validators/settings";
 import {
@@ -141,11 +141,10 @@ export const settingsRouter = router({
 				.max(VALID_SETTING_KEYS.length),
 		)
 		.mutation(async ({ input }) => {
-			for (const { key, value } of input) {
-				if (isSecretKey(key) && value === SECRET_MASK) continue;
-				const sanitizedValue = sanitizeSetting(key, value);
-				await upsertSetting(key, sanitizedValue);
-			}
+			const stmts = input
+				.filter(({ key, value }) => !(isSecretKey(key) && value === SECRET_MASK))
+				.map(({ key, value }) => settingUpsertStmt(key, sanitizeSetting(key, value)));
+			await runBatch(stmts);
 			await logAudit("settings.updateBulk", "setting");
 
 			return { success: true };

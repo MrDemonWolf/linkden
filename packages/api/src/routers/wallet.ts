@@ -5,7 +5,7 @@ import { eq, asc } from "drizzle-orm";
 import { env } from "@linkden/env/server";
 import { z } from "zod";
 import { stripHtml } from "../utils/sanitize";
-import { upsertSetting, buildSettingsMap } from "../utils/settings";
+import { buildSettingsMap, runBatch, settingUpsertStmt } from "../utils/settings";
 import { maskSecret, WALLET_SETTING_KEYS } from "@linkden/validators/settings-registry";
 import {
 	passFieldSchema,
@@ -166,9 +166,7 @@ export const walletRouter = router({
 			if (input.locations !== undefined)
 				push("wallet_locations", JSON.stringify(input.locations.slice(0, PASS_LOCATION_LIMIT)));
 
-			for (const { key, value } of updates) {
-				await upsertSetting(key, value);
-			}
+			await runBatch(updates.map(({ key, value }) => settingUpsertStmt(key, value)));
 			return { success: true };
 		}),
 
@@ -176,12 +174,14 @@ export const walletRouter = router({
 		.input(z.object({ preset: z.enum(PASS_TEMPLATE_PRESETS) }))
 		.mutation(async ({ input }) => {
 			const seed = seedFromPreset(input.preset as PassTemplatePreset);
-			await upsertSetting("wallet_template_preset", seed.templatePreset);
-			await upsertSetting("wallet_header_fields", JSON.stringify(seed.headerFields));
-			await upsertSetting("wallet_primary_fields", JSON.stringify(seed.primaryFields));
-			await upsertSetting("wallet_secondary_fields", JSON.stringify(seed.secondaryFields));
-			await upsertSetting("wallet_auxiliary_fields", JSON.stringify(seed.auxiliaryFields));
-			await upsertSetting("wallet_back_fields", JSON.stringify(seed.backFields));
+			await runBatch([
+				settingUpsertStmt("wallet_template_preset", seed.templatePreset),
+				settingUpsertStmt("wallet_header_fields", JSON.stringify(seed.headerFields)),
+				settingUpsertStmt("wallet_primary_fields", JSON.stringify(seed.primaryFields)),
+				settingUpsertStmt("wallet_secondary_fields", JSON.stringify(seed.secondaryFields)),
+				settingUpsertStmt("wallet_auxiliary_fields", JSON.stringify(seed.auxiliaryFields)),
+				settingUpsertStmt("wallet_back_fields", JSON.stringify(seed.backFields)),
+			]);
 			return { success: true, seed };
 		}),
 
@@ -252,9 +252,7 @@ export const walletRouter = router({
 			if (input.wwdrCert !== undefined)
 				updates.push({ key: "wallet_wwdr_cert", value: input.wwdrCert });
 
-			for (const { key, value } of updates) {
-				await upsertSetting(key, value);
-			}
+			await runBatch(updates.map(({ key, value }) => settingUpsertStmt(key, value)));
 			return { success: true };
 		}),
 

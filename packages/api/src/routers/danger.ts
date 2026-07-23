@@ -12,6 +12,7 @@ import {
 	account,
 	verification,
 } from "@linkden/db/schema/index";
+import { runBatch } from "../utils/settings";
 
 // ─── Danger Zone Router ────────────────────────────────────────────────────
 // Destructive operations triggered from /admin/account. Both procedures are
@@ -25,24 +26,28 @@ import {
 
 export const dangerRouter = router({
 	deleteAllContent: protectedProcedure.mutation(async () => {
-		await db.delete(block);
-		await db.delete(pageView);
-		await db.delete(linkClick);
-		await db.delete(contactSubmission);
+		await runBatch([
+			db.delete(block),
+			db.delete(pageView),
+			db.delete(linkClick),
+			db.delete(contactSubmission),
+		]);
 		return { ok: true };
 	}),
 
 	resetEverything: protectedProcedure.mutation(async () => {
-		await db.delete(block);
-		await db.delete(pageView);
-		await db.delete(linkClick);
-		await db.delete(contactSubmission);
-		await db.delete(socialNetwork);
-		await db.delete(siteSettings);
-		await db.delete(session);
-		await db.delete(account);
-		await db.delete(verification);
-		await db.delete(user);
+		await runBatch([
+			db.delete(block),
+			db.delete(pageView),
+			db.delete(linkClick),
+			db.delete(contactSubmission),
+			db.delete(socialNetwork),
+			db.delete(siteSettings),
+			db.delete(session),
+			db.delete(account),
+			db.delete(verification),
+			db.delete(user),
+		]);
 		return { ok: true };
 	}),
 });

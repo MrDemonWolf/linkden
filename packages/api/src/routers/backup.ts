@@ -2,10 +2,11 @@ import { router, protectedProcedure } from "../index";
 import { db } from "@linkden/db";
 import { block, siteSettings, socialNetwork, contactSubmission } from "@linkden/db/schema/index";
 import { logAudit } from "../utils/audit";
-import { eq, asc, sql } from "drizzle-orm";
+import { asc } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
 import { z } from "zod";
 import { transformLinkStackData } from "../utils/linkstack-transformer";
-import { upsertSetting } from "../utils/settings";
+import { runBatch, settingUpsertStmt } from "../utils/settings";
 import { shouldBackup } from "@linkden/validators/settings-registry";
 import {
 	blockImportSchema,
@@ -67,75 +68,56 @@ export const backupRouter = router({
 		.mutation(async ({ input }) => {
 			const { mode, data } = input;
 
-			// In replace mode, wipe tables that are being imported to get a clean slate
+			// Build the entire import as one transactional batch so a mid-import
+			// failure can't leave a half-wiped / half-restored database. Merge uses
+			// upsert semantics (no read-then-write), so both modes are atomic.
+			const stmts: BatchItem<"sqlite">[] = [];
+
 			if (mode === "replace") {
-				if (data.blocks) {
-					await db.run(sql`DELETE FROM block`);
-				}
-				if (data.settings) {
-					await db.run(sql`DELETE FROM site_settings`);
-				}
-				if (data.socialNetworks) {
-					await db.run(sql`DELETE FROM social_network`);
-				}
-				if (data.contactSubmissions) {
-					await db.run(sql`DELETE FROM contact_submission`);
-				}
+				if (data.blocks) stmts.push(db.delete(block));
+				if (data.settings) stmts.push(db.delete(siteSettings));
+				if (data.socialNetworks) stmts.push(db.delete(socialNetwork));
+				if (data.contactSubmissions) stmts.push(db.delete(contactSubmission));
 			}
 
 			if (data.blocks) {
 				for (const b of data.blocks) {
-					const blockId = b.id;
-					if (mode === "merge") {
-						const [existing] = await db.select().from(block).where(eq(block.id, blockId));
-						if (existing) {
-							await db
-								.update(block)
-								.set(b as typeof block.$inferInsert)
-								.where(eq(block.id, blockId));
-							continue;
-						}
-					}
-					await db.insert(block).values(b as typeof block.$inferInsert);
+					const values = b as typeof block.$inferInsert;
+					stmts.push(
+						db.insert(block).values(values).onConflictDoUpdate({ target: block.id, set: values }),
+					);
 				}
 			}
 
 			if (data.settings) {
-				const entries = Object.entries(data.settings);
-				for (const [key, value] of entries) {
-					await upsertSetting(key, value);
+				for (const [key, value] of Object.entries(data.settings)) {
+					stmts.push(settingUpsertStmt(key, value));
 				}
 			}
 
 			if (data.socialNetworks) {
 				for (const s of data.socialNetworks) {
-					const slug = s.slug;
 					const url = s.url || "";
-					const isActive = s.isActive ?? true;
-
 					if (!url) continue;
-
-					await db.insert(socialNetwork).values({ slug, url, isActive }).onConflictDoUpdate({
-						target: socialNetwork.slug,
-						set: { url, isActive },
-					});
+					const isActive = s.isActive ?? true;
+					stmts.push(
+						db
+							.insert(socialNetwork)
+							.values({ slug: s.slug, url, isActive })
+							.onConflictDoUpdate({ target: socialNetwork.slug, set: { url, isActive } }),
+					);
 				}
 			}
 
 			if (data.contactSubmissions) {
 				for (const c of data.contactSubmissions) {
-					const contactId = c.id;
-					if (mode === "merge") {
-						const [existing] = await db
-							.select()
-							.from(contactSubmission)
-							.where(eq(contactSubmission.id, contactId));
-						if (existing) continue;
-					}
-					await db.insert(contactSubmission).values(c as typeof contactSubmission.$inferInsert);
+					const values = c as typeof contactSubmission.$inferInsert;
+					// merge keeps existing rows; replace already cleared the table.
+					stmts.push(db.insert(contactSubmission).values(values).onConflictDoNothing());
 				}
 			}
 
+			await runBatch(stmts);
 			await logAudit("backup.import", undefined, undefined, { mode });
 			return { success: true };
 		}),
@@ -178,10 +160,11 @@ export const backupRouter = router({
 
 			let linksImported = 0;
 			let settingsUpdated = false;
+			const stmts: BatchItem<"sqlite">[] = [];
 
 			if (options.importLinks && transformed.blocks.length > 0) {
 				for (const b of transformed.blocks) {
-					await db.insert(block).values(b);
+					stmts.push(db.insert(block).values(b));
 				}
 				linksImported = transformed.blocks.length;
 			}
@@ -203,13 +186,15 @@ export const backupRouter = router({
 				}
 
 				for (const [key, value] of Object.entries(settingsToImport)) {
-					await upsertSetting(key, value);
+					stmts.push(settingUpsertStmt(key, value));
 				}
 
 				if (Object.keys(settingsToImport).length > 0) {
 					settingsUpdated = true;
 				}
 			}
+
+			await runBatch(stmts);
 
 			return {
 				success: true,
