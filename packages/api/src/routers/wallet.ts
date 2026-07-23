@@ -5,6 +5,7 @@ import { eq, asc } from "drizzle-orm";
 import { env } from "@linkden/env/server";
 import { z } from "zod";
 import { stripHtml } from "../utils/sanitize";
+import { logAudit } from "../utils/audit";
 import { buildSettingsMap, runBatch, settingUpsertStmt } from "../utils/settings";
 import { maskSecret, WALLET_SETTING_KEYS } from "@linkden/validators/settings-registry";
 import {
@@ -167,6 +168,7 @@ export const walletRouter = router({
 				push("wallet_locations", JSON.stringify(input.locations.slice(0, PASS_LOCATION_LIMIT)));
 
 			await runBatch(updates.map(({ key, value }) => settingUpsertStmt(key, value)));
+			await logAudit("wallet.updateConfig", "wallet");
 			return { success: true };
 		}),
 
@@ -182,6 +184,7 @@ export const walletRouter = router({
 				settingUpsertStmt("wallet_auxiliary_fields", JSON.stringify(seed.auxiliaryFields)),
 				settingUpsertStmt("wallet_back_fields", JSON.stringify(seed.backFields)),
 			]);
+			await logAudit("wallet.applyPreset", "wallet", input.preset);
 			return { success: true, seed };
 		}),
 
@@ -253,6 +256,7 @@ export const walletRouter = router({
 				updates.push({ key: "wallet_wwdr_cert", value: input.wwdrCert });
 
 			await runBatch(updates.map(({ key, value }) => settingUpsertStmt(key, value)));
+			await logAudit("wallet.updateSigningKeys", "wallet");
 			return { success: true };
 		}),
 

@@ -37,6 +37,7 @@ import {
 	signatureMatchesExt,
 	validateUpload,
 } from "./lib/upload-validation";
+import { runScheduledMaintenance } from "./lib/retention-sweep";
 
 type Bindings = {
 	CORS_ORIGIN?: string;
@@ -460,4 +461,10 @@ app.get("/api/health", (c) => {
 	return c.json({ status: "ok" });
 });
 
-export default app;
+export default {
+	fetch: app.fetch,
+	// Cron-triggered maintenance (see wrangler.jsonc [triggers]/crons).
+	async scheduled(_event: ScheduledController, env: Bindings, ctx: ExecutionContext) {
+		ctx.waitUntil(runScheduledMaintenance(env.IMAGES_BUCKET));
+	},
+};

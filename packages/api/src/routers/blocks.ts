@@ -4,6 +4,7 @@ import { block } from "@linkden/db/schema/index";
 import { eq, asc, sql } from "drizzle-orm";
 import { z } from "zod";
 import { stripHtml, sanitizeUrl } from "../utils/sanitize";
+import { logAudit } from "../utils/audit";
 import { runBatch } from "../utils/settings";
 
 // ─── Block Router ──────────────────────────────────────────────────────────
@@ -121,6 +122,7 @@ export const blocksRouter = router({
 
 	delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
 		await db.delete(block).where(eq(block.id, input.id));
+		await logAudit("blocks.delete", "block", input.id);
 		return { success: true };
 	}),
 
