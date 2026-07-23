@@ -253,23 +253,10 @@ export default function BuilderPage() {
 		return () => mq.removeEventListener("change", update);
 	}, []);
 
-	// Below lg the edit panel is presented as a full-screen bottom sheet. Lock
-	// body scroll + wire Escape only while that sheet is actually mounted.
+	// Below lg the edit panel is presented as a full-screen bottom sheet.
+	// Escape handling and body scroll lock come from the Sheet primitive.
 	const mobileEditOpen = activeTab === "blocks" && !!editingBlock;
 	const mobileSheetOpen = mobileEditOpen && !isLg;
-	useEffect(() => {
-		if (!mobileSheetOpen) return;
-		const onKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") closeEdit();
-		};
-		document.addEventListener("keydown", onKey);
-		const prevOverflow = document.body.style.overflow;
-		document.body.style.overflow = "hidden";
-		return () => {
-			document.removeEventListener("keydown", onKey);
-			document.body.style.overflow = prevOverflow;
-		};
-	}, [mobileSheetOpen, closeEdit]);
 
 	const handleSaveEdit = async (data: Partial<Block>) => {
 		try {
