@@ -8,14 +8,25 @@ import {
 	socialNetwork,
 	user,
 } from "@linkden/db/schema/index";
+import { env } from "@linkden/env/server";
 import { socialBrandMap } from "@linkden/ui/social-brands";
 import { TRPCError } from "@trpc/server";
 import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { publicProcedure, router } from "../index";
-import { stripHtml, truncateUserAgent } from "../utils/sanitize";
+import { verifyCaptcha } from "../utils/captcha";
+import { requestMeta } from "../utils/request-meta";
+import { stripHtml } from "../utils/sanitize";
 import { buildSettingsMap } from "../utils/settings";
 import { generateVCardString, vcardDataSchema } from "./vcard";
+
+function expectedCaptchaHostname(): string | null {
+	try {
+		return new URL(env.CORS_ORIGIN).hostname;
+	} catch {
+		return null;
+	}
+}
 
 // ─── Public Router ─────────────────────────────────────────────────────────
 // These endpoints are unauthenticated — they power the public-facing link page.
@@ -161,7 +172,7 @@ export const publicRouter = router({
 				consent: z.literal(true, { error: "Consent is required" }),
 			}),
 		)
-		.mutation(async ({ input }) => {
+		.mutation(async ({ input, ctx }) => {
 			// Check if contact form is enabled
 			const [contactEnabled] = await db
 				.select()
@@ -181,33 +192,16 @@ export const publicRouter = router({
 				.from(siteSettings)
 				.where(eq(siteSettings.key, "captcha_secret_key"));
 
-			if (captchaProvider?.value && captchaProvider.value !== "none") {
-				if (!input.captchaToken) {
-					throw new TRPCError({ code: "BAD_REQUEST", message: "CAPTCHA verification required" });
-				}
-
-				let verifyUrl: string;
-				if (captchaProvider.value === "turnstile") {
-					verifyUrl = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
-				} else {
-					verifyUrl = "https://www.google.com/recaptcha/api/siteverify";
-				}
-
-				const verifyResponse = await fetch(verifyUrl, {
-					method: "POST",
-					headers: { "Content-Type": "application/x-www-form-urlencoded" },
-					body: new URLSearchParams({
-						secret: captchaSecret?.value || "",
-						response: input.captchaToken,
-					}),
+			const provider = captchaProvider?.value;
+			if (provider && provider !== "none") {
+				const { ip } = requestMeta(ctx.headers);
+				await verifyCaptcha({
+					provider,
+					secret: captchaSecret?.value || "",
+					token: input.captchaToken,
+					remoteip: ip || undefined,
+					expectedHostname: expectedCaptchaHostname(),
 				});
-
-				const verifyData = (await verifyResponse.json()) as {
-					success: boolean;
-				};
-				if (!verifyData.success) {
-					throw new TRPCError({ code: "BAD_REQUEST", message: "CAPTCHA verification failed" });
-				}
 			}
 
 			// Sanitize user content to prevent stored XSS
@@ -226,43 +220,37 @@ export const publicRouter = router({
 			return { success: true };
 		}),
 
-	// Analytics tracking — inputs are capped to prevent oversized payloads from anonymous visitors
-	trackView: publicProcedure
-		.input(
-			z.object({
-				referrer: z.string().max(2048).optional(),
-				userAgent: z.string().max(500).optional(),
-				country: z.string().max(10).optional(),
-			}),
-		)
-		.mutation(async ({ input }) => {
-			const id = crypto.randomUUID();
-			await db.insert(pageView).values({
-				id,
-				referrer: input.referrer ?? null,
-				userAgent: truncateUserAgent(input.userAgent),
-				country: input.country ?? null,
-			});
-			return { success: true };
-		}),
+	// Analytics tracking — user-agent/country/IP/referrer are derived from trusted
+	// Cloudflare request headers, never from spoofable client input.
+	trackView: publicProcedure.mutation(async ({ ctx }) => {
+		const meta = requestMeta(ctx.headers);
+		await db.insert(pageView).values({
+			id: crypto.randomUUID(),
+			referrer: meta.referrer,
+			userAgent: meta.userAgent,
+			country: meta.country,
+		});
+		return { success: true };
+	}),
 
 	trackClick: publicProcedure
-		.input(
-			z.object({
-				blockId: z.string().max(100),
-				referrer: z.string().max(2048).optional(),
-				userAgent: z.string().max(500).optional(),
-				country: z.string().max(10).optional(),
-			}),
-		)
-		.mutation(async ({ input }) => {
-			const id = crypto.randomUUID();
+		.input(z.object({ blockId: z.string().max(100) }))
+		.mutation(async ({ input, ctx }) => {
+			// Only record clicks for blocks that actually exist — prevents anyone
+			// from polluting stats or creating orphan rows with arbitrary ids.
+			const [target] = await db
+				.select({ id: block.id })
+				.from(block)
+				.where(eq(block.id, input.blockId));
+			if (!target) return { success: true };
+
+			const meta = requestMeta(ctx.headers);
 			await db.insert(linkClick).values({
-				id,
+				id: crypto.randomUUID(),
 				blockId: input.blockId,
-				referrer: input.referrer ?? null,
-				userAgent: truncateUserAgent(input.userAgent),
-				country: input.country ?? null,
+				referrer: meta.referrer,
+				userAgent: meta.userAgent,
+				country: meta.country,
 			});
 			return { success: true };
 		}),

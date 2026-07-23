@@ -35,11 +35,8 @@ export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockPr
 			e.preventDefault();
 			return;
 		}
-		trackClick.mutate({
-			blockId: block.id,
-			referrer: document.referrer || undefined,
-			userAgent: navigator.userAgent || undefined,
-		});
+		// Referrer / UA / country are derived server-side from request headers.
+		trackClick.mutate({ blockId: block.id });
 	};
 
 	const emoji = config.emoji as string | undefined;

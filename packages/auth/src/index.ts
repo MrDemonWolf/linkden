@@ -93,9 +93,15 @@ export const auth = betterAuth({
 	secret: env.BETTER_AUTH_SECRET,
 	baseURL: env.BETTER_AUTH_URL,
 	advanced: {
+		// On Cloudflare Workers the real client IP is in cf-connecting-ip; the
+		// default x-forwarded-for is client-spoofable. Point Better Auth's IP
+		// resolution (used for rate-limit / security features) at the trusted header.
+		ipAddress: {
+			ipAddressHeaders: ["cf-connecting-ip"],
+		},
 		defaultCookieAttributes: {
 			sameSite: "lax",
-			secure: env.BETTER_AUTH_URL?.startsWith("https") ? true : false,
+			secure: !!env.BETTER_AUTH_URL?.startsWith("https"),
 			httpOnly: true,
 		},
 		// uncomment crossSubDomainCookies setting when ready to deploy and replace <your-workers-subdomain> with your actual workers subdomain

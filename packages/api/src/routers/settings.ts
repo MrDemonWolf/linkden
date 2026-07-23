@@ -8,6 +8,7 @@ import { runBatch, settingUpsertStmt, upsertSetting } from "../utils/settings";
 import { logAudit } from "../utils/audit";
 import { settingKeySchema, VALID_SETTING_KEYS } from "@linkden/validators/settings";
 import {
+	CAPTCHA_PROVIDERS,
 	getSettingMeta,
 	isSecretKey,
 	maskSecret,
@@ -99,6 +100,11 @@ function sanitizeSetting(key: string, value: string): string {
 			const allowed = ["email", "database", "both"];
 			return value && !allowed.includes(value) ? "database" : value;
 		}
+		case "captchaProvider":
+			if (value && !CAPTCHA_PROVIDERS.includes(value as (typeof CAPTCHA_PROVIDERS)[number])) {
+				throw new Error(`Invalid CAPTCHA provider: ${value}`);
+			}
+			return value;
 		default:
 			return value;
 	}

@@ -23,10 +23,8 @@ export default function Home() {
 
 	useEffect(() => {
 		if (pageData.data?.profile && hasAnalyticsConsent()) {
-			trackViewMutate({
-				referrer: document.referrer || undefined,
-				userAgent: navigator.userAgent || undefined,
-			});
+			// Referrer / UA / country are derived server-side from request headers.
+			trackViewMutate();
 		}
 	}, [pageData.data?.profile, trackViewMutate]);
 

@@ -16,7 +16,11 @@ export type SettingKind =
 	| "apiKey" // control chars stripped, capped
 	| "boolean" // coerced to "true"/"false"
 	| "contactDelivery" // email|database|both (default database)
+	| "captchaProvider" // none|turnstile|recaptcha|hcaptcha
 	| "opaque"; // stored verbatim (enums/toggles/JSON validated elsewhere)
+
+/** Allowed CAPTCHA providers (empty string = unset). */
+export const CAPTCHA_PROVIDERS = ["none", "turnstile", "recaptcha", "hcaptcha"] as const;
 
 export interface SettingMeta {
 	kind: SettingKind;
@@ -83,7 +87,7 @@ export const SETTING_REGISTRY: Record<string, SettingMeta> = {
 	vcard_enabled: { kind: "opaque" },
 	contact_form_enabled: { kind: "opaque" },
 	// Auth / CAPTCHA
-	captcha_provider: { kind: "opaque" },
+	captcha_provider: { kind: "captchaProvider" },
 	captcha_site_key: { kind: "opaque" },
 	captcha_secret_key: { kind: "apiKey", maxLength: 512, secret: true },
 	magic_link_enabled: { kind: "opaque" },
