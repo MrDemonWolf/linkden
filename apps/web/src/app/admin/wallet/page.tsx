@@ -36,13 +36,20 @@ export default function WalletPage() {
 
 	useUnsavedChanges(isDirty);
 
+	const panelRef = useRef<HTMLElement>(null);
+
 	const handleSave = async () => {
-		if (!saveRef.current) return;
+		if (!saveRef.current || isSaving) return;
 		setIsSaving(true);
 		try {
 			await saveRef.current();
 		} finally {
 			setIsSaving(false);
+			// The sheet's Save chip unmounts once the state is clean; if the
+			// focused element was removed, land focus on the panel instead of body.
+			requestAnimationFrame(() => {
+				if (document.activeElement === document.body) panelRef.current?.focus();
+			});
 		}
 	};
 
@@ -175,15 +182,22 @@ export default function WalletPage() {
 				</div>
 
 				{/* Editing panel — non-modal, in-flow sheet overlapping the frame bottom */}
-				<div className="relative z-10 -mt-10 rounded-t-3xl border border-b-0 border-border bg-background/85 px-4 pb-2 pt-2 shadow-2xl backdrop-blur-xl">
+				<section
+					ref={panelRef}
+					tabIndex={-1}
+					aria-label="Pass editor"
+					className="relative z-10 -mt-10 rounded-t-3xl border border-b-0 border-border bg-background/85 px-4 pb-2 pt-2 shadow-2xl outline-none backdrop-blur-xl"
+				>
 					<div className="mb-3 flex items-center justify-between">
 						{/* Grabber */}
 						<span aria-hidden="true" className="mx-auto block h-1 w-9 rounded-full bg-border" />
 					</div>
 					{isDirty && (
-						<div className="mb-3 flex items-center justify-between rounded-full border border-warning/30 bg-warning/10 py-1 pl-3 pr-1">
+						// Solid background: text-warning over the translucent panel composited
+						// on the dark device frame measured ~3:1 (fails AA at 11px).
+						<div className="mb-3 flex items-center justify-between rounded-full border border-warning/40 bg-background py-1 pl-3 pr-1">
 							<span className="text-[11px] font-medium text-warning">Unsaved changes</span>
-							<Button size="sm" variant="default" disabled={isSaving} onClick={handleSave}>
+							<Button size="sm" variant="default" onClick={handleSave}>
 								{isSaving ? "Saving…" : "Save"}
 							</Button>
 						</div>
@@ -197,7 +211,7 @@ export default function WalletPage() {
 					<p className="mt-4 pb-1 text-center text-[11px] text-muted-foreground">
 						QR code links to your public profile page
 					</p>
-				</div>
+				</section>
 			</div>
 
 			{/* Signing keys / cert upload — hidden until issuance is wired up */}

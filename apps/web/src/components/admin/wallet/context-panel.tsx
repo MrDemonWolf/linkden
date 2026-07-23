@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarPlus, MapPin, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { PASS_LOCATION_LIMIT, type PassLocation } from "@linkden/validators/wallet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,12 +29,19 @@ export function ContextPanel({
 	const [showDate, setShowDate] = useState(false);
 	const dateVisible = showDate || relevantDate !== "";
 
+	// Reveal/remove actions unmount the focused control — restore focus to the
+	// pill that takes its place instead of letting it fall to <body>.
+	const datePillRef = useRef<HTMLButtonElement>(null);
+	const locationPillRef = useRef<HTMLButtonElement>(null);
+
 	const updateLocation = (i: number, patch: Partial<PassLocation>) =>
 		onLocationsChange(locations.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
 	const addLocation = () =>
 		onLocationsChange([...locations, { latitude: 0, longitude: 0, relevantText: "" }]);
-	const removeLocation = (i: number) =>
+	const removeLocation = (i: number) => {
 		onLocationsChange(locations.filter((_, idx) => idx !== i));
+		requestAnimationFrame(() => locationPillRef.current?.focus());
+	};
 
 	return (
 		<div className="space-y-5">
@@ -94,7 +101,12 @@ export function ContextPanel({
 					</div>
 				))}
 				{locations.length < PASS_LOCATION_LIMIT && (
-					<button type="button" onClick={addLocation} className={pillButtonClass}>
+					<button
+						ref={locationPillRef}
+						type="button"
+						onClick={addLocation}
+						className={pillButtonClass}
+					>
 						<MapPin className="h-4 w-4" aria-hidden="true" />
 						Add Location…
 					</button>
@@ -114,12 +126,14 @@ export function ContextPanel({
 							value={relevantDate}
 							onChange={(e) => onRelevantDateChange(e.target.value)}
 							className="flex-1"
+							autoFocus={showDate}
 						/>
 						<button
 							type="button"
 							onClick={() => {
 								onRelevantDateChange("");
 								setShowDate(false);
+								requestAnimationFrame(() => datePillRef.current?.focus());
 							}}
 							aria-label="Clear relevant date"
 							className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -128,7 +142,12 @@ export function ContextPanel({
 						</button>
 					</div>
 				) : (
-					<button type="button" onClick={() => setShowDate(true)} className={pillButtonClass}>
+					<button
+						ref={datePillRef}
+						type="button"
+						onClick={() => setShowDate(true)}
+						className={pillButtonClass}
+					>
 						<CalendarPlus className="h-4 w-4" aria-hidden="true" />
 						Add Relevant Date
 					</button>
