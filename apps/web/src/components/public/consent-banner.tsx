@@ -170,11 +170,14 @@ export function ConsentBanner({ settings, themeColors }: ConsentBannerProps) {
 		: undefined;
 	// Fully inline-styled tinted button — the class fallback's border/bg would
 	// otherwise stay on admin tokens even when the page theme is applied.
+	// Hex-alpha concat only works on #RRGGBB values; anything else (an
+	// unsanitized import, rgb() string) falls back to the untinted color.
+	const primaryIsHex6 = themeColors ? /^#[0-9a-fA-F]{6}$/.test(themeColors.primary) : false;
 	const tintedBtnStyle: React.CSSProperties | undefined = themeColors
 		? {
 				color: themeColors.primary,
-				borderColor: `${themeColors.primary}4D`,
-				backgroundColor: `${themeColors.primary}1A`,
+				borderColor: primaryIsHex6 ? `${themeColors.primary}4D` : themeColors.border,
+				backgroundColor: primaryIsHex6 ? `${themeColors.primary}1A` : themeColors.muted,
 			}
 		: undefined;
 
