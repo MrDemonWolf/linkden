@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
 	ArrowRight,
 	Code2,
@@ -14,6 +13,9 @@ import {
 	Wallet,
 	Zap,
 } from "lucide-react";
+import Link from "next/link";
+// Single source of truth for the app version: root version.json
+import versionJson from "../../../../../version.json";
 
 const features = [
 	{
@@ -122,7 +124,7 @@ export default function HomePage() {
 								style={{ backgroundColor: "var(--color-fd-primary)" }}
 							/>
 						</span>
-						Open Source &middot; MIT Licensed &middot; v0.1.0
+						Open Source &middot; MIT Licensed &middot; v{versionJson.version}
 					</div>
 
 					<h1 className="text-5xl font-bold tracking-tight text-fd-foreground sm:text-6xl lg:text-7xl leading-[1.1]">

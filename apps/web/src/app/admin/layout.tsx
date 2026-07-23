@@ -206,7 +206,10 @@ function SidebarContent({
 						</a>
 					</p>
 				)}
-				<p className="text-xs text-muted-foreground">v0.1.0{isDev && " · DEV"}</p>
+				<p className="text-xs text-muted-foreground">
+					v{process.env.NEXT_PUBLIC_APP_VERSION}
+					{isDev && " · DEV"}
+				</p>
 			</div>
 
 			{/* User profile footer */}

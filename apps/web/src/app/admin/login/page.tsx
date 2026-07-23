@@ -29,6 +29,9 @@ export default function AdminLoginPage() {
 	const [rememberMe, setRememberMe] = useState(true);
 	const [loginSuccess, setLoginSuccess] = useState(false);
 	const [isMagicLinkSubmitting, setIsMagicLinkSubmitting] = useState(false);
+	const [isDevLoginSubmitting, setIsDevLoginSubmitting] = useState(false);
+	// Inlined at build time; the server endpoint additionally requires DEV_LOGIN==="true".
+	const devLoginEnabled = process.env.NEXT_PUBLIC_DEV_LOGIN === "true";
 	const [magicLinkSent, setMagicLinkSent] = useState(false);
 	const [ppDialogOpen, setPpDialogOpen] = useState(false);
 	const [tosDialogOpen, setTosDialogOpen] = useState(false);
@@ -78,6 +81,21 @@ export default function AdminLoginPage() {
 			if (!loginSuccess) {
 				setIsSubmitting(false);
 			}
+		}
+	};
+
+	const handleDevLogin = async () => {
+		setFormError("");
+		setIsDevLoginSubmitting(true);
+		try {
+			await authClient.$fetch("/dev-login", { method: "POST", body: {} });
+			setLoginSuccess(true);
+			window.location.href = "/admin";
+		} catch {
+			const msg = "Dev login failed — is DEV_LOGIN=true set on the server?";
+			setFormError(msg);
+			toast.error(msg);
+			setIsDevLoginSubmitting(false);
 		}
 	};
 
@@ -215,7 +233,9 @@ export default function AdminLoginPage() {
 						</p>
 					</div>
 
-					<div className="data-mono text-[11px] text-muted-foreground/70">v0.1.0 · self-hosted</div>
+					<div className="data-mono text-[11px] text-muted-foreground/70">
+						v{process.env.NEXT_PUBLIC_APP_VERSION} · self-hosted
+					</div>
 				</aside>
 
 				{/* Form column */}
@@ -522,6 +542,25 @@ export default function AdminLoginPage() {
 												)}
 											</Button>
 										</div>
+									)}
+
+									{devLoginEnabled && (
+										<Button
+											type="button"
+											variant="outline"
+											className="mt-4 w-full h-11 border-dashed transition-all"
+											disabled={isDevLoginSubmitting}
+											onClick={handleDevLogin}
+										>
+											{isDevLoginSubmitting ? (
+												<>
+													<Loader2 className="h-4 w-4 animate-spin" />
+													Signing in...
+												</>
+											) : (
+												"Dev login (bypass)"
+											)}
+										</Button>
 									)}
 								</div>
 							)}

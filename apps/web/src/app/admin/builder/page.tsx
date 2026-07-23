@@ -1,55 +1,55 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams, useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { Plus, Upload, Blocks, Rocket, User, Globe, Smartphone } from "lucide-react";
 import {
-	DndContext,
-	DragOverlay,
 	closestCenter,
-	PointerSensor,
-	MouseSensor,
-	KeyboardSensor,
-	TouchSensor,
-	MeasuringStrategy,
-	defaultDropAnimationSideEffects,
-	useSensor,
-	useSensors,
+	DndContext,
 	type DragEndEvent,
+	DragOverlay,
 	type DragStartEvent,
 	type DropAnimation,
+	defaultDropAnimationSideEffects,
+	KeyboardSensor,
+	MeasuringStrategy,
+	MouseSensor,
+	PointerSensor,
+	TouchSensor,
+	useSensor,
+	useSensors,
 } from "@dnd-kit/core";
-import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
+import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import {
+	arrayMove,
 	SortableContext,
 	sortableKeyboardCoordinates,
 	verticalListSortingStrategy,
-	arrayMove,
 } from "@dnd-kit/sortable";
-import { trpc } from "@/utils/trpc";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
-import { EmptyState } from "@/components/admin/empty-state";
-import { SkeletonRows } from "@/components/admin/skeleton-rows";
-import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
-import { SharedPreview } from "@/components/admin/shared-preview";
-import { PageHeader } from "@/components/admin/page-header";
-import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Blocks, Globe, Plus, Rocket, Smartphone, Upload, User } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { BlockEditPanel } from "@/components/admin/builder/block-edit-panel";
 import { BlockRow } from "@/components/admin/builder/block-row";
 import {
 	BLOCK_TYPES,
-	TYPE_BADGE_BG,
-	type BlockType,
 	type Block,
+	type BlockType,
 	generateId,
+	TYPE_BADGE_BG,
 } from "@/components/admin/builder/builder-constants";
 import { ProfileTab } from "@/components/admin/builder/profile-tab";
 import { SocialTab } from "@/components/admin/builder/social-tab";
+import { EmptyState } from "@/components/admin/empty-state";
+import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
+import { PageHeader } from "@/components/admin/page-header";
+import { SharedPreview } from "@/components/admin/shared-preview";
+import { SkeletonRows } from "@/components/admin/skeleton-rows";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+import { cn } from "@/lib/utils";
+import { trpc } from "@/utils/trpc";
 
 const TABS = [
 	{ id: "blocks", label: "Blocks", icon: Blocks },
@@ -125,8 +125,22 @@ export default function BuilderPage() {
 		}
 	}, [newlyAddedId, blocks]);
 
-	const updateSettings = useMutation(trpc.settings.updateBulk.mutationOptions());
-	const contactDelivery = settingsQuery.data?.contact_delivery ?? "database";
+
+	// Feature toggles gate public rendering server-side: connect blocks only
+	// render when the contact form is enabled, vcard blocks when vCard is.
+	// Surface that on the row so a block never silently no-renders. Only warn
+	// once settings have actually loaded.
+	const isFeatureHidden = useCallback(
+		(type: string) => {
+			const settings = settingsQuery.data;
+			if (!settings) return false;
+			return (
+				(type === "connect" && settings.contact_form_enabled !== "true") ||
+				(type === "vcard" && settings.vcard_enabled !== "true")
+			);
+		},
+		[settingsQuery.data],
+	);
 
 	const createBlock = useMutation(trpc.blocks.create.mutationOptions());
 	const updateBlock = useMutation(trpc.blocks.update.mutationOptions());
@@ -229,18 +243,6 @@ export default function BuilderPage() {
 		setEditingOverrides(null);
 	}, []);
 
-	const handleDeliveryChange = useCallback(
-		async (value: string) => {
-			try {
-				await updateSettings.mutateAsync([{ key: "contact_delivery", value }]);
-				qc.invalidateQueries({ queryKey: trpc.settings.getAll.queryOptions().queryKey });
-				toast.success("Delivery mode updated");
-			} catch {
-				toast.error("Failed to update delivery mode");
-			}
-		},
-		[updateSettings, qc],
-	);
 
 	// Keep isLg in sync with the lg breakpoint (1024px).
 	useEffect(() => {
@@ -511,6 +513,7 @@ export default function BuilderPage() {
 														onEdit={() => setEditingBlock(block)}
 														onDelete={() => handleDelete(block)}
 														accent={editingBlock?.id === block.id}
+														featureHidden={isFeatureHidden(block.type)}
 													/>
 												</li>
 											))}
@@ -526,6 +529,7 @@ export default function BuilderPage() {
 												onToggle={() => {}}
 												onEdit={() => {}}
 												onDelete={() => {}}
+												featureHidden={isFeatureHidden(activeBlock.type)}
 											/>
 										</div>
 									)}
@@ -611,8 +615,6 @@ export default function BuilderPage() {
 									handleDelete(b);
 								}}
 								isSaving={updateBlock.isPending}
-								contactDelivery={contactDelivery}
-								onDeliveryChange={handleDeliveryChange}
 							/>
 						</div>
 					)}
@@ -675,8 +677,6 @@ export default function BuilderPage() {
 								handleDelete(b);
 							}}
 							isSaving={updateBlock.isPending}
-							contactDelivery={contactDelivery}
-							onDeliveryChange={handleDeliveryChange}
 						/>
 					</div>
 				</div>
