@@ -33,7 +33,7 @@ function tokenFrom(url: string): string {
 	const fromQuery = new URL(url).searchParams.get("token");
 	if (fromQuery) return fromQuery;
 	const m = url.match(/reset-password\/([^/?]+)/);
-	if (!m) throw new Error(`no token in reset url: ${url}`);
+	if (!m?.[1]) throw new Error(`no token in reset url: ${url}`);
 	return m[1];
 }
 

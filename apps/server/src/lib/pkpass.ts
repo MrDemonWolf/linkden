@@ -258,7 +258,7 @@ export async function generatePkpass(
 
 	const manifest = await buildManifest(files);
 	files["manifest.json"] = enc.encode(manifest);
-	files["signature"] = signManifest(manifest, material);
+	files.signature = signManifest(manifest, material);
 
 	return zipSync(files);
 }

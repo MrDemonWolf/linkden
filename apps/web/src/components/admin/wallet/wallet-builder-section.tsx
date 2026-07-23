@@ -11,7 +11,6 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/admin/settings/field-group";
 import {
-	PASS_TEMPLATE_PRESETS,
 	PASS_LOCATION_LIMIT,
 	type PassField,
 	type PassLocation,
@@ -554,6 +553,7 @@ function PalettePicker({
 			{WALLET_PALETTES.map((p) => {
 				const active = eqColor(bg, p.bg) && eqColor(fg, p.fg) && eqColor(label, p.label);
 				return (
+					// biome-ignore lint/a11y/useSemanticElements: button-based radio is intentional for this custom preset picker
 					<button
 						key={p.name}
 						type="button"

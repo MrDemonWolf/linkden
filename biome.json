@@ -55,7 +55,8 @@
 		"includes": [
 			"**",
 			"!**/node_modules",
-			"!.claude/**",
+			"!.claude",
+			"!**/coverage",
 			"!**/.next",
 			"!**/dist",
 			"!**/.turbo",

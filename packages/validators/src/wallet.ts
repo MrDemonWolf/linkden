@@ -123,7 +123,6 @@ export function seedFromPreset(preset: PassTemplatePreset): PresetSeed {
 				auxiliaryFields: [],
 				backFields: [],
 			};
-		case "contact-card":
 		default:
 			return {
 				templatePreset: "contact-card",

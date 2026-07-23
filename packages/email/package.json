@@ -1,6 +1,9 @@
 {
 	"name": "@linkden/email",
 	"type": "module",
+	"scripts": {
+		"check-types": "tsc --noEmit"
+	},
 	"exports": {
 		".": {
 			"default": "./src/index.ts"

@@ -5,6 +5,7 @@ import { cn } from "../utils";
 // <label htmlFor> gives the same click-to-focus behavior with zero deps.
 const Label = React.forwardRef<HTMLLabelElement, React.LabelHTMLAttributes<HTMLLabelElement>>(
 	({ className, ...props }, ref) => (
+		// biome-ignore lint/a11y/noLabelWithoutControl: reusable primitive; consumers pass htmlFor / wrap a control
 		<label
 			ref={ref}
 			data-slot="label"

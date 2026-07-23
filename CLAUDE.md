@@ -25,8 +25,9 @@ Self-hosted link-in-bio application built for Cloudflare-first deployment.
 - `bun dev:docs` — Start docs site only
 - `bun run build` — Build all apps and packages
 - `bun run check-types` — TypeScript type checking
-- `bun test` — Run Vitest test suite
-- `bun test:watch` — Run tests in watch mode
+- `bun run test` — Run Vitest test suite (note: `bun test` uses Bun's own runner, not Vitest)
+- `bun run test:watch` — Run tests in watch mode
+- `bun run test:coverage` — Run tests with V8 coverage + thresholds
 - `bun run db:generate` — Generate Drizzle migrations
 - `bun run db:push` — Push schema to database
 - `bun db:reset` — Wipe local DB state (`.wrangler/state`)
