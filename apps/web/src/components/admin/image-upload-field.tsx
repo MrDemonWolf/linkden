@@ -52,6 +52,8 @@ export function ImageUploadField({
 				const formData = new FormData();
 				formData.append("file", file);
 				formData.append("purpose", purpose);
+				// Let the server delete the object this upload replaces.
+				if (value) formData.append("replaces", value);
 
 				const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "";
 				const res = await fetch(`${serverUrl}/api/upload`, {
@@ -75,7 +77,7 @@ export function ImageUploadField({
 				setUploading(false);
 			}
 		},
-		[purpose, onUploadComplete],
+		[purpose, value, onUploadComplete],
 	);
 
 	const openCropper = useCallback((source: string, name?: string) => {

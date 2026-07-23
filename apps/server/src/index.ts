@@ -31,7 +31,12 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { generatePkpass } from "./lib/pkpass";
-import { buildR2Key, validateUpload } from "./lib/upload-validation";
+import {
+	buildR2Key,
+	MAX_UPLOAD_BODY_SIZE,
+	signatureMatchesExt,
+	validateUpload,
+} from "./lib/upload-validation";
 
 type Bindings = {
 	CORS_ORIGIN?: string;
@@ -182,6 +187,12 @@ app.post("/api/upload", async (c) => {
 		return c.json({ error: "Image storage not configured" }, 500);
 	}
 
+	// Reject oversized uploads before buffering the whole multipart body.
+	const contentLength = Number(c.req.header("content-length") ?? "0");
+	if (contentLength > MAX_UPLOAD_BODY_SIZE) {
+		return c.json({ error: "File too large. Maximum size is 5MB." }, 413);
+	}
+
 	const formData = await c.req.formData();
 	const file = formData.get("file");
 	const purpose = formData.get("purpose");
@@ -203,11 +214,29 @@ app.post("/api/upload", async (c) => {
 		return c.json({ error: result.error }, result.status);
 	}
 
+	// Validate the actual file signature, not just the client-supplied name/MIME.
+	const header = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+	if (!signatureMatchesExt(result.ext, header)) {
+		return c.json({ error: "File content does not match its type." }, 400);
+	}
+
 	const key = buildR2Key(result.purpose, result.ext, crypto.randomUUID());
 
 	await bucket.put(key, file.stream(), {
 		httpMetadata: { contentType: file.type },
 	});
+
+	// Delete the object this upload replaces, so old avatars/banners don't
+	// accumulate as orphans in R2.
+	const replaces = formData.get("replaces");
+	if (typeof replaces === "string") {
+		const marker = "/api/images/";
+		const idx = replaces.indexOf(marker);
+		const oldKey = idx >= 0 ? replaces.slice(idx + marker.length) : "";
+		if (oldKey && oldKey !== key && !oldKey.includes("..")) {
+			await bucket.delete(oldKey).catch(() => {});
+		}
+	}
 
 	const publicUrl = `/api/images/${key}`;
 

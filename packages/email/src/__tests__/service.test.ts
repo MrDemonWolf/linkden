@@ -15,7 +15,7 @@ describe("createResendEmailService", () => {
 		});
 
 		expect(fetchMock).toHaveBeenCalledOnce();
-		const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+		const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
 		expect(url).toBe("https://api.resend.com/emails");
 		expect((init.headers as Record<string, string>).Authorization).toBe("Bearer re_key");
 		expect(JSON.parse(init.body as string)).toMatchObject({

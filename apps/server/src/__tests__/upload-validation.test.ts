@@ -2,9 +2,19 @@ import { describe, expect, it } from "vitest";
 import {
 	buildR2Key,
 	MAX_FILE_SIZE,
+	signatureMatchesExt,
+	sniffImageSignature,
 	validateUpload,
 	VALID_UPLOAD_PURPOSES,
 } from "../lib/upload-validation";
+
+const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+const JPG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0, 0, 0]);
+const GIF = new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0, 0, 0, 0, 0, 0]);
+const WEBP = new Uint8Array([0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50]);
+const ICO = new Uint8Array([0x00, 0x00, 0x01, 0x00, 0, 0, 0, 0]);
+// A GIF header renamed to .png / labelled image/png — the classic spoof.
+const HTML = new Uint8Array([0x3c, 0x21, 0x44, 0x4f, 0x43, 0x54, 0x59, 0x50, 0x45, 0, 0, 0]);
 
 describe("validateUpload", () => {
 	const good = {
@@ -89,6 +99,38 @@ describe("validateUpload", () => {
 			fileName: `f.${extByMime[mimeType]}`,
 		});
 		expect(r.ok).toBe(true);
+	});
+});
+
+describe("sniffImageSignature", () => {
+	it("identifies each supported image by magic bytes", () => {
+		expect(sniffImageSignature(PNG)).toBe("png");
+		expect(sniffImageSignature(JPG)).toBe("jpg");
+		expect(sniffImageSignature(GIF)).toBe("gif");
+		expect(sniffImageSignature(WEBP)).toBe("webp");
+		expect(sniffImageSignature(ICO)).toBe("ico");
+	});
+
+	it("returns null for non-image content", () => {
+		expect(sniffImageSignature(HTML)).toBeNull();
+		expect(sniffImageSignature(new Uint8Array([1, 2]))).toBeNull();
+	});
+});
+
+describe("signatureMatchesExt", () => {
+	it("accepts bytes matching the claimed extension", () => {
+		expect(signatureMatchesExt("png", PNG)).toBe(true);
+		expect(signatureMatchesExt("jpg", JPG)).toBe(true);
+		expect(signatureMatchesExt("jpeg", JPG)).toBe(true);
+		expect(signatureMatchesExt("webp", WEBP)).toBe(true);
+	});
+
+	it("rejects a spoofed file (HTML bytes named .png)", () => {
+		expect(signatureMatchesExt("png", HTML)).toBe(false);
+	});
+
+	it("rejects a real image whose bytes disagree with the extension", () => {
+		expect(signatureMatchesExt("png", JPG)).toBe(false);
 	});
 });
 
