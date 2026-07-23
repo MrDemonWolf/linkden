@@ -1,38 +1,38 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+	AlertTriangle,
 	Eye,
 	EyeOff,
-	Loader2,
-	QrCode,
-	Shield,
 	Key,
+	Loader2,
 	Lock,
-	AlertTriangle,
 	Mail,
-	X,
+	QrCode,
 	Save,
+	Shield,
 	Undo2,
+	X,
 } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
-import { trpc } from "@/utils/trpc";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { ProfileSection } from "@/components/admin/appearance/profile-section";
 import { PageHeader } from "@/components/admin/page-header";
 import { SectionHeader } from "@/components/admin/section-header";
-import { DangerConfirmDialog } from "./danger-confirm-dialog";
-import { ProfileSection } from "@/components/admin/appearance/profile-section";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+import { authClient } from "@/lib/auth-client";
+import { trpc } from "@/utils/trpc";
+import { DangerConfirmDialog } from "./danger-confirm-dialog";
 
 // ─── Account Page — Stacked Sections ───────────────────────────────────────
 // Single-column layout: Profile → Login & Security → Danger zone.
@@ -202,6 +202,7 @@ export default function AccountPage() {
 	const [twoFaMode, setTwoFaMode] = useState<"enable" | "disable" | "verify">("enable");
 	const twoFaDialogRef = useRef<HTMLDivElement>(null);
 	const twoFaCloseRef = useRef<HTMLButtonElement>(null);
+	const twoFaTriggerRef = useRef<HTMLElement | null>(null);
 
 	const handleTwoFaKeyDown = useCallback(
 		(e: KeyboardEvent) => {
@@ -211,7 +212,7 @@ export default function AccountPage() {
 			// Focus trap
 			if (e.key === "Tab" && twoFaDialogRef.current) {
 				const focusable = twoFaDialogRef.current.querySelectorAll<HTMLElement>(
-					'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+					'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
 				);
 				const first = focusable[0];
 				const last = focusable[focusable.length - 1];
@@ -230,10 +231,15 @@ export default function AccountPage() {
 
 	useEffect(() => {
 		if (twoFaModalOpen) {
+			twoFaTriggerRef.current = document.activeElement as HTMLElement | null;
 			document.addEventListener("keydown", handleTwoFaKeyDown);
 			// Focus the close button on open
 			requestAnimationFrame(() => twoFaCloseRef.current?.focus());
-			return () => document.removeEventListener("keydown", handleTwoFaKeyDown);
+			return () => {
+				document.removeEventListener("keydown", handleTwoFaKeyDown);
+				twoFaTriggerRef.current?.focus();
+				twoFaTriggerRef.current = null;
+			};
 		}
 	}, [twoFaModalOpen, handleTwoFaKeyDown]);
 

@@ -17,21 +17,21 @@
 //   - File upload validation: triple-checks extension, MIME type, and size
 //     before writing to R2. This defends against content-type spoofing.
 
-import { cloudflareRateLimiter } from "@hono-rate-limiter/cloudflare";
 import { trpcServer } from "@hono/trpc-server";
+import { cloudflareRateLimiter } from "@hono-rate-limiter/cloudflare";
 import { createContext } from "@linkden/api/context";
 import { appRouter } from "@linkden/api/routers/index";
 import { generateVCardString, vcardDataSchema } from "@linkden/api/routers/vcard";
 import { auth } from "@linkden/auth";
 import { db } from "@linkden/db";
-import { block, user, siteSettings } from "@linkden/db/schema/index";
+import { block, siteSettings, user } from "@linkden/db/schema/index";
+import type { PassField } from "@linkden/validators/wallet";
 import { and, asc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import { buildR2Key, validateUpload } from "./lib/upload-validation";
 import { generatePkpass } from "./lib/pkpass";
-import type { PassField } from "@linkden/validators/wallet";
+import { buildR2Key, validateUpload } from "./lib/upload-validation";
 
 type Bindings = {
 	CORS_ORIGIN?: string;
@@ -144,6 +144,10 @@ app.use(
 );
 app.use(
 	"/trpc/public.trackClick*",
+	rateLimit((env) => env.RL_PUBLIC),
+);
+app.use(
+	"/api/vcard",
 	rateLimit((env) => env.RL_PUBLIC),
 );
 

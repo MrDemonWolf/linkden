@@ -88,7 +88,10 @@ export default function AdminLoginPage() {
 		setFormError("");
 		setIsDevLoginSubmitting(true);
 		try {
-			await authClient.$fetch("/dev-login", { method: "POST", body: {} });
+			// better-fetch resolves { data, error } instead of throwing on 4xx/5xx —
+			// a disabled bypass (404) would otherwise fall through to the success path.
+			const { error } = await authClient.$fetch("/dev-login", { method: "POST", body: {} });
+			if (error) throw error;
 			setLoginSuccess(true);
 			window.location.href = "/admin";
 		} catch {

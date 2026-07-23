@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, Save, Trash2 } from "lucide-react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Save, Plus, Trash2 } from "lucide-react";
-import { trpc } from "@/utils/trpc";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { trpc } from "@/utils/trpc";
 import { FieldGroup } from "./field-group";
 
 interface UrlEntry {
@@ -49,14 +49,20 @@ const emptyData: VCardData = {
 	urls: [],
 };
 
+export interface VCardSectionHandle {
+	/** Saves if dirty; the promise resolves after persistence (or rejects on failure) so the parent's global save can await it. */
+	saveIfDirty: () => Promise<void>;
+}
+
 interface VCardSectionProps {
-	/** Incremented by the parent when its global save runs; triggers a vCard save if dirty. */
-	saveSignal?: number;
 	/** Notifies the parent whenever this section's dirty state changes. */
 	onDirtyChange?: (dirty: boolean) => void;
 }
 
-export function VCardSection({ saveSignal, onDirtyChange }: VCardSectionProps) {
+export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(function VCardSection(
+	{ onDirtyChange },
+	ref,
+) {
 	const qc = useQueryClient();
 	const configQuery = useQuery(trpc.vcard.getConfig.queryOptions());
 	const updateConfig = useMutation(trpc.vcard.updateConfig.mutationOptions());
@@ -126,7 +132,7 @@ export function VCardSection({ saveSignal, onDirtyChange }: VCardSectionProps) {
 		}));
 	};
 
-	const handleSave = async () => {
+	const handleSave = async (opts?: { silent?: boolean }) => {
 		try {
 			await updateConfig.mutateAsync({
 				enabled,
@@ -151,25 +157,31 @@ export function VCardSection({ saveSignal, onDirtyChange }: VCardSectionProps) {
 			qc.invalidateQueries({
 				queryKey: trpc.vcard.getConfig.queryOptions().queryKey,
 			});
-			toast.success("vCard settings saved");
-		} catch {
-			toast.error("Failed to save vCard settings");
+			if (!opts?.silent) toast.success("vCard settings saved");
+		} catch (err) {
+			if (!opts?.silent) toast.error("Failed to save vCard settings");
+			throw err;
 		}
 	};
 
-	// Save when the parent's global save runs (saveSignal increments) and we have unsaved changes
+	// Exposes an awaitable save to the parent so its global save can wait for
+	// this section to actually persist before reporting success (silent: the
+	// parent shows its own combined success/error toast).
 	const handleSaveRef = useRef(handleSave);
 	handleSaveRef.current = handleSave;
 	const isDirtyRef = useRef(isDirty);
 	isDirtyRef.current = isDirty;
-	const lastSaveSignalRef = useRef(saveSignal ?? 0);
-	useEffect(() => {
-		if (saveSignal === undefined || saveSignal === lastSaveSignalRef.current) return;
-		lastSaveSignalRef.current = saveSignal;
-		if (isDirtyRef.current) {
-			void handleSaveRef.current();
-		}
-	}, [saveSignal]);
+	useImperativeHandle(
+		ref,
+		() => ({
+			saveIfDirty: async () => {
+				if (isDirtyRef.current) {
+					await handleSaveRef.current({ silent: true });
+				}
+			},
+		}),
+		[],
+	);
 
 	if (configQuery.isLoading) {
 		return (
@@ -375,11 +387,11 @@ export function VCardSection({ saveSignal, onDirtyChange }: VCardSectionProps) {
 			)}
 
 			{isDirty && (
-				<Button size="sm" onClick={handleSave} disabled={updateConfig.isPending}>
+				<Button size="sm" onClick={() => handleSave()} disabled={updateConfig.isPending}>
 					<Save className="mr-1.5 h-3.5 w-3.5" />
 					{updateConfig.isPending ? "Saving..." : "Save vCard Settings"}
 				</Button>
 			)}
 		</div>
 	);
-}
+});
