@@ -30,7 +30,24 @@ const jetbrainsMono = JetBrains_Mono({
 	display: "swap",
 });
 
-async function fetchSettings(): Promise<Record<string, string>> {
+type PublicPagePayload = {
+	profile?: {
+		name?: string | null;
+		image?: string | null;
+		bio?: string | null;
+	} | null;
+	settings?: {
+		seoTitle?: string | null;
+		seoDescription?: string | null;
+		seoOgImage?: string | null;
+		seoOgMode?: string | null;
+		seoOgTemplate?: string | null;
+		customPrimary?: string | null;
+		brandingFaviconUrl?: string | null;
+	};
+};
+
+async function fetchPage(): Promise<PublicPagePayload> {
 	try {
 		const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
 		if (!serverUrl) return {};
@@ -39,43 +56,48 @@ async function fetchSettings(): Promise<Record<string, string>> {
 		});
 		if (!res.ok) return {};
 		const json = (await res.json()) as {
-			result?: { data?: { settings?: Record<string, string> } };
+			result?: { data?: PublicPagePayload };
 		};
-		return json?.result?.data?.settings ?? {};
+		return json?.result?.data ?? {};
 	} catch {
 		return {};
 	}
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-	const settings = await fetchSettings();
+	const { profile, settings = {} } = await fetchPage();
 
-	const title = settings.seo_title || "LinkDen";
-	const description = settings.seo_description || "Your personal link-in-bio page";
+	const title = settings.seoTitle || "LinkDen";
+	const description = settings.seoDescription || "Your personal link-in-bio page";
 
 	let ogImageUrl: string | undefined;
-	if (settings.seo_og_mode === "template") {
-		const template = settings.seo_og_template || "minimal";
-		const name = encodeURIComponent(settings.profile_name || "My Links");
-		const bio = encodeURIComponent(settings.bio || "");
-		const theme = encodeURIComponent(settings.custom_primary || "#6366f1");
-		const avatar = settings.avatar_url ? `&avatar=${encodeURIComponent(settings.avatar_url)}` : "";
+	if (settings.seoOgMode === "template") {
+		const template = settings.seoOgTemplate || "minimal";
+		const name = encodeURIComponent(profile?.name || "My Links");
+		const bio = encodeURIComponent(profile?.bio || "");
+		const theme = encodeURIComponent(settings.customPrimary || "#6366f1");
+		const avatar = profile?.image ? `&avatar=${encodeURIComponent(profile.image)}` : "";
 		ogImageUrl = `/api/og?template=${template}&name=${name}&bio=${bio}&theme=${theme}${avatar}`;
-	} else if (settings.seo_og_image) {
-		ogImageUrl = settings.seo_og_image;
+	} else if (settings.seoOgImage) {
+		ogImageUrl = settings.seoOgImage;
 	}
 
 	return {
 		title,
 		description,
-		...(settings.brandingFaviconUrl
+		icons: settings.brandingFaviconUrl
 			? {
-					icons: {
-						icon: settings.brandingFaviconUrl,
-						apple: settings.brandingFaviconUrl,
-					},
+					icon: settings.brandingFaviconUrl,
+					apple: settings.brandingFaviconUrl,
 				}
-			: {}),
+			: {
+					icon: [
+						{ url: "/favicon/favicon.svg", type: "image/svg+xml" },
+						{ url: "/favicon/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+					],
+					apple: "/favicon/apple-touch-icon.png",
+				},
+		manifest: "/favicon/site.webmanifest",
 		openGraph: {
 			title,
 			description,

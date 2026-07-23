@@ -260,6 +260,10 @@ export default function SettingsPage() {
 	// Features
 	const [contactFormEnabled, setContactFormEnabled] = useState(false);
 
+	// vCard section (saves via its own tRPC mutation, wired into the global save flow)
+	const [vcardDirty, setVcardDirty] = useState(false);
+	const [vcardSaveSignal, setVcardSaveSignal] = useState(0);
+
 	// Load settings
 	useEffect(() => {
 		if (settingsQuery.data) {
@@ -336,7 +340,8 @@ export default function SettingsPage() {
 		consentBannerText !== savedState.consentBannerText ||
 		consentPrivacyUrl !== savedState.consentPrivacyUrl ||
 		consentCategories !== savedState.consentCategories ||
-		contactFormEnabled !== savedState.contactFormEnabled;
+		contactFormEnabled !== savedState.contactFormEnabled ||
+		vcardDirty;
 
 	useUnsavedChanges(isDirty);
 
@@ -384,6 +389,8 @@ export default function SettingsPage() {
 	};
 
 	const handleSave = async () => {
+		// Trigger the vCard section's own save (it persists via its own tRPC mutation)
+		if (vcardDirty) setVcardSaveSignal((n) => n + 1);
 		try {
 			await updateSettings.mutateAsync([
 				{ key: "seo_title", value: seoTitle },
@@ -694,7 +701,7 @@ export default function SettingsPage() {
 						title="Digital business card (vCard)"
 						description="Let visitors save your contact details to their phone with one tap"
 					>
-						<VCardSection />
+						<VCardSection saveSignal={vcardSaveSignal} onDirtyChange={setVcardDirty} />
 					</SectionCard>
 
 					<SectionCard

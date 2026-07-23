@@ -1,5 +1,5 @@
+import { Download, ExternalLink, Upload } from "lucide-react";
 import type { RefObject } from "react";
-import { Download, Upload, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface DataSectionProps {
@@ -55,7 +55,9 @@ export function DataSection({
 			<div className="flex items-center justify-between">
 				<div>
 					<p className="text-[11px] text-muted-foreground">Current Version</p>
-					<p className="text-sm font-semibold tabular-nums">{versionCheck?.current ?? "0.1.0"}</p>
+					<p className="text-sm font-semibold tabular-nums">
+						{versionCheck?.current ?? process.env.NEXT_PUBLIC_APP_VERSION}
+					</p>
 				</div>
 				{versionCheck?.hasUpdate ? (
 					<a href={versionCheck.releaseUrl ?? "#"} target="_blank" rel="noopener noreferrer">

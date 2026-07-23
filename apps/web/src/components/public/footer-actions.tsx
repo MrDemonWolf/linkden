@@ -10,7 +10,10 @@ interface FooterActionsProps {
 
 const pillClass = cn(
 	buttonVariants({ variant: "outline", size: "md" }),
-	"rounded-full backdrop-blur-2xl bg-white/5 dark:bg-white/5 border-white/20 hover:bg-white/10 hover:-translate-y-0.5 transition-all duration-300 no-underline",
+	// hover:text-inherit beats the variant's admin-token hover:text-foreground
+	// (twMerge keeps last) so hover text stays the page's themed color, which the
+	// anchors inherit from the ld-page wrapper's inline `color: themeColors.fg`.
+	"rounded-full backdrop-blur-2xl bg-white/5 dark:bg-white/5 border-white/20 hover:bg-white/10 hover:text-inherit hover:-translate-y-0.5 transition-all duration-300 no-underline",
 );
 
 // Wallet pass + vCard are served by the Hono API, not the Next app.

@@ -19,6 +19,8 @@ const animationClasses: Record<string, string> = {
 	shake: "hover:animate-[shake_0.3s]",
 };
 
+const apiBase = process.env.NEXT_PUBLIC_SERVER_URL ?? "";
+
 export function VCardBlock({ block, config, colorMode, themeColors }: VCardBlockProps) {
 	const { isPreview } = usePreview();
 	const buttonText = (config.buttonText as string) || block.title || "Download Contact";
@@ -83,7 +85,7 @@ export function VCardBlock({ block, config, colorMode, themeColors }: VCardBlock
 
 	return (
 		<a
-			href={isPreview ? undefined : "/api/vcard"}
+			href={isPreview ? undefined : `${apiBase}/api/vcard`}
 			download={isPreview ? undefined : "contact.vcf"}
 			onClick={isPreview ? (e: React.MouseEvent) => e.preventDefault() : undefined}
 			className={`ld-vcard-block ${baseClasses} ${colorClasses} cursor-pointer hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 no-underline`}

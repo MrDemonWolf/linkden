@@ -2,6 +2,10 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Tailwind v4 only auto-scans this app — without this, classes used solely in
+   @linkden/ui components are never generated (e.g. tab selected states). */
+@source "../../../packages/ui/src";
+
 @custom-variant dark (&:is(.dark *));
 
 :root {

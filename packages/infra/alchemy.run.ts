@@ -79,6 +79,11 @@ export const server = await Worker("server", {
 		CORS_ORIGIN: alchemy.env.CORS_ORIGIN!,
 		BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
 		BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
+		// Dev-only auth bypass — only bound when explicitly set in the deploy env.
+		// Production must never set DEV_LOGIN.
+		...(process.env.DEV_LOGIN && {
+			DEV_LOGIN: alchemy.env.DEV_LOGIN!,
+		}),
 		...(process.env.WALLET_SIGNER_CERT && {
 			WALLET_SIGNER_CERT: alchemy.secret.env.WALLET_SIGNER_CERT!,
 		}),

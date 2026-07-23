@@ -1,10 +1,10 @@
 "use client";
 
+import { AtSign, Cloud, Key, Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FieldGroup } from "./field-group";
 import { cn } from "@/lib/utils";
-import { Mail, Cloud, Key, AtSign } from "lucide-react";
+import { FieldGroup } from "./field-group";
 
 interface EmailSectionProps {
 	emailProvider: string;
@@ -21,12 +21,14 @@ const PROVIDERS = [
 		name: "Resend",
 		icon: Mail,
 		description: "Modern email API for developers",
+		comingSoon: false,
 	},
 	{
 		id: "cloudflare",
 		name: "Cloudflare Email Workers",
 		icon: Cloud,
 		description: "Native Cloudflare email routing",
+		comingSoon: true,
 	},
 ];
 
@@ -52,31 +54,47 @@ export function EmailSection({
 								key={p.id}
 								type="button"
 								aria-pressed={isSelected}
+								disabled={p.comingSoon}
 								onClick={() => onEmailProviderChange(p.id)}
 								className={cn(
 									"flex items-start gap-3 rounded-lg border p-3 text-left transition-all",
 									"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-									isSelected
-										? "border-primary/50 bg-primary/5 ring-1 ring-primary/50"
-										: "border-border/50 hover:border-border hover:bg-muted/30",
+									p.comingSoon
+										? "cursor-not-allowed border-border/50 opacity-60"
+										: isSelected
+											? "border-primary/50 bg-primary/5 ring-1 ring-primary/50"
+											: "border-border/50 hover:border-border hover:bg-muted/30",
 								)}
 							>
 								<div
 									className={cn(
 										"mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
-										isSelected ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+										isSelected && !p.comingSoon
+											? "bg-primary/10 text-primary"
+											: "bg-muted text-muted-foreground",
 									)}
 								>
 									<Icon className="h-3.5 w-3.5" />
 								</div>
 								<div className="min-w-0">
-									<p className="text-xs font-medium">{p.name}</p>
+									<p className="text-xs font-medium">
+										{p.name}
+										{p.comingSoon && (
+											<span className="ml-1.5 rounded-sm bg-muted px-1 py-0.5 text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
+												Coming soon
+											</span>
+										)}
+									</p>
 									<p className="mt-0.5 text-[10px] text-muted-foreground">{p.description}</p>
 								</div>
 							</button>
 						);
 					})}
 				</div>
+				<p className="text-[11px] text-muted-foreground">
+					Resend is currently the only supported provider — Cloudflare Email Workers support is
+					coming soon.
+				</p>
 			</div>
 
 			{/* Credentials */}

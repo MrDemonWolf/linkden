@@ -274,6 +274,7 @@ export default function AppearancePage() {
 		},
 		themeColors: {
 			primary: resolvedThemeVars["--ld-primary"],
+			secondary: resolvedThemeVars["--ld-secondary"],
 			accent: resolvedThemeVars["--ld-accent"],
 			bg: resolvedThemeVars["--ld-background"],
 			fg: resolvedThemeVars["--ld-foreground"],

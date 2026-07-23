@@ -65,6 +65,7 @@ interface PageData {
 
 export interface ThemeColors {
 	primary: string;
+	secondary: string;
 	accent: string;
 	bg: string;
 	fg: string;
@@ -89,6 +90,7 @@ export function getThemeColors(
 	const vars = theme.cssVars[colorMode];
 	const colors: ThemeColors = {
 		primary: vars["--ld-primary"],
+		secondary: vars["--ld-secondary"],
 		accent: vars["--ld-accent"],
 		bg: vars["--ld-background"],
 		fg: vars["--ld-foreground"],
@@ -98,9 +100,10 @@ export function getThemeColors(
 		muted: vars["--ld-muted"],
 		mutedFg: vars["--ld-muted-foreground"],
 	};
-	// Custom overrides apply in light mode only (stored as light-mode values)
-	if (colorMode === "light" && customColors) {
+	// Custom overrides apply in both color modes
+	if (customColors) {
 		if (customColors.primary) colors.primary = customColors.primary;
+		if (customColors.secondary) colors.secondary = customColors.secondary;
 		if (customColors.accent) colors.accent = customColors.accent;
 		if (customColors.background) colors.bg = customColors.background;
 	}
@@ -131,6 +134,7 @@ export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolea
 
 	const themeColors = getThemeColors(data.settings.themePreset, colorMode, {
 		primary: data.settings.customPrimary,
+		secondary: data.settings.customSecondary,
 		accent: data.settings.customAccent,
 		background: data.settings.customBackground,
 	});
@@ -144,9 +148,10 @@ export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolea
 				transition: "background-color 0.5s ease, color 0.5s ease",
 			}}
 		>
+			{/* Fixed navy/white pair (not admin tokens): AA-safe over any public theme */}
 			<a
 				href="#main-content"
-				className={`sr-only focus:not-sr-only focus:fixed focus:left-4 focus:z-[60] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground ${
+				className={`sr-only focus:not-sr-only focus:fixed focus:left-4 focus:z-[60] focus:rounded-md focus:bg-[#091533] focus:px-4 focus:py-2 focus:text-white ${
 					isAdmin ? "focus:top-16" : "focus:top-4"
 				}`}
 			>
