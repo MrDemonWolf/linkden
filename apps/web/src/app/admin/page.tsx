@@ -31,6 +31,7 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import { QueryError } from "@/components/admin/dashboard/query-error";
+import { PageHeader } from "@/components/admin/page-header";
 import { TopLinksList } from "@/components/admin/top-links-list";
 import { type Period, PeriodSelector } from "@/components/admin/period-selector";
 import { StatCard } from "@/components/admin/stat-card";
@@ -251,45 +252,58 @@ export default function AdminDashboardPage() {
 	return (
 		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
 			{/* Greeting + period selector */}
-			<div {...getAnimationProps(0)} className="flex flex-wrap items-center justify-between gap-3">
-				<div className="flex items-center gap-3 flex-wrap">
-					<h1 className="text-2xl font-bold tracking-tight">
-						<span className="text-base font-medium text-muted-foreground">{greeting}, </span>
-						{firstName}
-					</h1>
-					<span className="inline-flex items-center rounded-full border border-border/60 bg-muted/50 px-3 py-1 text-xs text-muted-foreground">
-						{formattedDate}
-					</span>
-				</div>
-				<div className="flex items-center gap-2 flex-wrap">
-					<PeriodSelector value={period} onChange={setPeriod} />
-					<Link href="/" target="_blank" rel="noopener noreferrer">
-						<Button
-							variant="outline"
-							size="sm"
-							className="gap-1.5 border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 hover:border-blue-500/50 text-blue-400 hover:text-blue-300 transition-all"
-						>
-							View public
-							<ArrowUpRight className="h-3.5 w-3.5" />
-						</Button>
-					</Link>
-				</div>
+			<div {...getAnimationProps(0)}>
+				<PageHeader
+					title={
+						<>
+							<span className="text-sm font-medium text-muted-foreground">{greeting}</span>
+							{firstName ? (
+								<>
+									<span className="text-sm font-medium text-muted-foreground">, </span>
+									{firstName}
+								</>
+							) : (
+								<Skeleton className="ml-2 inline-block h-5 w-24 align-middle" />
+							)}
+						</>
+					}
+					badge={
+						<span className="inline-flex items-center rounded-full border border-border/60 bg-muted/50 px-3 py-1 text-xs text-muted-foreground">
+							{formattedDate}
+						</span>
+					}
+					actions={
+						<>
+							<PeriodSelector value={period} onChange={setPeriod} />
+							<Link href="/" target="_blank" rel="noopener noreferrer">
+								<Button
+									variant="outline"
+									size="sm"
+									className="gap-1.5 border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 text-primary hover:text-primary transition-all"
+								>
+									View public
+									<ArrowUpRight className="h-3.5 w-3.5" />
+								</Button>
+							</Link>
+						</>
+					}
+				/>
 			</div>
 
 			{/* Callout banner */}
 			<div {...getAnimationProps(1)}>
 				<Card
 					size="sm"
-					className="relative overflow-hidden border border-blue-500/20 bg-blue-500/5"
+					className="relative overflow-hidden border border-primary/20 bg-primary/5"
 				>
 					<div
-						className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-blue-500/5 to-transparent pointer-events-none"
+						className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent pointer-events-none"
 						aria-hidden="true"
 					/>
 					<CardContent className="relative flex flex-col items-start gap-3 sm:flex-row sm:items-center">
 						<div className="flex min-w-0 items-center gap-3">
 							<div
-								className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400 shadow-lg shadow-blue-500/20"
+								className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-lg shadow-primary/20"
 								aria-hidden="true"
 							>
 								<Sparkles className="h-4 w-4" />
@@ -301,7 +315,7 @@ export default function AdminDashboardPage() {
 								<Button
 									variant="outline"
 									size="sm"
-									className="w-full gap-1.5 border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/10 hover:border-blue-500/50 text-blue-400 hover:text-blue-300 sm:w-auto"
+									className="w-full gap-1.5 border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 text-primary hover:text-primary sm:w-auto"
 								>
 									<Plus className="h-3.5 w-3.5" />
 									Add block
@@ -310,7 +324,7 @@ export default function AdminDashboardPage() {
 							<Button
 								variant="outline"
 								size="sm"
-								className="w-full flex-1 gap-1.5 border-violet-500/30 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500/50 text-violet-400 hover:text-violet-300 sm:w-auto sm:flex-none"
+								className="w-full flex-1 gap-1.5 border-primary/30 bg-primary/5 hover:bg-primary/10 hover:border-primary/50 text-primary hover:text-primary sm:w-auto sm:flex-none"
 								onClick={handleShare}
 							>
 								<Share2 className="h-3.5 w-3.5" />
@@ -348,7 +362,7 @@ export default function AdminDashboardPage() {
 				<Card>
 					<CardHeader className="flex-row items-center justify-between">
 						<CardTitle className="flex items-center gap-1.5">
-							<Eye className="h-4 w-4 text-blue-400" aria-hidden="true" />
+							<Eye className="h-4 w-4 text-primary" aria-hidden="true" />
 							Views vs Clicks
 						</CardTitle>
 						<span className="text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -465,7 +479,7 @@ export default function AdminDashboardPage() {
 					<Card>
 						<CardHeader>
 							<CardTitle className="flex items-center gap-1.5">
-								<BarChart3 className="h-4 w-4 text-blue-400" aria-hidden="true" />
+								<BarChart3 className="h-4 w-4 text-primary" aria-hidden="true" />
 								Clicks per day
 							</CardTitle>
 						</CardHeader>
@@ -555,7 +569,7 @@ export default function AdminDashboardPage() {
 					<Card className="h-full">
 						<CardHeader>
 							<CardTitle className="flex items-center gap-1.5">
-								<Globe className="h-4 w-4 text-blue-400" aria-hidden="true" />
+								<Globe className="h-4 w-4 text-primary" aria-hidden="true" />
 								Countries
 							</CardTitle>
 						</CardHeader>
@@ -597,7 +611,7 @@ export default function AdminDashboardPage() {
 					<Card className="h-full">
 						<CardHeader>
 							<CardTitle className="flex items-center gap-1.5">
-								<ArrowUpRight className="h-4 w-4 text-blue-400" aria-hidden="true" />
+								<ArrowUpRight className="h-4 w-4 text-primary" aria-hidden="true" />
 								Referrers
 							</CardTitle>
 						</CardHeader>
@@ -634,7 +648,7 @@ export default function AdminDashboardPage() {
 												</div>
 												<div className="h-1 w-full rounded-full bg-muted/50 overflow-hidden">
 													<div
-														className="h-full rounded-full bg-blue-500/60 transition-all duration-500"
+														className="h-full rounded-full bg-primary/60 transition-all duration-500"
 														style={{ width: `${pct}%` }}
 													/>
 												</div>
@@ -651,7 +665,7 @@ export default function AdminDashboardPage() {
 					<Card className="h-full">
 						<CardHeader>
 							<CardTitle className="flex items-center gap-1.5">
-								<Clock className="h-4 w-4 text-blue-400" aria-hidden="true" />
+								<Clock className="h-4 w-4 text-primary" aria-hidden="true" />
 								Recent clicks
 							</CardTitle>
 						</CardHeader>

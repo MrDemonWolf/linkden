@@ -11,7 +11,7 @@ export interface ThemePreset {
 export const themePresets: ThemePreset[] = [
 	{
 		name: "default",
-		label: "Light",
+		label: "Classic",
 		description: "Clean and minimal with bright backgrounds",
 		cssVars: {
 			light: {
@@ -42,7 +42,7 @@ export const themePresets: ThemePreset[] = [
 	},
 	{
 		name: "dark",
-		label: "Dark",
+		label: "Graphite",
 		description: "Sleek dark theme with subtle contrasts",
 		cssVars: {
 			light: {

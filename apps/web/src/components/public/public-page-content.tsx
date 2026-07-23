@@ -342,6 +342,7 @@ export function PageContent({
 					<FooterActions
 						walletEnabled={!!settings.walletPassEnabled}
 						vcardEnabled={!!settings.vcardEnabled && !hasVcardBlock}
+						themeColors={themeColors}
 					/>
 				)}
 			</Wrapper>
