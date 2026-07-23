@@ -204,6 +204,7 @@ export function PageContent({
 	// (which read var(--ld-*)) inherit the live theme without prop threading.
 	const cssVarStyle = {
 		"--ld-primary": themeColors.primary,
+		"--ld-secondary": themeColors.secondary,
 		"--ld-accent": themeColors.accent,
 		"--ld-background": themeColors.bg,
 		"--ld-foreground": themeColors.fg,
@@ -233,7 +234,9 @@ export function PageContent({
 
 	return (
 		<div className="ld-page min-h-dvh" style={cssVarStyle}>
-			{settings.customCss && <style>{settings.customCss}</style>}
+			{settings.customCss && (
+				<style>{settings.customCss.slice(0, 20000).replace(/<\/style/gi, "<\\/style")}</style>
+			)}
 
 			<Wrapper
 				{...(!isPreview ? { id: "main-content", role: "main" } : {})}
@@ -266,6 +269,7 @@ export function PageContent({
 							email={profile.email}
 							size="lg"
 							hasBanner={showCover}
+							colorMode={colorMode}
 							ringColor={
 								showCover
 									? colorMode === "dark"

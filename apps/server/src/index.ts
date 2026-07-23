@@ -21,10 +21,11 @@ import { cloudflareRateLimiter } from "@hono-rate-limiter/cloudflare";
 import { trpcServer } from "@hono/trpc-server";
 import { createContext } from "@linkden/api/context";
 import { appRouter } from "@linkden/api/routers/index";
+import { generateVCardString, vcardDataSchema } from "@linkden/api/routers/vcard";
 import { auth } from "@linkden/auth";
 import { db } from "@linkden/db";
-import { user, siteSettings } from "@linkden/db/schema/index";
-import { eq } from "drizzle-orm";
+import { block, user, siteSettings } from "@linkden/db/schema/index";
+import { and, asc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
@@ -77,19 +78,30 @@ app.use(
 const rlKeyGenerator = (c: { req: { header: (name: string) => string | undefined } }) =>
 	c.req.header("cf-connecting-ip") ?? "";
 
+// Local `wrangler dev` (miniflare) does not simulate `rate_limits` bindings, so
+// env.RL_* are undefined there and @hono-rate-limiter/cloudflare crashes with
+// "Cannot read properties of undefined (reading 'limit')" — which 500s every
+// auth/upload route on a fresh local install. No-op when the binding is absent;
+// production (Alchemy) always provides the bindings.
+const rateLimit = (pickBinding: (env: Bindings) => RateLimit | undefined) => {
+	const limiter = cloudflareRateLimiter<{ Bindings: Bindings }>({
+		rateLimitBinding: (c) => pickBinding(c.env) as RateLimit,
+		keyGenerator: rlKeyGenerator,
+	});
+	const passthrough: ReturnType<typeof cloudflareRateLimiter<{ Bindings: Bindings }>> = (
+		c,
+		next,
+	) => (pickBinding(c.env) ? limiter(c, next) : next());
+	return passthrough;
+};
+
 app.use(
 	"/api/auth/sign-in/*",
-	cloudflareRateLimiter<{ Bindings: Bindings }>({
-		rateLimitBinding: (c) => c.env.RL_AUTH,
-		keyGenerator: rlKeyGenerator,
-	}),
+	rateLimit((env) => env.RL_AUTH),
 );
 app.use(
 	"/api/auth/send-password-reset-email",
-	cloudflareRateLimiter<{ Bindings: Bindings }>({
-		rateLimitBinding: (c) => c.env.RL_STRICT,
-		keyGenerator: rlKeyGenerator,
-	}),
+	rateLimit((env) => env.RL_STRICT),
 );
 // Block magic link requests when the feature is disabled
 app.use("/api/auth/magic-link/*", async (c, next) => {
@@ -104,10 +116,7 @@ app.use("/api/auth/magic-link/*", async (c, next) => {
 });
 app.use(
 	"/api/auth/magic-link/*",
-	cloudflareRateLimiter<{ Bindings: Bindings }>({
-		rateLimitBinding: (c) => c.env.RL_STRICT,
-		keyGenerator: rlKeyGenerator,
-	}),
+	rateLimit((env) => env.RL_STRICT),
 );
 // Block registration after the first user has been created (single-user app)
 app.use("/api/auth/sign-up/*", async (c, next) => {
@@ -119,38 +128,23 @@ app.use("/api/auth/sign-up/*", async (c, next) => {
 });
 app.use(
 	"/api/auth/sign-up/*",
-	cloudflareRateLimiter<{ Bindings: Bindings }>({
-		rateLimitBinding: (c) => c.env.RL_STRICT,
-		keyGenerator: rlKeyGenerator,
-	}),
+	rateLimit((env) => env.RL_STRICT),
 );
 app.use(
 	"/trpc/public.submitContact*",
-	cloudflareRateLimiter<{ Bindings: Bindings }>({
-		rateLimitBinding: (c) => c.env.RL_AUTH,
-		keyGenerator: rlKeyGenerator,
-	}),
+	rateLimit((env) => env.RL_AUTH),
 );
 app.use(
 	"/api/upload",
-	cloudflareRateLimiter<{ Bindings: Bindings }>({
-		rateLimitBinding: (c) => c.env.RL_UPLOAD,
-		keyGenerator: rlKeyGenerator,
-	}),
+	rateLimit((env) => env.RL_UPLOAD),
 );
 app.use(
 	"/trpc/public.trackView*",
-	cloudflareRateLimiter<{ Bindings: Bindings }>({
-		rateLimitBinding: (c) => c.env.RL_PUBLIC,
-		keyGenerator: rlKeyGenerator,
-	}),
+	rateLimit((env) => env.RL_PUBLIC),
 );
 app.use(
 	"/trpc/public.trackClick*",
-	cloudflareRateLimiter<{ Bindings: Bindings }>({
-		rateLimitBinding: (c) => c.env.RL_PUBLIC,
-		keyGenerator: rlKeyGenerator,
-	}),
+	rateLimit((env) => env.RL_PUBLIC),
 );
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
@@ -382,6 +376,43 @@ app.get("/api/wallet-pass", async (c) => {
 		console.error("pkpass generation failed", err);
 		return c.text("Wallet pass is not available yet.", 503);
 	}
+});
+
+// ─── vCard download (.vcf) ───────────────────────────────────────────────────
+// Public download. Mirrors public.getVCard: requires the vcard_enabled setting
+// plus the first enabled, published vCard block, and generates the .vcf with
+// the same generator the tRPC endpoint uses.
+app.get("/api/vcard", async (c) => {
+	const [vcardSetting] = await db
+		.select()
+		.from(siteSettings)
+		.where(eq(siteSettings.key, "vcard_enabled"));
+	if (vcardSetting?.value !== "true") return c.notFound();
+
+	const [vcardBlock] = await db
+		.select()
+		.from(block)
+		.where(and(eq(block.type, "vcard"), eq(block.isEnabled, true), eq(block.status, "published")))
+		.orderBy(asc(block.position))
+		.limit(1);
+	if (!vcardBlock) return c.notFound();
+
+	let config: unknown = {};
+	try {
+		config = vcardBlock.config ? JSON.parse(vcardBlock.config) : {};
+	} catch {
+		// Corrupted JSON in block config — treat as no vCard rather than crashing
+		return c.notFound();
+	}
+	const result = vcardDataSchema.safeParse(config);
+	if (!result.success) return c.notFound();
+
+	return new Response(generateVCardString(result.data), {
+		headers: {
+			"Content-Type": "text/vcard; charset=utf-8",
+			"Content-Disposition": 'attachment; filename="contact.vcf"',
+		},
+	});
 });
 
 app.get("/", (c) => {

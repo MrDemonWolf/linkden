@@ -1,10 +1,18 @@
 import "@linkden/env/web";
+import { readFileSync } from "node:fs";
 import path from "node:path";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import type { NextConfig } from "next";
 
-import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+// Single source of truth for the app version: root version.json
+const { version } = JSON.parse(
+	readFileSync(path.resolve(__dirname, "../../version.json"), "utf8"),
+) as { version: string };
 
 const nextConfig: NextConfig = {
+	env: {
+		NEXT_PUBLIC_APP_VERSION: version,
+	},
 	typedRoutes: true,
 	reactCompiler: true,
 	transpilePackages: ["@linkden/ui"],

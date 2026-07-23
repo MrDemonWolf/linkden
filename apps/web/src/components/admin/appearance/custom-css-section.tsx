@@ -17,6 +17,7 @@ function CssEditor({ value, onChange }: { value: string; onChange: (value: strin
 	const onChangeRef = useRef(onChange);
 	onChangeRef.current = onChange;
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: mount-once editor init; the initial doc captures value at creation and the sync effect below handles external value changes
 	useEffect(() => {
 		if (!editorRef.current) return;
 		let destroyed = false;
@@ -119,7 +120,7 @@ function CssEditor({ value, onChange }: { value: string; onChange: (value: strin
 		};
 		// Only run once on mount - value is captured at creation time
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [value]);
+	}, []);
 
 	// Sync external value changes into the editor (e.g. discard/reset)
 	useEffect(() => {
@@ -164,6 +165,7 @@ function CssReference() {
 			<button
 				type="button"
 				onClick={() => setOpen(!open)}
+				aria-expanded={open}
 				className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
 			>
 				<span className="flex items-center gap-1.5">
@@ -222,8 +224,8 @@ function CssReference() {
 							<span className="text-muted-foreground">Border color</span>
 							<span className="text-primary">--ld-muted</span>
 							<span className="text-muted-foreground">Muted background</span>
-							<span className="text-primary">--ld-radius</span>
-							<span className="text-muted-foreground">Border radius</span>
+							<span className="text-primary">--ld-muted-foreground</span>
+							<span className="text-muted-foreground">Muted text</span>
 						</div>
 					</div>
 				</div>

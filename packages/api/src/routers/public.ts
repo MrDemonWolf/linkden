@@ -107,6 +107,8 @@ export const publicRouter = router({
 				seoTitle: settings.seo_title || null,
 				seoDescription: settings.seo_description || null,
 				seoOgImage: settings.seo_og_image || null,
+				seoOgMode: settings.seo_og_mode || null,
+				seoOgTemplate: settings.seo_og_template || null,
 				brandingEnabled: settings.branding_enabled !== "false",
 				brandingText: settings.branding_text || "Powered by LinkDen made by MrDemonWolf, Inc.",
 				defaultColorMode: settings.default_color_mode || "system",

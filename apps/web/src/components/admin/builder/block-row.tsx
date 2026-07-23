@@ -1,8 +1,9 @@
 "use client";
 
-import { GripVertical, Eye, EyeOff, Pencil, Trash2 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { Eye, EyeOff, GripVertical, Pencil, Trash2, TriangleAlert } from "lucide-react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { type Block, blockTypeIcon, TYPE_ACCENT, TYPE_BADGE_BG } from "./builder-constants";
 
@@ -12,12 +13,15 @@ export function BlockRow({
 	onEdit,
 	onDelete,
 	accent = false,
+	featureHidden = false,
 }: {
 	block: Block;
 	onToggle: () => void;
 	onEdit: () => void;
 	onDelete: () => void;
 	accent?: boolean;
+	/** The block's site-wide feature toggle is off, so it never renders publicly. */
+	featureHidden?: boolean;
 }) {
 	const Icon = blockTypeIcon(block.type);
 	const typeLabel = block.type === "connect" ? "Connect" : block.type.replace(/_/g, " ");
@@ -105,6 +109,20 @@ export function BlockRow({
 					</span>
 				</div>
 			</button>
+
+			{/* Feature-gate warning — this block's site-wide toggle is off, so the
+			    public page silently skips it. Link straight to Settings to fix. */}
+			{featureHidden && (
+				<Link
+					href="/admin/settings"
+					className="mr-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-warning/40 bg-warning/10 px-2 py-1 text-[10px] font-medium leading-none text-warning transition-colors hover:bg-warning/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+					title="This block's feature is turned off, so it won't appear on your public page"
+				>
+					<TriangleAlert className="h-3 w-3" aria-hidden="true" />
+					<span className="max-sm:hidden">Hidden — enable in Settings</span>
+					<span className="sm:hidden">Hidden</span>
+				</Link>
+			)}
 
 			{/* Actions */}
 			<div className="flex items-center gap-0.5 pr-2">

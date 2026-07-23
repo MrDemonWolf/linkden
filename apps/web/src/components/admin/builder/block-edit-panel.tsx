@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useId, useRef } from "react";
 import { X, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,16 +43,19 @@ function ToggleSwitch({
 	label: string;
 	description?: string;
 }) {
+	const id = useId();
 	return (
 		<div className="flex items-center justify-between">
 			<div className="space-y-0.5">
-				<Label>{label}</Label>
+				<Label htmlFor={id}>{label}</Label>
 				{description && <p className="text-[11px] text-muted-foreground">{description}</p>}
 			</div>
 			<button
+				id={id}
 				type="button"
 				role="switch"
 				aria-checked={checked}
+				aria-label={label}
 				onClick={onToggle}
 				className={cn(
 					"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
@@ -74,17 +77,25 @@ function SegmentedControl({
 	value,
 	options,
 	onChange,
+	ariaLabelledby,
 }: {
 	value: string;
 	options: Array<{ value: string; label: string; svg?: React.ReactNode }>;
 	onChange: (value: string) => void;
+	ariaLabelledby?: string;
 }) {
 	return (
-		<div className="flex rounded-lg border border-input overflow-hidden">
+		// biome-ignore lint/a11y/useSemanticElements: fieldset does not support flex layout in Chromium/WebKit; role="group" carries the aria-labelledby association instead
+		<div
+			role="group"
+			aria-labelledby={ariaLabelledby}
+			className="flex rounded-lg border border-input overflow-hidden"
+		>
 			{options.map((opt) => (
 				<button
 					key={opt.value}
 					type="button"
+					aria-pressed={value === opt.value}
 					onClick={() => onChange(opt.value)}
 					className={cn(
 						"flex-1 flex flex-col items-center gap-1 py-1.5 text-xs font-medium transition-colors",
@@ -111,8 +122,6 @@ export function BlockEditPanel({
 	onSave,
 	onDelete,
 	isSaving,
-	contactDelivery,
-	onDeliveryChange,
 	onChange,
 }: {
 	block: Block;
@@ -120,8 +129,6 @@ export function BlockEditPanel({
 	onSave: (data: Partial<Block>) => void;
 	onDelete?: () => void;
 	isSaving: boolean;
-	contactDelivery: string;
-	onDeliveryChange: (value: string) => void;
 	socialNetworks?: Array<{ slug: string; name: string; url: string; hex: string; svgPath: string }>;
 	onChange?: (data: Partial<Block>) => void;
 }) {
@@ -394,7 +401,7 @@ export function BlockEditPanel({
 								/>
 							</div>
 							<div className="space-y-1.5">
-								<Label>Emoji Position</Label>
+								<Label id="edit-emoji-position-label">Emoji Position</Label>
 								<SegmentedControl
 									value={parsedConfig.buttonEmojiPosition ?? "left"}
 									options={[
@@ -402,6 +409,7 @@ export function BlockEditPanel({
 										{ value: "right", label: "Right" },
 									]}
 									onChange={(v) => updateConfigField("buttonEmojiPosition", v)}
+									ariaLabelledby="edit-emoji-position-label"
 								/>
 							</div>
 							<div className="space-y-1.5">
@@ -440,7 +448,7 @@ export function BlockEditPanel({
 								/>
 							</div>
 							<div className="space-y-1.5">
-								<Label>Emoji Position</Label>
+								<Label id="edit-vcard-emoji-position-label">Emoji Position</Label>
 								<SegmentedControl
 									value={parsedConfig.buttonEmojiPosition ?? "left"}
 									options={[
@@ -448,6 +456,7 @@ export function BlockEditPanel({
 										{ value: "right", label: "Right" },
 									]}
 									onChange={(v) => updateConfigField("buttonEmojiPosition", v)}
+									ariaLabelledby="edit-vcard-emoji-position-label"
 								/>
 							</div>
 
@@ -604,6 +613,7 @@ export function BlockEditPanel({
 										<div className="flex-1 space-y-1">
 											<Label className="text-[11px]">Label</Label>
 											<Input
+												aria-label="URL label"
 												value={urlItem.label}
 												onChange={(e) => {
 													const urls = [...(parsedConfig.urls ?? [])];
@@ -617,6 +627,7 @@ export function BlockEditPanel({
 										<div className="flex-[2] space-y-1">
 											<Label className="text-[11px]">URL</Label>
 											<Input
+												aria-label="URL address"
 												value={urlItem.url}
 												onChange={(e) => {
 													const urls = [...(parsedConfig.urls ?? [])];
@@ -629,6 +640,7 @@ export function BlockEditPanel({
 										</div>
 										<button
 											type="button"
+											aria-label="Remove URL"
 											onClick={() => {
 												const urls = [...(parsedConfig.urls ?? [])];
 												urls.splice(idx, 1);
@@ -668,7 +680,7 @@ export function BlockEditPanel({
 								/>
 							</div>
 							<div className="space-y-1.5">
-								<Label>Link Type</Label>
+								<Label id="edit-link-type-label">Link Type</Label>
 								<SegmentedControl
 									value={parsedConfig.linkType ?? "none"}
 									options={[
@@ -678,6 +690,7 @@ export function BlockEditPanel({
 										{ value: "none", label: "None" },
 									]}
 									onChange={(v) => updateConfigField("linkType", v)}
+									ariaLabelledby="edit-link-type-label"
 								/>
 							</div>
 							{parsedConfig.linkType === "custom" && (
@@ -739,8 +752,9 @@ export function BlockEditPanel({
 								label="Open in New Tab"
 							/>
 							<div className="space-y-1.5">
-								<Label>Animation</Label>
+								<Label htmlFor="edit-animation">Animation</Label>
 								<GlassSelect
+									id="edit-animation"
 									value={parsedConfig.animation ?? "none"}
 									onChange={(v) => updateConfigField("animation", v)}
 								>
@@ -750,8 +764,9 @@ export function BlockEditPanel({
 								</GlassSelect>
 							</div>
 							<div className="space-y-1.5">
-								<Label>Thumbnail URL</Label>
+								<Label htmlFor="edit-thumbnail">Thumbnail URL</Label>
 								<Input
+									id="edit-thumbnail"
 									value={parsedConfig.thumbnail ?? ""}
 									onChange={(e) => updateConfigField("thumbnail", e.target.value)}
 									placeholder="https://example.com/thumb.jpg"
@@ -769,8 +784,9 @@ export function BlockEditPanel({
 								label="Outlined Style"
 							/>
 							<div className="space-y-1.5">
-								<Label>Animation</Label>
+								<Label htmlFor="edit-animation">Animation</Label>
 								<GlassSelect
+									id="edit-animation"
 									value={parsedConfig.animation ?? "none"}
 									onChange={(v) => updateConfigField("animation", v)}
 								>
@@ -785,8 +801,9 @@ export function BlockEditPanel({
 					{block.type === "embed" && (
 						<>
 							<div className="space-y-1.5">
-								<Label>Aspect Ratio</Label>
+								<Label htmlFor="edit-aspect-ratio">Aspect Ratio</Label>
 								<GlassSelect
+									id="edit-aspect-ratio"
 									value={parsedConfig.aspectRatio ?? "16:9"}
 									onChange={(v) => updateConfigField("aspectRatio", v)}
 								>
@@ -796,8 +813,9 @@ export function BlockEditPanel({
 								</GlassSelect>
 							</div>
 							<div className="space-y-1.5">
-								<Label>Max Width</Label>
+								<Label htmlFor="edit-max-width">Max Width</Label>
 								<GlassSelect
+									id="edit-max-width"
 									value={parsedConfig.maxWidth ?? "full"}
 									onChange={(v) => updateConfigField("maxWidth", v)}
 								>
@@ -819,27 +837,6 @@ export function BlockEditPanel({
 				{/* CONNECT FORM FIELDS (collapsible) */}
 				{block.type === "connect" && (
 					<CollapsibleSection label="Form Fields" defaultOpen>
-						<div className="space-y-1.5">
-							<div className="flex items-center gap-2">
-								<Label htmlFor="edit-delivery">Delivery mode</Label>
-								<span className="rounded-full bg-warning/10 px-1.5 py-0.5 text-[10px] font-medium text-warning">
-									Site-wide
-								</span>
-							</div>
-							<p className="text-[11px] text-muted-foreground">
-								Applies to every contact form on your page — changing it here updates the global
-								Features setting immediately.
-							</p>
-							<SegmentedControl
-								value={contactDelivery}
-								options={[
-									{ value: "database", label: "Database" },
-									{ value: "email", label: "Email" },
-									{ value: "both", label: "Both" },
-								]}
-								onChange={onDeliveryChange}
-							/>
-						</div>
 						<div className="mt-2 space-y-3">
 							<Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
 								Optional Fields

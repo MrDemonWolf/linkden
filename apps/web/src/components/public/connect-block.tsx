@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import { useMutation } from "@tanstack/react-query";
 import { getReadableTextColor } from "@linkden/ui/color-contrast";
+import { useMutation } from "@tanstack/react-query";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { trpc } from "@/utils/trpc";
-import type { ThemeColors } from "./public-page";
 import { usePreview } from "./preview-context";
+import type { ThemeColors } from "./public-page";
 
 const WHERE_MET_OPTIONS = [
 	"Conference",
@@ -19,6 +19,11 @@ const WHERE_MET_OPTIONS = [
 // Public blocks style inline from the resolved themeColors instead of CSS design
 // tokens: the public page renders under a per-page theme preset, not the app's
 // global .dark class, so tokens like var(--card) would resolve to the admin theme.
+
+// Fixed accessible red pair for error text/borders on the themed public page
+// (admin tokens like text-destructive would resolve to the admin theme here).
+const getErrorColor = (colorMode: "light" | "dark") =>
+	colorMode === "dark" ? "#F87171" : "#B91C1C";
 interface ConnectBlockProps {
 	block: {
 		id: string;
@@ -41,6 +46,8 @@ function FloatingField({
 	themeColors,
 	multiline = false,
 	submitAttempted = false,
+	colorMode = "light",
+	autoComplete,
 }: {
 	id: string;
 	label: string;
@@ -52,11 +59,14 @@ function FloatingField({
 	themeColors?: ThemeColors;
 	multiline?: boolean;
 	submitAttempted?: boolean;
+	colorMode?: "light" | "dark";
+	autoComplete?: string;
 }) {
 	const [touched, setTouched] = useState(false);
 	// Show the error once the field is blurred OR the form has been submitted, so
 	// an untouched-but-invalid field is never a silent dead-end.
 	const showError = !!error && (touched || submitAttempted);
+	const errorColor = getErrorColor(colorMode);
 
 	const fieldStyle: React.CSSProperties = themeColors
 		? {
@@ -66,9 +76,7 @@ function FloatingField({
 			}
 		: {};
 
-	const errorBorderStyle: React.CSSProperties = showError
-		? { borderColor: "var(--destructive)" }
-		: {};
+	const errorBorderStyle: React.CSSProperties = showError ? { borderColor: errorColor } : {};
 
 	const baseClasses =
 		"peer w-full rounded-xl border px-4 pt-5 pb-2 text-sm outline-none transition-all duration-200 placeholder-transparent focus:ring-1 focus:ring-current/20";
@@ -105,7 +113,12 @@ function FloatingField({
 					{label}
 				</label>
 				{showError && (
-					<span id={`${id}-error`} className="mt-1 block text-sm text-destructive" role="alert">
+					<span
+						id={`${id}-error`}
+						className="mt-1 block text-sm"
+						style={{ color: errorColor }}
+						role="alert"
+					>
 						{error}
 					</span>
 				)}
@@ -120,6 +133,7 @@ function FloatingField({
 				type={type}
 				placeholder={label}
 				required={required}
+				autoComplete={autoComplete}
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
 				onBlur={() => setTouched(true)}
@@ -132,7 +146,12 @@ function FloatingField({
 				{label}
 			</label>
 			{showError && (
-				<span id={`${id}-error`} className="mt-1 block text-sm text-destructive" role="alert">
+				<span
+					id={`${id}-error`}
+					className="mt-1 block text-sm"
+					style={{ color: errorColor }}
+					role="alert"
+				>
 					{error}
 				</span>
 			)}
@@ -147,6 +166,7 @@ function WhereMetSelect({
 	error,
 	themeColors,
 	submitAttempted = false,
+	colorMode = "light",
 }: {
 	id: string;
 	value: string;
@@ -154,16 +174,18 @@ function WhereMetSelect({
 	error?: string;
 	themeColors?: ThemeColors;
 	submitAttempted?: boolean;
+	colorMode?: "light" | "dark";
 }) {
 	const [touched, setTouched] = useState(false);
 	const [showOtherInput, setShowOtherInput] = useState(false);
 	const showError = !!error && (touched || submitAttempted);
+	const errorColor = getErrorColor(colorMode);
 
 	// The native <option> popup inherits the <select>'s background/color. A
 	// translucent bg makes the popup unreadable on dark presets, so use a SOLID
 	// surface here (and set each option explicitly for cross-browser safety).
-	const solidBg = themeColors?.card ?? "#ffffff";
-	const solidFg = themeColors?.cardFg ?? "#111827";
+	const solidBg = themeColors?.card ?? (colorMode === "dark" ? "#1f2937" : "#ffffff");
+	const solidFg = themeColors?.cardFg ?? (colorMode === "dark" ? "#f9fafb" : "#111827");
 
 	const fieldStyle: React.CSSProperties = themeColors
 		? {
@@ -173,9 +195,7 @@ function WhereMetSelect({
 			}
 		: { backgroundColor: solidBg, color: solidFg };
 
-	const errorBorderStyle: React.CSSProperties = showError
-		? { borderColor: "var(--destructive)" }
-		: {};
+	const errorBorderStyle: React.CSSProperties = showError ? { borderColor: errorColor } : {};
 
 	const labelStyle: React.CSSProperties = themeColors ? { color: themeColors.mutedFg } : {};
 	const optionStyle: React.CSSProperties = { backgroundColor: solidBg, color: solidFg };
@@ -218,7 +238,7 @@ function WhereMetSelect({
 					style={labelStyle}
 				>
 					Where did we meet?{" "}
-					<span className="text-destructive" aria-hidden="true">
+					<span style={{ color: errorColor }} aria-hidden="true">
 						*
 					</span>
 				</label>
@@ -245,10 +265,16 @@ function WhereMetSelect({
 					error={!value ? "Please specify where we met" : undefined}
 					themeColors={themeColors}
 					submitAttempted={submitAttempted}
+					colorMode={colorMode}
 				/>
 			)}
 			{showError && !showOtherInput && (
-				<span id={`${id}-error`} className="mt-1 block text-sm text-destructive" role="alert">
+				<span
+					id={`${id}-error`}
+					className="mt-1 block text-sm"
+					style={{ color: errorColor }}
+					role="alert"
+				>
 					{error}
 				</span>
 			)}
@@ -291,6 +317,17 @@ function ConnectForm({
 	// Once the visitor tries to submit, reveal errors on every field — even ones
 	// they never focused — so an untouched-empty form isn't a silent dead-end.
 	const [submitAttempted, setSubmitAttempted] = useState(false);
+	const errorColor = getErrorColor(colorMode);
+	// Unique per form instance so an inline block and a modal mounted at the same
+	// time never share the same consent-error element id.
+	const consentErrorId = useId();
+	const successRef = useRef<HTMLDivElement>(null);
+
+	// Move focus to the success panel so keyboard/screen-reader users hear the
+	// confirmation instead of being left on a form that just disappeared.
+	useEffect(() => {
+		if (submitted) successRef.current?.focus();
+	}, [submitted]);
 
 	const submitContact = useMutation({
 		...trpc.public.submitContact.mutationOptions(),
@@ -373,11 +410,24 @@ function ConnectForm({
 	const primaryColor = themeColors?.primary || (colorMode === "dark" ? "#3b82f6" : "#2563eb");
 
 	if (submitted) {
+		// Mode-aware success green: light surfaces need the darker pair for contrast.
+		const successFg = colorMode === "dark" ? "#4ADE80" : "#166534";
+		const successBg = colorMode === "dark" ? "rgba(74,222,128,0.12)" : "rgba(22,101,52,0.10)";
 		return (
-			<div className="py-6 text-center">
-				<div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-500/20">
+			<div
+				ref={successRef}
+				tabIndex={-1}
+				role="status"
+				aria-live="polite"
+				className="py-6 text-center outline-none"
+			>
+				<div
+					className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full"
+					style={{ backgroundColor: successBg }}
+				>
 					<svg
-						className="h-7 w-7 text-green-400"
+						className="h-7 w-7"
+						style={{ color: successFg }}
 						fill="none"
 						viewBox="0 0 24 24"
 						stroke="currentColor"
@@ -420,21 +470,25 @@ function ConnectForm({
 					id={`connect-fname-${blockId}`}
 					label="First Name"
 					required
+					autoComplete="given-name"
 					value={formData.firstName}
 					onChange={updateField("firstName")}
 					error={errors.firstName}
 					themeColors={themeColors}
 					submitAttempted={submitAttempted}
+					colorMode={colorMode}
 				/>
 				<FloatingField
 					id={`connect-lname-${blockId}`}
 					label="Last Name"
 					required
+					autoComplete="family-name"
 					value={formData.lastName}
 					onChange={updateField("lastName")}
 					error={errors.lastName}
 					themeColors={themeColors}
 					submitAttempted={submitAttempted}
+					colorMode={colorMode}
 				/>
 			</div>
 
@@ -443,11 +497,13 @@ function ConnectForm({
 				label="Email Address"
 				type="email"
 				required
+				autoComplete="email"
 				value={formData.email}
 				onChange={updateField("email")}
 				error={errors.email}
 				themeColors={themeColors}
 				submitAttempted={submitAttempted}
+				colorMode={colorMode}
 			/>
 
 			<WhereMetSelect
@@ -457,6 +513,7 @@ function ConnectForm({
 				error={errors.whereMet}
 				themeColors={themeColors}
 				submitAttempted={submitAttempted}
+				colorMode={colorMode}
 			/>
 
 			<FloatingField
@@ -466,6 +523,7 @@ function ConnectForm({
 				value={formData.message}
 				onChange={updateField("message")}
 				themeColors={themeColors}
+				colorMode={colorMode}
 			/>
 
 			<div className="flex flex-col gap-1">
@@ -484,7 +542,7 @@ function ConnectForm({
 								});
 						}}
 						className="mt-0.5 h-4 w-4 shrink-0 rounded"
-						aria-describedby={errors.consent ? "consent-error" : undefined}
+						aria-describedby={errors.consent ? consentErrorId : undefined}
 						aria-invalid={errors.consent ? true : undefined}
 					/>
 					<span
@@ -511,7 +569,7 @@ function ConnectForm({
 					</span>
 				</label>
 				{errors.consent && (
-					<span id="consent-error" className="text-sm text-destructive" role="alert">
+					<span id={consentErrorId} className="text-sm" style={{ color: errorColor }} role="alert">
 						{errors.consent}
 					</span>
 				)}
@@ -557,7 +615,7 @@ function ConnectForm({
 			</button>
 
 			{submitContact.isError && (
-				<p className="text-center text-sm text-destructive" role="alert">
+				<p className="text-center text-sm" style={{ color: errorColor }} role="alert">
 					Failed to send. Please try again.
 				</p>
 			)}

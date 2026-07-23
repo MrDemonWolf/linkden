@@ -41,7 +41,11 @@ export function ConsentSection({
 						Display a cookie consent banner to visitors
 					</p>
 				</div>
-				<Switch checked={enabled} onCheckedChange={onEnabledChange} />
+				<Switch
+					checked={enabled}
+					onCheckedChange={onEnabledChange}
+					aria-label="Show consent banner"
+				/>
 			</div>
 
 			{enabled && (
@@ -91,7 +95,7 @@ export function ConsentSection({
 										Required for authentication and core features
 									</p>
 								</div>
-								<Switch checked disabled />
+								<Switch checked disabled aria-label="Essential cookies" />
 							</div>
 
 							<div className="border-t border-border/30" />
@@ -107,6 +111,7 @@ export function ConsentSection({
 								<Switch
 									checked={categories.analytics}
 									onCheckedChange={(v) => onCategoriesChange({ ...categories, analytics: v })}
+									aria-label="Analytics cookies"
 								/>
 							</div>
 
@@ -123,6 +128,7 @@ export function ConsentSection({
 								<Switch
 									checked={categories.marketing}
 									onCheckedChange={(v) => onCategoriesChange({ ...categories, marketing: v })}
+									aria-label="Marketing cookies"
 								/>
 							</div>
 
@@ -139,6 +145,7 @@ export function ConsentSection({
 								<Switch
 									checked={categories.functional}
 									onCheckedChange={(v) => onCategoriesChange({ ...categories, functional: v })}
+									aria-label="Functional cookies"
 								/>
 							</div>
 						</div>

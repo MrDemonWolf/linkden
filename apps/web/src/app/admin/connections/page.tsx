@@ -76,6 +76,16 @@ export default function ConnectionsPage() {
 		selectedConnection,
 	]);
 
+	// Escape closes the mobile detail overlay
+	useEffect(() => {
+		if (!mobileDetailOpen) return;
+		const onKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") setMobileDetailOpen(false);
+		};
+		document.addEventListener("keydown", onKeyDown);
+		return () => document.removeEventListener("keydown", onKeyDown);
+	}, [mobileDetailOpen]);
+
 	const handleSelect = (id: string) => {
 		setSelectedId(id);
 		if (window.innerWidth < 768) {
@@ -203,6 +213,7 @@ export default function ConnectionsPage() {
 								size="xs"
 								onClick={handleMarkAllRead}
 								disabled={markAllRead.isPending}
+								aria-label="Mark all read"
 							>
 								<MailCheck className="mr-1 h-3 w-3" />
 								<span className="hidden sm:inline">Mark All Read</span>
@@ -347,7 +358,12 @@ export default function ConnectionsPage() {
 						onClick={() => setMobileDetailOpen(false)}
 						aria-label="Close"
 					/>
-					<div className="fixed inset-x-0 bottom-0 z-10 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t bg-background shadow-xl animate-in slide-in-from-bottom duration-200">
+					<div
+						role="dialog"
+						aria-modal="true"
+						aria-label="Connection details"
+						className="fixed inset-x-0 bottom-0 z-10 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t bg-background shadow-xl animate-in slide-in-from-bottom duration-200"
+					>
 						<div className="sticky top-0 flex items-center justify-between border-b bg-background px-4 py-2">
 							<h2 className="text-xs font-semibold">Connection Details</h2>
 							<button

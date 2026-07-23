@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Save, Plus, Trash2 } from "lucide-react";
@@ -49,7 +49,14 @@ const emptyData: VCardData = {
 	urls: [],
 };
 
-export function VCardSection() {
+interface VCardSectionProps {
+	/** Incremented by the parent when its global save runs; triggers a vCard save if dirty. */
+	saveSignal?: number;
+	/** Notifies the parent whenever this section's dirty state changes. */
+	onDirtyChange?: (dirty: boolean) => void;
+}
+
+export function VCardSection({ saveSignal, onDirtyChange }: VCardSectionProps) {
 	const qc = useQueryClient();
 	const configQuery = useQuery(trpc.vcard.getConfig.queryOptions());
 	const updateConfig = useMutation(trpc.vcard.updateConfig.mutationOptions());
@@ -86,6 +93,13 @@ export function VCardSection() {
 	}, [configQuery.data]);
 
 	const isDirty = enabled !== savedEnabled || JSON.stringify(data) !== JSON.stringify(savedData);
+
+	// Report dirty state to the parent so the global unsaved-changes bar covers vCard edits.
+	// The cleanup clears the flag on unmount (tab switch discards local edits with the component).
+	useEffect(() => {
+		onDirtyChange?.(isDirty);
+		return () => onDirtyChange?.(false);
+	}, [isDirty, onDirtyChange]);
 
 	const updateField = (field: keyof Omit<VCardData, "urls">, value: string) => {
 		setData((prev) => ({ ...prev, [field]: value }));
@@ -142,6 +156,20 @@ export function VCardSection() {
 			toast.error("Failed to save vCard settings");
 		}
 	};
+
+	// Save when the parent's global save runs (saveSignal increments) and we have unsaved changes
+	const handleSaveRef = useRef(handleSave);
+	handleSaveRef.current = handleSave;
+	const isDirtyRef = useRef(isDirty);
+	isDirtyRef.current = isDirty;
+	const lastSaveSignalRef = useRef(saveSignal ?? 0);
+	useEffect(() => {
+		if (saveSignal === undefined || saveSignal === lastSaveSignalRef.current) return;
+		lastSaveSignalRef.current = saveSignal;
+		if (isDirtyRef.current) {
+			void handleSaveRef.current();
+		}
+	}, [saveSignal]);
 
 	if (configQuery.isLoading) {
 		return (
@@ -336,6 +364,7 @@ export function VCardSection() {
 									size="sm"
 									onClick={() => removeUrl(i)}
 									className="text-destructive shrink-0"
+									aria-label="Remove URL"
 								>
 									<Trash2 className="h-3.5 w-3.5" />
 								</Button>
