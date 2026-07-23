@@ -6,6 +6,8 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { twoFactor, magicLink } from "better-auth/plugins";
 
+import { devLoginPlugin, isDevLoginEnabled } from "./dev-login";
+
 async function getEmailSettings() {
 	const allRows = await db.select().from(siteSettings);
 	const s: Record<string, string> = {};
@@ -104,6 +106,9 @@ export const auth = betterAuth({
 		// },
 	},
 	plugins: [
+		// DEV ONLY: the bypass-login endpoint (POST /api/auth/dev-login) exists only
+		// when DEV_LOGIN === "true". Unset in prod → plugin unregistered → route 404s.
+		...(isDevLoginEnabled((env as { DEV_LOGIN?: string }).DEV_LOGIN) ? [devLoginPlugin()] : []),
 		twoFactor(),
 		magicLink({
 			sendMagicLink: async ({ email, url }) => {
