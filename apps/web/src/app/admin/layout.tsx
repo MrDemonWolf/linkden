@@ -66,7 +66,7 @@ const BOTTOM_NAV_ITEMS = [
 
 const MOBILE_MENU_ID = "admin-mobile-nav";
 
-function DesktopTopBar({ pathname, siteName }: { pathname: string; siteName: string }) {
+function DesktopTopBar({ pathname }: { pathname: string }) {
 	const currentPageLabel =
 		ALL_NAV_ITEMS.find((item) =>
 			item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href),
@@ -74,13 +74,7 @@ function DesktopTopBar({ pathname, siteName }: { pathname: string; siteName: str
 
 	return (
 		<div className="hidden md:flex h-14 shrink-0 items-center justify-between border-b border-border px-6">
-			<div className="flex items-center gap-3">
-				<h2 className="text-sm font-semibold">{currentPageLabel}</h2>
-				<span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5">
-					<span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--primary)]" />
-					<span className="text-[10px] font-medium text-foreground font-mono">{siteName}</span>
-				</span>
-			</div>
+			<h2 className="text-sm font-semibold">{currentPageLabel}</h2>
 			<div className="flex items-center gap-3">
 				<ThemeToggle />
 				<a href="/" target="_blank" rel="noopener noreferrer">
@@ -142,12 +136,6 @@ function SidebarContent({
 						: "text-muted-foreground hover:text-foreground hover:bg-muted",
 				)}
 			>
-				{isActive && (
-					<span
-						aria-hidden
-						className="absolute left-0 top-2 bottom-2 w-0.5 rounded-sm bg-primary shadow-[0_0_10px_var(--primary)]"
-					/>
-				)}
 				<Icon className={cn("h-4 w-4 shrink-0", isActive && "text-primary")} />
 				<span>{item.label}</span>
 				{item.label === "Connections" && unreadCount > 0 && (
@@ -166,7 +154,7 @@ function SidebarContent({
 				{logoUrl ? (
 					<img src={logoUrl} alt="" className="h-8 w-8 rounded-lg object-cover" />
 				) : (
-					<WolfLogo className="h-16 w-16 shrink-0" />
+					<WolfLogo className="h-9 w-9 shrink-0" />
 				)}
 				<div className="flex flex-col min-w-0">
 					<span className="text-sm font-semibold leading-tight truncate">{siteName}</span>
@@ -366,13 +354,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
 			{/* Mobile header */}
 			<div className="fixed inset-x-0 top-0 z-40 flex h-12 items-center border-b border-border backdrop-blur-2xl bg-sidebar px-4 md:hidden">
-				<div className="flex items-center gap-2 shrink-0">
+				<div className="flex items-center shrink-0">
 					{logoUrl ? (
-						<img src={logoUrl} alt="" className="h-6 w-6 rounded-md object-cover" />
+						<img src={logoUrl} alt={siteName} className="h-7 w-7 rounded-md object-cover" />
 					) : (
-						<WolfLogo className="h-12 w-12" />
+						<WolfLogo className="h-7 w-7" />
 					)}
-					<span className="text-xs font-semibold">{siteName}</span>
+					<span className="sr-only">{siteName}</span>
 				</div>
 				{/* Current page — centered absolute */}
 				<span className="absolute inset-x-0 text-center text-xs font-medium text-muted-foreground pointer-events-none">
@@ -539,7 +527,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
 			{/* Right side: top bar + main content */}
 			<div className="flex flex-1 flex-col overflow-hidden">
-				<DesktopTopBar pathname={pathname} siteName={siteName} />
+				<DesktopTopBar pathname={pathname} />
 				<main id="main-content" className="flex-1 overflow-y-auto pt-12 pb-16 md:pt-0 md:pb-0">
 					<div className="mx-auto max-w-6xl px-4 py-4 sm:px-4 md:p-6">{children}</div>
 				</main>
