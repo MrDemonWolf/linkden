@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { ColorField } from "../color-field";
 import { type Block, EMBED_URL_PATTERNS, validateEmbedUrl } from "./builder-constants";
 import { CollapsibleSection } from "./collapsible-section";
 
@@ -779,6 +780,33 @@ export function BlockEditPanel({
 								</GlassSelect>
 							</div>
 						</>
+					)}
+
+					{(block.type === "link" || block.type === "connect" || block.type === "vcard") && (
+						<div className="grid gap-3 sm:grid-cols-2">
+							<ColorField
+								id="edit-custom-bg"
+								label="Custom background"
+								value={(parsedConfig.customBgColor as string) ?? ""}
+								onChange={(v) => updateConfigField("customBgColor", v || undefined)}
+								placeholder="Theme default"
+							/>
+							<ColorField
+								id="edit-custom-text"
+								label="Custom text"
+								value={(parsedConfig.customTextColor as string) ?? ""}
+								onChange={(v) => updateConfigField("customTextColor", v || undefined)}
+								placeholder="Theme default"
+								contrastAgainst={
+									(parsedConfig.customBgColor as string)
+										? {
+												hex: parsedConfig.customBgColor as string,
+												label: "custom background",
+											}
+										: undefined
+								}
+							/>
+						</div>
 					)}
 
 					{block.type === "embed" && (

@@ -110,12 +110,14 @@ export function ColorsSection({
 						label="Primary"
 						value={primaryColor}
 						onChange={onPrimaryChange}
+						contrastAgainst={bgColor ? { hex: bgColor, label: "background" } : undefined}
 					/>
 					<ColorField
 						id="color-secondary"
 						label="Secondary"
 						value={secondaryColor}
 						onChange={onSecondaryChange}
+						contrastAgainst={bgColor ? { hex: bgColor, label: "background" } : undefined}
 					/>
 					<ColorField
 						id="color-accent"

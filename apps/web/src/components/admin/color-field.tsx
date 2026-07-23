@@ -1,5 +1,6 @@
 "use client";
 
+import { getContrastRatio, getReadableTextColor } from "@linkden/ui/color-contrast";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +11,11 @@ interface ColorFieldProps {
 	value: string;
 	onChange: (value: string) => void;
 	placeholder?: string;
+	/**
+	 * Paired color to check WCAG contrast against (e.g. the background this text
+	 * sits on). Shows a live ratio badge and, on AA failure, a one-tap fix chip.
+	 */
+	contrastAgainst?: { hex: string; label: string };
 }
 
 /**
@@ -42,11 +48,23 @@ function normalizeHex(raw: string): string | null {
  * an inline error when it can't be parsed. The native swatch is only ever fed a
  * valid 7-char value — it falls back to the placeholder default (never `#000000`).
  */
-export function ColorField({ id, label, value, onChange, placeholder }: ColorFieldProps) {
+export function ColorField({
+	id,
+	label,
+	value,
+	onChange,
+	placeholder,
+	contrastAgainst,
+}: ColorFieldProps) {
 	const [error, setError] = useState<string | null>(null);
 	const errorId = `${id}-error`;
 
 	const swatchValue = normalizeHex(value) ?? normalizeHex(placeholder ?? "") ?? "#FFFFFF";
+
+	const contrastHex = contrastAgainst ? normalizeHex(contrastAgainst.hex) : null;
+	const ownHex = normalizeHex(value);
+	const ratio = contrastHex && ownHex ? getContrastRatio(ownHex, contrastHex) : null;
+	const passesAA = ratio !== null && ratio >= 4.5;
 
 	const handleBlur = () => {
 		if (!value.trim()) {
@@ -93,6 +111,27 @@ export function ColorField({ id, label, value, onChange, placeholder }: ColorFie
 			{error && (
 				<p id={errorId} role="alert" className="text-[11px] text-destructive">
 					{error}
+				</p>
+			)}
+			{ratio !== null && contrastAgainst && (
+				<p className="flex items-center gap-2 text-[11px]">
+					<span
+						className={
+							passesAA ? "font-medium text-success" : "font-medium text-warning"
+						}
+					>
+						{ratio.toFixed(1)}:1 vs {contrastAgainst.label}
+						{passesAA ? " — passes AA" : " — fails AA (4.5:1 needed)"}
+					</span>
+					{!passesAA && contrastHex && (
+						<button
+							type="button"
+							onClick={() => onChange(getReadableTextColor(contrastHex).toUpperCase())}
+							className="rounded-full border border-border px-2 py-0.5 font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+						>
+							Fix
+						</button>
+					)}
 				</p>
 			)}
 		</div>
