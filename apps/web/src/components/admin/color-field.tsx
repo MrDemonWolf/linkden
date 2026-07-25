@@ -115,11 +115,7 @@ export function ColorField({
 			)}
 			{ratio !== null && contrastAgainst && (
 				<p className="flex items-center gap-2 text-[11px]">
-					<span
-						className={
-							passesAA ? "font-medium text-success" : "font-medium text-warning"
-						}
-					>
+					<span className={passesAA ? "font-medium text-success" : "font-medium text-warning"}>
 						{ratio.toFixed(1)}:1 vs {contrastAgainst.label}
 						{passesAA ? " — passes AA" : " — fails AA (4.5:1 needed)"}
 					</span>

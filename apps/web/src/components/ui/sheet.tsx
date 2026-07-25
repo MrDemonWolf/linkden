@@ -93,11 +93,7 @@ export function Sheet({
 							</DialogPrimitive.Close>
 						</div>
 					)}
-					{scrollBody ? (
-						<div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
-					) : (
-						children
-					)}
+					{scrollBody ? <div className="min-h-0 flex-1 overflow-y-auto">{children}</div> : children}
 				</DialogPrimitive.Popup>
 			</DialogPrimitive.Portal>
 		</DialogPrimitive.Root>

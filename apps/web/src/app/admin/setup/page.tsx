@@ -930,7 +930,8 @@ export default function SetupPage() {
 			// non-blocking — profile can be edited later, but surface why the save failed
 			const msg = err instanceof Error && err.message ? err.message : "Could not save profile";
 			toast.error(msg, {
-				description: "You can finish your profile later in the admin panel. If this keeps happening, check the server logs.",
+				description:
+					"You can finish your profile later in the admin panel. If this keeps happening, check the server logs.",
 			});
 		} finally {
 			setIsSubmitting(false);
@@ -948,7 +949,8 @@ export default function SetupPage() {
 			// non-blocking — theme can be changed later, but surface why the save failed
 			const msg = err instanceof Error && err.message ? err.message : "Could not save theme";
 			toast.error(msg, {
-				description: "You can pick a theme later under Appearance. If this keeps happening, check the server logs.",
+				description:
+					"You can pick a theme later under Appearance. If this keeps happening, check the server logs.",
 			});
 		} finally {
 			setIsSubmitting(false);

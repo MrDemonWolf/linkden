@@ -292,10 +292,7 @@ export default function AdminDashboardPage() {
 
 			{/* Callout banner */}
 			<div {...getAnimationProps(1)}>
-				<Card
-					size="sm"
-					className="relative overflow-hidden border border-primary/20 bg-primary/5"
-				>
+				<Card size="sm" className="relative overflow-hidden border border-primary/20 bg-primary/5">
 					<div
 						className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent pointer-events-none"
 						aria-hidden="true"
