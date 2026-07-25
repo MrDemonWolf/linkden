@@ -5,7 +5,7 @@ import { Eye, Link2, MousePointerClick, Percent } from "lucide-react";
 import { useState } from "react";
 import { CountriesList } from "@/components/admin/analytics/countries-list";
 import { ReferrersList } from "@/components/admin/analytics/referrers-list";
-import { TopLinksList } from "@/components/admin/analytics/top-links-list";
+import { TopLinksList } from "@/components/admin/top-links-list";
 import { ViewsClicksChart } from "@/components/admin/analytics/views-clicks-chart";
 import { PageHeader } from "@/components/admin/page-header";
 import { type Period, PeriodSelector } from "@/components/admin/period-selector";

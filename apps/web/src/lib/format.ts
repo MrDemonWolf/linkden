@@ -8,6 +8,15 @@ export function initials(name?: string | null): string {
 		.toUpperCase();
 }
 
+export function extractDomain(url: string | null): string {
+	if (!url) return "—";
+	try {
+		return new URL(url).hostname.replace("www.", "");
+	} catch {
+		return url;
+	}
+}
+
 export function relativeTime(date: string | Date): string {
 	const d = typeof date === "string" ? new Date(date) : date;
 	const now = Date.now();
