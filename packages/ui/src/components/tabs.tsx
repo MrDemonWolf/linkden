@@ -2,7 +2,7 @@ import * as React from "react";
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import { cn } from "../utils";
 
-type TabsVariant = "default" | "pills";
+type TabsVariant = "default" | "pills" | "bar";
 
 const TabsContext = React.createContext<TabsVariant>("default");
 
@@ -19,7 +19,9 @@ const TabsList = React.forwardRef<
 			className={cn(
 				variant === "pills"
 					? "flex gap-2 overflow-x-auto scrollbar-none bg-transparent p-0"
-					: "inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground",
+					: variant === "bar"
+						? "grid auto-cols-fr grid-flow-col bg-transparent p-0"
+						: "inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground",
 				className,
 			)}
 			{...props}
@@ -46,6 +48,14 @@ const TabsTrigger = React.forwardRef<
 		"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 	].join(" ");
 
+	// iOS-style tab-bar trigger: icon stacked over a small label, tinted when active.
+	const barClasses = [
+		"flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1.5 text-[10px] font-medium transition-colors",
+		"text-muted-foreground hover:text-foreground",
+		"data-[active]:text-primary",
+		"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+	].join(" ");
+
 	return (
 		<TabsPrimitive.Tab
 			ref={ref}
@@ -53,13 +63,15 @@ const TabsTrigger = React.forwardRef<
 			className={cn(
 				variant === "pills"
 					? pillsClasses
-					: [
-							"inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all",
-							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-							"disabled:pointer-events-none disabled:opacity-50",
-							"text-muted-foreground hover:text-foreground",
-							"data-[active]:bg-primary/15 data-[active]:text-primary data-[active]:shadow-sm data-[active]:ring-1 data-[active]:ring-primary/25",
-						],
+					: variant === "bar"
+						? barClasses
+						: [
+								"inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all",
+								"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+								"disabled:pointer-events-none disabled:opacity-50",
+								"text-muted-foreground hover:text-foreground",
+								"data-[active]:bg-primary/15 data-[active]:text-primary data-[active]:shadow-sm data-[active]:ring-1 data-[active]:ring-primary/25",
+							],
 				className,
 			)}
 			{...props}
