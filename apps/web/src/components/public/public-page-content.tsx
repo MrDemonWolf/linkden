@@ -65,9 +65,6 @@ export interface PageContentProps {
 	colorMode: "light" | "dark";
 }
 
-/** @deprecated Use PageContentProps instead */
-export type PublicPageContentProps = PageContentProps;
-
 function parseConfig(config: string | null): Record<string, unknown> {
 	if (!config) return {};
 	try {
@@ -359,6 +356,3 @@ export function PageContent({
 		</div>
 	);
 }
-
-/** @deprecated Use PageContent instead */
-export const PublicPageContent = PageContent;

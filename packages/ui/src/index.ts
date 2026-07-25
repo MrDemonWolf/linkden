@@ -1,11 +1,8 @@
 export { cn } from "./utils";
 
 // Components
-export { Button, buttonVariants } from "./components/button";
-export type { ButtonProps } from "./components/button";
-
-export { Input } from "./components/input";
-export type { InputProps } from "./components/input";
+export { buttonVariants } from "./components/button";
+export type { ButtonVariantProps } from "./components/button";
 
 export { Switch } from "./components/switch";
 
@@ -30,8 +27,6 @@ export { Avatar, AvatarImage, AvatarFallback } from "./components/avatar";
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./components/tabs";
 
 export { Separator } from "./components/separator";
-
-export { Label } from "./components/label";
 
 // Theme system
 export type { ThemePreset } from "./themes";

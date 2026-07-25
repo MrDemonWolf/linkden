@@ -3,7 +3,7 @@
 import { getContrastRatio, getReadableTextColor } from "@linkden/ui/color-contrast";
 import { themePresets } from "@linkden/ui/themes";
 import { useState } from "react";
-import { PublicPageContent } from "./public-page-content";
+import { PageContent } from "./public-page-content";
 import { ThemeToggle } from "./theme-toggle";
 
 interface PageData {
@@ -203,7 +203,7 @@ export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolea
 
 			<ThemeToggle colorMode={colorMode} onToggle={toggleColorMode} themeColors={themeColors} />
 
-			<PublicPageContent
+			<PageContent
 				profile={data.profile}
 				blocks={data.blocks}
 				socialNetworks={data.socialNetworks}

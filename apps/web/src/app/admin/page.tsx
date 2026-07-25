@@ -13,7 +13,6 @@ import {
 	Plus,
 	Share2,
 	Sparkles,
-	Trophy,
 	Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -32,7 +31,7 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import { QueryError } from "@/components/admin/dashboard/query-error";
-import { TopLinksList } from "@/components/admin/dashboard/top-links-list";
+import { TopLinksList } from "@/components/admin/top-links-list";
 import { type Period, PeriodSelector } from "@/components/admin/period-selector";
 import { StatCard } from "@/components/admin/stat-card";
 import { Button } from "@/components/ui/button";
@@ -41,7 +40,7 @@ import { type ChartConfig, ChartContainer, ChartTooltipContent } from "@/compone
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 import { authClient } from "@/lib/auth-client";
-import { relativeTime } from "@/lib/format";
+import { extractDomain, relativeTime } from "@/lib/format";
 import { trpc } from "@/utils/trpc";
 
 const barChartConfig: ChartConfig = {
@@ -71,15 +70,6 @@ function computeTrend(current: number, previous: number): { value: number; label
 	}
 	const pct = Math.round(((current - previous) / previous) * 100);
 	return { value: pct, label: `${pct > 0 ? "+" : ""}${pct}%` };
-}
-
-function extractDomain(url: string | null): string {
-	if (!url) return "—";
-	try {
-		return new URL(url).hostname.replace("www.", "");
-	} catch {
-		return url;
-	}
 }
 
 function getGreeting(hour: number): string {
@@ -543,29 +533,19 @@ export default function AdminDashboardPage() {
 				</div>
 
 				<div {...getAnimationProps(8)}>
-					<Card className="h-full">
-						<CardHeader>
-							<CardTitle className="flex items-center gap-1.5">
-								<Trophy className="h-4 w-4 text-blue-400" aria-hidden="true" />
-								Top links
-							</CardTitle>
-						</CardHeader>
-						<CardContent>
-							{topLinks.isError ? (
-								<QueryError onRetry={() => topLinks.refetch()} />
-							) : (
-								<TopLinksList
-									data={topLinks.data?.map((l) => ({
-										id: l.id,
-										title: (l.title as string | null) ?? null,
-										url: (l.url as string | null) ?? null,
-										clicks: (l.clicks as number) ?? 0,
-									}))}
-									isLoading={topLinks.isLoading}
-								/>
-							)}
-						</CardContent>
-					</Card>
+					<TopLinksList
+						className="h-full"
+						title="Top links"
+						items={topLinks.data?.map((l) => ({
+							id: l.id,
+							title: (l.title as string | null) ?? null,
+							url: (l.url as string | null) ?? null,
+							clicks: (l.clicks as number) ?? 0,
+						}))}
+						isLoading={topLinks.isLoading}
+						isError={topLinks.isError}
+						onRetry={() => topLinks.refetch()}
+					/>
 				</div>
 			</div>
 
