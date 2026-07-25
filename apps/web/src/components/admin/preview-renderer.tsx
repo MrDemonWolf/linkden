@@ -156,6 +156,7 @@ export function PreviewRenderer({
 
 	const settingsQuery = useQuery(trpc.settings.getAll.queryOptions());
 	const settings = settingsQuery.data ?? {};
+	const blocksQuery = useQuery(trpc.blocks.list.queryOptions());
 
 	const [systemPrefersDark, setSystemPrefersDark] = useState(false);
 	useEffect(() => {
@@ -197,9 +198,25 @@ export function PreviewRenderer({
 		socialIconShape: (settings.social_icon_shape as "circle" | "rounded-square") || "circle",
 	};
 
-	// Merge overrides with live data — always use dummy blocks
+	// Merge overrides with live data. Prefer the page's real blocks so this
+	// preview matches what the builder (and the live page) actually show; the
+	// dummy set only backs an empty page so theming is still previewable.
 	const profile = { ...liveProfile, ...overrides?.profile };
-	const blocks = DUMMY_BLOCKS;
+	const liveBlocks = (blocksQuery.data ?? [])
+		.filter((b) => b.isEnabled)
+		.map((b) => ({
+			id: b.id,
+			type: b.type,
+			title: b.title,
+			url: b.url,
+			icon: b.icon,
+			embedType: b.embedType,
+			embedUrl: b.embedUrl,
+			socialIcons: b.socialIcons,
+			config: b.config,
+			position: b.position,
+		}));
+	const blocks = liveBlocks.length > 0 ? liveBlocks : DUMMY_BLOCKS;
 	const themeColors = overrides?.themeColors ?? liveThemeColors;
 	const mergedSettings = { ...liveSettings, ...overrides?.settings };
 
@@ -227,10 +244,12 @@ export function PreviewRenderer({
 							<button
 								type="button"
 								onClick={() => handleModeChange("light")}
+								aria-pressed={previewMode === "light"}
 								className={cn(
 									"flex items-center justify-center rounded-md p-1.5 transition-all",
+									"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
 									previewMode === "light"
-										? "bg-white/20 text-foreground shadow-sm"
+										? "bg-white/20 text-foreground shadow-sm ring-1 ring-inset ring-primary/40"
 										: "text-muted-foreground hover:text-foreground",
 								)}
 								aria-label="Light preview"
@@ -240,10 +259,12 @@ export function PreviewRenderer({
 							<button
 								type="button"
 								onClick={() => handleModeChange("dark")}
+								aria-pressed={previewMode === "dark"}
 								className={cn(
 									"flex items-center justify-center rounded-md p-1.5 transition-all",
+									"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
 									previewMode === "dark"
-										? "bg-white/20 text-foreground shadow-sm"
+										? "bg-white/20 text-foreground shadow-sm ring-1 ring-inset ring-primary/40"
 										: "text-muted-foreground hover:text-foreground",
 								)}
 								aria-label="Dark preview"

@@ -208,7 +208,7 @@ function SortableFieldRow({
 			<button
 				type="button"
 				onClick={onRemove}
-				className="mt-1.5 rounded p-1 text-muted-foreground/40 opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+				className="mt-1.5 rounded p-1 text-muted-foreground/40 opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 				aria-label="Delete field"
 			>
 				<Trash2 className="h-3 w-3" />

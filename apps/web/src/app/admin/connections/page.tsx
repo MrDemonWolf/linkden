@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Filter, Handshake, MailCheck, MessageSquare, Trash2, X } from "lucide-react";
+import { Filter, Handshake, MailCheck, MessageSquare, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/admin/page-header";
 import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Sheet } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 
@@ -350,44 +351,25 @@ export default function ConnectionsPage() {
 			</div>
 
 			{/* Mobile detail overlay */}
-			{mobileDetailOpen && selectedConnection && (
-				<div className="fixed inset-0 z-50 md:hidden">
-					<button
-						type="button"
-						className="fixed inset-0 bg-black/40 backdrop-blur-sm"
-						onClick={() => setMobileDetailOpen(false)}
-						aria-label="Close"
+			{selectedConnection && (
+				<Sheet
+					open={mobileDetailOpen}
+					onOpenChange={setMobileDetailOpen}
+					title="Connection Details"
+					breakpoint="md"
+				>
+					<ConnectionDetail
+						connection={selectedConnection}
+						onMarkRead={() => handleMarkRead(selectedConnection.id)}
+						onMarkUnread={() => handleMarkUnread(selectedConnection.id)}
+						onDelete={() => {
+							setMobileDetailOpen(false);
+							setDeleteConfirmId(selectedConnection.id);
+						}}
+						isMarkingRead={markRead.isPending}
+						isMarkingUnread={markUnread.isPending}
 					/>
-					<div
-						role="dialog"
-						aria-modal="true"
-						aria-label="Connection details"
-						className="fixed inset-x-0 bottom-0 z-10 max-h-[85vh] overflow-y-auto rounded-t-2xl border-t bg-background shadow-xl animate-in slide-in-from-bottom duration-200"
-					>
-						<div className="sticky top-0 flex items-center justify-between border-b bg-background px-4 py-2">
-							<h2 className="text-xs font-semibold">Connection Details</h2>
-							<button
-								type="button"
-								onClick={() => setMobileDetailOpen(false)}
-								className="rounded-lg p-1.5 hover:bg-muted"
-								aria-label="Close details"
-							>
-								<X className="h-4 w-4" />
-							</button>
-						</div>
-						<ConnectionDetail
-							connection={selectedConnection}
-							onMarkRead={() => handleMarkRead(selectedConnection.id)}
-							onMarkUnread={() => handleMarkUnread(selectedConnection.id)}
-							onDelete={() => {
-								setMobileDetailOpen(false);
-								setDeleteConfirmId(selectedConnection.id);
-							}}
-							isMarkingRead={markRead.isPending}
-							isMarkingUnread={markUnread.isPending}
-						/>
-					</div>
-				</div>
+				</Sheet>
 			)}
 
 			{/* Single delete confirm */}
