@@ -6,6 +6,8 @@ import { eq, asc, sql } from "drizzle-orm";
 import { z } from "zod";
 import { transformLinkStackData } from "../utils/linkstack-transformer";
 import { upsertSetting } from "../utils/settings";
+import { VALID_SETTING_KEYS } from "@linkden/validators/settings";
+import { sanitizeSetting } from "./settings";
 import {
 	blockImportSchema,
 	socialNetworkImportSchema,
@@ -108,9 +110,26 @@ export const backupRouter = router({
 			}
 
 			if (data.settings) {
+				// Run the same whitelist + sanitization pipeline as settings.update —
+				// otherwise a crafted backup can plant unvalidated values (e.g. a
+				// non-#RRGGBB custom color that downstream inline styling relies on).
 				const entries = Object.entries(data.settings);
+				let skippedSettings = 0;
 				for (const [key, value] of entries) {
-					await upsertSetting(key, value);
+					if (!(VALID_SETTING_KEYS as readonly string[]).includes(key)) {
+						skippedSettings++;
+						continue;
+					}
+					try {
+						await upsertSetting(key, sanitizeSetting(key, value));
+					} catch {
+						skippedSettings++;
+					}
+				}
+				if (skippedSettings > 0) {
+					await logAudit("backup.import.skipped_settings", undefined, undefined, {
+						count: skippedSettings,
+					});
 				}
 			}
 

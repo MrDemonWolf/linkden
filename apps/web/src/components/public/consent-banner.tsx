@@ -168,6 +168,18 @@ export function ConsentBanner({ settings, themeColors }: ConsentBannerProps) {
 	const panelStyle: React.CSSProperties | undefined = themeColors
 		? { backgroundColor: themeColors.muted, borderColor: themeColors.border }
 		: undefined;
+	// Fully inline-styled tinted button — the class fallback's border/bg would
+	// otherwise stay on admin tokens even when the page theme is applied.
+	// Hex-alpha concat only works on #RRGGBB values; anything else (an
+	// unsanitized import, rgb() string) falls back to the untinted color.
+	const primaryIsHex6 = themeColors ? /^#[0-9a-fA-F]{6}$/.test(themeColors.primary) : false;
+	const tintedBtnStyle: React.CSSProperties | undefined = themeColors
+		? {
+				color: themeColors.primary,
+				borderColor: primaryIsHex6 ? `${themeColors.primary}4D` : themeColors.border,
+				backgroundColor: primaryIsHex6 ? `${themeColors.primary}1A` : themeColors.muted,
+			}
+		: undefined;
 
 	// A non-modal <section> (implicit role="region"), not role="dialog": the banner
 	// must not trap focus or block the page — visitors can ignore it and keep using
@@ -199,7 +211,7 @@ export function ConsentBanner({ settings, themeColors }: ConsentBannerProps) {
 					<button
 						type="button"
 						onClick={essentialOnly}
-						className="rounded-lg border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
+						className="rounded-lg border px-4 py-2 text-sm font-medium transition-opacity hover:opacity-80"
 						style={secondaryBtnStyle}
 					>
 						Decline
@@ -316,7 +328,7 @@ export function ConsentBanner({ settings, themeColors }: ConsentBannerProps) {
 					<button
 						type="button"
 						onClick={() => setShowPreferences(!showPreferences)}
-						className="rounded-lg border px-3 py-2 text-sm font-medium transition-colors hover:bg-muted"
+						className="rounded-lg border px-3 py-2 text-sm font-medium transition-opacity hover:opacity-80"
 						style={secondaryBtnStyle}
 					>
 						{showPreferences ? "Hide Preferences" : "Manage Preferences"}
@@ -325,8 +337,8 @@ export function ConsentBanner({ settings, themeColors }: ConsentBannerProps) {
 						<button
 							type="button"
 							onClick={acceptSelected}
-							className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/20"
-							style={linkStyle}
+							className="rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm font-medium text-primary transition-colors hover:brightness-110"
+							style={tintedBtnStyle}
 						>
 							Accept Selected
 						</button>
@@ -334,7 +346,7 @@ export function ConsentBanner({ settings, themeColors }: ConsentBannerProps) {
 					<button
 						type="button"
 						onClick={essentialOnly}
-						className="rounded-lg border px-3 py-2 text-sm font-medium transition-colors hover:bg-muted"
+						className="rounded-lg border px-3 py-2 text-sm font-medium transition-opacity hover:opacity-80"
 						style={secondaryBtnStyle}
 					>
 						Essential Only
