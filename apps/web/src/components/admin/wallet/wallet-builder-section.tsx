@@ -10,11 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { FieldGroup } from "@/components/admin/settings/field-group";
-import type {
-	PassField,
-	PassLocation,
-	PassTemplatePreset,
-} from "@linkden/validators/wallet";
+import type { PassField, PassLocation, PassTemplatePreset } from "@linkden/validators/wallet";
 import { TemplatePresetPicker } from "./template-preset-picker";
 import { PassImageSlots } from "./pass-image-slots";
 import { PassFieldEditor } from "./pass-field-editor";
@@ -414,4 +410,3 @@ function Section({
 		</div>
 	);
 }
-

@@ -144,9 +144,9 @@ export default function WalletPage() {
 						<Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
 						<p className="text-xs leading-relaxed text-muted-foreground">
 							<span className="font-medium text-foreground">Preview only.</span> Issuing a signed{" "}
-							<span className="font-mono">.pkpass</span> is coming soon. The design you save here
-							is stored and ready — you&apos;ll be able to issue passes from this page once the
-							signing endpoint ships.
+							<span className="font-mono">.pkpass</span> is coming soon. The design you save here is
+							stored and ready — you&apos;ll be able to issue passes from this page once the signing
+							endpoint ships.
 						</p>
 					</div>
 				</div>

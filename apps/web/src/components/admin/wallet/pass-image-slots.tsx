@@ -36,7 +36,11 @@ const SLOT_DEFS = [
 export function PassImageSlots({ slots, onChange, ...urls }: Props) {
 	const defs = SLOT_DEFS.filter((d) => !slots || slots.includes(d.key));
 	return (
-		<div className={defs.length === 1 ? "grid grid-cols-1 gap-4" : "grid grid-cols-2 gap-4 sm:grid-cols-4"}>
+		<div
+			className={
+				defs.length === 1 ? "grid grid-cols-1 gap-4" : "grid grid-cols-2 gap-4 sm:grid-cols-4"
+			}
+		>
 			{defs.map((d) => (
 				<ImageUploadField
 					key={d.key}
