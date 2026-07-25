@@ -49,7 +49,9 @@ function sanitizeCss(css: string): string {
 		.replace(/-moz-binding\s*:/gi, "");
 }
 
-function sanitizeSetting(key: string, value: string): string {
+// Exported so backup.import runs the same whitelist + sanitization pipeline
+// instead of raw upserts. Per-key behavior comes from the settings registry.
+export function sanitizeSetting(key: string, value: string): string {
 	const meta = getSettingMeta(key);
 	switch (meta?.kind) {
 		case "text": {

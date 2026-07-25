@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { ShaderBanner } from "@/components/public/shader-banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -904,7 +905,9 @@ export default function SetupPage() {
 						goStep(2);
 					},
 					onError: (error) => {
-						const msg = error.error.message || "Something went wrong — please try again";
+						const msg =
+							error.error.message ||
+							"Something went wrong — please try again. If this keeps happening, check the server logs.";
 						setFormErrors({ form: msg });
 					},
 				},
@@ -923,8 +926,13 @@ export default function SetupPage() {
 			if (displayName.trim()) updates.push({ key: "profile_name", value: displayName.trim() });
 			if (bio.trim()) updates.push({ key: "bio", value: bio.trim() });
 			if (updates.length > 0) await updateBulk.mutateAsync(updates);
-		} catch {
-			// non-blocking
+		} catch (err) {
+			// non-blocking — profile can be edited later, but surface why the save failed
+			const msg = err instanceof Error && err.message ? err.message : "Could not save profile";
+			toast.error(msg, {
+				description:
+					"You can finish your profile later in the admin panel. If this keeps happening, check the server logs.",
+			});
 		} finally {
 			setIsSubmitting(false);
 			goStep(3);
@@ -937,8 +945,13 @@ export default function SetupPage() {
 		try {
 			type BulkInput = Parameters<typeof updateBulk.mutateAsync>[0];
 			await updateBulk.mutateAsync([{ key: "theme_preset", value: themePreset }] as BulkInput);
-		} catch {
-			// non-blocking
+		} catch (err) {
+			// non-blocking — theme can be changed later, but surface why the save failed
+			const msg = err instanceof Error && err.message ? err.message : "Could not save theme";
+			toast.error(msg, {
+				description:
+					"You can pick a theme later under Appearance. If this keeps happening, check the server logs.",
+			});
 		} finally {
 			setIsSubmitting(false);
 			clearProgress();

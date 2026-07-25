@@ -8,6 +8,8 @@ import { z } from "zod";
 import { transformLinkStackData } from "../utils/linkstack-transformer";
 import { runBatch, settingUpsertStmt } from "../utils/settings";
 import { shouldBackup } from "@linkden/validators/settings-registry";
+import { VALID_SETTING_KEYS } from "@linkden/validators/settings";
+import { sanitizeSetting } from "./settings";
 import {
 	blockImportSchema,
 	socialNetworkImportSchema,
@@ -72,6 +74,7 @@ export const backupRouter = router({
 			// failure can't leave a half-wiped / half-restored database. Merge uses
 			// upsert semantics (no read-then-write), so both modes are atomic.
 			const stmts: BatchItem<"sqlite">[] = [];
+			let skippedSettings = 0;
 
 			if (mode === "replace") {
 				if (data.blocks) stmts.push(db.delete(block));
@@ -90,8 +93,23 @@ export const backupRouter = router({
 			}
 
 			if (data.settings) {
+				// Run the same whitelist + sanitization pipeline as settings.update —
+				// otherwise a crafted backup can plant unvalidated values (e.g. a
+				// non-#RRGGBB custom color that downstream inline styling relies on).
+				// Sanitization happens while building the batch; the writes still land
+				// atomically via runBatch below.
 				for (const [key, value] of Object.entries(data.settings)) {
-					stmts.push(settingUpsertStmt(key, value));
+					if (!(VALID_SETTING_KEYS as readonly string[]).includes(key)) {
+						skippedSettings++;
+						continue;
+					}
+					try {
+						stmts.push(settingUpsertStmt(key, sanitizeSetting(key, value)));
+					} catch {
+						// Value failed validation (bad URL/color/timezone/…) — skip it
+						// rather than aborting the whole restore.
+						skippedSettings++;
+					}
 				}
 			}
 
@@ -118,6 +136,11 @@ export const backupRouter = router({
 			}
 
 			await runBatch(stmts);
+			if (skippedSettings > 0) {
+				await logAudit("backup.import.skipped_settings", undefined, undefined, {
+					count: skippedSettings,
+				});
+			}
 			await logAudit("backup.import", undefined, undefined, { mode });
 			return { success: true };
 		}),

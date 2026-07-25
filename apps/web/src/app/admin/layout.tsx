@@ -74,7 +74,10 @@ function DesktopTopBar({ pathname }: { pathname: string }) {
 
 	return (
 		<div className="hidden md:flex h-14 shrink-0 items-center justify-between border-b border-border px-6">
-			<h2 className="text-sm font-semibold">{currentPageLabel}</h2>
+			{/* Non-heading label: pages own their single h1 via PageHeader */}
+			<span className="text-[10px] font-mono font-medium uppercase tracking-[0.14em] text-muted-foreground">
+				{currentPageLabel}
+			</span>
 			<div className="flex items-center gap-3">
 				<ThemeToggle />
 				<a href="/" target="_blank" rel="noopener noreferrer">

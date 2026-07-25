@@ -46,6 +46,7 @@ import { SharedPreview } from "@/components/admin/shared-preview";
 import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Sheet } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { cn } from "@/lib/utils";
@@ -252,23 +253,10 @@ export default function BuilderPage() {
 		return () => mq.removeEventListener("change", update);
 	}, []);
 
-	// Below lg the edit panel is presented as a full-screen bottom sheet. Lock
-	// body scroll + wire Escape only while that sheet is actually mounted.
+	// Below lg the edit panel is presented as a full-screen bottom sheet.
+	// Escape handling and body scroll lock come from the Sheet primitive.
 	const mobileEditOpen = activeTab === "blocks" && !!editingBlock;
 	const mobileSheetOpen = mobileEditOpen && !isLg;
-	useEffect(() => {
-		if (!mobileSheetOpen) return;
-		const onKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") closeEdit();
-		};
-		document.addEventListener("keydown", onKey);
-		const prevOverflow = document.body.style.overflow;
-		document.body.style.overflow = "hidden";
-		return () => {
-			document.removeEventListener("keydown", onKey);
-			document.body.style.overflow = prevOverflow;
-		};
-	}, [mobileSheetOpen, closeEdit]);
 
 	const handleSaveEdit = async (data: Partial<Block>) => {
 		try {
@@ -651,33 +639,30 @@ export default function BuilderPage() {
 
 			{/* Mobile block edit sheet — below lg the edit panel is impossible to
 			    reach inline, so present it as a full-screen bottom sheet. */}
-			{mobileSheetOpen && editingBlock && (
-				<div className="fixed inset-0 z-50 lg:hidden">
-					<div
-						className="fixed inset-0 bg-black/40 backdrop-blur-sm"
-						onClick={closeEdit}
-						aria-hidden="true"
+			{editingBlock && (
+				<Sheet
+					open={mobileSheetOpen}
+					onOpenChange={(open) => {
+						if (!open) closeEdit();
+					}}
+					ariaLabel="Edit block"
+					breakpoint="lg"
+					className="h-[90vh] max-h-none bg-card"
+					scrollBody={false}
+				>
+					<BlockEditPanel
+						block={editingBlock}
+						onClose={closeEdit}
+						onChange={setEditingOverrides}
+						onSave={handleSaveEdit}
+						onDelete={() => {
+							const b = editingBlock;
+							closeEdit();
+							handleDelete(b);
+						}}
+						isSaving={updateBlock.isPending}
 					/>
-					<div
-						role="dialog"
-						aria-modal="true"
-						aria-label="Edit block"
-						className="fixed inset-x-0 bottom-0 z-10 flex h-[90vh] flex-col overflow-hidden rounded-t-2xl border-t border-border bg-card shadow-xl animate-in slide-in-from-bottom duration-300"
-					>
-						<BlockEditPanel
-							block={editingBlock}
-							onClose={closeEdit}
-							onChange={setEditingOverrides}
-							onSave={handleSaveEdit}
-							onDelete={() => {
-								const b = editingBlock;
-								closeEdit();
-								handleDelete(b);
-							}}
-							isSaving={updateBlock.isPending}
-						/>
-					</div>
-				</div>
+				</Sheet>
 			)}
 		</div>
 	);

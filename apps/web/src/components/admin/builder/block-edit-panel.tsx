@@ -5,7 +5,9 @@ import { X, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { ColorField } from "../color-field";
 import { type Block, EMBED_URL_PATTERNS, validateEmbedUrl } from "./builder-constants";
 import { CollapsibleSection } from "./collapsible-section";
 
@@ -50,25 +52,7 @@ function ToggleSwitch({
 				<Label htmlFor={id}>{label}</Label>
 				{description && <p className="text-[11px] text-muted-foreground">{description}</p>}
 			</div>
-			<button
-				id={id}
-				type="button"
-				role="switch"
-				aria-checked={checked}
-				aria-label={label}
-				onClick={onToggle}
-				className={cn(
-					"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
-					checked ? "bg-primary" : "bg-muted",
-				)}
-			>
-				<span
-					className={cn(
-						"inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform",
-						checked ? "translate-x-[18px]" : "translate-x-[3px]",
-					)}
-				/>
-			</button>
+			<Switch id={id} checked={checked} onCheckedChange={() => onToggle()} aria-label={label} />
 		</div>
 	);
 }
@@ -796,6 +780,33 @@ export function BlockEditPanel({
 								</GlassSelect>
 							</div>
 						</>
+					)}
+
+					{(block.type === "link" || block.type === "connect" || block.type === "vcard") && (
+						<div className="grid gap-3 sm:grid-cols-2">
+							<ColorField
+								id="edit-custom-bg"
+								label="Custom background"
+								value={(parsedConfig.customBgColor as string) ?? ""}
+								onChange={(v) => updateConfigField("customBgColor", v || undefined)}
+								placeholder="Theme default"
+							/>
+							<ColorField
+								id="edit-custom-text"
+								label="Custom text"
+								value={(parsedConfig.customTextColor as string) ?? ""}
+								onChange={(v) => updateConfigField("customTextColor", v || undefined)}
+								placeholder="Theme default"
+								contrastAgainst={
+									(parsedConfig.customBgColor as string)
+										? {
+												hex: parsedConfig.customBgColor as string,
+												label: "custom background",
+											}
+										: undefined
+								}
+							/>
+						</div>
 					)}
 
 					{block.type === "embed" && (

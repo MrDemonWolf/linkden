@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
+import { PageHeader } from "@/components/admin/page-header";
 import { PreviewRenderer } from "@/components/admin/preview-renderer";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { ThemePresetsSection } from "@/components/admin/appearance/theme-presets-section";
@@ -296,29 +297,30 @@ export default function AppearancePage() {
 	return (
 		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
 			{/* Page header */}
-			<div className="flex items-center justify-between gap-3">
-				<div className="min-w-0">
-					<h1 className="text-base font-semibold tracking-tight">Appearance</h1>
-					<p
+			<PageHeader
+				title="Appearance"
+				badge={
+					<span
 						className={cn(
 							"text-xs transition-colors",
 							isDirty ? "text-warning" : "text-muted-foreground",
 						)}
 					>
 						{isDirty ? "Unsaved changes" : "All changes saved"}
-					</p>
-				</div>
-				{/* Mobile preview button */}
-				<Button
-					variant="outline"
-					size="sm"
-					className="lg:hidden"
-					onClick={() => setShowMobilePreview(true)}
-				>
-					<Eye className="mr-1.5 h-3.5 w-3.5" />
-					Preview
-				</Button>
-			</div>
+					</span>
+				}
+				actions={
+					<Button
+						variant="outline"
+						size="sm"
+						className="lg:hidden"
+						onClick={() => setShowMobilePreview(true)}
+					>
+						<Eye className="mr-1.5 h-3.5 w-3.5" />
+						Preview
+					</Button>
+				}
+			/>
 
 			{/* Two-column layout: settings left, preview right */}
 			<div className="flex gap-6">

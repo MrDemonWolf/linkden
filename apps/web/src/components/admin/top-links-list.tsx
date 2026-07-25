@@ -4,6 +4,7 @@ import { ExternalLink, Trophy } from "lucide-react";
 import { QueryError } from "@/components/admin/dashboard/query-error";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { extractDomain } from "@/lib/format";
 
 interface TopLinkItem {
 	id?: string | number | null;
@@ -19,15 +20,7 @@ interface TopLinksListProps {
 	onRetry?: () => void;
 	limit?: number;
 	title?: string;
-}
-
-function extractDomain(url: string | null): string {
-	if (!url) return "—";
-	try {
-		return new URL(url).hostname.replace("www.", "");
-	} catch {
-		return url;
-	}
+	className?: string;
 }
 
 export function TopLinksList({
@@ -37,12 +30,13 @@ export function TopLinksList({
 	onRetry,
 	limit = 5,
 	title = "Top Links",
+	className,
 }: TopLinksListProps) {
 	const data = (items ?? []).slice(0, limit);
 	const max = data[0]?.clicks ?? 0;
 
 	return (
-		<Card>
+		<Card className={className}>
 			<CardHeader>
 				<CardTitle className="flex items-center gap-1.5">
 					<Trophy className="h-4 w-4 text-primary" aria-hidden="true" />
