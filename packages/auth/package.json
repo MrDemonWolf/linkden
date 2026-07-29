@@ -9,9 +9,12 @@
 			"default": "./src/*.ts"
 		}
 	},
-	"scripts": {},
+	"scripts": {
+		"check-types": "tsc --noEmit"
+	},
 	"dependencies": {
 		"@linkden/db": "workspace:*",
+		"@linkden/email": "workspace:*",
 		"@linkden/env": "workspace:*",
 		"better-auth": "catalog:",
 		"dotenv": "catalog:",

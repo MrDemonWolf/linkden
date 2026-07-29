@@ -1,12 +1,4 @@
 {
 	"title": "Self-Hosting",
-	"pages": [
-		"cloudflare",
-		"docker",
-		"coolify",
-		"railway",
-		"environment-variables",
-		"custom-domain",
-		"troubleshooting"
-	]
+	"pages": ["cloudflare", "environment-variables", "custom-domain", "troubleshooting"]
 }

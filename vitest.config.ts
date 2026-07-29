@@ -12,7 +12,18 @@ export default defineConfig({
 		coverage: {
 			provider: "v8",
 			reporter: ["text", "html", "lcov"],
-			include: ["apps/**/src/**", "packages/**/src/**"],
+			// Scope coverage to the backend logic we unit-test. UI components and
+			// Next/docs pages are exercised via the app, not the unit suite, so
+			// including them would make the thresholds meaningless.
+			include: [
+				"packages/api/src/utils/**",
+				"packages/api/src/routers/version.ts",
+				"packages/validators/src/**",
+				"packages/db/src/retention.ts",
+				"packages/db/src/testing.ts",
+				"packages/email/src/**",
+				"apps/server/src/lib/**",
+			],
 			exclude: [
 				"**/node_modules/**",
 				"**/.next/**",
@@ -22,7 +33,15 @@ export default defineConfig({
 				"**/*.config.*",
 				"**/*.test.{ts,tsx}",
 				"**/__tests__/**",
+				"**/index.ts",
 			],
+			// A ratchet floor to prevent regressions — raise as coverage grows.
+			thresholds: {
+				statements: 60,
+				branches: 60,
+				functions: 55,
+				lines: 60,
+			},
 		},
 	},
 	resolve: {

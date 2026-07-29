@@ -72,7 +72,7 @@ LinkDen has a solid set of **baseline technical controls** in place (authenticat
 | A.5.27 | Learning from incidents | ❌ Not Implemented | None | No post-incident review process. | 🟡 Medium |
 | A.5.28 | Collection of evidence | ❌ Not Implemented | None | No evidence preservation procedure. Basic Hono request log is not forensics-grade. | 🟡 Medium |
 | A.5.29 | IS during disruption | ❌ Not Implemented | None | No business continuity plan for IS during service disruption. | 🟡 Medium |
-| A.5.30 | ICT readiness for BC | ❌ Not Implemented | None | No automated backups. Manual export only. No RTO/RPO defined. Docker uses named volume with no backup. | 🔴 High |
+| A.5.30 | ICT readiness for BC | ❌ Not Implemented | None | No automated backups. Manual export only. No RTO/RPO defined. Relies on Cloudflare D1 durability. | 🔴 High |
 | A.5.31 | Legal/regulatory compliance | 🟡 Partial | Privacy policy in docs; GDPR audit in progress | No formal compliance register. GDPR obligations not fully implemented (see GDPR audit). | 🟡 Medium |
 | A.5.33 | Protection of records | 🟡 Partial | Cloudflare D1 provides some durability | No formal records retention policy. Analytics and contact data accumulate indefinitely. No backup of D1. | 🟡 Medium |
 | A.5.34 | Privacy and PII | 🟡 Partial | Some PII protections (httpOnly cookies, auth protection) | Major GDPR gaps — see separate GDPR audit report (`docs/gdpr-audit.md`). | 🔴 High |
@@ -98,7 +98,7 @@ LinkDen has a solid set of **baseline technical controls** in place (authenticat
 
 | Control ID | Control Name | Status | Gap Notes | Priority |
 |-----------|-------------|--------|-----------|----------|
-| A.7.1–A.7.14 | Physical controls (all) | N/A / 🟡 Partial | Primary deployment is Cloudflare (serverless) — physical security is Cloudflare's responsibility. For Docker/Coolify secondary deployment, physical security depends on the host environment. Document exclusions in SoA with reference to Cloudflare's ISO 27001 certificate. | 🟢 Low |
+| A.7.1–A.7.14 | Physical controls (all) | N/A / 🟡 Partial | Deployment is Cloudflare (serverless) — physical security is Cloudflare's responsibility. Document exclusions in SoA with reference to Cloudflare's ISO 27001 certificate. | 🟢 Low |
 
 ---
 

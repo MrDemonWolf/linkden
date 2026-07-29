@@ -95,7 +95,7 @@ is managed from the admin panel.
 | Storage      | Cloudflare R2                                        |
 | Build system | Bun 1.3.10, Turborepo                                |
 | Testing      | Vitest, @testing-library/react                       |
-| Deployment   | Cloudflare Workers + Pages (primary), Docker (secondary) |
+| Deployment   | Cloudflare Workers + Pages |
 
 ## Development
 
@@ -140,8 +140,9 @@ is managed from the admin panel.
 - `bun dev:docs` — Start the documentation site only
 - `bun build` — Build all apps and packages
 - `bun check-types` — TypeScript type checks across the monorepo
-- `bun test` — Run the test suite with Vitest
-- `bun test:watch` — Run tests in watch mode
+- `bun run test` — Run the test suite with Vitest (use `bun run test`, not `bun test` — the latter invokes Bun's own runner)
+- `bun run test:watch` — Run tests in watch mode
+- `bun run test:coverage` — Run tests with coverage and thresholds
 - `bun db:generate` — Generate a Drizzle migration from schema changes
 - `bun db:push` — Push the current schema to the local D1 database
 - `bun db:reset` — Wipe the local database state (`.wrangler/state`)

@@ -15,6 +15,7 @@ const tables = [
 	"link_click",
 	"page_view",
 	"contact_submission",
+	"audit_log",
 	"session",
 	"account",
 	"verification",

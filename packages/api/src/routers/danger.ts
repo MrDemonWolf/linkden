@@ -11,7 +11,10 @@ import {
 	session,
 	account,
 	verification,
+	auditLog,
 } from "@linkden/db/schema/index";
+import { logAudit } from "../utils/audit";
+import { runBatch } from "../utils/settings";
 
 // ─── Danger Zone Router ────────────────────────────────────────────────────
 // Destructive operations triggered from /admin/account. Both procedures are
@@ -25,24 +28,35 @@ import {
 
 export const dangerRouter = router({
 	deleteAllContent: protectedProcedure.mutation(async () => {
-		await db.delete(block);
-		await db.delete(pageView);
-		await db.delete(linkClick);
-		await db.delete(contactSubmission);
+		// Audit the destructive action BEFORE wiping (the log survives this op).
+		await logAudit("danger.deleteAllContent");
+		await runBatch([
+			db.delete(block),
+			db.delete(pageView),
+			db.delete(linkClick),
+			db.delete(contactSubmission),
+		]);
 		return { ok: true };
 	}),
 
 	resetEverything: protectedProcedure.mutation(async () => {
-		await db.delete(block);
-		await db.delete(pageView);
-		await db.delete(linkClick);
-		await db.delete(contactSubmission);
-		await db.delete(socialNetwork);
-		await db.delete(siteSettings);
-		await db.delete(session);
-		await db.delete(account);
-		await db.delete(verification);
-		await db.delete(user);
+		// Audit first — resetEverything clears audit_log too, so this entry is
+		// only meaningful if written before the wipe (it will be removed by the
+		// batch, which is fine: the action still fires an audit event).
+		await logAudit("danger.resetEverything");
+		await runBatch([
+			db.delete(block),
+			db.delete(pageView),
+			db.delete(linkClick),
+			db.delete(contactSubmission),
+			db.delete(socialNetwork),
+			db.delete(siteSettings),
+			db.delete(session),
+			db.delete(account),
+			db.delete(verification),
+			db.delete(auditLog),
+			db.delete(user),
+		]);
 		return { ok: true };
 	}),
 });

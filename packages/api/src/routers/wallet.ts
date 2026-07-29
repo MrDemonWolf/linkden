@@ -5,96 +5,25 @@ import { eq, asc } from "drizzle-orm";
 import { env } from "@linkden/env/server";
 import { z } from "zod";
 import { stripHtml } from "../utils/sanitize";
-import { upsertSetting, buildSettingsMap } from "../utils/settings";
+import { logAudit } from "../utils/audit";
+import { buildSettingsMap, runBatch, settingUpsertStmt } from "../utils/settings";
+import { maskSecret, WALLET_SETTING_KEYS } from "@linkden/validators/settings-registry";
 import {
 	passFieldSchema,
 	passLocationSchema,
+	parsePassFieldsJson,
+	parsePassLocationsJson,
 	seedFromPreset,
 	PASS_TEMPLATE_PRESETS,
 	PASS_FIELD_LIMITS,
 	PASS_LOCATION_LIMIT,
 	type PassField,
-	type PassLocation,
 	type PassTemplatePreset,
 } from "@linkden/validators/wallet";
 
 const hexColorRegex = /^#[0-9a-fA-F]{6}$/;
 
-const walletKeys = [
-	"wallet_pass_enabled",
-	"wallet_show_email",
-	"wallet_show_name",
-	"wallet_show_qr_code",
-	"wallet_template_preset",
-	"wallet_organization_name",
-	"wallet_pass_description",
-	"wallet_background_color",
-	"wallet_foreground_color",
-	"wallet_label_color",
-	"wallet_logo_url",
-	"wallet_icon_url",
-	"wallet_thumbnail_url",
-	"wallet_strip_url",
-	"wallet_header_fields",
-	"wallet_primary_fields",
-	"wallet_secondary_fields",
-	"wallet_auxiliary_fields",
-	"wallet_back_fields",
-	"wallet_relevant_date",
-	"wallet_locations",
-	"wallet_signer_cert",
-	"wallet_signer_key",
-	"wallet_wwdr_cert",
-	"wallet_team_id",
-	"wallet_pass_type_id",
-];
-
-const WALLET_SECRET_KEYS = new Set(["wallet_signer_cert", "wallet_signer_key", "wallet_wwdr_cert"]);
-
-function parseFields(raw: string | undefined): PassField[] {
-	if (!raw) return [];
-	try {
-		const parsed = JSON.parse(raw);
-		if (!Array.isArray(parsed)) return [];
-		return parsed
-			.filter(
-				(f): f is PassField =>
-					typeof f === "object" &&
-					f !== null &&
-					typeof f.key === "string" &&
-					typeof f.label === "string" &&
-					typeof f.value === "string",
-			)
-			.map((f) => ({
-				key: f.key.slice(0, 64),
-				label: f.label.slice(0, 40),
-				value: f.value.slice(0, 200),
-			}));
-	} catch {
-		return [];
-	}
-}
-
-function parseLocations(raw: string | undefined): PassLocation[] {
-	if (!raw) return [];
-	try {
-		const parsed = JSON.parse(raw);
-		if (!Array.isArray(parsed)) return [];
-		return parsed
-			.filter(
-				(l): l is PassLocation =>
-					l && typeof l.latitude === "number" && typeof l.longitude === "number",
-			)
-			.slice(0, PASS_LOCATION_LIMIT)
-			.map((l) => ({
-				latitude: l.latitude,
-				longitude: l.longitude,
-				relevantText: stripHtml(String(l.relevantText ?? "")).slice(0, 100),
-			}));
-	} catch {
-		return [];
-	}
-}
+const walletKeys: readonly string[] = WALLET_SETTING_KEYS;
 
 function clampFields(fields: PassField[], max: number): PassField[] {
 	return fields.slice(0, max).map((f) => ({
@@ -110,7 +39,7 @@ export const walletRouter = router({
 		const config: Record<string, string> = {};
 		for (const row of results) {
 			if (walletKeys.includes(row.key)) {
-				config[row.key] = WALLET_SECRET_KEYS.has(row.key) && row.value ? "••••••" : row.value;
+				config[row.key] = maskSecret(row.key, row.value);
 			}
 		}
 		return config;
@@ -192,11 +121,18 @@ export const walletRouter = router({
 				);
 			if (input.relevantDate !== undefined) push("wallet_relevant_date", input.relevantDate);
 			if (input.locations !== undefined)
-				push("wallet_locations", JSON.stringify(input.locations.slice(0, PASS_LOCATION_LIMIT)));
+				push(
+					"wallet_locations",
+					JSON.stringify(
+						input.locations.slice(0, PASS_LOCATION_LIMIT).map((l) => ({
+							...l,
+							relevantText: l.relevantText ? stripHtml(l.relevantText) : l.relevantText,
+						})),
+					),
+				);
 
-			for (const { key, value } of updates) {
-				await upsertSetting(key, value);
-			}
+			await runBatch(updates.map(({ key, value }) => settingUpsertStmt(key, value)));
+			await logAudit("wallet.updateConfig", "wallet");
 			return { success: true };
 		}),
 
@@ -204,12 +140,15 @@ export const walletRouter = router({
 		.input(z.object({ preset: z.enum(PASS_TEMPLATE_PRESETS) }))
 		.mutation(async ({ input }) => {
 			const seed = seedFromPreset(input.preset as PassTemplatePreset);
-			await upsertSetting("wallet_template_preset", seed.templatePreset);
-			await upsertSetting("wallet_header_fields", JSON.stringify(seed.headerFields));
-			await upsertSetting("wallet_primary_fields", JSON.stringify(seed.primaryFields));
-			await upsertSetting("wallet_secondary_fields", JSON.stringify(seed.secondaryFields));
-			await upsertSetting("wallet_auxiliary_fields", JSON.stringify(seed.auxiliaryFields));
-			await upsertSetting("wallet_back_fields", JSON.stringify(seed.backFields));
+			await runBatch([
+				settingUpsertStmt("wallet_template_preset", seed.templatePreset),
+				settingUpsertStmt("wallet_header_fields", JSON.stringify(seed.headerFields)),
+				settingUpsertStmt("wallet_primary_fields", JSON.stringify(seed.primaryFields)),
+				settingUpsertStmt("wallet_secondary_fields", JSON.stringify(seed.secondaryFields)),
+				settingUpsertStmt("wallet_auxiliary_fields", JSON.stringify(seed.auxiliaryFields)),
+				settingUpsertStmt("wallet_back_fields", JSON.stringify(seed.backFields)),
+			]);
+			await logAudit("wallet.applyPreset", "wallet", input.preset);
 			return { success: true, seed };
 		}),
 
@@ -280,9 +219,8 @@ export const walletRouter = router({
 			if (input.wwdrCert !== undefined)
 				updates.push({ key: "wallet_wwdr_cert", value: input.wwdrCert });
 
-			for (const { key, value } of updates) {
-				await upsertSetting(key, value);
-			}
+			await runBatch(updates.map(({ key, value }) => settingUpsertStmt(key, value)));
+			await logAudit("wallet.updateSigningKeys", "wallet");
 			return { success: true };
 		}),
 
@@ -297,11 +235,11 @@ export const walletRouter = router({
 		const settingsMap = await buildSettingsMap();
 
 		// Backwards-compat: if new field arrays empty, derive from old toggles + profile
-		const headerFields = parseFields(settingsMap.wallet_header_fields);
-		const primaryFieldsStored = parseFields(settingsMap.wallet_primary_fields);
-		const secondaryFieldsStored = parseFields(settingsMap.wallet_secondary_fields);
-		const auxiliaryFields = parseFields(settingsMap.wallet_auxiliary_fields);
-		const backFields = parseFields(settingsMap.wallet_back_fields);
+		const headerFields = parsePassFieldsJson(settingsMap.wallet_header_fields);
+		const primaryFieldsStored = parsePassFieldsJson(settingsMap.wallet_primary_fields);
+		const secondaryFieldsStored = parsePassFieldsJson(settingsMap.wallet_secondary_fields);
+		const auxiliaryFields = parsePassFieldsJson(settingsMap.wallet_auxiliary_fields);
+		const backFields = parsePassFieldsJson(settingsMap.wallet_back_fields);
 
 		const showEmail = settingsMap.wallet_show_email !== "false";
 		const showName = settingsMap.wallet_show_name !== "false";
@@ -346,7 +284,7 @@ export const walletRouter = router({
 			auxiliaryFields,
 			backFields,
 			relevantDate: settingsMap.wallet_relevant_date || "",
-			locations: parseLocations(settingsMap.wallet_locations),
+			locations: parsePassLocationsJson(settingsMap.wallet_locations),
 			showEmail,
 			showName,
 			showQrCode: settingsMap.wallet_show_qr_code !== "false",

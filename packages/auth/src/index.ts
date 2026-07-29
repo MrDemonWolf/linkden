@@ -1,6 +1,7 @@
 import { db } from "@linkden/db";
 import { siteSettings } from "@linkden/db/schema/index";
 import * as schema from "@linkden/db/schema/auth";
+import { createResendEmailService } from "@linkden/email";
 import { env } from "@linkden/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -20,6 +21,17 @@ async function getEmailSettings() {
 	};
 }
 
+// Single Resend path (via packages/email) for every auth email — no more three
+// hand-rolled fetches that silently ignored non-2xx responses.
+async function sendAuthEmail(to: string, subject: string, html: string): Promise<void> {
+	const { apiKey, from } = await getEmailSettings();
+	if (!apiKey) {
+		console.warn(`No email API key configured; skipping "${subject}" email`);
+		return;
+	}
+	await createResendEmailService(apiKey, from).send({ to, subject, html });
+}
+
 export const auth = betterAuth({
 	database: drizzleAdapter(db, {
 		provider: "sqlite",
@@ -30,24 +42,11 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 		sendResetPassword: async ({ user, url }) => {
-			const { apiKey, from } = await getEmailSettings();
-			if (!apiKey) {
-				console.warn("No email API key configured; skipping password reset email");
-				return;
-			}
-			await fetch("https://api.resend.com/emails", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${apiKey}`,
-				},
-				body: JSON.stringify({
-					from,
-					to: user.email,
-					subject: "Reset your LinkDen password",
-					html: `<p>Click the link below to reset your password:</p><p><a href="${url}">${url}</a></p><p>This link expires in 1 hour. If you didn't request this, ignore this email.</p>`,
-				}),
-			});
+			await sendAuthEmail(
+				user.email,
+				"Reset your LinkDen password",
+				`<p>Click the link below to reset your password:</p><p><a href="${url}">${url}</a></p><p>This link expires in 1 hour. If you didn't request this, ignore this email.</p>`,
+			);
 		},
 	},
 	user: {
@@ -62,24 +61,11 @@ export const auth = betterAuth({
 				newEmail: string;
 				url: string;
 			}) => {
-				const { apiKey, from } = await getEmailSettings();
-				if (!apiKey) {
-					console.warn("No email API key configured; skipping email-change verification");
-					return;
-				}
-				await fetch("https://api.resend.com/emails", {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: `Bearer ${apiKey}`,
-					},
-					body: JSON.stringify({
-						from,
-						to: user.email,
-						subject: "Confirm your new LinkDen email",
-						html: `<p>You requested to change your LinkDen email to <strong>${newEmail}</strong>.</p><p>Click the link below to confirm:</p><p><a href="${url}">${url}</a></p><p>If you didn't request this, ignore this email.</p>`,
-					}),
-				});
+				await sendAuthEmail(
+					user.email,
+					"Confirm your new LinkDen email",
+					`<p>You requested to change your LinkDen email to <strong>${newEmail}</strong>.</p><p>Click the link below to confirm:</p><p><a href="${url}">${url}</a></p><p>If you didn't request this, ignore this email.</p>`,
+				);
 			},
 		},
 	},
@@ -93,9 +79,15 @@ export const auth = betterAuth({
 	secret: env.BETTER_AUTH_SECRET,
 	baseURL: env.BETTER_AUTH_URL,
 	advanced: {
+		// On Cloudflare Workers the real client IP is in cf-connecting-ip; the
+		// default x-forwarded-for is client-spoofable. Point Better Auth's IP
+		// resolution (used for rate-limit / security features) at the trusted header.
+		ipAddress: {
+			ipAddressHeaders: ["cf-connecting-ip"],
+		},
 		defaultCookieAttributes: {
 			sameSite: "lax",
-			secure: env.BETTER_AUTH_URL?.startsWith("https") ? true : false,
+			secure: !!env.BETTER_AUTH_URL?.startsWith("https"),
 			httpOnly: true,
 		},
 		// uncomment crossSubDomainCookies setting when ready to deploy and replace <your-workers-subdomain> with your actual workers subdomain
@@ -122,24 +114,11 @@ export const auth = betterAuth({
 					throw new Error("Magic link sign-in is disabled");
 				}
 
-				const { apiKey, from } = await getEmailSettings();
-				if (!apiKey) {
-					console.warn("No email API key configured; skipping magic link email");
-					return;
-				}
-				await fetch("https://api.resend.com/emails", {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Authorization: `Bearer ${apiKey}`,
-					},
-					body: JSON.stringify({
-						from,
-						to: email,
-						subject: "Sign in to LinkDen",
-						html: `<p>Click the link below to sign in to your LinkDen admin panel:</p><p><a href="${url}">${url}</a></p><p>This link expires in 10 minutes.</p>`,
-					}),
-				});
+				await sendAuthEmail(
+					email,
+					"Sign in to LinkDen",
+					`<p>Click the link below to sign in to your LinkDen admin panel:</p><p><a href="${url}">${url}</a></p><p>This link expires in 10 minutes.</p>`,
+				);
 			},
 		}),
 	],

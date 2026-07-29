@@ -4,30 +4,24 @@ import { siteSettings } from "@linkden/db/schema/index";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { sanitizeUrl, stripHtml } from "../utils/sanitize";
-import { upsertSetting } from "../utils/settings";
+import { runBatch, settingUpsertStmt, upsertSetting } from "../utils/settings";
 import { logAudit } from "../utils/audit";
-import { settingKeySchema } from "@linkden/validators/settings";
+import { settingKeySchema, VALID_SETTING_KEYS } from "@linkden/validators/settings";
+import {
+	CAPTCHA_PROVIDERS,
+	getSettingMeta,
+	isSecretKey,
+	maskSecret,
+	MAX_SETTING_VALUE_LENGTH,
+	SECRET_MASK,
+} from "@linkden/validators/settings-registry";
 
 // ─── Settings Router ───────────────────────────────────────────────────────
-// Settings are key-value pairs stored in site_settings. The key whitelist below
-// prevents arbitrary key injection — only known keys are accepted.
-//
-// Settings are grouped by category:
-//   - Profile: profile_name, bio, avatar_url, verified_badge
-//   - Appearance: theme_preset, theme, custom_*, banner_*, social_icon_shape
-//   - SEO: seo_title, seo_description, seo_og_image, seo_og_mode, seo_og_template
-//   - Branding: branding_enabled, branding_text, branding_link, branding_logo_url, etc.
-//   - Features: wallet_pass_enabled, vcard_enabled, contact_form_enabled, mapkit_*
-//   - Auth: magic_link_enabled, captcha_provider, captcha_site_key, captcha_secret_key
-//   - Email: email_provider, email_api_key, email_from, contact_delivery
-//   - System: default_color_mode, timezone, admin_branding_enabled
-//
-// Sanitization pipeline: values pass through sanitizeSetting() which applies
-// type-appropriate validation — HTML stripping for text, URL validation,
-// hex color format checks, and CSS injection mitigation.
-
-// Keys containing secrets — masked in API responses, never exposed in plaintext
-const SECRET_SETTING_KEYS = new Set(["email_api_key", "captcha_secret_key", "mapkit_token"]);
+// Settings are key-value pairs stored in site_settings. The key whitelist
+// (settingKeySchema) prevents arbitrary key injection. Per-key metadata —
+// sanitizer kind, max length, secret/mask/backup policy — lives in the shared
+// settings registry (@linkden/validators/settings-registry), so the settings,
+// wallet, and backup routers all agree on one source of truth.
 
 // Empty values are allowed; non-empty values must be http(s) URLs.
 function isValidUrl(url: string): boolean {
@@ -55,152 +49,90 @@ function sanitizeCss(css: string): string {
 		.replace(/-moz-binding\s*:/gi, "");
 }
 
-// Keys that should be sanitized as plain text (no HTML)
-const TEXT_KEYS = [
-	"profile_name",
-	"bio",
-	"branding_text",
-	"seo_title",
-	"seo_description",
-	"seo_og_mode",
-	"seo_og_template",
-	"branding_site_name",
-	"branding_pp_mode",
-	"branding_tos_mode",
-	"branding_pp_text",
-	"branding_tos_text",
-];
-// Keys that should be validated as URLs
-const URL_KEYS = [
-	"branding_link",
-	"seo_og_image",
-	"avatar_url",
-	"banner_custom_url",
-	"branding_logo_url",
-	"branding_login_logo_url",
-	"branding_login_bg_custom_url",
-	"branding_favicon_url",
-	"branding_pp_url",
-	"branding_tos_url",
-];
-// Keys that should be validated as hex colors
-const COLOR_KEYS = ["custom_primary", "custom_secondary", "custom_accent", "custom_background"];
-// Keys with length limits
-const LENGTH_LIMITS: Record<string, number> = {
-	profile_name: 50,
-	bio: 300,
-	branding_text: 100,
-	seo_title: 100,
-	seo_description: 250,
-	branding_site_name: 50,
-};
-
-// Exported so backup.import runs the same pipeline instead of raw upserts.
+// Exported so backup.import runs the same whitelist + sanitization pipeline
+// instead of raw upserts. Per-key behavior comes from the settings registry.
 export function sanitizeSetting(key: string, value: string): string {
-	if (TEXT_KEYS.includes(key)) {
-		let sanitized = stripHtml(value);
-		const limit = LENGTH_LIMITS[key];
-		if (limit && sanitized.length > limit) {
-			sanitized = sanitized.slice(0, limit);
-		}
-		return sanitized;
-	}
-	if (URL_KEYS.includes(key)) {
-		if (value && !isValidUrl(value)) {
-			throw new Error(`Invalid URL for ${key}`);
-		}
-		return value;
-	}
-	if (COLOR_KEYS.includes(key)) {
-		if (value && !isValidHexColor(value)) {
-			throw new Error(`Invalid color for ${key}: must be #RRGGBB`);
-		}
-		return value;
-	}
-	if (key === "custom_css") {
-		return sanitizeCss(value);
-	}
-	// Timezone: validate against known IANA zones
-	if (key === "timezone") {
-		if (value === "") return value; // empty = browser default
-		try {
-			const supported = Intl.supportedValuesOf("timeZone");
-			if (!supported.includes(value)) {
-				throw new Error(`Invalid timezone: ${value}`);
+	const meta = getSettingMeta(key);
+	switch (meta?.kind) {
+		case "text": {
+			let sanitized = stripHtml(value);
+			if (meta.maxLength && sanitized.length > meta.maxLength) {
+				sanitized = sanitized.slice(0, meta.maxLength);
 			}
-		} catch (e) {
-			if (e instanceof Error && e.message.startsWith("Invalid timezone")) throw e;
-			// Intl.supportedValuesOf not available — skip validation
+			return sanitized;
 		}
-		return value;
-	}
-	// Email provider: enum check
-	if (key === "email_provider") {
-		const allowed = ["resend", "sendgrid", "mailgun", "smtp", "cloudflare", "none"];
-		if (value && !allowed.includes(value)) {
-			throw new Error(`Invalid email provider: ${value}`);
+		case "url":
+			if (value && !isValidUrl(value)) throw new Error(`Invalid URL for ${key}`);
+			return value;
+		case "color":
+			if (value && !isValidHexColor(value)) {
+				throw new Error(`Invalid color for ${key}: must be #RRGGBB`);
+			}
+			return value;
+		case "css":
+			return sanitizeCss(value);
+		case "timezone": {
+			if (value === "") return value; // empty = browser default
+			try {
+				const supported = Intl.supportedValuesOf("timeZone");
+				if (!supported.includes(value)) throw new Error(`Invalid timezone: ${value}`);
+			} catch (e) {
+				if (e instanceof Error && e.message.startsWith("Invalid timezone")) throw e;
+				// Intl.supportedValuesOf not available — skip validation
+			}
+			return value;
 		}
-		return value;
-	}
-	// Email from: basic email format
-	if (key === "email_from") {
-		if (value && !value.includes("@")) {
-			throw new Error("Invalid email address for email_from");
+		case "emailProvider": {
+			const allowed = ["resend", "sendgrid", "mailgun", "smtp", "cloudflare", "none"];
+			if (value && !allowed.includes(value)) throw new Error(`Invalid email provider: ${value}`);
+			return value;
 		}
-		return value;
-	}
-	// API keys / tokens: strip control chars, enforce length limit
-	if (key === "email_api_key" || key === "mapkit_token") {
-		// biome-ignore lint/suspicious/noControlCharactersInRegex: intentionally strips control characters
-		const cleaned = value.replace(/[\x00-\x1f\x7f]/g, "");
-		if (cleaned.length > 512) {
-			return cleaned.slice(0, 512);
+		case "emailFrom":
+			if (value && !value.includes("@")) throw new Error("Invalid email address for email_from");
+			return value;
+		case "apiKey": {
+			// biome-ignore lint/suspicious/noControlCharactersInRegex: intentionally strips control characters
+			const cleaned = value.replace(/[\x00-\x1f\x7f]/g, "");
+			const cap = meta.maxLength ?? 512;
+			return cleaned.length > cap ? cleaned.slice(0, cap) : cleaned;
 		}
-		return cleaned;
-	}
-	// Boolean settings: coerce to "true"/"false"
-	if (key === "admin_branding_enabled" || key === "mapkit_enabled") {
-		return value === "true" ? "true" : "false";
-	}
-	// Contact delivery: validate allowed values
-	if (key === "contact_delivery") {
-		const allowed = ["email", "database", "both"];
-		if (value && !allowed.includes(value)) {
-			return "database";
+		case "boolean":
+			return value === "true" ? "true" : "false";
+		case "contactDelivery": {
+			const allowed = ["email", "database", "both"];
+			return value && !allowed.includes(value) ? "database" : value;
 		}
-		return value;
+		case "captchaProvider":
+			if (value && !CAPTCHA_PROVIDERS.includes(value as (typeof CAPTCHA_PROVIDERS)[number])) {
+				throw new Error(`Invalid CAPTCHA provider: ${value}`);
+			}
+			return value;
+		default:
+			return value;
 	}
-	return value;
 }
 
 export const settingsRouter = router({
 	get: protectedProcedure.input(z.object({ key: settingKeySchema })).query(async ({ input }) => {
 		const [result] = await db.select().from(siteSettings).where(eq(siteSettings.key, input.key));
 		if (!result) return null;
-		if (SECRET_SETTING_KEYS.has(result.key) && result.value) {
-			return { ...result, value: "••••••" };
-		}
-		return result;
+		return { ...result, value: maskSecret(result.key, result.value) };
 	}),
 
 	getAll: protectedProcedure.query(async () => {
 		const results = await db.select().from(siteSettings);
 		const map: Record<string, string> = {};
 		for (const row of results) {
-			map[row.key] = SECRET_SETTING_KEYS.has(row.key) && row.value ? "••••••" : row.value;
+			map[row.key] = maskSecret(row.key, row.value);
 		}
 		return map;
 	}),
 
 	update: protectedProcedure
-		.input(
-			z.object({
-				key: settingKeySchema,
-				value: z.string(),
-			}),
-		)
+		.input(z.object({ key: settingKeySchema, value: z.string().max(MAX_SETTING_VALUE_LENGTH) }))
 		.mutation(async ({ input }) => {
-			if (SECRET_SETTING_KEYS.has(input.key) && input.value === "••••••") {
+			// Ignore a re-submitted mask — the real secret is already stored.
+			if (isSecretKey(input.key) && input.value === SECRET_MASK) {
 				return { success: true };
 			}
 			const sanitizedValue = sanitizeSetting(input.key, input.value);
@@ -211,15 +143,16 @@ export const settingsRouter = router({
 		}),
 
 	updateBulk: protectedProcedure
-		.input(z.array(z.object({ key: settingKeySchema, value: z.string() })))
+		.input(
+			z
+				.array(z.object({ key: settingKeySchema, value: z.string().max(MAX_SETTING_VALUE_LENGTH) }))
+				.max(VALID_SETTING_KEYS.length),
+		)
 		.mutation(async ({ input }) => {
-			for (const { key, value } of input) {
-				if (SECRET_SETTING_KEYS.has(key) && value === "••••••") {
-					continue;
-				}
-				const sanitizedValue = sanitizeSetting(key, value);
-				await upsertSetting(key, sanitizedValue);
-			}
+			const stmts = input
+				.filter(({ key, value }) => !(isSecretKey(key) && value === SECRET_MASK))
+				.map(({ key, value }) => settingUpsertStmt(key, sanitizeSetting(key, value)));
+			await runBatch(stmts);
 			await logAudit("settings.updateBulk", "setting");
 
 			return { success: true };

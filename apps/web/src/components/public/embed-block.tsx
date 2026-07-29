@@ -11,6 +11,7 @@
 //     or accessing APIs it shouldn't.
 //   - In preview mode, no iframe is rendered at all — just a placeholder div.
 
+import { getEmbedSrc } from "@linkden/validators/blocks";
 import { usePreview } from "./preview-context";
 
 interface EmbedBlockProps {
@@ -26,39 +27,6 @@ interface EmbedBlockProps {
 		muted?: string;
 		mutedFg?: string;
 	};
-}
-
-/**
- * Converts user-entered embed URLs into safe, provider-specific embed URLs.
- * Known providers (YouTube, Spotify, SoundCloud) are parsed and rewritten to their
- * embed endpoints, which guarantees a safe origin. Custom embeds fall through to
- * the protocol check below — only https: is allowed to prevent javascript:/data: injection.
- */
-function getEmbedUrl(embedType: string | null, embedUrl: string | null): string | null {
-	if (!embedUrl) return null;
-
-	switch (embedType) {
-		case "youtube": {
-			const match = embedUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
-			return match ? `https://www.youtube-nocookie.com/embed/${match[1]}` : null;
-		}
-		case "spotify": {
-			const match = embedUrl.match(/spotify\.com\/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/);
-			return match ? `https://open.spotify.com/embed/${match[1]}/${match[2]}` : null;
-		}
-		case "soundcloud":
-			return `https://w.soundcloud.com/player/?url=${encodeURIComponent(embedUrl)}&auto_play=false&visual=true`;
-		default: {
-			// Custom embeds: only allow https: to block javascript:, data:, and http: schemes
-			try {
-				const parsed = new URL(embedUrl);
-				if (parsed.protocol !== "https:") return null;
-			} catch {
-				return null;
-			}
-			return embedUrl;
-		}
-	}
 }
 
 const aspectRatioClasses: Record<string, string> = {
@@ -80,7 +48,7 @@ export function EmbedBlock({ block, config, colorMode, themeColors }: EmbedBlock
 	const maxWidth = (config.maxWidth as string) || "full";
 	const showTitle = config.showTitle !== false;
 
-	const src = getEmbedUrl(block.embedType, block.embedUrl);
+	const src = getEmbedSrc(block.embedType, block.embedUrl);
 
 	if (!src) return null;
 

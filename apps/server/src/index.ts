@@ -25,13 +25,20 @@ import { generateVCardString, vcardDataSchema } from "@linkden/api/routers/vcard
 import { auth } from "@linkden/auth";
 import { db } from "@linkden/db";
 import { block, siteSettings, user } from "@linkden/db/schema/index";
-import type { PassField } from "@linkden/validators/wallet";
-import { and, asc, eq } from "drizzle-orm";
+import { parsePassFieldsJson, parsePassLocationsJson } from "@linkden/validators/wallet";
+import { and, asc, eq, sql } from "drizzle-orm";
+import { APP_VERSION } from "@linkden/api/utils/version";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { generatePkpass } from "./lib/pkpass";
-import { buildR2Key, validateUpload } from "./lib/upload-validation";
+import {
+	buildR2Key,
+	MAX_UPLOAD_BODY_SIZE,
+	signatureMatchesExt,
+	validateUpload,
+} from "./lib/upload-validation";
+import { runScheduledMaintenance } from "./lib/retention-sweep";
 
 type Bindings = {
 	CORS_ORIGIN?: string;
@@ -100,7 +107,11 @@ app.use(
 	rateLimit((env) => env.RL_AUTH),
 );
 app.use(
-	"/api/auth/send-password-reset-email",
+	"/api/auth/request-password-reset",
+	rateLimit((env) => env.RL_STRICT),
+);
+app.use(
+	"/api/auth/reset-password",
 	rateLimit((env) => env.RL_STRICT),
 );
 // Block magic link requests when the feature is disabled
@@ -178,6 +189,12 @@ app.post("/api/upload", async (c) => {
 		return c.json({ error: "Image storage not configured" }, 500);
 	}
 
+	// Reject oversized uploads before buffering the whole multipart body.
+	const contentLength = Number(c.req.header("content-length") ?? "0");
+	if (contentLength > MAX_UPLOAD_BODY_SIZE) {
+		return c.json({ error: "File too large. Maximum size is 5MB." }, 413);
+	}
+
 	const formData = await c.req.formData();
 	const file = formData.get("file");
 	const purpose = formData.get("purpose");
@@ -199,11 +216,29 @@ app.post("/api/upload", async (c) => {
 		return c.json({ error: result.error }, result.status);
 	}
 
+	// Validate the actual file signature, not just the client-supplied name/MIME.
+	const header = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+	if (!signatureMatchesExt(result.ext, header)) {
+		return c.json({ error: "File content does not match its type." }, 400);
+	}
+
 	const key = buildR2Key(result.purpose, result.ext, crypto.randomUUID());
 
 	await bucket.put(key, file.stream(), {
 		httpMetadata: { contentType: file.type },
 	});
+
+	// Delete the object this upload replaces, so old avatars/banners don't
+	// accumulate as orphans in R2.
+	const replaces = formData.get("replaces");
+	if (typeof replaces === "string") {
+		const marker = "/api/images/";
+		const idx = replaces.indexOf(marker);
+		const oldKey = idx >= 0 ? replaces.slice(idx + marker.length) : "";
+		if (oldKey && oldKey !== key && !oldKey.includes("..")) {
+			await bucket.delete(oldKey).catch(() => {});
+		}
+	}
 
 	const publicUrl = `/api/images/${key}`;
 
@@ -236,44 +271,9 @@ app.get("/api/images/*", async (c) => {
 
 // ─── Apple Wallet pass (.pkpass) ─────────────────────────────────────────────
 // Public download. Assembles a signed pass from the wallet_* settings + profile.
-function parsePassFields(raw: string | undefined): PassField[] {
-	if (!raw) return [];
-	try {
-		const parsed = JSON.parse(raw);
-		if (!Array.isArray(parsed)) return [];
-		return parsed
-			.filter(
-				(f): f is PassField =>
-					f &&
-					typeof f.key === "string" &&
-					typeof f.label === "string" &&
-					typeof f.value === "string",
-			)
-			.map((f) => ({ key: f.key, label: f.label, value: f.value }));
-	} catch {
-		return [];
-	}
-}
-
-function parsePassLocations(
-	raw: string | undefined,
-): { latitude: number; longitude: number; relevantText?: string }[] {
-	if (!raw) return [];
-	try {
-		const parsed = JSON.parse(raw);
-		if (!Array.isArray(parsed)) return [];
-		return parsed
-			.filter((l) => l && typeof l.latitude === "number" && typeof l.longitude === "number")
-			.slice(0, 10)
-			.map((l) => ({
-				latitude: l.latitude,
-				longitude: l.longitude,
-				relevantText: typeof l.relevantText === "string" ? l.relevantText : undefined,
-			}));
-	} catch {
-		return [];
-	}
-}
+// Field/location parsing is shared with the wallet router via @linkden/validators.
+const parsePassFields = parsePassFieldsJson;
+const parsePassLocations = parsePassLocationsJson;
 
 async function fetchPassImage(
 	bucket: R2Bucket | undefined,
@@ -423,8 +423,23 @@ app.get("/", (c) => {
 	return c.text("OK");
 });
 
-app.get("/api/health", (c) => {
-	return c.json({ status: "ok" });
+app.get("/api/health", async (c) => {
+	// Real readiness: confirm D1 is reachable and report the deployed version,
+	// so a green health check actually means the app can serve requests.
+	let database: "ok" | "error" = "ok";
+	try {
+		await db.run(sql`SELECT 1`);
+	} catch {
+		database = "error";
+	}
+	const ok = database === "ok";
+	return c.json({ status: ok ? "ok" : "degraded", database, version: APP_VERSION }, ok ? 200 : 503);
 });
 
-export default app;
+export default {
+	fetch: app.fetch,
+	// Cron-triggered maintenance (see wrangler.jsonc [triggers]/crons).
+	async scheduled(_event: ScheduledController, env: Bindings, ctx: ExecutionContext) {
+		ctx.waitUntil(runScheduledMaintenance(env.IMAGES_BUCKET));
+	},
+};

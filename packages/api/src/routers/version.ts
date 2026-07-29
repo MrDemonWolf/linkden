@@ -1,12 +1,13 @@
 import { router, publicProcedure } from "../index";
+import { APP_VERSION, compareSemver } from "../utils/version";
 
 export const versionRouter = router({
 	current: publicProcedure.query(() => {
-		return { version: "0.1.0" };
+		return { version: APP_VERSION };
 	}),
 
 	checkUpdate: publicProcedure.query(async () => {
-		const current = "0.1.0";
+		const current = APP_VERSION;
 
 		try {
 			const response = await fetch(
@@ -39,7 +40,7 @@ export const versionRouter = router({
 			return {
 				current,
 				latest,
-				hasUpdate: latest !== current,
+				hasUpdate: compareSemver(latest, current) > 0,
 				releaseUrl: data.html_url,
 				changelog: data.body,
 			};
