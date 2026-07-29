@@ -1,6 +1,6 @@
 import alchemy from "alchemy";
 import { D1Database, Nextjs, R2Bucket, RateLimit, Worker } from "alchemy/cloudflare";
-import { D1StateStore } from "alchemy/state";
+import { CloudflareStateStore } from "alchemy/state";
 import { config } from "dotenv";
 
 config({ path: "./.env" });
@@ -8,10 +8,16 @@ config({ path: "../../apps/web/.env" });
 config({ path: "../../apps/server/.env" });
 
 const app = await alchemy("linkden", {
-	// Shared account-wide state store: the `alchemy-state` D1 (default name).
-	// Alchemy namespaces state by app, so linkden's state lives under the
-	// "linkden" scope alongside the other MrDemonWolf Alchemy apps.
-	stateStore: (scope) => new D1StateStore(scope),
+	// Shared account-wide state store: the `alchemy-state` worker, a SQLite
+	// Durable Object shared by every MrDemonWolf Alchemy app (website, wolfathon,
+	// dirework, linkden). Alchemy namespaces state by app, so linkden's state
+	// lives under the "linkden" scope inside it. Every app MUST pass the same
+	// ALCHEMY_STATE_TOKEN or the store rejects it.
+	stateStore: (scope) =>
+		new CloudflareStateStore(scope, {
+			scriptName: "alchemy-state",
+			stateToken: alchemy.secret(process.env.ALCHEMY_STATE_TOKEN),
+		}),
 });
 
 const db = await D1Database("database", {
