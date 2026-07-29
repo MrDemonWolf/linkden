@@ -36,6 +36,14 @@ jobs:
         with:
           bun-version-file: package.json
 
+      # Alchemy runs under Node via tsx — Bun segfaults on the Alchemy program
+      # (exit 132/SIGILL), same as wolfathon and dirework. Bun is still used for
+      # installs and the turbo run.
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - name: Cache bun install
         uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
