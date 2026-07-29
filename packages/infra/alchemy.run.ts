@@ -7,7 +7,12 @@ config({ path: "./.env" });
 config({ path: "../../apps/web/.env" });
 config({ path: "../../apps/server/.env" });
 
+// Run under Node (via tsx) rather than Bun — Bun segfaults executing this
+// Alchemy program (exit 132/SIGILL), the same lesson as wolfathon and dirework.
+// The deploy/destroy scripts in package.json use tsx; `--destroy` selects the
+// teardown phase, otherwise Alchemy auto-detects (deploy / dev).
 const app = await alchemy("linkden", {
+	phase: process.argv.includes("--destroy") ? "destroy" : undefined,
 	// Shared account-wide state store: the `alchemy-state` worker, a SQLite
 	// Durable Object shared by every MrDemonWolf Alchemy app (website, wolfathon,
 	// dirework, linkden). Alchemy namespaces state by app, so linkden's state
