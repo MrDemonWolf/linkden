@@ -32,10 +32,31 @@
 			"cache": false
 		},
 		"deploy": {
-			"cache": false
+			"cache": false,
+			"passThroughEnv": [
+				"CLOUDFLARE_API_TOKEN",
+				"CLOUDFLARE_ACCOUNT_ID",
+				"ALCHEMY_PASSWORD",
+				"ALCHEMY_STATE_TOKEN",
+				"BETTER_AUTH_SECRET",
+				"BETTER_AUTH_URL",
+				"NEXT_PUBLIC_SERVER_URL",
+				"CORS_ORIGIN",
+				"WALLET_SIGNER_CERT",
+				"WALLET_SIGNER_KEY",
+				"WALLET_WWDR_CERT",
+				"WALLET_TEAM_ID",
+				"WALLET_PASS_TYPE_ID"
+			]
 		},
 		"destroy": {
-			"cache": false
+			"cache": false,
+			"passThroughEnv": [
+				"CLOUDFLARE_API_TOKEN",
+				"CLOUDFLARE_ACCOUNT_ID",
+				"ALCHEMY_PASSWORD",
+				"ALCHEMY_STATE_TOKEN"
+			]
 		}
 	}
 }
