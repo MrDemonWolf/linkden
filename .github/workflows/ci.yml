@@ -69,15 +69,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
+      # The action lives in a subdirectory — the repo root action.yml is a
+      # branding stub with no `runs:` section and fails at resolution time.
       - name: Dependency & advisory scan (OSV)
-        uses: google/osv-scanner-action@9a498708959aeaef5ef730655706c5a1df1edbc2 # v2.3.8
+        uses: google/osv-scanner-action/osv-scanner-action@9a498708959aeaef5ef730655706c5a1df1edbc2 # v2.3.8
         # Report-only for now: transitive advisories shouldn't block merges until
         # triaged. Findings surface in the job log / annotations.
         continue-on-error: true
         with:
           scan-args: |-
             --recursive
-            --skip-git
             ./
 
       - name: Generate SBOM (CycloneDX)
