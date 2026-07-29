@@ -3,7 +3,7 @@
 This file provides foundational mandates and architectural context for Gemini CLI when working on the LinkDen codebase.
 
 ## Project Overview
-LinkDen is a **self-hosted, single-user link-in-bio platform** designed for Cloudflare-first deployment (Workers + D1 + R2) with Docker/Coolify as a secondary target. It features a drag-and-drop builder, real-time analytics, Apple Wallet integration, and a themes system.
+LinkDen is a **self-hosted, single-user link-in-bio platform** designed for Cloudflare deployment (Workers + D1 + R2). It features a drag-and-drop builder, real-time analytics, Apple Wallet integration, and a themes system.
 
 ### Core Architecture (Monorepo)
 - **Runtime:** Bun (v1.3+)

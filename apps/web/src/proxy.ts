@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Lightweight edge middleware: checks for session cookie presence on /admin/* routes.
-// Full session validation is still enforced server-side by tRPC protectedProcedure.
-// This prevents unauthenticated users from loading admin page bundles at the edge.
+// Lightweight edge proxy (Next.js 16 renamed middleware → proxy): checks for a
+// session cookie on /admin/* routes. Full session validation is still enforced
+// server-side by tRPC protectedProcedure. This prevents unauthenticated users
+// from loading admin page bundles at the edge.
 
 const PUBLIC_ADMIN_ROUTES = ["/admin/login", "/admin/setup"];
 
 /**
- * Edge middleware that protects all /admin/* routes.
+ * Edge proxy that protects all /admin/* routes.
  * Checks for a Better Auth session cookie and redirects unauthenticated requests
  * to /admin/login with a ?from= param so the user can return after signing in.
  * Full session validation is still enforced server-side by tRPC protectedProcedure.
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
 	// Allow public admin routes through without auth check

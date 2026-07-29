@@ -59,6 +59,7 @@ export function ColorPalettePanel({
 					{WALLET_PALETTES.map((p) => {
 						const active = eqColor(bg, p.bg) && eqColor(fg, p.fg) && eqColor(label, p.label);
 						return (
+							// biome-ignore lint/a11y/useSemanticElements: button-based radio is intentional for this custom palette picker
 							<button
 								key={p.name}
 								type="button"

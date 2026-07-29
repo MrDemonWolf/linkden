@@ -65,6 +65,8 @@ export const server = await Worker("server", {
 	cwd: "../../apps/server",
 	entrypoint: "src/index.ts",
 	compatibility: "node",
+	// Daily retention sweep (prune analytics/sessions/contacts/audit + orphan R2).
+	crons: ["0 3 * * *"],
 	bindings: {
 		DB: db,
 		IMAGES_BUCKET: imagesBucket,

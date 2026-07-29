@@ -5,6 +5,9 @@
 		"declarationMap": true,
 		"sourceMap": true,
 		"outDir": "dist",
-		"composite": true
+		"composite": true,
+		// @linkden/email is consumed as source (.tsx templates); enable JSX so
+		// type-checking the imported React Email components succeeds.
+		"jsx": "react-jsx"
 	}
 }

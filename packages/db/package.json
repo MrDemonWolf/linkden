@@ -10,6 +10,7 @@
 		}
 	},
 	"scripts": {
+		"check-types": "tsc --noEmit",
 		"db:push": "drizzle-kit push",
 		"db:generate": "drizzle-kit generate"
 	},

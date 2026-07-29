@@ -5,7 +5,7 @@ description: Common issues and solutions for self-hosted LinkDen instances.
 
 # Troubleshooting
 
-Solutions to common problems across all deployment platforms. For platform-specific issues, also check the troubleshooting section in your deployment guide ([Cloudflare](/docs/self-hosting/cloudflare), [Docker](/docs/self-hosting/docker), [Coolify](/docs/self-hosting/coolify)).
+Solutions to common problems for self-hosted LinkDen instances. For deployment steps, see the [Cloudflare](/docs/self-hosting/cloudflare) guide.
 
 ---
 
@@ -38,66 +38,6 @@ Better Auth cookies may not work across different `*.workers.dev` subdomains bec
 
 - Use custom domains for both Workers (e.g., `yourdomain.com` and `api.yourdomain.com`)
 - Ensure `BETTER_AUTH_URL` matches the actual API domain
-
----
-
-## Docker
-
-### Environment variables not loading
-
-- Runtime variables (like `BETTER_AUTH_SECRET`) go in the `environment` block of `docker-compose.yml`
-- `NEXT_PUBLIC_*` variables must be set at **build time** as build args — changing them requires a rebuild
-- Verify with: `docker exec linkden-api env | grep BETTER`
-
-### Port conflicts
-
-```
-Error: listen EADDRINUSE :::8787
-```
-
-Another process is using port 8787. Either stop it or change the port mapping in `docker-compose.yml`.
-
-### Database not persisting
-
-- Check that the volume is mounted: `docker inspect linkden-api | grep Mounts -A 20`
-- Ensure `DATABASE_URL=file:/data/linkden.db`
-- Never use `docker compose down -v` unless you want to delete data
-
-### Volume mount permissions
-
-If the container can't write to `/data`:
-
-```bash
-docker exec linkden-api ls -la /data
-```
-
-Fix with: `chmod 777 /data` inside the container or adjust the user in the Dockerfile.
-
----
-
-## Coolify
-
-### Build failures
-
-- Check Coolify build logs for the specific error
-- Ensure the Dockerfile path is correct (e.g., `Dockerfile.api` not `./Dockerfile.api`)
-- Verify build context is set to `.` (repository root)
-- If using Docker Compose, make sure `docker-compose.yml` is at the repository root
-
-### Environment variable injection
-
-- API runtime variables: add as **Environment Variables** in Coolify
-- Web build args: add as **Build Arguments** (not environment variables)
-- Mark secrets (API keys, auth secret) as **Secret** in Coolify
-
-### Health check failures
-
-If Coolify reports the service as unhealthy:
-
-- Check that the exposed port matches the health check port
-- API health check: `wget --spider -q http://localhost:8787/`
-- Web health check: `wget --spider -q http://localhost:3001/`
-- Increase `start_period` if the container takes longer to boot
 
 ---
 
@@ -148,10 +88,7 @@ If Coolify reports the service as unhealthy:
 
 **Explanation:** This is expected behavior. LinkDen is a single-user platform. After the first admin account is created, registration is permanently locked. This protects your instance from unauthorized account creation.
 
-If you need to reset and create a new admin account, you'll need to clear the user table in your database:
-- **Cloudflare D1:** Use the D1 console in the Cloudflare dashboard
-- **Docker:** `docker exec linkden-api sqlite3 /data/linkden.db "DELETE FROM user;"`
-- **Coolify:** Access the container shell through Coolify's terminal
+If you need to reset and create a new admin account, clear the user table in your D1 database using the D1 console in the Cloudflare dashboard (or `wrangler d1 execute <db> --command "DELETE FROM user;"`).
 
 ### File upload errors
 
