@@ -50,7 +50,10 @@
 		"reset:factory": "bun scripts/factory-reset.ts",
 		"test": "vitest run",
 		"test:watch": "vitest",
-		"test:coverage": "vitest run --coverage"
+		"test:coverage": "vitest run --coverage",
+		"test:e2e": "playwright test",
+		"test:e2e:headed": "playwright test --headed",
+		"test:all": "vitest run && playwright test"
 	},
 	"dependencies": {
 		"@linkden/env": "workspace:*",
@@ -62,6 +65,7 @@
 		"@biomejs/biome": "^2.4.15",
 		"@cloudflare/workers-types": "catalog:",
 		"@linkden/config": "workspace:*",
+		"@playwright/test": "^1.62.1",
 		"@tailwindcss/postcss": "catalog:",
 		"@testing-library/jest-dom": "^6.9.1",
 		"@testing-library/react": "^16.3.2",

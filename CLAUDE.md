@@ -28,6 +28,8 @@ Self-hosted link-in-bio application built for Cloudflare-first deployment.
 - `bun run test` — Run Vitest test suite (note: `bun test` uses Bun's own runner, not Vitest)
 - `bun run test:watch` — Run tests in watch mode
 - `bun run test:coverage` — Run tests with V8 coverage + thresholds
+- `bun run test:e2e` — Run Playwright e2e suite (`e2e/*.spec.ts`, split from Vitest; `PW_BASE_URL` overrides target origin)
+- `bun run test:all` — Vitest then Playwright
 - `bun run db:generate` — Generate Drizzle migrations
 - `bun run db:push` — Push schema to database
 - `bun db:reset` — Wipe local DB state (`.wrangler/state`)
@@ -52,6 +54,11 @@ Self-hosted link-in-bio application built for Cloudflare-first deployment.
 - Setup guides → Add reference path here
 
 This prevents context loss! Update this file IMMEDIATELY when creating important docs.
+
+## Dev / Testing Docs
+
+- Tunnel testing (view dev app on phone via cloudflared quick tunnel, single-origin
+  rewrites, Playwright split suite): `docs/dev-tunnel-testing.md`
 
 ## Compliance Audits
 
