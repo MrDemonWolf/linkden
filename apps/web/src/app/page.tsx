@@ -9,7 +9,8 @@ import { WolfLogo } from "@/components/wolf-logo";
 import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 import { ConsentBanner, hasAnalyticsConsent } from "@/components/public/consent-banner";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Link, BarChart3, Palette } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Link, BarChart3, Palette, AlertCircle, RotateCw } from "lucide-react";
 
 export default function Home() {
 	const pageData = useQuery({
@@ -28,8 +29,13 @@ export default function Home() {
 		}
 	}, [pageData.data?.profile, trackViewMutate]);
 
-	// Show welcome page on error (API unreachable) or when no profile exists
-	if (pageData.isError || (!pageData.isLoading && !pageData.data?.profile)) {
+	// Query failed (API unreachable) — show a retryable error card, not a spinner
+	if (pageData.isError) {
+		return <PageLoadError onRetry={() => pageData.refetch()} />;
+	}
+
+	// Show welcome page when no profile exists yet
+	if (!pageData.isLoading && !pageData.data?.profile) {
 		return <WelcomePage />;
 	}
 
@@ -99,6 +105,29 @@ function AuthenticatedPublicPage({ data }: { data: Parameters<typeof PublicPage>
 	return <PublicPage data={data} isAdmin={!!session?.user} />;
 }
 
+function PageLoadError({ onRetry }: { onRetry: () => void }) {
+	return (
+		<main className="flex min-h-dvh items-center justify-center px-6">
+			<div
+				role="alert"
+				className="w-full max-w-sm rounded-2xl bg-card p-8 text-center shadow-lg ring-1 ring-border"
+			>
+				<div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10 text-destructive ring-1 ring-destructive/20">
+					<AlertCircle className="h-5 w-5" aria-hidden="true" />
+				</div>
+				<h1 className="text-base font-semibold text-foreground">Couldn&apos;t load this page</h1>
+				<p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+					Something went wrong while loading. Check your connection and try again.
+				</p>
+				<Button onClick={onRetry} className="mt-5 gap-1.5">
+					<RotateCw className="h-4 w-4" aria-hidden="true" />
+					Retry
+				</Button>
+			</div>
+		</main>
+	);
+}
+
 const features = [
 	{ label: "Custom Links", desc: "Add unlimited blocks", icon: Link },
 	{ label: "Analytics", desc: "Track every click", icon: BarChart3 },
@@ -115,7 +144,7 @@ function WelcomePage() {
 				<ThemeToggle />
 			</div>
 
-			<div className="relative z-10 mx-auto max-w-lg px-6 text-center">
+			<main className="relative z-10 mx-auto max-w-lg px-6 text-center">
 				{/* Logo mark */}
 				<div {...getAnimationProps(0)}>
 					<div className="mx-auto mb-8 flex h-18 w-18 items-center justify-center rounded-2xl bg-card ring-1 ring-border shadow-[0_0_40px_-12px_rgba(59,130,246,0.25)] backdrop-blur-xl">
@@ -185,7 +214,7 @@ function WelcomePage() {
 						</a>
 					</p>
 				</div>
-			</div>
+			</main>
 		</div>
 	);
 }

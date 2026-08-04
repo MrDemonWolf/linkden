@@ -182,7 +182,7 @@ function SidebarContent({
 			</nav>
 
 			{/* Branding + version */}
-			<div className="px-4 pb-2">
+			<div className="px-4 pb-3">
 				{adminBrandingEnabled && (
 					<p className="text-xs text-muted-foreground">
 						Powered by{" "}
@@ -216,13 +216,17 @@ function SidebarContent({
 						</AvatarFallback>
 					</Avatar>
 					<div className="flex-1 min-w-0">
-						<p className="text-xs font-semibold truncate">{user?.name ?? "Admin"}</p>
-						<p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
+						<p className="text-xs font-semibold truncate" title={user?.name}>
+							{user?.name ?? "Admin"}
+						</p>
+						<p className="text-[11px] text-muted-foreground truncate" title={user?.email}>
+							{user?.email}
+						</p>
 					</div>
 					<button
 						type="button"
 						onClick={handleSignOut}
-						className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
+						className="shrink-0 p-1.5 text-muted-foreground hover:text-destructive transition-colors"
 						aria-label="Sign out"
 					>
 						<LogOut className="h-3.5 w-3.5" />

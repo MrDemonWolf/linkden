@@ -188,7 +188,7 @@ export function ConsentBanner({ settings, themeColors }: ConsentBannerProps) {
 		return (
 			<section
 				aria-label="Cookie consent"
-				className="fixed bottom-0 left-0 right-0 z-50 flex flex-col gap-3 border-t bg-background/95 p-4 shadow-lg backdrop-blur-md sm:flex-row sm:items-center sm:justify-between"
+				className="fixed bottom-0 left-0 right-0 z-50 flex flex-col gap-3 border-t bg-background/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-lg backdrop-blur-md sm:flex-row sm:items-center sm:justify-between"
 				style={containerStyle}
 			>
 				<div className="min-w-0 flex-1">
@@ -207,7 +207,7 @@ export function ConsentBanner({ settings, themeColors }: ConsentBannerProps) {
 						</a>
 					)}
 				</div>
-				<div className="flex shrink-0 gap-2">
+				<div className="flex shrink-0 flex-wrap gap-2">
 					<button
 						type="button"
 						onClick={essentialOnly}
@@ -232,7 +232,7 @@ export function ConsentBanner({ settings, themeColors }: ConsentBannerProps) {
 	return (
 		<section
 			aria-label="Cookie consent"
-			className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 p-4 shadow-lg backdrop-blur-md"
+			className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-lg backdrop-blur-md"
 			style={containerStyle}
 		>
 			<div className="mx-auto max-w-3xl space-y-3">
