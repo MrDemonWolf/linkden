@@ -54,8 +54,7 @@ async function fetchPage(): Promise<PublicPagePayload> {
 		// origin and back for every render. Deliberately not named NEXT_PUBLIC_*:
 		// those are inlined at compile time (even under `next dev`) and so cannot
 		// hold a different value on the server than in the browser bundle.
-		const serverUrl =
-			process.env.INTERNAL_SERVER_URL ?? process.env.NEXT_PUBLIC_SERVER_URL;
+		const serverUrl = process.env.INTERNAL_SERVER_URL ?? process.env.NEXT_PUBLIC_SERVER_URL;
 		if (!serverUrl) return {};
 		const res = await fetch(`${serverUrl}/trpc/public.getPage`, {
 			next: { revalidate: 60 },
@@ -146,7 +145,9 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" className="dark" suppressHydrationWarning>
+		// Theme class is applied pre-paint by next-themes (defaultTheme="system");
+		// hardcoding "dark" here would flash dark for light-OS first visits.
+		<html lang="en" suppressHydrationWarning>
 			<body
 				className={`${montserrat.variable} ${roboto.variable} ${jetbrainsMono.variable} antialiased`}
 			>
