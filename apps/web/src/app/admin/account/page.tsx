@@ -471,7 +471,7 @@ export default function AccountPage() {
 										<Mail className="h-3 w-3 text-muted-foreground" />
 										Email
 									</div>
-									<div className="text-[11px] font-mono text-muted-foreground truncate">
+									<div className="text-micro font-mono text-muted-foreground truncate">
 										{user?.email ?? "—"}
 									</div>
 								</div>
@@ -522,11 +522,11 @@ export default function AccountPage() {
 										</Button>
 									</div>
 									{emailError ? (
-										<p id="newEmail-error" role="alert" className="text-[11px] text-destructive">
+										<p id="newEmail-error" role="alert" className="text-micro text-destructive">
 											{emailError}
 										</p>
 									) : (
-										<p className="text-[10px] text-muted-foreground">
+										<p className="text-micro text-muted-foreground">
 											A verification link will be sent to your current email.
 										</p>
 									)}
@@ -537,7 +537,7 @@ export default function AccountPage() {
 							<div className="grid grid-cols-[1fr_auto] gap-3 items-center py-3 border-b border-dashed border-border">
 								<div className="min-w-0">
 									<div className="text-xs font-medium">Password</div>
-									<div className="text-[11px] text-muted-foreground">
+									<div className="text-micro text-muted-foreground">
 										{relativeDays(userUpdatedAt)}
 									</div>
 								</div>
@@ -621,7 +621,7 @@ export default function AccountPage() {
 											</button>
 										</div>
 										{newPwError && (
-											<p id="newPw-error" role="alert" className="text-[11px] text-destructive">
+											<p id="newPw-error" role="alert" className="text-micro text-destructive">
 												{newPwError}
 											</p>
 										)}
@@ -650,7 +650,7 @@ export default function AccountPage() {
 											aria-describedby={confirmPwError ? "confirmPw-error" : undefined}
 										/>
 										{confirmPwError && (
-											<p id="confirmPw-error" role="alert" className="text-[11px] text-destructive">
+											<p id="confirmPw-error" role="alert" className="text-micro text-destructive">
 												{confirmPwError}
 											</p>
 										)}
@@ -670,11 +670,11 @@ export default function AccountPage() {
 							<div className="grid grid-cols-[1fr_auto_auto] gap-3 items-center py-3 border-b border-dashed border-border">
 								<div className="min-w-0">
 									<div className="text-xs font-medium">Two-factor authentication</div>
-									<div className="text-[11px] text-muted-foreground">
+									<div className="text-micro text-muted-foreground">
 										TOTP via authenticator app
 									</div>
 								</div>
-								<Badge variant={is2faEnabled ? "default" : "secondary"} className="text-[10px]">
+								<Badge variant={is2faEnabled ? "default" : "secondary"} className="text-micro">
 									{is2faEnabled ? "enabled" : "disabled"}
 								</Badge>
 								<Switch
@@ -688,7 +688,7 @@ export default function AccountPage() {
 							<div className="grid grid-cols-[1fr_auto] gap-3 items-center py-3">
 								<div className="min-w-0">
 									<div className="text-xs font-medium">Magic link sign-in</div>
-									<div className="text-[11px] text-muted-foreground">passwordless · email-only</div>
+									<div className="text-micro text-muted-foreground">passwordless · email-only</div>
 								</div>
 								<Switch
 									checked={magicLinkEnabled}
@@ -709,7 +709,7 @@ export default function AccountPage() {
 							<div className="grid grid-cols-[1fr_auto] gap-3 items-center">
 								<div className="min-w-0">
 									<div className="text-xs font-medium">Delete all content</div>
-									<div className="text-[11px] text-muted-foreground">
+									<div className="text-micro text-muted-foreground">
 										removes blocks + analytics · keeps account
 									</div>
 								</div>
@@ -721,7 +721,7 @@ export default function AccountPage() {
 							<div className="grid grid-cols-[1fr_auto] gap-3 items-center pt-3 border-t border-dashed border-destructive/30">
 								<div className="min-w-0">
 									<div className="text-xs font-medium">Reset everything</div>
-									<div className="text-[11px] text-muted-foreground">
+									<div className="text-micro text-muted-foreground">
 										full wipe · returns to setup wizard
 									</div>
 								</div>
@@ -866,7 +866,7 @@ export default function AccountPage() {
 											<summary className="cursor-pointer text-muted-foreground hover:text-foreground">
 												Manual entry key
 											</summary>
-											<code className="mt-1 block break-all rounded bg-muted px-2 py-1 text-[10px]">
+											<code className="mt-1 block break-all rounded bg-muted px-2 py-1 text-micro">
 												{totpUri}
 											</code>
 										</details>
@@ -880,7 +880,7 @@ export default function AccountPage() {
 										</p>
 										<div className="grid grid-cols-2 gap-1">
 											{backupCodes.map((code) => (
-												<code key={code} className="text-[10px] font-mono text-muted-foreground">
+												<code key={code} className="text-micro font-mono text-muted-foreground">
 													{code}
 												</code>
 											))}

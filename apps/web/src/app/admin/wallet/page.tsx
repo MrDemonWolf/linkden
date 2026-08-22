@@ -171,7 +171,7 @@ export default function WalletPage() {
 						// Solid background: text-warning over the translucent panel composited
 						// on the dark device frame measured ~3:1 (fails AA at 11px).
 						<div className="mb-3 flex items-center justify-between rounded-full border border-warning/40 bg-background py-1 pl-3 pr-1">
-							<span className="text-[11px] font-medium text-warning">Unsaved changes</span>
+							<span className="text-micro font-medium text-warning">Unsaved changes</span>
 							<Button size="sm" variant="default" onClick={handleSave}>
 								{isSaving ? "Saving…" : "Save"}
 							</Button>
@@ -183,7 +183,7 @@ export default function WalletPage() {
 						onDirtyChange={setIsDirty}
 						saveRef={saveRef}
 					/>
-					<p className="mt-4 pb-1 text-center text-[11px] text-muted-foreground">
+					<p className="mt-4 pb-1 text-center text-micro text-muted-foreground">
 						QR code links to your public profile page
 					</p>
 				</section>

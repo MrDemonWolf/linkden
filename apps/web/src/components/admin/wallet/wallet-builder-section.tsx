@@ -401,7 +401,7 @@ function Section({
 		<div className="space-y-2">
 			<div className="flex items-baseline gap-2">
 				{Icon && <Icon className="h-3 w-3 self-center text-muted-foreground" />}
-				<h3 className="text-[11px] font-semibold uppercase tracking-wider text-foreground/80">
+				<h3 className="text-micro font-semibold uppercase tracking-wider text-foreground/80">
 					{title}
 				</h3>
 				{hint && <span className="text-[10.5px] text-muted-foreground/60">· {hint}</span>}

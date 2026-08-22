@@ -101,7 +101,7 @@ export function BlockRow({
 					</div>
 					<span
 						className={cn(
-							"inline-block mt-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none capitalize",
+							"inline-block mt-1 rounded-full px-1.5 py-0.5 text-micro font-medium leading-none capitalize",
 							badgeClass,
 						)}
 					>
@@ -115,7 +115,7 @@ export function BlockRow({
 			{featureHidden && (
 				<Link
 					href="/admin/settings"
-					className="mr-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-warning/40 bg-warning/10 px-2 py-1 text-[10px] font-medium leading-none text-warning transition-colors hover:bg-warning/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+					className="mr-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-warning/40 bg-warning/10 px-2 py-1 text-micro font-medium leading-none text-warning transition-colors hover:bg-warning/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 					title="This block's feature is turned off, so it won't appear on your public page"
 				>
 					<TriangleAlert className="h-3 w-3" aria-hidden="true" />

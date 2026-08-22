@@ -24,7 +24,7 @@ export function OgPreviewCard({ title, description, imageUrl, siteUrl }: OgPrevi
 		<div className="space-y-3">
 			{/* Twitter / X card style */}
 			<div>
-				<p className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+				<p className="mb-1.5 text-micro font-medium uppercase tracking-wider text-muted-foreground">
 					Twitter / X
 				</p>
 				<div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
@@ -39,7 +39,7 @@ export function OgPreviewCard({ title, description, imageUrl, siteUrl }: OgPrevi
 						</div>
 					)}
 					<div className="border-t border-border/40 px-3 py-2.5">
-						<p className="truncate text-[11px] text-muted-foreground">{displayDomain}</p>
+						<p className="truncate text-micro text-muted-foreground">{displayDomain}</p>
 						<p className="mt-0.5 truncate text-sm font-medium text-foreground">{displayTitle}</p>
 						<p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
 							{displayDescription}
@@ -50,7 +50,7 @@ export function OgPreviewCard({ title, description, imageUrl, siteUrl }: OgPrevi
 
 			{/* Facebook style */}
 			<div>
-				<p className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+				<p className="mb-1.5 text-micro font-medium uppercase tracking-wider text-muted-foreground">
 					Facebook / LinkedIn
 				</p>
 				<div className="overflow-hidden rounded-lg border border-border/60 bg-muted/30 shadow-sm">
@@ -65,7 +65,7 @@ export function OgPreviewCard({ title, description, imageUrl, siteUrl }: OgPrevi
 						</div>
 					)}
 					<div className="px-3 py-2.5">
-						<p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+						<p className="text-micro font-medium uppercase tracking-wide text-muted-foreground">
 							{displayDomain}
 						</p>
 						<p className="mt-1 truncate text-sm font-semibold text-foreground">{displayTitle}</p>

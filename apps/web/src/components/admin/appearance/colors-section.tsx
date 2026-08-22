@@ -89,16 +89,16 @@ export function ColorsSection({
 				{/* Custom color pickers — light mode only */}
 				<div className="flex items-center justify-between gap-2">
 					<Label className="text-xs">Custom colors</Label>
-					<span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+					<span className="rounded-full border border-border bg-muted px-2 py-0.5 text-micro font-medium text-muted-foreground">
 						Light mode only
 					</span>
 				</div>
-				<p className="text-[11px] text-muted-foreground -mt-2">
+				<p className="text-micro text-muted-foreground -mt-2">
 					These override the preset&apos;s light palette. Dark mode always uses the selected
 					preset&apos;s built-in dark colors.
 				</p>
 				{previewDark && (
-					<p className="flex items-center gap-1.5 rounded-md border border-warning/30 bg-warning/10 px-2.5 py-1.5 text-[11px] text-warning">
+					<p className="flex items-center gap-1.5 rounded-md border border-warning/30 bg-warning/10 px-2.5 py-1.5 text-micro text-warning">
 						You&apos;re previewing dark mode — changes below won&apos;t affect this preview.
 					</p>
 				)}

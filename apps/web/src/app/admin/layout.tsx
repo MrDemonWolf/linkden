@@ -75,7 +75,7 @@ function DesktopTopBar({ pathname }: { pathname: string }) {
 	return (
 		<div className="hidden md:flex h-14 shrink-0 items-center justify-between border-b border-border px-6">
 			{/* Non-heading label: pages own their single h1 via PageHeader */}
-			<span className="text-[10px] font-mono font-medium uppercase tracking-[0.14em] text-muted-foreground">
+			<span className="text-micro font-mono font-medium uppercase tracking-[0.14em] text-muted-foreground">
 				{currentPageLabel}
 			</span>
 			<div className="flex items-center gap-3">
@@ -142,7 +142,7 @@ function SidebarContent({
 				<Icon className={cn("h-4 w-4 shrink-0", isActive && "text-primary")} />
 				<span>{item.label}</span>
 				{item.label === "Connections" && unreadCount > 0 && (
-					<span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-primary-foreground">
+					<span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-micro font-semibold text-primary-foreground">
 						{unreadCount > 99 ? "99+" : unreadCount}
 					</span>
 				)}
@@ -161,7 +161,7 @@ function SidebarContent({
 				)}
 				<div className="flex flex-col min-w-0">
 					<span className="text-sm font-semibold leading-tight truncate">{siteName}</span>
-					<span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+					<span className="text-micro font-bold uppercase tracking-wider text-muted-foreground">
 						Admin Console
 					</span>
 				</div>
@@ -171,7 +171,7 @@ function SidebarContent({
 			<nav aria-label="Main navigation" className="flex-1 px-2 py-2 space-y-3 overflow-y-auto">
 				{NAV_GROUPS.map((group) => (
 					<div key={group.label} className="space-y-0.5">
-						<p className="px-3 pt-1 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+						<p className="px-3 pt-1 pb-1 text-micro font-bold uppercase tracking-widest text-muted-foreground">
 							{group.label}
 						</p>
 						{(
@@ -217,7 +217,7 @@ function SidebarContent({
 					</Avatar>
 					<div className="flex-1 min-w-0">
 						<p className="text-xs font-semibold truncate">{user?.name ?? "Admin"}</p>
-						<p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
+						<p className="text-micro text-muted-foreground truncate">{user?.email}</p>
 					</div>
 					<button
 						type="button"
@@ -419,7 +419,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 						<nav className="flex flex-col px-2 py-2 gap-0.5" aria-label="Navigation">
 							{NAV_GROUPS.map((group) => (
 								<div key={group.label}>
-									<p className="px-3 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+									<p className="px-3 pt-3 pb-1 text-micro font-bold uppercase tracking-widest text-muted-foreground">
 										{group.label}
 									</p>
 									{(
@@ -450,7 +450,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 												<Icon className="h-4 w-4 shrink-0" />
 												{item.label}
 												{item.label === "Connections" && unreadCount > 0 && (
-													<span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-semibold text-primary-foreground">
+													<span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-micro font-semibold text-primary-foreground">
 														{unreadCount > 99 ? "99+" : unreadCount}
 													</span>
 												)}
@@ -517,7 +517,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 							<span className="relative">
 								<Icon className="h-5 w-5" />
 								{showBadge && (
-									<span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+									<span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-micro font-semibold text-primary-foreground">
 										{unreadCount > 99 ? "99+" : unreadCount}
 									</span>
 								)}

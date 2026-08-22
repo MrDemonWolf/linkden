@@ -62,12 +62,12 @@ export function TopLinksList({
 								<div key={String(link.id ?? i)}>
 									<div className="flex items-center justify-between gap-3 mb-1">
 										<div className="flex items-center gap-2 min-w-0">
-											<span className="text-[11px] font-mono text-muted-foreground tabular-nums shrink-0 w-6">
+											<span className="text-micro font-mono text-muted-foreground tabular-nums shrink-0 w-6">
 												#{String(i + 1).padStart(2, "0")}
 											</span>
 											<div className="min-w-0">
 												<p className="text-xs font-medium truncate">{link.title || "Untitled"}</p>
-												<p className="text-[10px] text-muted-foreground truncate flex items-center gap-1">
+												<p className="text-micro text-muted-foreground truncate flex items-center gap-1">
 													<ExternalLink className="h-2.5 w-2.5 shrink-0" />
 													{extractDomain(link.url)}
 												</p>

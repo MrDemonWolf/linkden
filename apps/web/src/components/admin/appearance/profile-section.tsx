@@ -40,7 +40,7 @@ export function ProfileSection({
 						aspectRatio="square"
 						onUploadComplete={onAvatarChange}
 					/>
-					<p className="text-[10px] text-muted-foreground">Recommended: 400x400px, max 5MB</p>
+					<p className="text-micro text-muted-foreground">Recommended: 400x400px, max 5MB</p>
 				</div>
 
 				{/* Name field */}
@@ -49,7 +49,7 @@ export function ProfileSection({
 						<Label htmlFor="a-name" className="text-xs">
 							Display Name
 						</Label>
-						<span className="text-[10px] tabular-nums text-muted-foreground">
+						<span className="text-micro tabular-nums text-muted-foreground">
 							{profileName.length}/50
 						</span>
 					</div>
@@ -68,7 +68,7 @@ export function ProfileSection({
 						<Label htmlFor="a-bio" className="text-xs">
 							Bio
 						</Label>
-						<span className="text-[10px] tabular-nums text-muted-foreground">
+						<span className="text-micro tabular-nums text-muted-foreground">
 							{profileBio.length}/300
 						</span>
 					</div>

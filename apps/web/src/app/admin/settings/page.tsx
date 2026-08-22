@@ -677,7 +677,7 @@ export default function SettingsPage() {
 									</option>
 								))}
 							</select>
-							<p className="text-[11px] text-muted-foreground">
+							<p className="text-micro text-muted-foreground">
 								Used for timestamps on the dashboard. Defaults to your browser&apos;s timezone.
 							</p>
 						</div>
