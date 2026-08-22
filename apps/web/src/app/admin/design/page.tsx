@@ -179,8 +179,12 @@ export default function DesignThemePage() {
 				onVerifiedBadgeChange={(v) => set("verifiedBadge", v)}
 			/>
 
-			<CustomCssSection customCss={f.customCss} onCustomCssChange={(v) => set("customCss", v)} />
-			<FieldError id="custom-css-error" error={form.errors.customCss ?? null} />
+			{/* The error belongs to the CSS card above it, so it rides in the same
+			    stack instead of floating a full section gap away. */}
+			<div className="space-y-2">
+				<CustomCssSection customCss={f.customCss} onCustomCssChange={(v) => set("customCss", v)} />
+				<FieldError id="custom-css-error" error={form.errors.customCss ?? null} />
+			</div>
 
 			<StickySaveBar
 				isDirty={form.isDirty}

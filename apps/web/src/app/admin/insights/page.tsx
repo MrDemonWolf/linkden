@@ -24,8 +24,8 @@ import { PageShell } from "@/components/admin/page-shell";
 import { type Period, PeriodSelector } from "@/components/admin/period-selector";
 import { StatCard } from "@/components/admin/stat-card";
 import { TopLinksList } from "@/components/admin/top-links-list";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 import { trpc } from "@/utils/trpc";
 
@@ -181,72 +181,60 @@ export default function InsightsPage() {
 			</div>
 
 			{visibleNudges.length > 0 && (
-				<div {...enter()}>
-					<Card size="sm">
-						<CardContent className="space-y-3">
-							<p className="text-micro font-mono uppercase tracking-[0.14em] text-muted-foreground">
-								Next steps
-							</p>
-							<ul className="divide-y divide-border">
-								{visibleNudges.map((n) => {
-									const Icon = n.icon;
-									const destructive = n.tone === "destructive";
-									return (
-										<li
-											key={n.id}
-											className="flex flex-col items-start gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center"
+				<div {...enter()} className="space-y-2">
+					<p className="text-micro font-mono uppercase tracking-[0.14em] text-muted-foreground">
+						Next steps
+					</p>
+					{/* One Alert per nudge — including the email-not-configured banner,
+					    which is just the destructive-toned member of the same list. */}
+					{visibleNudges.map((n) => {
+						const Icon = n.icon;
+						return (
+							<Alert
+								key={n.id}
+								variant={n.tone === "destructive" ? "destructive" : "default"}
+								className="gap-x-3 gap-y-1 p-3 sm:grid-cols-[auto_1fr_auto]"
+							>
+								<Icon />
+								{/* role/aria-level keeps these in the heading outline: AlertTitle
+								    is a div, and a div is not valid content for an <h2>. */}
+								<AlertTitle role="heading" aria-level={2} className="text-sm font-semibold">
+									{n.title}
+								</AlertTitle>
+								<AlertDescription>{n.description}</AlertDescription>
+								<div className="col-start-2 mt-1 flex items-center gap-1 sm:col-start-3 sm:row-span-2 sm:row-start-1 sm:mt-0 sm:self-center sm:justify-self-end">
+									{"href" in n.action ? (
+										<Button
+											variant="outline"
+											size="sm"
+											nativeButton={false}
+											render={<Link href={n.action.href} />}
 										>
-											<div className="flex min-w-0 items-center gap-3">
-												<div
-													className={
-														destructive
-															? "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-destructive/10 text-destructive"
-															: "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
-													}
-													aria-hidden="true"
-												>
-													<Icon className="h-4 w-4" />
-												</div>
-												<div className="min-w-0">
-													<h2 className="text-sm font-semibold">{n.title}</h2>
-													<p className="text-xs text-muted-foreground">{n.description}</p>
-												</div>
-											</div>
-											<div className="flex w-full items-center gap-1 sm:ml-auto sm:w-auto">
-												{"href" in n.action ? (
-													<Button
-														variant="outline"
-														size="sm"
-														render={<Link href={n.action.href} />}
-													>
-														{n.action.label}
-													</Button>
-												) : (
-													<Button variant="outline" size="sm" onClick={n.action.onClick}>
-														{n.action.label}
-													</Button>
-												)}
-												<Button
-													variant="ghost"
-													size="icon"
-													className="ml-auto h-11 w-11 text-muted-foreground sm:ml-0 md:h-8 md:w-8"
-													onClick={() => dismiss(n.id)}
-													aria-label={`Dismiss: ${n.title}`}
-												>
-													<X className="h-4 w-4" />
-												</Button>
-											</div>
-										</li>
-									);
-								})}
-							</ul>
-						</CardContent>
-					</Card>
+											{n.action.label}
+										</Button>
+									) : (
+										<Button variant="outline" size="sm" onClick={n.action.onClick}>
+											{n.action.label}
+										</Button>
+									)}
+									<Button
+										variant="ghost"
+										size="icon"
+										className="ml-auto text-muted-foreground sm:ml-0"
+										onClick={() => dismiss(n.id)}
+										aria-label={`Dismiss: ${n.title}`}
+									>
+										<X className="h-4 w-4" />
+									</Button>
+								</div>
+							</Alert>
+						);
+					})}
 				</div>
 			)}
 
 			{/* Stat cards */}
-			<div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+			<div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-4">
 				<div {...enter()}>
 					<StatCard
 						icon={Eye}

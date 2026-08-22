@@ -36,7 +36,7 @@ export function SubTabs({
 		<nav
 			aria-label={ariaLabel}
 			className={cn(
-				"-mx-4 flex gap-1 overflow-x-auto border-b border-rule px-4 [scrollbar-width:none] md:mx-0 md:px-0",
+				"-mx-6 mb-6 flex gap-1 overflow-x-auto border-b border-border px-6 [scrollbar-width:none] md:mx-0 md:px-0",
 				className,
 			)}
 		>
@@ -47,18 +47,15 @@ export function SubTabs({
 						key={item.href}
 						href={item.href}
 						aria-current={active ? "page" : undefined}
+						// Static underline: a 2px foreground rule overlapping the strip's hairline.
 						className={cn(
-							"relative flex min-h-11 shrink-0 items-center whitespace-nowrap px-3 text-xs font-medium transition-colors md:min-h-10",
-							active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+							"-mb-px flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 px-3 text-xs transition-colors md:min-h-10",
+							active
+								? "border-foreground font-medium text-foreground"
+								: "border-transparent text-muted-foreground hover:text-foreground",
 						)}
 					>
 						{item.label}
-						{active && (
-							<span
-								aria-hidden
-								className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-[image:var(--signal)]"
-							/>
-						)}
 					</Link>
 				);
 			})}

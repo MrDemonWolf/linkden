@@ -36,7 +36,9 @@ export function PhoneFrame({ children, previewDark, isLoading }: PhoneFrameProps
 
 	return (
 		<DeviceFrame width={340} height={SCREEN_HEIGHT} previewDark={previewDark} isLoading={isLoading}>
-			<div style={{ height: contentHeight * SCALE, overflow: "hidden" }}>
+			{/* `public-scope` undoes the admin radius scale: this subtree is the real
+			    public page and has to render with the public page's corners. */}
+			<div className="public-scope" style={{ height: contentHeight * SCALE, overflow: "hidden" }}>
 				<div
 					ref={contentRef}
 					style={{

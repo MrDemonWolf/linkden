@@ -7,6 +7,7 @@ import { ShaderBanner } from "@/components/public/shader-banner";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { getLoginBgPresets } from "@/lib/login-bg";
 import { cn } from "@/lib/utils";
 
@@ -150,30 +151,31 @@ export function PreferencesSection({
 
 				<div className="space-y-2">
 					<p className="text-micro font-medium text-muted-foreground">Login background</p>
-					<div
-						className="inline-flex flex-wrap gap-1 rounded-lg border border-border bg-background p-1"
-						role="tablist"
+					{/* Single-select ToggleGroup (Base UI `multiple` defaults to false).
+					    An empty `next` is a re-press of the active mode — ignoring it keeps
+					    one mode selected. This was a `role="tablist"` before, but the three
+					    modes never controlled tabpanels. */}
+					<ToggleGroup
+						value={[bgMode]}
+						onValueChange={(next) => {
+							const picked = next[0];
+							if (picked) set("loginBgMode", picked);
+						}}
+						spacing={1}
 						aria-label="Login background mode"
+						className="flex-wrap rounded-lg border border-border bg-background p-1"
 					>
 						{BG_MODES.map(({ id, label, icon: Icon }) => (
-							<button
+							<ToggleGroupItem
 								key={id}
-								type="button"
-								role="tab"
-								aria-selected={bgMode === id}
-								onClick={() => set("loginBgMode", id)}
-								className={cn(
-									"flex min-h-11 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors md:min-h-9",
-									bgMode === id
-										? "bg-primary/10 text-primary"
-										: "text-muted-foreground hover:text-foreground",
-								)}
+								value={id}
+								className="min-h-11 gap-1.5 px-3 text-muted-foreground md:min-h-9 aria-pressed:bg-primary/10 aria-pressed:text-primary hover:aria-pressed:bg-primary/10 hover:aria-pressed:text-primary"
 							>
-								<Icon className="h-3 w-3" />
+								<Icon className="size-3" />
 								{label}
-							</button>
+							</ToggleGroupItem>
 						))}
-					</div>
+					</ToggleGroup>
 
 					{bgMode === "default" && (
 						<p className="text-micro text-muted-foreground">

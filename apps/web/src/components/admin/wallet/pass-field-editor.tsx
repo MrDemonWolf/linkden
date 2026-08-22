@@ -1,15 +1,13 @@
 "use client";
 
-import { useId, useMemo } from "react";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
 import {
-	DndContext,
 	closestCenter,
+	DndContext,
+	type DragEndEvent,
 	KeyboardSensor,
 	PointerSensor,
 	useSensor,
 	useSensors,
-	type DragEndEvent,
 } from "@dnd-kit/core";
 import {
 	arrayMove,
@@ -19,11 +17,13 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { PASS_FIELD_LIMITS, type PassField } from "@linkden/validators/wallet";
+import { GripVertical, Plus, Trash2 } from "lucide-react";
+import { useId, useMemo } from "react";
+import type { PassZone } from "@/components/admin/wallet-pass-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { PASS_FIELD_LIMITS, type PassField } from "@linkden/validators/wallet";
-import type { PassZone } from "@/components/admin/wallet-pass-preview";
 
 const ZONE_LABELS: Record<PassZone, { name: string; key: keyof typeof PASS_FIELD_LIMITS }> = {
 	header: { name: "Header", key: "header" },
@@ -92,7 +92,7 @@ export function PassFieldEditor({ zone, fields, onChange, onZoneFocus }: FieldEd
 					<h3 className="text-micro font-semibold uppercase tracking-wider text-foreground/80">
 						{meta.name}
 					</h3>
-					<span className="font-mono text-[9.5px] text-muted-foreground/70 tabular-nums">
+					<span className="font-mono text-micro text-muted-foreground/70 tabular-nums">
 						{fields.length}/{max}
 					</span>
 				</div>
@@ -102,7 +102,7 @@ export function PassFieldEditor({ zone, fields, onChange, onZoneFocus }: FieldEd
 					size="xs"
 					disabled={atMax}
 					onClick={addField}
-					className="h-6 px-2"
+					className="px-2"
 				>
 					<Plus className="mr-1 h-3 w-3" />
 					Add

@@ -331,7 +331,7 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 										<button
 											type="button"
 											onClick={() => handleRemoveNetwork(social.slug)}
-											className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm opacity-60 transition-opacity hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100"
+											className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm opacity-60 transition-opacity after:absolute after:-inset-3 after:content-[''] hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100 md:after:hidden"
 											aria-label={`Remove ${social.name}`}
 										>
 											<Trash2 className="h-3 w-3" />

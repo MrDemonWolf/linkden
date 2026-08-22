@@ -1,11 +1,11 @@
 "use client";
 
-import { Popover } from "@base-ui/react/popover";
 import { Copy, Share2 } from "lucide-react";
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 /**
@@ -43,58 +43,43 @@ export function SharePopover({ className }: { className?: string }) {
 	const canShare = typeof navigator !== "undefined" && !!navigator.share;
 
 	return (
-		<Popover.Root open={open} onOpenChange={setOpen}>
-			<Popover.Trigger
+		<Popover open={open} onOpenChange={setOpen}>
+			<PopoverTrigger
 				aria-label="Share your page"
 				render={
 					<Button variant="ghost" size="icon" className={cn("text-muted-foreground", className)} />
 				}
 			>
 				<Share2 className="h-4 w-4" />
-			</Popover.Trigger>
-			<Popover.Portal>
-				<Popover.Positioner
-					side="bottom"
-					align="end"
-					sideOffset={8}
-					collisionPadding={8}
-					className="z-50"
-				>
-					<Popover.Popup
-						className={cn(
-							"w-64 rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-md outline-none",
-							"data-[open]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:fade-in-0 duration-150",
-						)}
-					>
-						<Popover.Title className="text-micro font-semibold uppercase tracking-widest text-muted-foreground">
-							Share your page
-						</Popover.Title>
-						<div className="mt-2 flex items-center gap-1">
-							<code className="min-w-0 flex-1 truncate rounded-md border border-border bg-muted px-2 py-1.5 font-mono text-xs">
-								{url}
-							</code>
-							<Button variant="outline" size="icon" aria-label="Copy link" onClick={copy}>
-								<Copy className="h-3.5 w-3.5" />
-							</Button>
-						</div>
-						{canShare && (
-							<Button variant="secondary" size="sm" className="mt-2 w-full" onClick={share}>
-								<Share2 className="h-3.5 w-3.5" />
-								Share…
-							</Button>
-						)}
-						{qr && (
-							<img
-								src={qr}
-								alt="QR code linking to your page"
-								width={200}
-								height={200}
-								className="mx-auto mt-3 rounded-lg bg-white p-2"
-							/>
-						)}
-					</Popover.Popup>
-				</Popover.Positioner>
-			</Popover.Portal>
-		</Popover.Root>
+			</PopoverTrigger>
+			<PopoverContent align="end" side="bottom" sideOffset={8} className="w-64 gap-0 p-3">
+				<PopoverTitle className="text-micro font-semibold uppercase tracking-widest text-muted-foreground">
+					Share your page
+				</PopoverTitle>
+				<div className="mt-2 flex items-center gap-1">
+					<code className="min-w-0 flex-1 truncate rounded-md border border-border bg-muted px-2 py-1.5 font-mono text-xs">
+						{url}
+					</code>
+					<Button variant="outline" size="icon" aria-label="Copy link" onClick={copy}>
+						<Copy className="h-3.5 w-3.5" />
+					</Button>
+				</div>
+				{canShare && (
+					<Button variant="secondary" size="sm" className="mt-2 w-full" onClick={share}>
+						<Share2 className="h-3.5 w-3.5" />
+						Share…
+					</Button>
+				)}
+				{qr && (
+					<img
+						src={qr}
+						alt="QR code linking to your page"
+						width={200}
+						height={200}
+						className="mx-auto mt-3 rounded-lg bg-white p-2"
+					/>
+				)}
+			</PopoverContent>
+		</Popover>
 	);
 }
