@@ -64,8 +64,16 @@ export default function AdminDashboardPage() {
 	const blocksQuery = useQuery(trpc.blocks.list.queryOptions());
 	const timezoneQuery = useQuery(trpc.settings.get.queryOptions({ key: "timezone" }));
 	const emailKeyQuery = useQuery(trpc.settings.get.queryOptions({ key: "email_api_key" }));
+	const emailFromQuery = useQuery(trpc.settings.get.queryOptions({ key: "email_from" }));
+	const deliveryQuery = useQuery(trpc.settings.get.queryOptions({ key: "contact_delivery" }));
 	// Secrets come back masked, so any non-empty value means a key is stored.
-	const emailMissing = emailKeyQuery.isSuccess && !emailKeyQuery.data?.value;
+	// Auth mail (reset, magic link) only needs the API key; contact-form delivery
+	// by email also needs a verified sender address.
+	const deliveryNeedsSender =
+		deliveryQuery.data?.value === "email" || deliveryQuery.data?.value === "both";
+	const emailMissing =
+		(emailKeyQuery.isSuccess && !emailKeyQuery.data?.value) ||
+		(deliveryNeedsSender && emailFromQuery.isSuccess && !emailFromQuery.data?.value);
 
 	const timezone = timezoneQuery.data?.value || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -250,7 +258,7 @@ export default function AdminDashboardPage() {
 									<Mail className="h-4 w-4" />
 								</div>
 								<div className="min-w-0">
-									<p className="text-sm font-semibold">Email isn&apos;t set up</p>
+									<h2 className="text-sm font-semibold">Email isn&apos;t set up</h2>
 									<p className="text-sm text-muted-foreground">
 										Password reset, magic links and contact notifications are off until you add a
 										provider key.
