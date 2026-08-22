@@ -59,7 +59,7 @@ export function ColorsSection({
 									aria-pressed={colorMode === opt.value}
 									onClick={() => onColorModeChange(opt.value)}
 									className={cn(
-										"flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
+										"flex min-h-11 items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all md:min-h-8",
 										"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 										colorMode === opt.value
 											? "bg-background text-foreground shadow-sm"

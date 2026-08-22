@@ -105,7 +105,7 @@ export function ColorField({
 						onChange(e.target.value.toUpperCase());
 					}}
 					aria-label={`${label} color`}
-					className="h-8 w-10 shrink-0 cursor-pointer appearance-none rounded-lg border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
+					className="h-11 w-12 shrink-0 cursor-pointer appearance-none rounded-lg md:h-8 md:w-10 border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
 				/>
 			</div>
 			{error && (
