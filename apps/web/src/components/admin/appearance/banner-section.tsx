@@ -48,7 +48,7 @@ export function BannerSection({
 						<span className="text-xs font-medium group-hover:text-foreground transition-colors">
 							Show banner on public page
 						</span>
-						<p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+						<p className="text-micro text-muted-foreground leading-tight mt-0.5">
 							Displays a banner behind your avatar
 						</p>
 					</div>
@@ -142,7 +142,7 @@ export function BannerSection({
 												<Check className="h-4 w-4 text-white drop-shadow-lg" />
 											</div>
 										)}
-										<span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-1.5 py-1 text-[10px] font-medium text-white truncate">
+										<span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-1.5 py-1 text-micro font-medium text-white truncate">
 											{preset.name}
 										</span>
 									</button>

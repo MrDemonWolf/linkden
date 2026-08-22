@@ -123,7 +123,7 @@ export function ThemePresetsSection({
 											style={{ backgroundColor: light["--ld-background"] }}
 										/>
 									</div>
-									<span className="text-[11px] font-semibold truncate">{theme.label}</span>
+									<span className="text-micro font-semibold truncate">{theme.label}</span>
 								</div>
 							</button>
 						);

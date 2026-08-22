@@ -99,7 +99,7 @@ export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
 							placeholder="Your name"
 							maxLength={50}
 						/>
-						<p className="text-[10px] text-muted-foreground text-right">{profileName.length}/50</p>
+						<p className="text-micro text-muted-foreground text-right">{profileName.length}/50</p>
 					</div>
 
 					<div className="space-y-1.5">
@@ -117,7 +117,7 @@ export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
 							maxLength={300}
 							rows={3}
 						/>
-						<p className="text-[10px] text-muted-foreground text-right">{bio.length}/300</p>
+						<p className="text-micro text-muted-foreground text-right">{bio.length}/300</p>
 					</div>
 
 					{profileDirty && (

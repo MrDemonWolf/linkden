@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Sun, Moon, Copy, ExternalLink } from "lucide-react";
+import { Copy, ExternalLink, Moon, Sun } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { trpc } from "@/utils/trpc";
 import { PhoneFrame } from "@/components/admin/phone-frame";
 import { PreviewContent } from "@/components/admin/preview-content";
 import { getThemeColors, type ThemeColors } from "@/components/public/public-page";
+import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { trpc } from "@/utils/trpc";
 
 // ── Dummy blocks for preview ────────────────────────────────────────────────
 // These provide a realistic preview without needing real block data.
@@ -236,7 +237,7 @@ export function PreviewRenderer({
 		<div className={className}>
 			{showHeader && (
 				<div className="mb-3 flex items-center justify-between px-1">
-					<span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+					<span className="text-micro font-semibold uppercase tracking-widest text-muted-foreground">
 						Preview
 					</span>
 					<div className="flex items-center gap-1">
@@ -272,25 +273,27 @@ export function PreviewRenderer({
 								<Moon className="h-3 w-3" />
 							</button>
 						</div>
-						<button
-							type="button"
-							onClick={handleCopyLink}
-							className="flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
-							aria-label="Copy live page link"
-							title="Copy link"
-						>
-							<Copy className="h-3 w-3" />
-						</button>
-						<a
-							href="/"
-							target="_blank"
-							rel="noopener noreferrer"
-							className="flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
-							aria-label="Open live page"
-							title="Open live page"
-						>
-							<ExternalLink className="h-3 w-3" />
-						</a>
+						<Tooltip content="Copy link">
+							<button
+								type="button"
+								onClick={handleCopyLink}
+								className="flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+								aria-label="Copy live page link"
+							>
+								<Copy className="h-3 w-3" />
+							</button>
+						</Tooltip>
+						<Tooltip content="Open live page">
+							<a
+								href="/"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+								aria-label="Open live page"
+							>
+								<ExternalLink className="h-3 w-3" />
+							</a>
+						</Tooltip>
 					</div>
 				</div>
 			)}

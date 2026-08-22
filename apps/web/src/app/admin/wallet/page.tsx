@@ -1,21 +1,22 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { Settings2, Save, Undo2, KeyRound } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { trpc } from "@/utils/trpc";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { PageHeader } from "@/components/admin/page-header";
-import { SectionCard } from "@/components/admin/section-header";
-import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+import { KeyRound, Save, Settings2, Undo2 } from "lucide-react";
+import { useRef, useState } from "react";
 import { DeviceFrame } from "@/components/admin/device-frame";
-import { WalletPassPreview, type PassZone } from "@/components/admin/wallet-pass-preview";
+import { PageHeader } from "@/components/admin/page-header";
+import { PageShell } from "@/components/admin/page-shell";
+import { SectionCard } from "@/components/admin/section-header";
+import { SigningKeysSection } from "@/components/admin/wallet/signing-keys-section";
 import {
 	WalletBuilderSection,
 	type WalletLiveState,
 } from "@/components/admin/wallet/wallet-builder-section";
-import { SigningKeysSection } from "@/components/admin/wallet/signing-keys-section";
+import { type PassZone, WalletPassPreview } from "@/components/admin/wallet-pass-preview";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+import { trpc } from "@/utils/trpc";
 
 // Server-side .pkpass signing/issuance is live: GET /api/wallet-pass signs and
 // serves the pass from the saved design + certs (503 if certs are missing), so
@@ -85,7 +86,7 @@ export default function WalletPage() {
 	};
 
 	return (
-		<div className="space-y-6 duration-300 animate-in fade-in-0 slide-in-from-bottom-2 ease-out">
+		<PageShell>
 			<PageHeader
 				title="Wallet Pass"
 				description={
@@ -171,7 +172,7 @@ export default function WalletPage() {
 						// Solid background: text-warning over the translucent panel composited
 						// on the dark device frame measured ~3:1 (fails AA at 11px).
 						<div className="mb-3 flex items-center justify-between rounded-full border border-warning/40 bg-background py-1 pl-3 pr-1">
-							<span className="text-[11px] font-medium text-warning">Unsaved changes</span>
+							<span className="text-micro font-medium text-warning">Unsaved changes</span>
 							<Button size="sm" variant="default" onClick={handleSave}>
 								{isSaving ? "Saving…" : "Save"}
 							</Button>
@@ -183,7 +184,7 @@ export default function WalletPage() {
 						onDirtyChange={setIsDirty}
 						saveRef={saveRef}
 					/>
-					<p className="mt-4 pb-1 text-center text-[11px] text-muted-foreground">
+					<p className="mt-4 pb-1 text-center text-micro text-muted-foreground">
 						QR code links to your public profile page
 					</p>
 				</section>
@@ -197,6 +198,6 @@ export default function WalletPage() {
 			>
 				<SigningKeysSection />
 			</SectionCard>
-		</div>
+		</PageShell>
 	);
 }

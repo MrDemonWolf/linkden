@@ -1,28 +1,30 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { Save, Undo2, Eye } from "lucide-react";
-import { themePresets } from "@linkden/ui/themes";
 import { getBannerPresetsForTheme } from "@linkden/ui/banner-presets";
-import { trpc } from "@/utils/trpc";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
-import { PageHeader } from "@/components/admin/page-header";
-import { PreviewRenderer } from "@/components/admin/preview-renderer";
-import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
-import { ThemePresetsSection } from "@/components/admin/appearance/theme-presets-section";
-import { ColorsSection } from "@/components/admin/appearance/colors-section";
+import { themePresets } from "@linkden/ui/themes";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Eye } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { BannerSection } from "@/components/admin/appearance/banner-section";
 import { VerifiedBadgeSection } from "@/components/admin/appearance/branding-section";
+import { ColorsSection } from "@/components/admin/appearance/colors-section";
 import { CustomCssSection } from "@/components/admin/appearance/custom-css-section";
 import {
-	SocialIconShapeSection,
 	type SocialIconShape,
+	SocialIconShapeSection,
 } from "@/components/admin/appearance/social-icon-shape-section";
+import { ThemePresetsSection } from "@/components/admin/appearance/theme-presets-section";
+import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
+import { PageHeader } from "@/components/admin/page-header";
+import { PageShell } from "@/components/admin/page-shell";
+import { PreviewRenderer } from "@/components/admin/preview-renderer";
+import { StickySaveBar } from "@/components/admin/sticky-save-bar";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+import { cn } from "@/lib/utils";
+import { trpc } from "@/utils/trpc";
 
 interface SavedState {
 	theme: string;
@@ -245,12 +247,7 @@ export default function AppearancePage() {
 
 	if (settingsQuery.isLoading) {
 		return (
-			<div
-				className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6"
-				aria-busy="true"
-				role="status"
-				aria-label="Loading appearance settings"
-			>
+			<PageShell aria-busy="true" role="status" aria-label="Loading appearance settings">
 				<Skeleton className="h-8 w-48" />
 				<div className="flex gap-6">
 					<div className="flex-1 space-y-4">
@@ -262,7 +259,7 @@ export default function AppearancePage() {
 						<Skeleton className="h-[640px] rounded-[2rem]" />
 					</div>
 				</div>
-			</div>
+			</PageShell>
 		);
 	}
 
@@ -295,7 +292,7 @@ export default function AppearancePage() {
 	};
 
 	return (
-		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
+		<PageShell>
 			{/* Page header */}
 			<PageHeader
 				title="Appearance"
@@ -363,8 +360,12 @@ export default function AppearancePage() {
 
 					<CustomCssSection customCss={customCss} onCustomCssChange={setCustomCss} />
 
-					{/* Spacer for sticky publish bar */}
-					{isDirty && <div className="h-16" />}
+					<StickySaveBar
+						isDirty={isDirty}
+						isSaving={updateSettings.isPending}
+						onSave={handleSave}
+						onDiscard={handleDiscard}
+					/>
 				</div>
 
 				{/* Preview column (desktop) */}
@@ -388,28 +389,6 @@ export default function AppearancePage() {
 					showHeader={false}
 				/>
 			</MobilePreviewSheet>
-
-			{/* Sticky bottom save bar */}
-			{isDirty && (
-				<div className="fixed bottom-16 md:bottom-0 inset-x-0 md:left-56 z-30 border-t border-border/50 bg-background/80 backdrop-blur-xl px-4 py-3 flex items-center justify-between shadow-lg animate-in slide-in-from-bottom-2 duration-200">
-					<span className="text-sm text-muted-foreground">You have unsaved changes</span>
-					<div className="flex gap-2">
-						<Button variant="ghost" size="sm" onClick={handleDiscard}>
-							<Undo2 className="mr-1.5 h-3.5 w-3.5" />
-							Discard
-						</Button>
-						<Button
-							size="sm"
-							disabled={updateSettings.isPending}
-							onClick={handleSave}
-							className="shadow-sm"
-						>
-							<Save className="mr-1.5 h-3.5 w-3.5" />
-							{updateSettings.isPending ? "Saving…" : "Save changes"}
-						</Button>
-					</div>
-				</div>
-			)}
-		</div>
+		</PageShell>
 	);
 }

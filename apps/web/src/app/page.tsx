@@ -148,7 +148,7 @@ function WelcomePage() {
 								<Icon className="h-5 w-5" />
 							</div>
 							<p className="text-xs font-semibold text-foreground">{label}</p>
-							<p className="mt-0.5 text-[11px] text-muted-foreground">{desc}</p>
+							<p className="mt-0.5 text-micro text-muted-foreground">{desc}</p>
 						</div>
 					))}
 				</div>

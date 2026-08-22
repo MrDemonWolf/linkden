@@ -37,7 +37,7 @@ export function ConsentSection({
 			<div className="flex items-center justify-between">
 				<div>
 					<Label className="text-sm font-medium">Show Consent Banner</Label>
-					<p className="text-[11px] text-muted-foreground">
+					<p className="text-micro text-muted-foreground">
 						Display a cookie consent banner to visitors
 					</p>
 				</div>
@@ -61,7 +61,7 @@ export function ConsentSection({
 							placeholder="This site uses cookies for authentication and optional analytics..."
 							className="dark:bg-input/30 border-input w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
 						/>
-						<p className="text-[11px] text-muted-foreground">
+						<p className="text-micro text-muted-foreground">
 							Customize the message shown in the consent banner
 						</p>
 					</div>
@@ -75,7 +75,7 @@ export function ConsentSection({
 							onChange={(e) => onPrivacyUrlChange(e.target.value)}
 							placeholder="https://example.com/privacy"
 						/>
-						<p className="text-[11px] text-muted-foreground">
+						<p className="text-micro text-muted-foreground">
 							Link shown in the banner for your privacy policy
 						</p>
 					</div>
@@ -91,7 +91,7 @@ export function ConsentSection({
 							<div className="flex items-center justify-between">
 								<div>
 									<p className="text-xs font-medium">Essential</p>
-									<p className="text-[11px] text-muted-foreground">
+									<p className="text-micro text-muted-foreground">
 										Required for authentication and core features
 									</p>
 								</div>
@@ -104,7 +104,7 @@ export function ConsentSection({
 							<div className="flex items-center justify-between">
 								<div>
 									<p className="text-xs font-medium">Analytics</p>
-									<p className="text-[11px] text-muted-foreground">
+									<p className="text-micro text-muted-foreground">
 										Track page views, clicks, and visitor behaviour
 									</p>
 								</div>
@@ -121,7 +121,7 @@ export function ConsentSection({
 							<div className="flex items-center justify-between">
 								<div>
 									<p className="text-xs font-medium">Marketing</p>
-									<p className="text-[11px] text-muted-foreground">
+									<p className="text-micro text-muted-foreground">
 										Personalized content and recommendations
 									</p>
 								</div>
@@ -138,7 +138,7 @@ export function ConsentSection({
 							<div className="flex items-center justify-between">
 								<div>
 									<p className="text-xs font-medium">Functional</p>
-									<p className="text-[11px] text-muted-foreground">
+									<p className="text-micro text-muted-foreground">
 										Enhanced features like themes and preferences
 									</p>
 								</div>

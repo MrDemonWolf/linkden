@@ -41,13 +41,13 @@ export function MapKitSection() {
 		<div className="space-y-3">
 			<div className="flex items-start gap-2 rounded-lg border border-border/40 bg-muted/20 px-3 py-2">
 				<Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-				<p className="text-[11px] text-muted-foreground">
+				<p className="text-micro text-muted-foreground">
 					Not yet functional — Location blocks currently use map links and don&apos;t require a
 					token.
 				</p>
 			</div>
 
-			<p className="text-[11px] text-muted-foreground">
+			<p className="text-micro text-muted-foreground">
 				Requires an Apple Developer account and a MapKit JS JWT token.
 			</p>
 

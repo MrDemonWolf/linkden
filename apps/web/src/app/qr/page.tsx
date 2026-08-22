@@ -27,7 +27,7 @@ export default function QRPage() {
 
 	return (
 		<div className="login-bg flex min-h-screen flex-col items-center justify-center p-4 sm:p-8">
-			<p className="mb-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-mono">
+			<p className="mb-2 text-micro uppercase tracking-[0.14em] text-muted-foreground font-mono">
 				LinkDen · QR
 			</p>
 			<h1 className="mb-6 text-2xl font-semibold tracking-[-0.015em] text-foreground">

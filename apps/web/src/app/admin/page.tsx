@@ -33,9 +33,9 @@ import {
 import { toast } from "sonner";
 import { QueryError } from "@/components/admin/dashboard/query-error";
 import { PageHeader } from "@/components/admin/page-header";
-import { TopLinksList } from "@/components/admin/top-links-list";
 import { type Period, PeriodSelector } from "@/components/admin/period-selector";
 import { StatCard } from "@/components/admin/stat-card";
+import { TopLinksList } from "@/components/admin/top-links-list";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { type ChartConfig, ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
@@ -193,9 +193,6 @@ export default function AdminDashboardPage() {
 		icon: typeof Eye;
 		label: string;
 		value: number;
-		iconColor: string;
-		iconBg: string;
-		gradient: string;
 		trend: { value: number; label: string } | null;
 		subtitle: string;
 		href?: string;
@@ -204,9 +201,6 @@ export default function AdminDashboardPage() {
 			icon: Eye,
 			label: "Views",
 			value: totalViews,
-			iconColor: "text-primary",
-			iconBg: "bg-primary/10",
-			gradient: "from-primary/10 via-primary/5 to-transparent",
 			trend: overview.data ? viewsTrend : null,
 			subtitle: periodSubtitle,
 		},
@@ -214,9 +208,6 @@ export default function AdminDashboardPage() {
 			icon: MousePointerClick,
 			label: "Clicks",
 			value: totalClicks,
-			iconColor: "text-emerald-400",
-			iconBg: "bg-emerald-500/10",
-			gradient: "from-emerald-500/10 via-emerald-500/5 to-transparent",
 			trend: overview.data ? clicksTrend : null,
 			subtitle: periodSubtitle,
 		},
@@ -224,9 +215,6 @@ export default function AdminDashboardPage() {
 			icon: Link2,
 			label: "Active Links",
 			value: activeLinks,
-			iconColor: "text-sky-400",
-			iconBg: "bg-sky-500/10",
-			gradient: "from-sky-500/10 via-sky-500/5 to-transparent",
 			trend: null,
 			subtitle: "Published & enabled",
 			href: "/admin/builder",
@@ -235,9 +223,6 @@ export default function AdminDashboardPage() {
 			icon: Users,
 			label: "New Contacts",
 			value: totalConnections,
-			iconColor: "text-amber-400",
-			iconBg: "bg-amber-500/10",
-			gradient: "from-amber-500/10 via-amber-500/5 to-transparent",
 			trend: null,
 			subtitle: periodSubtitle,
 			href: "/admin/connections",
@@ -378,9 +363,6 @@ export default function AdminDashboardPage() {
 							icon={card.icon}
 							label={card.label}
 							value={card.value}
-							iconColor={card.iconColor}
-							iconBg={card.iconBg}
-							gradient={card.gradient}
 							href={card.href}
 							isLoading={overview.isLoading}
 							isError={overview.isError}
@@ -400,7 +382,7 @@ export default function AdminDashboardPage() {
 							<Eye className="h-4 w-4 text-primary" aria-hidden="true" />
 							Views vs Clicks
 						</CardTitle>
-						<span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+						<span className="text-micro uppercase tracking-wider text-muted-foreground">
 							Last {periodLabel}
 							{periodLabel === "all" ? "" : " days"}
 						</span>
@@ -726,13 +708,13 @@ export default function AdminDashboardPage() {
 												<p className="font-medium truncate">
 													{(click.title as string | null) || "Untitled"}
 												</p>
-												<p className="text-[10px] text-muted-foreground truncate flex items-center gap-1">
+												<p className="text-micro text-muted-foreground truncate flex items-center gap-1">
 													<ExternalLink className="h-2.5 w-2.5 shrink-0" />
 													{extractDomain(click.url as string | null)}
 													{click.country ? ` · ${click.country}` : ""}
 												</p>
 											</div>
-											<span className="text-[10px] text-muted-foreground shrink-0 font-mono">
+											<span className="text-micro text-muted-foreground shrink-0 font-mono">
 												{relativeTime(click.createdAt)}
 											</span>
 										</div>
