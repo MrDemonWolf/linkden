@@ -51,7 +51,8 @@
 				"WALLET_SIGNER_KEY",
 				"WALLET_WWDR_CERT",
 				"WALLET_TEAM_ID",
-				"WALLET_PASS_TYPE_ID"
+				"WALLET_PASS_TYPE_ID",
+				"WALLET_SIGNER_KEY_PASSPHRASE"
 			]
 		},
 		"destroy": {

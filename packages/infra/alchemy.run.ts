@@ -97,7 +97,8 @@ const rlStrict = RateLimit({ namespace_id: rlBase + 2, simple: { limit: 5, perio
 const rlUpload = RateLimit({ namespace_id: rlBase + 3, simple: { limit: 20, period: 60 } });
 const rlPublic = RateLimit({ namespace_id: rlBase + 4, simple: { limit: 60, period: 60 } });
 
-// Wallet signing material is optional; bind each key only when it is set so
+// Wallet signing material is optional and only the API worker signs passes, so
+// it is bound to the server alone. Bind each key only when it is set so
 // an unset value never becomes an empty-string binding.
 const walletBindings = {
 	...(process.env.WALLET_SIGNER_CERT && {
@@ -114,6 +115,9 @@ const walletBindings = {
 	}),
 	...(process.env.WALLET_PASS_TYPE_ID && {
 		WALLET_PASS_TYPE_ID: alchemy.env.WALLET_PASS_TYPE_ID!,
+	}),
+	...(process.env.WALLET_SIGNER_KEY_PASSPHRASE && {
+		WALLET_SIGNER_KEY_PASSPHRASE: alchemy.secret.env.WALLET_SIGNER_KEY_PASSPHRASE!,
 	}),
 };
 
@@ -169,7 +173,6 @@ export const web = await Nextjs("linkden", {
 		CORS_ORIGIN: alchemy.env.CORS_ORIGIN!,
 		BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
 		BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
-		...walletBindings,
 	},
 	dev: {
 		env: {

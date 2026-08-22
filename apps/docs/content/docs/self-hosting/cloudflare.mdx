@@ -38,26 +38,26 @@ bun install
 
 LinkDen uses Alchemy (IaC) to provision your Workers, D1 database, R2 buckets, custom domain, and routes automatically. It needs an API token to do that.
 
-1. Log in to the [Cloudflare dashboard](https://dash.cloudflare.com).
-2. Click your profile icon (top right) → **My Profile**.
-3. Go to **API Tokens** → **Create Token** → **Custom token**.
-4. Add the following permissions:
+- [ ] Log in to the [Cloudflare dashboard](https://dash.cloudflare.com).
+- [ ] Click your profile icon (top right) → **My Profile**.
+- [ ] Go to **API Tokens** → **Create Token** → **Custom token**.
+- [ ] Add the following permissions:
 
-   | Resource | Permission |
-   |----------|-----------|
-   | Account → Workers Scripts | Edit |
-   | Account → D1 | Edit |
-   | Account → Workers R2 Storage | Edit |
-   | Zone → Workers Routes | Edit |
-   | Zone → Zone | Read |
-   | Zone → DNS | Edit |
-   | Zone → SSL and Certificates | Edit |
+  | Resource | Permission |
+  |----------|-----------|
+  | Account → Workers Scripts | Edit |
+  | Account → D1 | Edit |
+  | Account → Workers R2 Storage | Edit |
+  | Zone → Workers Routes | Edit |
+  | Zone → Zone | Read |
+  | Zone → DNS | Edit |
+  | Zone → SSL and Certificates | Edit |
 
-   The Zone permissions are what let Alchemy attach your custom domain and the `/api/*` and `/trpc/*` routes. If you only ever deploy to `workers.dev`, the Account permissions alone are enough.
+  The Zone permissions are what let Alchemy attach your custom domain and the `/api/*` and `/trpc/*` routes. If you only ever deploy to `workers.dev`, the Account permissions alone are enough.
 
-5. Under **Account Resources**, select your account. Under **Zone Resources**, select the zone that will host your site (or all zones).
-6. Click **Continue to summary** → **Create Token**.
-7. **Copy the token immediately** — it's only shown once.
+- [ ] Under **Account Resources**, select your account. Under **Zone Resources**, select the zone that will host your site (or all zones).
+- [ ] Click **Continue to summary** → **Create Token**.
+- [ ] **Copy the token immediately** — it's only shown once.
 
 > 💡 **Where's my Account ID?** Find it on the main Cloudflare dashboard in the right sidebar, or run `npx wrangler whoami`.
 
