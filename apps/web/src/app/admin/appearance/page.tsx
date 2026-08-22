@@ -15,10 +15,11 @@ import {
 	SocialIconShapeSection,
 } from "@/components/admin/appearance/social-icon-shape-section";
 import { ThemePresetsSection } from "@/components/admin/appearance/theme-presets-section";
+import { QueryError } from "@/components/admin/dashboard/query-error";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
 import { PageHeader } from "@/components/admin/page-header";
+import { PagePreview, type PreviewOverrides } from "@/components/admin/page-preview";
 import { PageShell } from "@/components/admin/page-shell";
-import { PreviewRenderer } from "@/components/admin/preview-renderer";
 import { StickySaveBar } from "@/components/admin/sticky-save-bar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -227,13 +228,12 @@ export default function AppearancePage() {
 	const resolvedThemeVars = useMemo(() => {
 		const preset = themePresets.find((t) => t.name === selectedTheme) ?? themePresets[0];
 		const mode = previewDark ? "dark" : "light";
+		// Custom colors apply in both modes, same as getThemeColors on the live page.
 		const vars = { ...preset.cssVars[mode] };
-		if (!previewDark) {
-			vars["--ld-primary"] = primaryColor;
-			vars["--ld-secondary"] = secondaryColor;
-			vars["--ld-accent"] = accentColor;
-			vars["--ld-background"] = bgColor;
-		}
+		if (primaryColor) vars["--ld-primary"] = primaryColor;
+		if (secondaryColor) vars["--ld-secondary"] = secondaryColor;
+		if (accentColor) vars["--ld-accent"] = accentColor;
+		if (bgColor) vars["--ld-background"] = bgColor;
 		return vars;
 	}, [selectedTheme, previewDark, primaryColor, secondaryColor, accentColor, bgColor]);
 
@@ -263,30 +263,29 @@ export default function AppearancePage() {
 		);
 	}
 
-	const previewOverrides = {
-		profile: {
-			name: settings.profile_name || "Your Name",
-			bio: settings.bio || null,
-			image: settings.avatar_url || null,
-			isVerified: verifiedBadge,
-		},
-		themeColors: {
-			primary: resolvedThemeVars["--ld-primary"],
-			secondary: resolvedThemeVars["--ld-secondary"],
-			accent: resolvedThemeVars["--ld-accent"],
-			bg: resolvedThemeVars["--ld-background"],
-			fg: resolvedThemeVars["--ld-foreground"],
-			card: resolvedThemeVars["--ld-card"],
-			cardFg: resolvedThemeVars["--ld-card-foreground"],
-			border: resolvedThemeVars["--ld-border"],
-			muted: resolvedThemeVars["--ld-muted"],
-			mutedFg: resolvedThemeVars["--ld-muted-foreground"],
-		},
+	if (settingsQuery.isError) {
+		return (
+			<PageShell>
+				<QueryError message="Couldn't load settings" onRetry={() => settingsQuery.refetch()} />
+			</PageShell>
+		);
+	}
+
+	// Unsaved edits in `public.getPage` shape — PublicPage resolves the theme
+	// from these exactly as the live page does.
+	const previewOverrides: PreviewOverrides = {
+		profile: { isVerified: verifiedBadge },
 		settings: {
+			themePreset: selectedTheme,
+			customPrimary: primaryColor,
+			customSecondary: secondaryColor,
+			customAccent: accentColor,
+			customBackground: bgColor,
+			customCss,
 			bannerEnabled,
-			bannerPreset: bannerEnabled && bannerMode === "preset" ? bannerPreset : null,
+			bannerPreset,
 			bannerMode,
-			bannerCustomUrl: bannerEnabled && bannerMode === "custom" ? bannerCustomUrl : undefined,
+			bannerCustomUrl,
 			socialIconShape,
 		},
 	};
@@ -331,7 +330,6 @@ export default function AppearancePage() {
 						secondaryColor={secondaryColor}
 						accentColor={accentColor}
 						bgColor={bgColor}
-						previewDark={previewDark}
 						onColorModeChange={setColorMode}
 						onPrimaryChange={setPrimaryColor}
 						onSecondaryChange={setSecondaryColor}
@@ -371,7 +369,7 @@ export default function AppearancePage() {
 				{/* Preview column (desktop) */}
 				<div className="hidden w-[360px] shrink-0 lg:block">
 					<div className="sticky top-6">
-						<PreviewRenderer
+						<PagePreview
 							overrides={previewOverrides}
 							mode={previewDark ? "dark" : "light"}
 							onModeChange={(m) => setPreviewDark(m === "dark")}
@@ -382,7 +380,7 @@ export default function AppearancePage() {
 
 			{/* Mobile preview sheet */}
 			<MobilePreviewSheet open={showMobilePreview} onOpenChange={setShowMobilePreview}>
-				<PreviewRenderer
+				<PagePreview
 					overrides={previewOverrides}
 					mode={previewDark ? "dark" : "light"}
 					onModeChange={(m) => setPreviewDark(m === "dark")}

@@ -44,8 +44,8 @@ import { SocialTab } from "@/components/admin/builder/social-tab";
 import { EmptyState } from "@/components/admin/empty-state";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
 import { PageHeader } from "@/components/admin/page-header";
+import { PagePreview, type PreviewBlock } from "@/components/admin/page-preview";
 import { PageShell } from "@/components/admin/page-shell";
-import { SharedPreview } from "@/components/admin/shared-preview";
 import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -114,8 +114,8 @@ export default function BuilderPage() {
 	const handleProfileDirtyChange = useCallback((dirty: boolean) => setProfileDirty(dirty), []);
 	const handleSocialDirtyChange = useCallback((dirty: boolean) => setSocialDirty(dirty), []);
 
-	const hasAnyChanges = hasDrafts || profileDirty || socialDirty;
-	useUnsavedChanges(hasAnyChanges);
+	// Drafts are already saved server-side — only in-flight form edits are "unsaved".
+	useUnsavedChanges(profileDirty || socialDirty);
 
 	useEffect(() => {
 		if (newlyAddedId && blocks.some((b) => b.id === newlyAddedId)) {
@@ -317,27 +317,17 @@ export default function BuilderPage() {
 		}
 	};
 
-	const previewBlocksData = useMemo(() => {
+	// While a block is being edited, the preview shows the enabled blocks with
+	// the in-progress edits applied; otherwise PagePreview reads blocks itself.
+	const previewBlocks = useMemo<PreviewBlock[] | undefined>(() => {
+		if (!editingOverrides) return undefined;
 		return blocks
 			.filter((b) => b.isEnabled)
-			.map((b) => {
-				const base = {
-					id: b.id,
-					type: b.type,
-					title: b.title,
-					url: b.url,
-					icon: b.icon,
-					embedType: b.embedType,
-					embedUrl: b.embedUrl,
-					socialIcons: b.socialIcons,
-					config: b.config,
-					position: b.position,
-				};
-				if (editingOverrides && editingOverrides.id === b.id) {
-					return { ...base, ...editingOverrides, position: base.position, type: base.type };
-				}
-				return base;
-			});
+			.map((b) =>
+				b.id === editingOverrides.id
+					? { ...b, ...editingOverrides, position: b.position, type: b.type }
+					: b,
+			);
 	}, [blocks, editingOverrides]);
 
 	const activeBlock = activeId ? blocks.find((b) => b.id === activeId) : null;
@@ -578,8 +568,9 @@ export default function BuilderPage() {
 					{activeTab === "social" && <SocialTab onDirtyChange={handleSocialDirtyChange} />}
 				</div>
 
-				{/* Right side: Edit panel and/or Preview */}
-				<div className="hidden lg:flex lg:gap-4 shrink-0">
+				{/* Right side: edit panel stacks above the preview at lg, sits beside
+				    it at xl. The preview never unmounts while editing. */}
+				<div className="hidden lg:flex lg:flex-col xl:flex-row gap-4 shrink-0 sticky top-6 max-h-[calc(100dvh-3rem)] overflow-y-auto items-start">
 					{/* Edit panel — inline at lg+ only; below lg it renders inside the
 						    bottom sheet instead (never both, to avoid duplicate input IDs) */}
 					{activeTab === "blocks" && editingBlock && isLg && (
@@ -600,17 +591,8 @@ export default function BuilderPage() {
 					)}
 
 					{/* Permanent live preview sidebar */}
-					<div
-						className={cn(
-							"w-[360px] shrink-0 sticky top-6",
-							activeTab === "blocks" && editingBlock ? "hidden xl:block" : "block",
-						)}
-					>
-						<SharedPreview
-							overrides={{
-								blocks: editingOverrides ? previewBlocksData : undefined,
-							}}
-						/>
+					<div className="w-[360px] shrink-0">
+						<PagePreview overrides={{ blocks: previewBlocks }} />
 					</div>
 				</div>
 			</div>
@@ -628,7 +610,7 @@ export default function BuilderPage() {
 
 			{/* Mobile preview sheet */}
 			<MobilePreviewSheet open={showMobilePreview} onOpenChange={setShowMobilePreview}>
-				<SharedPreview overrides={{ blocks: previewBlocksData }} showHeader={false} />
+				<PagePreview overrides={{ blocks: previewBlocks }} showHeader={false} />
 			</MobilePreviewSheet>
 
 			{/* Mobile block edit sheet — below lg the edit panel is impossible to
