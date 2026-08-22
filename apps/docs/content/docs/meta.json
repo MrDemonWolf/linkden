@@ -1,4 +1,13 @@
 {
 	"title": "Documentation",
-	"pages": ["getting-started", "guide", "self-hosting", "reference", "changelog"]
+	"pages": [
+		"getting-started",
+		"guide",
+		"self-hosting",
+		"reference",
+		"changelog",
+		"---Legal---",
+		"privacy-policy",
+		"terms-of-service"
+	]
 }

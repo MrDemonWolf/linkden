@@ -26,12 +26,16 @@ jobs:
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 24
+          node-version-file: .node-version
 
       - run: bun install --frozen-lockfile
 
       - name: Build docs
         run: bun run turbo build --filter=@linkden/docs
+        env:
+          # GitHub Pages serves the site under /<repo>/, so Next needs the
+          # base path at build time for asset and link URLs to resolve.
+          NEXT_PUBLIC_BASE_PATH: /linkden
 
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
 

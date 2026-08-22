@@ -16,6 +16,7 @@ import {
 	Shield,
 	Undo2,
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/page-header";
@@ -147,6 +148,8 @@ function buildSavedState(s: Record<string, string>): SavedState {
 	};
 }
 
+const SETTINGS_TABS = ["seo", "branding", "email", "features", "data", "privacy"];
+
 export default function SettingsPage() {
 	const qc = useQueryClient();
 	const settingsQuery = useQuery(trpc.settings.getAll.queryOptions());
@@ -160,13 +163,17 @@ export default function SettingsPage() {
 
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
-	// Active tab (persisted to localStorage so navigations land back where you were)
-	const [activeTab, setActiveTab] = useState<string>("seo");
+	// Active tab: `?tab=` wins (deep links from the dashboard), else the last
+	// tab from localStorage so navigations land back where you were.
+	const tabParam = useSearchParams().get("tab");
+	const [activeTab, setActiveTab] = useState<string>(
+		tabParam && SETTINGS_TABS.includes(tabParam) ? tabParam : "seo",
+	);
 	useEffect(() => {
-		if (typeof window === "undefined") return;
+		if (tabParam && SETTINGS_TABS.includes(tabParam)) return;
 		const stored = window.localStorage.getItem("admin.settings.tab");
-		if (stored) setActiveTab(stored);
-	}, []);
+		if (stored && SETTINGS_TABS.includes(stored)) setActiveTab(stored);
+	}, [tabParam]);
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 		window.localStorage.setItem("admin.settings.tab", activeTab);

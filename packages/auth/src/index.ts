@@ -69,13 +69,14 @@ export const auth = betterAuth({
 			},
 		},
 	},
-	// uncomment cookieCache setting when ready to deploy to Cloudflare using *.workers.dev domains
-	// session: {
-	//   cookieCache: {
-	//     enabled: true,
-	//     maxAge: 60,
-	//   },
-	// },
+	session: {
+		// Cache the session in a signed cookie for 5 minutes so every tRPC call
+		// does not hit D1 for a session lookup.
+		cookieCache: {
+			enabled: true,
+			maxAge: 300,
+		},
+	},
 	secret: env.BETTER_AUTH_SECRET,
 	baseURL: env.BETTER_AUTH_URL,
 	advanced: {
@@ -85,17 +86,14 @@ export const auth = betterAuth({
 		ipAddress: {
 			ipAddressHeaders: ["cf-connecting-ip"],
 		},
+		// Web and API share one origin in production (API is routed under the
+		// site domain), so host-only cookies are enough. A split-origin deploy
+		// would need crossSubDomainCookies with a shared parent domain.
 		defaultCookieAttributes: {
 			sameSite: "lax",
 			secure: !!env.BETTER_AUTH_URL?.startsWith("https"),
 			httpOnly: true,
 		},
-		// uncomment crossSubDomainCookies setting when ready to deploy and replace <your-workers-subdomain> with your actual workers subdomain
-		// https://developers.cloudflare.com/workers/wrangler/configuration/#workersdev
-		// crossSubDomainCookies: {
-		//   enabled: true,
-		//   domain: "<your-workers-subdomain>",
-		// },
 	},
 	plugins: [
 		// DEV ONLY: the bypass-login endpoint (POST /api/auth/dev-login) exists only

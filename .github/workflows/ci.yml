@@ -71,14 +71,20 @@ jobs:
 
       # The action lives in a subdirectory — the repo root action.yml is a
       # branding stub with no `runs:` section and fails at resolution time.
+      #
+      # Report-only on purpose (2026-08-21): ~100 open advisories are all in
+      # dev tooling transitives (jsdom, miniflare, wrangler, shadcn CLI) with no
+      # fix inside their ranges, and none of that ships to the Workers runtime.
+      # Runtime deps (next, hono) are kept current by hand. Flip this to
+      # blocking once `osv-scanner scan --lockfile=bun.lock` is clean, and use
+      # osv-scanner.toml dated ignores for anything triaged after that.
       - name: Dependency & advisory scan (OSV)
         uses: google/osv-scanner-action/osv-scanner-action@9a498708959aeaef5ef730655706c5a1df1edbc2 # v2.3.8
-        # Report-only for now: transitive advisories shouldn't block merges until
-        # triaged. Findings surface in the job log / annotations.
         continue-on-error: true
         with:
           scan-args: |-
             --recursive
+            --config=osv-scanner.toml
             ./
 
       - name: Generate SBOM (CycloneDX)

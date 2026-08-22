@@ -9,6 +9,7 @@ import {
 	Eye,
 	Globe,
 	Link2,
+	Mail,
 	MousePointerClick,
 	Plus,
 	Share2,
@@ -92,6 +93,9 @@ export default function AdminDashboardPage() {
 	const referrers = useQuery(trpc.analytics.referrers.queryOptions({ period }));
 	const countries = useQuery(trpc.analytics.countries.queryOptions({ period }));
 	const timezoneQuery = useQuery(trpc.settings.get.queryOptions({ key: "timezone" }));
+	const emailKeyQuery = useQuery(trpc.settings.get.queryOptions({ key: "email_api_key" }));
+	// Secrets come back masked, so any non-empty value means a key is stored.
+	const emailMissing = emailKeyQuery.isSuccess && !emailKeyQuery.data?.value;
 
 	const timezone = timezoneQuery.data?.value || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -331,6 +335,40 @@ export default function AdminDashboardPage() {
 					</CardContent>
 				</Card>
 			</div>
+
+			{/* Email not configured — password reset / magic links / contact mail are silently off */}
+			{emailMissing && (
+				<div {...getAnimationProps(1)}>
+					<Card size="sm" className="border border-destructive/30 bg-destructive/5">
+						<CardContent className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+							<div className="flex min-w-0 items-center gap-3">
+								<div
+									className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive"
+									aria-hidden="true"
+								>
+									<Mail className="h-4 w-4" />
+								</div>
+								<div className="min-w-0">
+									<p className="text-sm font-semibold">Email isn&apos;t set up</p>
+									<p className="text-sm text-muted-foreground">
+										Password reset, magic links and contact notifications are off until you add a
+										provider key.
+									</p>
+								</div>
+							</div>
+							{/* Base UI Button has no asChild; `render` swaps the element for a Link. */}
+							<Button
+								variant="outline"
+								size="sm"
+								className="sm:ml-auto"
+								render={<Link href="/admin/settings?tab=email" />}
+							>
+								Set up email
+							</Button>
+						</CardContent>
+					</Card>
+				</div>
+			)}
 
 			{/* Stat Cards */}
 			<div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">

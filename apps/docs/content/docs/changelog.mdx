@@ -5,7 +5,7 @@ description: What changed in LinkDen. Each release has a plain-language summary 
 
 ## TL;DR
 
-- **Latest release:** **0.4.0** (2026-05-10)
+- **Latest release:** **0.5.0** (2026-08-21)
 - **Format:** **✨ What's new** for site owners + **🔧 Technical** for
   developers and self-hosters.
 - **Source of truth:** [`CHANGELOG.md`](https://github.com/MrDemonWolf/linkden/blob/main/CHANGELOG.md)
@@ -25,6 +25,198 @@ that file is the source of truth.
 ## Unreleased
 
 _No unreleased changes yet._
+
+## 0.5.0 — 2026-08-21
+
+### ✨ What's new
+
+- **LinkDen deploys for real now.** The production deploy pipeline works
+  end to end on Cloudflare. Your site and its API live on one hostname
+  (for example `https://links.yourdomain.com` with the API under
+  `/api/*`), so there is no cross-site cookie juggling and admin login
+  no longer bounces you back to the login page.
+- **Custom domain in one setting.** Set `SITE_DOMAIN` and redeploy.
+  LinkDen attaches the domain to the web app and routes the API under
+  it. No dashboard clicking, no manual DNS records.
+- **Daily database backups.** A scheduled job exports the D1 database
+  every day into a private R2 bucket (`linkden-backups`), kept for
+  30 days. Restore steps are in the troubleshooting docs.
+- **You will know when email is not set up.** The dashboard shows a
+  banner when no email API key is configured (password reset and magic
+  links need it) with a direct link to the Email settings tab.
+- **Wallet pass editor, iOS style.** The Apple Wallet builder now looks
+  and works like the Wallet app: a centered pass preview with a bottom
+  tab bar (Business, Images, Context, Colors, Background), live AA
+  contrast badges on custom colours, and an "Unsaved" chip so you never
+  lose an edit.
+- **Better keyboard and screen-reader support.** Bottom sheets (mobile
+  preview, block editor, connections detail) trap focus, close on
+  Escape, and restore focus when dismissed. Every admin page has one
+  real heading. Colour fields warn you when text will be hard to read
+  and offer a one-tap fix.
+- **Theme preset names.** "Light" is now "Classic" and "Dark" is
+  "Graphite". Your saved choice is unchanged.
+- **Contact form delivery works.** Email, database, and "both" delivery
+  modes now do what they say. Submissions are stored before the email
+  goes out, so a mail failure never loses a message.
+- **Password reset works.** The reset link on the login page now calls
+  the right endpoint.
+- **Faster admin sessions.** Session lookups are cached in the cookie
+  for five minutes, so admin pages stop hitting the database on every
+  request.
+
+### 🔧 Technical
+
+#### Added
+
+- Same-origin routing model in `packages/infra/alchemy.run.ts`: the web
+  worker (`linkden`) owns `SITE_DOMAIN` as a Cloudflare Custom Domain;
+  the API worker (`linkden-api`) gets Routes `SITE_DOMAIN/api/*` and
+  `SITE_DOMAIN/trpc/*`. Routes run before the custom-domain worker, so
+  `BETTER_AUTH_URL`, `NEXT_PUBLIC_SERVER_URL`, `CORS_ORIGIN`, and
+  `NEXT_PUBLIC_SITE_URL` are all `https://SITE_DOMAIN` in production.
+  Unset `SITE_DOMAIN` deploys to `workers.dev` (staging).
+- Service binding `API` from the web worker to the API worker. SSR
+  fetches go through `apps/web/src/lib/server-api.ts` (`apiFetch`),
+  because a worker `fetch()` to its own zone bypasses routes. Falls back
+  to `NEXT_PUBLIC_SERVER_URL` in local dev.
+- `NEXT_PUBLIC_SITE_URL` (validated with `z.url()` in
+  `packages/env/src/web.ts`) drives `metadataBase`, `robots.ts`, and
+  `sitemap.ts`. The `example.com` fallbacks are gone.
+- Explicit Alchemy stage (`ALCHEMY_STAGE`, default `prod`) and resource
+  names: `linkden-db`, `linkden-images`, `linkden`, `linkden-api`,
+  `linkden-backups` (R2, 30-day lifecycle expiry).
+- `.github/workflows/backup-db.yml`: daily `wrangler d1 export` to
+  `linkden-backups/d1/<date>.sql`.
+- Structured JSON error logs: Hono `app.onError`, tRPC `onError`, and a
+  `try/catch` around `scheduled()` in `apps/server/src/index.ts`.
+  Worker invocation logs enabled via `observability`.
+- `/api/health` reports `email: configured | missing` next to
+  `database` and `version`.
+- Dashboard email-missing banner linking to `/admin/settings?tab=email`
+  (the settings page now reads `?tab`).
+- Tests: `apps/server/src/__tests__/health.test.ts`,
+  `apps/web/src/app/__tests__/sitemap.test.ts`,
+  `packages/auth/src/__tests__/cookie-config.test.ts` (Secure, HttpOnly,
+  SameSite=Lax, no `Domain=`).
+- Shared `Sheet` primitive (Base UI Dialog) with a `breakpoint` prop
+  that auto-closes past its breakpoint; replaces three hand-rolled
+  bottom sheets ([#51](https://github.com/MrDemonWolf/linkden/pull/51)).
+- `ColorField` `contrastAgainst` prop: live WCAG ratio badge and a
+  "Fix" chip backed by `getReadableTextColor`; wired into appearance
+  custom colours and block custom bg/text colours ([#51](https://github.com/MrDemonWolf/linkden/pull/51)).
+- `Tabs variant="bar"` (icon over label, roving tabindex) for the iOS
+  style wallet editor ([#52](https://github.com/MrDemonWolf/linkden/pull/52)).
+- `@linkden/db/testing` in-memory libsql helper (`createTestDb`) for
+  integration tests; `settings-registry.ts` drift test; CAPTCHA,
+  upload-signature, retention, embed-registry, and batch-rollback tests
+  ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
+- Daily retention cron (`scheduled()` handler) pruning analytics,
+  sessions, contacts, and audit rows, plus an orphan R2 image sweep with
+  a 24h grace window ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
+- Contact form delivery (`email` / `database` / `both`) through
+  `packages/email` ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
+- CI security job: OSV scanner plus a CycloneDX SBOM artifact
+  ([#53](https://github.com/MrDemonWolf/linkden/pull/53)). The scan is
+  report-only for now (open advisories are all dev-tooling transitives);
+  `osv-scanner.toml` is in place for dated ignores once it is switched to
+  blocking. `next` bumped to 16.2.11 and `hono` to 4.12.34.
+
+#### Changed
+
+- `apps/web/src/app/api/og/route.tsx` moved to `app/og/route.tsx` so the
+  OG image route no longer collides with the `/api/*` Worker route.
+  `layout.tsx` and the SEO settings section point at `/og`.
+- Better Auth `session.cookieCache` enabled (`maxAge: 300`); stale
+  cross-subdomain cookie comments removed from `packages/auth/src/index.ts`.
+- Deploy workflow: Node version pinned via `.node-version` (`24`),
+  `setup-node` SHA-pinned, `SITE_DOMAIN` and `NEXT_PUBLIC_SITE_URL` read
+  from environment variables, both added to `turbo.json`
+  `passThroughEnv`. Docs deploy builds with
+  `NEXT_PUBLIC_BASE_PATH=/linkden`.
+- Alchemy state moved from the deprecated `D1StateStore` to the shared
+  `alchemy-state` `CloudflareStateStore` worker; `ALCHEMY_STATE_TOKEN` is
+  now required at deploy time
+  ([#54](https://github.com/MrDemonWolf/linkden/pull/54)).
+- Alchemy runs under Node via `tsx` (Bun segfaults on the Alchemy
+  program, exit 132). Deploy secrets declared in `turbo.json`
+  `passThroughEnv` so Turborepo strict env mode passes them through
+  ([#55](https://github.com/MrDemonWolf/linkden/pull/55)).
+- Wallet editor rebuilt around a `DeviceFrame` preview hero with an
+  in-flow translucent sheet; state model, tRPC contract, and `wallet_*`
+  keys unchanged ([#52](https://github.com/MrDemonWolf/linkden/pull/52)).
+- Dashboard and appearance headers render via `PageHeader`;
+  `DesktopTopBar` label demoted to a non-heading kicker so each page has
+  one `h1` ([#51](https://github.com/MrDemonWolf/linkden/pull/51)).
+- Theme preset display labels: "Light" → "Classic", "Dark" → "Graphite"
+  (persisted keys untouched) ([#51](https://github.com/MrDemonWolf/linkden/pull/51)).
+- Settings metadata (sanitizer kind, max length, secret/mask, backup
+  policy) consolidated into `packages/validators/src/settings-registry.ts`;
+  settings, wallet, and backup routers derive from it
+  ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
+- Backup import, block reorder, bulk settings, wallet config, and danger
+  resets run as a single `db.batch([...])`
+  ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
+- Version read from `version.json` only, compared with `compareSemver`
+  ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
+- Next 16 `middleware.ts` renamed to `proxy.ts`; tsdown `noExternal`
+  replaced with `deps.alwaysBundle`; dead Wallet "coming soon" branch
+  removed ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
+- Shared email, wallet JSON parsing, and embed-provider helpers
+  (`parsePass*Json`, one embed registry in validators)
+  ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
+- `check-types` scripts in every code workspace; `@vitest/coverage-v8`
+  with a coverage floor enforced in `vitest.config.ts`
+  ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
+
+#### Removed
+
+- Docker, Coolify, and Railway deployment path and docs. Deployment is
+  Cloudflare-only ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
+- `/qr` entry dropped from `sitemap.ts`.
+
+#### Fixed
+
+- Password reset on the login page called a nonexistent endpoint on the
+  web origin; it now uses `authClient.requestPasswordReset` against the
+  API ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
+- Deploy workflow checks out `workflow_run.head_sha`, the exact commit
+  that passed CI ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
+- `settings.getAll` masked three of six secrets; wallet signing certs
+  were returned in plaintext ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
+- `audit_log` was skipped by full and factory resets
+  ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
+- Wallet "Unsaved changes" chip failed AA on the translucent panel;
+  keyboard focus is kept when switching editor tabs
+  ([#52](https://github.com/MrDemonWolf/linkden/pull/52)).
+- Dashboard chrome used hardcoded blue/violet (about 2.5:1 on the day
+  theme); consent banner "Accept Selected" and footer pills now read on
+  light presets ([#51](https://github.com/MrDemonWolf/linkden/pull/51)).
+- Setup wizard surfaces real server errors instead of swallowing them
+  ([#51](https://github.com/MrDemonWolf/linkden/pull/51)).
+- Backup imports are sanitized; hex-alpha styling guarded
+  ([#51](https://github.com/MrDemonWolf/linkden/pull/51)).
+
+#### Security
+
+- Single-admin invariant enforced by a `BEFORE INSERT` trigger on
+  `user` (`0007_single_admin_trigger.sql`), not just middleware
+  ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
+- Analytics and CAPTCHA use server-derived `requestMeta`
+  (`cf-connecting-ip`, `cf-ipcountry`, UA, referer); CAPTCHA provider is
+  an enum that fails closed, with a 10s timeout, `remoteip`, and
+  hostname/action verification. Better Auth IP header is
+  `cf-connecting-ip` ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
+- Uploads: `Content-Length` rejected before buffering, magic-byte
+  signature must match the extension, replaced R2 objects deleted
+  ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
+- Rate limits on `/api/auth/request-password-reset` and
+  `/api/auth/reset-password` ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
+- Every GitHub Action SHA-pinned with minimal `permissions` blocks
+  ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
+- Danger resets, wallet config/preset/signing-key changes, and block
+  deletes are written to the audit log
+  ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
 
 ## 0.4.0 — 2026-05-10
 

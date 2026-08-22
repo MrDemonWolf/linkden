@@ -1,38 +1,38 @@
-# TODO
+# Go-live checklist
 
-## 🔴 Production deploy — configure secrets (blocking)
+Release notes live in [`CHANGELOG.md`](./CHANGELOG.md).
 
-The **Deploy** workflow (`.github/workflows/deploy.yml`, job `environment: production`)
-fails on every run because the GitHub **`production` environment has zero secrets**,
-so Alchemy aborts at state-store init with `No credentials found`. Deploy has never
-succeeded in CI. Set the secrets below, then re-run.
+**One thing at a time. Each box is 15 minutes or less. Stop after each ✅.**
 
-Set each into the **production** environment (values are prompted — never hit the
-shell history or logs):
+## Today (you, no code)
 
-### Required — Alchemy will not start without these
-- [ ] `CLOUDFLARE_API_TOKEN` — **manual**: create at Cloudflare → My Profile → API Tokens
-      → "Edit Cloudflare Workers" template (needs Workers Scripts + D1 + R2 edit), then
-      `gh secret set CLOUDFLARE_API_TOKEN --env production`
-- [ ] `CLOUDFLARE_ACCOUNT_ID` — from `wrangler whoami` or the CF dashboard URL
-- [ ] `ALCHEMY_PASSWORD` — state-secret encryption; value already in `packages/infra/.env`
+- [ ] GitHub → repo → Settings → Environments → `production` → add **secrets**: `CLOUDFLARE_API_TOKEN` (perms: Workers Scripts:Edit, Workers Routes:Edit, D1:Edit, R2:Edit, Zone:Read, DNS:Edit, SSL and Certificates:Edit), `CLOUDFLARE_ACCOUNT_ID`, `ALCHEMY_PASSWORD`, `ALCHEMY_STATE_TOKEN` (same as wolfathon), `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), `BETTER_AUTH_URL=https://l.mrdemonwolf.com`, `NEXT_PUBLIC_SERVER_URL=https://l.mrdemonwolf.com`, `CORS_ORIGIN=https://l.mrdemonwolf.com`
+- [ ] Same page → **variables**: `NEXT_PUBLIC_SITE_URL=https://l.mrdemonwolf.com`. Leave `SITE_DOMAIN` **empty** for now (= staging on workers.dev)
+- [ ] Resend: create API key + verify sending domain (needed for password reset)
 
-### App runtime — use PRODUCTION values (NOT the localhost values in local `.env`)
-- [ ] `BETTER_AUTH_SECRET` — generate fresh for prod: `openssl rand -base64 32`
-- [ ] `BETTER_AUTH_URL` — deployed web URL
-- [ ] `NEXT_PUBLIC_SERVER_URL` — deployed API (worker) URL; also used by the deploy smoke test
-- [ ] `CORS_ORIGIN` — deployed web origin
+## When PR 1 merges (staging)
 
-### Wallet pass — only if the Apple Wallet feature is deployed (guarded in `alchemy.run.ts`)
-- [ ] `WALLET_SIGNER_CERT`
-- [ ] `WALLET_SIGNER_KEY`
-- [ ] `WALLET_WWDR_CERT`
-- [ ] `WALLET_TEAM_ID`
-- [ ] `WALLET_PASS_TYPE_ID`
+- [ ] Watch Actions → Deploy goes green (first time ever 🎉)
+- [ ] Open `https://linkden.mrdemonwolf.workers.dev/api/health` → `"status":"ok"`
+- [ ] Admin login on workers.dev **will** redirect-loop (split origin). Expected; test admin locally. Public page + health are what staging proves.
 
-### After secrets are set
-- [ ] Re-run deploy: `gh run rerun <deploy-run-id>` (or push any commit to `main`)
-- [ ] Confirm the deploy log shows the 4 Cloudflare resources **adopted / unchanged** —
-      no `create` / `replace` / `delete` on the live Worker / D1 / R2. If any shows
-      create/replace on the live **D1 or R2** → stop and revert (an `adopt` is missing).
-- [ ] Confirm the smoke test hits `NEXT_PUBLIC_SERVER_URL/api/health` → `{"status":"ok"}`
+## When PR 2–5 merge (design + admin + validation)
+
+- [ ] `bun dev:server` + `bun dev:web` → `/admin/setup` locally → create your account, import LinkStack export (Settings → Data → Import)
+- [ ] Walk `/admin/builder` on your phone (same Wi-Fi: `http://<mac-ip>:3001`). Add a Featured link, a Grid header, an Image block
+- [ ] Settings → Email → paste Resend key → send yourself a password reset to prove it
+
+## Cutover day (15 min, reversible)
+
+- [ ] Cloudflare DNS → `mrdemonwolf.com` zone → **delete** the existing `l` record (Custom Domain can't be created over a CNAME)
+- [ ] GitHub → `production` variables → set `SITE_DOMAIN=l.mrdemonwolf.com`
+- [ ] Actions → Deploy → **Run workflow** (or re-run last) → wait green
+- [ ] `https://l.mrdemonwolf.com/api/health` → ok; `https://l.mrdemonwolf.com/admin` → login works, no loop
+- [ ] `/admin/setup` → account → Settings → Data → **Import** your LinkStack export → Builder → Publish
+- [ ] Phone: open site, Share → "Add to Home Screen" works
+- [ ] Actions → `backup-db` → Run workflow → check `linkden-backups` bucket has today's file
+- [ ] `git tag -a v0.5.0 -m "Go live" && git push --tags`
+
+## Rollback (if anything's wrong)
+
+- [ ] Cloudflare DNS → re-create the old `l` record → old site is back in about a minute. Nothing else to undo.

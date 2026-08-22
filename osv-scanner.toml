@@ -1,0 +1,14 @@
+# OSV-Scanner config (google/osv-scanner). Referenced from .github/workflows/ci.yml.
+#
+# The scan is blocking. When an advisory is triaged as not applicable, add a
+# dated ignore here instead of turning the job back to report-only. Every
+# ignore needs a reason and an expiry so it gets re-reviewed.
+#
+# Example:
+#
+# [[IgnoredVulns]]
+# id = "GHSA-xxxx-xxxx-xxxx"
+# reason = "Only reachable via the CLI entrypoint we never ship to Workers."
+# ignoreUntil = 2026-12-31
+
+# No active ignores.
