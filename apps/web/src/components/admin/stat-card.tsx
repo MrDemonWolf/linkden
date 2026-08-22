@@ -103,7 +103,7 @@ export function StatCard({
 				{href && !isError && (
 					<Link
 						href={href as never}
-						className="relative ml-auto rounded-md p-1 transition-colors hover:bg-muted"
+						className="relative ml-auto flex h-11 w-11 items-center justify-center rounded-md transition-colors hover:bg-muted md:h-auto md:w-auto md:p-1"
 						aria-label={`Go to ${label}`}
 					>
 						<ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />

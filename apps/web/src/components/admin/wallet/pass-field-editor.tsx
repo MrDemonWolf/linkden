@@ -175,7 +175,7 @@ function SortableFieldRow({
 		>
 			<button
 				type="button"
-				className="mt-2 cursor-grab touch-none text-muted-foreground/30 hover:text-muted-foreground/70 active:cursor-grabbing"
+				className="flex h-11 w-8 cursor-grab touch-none items-center justify-center text-muted-foreground/30 hover:text-muted-foreground/70 active:cursor-grabbing md:mt-2 md:h-auto md:w-auto"
 				aria-label="Drag to reorder"
 				{...attributes}
 				{...listeners}
@@ -189,7 +189,7 @@ function SortableFieldRow({
 					placeholder="Label"
 					value={field.label}
 					onChange={(e) => onUpdate({ label: e.target.value })}
-					className="h-7 text-micro"
+					className="h-11 text-micro md:h-7"
 					aria-label={`${zone} field ${idx + 1} label`}
 				/>
 				<Input
@@ -197,7 +197,7 @@ function SortableFieldRow({
 					placeholder="Value"
 					value={field.value}
 					onChange={(e) => onUpdate({ value: e.target.value })}
-					className="h-7 text-micro"
+					className="h-11 text-micro md:h-7"
 					aria-label={`${zone} field ${idx + 1} value`}
 				/>
 				<p className="col-span-2 -mt-0.5 font-mono text-micro text-muted-foreground/40">
@@ -208,7 +208,7 @@ function SortableFieldRow({
 			<button
 				type="button"
 				onClick={onRemove}
-				className="mt-1.5 rounded p-1 text-muted-foreground/40 opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+				className="flex h-11 w-11 items-center justify-center rounded text-muted-foreground/40 transition-all md:mt-1.5 md:h-auto md:w-auto md:p-1 md:opacity-0 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 				aria-label="Delete field"
 			>
 				<Trash2 className="h-3 w-3" />
