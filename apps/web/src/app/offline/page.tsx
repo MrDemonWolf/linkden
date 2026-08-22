@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 // fails, so it must render without fetching anything.
 export default function OfflinePage() {
 	return (
-		<main className="admin-glass-bg flex min-h-dvh items-center justify-center px-6 text-foreground">
+		<main className="flex min-h-dvh bg-background items-center justify-center px-6 text-foreground">
 			<div className="w-full max-w-sm space-y-4 rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
 				<p className="text-micro font-mono font-medium uppercase tracking-[0.14em] text-muted-foreground">
 					No connection

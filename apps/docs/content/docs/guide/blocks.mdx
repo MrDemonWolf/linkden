@@ -5,7 +5,7 @@ description: Add links, headers, embeds, social icons, forms, vCard buttons, and
 
 # 🧱 Blocks
 
-Build your page by adding blocks in the builder at `/admin/builder`. LinkDen supports **7 block types** that you can mix, match, and reorder however you like.
+Build your page by adding blocks at `/admin/links`. LinkDen supports **7 block types** that you can mix, match, and reorder however you like.
 
 ### ⚡ Summary
 - **7 types:** Link, Header, Social Icons, Embed, Form, vCard, Location.
@@ -30,7 +30,7 @@ A text heading to organize your page.
 
 ### 🌐 Social Icons
 A row of icons linking to your profiles.
-- **Source:** Uses networks from `/admin/social`.
+- **Source:** Uses networks from `/admin/links/social`.
 - **Styles:** Size, spacing, brand colors (auto dark mode).
 
 ### 📺 Embed
@@ -42,7 +42,7 @@ Embed media directly on your page.
 An inline contact form. Visitors message you directly.
 - **Presets:** Contact, Feedback, RSVP.
 - **Styles:** Button text, success messages.
-> **Note:** Requires setup in `/admin/settings` first.
+> **Note:** Turn on **Accepting messages** at `/admin/inbox` first.
 
 ### 📇 vCard
 A **"Download Contact"** button.
@@ -54,14 +54,14 @@ An embedded map showing a physical address.
 - **Includes:** Address text, optional label.
 - **Provider:** Apple Maps (via MapKit JS) when configured, Google Maps embed otherwise.
 - **Styles:** Height, zoom level.
-> **Note:** MapKit JS token is optional. See `/admin/settings` → **Map** to enable Apple Maps.
+> **Note:** MapKit JS token is optional. See `/admin/settings/integrations` → **MapKit** to enable Apple Maps.
 
 ---
 
 ## 🛠️ Managing Blocks
 
 ### Adding
-1. Go to `/admin/builder`.
+1. Go to `/admin/links`.
 2. Click **Add Block**.
 3. Select a type.
 

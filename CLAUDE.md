@@ -123,8 +123,8 @@ Key production-readiness invariants added in the hardening pass — don't regres
 - **Image uploads:** always use `ImageUploadField` (never plain URL text inputs)
 - **Form layouts:** `FieldGroup` component with `columns` prop for grid layouts
 - **Metrics:** `StatCard` component (icon, label, value, optional href/trend/subtitle)
-- **Page headers:** `PageHeader` with optional badge and description
-- **Entrance animations:** `useEntranceAnimation` hook with staggered `getAnimationProps(index)`
+- **Page headers:** `PageHeader` (h1 · badge · actions; optional `kicker` sub-tab label reported to the shell top bar)
+- **Entrance animations:** `useEntranceAnimation` is used on Insights only — admin pages have no page fade
 - **Previewer:** `PagePreview` renders the real `PublicPage` with `previewMode` — never fork the public components for preview
 - **Block editor validation:** shared zod schemas from `@linkden/validators` via `lib/validate.ts` `fieldError`/`configErrors`
 - **Fonts:** Sora / DM Sans / Geist Mono; type scale `text-h1`..`text-micro` (12px floor)
@@ -133,7 +133,7 @@ Key production-readiness invariants added in the hardening pass — don't regres
 - **Consent banner:** `consent_banner_enabled` + `consent_banner_text` settings, shown on public page footer
 - **MapKit:** `mapkit_enabled` + `mapkit_token` settings, used by Location blocks for Apple Maps embed
 - **Admin branding:** `admin_branding_enabled` setting — controls LinkDen logo/name inside admin panel
-- **Connections page:** `/admin/connections` — contact form submissions inbox (tRPC `forms.*` router); uses split-panel list+detail layout same as builder
+- **Inbox page:** `/admin/inbox` — contact form submissions (tRPC `forms.*` router); split-panel list+detail; header `Switch` saves `contact_form_enabled` instantly
 
 ### Wallet Pass
 - Apple HIG generic pass layout (header → primary + thumbnail → secondary → QR)
@@ -146,9 +146,15 @@ Key production-readiness invariants added in the hardening pass — don't regres
 - **Context-aware relevance:** `relevantDate` + `locations[]` (`{latitude, longitude, relevantText}`, max 10 — `PASS_LOCATION_LIMIT`) → Wallet Lock Screen surfacing. Settings keys `wallet_relevant_date` (UTC ISO) + `wallet_locations` (JSON). Builder "Context-Aware" section: native `datetime-local` + repeatable location rows. Date stored UTC ISO, edited as `datetime-local` (see `isoToLocal`/`localToIso`). Schema `passLocationSchema` in validators; written into pass.json by `buildPassJson`.
 
 ### Admin Panel
+- **Five destinations, path-segment sub-tabs** (no `?tab=`): `/admin/links[/profile|/social]` (home) · `/admin/design[/banner|/branding|/seo]` · `/admin/insights` · `/admin/inbox` · `/admin/settings[/email|/integrations|/wallet|/data]` (root = Account). `NAV_ITEMS` in `components/admin/nav-list.tsx` is the single source for the rail (≥lg, hover/pin-expand at xl), the bottom tab bar (<lg) and the top-bar kicker. Features tab is gone: each toggle sits next to what it toggles (messages → Inbox header, wallet → Settings/Wallet header, vCard + consent → Design/Branding, MapKit + CAPTCHA → Settings/Integrations, magic link → Settings/Account).
+- **Legacy routes** (`/admin`, `/admin/builder`, `/admin/appearance`, `/admin/analytics`, `/admin/connections`, `/admin/forms`, `/admin/social`, `/admin/account`, `/admin/wallet`, `/admin/settings?tab=*`) get a real 307 from `proxy.ts` (`legacyAdminRedirect(pathname, tab)` runs before the auth gate so `?from=` carries the new path) and keep 7-line `redirect()` page shims as a fallback — the shims alone stream a 200 + client redirect because of `app/admin/loading.tsx`. Both derive from the pure map `lib/admin-redirects.ts` (tested in `lib/__tests__/admin-redirects.test.ts`). Add new moves there; `/admin/settings` without a tab must not redirect.
+- **Preview slot contract** (`components/admin/preview-slot.tsx`): a page that should show the phone calls `usePreviewSlot({ overrides?, mode?, onModeChange?, panel?, altView? })` every render; the shell-owned `PreviewColumn` (≥lg, sticky, collapsible, dot-grid ground, `panel` replaces the phone at lg and stacks above it at xl) and the FAB + `MobilePreviewSheet` (<lg) read the same registration. Pages never read the registration (two contexts, no render loops) and never render their own right column. `PageShell` + `PageHeader` (+ `SubTabs` in the destination layout) is the page skeleton; the tool column is 720px beside a preview, 880px alone.
+- **State pill** (`state-pill.tsx`): `● Unsaved` comes from `useAnyUnsaved()` (module-level counter fed by every `useUnsavedChanges(dirty)`), `n drafts` from `blocks.list`, else `● Live`. Keep every form on `useUnsavedChanges` so the pill and the tab-switch guard stay honest.
+- Signal gradient only on the active rail bar, the selected block row edge and the Unsaved pill; `--shadow-glow` only on the Unsaved pill and `+ Add block` hover; cards are matte (`bg-card border-border shadow-none`, no blur).
+- Motion: rail indicator slides 180ms, preview collapse 220ms width + 120ms fade, Unsaved dot `animate-pulse-once` (600ms) — all cut by the global `prefers-reduced-motion` rule in `index.css`.
 - Wrap sections in `Card` / `CardContent`
 - Section headers: `<h2 className="text-sm font-semibold">`
-- Settings forms: state pairs (current + saved) for dirty detection, save button appears when dirty
+- Settings forms: `useSettingsForm` scope per page + one `StickySaveBar` (sits above the bottom tab bar below lg)
 - Setup wizard: `/admin/setup` — 4-step split-panel onboarding (Account → Profile → Theme → Done); redirects to `/admin/login` if account already exists
 - Login page: `/admin/login` — split-panel layout; left side customizable via branding settings (`branding_login_*`)
 

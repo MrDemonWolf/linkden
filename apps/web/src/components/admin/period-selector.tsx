@@ -30,7 +30,7 @@ export function PeriodSelector({ value, onChange, className }: PeriodSelectorPro
 						"rounded-md px-3 py-1.5 text-xs font-medium transition-all min-h-11 md:min-h-0",
 						"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 						value === p.value
-							? "bg-white dark:bg-white/15 shadow-sm text-foreground"
+							? "bg-card text-foreground shadow-sm"
 							: "text-muted-foreground hover:text-foreground",
 					)}
 				>

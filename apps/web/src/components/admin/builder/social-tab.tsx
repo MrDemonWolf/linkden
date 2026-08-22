@@ -1,17 +1,18 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { Save, Undo2, Globe, Search, Plus, Trash2 } from "lucide-react";
-import { useTheme } from "next-themes";
-import { trpc } from "@/utils/trpc";
+import { getAccessibleIconFill, isLowLuminance } from "@linkden/ui/color-contrast";
 import { socialBrands } from "@linkden/ui/social-brands";
 import type { SocialNetworkUpdate } from "@linkden/validators/social";
-import { getAccessibleIconFill, isLowLuminance } from "@linkden/ui/color-contrast";
-import { Card, CardContent } from "@/components/ui/card";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Globe, Plus, Save, Search, Trash2, Undo2 } from "lucide-react";
+import { useTheme } from "next-themes";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { SectionHeader } from "@/components/admin/section-header";
+import { NetworkRow } from "@/components/admin/social/network-row";
+import { CATEGORY_LABELS, type NetworkDraft } from "@/components/admin/social/social-constants";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
@@ -20,11 +21,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { SectionHeader } from "@/components/admin/section-header";
-import { NetworkRow } from "@/components/admin/social/network-row";
-import { type NetworkDraft, CATEGORY_LABELS } from "@/components/admin/social/social-constants";
 import { cn, getAdminThemeColors } from "@/lib/utils";
+import { trpc } from "@/utils/trpc";
 
 const URL_PLACEHOLDERS: Record<string, string> = {
 	twitter: "https://twitter.com/yourhandle",
@@ -62,11 +62,21 @@ const URL_PLACEHOLDERS: Record<string, string> = {
 	website: "https://yoursite.com",
 };
 
-interface SocialTabProps {
-	onDirtyChange: (dirty: boolean) => void;
+export interface SocialLive {
+	slug: string;
+	name: string;
+	url: string;
+	hex: string;
+	svgPath: string;
 }
 
-export function SocialTab({ onDirtyChange }: SocialTabProps) {
+interface SocialTabProps {
+	onDirtyChange: (dirty: boolean) => void;
+	/** In-progress active networks for the live preview (`overrides.socialNetworks`); null once saved. */
+	onLiveChange?: (networks: SocialLive[] | null) => void;
+}
+
+export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 	const qc = useQueryClient();
 	const { resolvedTheme } = useTheme();
 
@@ -166,6 +176,23 @@ export function SocialTab({ onDirtyChange }: SocialTabProps) {
 	useEffect(() => {
 		onDirtyChange(socialDirty);
 	}, [socialDirty, onDirtyChange]);
+
+	// ponytail: only while dirty, so the saved page keeps its live (addedAt) order;
+	// unsaved edits preview alphabetically, the same order as the list below.
+	useEffect(() => {
+		onLiveChange?.(
+			socialDirty
+				? activeNetworks.map(({ slug, name, url, hex, svgPath }) => ({
+						slug,
+						name,
+						url,
+						hex,
+						svgPath,
+					}))
+				: null,
+		);
+		return () => onLiveChange?.(null);
+	}, [socialDirty, activeNetworks, onLiveChange]);
 
 	const handleUrlChange = (slug: string, url: string) => {
 		setDrafts((prev) => ({

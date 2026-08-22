@@ -1,7 +1,9 @@
 "use client";
 
 import { type BlockType, blockTypeSchema, httpUrlSchema } from "@linkden/validators/blocks";
+import { useQuery } from "@tanstack/react-query";
 import { Plus, Trash2, X } from "lucide-react";
+import Link from "next/link";
 import { createContext, useContext, useEffect, useId, useRef, useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -13,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { isoToLocal } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { configErrors, fieldError } from "@/lib/validate";
+import { trpc } from "@/utils/trpc";
 import { ColorField } from "../color-field";
 import { ImageUploadField } from "../image-upload-field";
 import { type Block, EMBED_URL_PATTERNS, validateEmbedUrl } from "./builder-constants";
@@ -290,6 +293,8 @@ export function BlockEditPanel({
 	onChange?: (data: Partial<Block>) => void;
 }) {
 	const panelRef = useRef<HTMLDivElement>(null);
+	// Site-wide toggles that gate this block type (cached; the list page already fetches it).
+	const siteSettings = useQuery(trpc.settings.getAll.queryOptions()).data;
 	const [title, setTitle] = useState(block.title ?? "");
 	const [url, setUrl] = useState(block.url ?? "");
 	const [icon, setIcon] = useState(block.icon ?? "");
@@ -430,10 +435,7 @@ export function BlockEditPanel({
 	const textBody = str("body");
 
 	const panel = (
-		<div
-			ref={panelRef}
-			className="flex h-full flex-col rounded-xl border border-border bg-card/80 backdrop-blur-xl shadow-xl"
-		>
+		<div ref={panelRef} className="flex h-full flex-col rounded-xl border border-border bg-card">
 			{/* Header */}
 			<div className="flex items-center justify-between border-b border-border px-4 py-3">
 				<h3 className="text-sm font-medium">
@@ -711,6 +713,18 @@ export function BlockEditPanel({
 
 					{block.type === "connect" && (
 						<>
+							{siteSettings && siteSettings.contact_form_enabled !== "true" && (
+								<p
+									role="status"
+									className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-micro text-warning"
+								>
+									Messages are off, so this block is hidden on your page —{" "}
+									<Link href="/admin/inbox" className="font-medium underline underline-offset-2">
+										turn on in Inbox
+									</Link>
+									.
+								</p>
+							)}
 							<SelectField
 								id="edit-preset"
 								label="Preset"
@@ -990,6 +1004,18 @@ export function BlockEditPanel({
 
 					{block.type === "location" && (
 						<>
+							{siteSettings && siteSettings.mapkit_enabled !== "true" && (
+								<Hint>
+									Want an embedded Apple Map?{" "}
+									<Link
+										href="/admin/settings/integrations"
+										className="font-medium text-foreground underline underline-offset-2"
+									>
+										Configure MapKit in Settings → Integrations
+									</Link>
+									.
+								</Hint>
+							)}
 							<TextField
 								id="edit-address"
 								label="Address"

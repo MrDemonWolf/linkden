@@ -12,7 +12,9 @@ function Card({
 			data-slot="card"
 			data-size={size}
 			className={cn(
-				"bg-card text-card-foreground backdrop-blur-xl border border-border shadow-[0_1px_3px_rgb(0_0_0/0.06)] dark:shadow-[0_2px_8px_rgb(0_0_0/0.4)] gap-4 overflow-hidden rounded-xl py-4 text-xs/relaxed has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-2 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-xl *:[img:last-child]:rounded-xl group/card flex flex-col transition-colors hover:border-foreground/20",
+				// Matte admin surface: no blur, no shadow, no hover edge (the Studio glass look
+				// left with `.admin-glass-bg`). `--shadow-card` is reserved for the phone frame.
+				"bg-card text-card-foreground border border-border shadow-none gap-4 overflow-hidden rounded-xl py-4 text-xs/relaxed has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-2 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-xl *:[img:last-child]:rounded-xl group/card flex flex-col",
 				className,
 			)}
 			{...props}
