@@ -3,153 +3,75 @@ title: Custom Domain
 description: Point a custom domain at your LinkDen instance.
 ---
 
-# Custom Domain Setup
+# 🌐 Custom Domain Setup
 
-Give your LinkDen instance a custom domain instead of the default `*.workers.dev` URL.
+Give your LinkDen instance a custom domain instead of the default `*.workers.dev` URLs. This is the recommended production setup: on a custom domain the web app and the API share one origin, so admin login works without any cookie or CORS tricks.
 
-## What You're Setting Up
+### ⚡ TL;DR
+- Your domain must be a zone in your Cloudflare account, and the hostname must have **no existing DNS record**.
+- Set `SITE_DOMAIN` and point `BETTER_AUTH_URL`, `NEXT_PUBLIC_SERVER_URL`, `CORS_ORIGIN`, and `NEXT_PUBLIC_SITE_URL` at it.
+- Run `bun ship`. Alchemy creates the Custom Domain (DNS + certificate) and the `/api/*` and `/trpc/*` routes.
+- Verify: the page loads over HTTPS, `/api/health` returns `"status":"ok"`, and `/admin/login` stays signed in.
 
-| Service | Default URL | Custom Domain Example |
-|---------|------------|----------------------|
-| Web app | `linkden-web.your-subdomain.workers.dev` | `links.yourdomain.com` or `yourdomain.com` |
-| API | `linkden-server.your-subdomain.workers.dev` | `api.yourdomain.com` |
+---
 
-You can set up a custom domain for one or both services.
+## 🧭 How It Works
 
-## Option 1: Domain on Cloudflare DNS (Recommended)
+Alchemy does the wiring for you from a single variable, `SITE_DOMAIN`:
 
-If your domain already uses Cloudflare's nameservers, this is nearly automatic.
+| Worker | What Alchemy creates |
+|--------|----------------------|
+| `linkden` (web) | A **Custom Domain** on `SITE_DOMAIN` (DNS record + certificate) |
+| `linkden-api` (API) | Two **Routes**: `SITE_DOMAIN/api/*` and `SITE_DOMAIN/trpc/*` |
 
-### Add Your Domain to Cloudflare
+Cloudflare matches routes before the custom-domain Worker, so requests to `/api/*` and `/trpc/*` reach the API and everything else reaches the web app. There is no separate API hostname.
 
-If your domain isn't on Cloudflare yet:
+Without `SITE_DOMAIN` the deploy targets `workers.dev`, where the two Workers are different origins and `/admin` cannot hold a session. Treat `workers.dev` as staging only.
 
-1. Go to the [Cloudflare dashboard](https://dash.cloudflare.com) > **Add a site**.
-2. Enter your domain, select the **Free** plan.
-3. Update your nameservers at your registrar to the ones Cloudflare provides.
-4. Wait for propagation (usually 15 minutes to 24 hours).
+## ✅ Requirements
 
-### Add Custom Domains to Workers
+1. Your domain is a **zone in your Cloudflare account** (Cloudflare nameservers). If it is not yet, go to the [Cloudflare dashboard](https://dash.cloudflare.com) → **Add a site**, pick the Free plan, and switch your registrar's nameservers to the ones Cloudflare shows you. Propagation takes anywhere from 15 minutes to 24 hours.
+2. The hostname you choose **must not already have a DNS record**. Cloudflare creates the record when it attaches the Custom Domain and refuses to overwrite an existing A, AAAA, or CNAME. If something lives there today, delete that record first.
+3. Your `CLOUDFLARE_API_TOKEN` has the Zone permissions listed in the [Cloudflare guide](/docs/self-hosting/cloudflare): Workers Routes:Edit, Zone:Read, DNS:Edit, SSL and Certificates:Edit.
 
-For each Worker (`linkden-web` and `linkden-server`):
+## 🚀 Set It Up
 
-1. Go to **Workers & Pages** > click the Worker.
-2. Go to **Settings > Domains & Routes** > **Add Custom Domain**.
-3. Enter your domain (e.g., `links.yourdomain.com` or `api.yourdomain.com`).
+- [ ] Set `SITE_DOMAIN` and point every URL at it. In production all four URLs are the same value:
 
-Cloudflare automatically creates the DNS record and provisions SSL.
+  ```bash
+  SITE_DOMAIN=links.yourdomain.com
+  BETTER_AUTH_URL=https://links.yourdomain.com
+  NEXT_PUBLIC_SERVER_URL=https://links.yourdomain.com
+  CORS_ORIGIN=https://links.yourdomain.com
+  NEXT_PUBLIC_SITE_URL=https://links.yourdomain.com
+  ```
 
-### Update Environment Variables
+  If you deploy from GitHub Actions, `SITE_DOMAIN` and `NEXT_PUBLIC_SITE_URL` go in as **variables** on the `production` environment; the rest are **secrets**.
 
-Update your `.env` file with the custom domain URLs:
+- [ ] Redeploy:
 
-```bash
-NEXT_PUBLIC_SERVER_URL=https://api.yourdomain.com
-CORS_ORIGIN=https://yourdomain.com
-BETTER_AUTH_URL=https://api.yourdomain.com
-```
+  ```bash
+  bun ship
+  ```
 
-Redeploy:
+  The deploy log lists the custom domain and the two routes as they are created. Certificate issuance usually finishes within a minute.
 
-```bash
-bun ship
-```
+- [ ] Verify:
 
-## Option 2: Domain on External DNS
+  - `https://links.yourdomain.com` loads your link page with a lock icon.
+  - `curl -I https://links.yourdomain.com/api/health` returns `"status":"ok"`. The response carries the API's `Strict-Transport-Security` header, which proves the route won over the web Worker.
+  - `/admin/login` signs you in and stays signed in.
 
-If your domain uses another DNS provider (Namecheap, GoDaddy, Route 53, etc.), you'll add DNS records manually.
+## 🌐 Apex Domains
 
-### Step 1: Add the Domain in Cloudflare
+An apex domain is `yourdomain.com` with no subdomain. Cloudflare Custom Domains support it directly (CNAME flattening is automatic), so `SITE_DOMAIN=yourdomain.com` works as long as the apex has no existing record. Most people still prefer a subdomain such as `links.yourdomain.com` so the apex stays free for a main website.
 
-Follow the same Cloudflare dashboard steps as Option 1 (Workers & Pages > your Worker > Settings > Domains & Routes). Cloudflare shows you the required DNS record.
+## 🔀 External DNS
 
-### Step 2: Add DNS Records
+Custom Domains require the zone to be on Cloudflare DNS. If your DNS lives elsewhere (Namecheap, GoDaddy, Route 53, and so on), move the zone to Cloudflare first. The Free plan is enough, the registrar stays where it is, and switching the nameservers is the only change. Cloudflare imports your existing records when you add the site, so nothing else breaks.
 
-At your DNS provider, create CNAME records:
+## 🔄 Changing or Removing the Domain
 
-**Web app:**
-
-| Type | Name | Target | TTL |
-|------|------|--------|-----|
-| CNAME | `@` or subdomain | `linkden-web.your-subdomain.workers.dev` | Auto or 300 |
-
-**API:**
-
-| Type | Name | Target | TTL |
-|------|------|--------|-----|
-| CNAME | `api` | `linkden-server.your-subdomain.workers.dev` | Auto or 300 |
-
-### Provider-Specific Notes
-
-**Namecheap**: Go to **Domain List > Manage > Advanced DNS > Add New Record > CNAME Record**. Note: Namecheap does not support CNAME on the apex domain (`@`) — use a subdomain or transfer to Cloudflare.
-
-**GoDaddy**: Go to **My Products > DNS > Add > CNAME**. Same apex limitation as Namecheap.
-
-**Route 53**: Go to **Hosted zones > your domain > Create record > CNAME**. Route 53 supports ALIAS records for apex domains, but only for AWS resources — for Cloudflare Workers, use a subdomain.
-
-### Step 3: Wait for DNS Propagation
-
-Check propagation with:
-
-```bash
-dig yourdomain.com CNAME +short
-dig yourdomain.com A +short
-```
-
-Or use [whatsmydns.net](https://www.whatsmydns.net/) for a global view. Most providers update within 5-30 minutes.
-
-### Step 4: SSL
-
-Cloudflare provisions a free SSL certificate automatically once DNS verification completes. No manual configuration needed.
-
-## Apex Domain Configuration
-
-An apex domain is `yourdomain.com` without a subdomain prefix.
-
-**Cloudflare DNS**: Works automatically. Cloudflare uses CNAME flattening to handle apex CNAME records.
-
-**External DNS**: Most providers don't support CNAME at the apex (it violates RFC 1034). Your options:
-
-1. **Transfer to Cloudflare DNS** (recommended) — free registrar, supports CNAME flattening
-2. **Use a subdomain** like `links.yourdomain.com` instead
-3. **Check for ALIAS/ANAME support** — some providers offer it:
-
-| Provider | Apex Support |
-|----------|-------------|
-| Cloudflare | CNAME flattening (automatic) |
-| Route 53 | ALIAS (AWS resources only) |
-| DNSimple | ALIAS |
-| NS1 | ALIAS |
-| Namecheap | Not supported |
-| GoDaddy | Not supported |
-
-4. **Set up a redirect** from the apex to `www`, then point `www` via CNAME
-
-## Subdomain vs. Same Domain
-
-The recommended setup uses subdomains:
-
-```
-yourdomain.com       → Web app (Cloudflare Pages/Worker)
-api.yourdomain.com   → API (Cloudflare Worker)
-```
-
-This is the simplest and most maintainable configuration.
-
-## Verify Your Setup
-
-After configuring, check that everything works:
-
-1. Visit `https://yourdomain.com` — your link page loads
-2. Browser shows a lock icon (SSL active)
-3. Navigate to `/admin/login` — login page loads
-4. Sign in and create or edit a link — saves without errors
-5. Visit `https://api.yourdomain.com` — returns a response
-
-## Removing a Custom Domain
-
-1. In the Cloudflare dashboard, go to the Worker > **Custom Domains**.
-2. Remove the domain.
-3. Delete the CNAME record at your DNS provider.
-4. Update environment variables back to `*.workers.dev` URLs.
-5. Redeploy.
+- **Change:** update `SITE_DOMAIN` and the four URLs, make sure the new hostname has no DNS record, and run `bun ship`. Alchemy removes the old domain and routes and creates the new ones.
+- **Remove:** unset `SITE_DOMAIN`, point the URLs back at the `workers.dev` addresses, and run `bun ship`. The DNS record Cloudflare created is deleted with the Custom Domain.
+- **Roll back to a previous site on that hostname:** re-create the old DNS record after removing `SITE_DOMAIN` and redeploying. Nothing else needs undoing.

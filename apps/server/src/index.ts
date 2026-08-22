@@ -3,42 +3,50 @@
 //   1. Auth routes (Better Auth)
 //   2. tRPC API (all admin + public endpoints)
 //   3. Image upload/serving (R2)
+//   4. Public downloads: /api/vcard, /api/wallet-pass (.pkpass)
+//   5. /api/health + the daily retention cron (`scheduled`)
 //
-// Rate limiting uses Cloudflare's native rate limiter with three tiers:
+// Rate limiting uses Cloudflare's native rate limiter with four limiters
+// (configured in wrangler.jsonc + packages/infra/alchemy.run.ts, per IP):
 //   - RL_AUTH (10 req/60s): login, contact form — generous for real users
 //   - RL_STRICT (5 req/60s): password reset, magic link, signup — tight to prevent abuse
 //   - RL_UPLOAD (20 req/60s): image uploads — higher since admin may batch-upload
+//   - RL_PUBLIC (60 req/60s): view/click tracking, vCard download — unauthenticated traffic
+//
+// Errors: unhandled exceptions (Hono + tRPC + cron) are logged as one-line JSON
+// so Workers observability can filter on `level` / `path`.
 //
 // Security patterns:
-//   - Signup lock: after the first user registers, /sign-up returns 403.
-//     This is a single-user app — registration is only for initial setup.
+//   - Signup lock: after the first user registers, /sign-up returns 403 here;
+//     the DB trigger (0007_single_admin_trigger.sql) is the real enforcement.
 //   - Magic link gate: checks the magic_link_enabled setting before allowing
 //     magic link auth requests, so admins can disable it at runtime.
-//   - File upload validation: triple-checks extension, MIME type, and size
-//     before writing to R2. This defends against content-type spoofing.
+//   - File upload validation: extension + MIME + Content-Length precheck, then
+//     the magic-byte signature must match the extension before writing to R2.
 
 import { trpcServer } from "@hono/trpc-server";
 import { cloudflareRateLimiter } from "@hono-rate-limiter/cloudflare";
 import { createContext } from "@linkden/api/context";
 import { appRouter } from "@linkden/api/routers/index";
 import { generateVCardString, vcardDataSchema } from "@linkden/api/routers/vcard";
-import { auth } from "@linkden/auth";
+import { auth, getSessionQuery } from "@linkden/auth";
 import { db } from "@linkden/db";
 import { block, siteSettings, user } from "@linkden/db/schema/index";
 import { parsePassFieldsJson, parsePassLocationsJson } from "@linkden/validators/wallet";
-import { and, asc, eq, sql } from "drizzle-orm";
-import { APP_VERSION } from "@linkden/api/utils/version";
+import { and, asc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { HTTPException } from "hono/http-exception";
 import { logger } from "hono/logger";
+import { buildHealth } from "./lib/health";
 import { generatePkpass } from "./lib/pkpass";
+import { runScheduledMaintenance } from "./lib/retention-sweep";
 import {
 	buildR2Key,
 	MAX_UPLOAD_BODY_SIZE,
 	signatureMatchesExt,
 	validateUpload,
 } from "./lib/upload-validation";
-import { runScheduledMaintenance } from "./lib/retention-sweep";
 
 type Bindings = {
 	CORS_ORIGIN?: string;
@@ -56,6 +64,20 @@ type Bindings = {
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
+
+/** One-line JSON error log, shared by the Hono, tRPC, and cron error paths. */
+function logError(fields: Record<string, unknown>, err: unknown) {
+	const e = err instanceof Error ? err : new Error(String(err));
+	console.error(JSON.stringify({ level: "error", ...fields, message: e.message, stack: e.stack }));
+}
+
+// Unhandled route errors: keep HTTPException status codes (4xx thrown on
+// purpose), log everything else and hide internals from the client.
+app.onError((err, c) => {
+	if (err instanceof HTTPException) return err.getResponse();
+	logError({ path: c.req.path, method: c.req.method }, err);
+	return c.json({ error: "Internal error" }, 500);
+});
 
 // Security headers
 app.use("/*", async (c, next) => {
@@ -81,7 +103,7 @@ app.use(
 	}),
 );
 
-// Rate limiters (Cloudflare native rate limiting: RL_AUTH=10/60s, RL_STRICT=5/60s, RL_UPLOAD=20/60s)
+// Rate limiters (Cloudflare native rate limiting; see header comment for the four limiters)
 const rlKeyGenerator = (c: { req: { header: (name: string) => string | undefined } }) =>
 	c.req.header("cf-connecting-ip") ?? "";
 
@@ -171,6 +193,12 @@ app.use(
 		createContext: (_opts, context) => {
 			return createContext({ context });
 		},
+		// Expected client errors (UNAUTHORIZED, BAD_REQUEST, ...) are noise; only
+		// log what a developer needs to act on.
+		onError: ({ error, path }) => {
+			if (error.code !== "INTERNAL_SERVER_ERROR") return;
+			logError({ path: path ?? "trpc", code: error.code }, error.cause ?? error);
+		},
 	}),
 );
 
@@ -179,6 +207,7 @@ app.post("/api/upload", async (c) => {
 	// Verify auth
 	const session = await auth.api.getSession({
 		headers: c.req.raw.headers,
+		query: getSessionQuery(c.req.method),
 	});
 	if (!session) {
 		return c.json({ error: "Unauthorized" }, 401);
@@ -424,22 +453,18 @@ app.get("/", (c) => {
 });
 
 app.get("/api/health", async (c) => {
-	// Real readiness: confirm D1 is reachable and report the deployed version,
-	// so a green health check actually means the app can serve requests.
-	let database: "ok" | "error" = "ok";
-	try {
-		await db.run(sql`SELECT 1`);
-	} catch {
-		database = "error";
-	}
-	const ok = database === "ok";
-	return c.json({ status: ok ? "ok" : "degraded", database, version: APP_VERSION }, ok ? 200 : 503);
+	const report = await buildHealth(db);
+	return c.json(report, report.status === "ok" ? 200 : 503);
 });
 
 export default {
 	fetch: app.fetch,
 	// Cron-triggered maintenance (see wrangler.jsonc [triggers]/crons).
-	async scheduled(_event: ScheduledController, env: Bindings, ctx: ExecutionContext) {
-		ctx.waitUntil(runScheduledMaintenance(env.IMAGES_BUCKET));
+	async scheduled(event: ScheduledController, env: Bindings, ctx: ExecutionContext) {
+		ctx.waitUntil(
+			runScheduledMaintenance(env.IMAGES_BUCKET).catch((err) =>
+				logError({ path: "scheduled", method: event.cron }, err),
+			),
+		);
 	},
 };

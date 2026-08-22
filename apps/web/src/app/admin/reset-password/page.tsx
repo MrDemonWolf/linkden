@@ -94,8 +94,8 @@ export default function ResetPasswordPage() {
 				<div className="w-full max-w-[400px] login-card-enter">
 					{success ? (
 						<div className="login-glass-card rounded-2xl p-6 sm:p-8 text-center space-y-3">
-							<div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-green-500/10">
-								<CheckCircle2 className="h-5 w-5 text-green-500" />
+							<div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-success/10">
+								<CheckCircle2 className="h-5 w-5 text-success" />
 							</div>
 							<h2 className="text-sm font-semibold text-foreground">Password reset successful</h2>
 							<p className="text-xs text-muted-foreground">

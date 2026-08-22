@@ -5,10 +5,10 @@ description: Set up environment variables and authentication for your LinkDen in
 
 # ⚙️ Configuration
 
-LinkDen keeps its `.env` file **minimal on purpose**. You only need four environment variables to get running. Everything else -- email, CAPTCHA, branding, and more -- is configured through the admin panel and stored in the database.
+LinkDen keeps its `.env` file **minimal on purpose**. You only need five environment variables to get running. Everything else -- email, CAPTCHA, branding, and more -- is configured through the admin panel and stored in the database.
 
 ### ⚡ TL;DR
-- **Required:** 4 variables (`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CORS_ORIGIN`, `NEXT_PUBLIC_SERVER_URL`).
+- **Required:** 5 variables (`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CORS_ORIGIN`, `NEXT_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_SITE_URL`).
 - **Config Location:** Most settings are in `/admin/settings` (DB), not `.env`.
 - **Auth:** Built-in email/password (Better Auth). No external provider needed.
 
@@ -28,6 +28,7 @@ cp .env.example .env
 - [ ] `BETTER_AUTH_URL` - **Public.** URL where the API server runs.
 - [ ] `CORS_ORIGIN` - **Public.** URL where the web frontend runs.
 - [ ] `NEXT_PUBLIC_SERVER_URL` - **Public.** Same as `BETTER_AUTH_URL`.
+- [ ] `NEXT_PUBLIC_SITE_URL` - **Public.** URL of the site itself (used for `robots.txt`, `sitemap.xml`, and Open Graph links).
 
 ### Generating a Secret
 
@@ -49,18 +50,21 @@ BETTER_AUTH_SECRET=your-generated-secret
 BETTER_AUTH_URL=http://localhost:3000
 CORS_ORIGIN=http://localhost:3001
 NEXT_PUBLIC_SERVER_URL=http://localhost:3000
+NEXT_PUBLIC_SITE_URL=http://localhost:3001
 ```
 
 ### 🌍 Production
 
 ```bash
+SITE_DOMAIN=links.yourdomain.com
 BETTER_AUTH_SECRET=your-production-secret
-BETTER_AUTH_URL=https://api.yourdomain.com
-CORS_ORIGIN=https://yourdomain.com
-NEXT_PUBLIC_SERVER_URL=https://api.yourdomain.com
+BETTER_AUTH_URL=https://links.yourdomain.com
+CORS_ORIGIN=https://links.yourdomain.com
+NEXT_PUBLIC_SERVER_URL=https://links.yourdomain.com
+NEXT_PUBLIC_SITE_URL=https://links.yourdomain.com
 ```
 
-> **Tip:** `BETTER_AUTH_URL` and `NEXT_PUBLIC_SERVER_URL` should point to the **same server**. `CORS_ORIGIN` points to your **frontend**.
+> **Tip:** In production all four URLs are the same hostname. The web app owns `SITE_DOMAIN` and the API is routed under it at `/api/*` and `/trpc/*`, so there is no separate API domain. Locally the API (`:3000`) and web app (`:3001`) are different origins, which is why the local values differ. See [Environment Variables](/docs/self-hosting/environment-variables) for the deploy-only variables.
 
 ---
 

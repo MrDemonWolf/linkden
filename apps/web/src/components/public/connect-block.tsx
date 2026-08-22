@@ -3,6 +3,7 @@
 import { getReadableTextColor } from "@linkden/ui/color-contrast";
 import { useMutation } from "@tanstack/react-query";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { trackClick } from "@/lib/track";
 import { trpc } from "@/utils/trpc";
 import { usePreview } from "./preview-context";
 import type { ThemeColors } from "./public-page";
@@ -83,12 +84,12 @@ function FloatingField({
 
 	const labelBase = "pointer-events-none absolute left-4 text-sm transition-all duration-200";
 
-	const labelClasses = `${labelBase} top-1/2 -translate-y-1/2 peer-focus:top-3 peer-focus:translate-y-0 peer-focus:text-[10px] peer-focus:font-medium ${
-		value ? "top-3 translate-y-0 text-[10px] font-medium" : ""
+	const labelClasses = `${labelBase} top-1/2 -translate-y-1/2 peer-focus:top-3 peer-focus:translate-y-0 peer-focus:text-micro peer-focus:font-medium ${
+		value ? "top-3 translate-y-0 text-micro font-medium" : ""
 	}`;
 
-	const labelClassesMultiline = `${labelBase} top-4 peer-focus:top-2 peer-focus:text-[10px] peer-focus:font-medium ${
-		value ? "top-2 text-[10px] font-medium" : ""
+	const labelClassesMultiline = `${labelBase} top-4 peer-focus:top-2 peer-focus:text-micro peer-focus:font-medium ${
+		value ? "top-2 text-micro font-medium" : ""
 	}`;
 
 	const labelStyle: React.CSSProperties = themeColors ? { color: themeColors.mutedFg } : {};
@@ -234,7 +235,7 @@ function WhereMetSelect({
 				</select>
 				<label
 					htmlFor={id}
-					className="pointer-events-none absolute left-4 top-3 translate-y-0 text-[10px] font-medium transition-all duration-200"
+					className="pointer-events-none absolute left-4 top-3 translate-y-0 text-micro font-medium transition-all duration-200"
 					style={labelStyle}
 				>
 					Where did we meet?{" "}
@@ -332,6 +333,7 @@ function ConnectForm({
 	const submitContact = useMutation({
 		...trpc.public.submitContact.mutationOptions(),
 		onSuccess: () => {
+			trackClick(blockId, { preview: !!isPreview });
 			setSubmitted(true);
 			setFormData({
 				firstName: "",
@@ -450,7 +452,7 @@ function ConnectForm({
 				<button
 					type="button"
 					onClick={() => setSubmitted(false)}
-					className="mt-3 text-xs transition-colors hover:opacity-70"
+					className="mt-3 min-h-11 px-3 text-small underline underline-offset-4 transition-colors hover:opacity-70"
 					style={{ color: primaryColor }}
 				>
 					Send another message
@@ -462,7 +464,7 @@ function ConnectForm({
 	return (
 		<form onSubmit={handleSubmit} className="space-y-3" noValidate>
 			{isPreview && (
-				<p className="mb-3 text-center text-[10px] uppercase tracking-widest opacity-40">Preview</p>
+				<p className="mb-3 text-center text-micro uppercase tracking-widest opacity-40">Preview</p>
 			)}
 
 			<div className="grid gap-3 sm:grid-cols-2">
@@ -546,7 +548,7 @@ function ConnectForm({
 						aria-invalid={errors.consent ? true : undefined}
 					/>
 					<span
-						className="text-xs leading-relaxed"
+						className="text-small leading-relaxed"
 						style={{
 							color: themeColors?.mutedFg || (colorMode === "dark" ? "#9ca3af" : "#6b7280"),
 						}}
@@ -578,7 +580,7 @@ function ConnectForm({
 			<button
 				type="submit"
 				disabled={submitContact.isPending}
-				className="w-full rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 hover:brightness-110"
+				className="min-h-11 w-full rounded-xl px-4 py-3 text-small font-semibold transition-all duration-200 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 hover:brightness-110"
 				style={{
 					backgroundColor: primaryColor,
 					color: getReadableTextColor(primaryColor),

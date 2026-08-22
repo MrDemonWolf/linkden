@@ -1,3 +1,4 @@
+import { env } from "@linkden/env/web";
 import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
@@ -9,6 +10,6 @@ export default function robots(): MetadataRoute.Robots {
 				disallow: ["/admin/", "/api/"],
 			},
 		],
-		sitemap: `${process.env.NEXT_PUBLIC_SERVER_URL || "https://example.com"}/sitemap.xml`,
+		sitemap: new URL("/sitemap.xml", env.NEXT_PUBLIC_SITE_URL).toString(),
 	};
 }

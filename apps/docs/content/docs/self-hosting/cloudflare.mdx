@@ -5,14 +5,15 @@ description: Deploy LinkDen on Cloudflare Workers and D1 — the recommended hos
 
 # ☁️ Cloudflare Deployment
 
-Deploy LinkDen to Cloudflare's **free tier** with two Workers and a D1 database. LinkDen was purpose-built for this — one command does everything.
+Deploy LinkDen to Cloudflare's **free tier** with two Workers, a D1 database, and two R2 buckets. LinkDen was built for this. One command provisions everything.
 
 ### ⚡ TL;DR
 1. Get a free Cloudflare account → create an API token.
-2. Fill in `.env` with your token, account ID, and secrets.
+2. Fill in `.env` with your token, account ID, Alchemy state settings, and secrets.
 3. Run `bun ship`. *(Deploy everything in one shot.)*
 4. Copy the real URLs from the output → update `.env` → run `bun ship` again.
-5. Go to `/admin/setup` and create your account. Done.
+5. Set `SITE_DOMAIN` to your hostname, point the URLs at it, `bun ship` once more.
+6. Go to `/admin/setup` and create your account. Done.
 
 ---
 
@@ -22,6 +23,7 @@ Before you start, make sure you have:
 
 - [ ] A [Cloudflare account](https://dash.cloudflare.com/sign-up) (free tier is fine)
 - [ ] [Bun](https://bun.sh) installed (`bun --version` should work)
+- [ ] [Node.js](https://nodejs.org) 24 installed (the deploy runs Alchemy under Node via `tsx`; Bun crashes on it)
 - [ ] The repo cloned and dependencies installed:
 
 ```bash
@@ -34,26 +36,28 @@ bun install
 
 ## 🔑 Step 1 — Create a Cloudflare API Token
 
-LinkDen uses Alchemy (IaC) to provision your Workers, D1 database, and R2 storage automatically. It needs an API token to do that.
+LinkDen uses Alchemy (IaC) to provision your Workers, D1 database, R2 buckets, custom domain, and routes automatically. It needs an API token to do that.
 
-1. Log in to the [Cloudflare dashboard](https://dash.cloudflare.com).
-2. Click your profile icon (top right) → **My Profile**.
-3. Go to **API Tokens** → **Create Token** → **Custom token**.
-4. Add the following **Edit** permissions:
+- [ ] Log in to the [Cloudflare dashboard](https://dash.cloudflare.com).
+- [ ] Click your profile icon (top right) → **My Profile**.
+- [ ] Go to **API Tokens** → **Create Token** → **Custom token**.
+- [ ] Add the following permissions:
 
-   | Resource | Permission |
-   |----------|-----------|
-   | Account → Cloudflare Workers Scripts | Edit |
-   | Account → D1 | Edit |
-   | Account → Workers KV Storage | Edit |
-   | Account → Workers Rate Limiting | Edit |
-   | Account → Cloudflare Images | Edit |
-   | Account → R2 Storage | Edit |
-   | User → Memberships | Read |
+  | Resource | Permission |
+  |----------|-----------|
+  | Account → Workers Scripts | Edit |
+  | Account → D1 | Edit |
+  | Account → Workers R2 Storage | Edit |
+  | Zone → Workers Routes | Edit |
+  | Zone → Zone | Read |
+  | Zone → DNS | Edit |
+  | Zone → SSL and Certificates | Edit |
 
-5. Under **Account Resources**, select your account.
-6. Click **Continue to summary** → **Create Token**.
-7. **Copy the token immediately** — it's only shown once.
+  The Zone permissions are what let Alchemy attach your custom domain and the `/api/*` and `/trpc/*` routes. If you only ever deploy to `workers.dev`, the Account permissions alone are enough.
+
+- [ ] Under **Account Resources**, select your account. Under **Zone Resources**, select the zone that will host your site (or all zones).
+- [ ] Click **Continue to summary** → **Create Token**.
+- [ ] **Copy the token immediately** — it's only shown once.
 
 > 💡 **Where's my Account ID?** Find it on the main Cloudflare dashboard in the right sidebar, or run `npx wrangler whoami`.
 
@@ -68,15 +72,24 @@ Create a `.env` file in the **project root** (not inside `apps/`):
 CLOUDFLARE_API_TOKEN=paste-your-token-here
 CLOUDFLARE_ACCOUNT_ID=paste-your-account-id-here
 
+# ── Alchemy (deploy state) ──────────────────────────────────
+ALCHEMY_PASSWORD=paste-a-random-secret-here
+ALCHEMY_STATE_TOKEN=paste-your-state-worker-token-here
+# ALCHEMY_STAGE=prod
+
 # ── App URLs ────────────────────────────────────────────────
 # Use placeholder values for now — you'll get real URLs after first deploy.
 # Your subdomain is your Cloudflare account name (shown in the dashboard).
-NEXT_PUBLIC_SERVER_URL=https://linkden-server.<your-subdomain>.workers.dev
-CORS_ORIGIN=https://linkden-web.<your-subdomain>.workers.dev
+NEXT_PUBLIC_SERVER_URL=https://linkden-api.<your-subdomain>.workers.dev
+CORS_ORIGIN=https://linkden.<your-subdomain>.workers.dev
+NEXT_PUBLIC_SITE_URL=https://linkden.<your-subdomain>.workers.dev
 
 # ── Better Auth ─────────────────────────────────────────────
 BETTER_AUTH_SECRET=paste-a-random-secret-here
-BETTER_AUTH_URL=https://linkden-server.<your-subdomain>.workers.dev
+BETTER_AUTH_URL=https://linkden-api.<your-subdomain>.workers.dev
+
+# ── Custom domain (leave unset until you are ready) ────────
+# SITE_DOMAIN=links.yourdomain.com
 
 # ── Apple Wallet (optional — skip if you don't need Wallet passes) ──
 # WALLET_SIGNER_CERT=base64encodedcert...
@@ -86,12 +99,34 @@ BETTER_AUTH_URL=https://linkden-server.<your-subdomain>.workers.dev
 # WALLET_PASS_TYPE_ID=pass.com.yourname.linkden
 ```
 
-**Generate a secret:**
+**Generate a secret** (run it twice, once for `ALCHEMY_PASSWORD` and once for `BETTER_AUTH_SECRET`):
 ```bash
 openssl rand -base64 32
 ```
 
-> 💡 **What's my subdomain?** It's the account name shown in the Cloudflare dashboard sidebar (e.g. `myname` → `linkden-server.myname.workers.dev`). You can also find it after the first deploy in the command output.
+### About the Alchemy state store
+
+Alchemy keeps a record of which Cloudflare resources it created. LinkDen's `packages/infra/alchemy.run.ts` points that record at a **shared `alchemy-state` Worker** (a `CloudflareStateStore`) that the MrDemonWolf apps all use, authenticated by `ALCHEMY_STATE_TOKEN`. `ALCHEMY_PASSWORD` encrypts the secrets inside that state.
+
+That shared worker is specific to the MrDemonWolf account. As a third-party self-hoster you have two options:
+
+1. **Deploy your own `alchemy-state` worker** in your account (see the [Alchemy docs for `CloudflareStateStore`](https://alchemy.run/state-store)) and set `ALCHEMY_STATE_TOKEN` to the token you gave it, or
+2. **Switch the `stateStore`** in `packages/infra/alchemy.run.ts` to something local, for example the default file-system store, by removing the `stateStore` option. Then `ALCHEMY_STATE_TOKEN` is not needed and state lives in `packages/infra/.alchemy/` (keep it out of git, but do not lose it: it is how Alchemy knows what it already deployed).
+
+`ALCHEMY_STAGE` separates deployments of the same app. It defaults to `prod`; set it to `dev` for a throwaway staging copy. Every resource of a non-`prod` stage gets the stage as a name suffix (`linkden-db-dev`, `linkden-images-dev`, `linkden-backups-dev`, `linkden-api-dev`, `linkden-dev`), so a staging deploy — and `ALCHEMY_STAGE=dev bun run destroy` — can never touch the production database, buckets, or Workers.
+
+### Upgrading a deploy made before 0.5.0
+
+Before 0.5.0 the D1 database and R2 bucket had no fixed names, so Alchemy generated them: a GitHub Actions deploy created **`linkden-database-runner`** and **`linkden-images-runner`** (a local `bun ship` used your login name instead of `runner`). 0.5.0 pins the names to `linkden-db` / `linkden-images` and moves state to the `prod` stage. On its own that would create a brand-new, empty database and bucket, put the public page back on the Welcome screen, and reopen `/admin/setup` to anyone — so **before you deploy 0.5.0 over an existing install**, set two variables to the names you already have (Cloudflare dashboard → Storage & Databases → D1 / R2):
+
+```bash
+LINKDEN_DB_NAME=linkden-database-runner
+LINKDEN_IMAGES_BUCKET=linkden-images-runner
+```
+
+In GitHub Actions these are **variables** on the `production` environment (next to `SITE_DOMAIN`). The `prod` stage then adopts your existing resources by name, runs any pending migrations against them, and nothing is re-created. The old `runner` (or `<login>`) stage's state is simply left behind. Do **not** try to keep the old stage by setting `ALCHEMY_STAGE` to it instead: in the same stage Alchemy treats the new name as a rename, which creates the new resource and deletes the old one.
+
+> 💡 **What's my subdomain?** It's the account name shown in the Cloudflare dashboard sidebar (e.g. `myname` → `linkden-api.myname.workers.dev`). You can also find it after the first deploy in the command output.
 
 ---
 
@@ -102,15 +137,15 @@ bun ship
 ```
 
 This single command:
-1. Creates your **D1 database** and runs schema migrations.
-2. Creates your **R2 bucket** for image storage.
-3. Deploys the **API Worker** (`linkden-server`).
-4. Deploys the **Web Worker** (`linkden-web`).
+1. Creates your **D1 database** (`linkden-db`) and runs schema migrations.
+2. Creates the **R2 buckets** `linkden-images` (uploads) and `linkden-backups` (daily D1 exports, 30-day expiry).
+3. Deploys the **API Worker** (`linkden-api`).
+4. Deploys the **Web Worker** (`linkden`) with a service binding to the API.
 
 At the end, the terminal prints your **real Worker URLs**, like:
 ```
-Web    -> https://linkden-web.myname.workers.dev
-Server -> https://linkden-server.myname.workers.dev
+Web    -> https://linkden.myname.workers.dev
+Server -> https://linkden-api.myname.workers.dev
 ```
 
 ---
@@ -123,9 +158,10 @@ Server -> https://linkden-server.myname.workers.dev
 2. Update `.env` with the real URLs (replace the placeholder `<your-subdomain>` values):
 
 ```bash
-NEXT_PUBLIC_SERVER_URL=https://linkden-server.myname.workers.dev
-CORS_ORIGIN=https://linkden-web.myname.workers.dev
-BETTER_AUTH_URL=https://linkden-server.myname.workers.dev
+NEXT_PUBLIC_SERVER_URL=https://linkden-api.myname.workers.dev
+CORS_ORIGIN=https://linkden.myname.workers.dev
+NEXT_PUBLIC_SITE_URL=https://linkden.myname.workers.dev
+BETTER_AUTH_URL=https://linkden-api.myname.workers.dev
 ```
 
 3. Run deploy again:
@@ -134,11 +170,41 @@ BETTER_AUTH_URL=https://linkden-server.myname.workers.dev
 bun ship
 ```
 
+> ⚠️ **Admin login does not work on `workers.dev`.** The web and API Workers sit on two different `workers.dev` origins, and the session cookie cannot cross them, so `/admin` redirects back to the login page. The public page and `/api/health` work fine, which is what a `workers.dev` deploy is for (staging). For a working admin, finish Step 5.
+
 ---
 
-## 👤 Step 5 — Create Your Admin Account
+## 🌐 Step 5 — Custom Domain (Recommended)
 
-1. Open your web Worker URL: `https://linkden-web.myname.workers.dev/admin/setup`
+With a custom domain LinkDen runs **same-origin**: the web app owns the hostname and the API is routed under it.
+
+| What | Where |
+|------|-------|
+| Web Worker `linkden` | Custom Domain on `SITE_DOMAIN` |
+| API Worker `linkden-api` | Routes `SITE_DOMAIN/api/*` and `SITE_DOMAIN/trpc/*` |
+
+Routes are matched before the custom-domain Worker, so `/api/*` and `/trpc/*` reach the API and everything else reaches Next.js. No CORS, no cookie domain tricks.
+
+1. The domain must be a zone in your Cloudflare account, and the hostname must **not** already have a DNS record (Cloudflare creates it for you and refuses to overwrite an existing one).
+2. Set `SITE_DOMAIN` and point every URL at it:
+
+```bash
+SITE_DOMAIN=links.yourdomain.com
+BETTER_AUTH_URL=https://links.yourdomain.com
+NEXT_PUBLIC_SERVER_URL=https://links.yourdomain.com
+CORS_ORIGIN=https://links.yourdomain.com
+NEXT_PUBLIC_SITE_URL=https://links.yourdomain.com
+```
+
+3. Run `bun ship` one more time. The deploy log shows the custom domain and two routes being created.
+
+See the [Custom Domain guide](/docs/self-hosting/custom-domain) for DNS details and rollback.
+
+---
+
+## 👤 Step 6 — Create Your Admin Account
+
+1. Open `https://links.yourdomain.com/admin/setup`.
 2. Fill in your email and password.
 3. Click **Create Account**.
 
@@ -146,17 +212,9 @@ bun ship
 
 ---
 
-## 🌐 Step 6 — Custom Domain (Optional)
+## 🤖 Deploying from GitHub Actions
 
-Want `links.yourdomain.com` instead of `.workers.dev`?
-
-1. Go to **Workers & Pages** in the Cloudflare dashboard.
-2. Open your **linkden-web** Worker → **Settings** → **Domains & Routes** → **Add Custom Domain**.
-3. Repeat for **linkden-server** with your API subdomain.
-4. Update `.env` with the new URLs.
-5. Run `bun ship` one more time.
-
-See the [Custom Domain guide](/docs/self-hosting/custom-domain) for more details.
+The repo ships `.github/workflows/deploy.yml`, which runs the same `bun run deploy` after CI passes on `main`. Put the values from Step 2 into the repo's **`production` environment**: everything sensitive as **secrets**, and `SITE_DOMAIN` plus `NEXT_PUBLIC_SITE_URL` as **variables**. A separate `backup-db.yml` workflow exports D1 to `linkden-backups` daily.
 
 ---
 
@@ -165,8 +223,9 @@ See the [Custom Domain guide](/docs/self-hosting/custom-domain) for more details
 | Command | What it does |
 |---------|-------------|
 | `bun ship` | Build and deploy (safe to run repeatedly) |
-| `bun destroy` | ⚠️ **Irreversible.** Deletes all Cloudflare resources |
-| `wrangler tail linkden-server` | Stream live API logs |
+| `bun run destroy` | ⚠️ **Irreversible.** Deletes all Cloudflare resources |
+| `bunx wrangler tail linkden-api` | Stream live API logs |
+| `bunx wrangler tail linkden` | Stream live web logs |
 | `bun db:generate` | Generate a migration from schema changes |
 | `bun db:push` | Push schema to local dev D1 |
 
@@ -191,11 +250,16 @@ For a typical single-user LinkDen instance, you will stay **100% within Cloudfla
 ### "Missing CORS_ORIGIN" or auth errors after deploy
 You skipped Step 4. Update `.env` with the real URLs and run `bun ship` again.
 
+### Admin redirects to login in a loop
+You are on `workers.dev`, where web and API are different origins. Set `SITE_DOMAIN` (Step 5) so both run on one hostname.
+
 ### "Registration is closed" on `/admin/setup`
 An account already exists. Go to `/admin/login` instead. If you've lost access, run `bun reset:password` locally.
 
 ### Worker returns 500 on all routes
-Check your `BETTER_AUTH_SECRET` — it must be set and match what was used on the previous deploy. Run `wrangler tail linkden-server` to see the error.
+Check your `BETTER_AUTH_SECRET` — it must be set and match what was used on the previous deploy. Run `bunx wrangler tail linkden-api` to see the error; errors are logged as JSON with the request path.
 
 ### D1 binding not found
-Alchemy provisions bindings at deploy time. If you deleted and re-created resources manually, run `bun destroy` then `bun ship` to start fresh.
+Alchemy provisions bindings at deploy time. If you deleted and re-created resources manually, run `bun run destroy` then `bun ship` to start fresh.
+
+More in the [Troubleshooting guide](/docs/self-hosting/troubleshooting).

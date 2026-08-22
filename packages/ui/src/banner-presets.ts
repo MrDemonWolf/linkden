@@ -6,7 +6,7 @@ interface BannerPresetBase {
 	category: "gradient" | "shader" | "pattern" | "solid";
 }
 
-export interface CssBannerPreset extends BannerPresetBase {
+interface CssBannerPreset extends BannerPresetBase {
 	type: "css";
 	style: CSSProperties;
 	className?: string;

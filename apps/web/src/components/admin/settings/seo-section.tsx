@@ -1,14 +1,34 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-import { FieldGroup } from "./field-group";
-import { OG_TEMPLATES } from "@/lib/og-templates";
-import { OgPreviewCard } from "./og-preview-card";
+import { Check, Image, Layout } from "lucide-react";
+import { z } from "zod";
+import { CharCount, FieldError } from "@/components/admin/field-feedback";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { SectionLabel } from "@/components/admin/section-header";
-import { Check, Layout, Image } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { OG_TEMPLATES } from "@/lib/og-templates";
+import { cn } from "@/lib/utils";
+import { fieldError } from "@/lib/validate";
+import { FieldGroup } from "./field-group";
+import { OgPreviewCard } from "./og-preview-card";
+
+// Search engines truncate titles past ~70 and descriptions past ~160 chars.
+const SEO_TITLE_MAX = 70;
+const SEO_DESCRIPTION_MAX = 160;
+
+/**
+ * Field → message for every invalid SEO value; `{}` when all valid. The OG
+ * image is upload-only (a relative `/api/images/…` path), so it is not checked.
+ */
+export function seoErrors(v: { seoTitle: string; seoDescription: string }): Record<string, string> {
+	const errors: Record<string, string> = {};
+	const title = fieldError(z.string().max(SEO_TITLE_MAX), v.seoTitle);
+	if (title) errors.seoTitle = title;
+	const description = fieldError(z.string().max(SEO_DESCRIPTION_MAX), v.seoDescription);
+	if (description) errors.seoDescription = description;
+	return errors;
+}
 
 const focusRing =
 	"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
@@ -46,10 +66,11 @@ export function SeoSection({
 	onSeoOgModeChange,
 	onSeoOgTemplateChange,
 }: SeoSectionProps) {
-	const previewUrl = `/api/og?template=${encodeURIComponent(seoOgTemplate || "minimal")}&name=${encodeURIComponent(profileName || "My Links")}&bio=${encodeURIComponent(bio || "")}&theme=${encodeURIComponent(primaryColor || "#6366f1")}${avatarUrl ? `&avatar=${encodeURIComponent(avatarUrl)}` : ""}&_preview=1`;
+	const previewUrl = `/og?template=${encodeURIComponent(seoOgTemplate || "minimal")}&name=${encodeURIComponent(profileName || "My Links")}&bio=${encodeURIComponent(bio || "")}&theme=${encodeURIComponent(primaryColor || "#6366f1")}${avatarUrl ? `&avatar=${encodeURIComponent(avatarUrl)}` : ""}&_preview=1`;
 
 	// Determine the OG image URL for the preview card
 	const ogImageForPreview = seoOgMode === "template" ? previewUrl : seoOgImage || "";
+	const errors = seoErrors({ seoTitle, seoDescription });
 
 	return (
 		<div className="space-y-6">
@@ -64,10 +85,16 @@ export function SeoSection({
 							value={seoTitle}
 							onChange={(e) => onSeoTitleChange(e.target.value)}
 							placeholder="My Links"
+							aria-invalid={!!errors.seoTitle}
+							aria-describedby={errors.seoTitle ? "s-seo-title-error" : "s-seo-title-hint"}
 						/>
-						<p className="text-[11px] text-muted-foreground">
-							Shown in browser tab and search results
-						</p>
+						<div className="flex items-start justify-between gap-2">
+							<p id="s-seo-title-hint" className="text-micro text-muted-foreground">
+								Shown in browser tab and search results
+							</p>
+							<CharCount value={seoTitle} max={SEO_TITLE_MAX} />
+						</div>
+						<FieldError id="s-seo-title-error" error={errors.seoTitle} />
 					</div>
 					<div className="space-y-1.5">
 						<Label htmlFor="s-seo-desc">Meta Description</Label>
@@ -77,11 +104,17 @@ export function SeoSection({
 							onChange={(e) => onSeoDescriptionChange(e.target.value)}
 							rows={2}
 							placeholder="Check out all my links"
-							className="dark:bg-input/30 border-input w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
+							aria-invalid={!!errors.seoDescription}
+							aria-describedby={errors.seoDescription ? "s-seo-desc-error" : "s-seo-desc-hint"}
+							className="dark:bg-input/30 border-input aria-invalid:border-destructive w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
 						/>
-						<p className="text-[11px] text-muted-foreground">
-							Appears below the title in search engine results
-						</p>
+						<div className="flex items-start justify-between gap-2">
+							<p id="s-seo-desc-hint" className="text-micro text-muted-foreground">
+								Appears below the title in search engine results
+							</p>
+							<CharCount value={seoDescription} max={SEO_DESCRIPTION_MAX} />
+						</div>
+						<FieldError id="s-seo-desc-error" error={errors.seoDescription} />
 					</div>
 				</FieldGroup>
 			</div>
@@ -149,7 +182,7 @@ export function SeoSection({
 										</div>
 									)}
 									<p className="text-xs font-medium">{t.name}</p>
-									<p className="mt-0.5 text-[10px] text-muted-foreground">{t.description}</p>
+									<p className="mt-0.5 text-micro text-muted-foreground">{t.description}</p>
 								</button>
 							);
 						})}
@@ -165,7 +198,7 @@ export function SeoSection({
 							onUploadComplete={onSeoOgImageChange}
 							aspectRatio="banner"
 						/>
-						<p className="text-[11px] text-muted-foreground">
+						<p className="text-micro text-muted-foreground">
 							Recommended size: 1200 x 630 pixels. Max 5MB.
 						</p>
 					</div>
@@ -175,7 +208,7 @@ export function SeoSection({
 			{/* Live Social Preview */}
 			<div className="space-y-3">
 				<SectionLabel>Social Media Preview</SectionLabel>
-				<p className="text-[11px] text-muted-foreground -mt-2">
+				<p className="text-micro text-muted-foreground -mt-2">
 					How your page will look when shared on social media
 				</p>
 				<OgPreviewCard

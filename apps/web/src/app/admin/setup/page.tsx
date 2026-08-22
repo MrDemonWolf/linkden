@@ -115,10 +115,10 @@ function SetupSidebar({
 			</div>
 
 			<div className="mb-1 flex items-baseline justify-between">
-				<span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+				<span className="text-micro font-semibold uppercase tracking-widest text-muted-foreground">
 					Setup
 				</span>
-				<span className="data-mono text-[11px] text-muted-foreground">{percent}%</span>
+				<span className="data-mono text-micro text-muted-foreground">{percent}%</span>
 			</div>
 			<div className="mb-6 h-1 overflow-hidden rounded-full bg-border">
 				<div
@@ -207,7 +207,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 								</div>
 								<span
 									className={cn(
-										"whitespace-nowrap text-[10px] font-semibold uppercase tracking-widest transition-colors duration-300",
+										"whitespace-nowrap text-micro font-semibold uppercase tracking-widest transition-colors duration-300",
 										isActive && "text-primary",
 										isComplete && "text-primary/60",
 										!isActive && !isComplete && "text-muted-foreground",
@@ -237,7 +237,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 
 function FieldError({ message }: { message?: string }) {
 	if (!message) return null;
-	return <p className="mt-1 text-[11px] text-destructive">{message}</p>;
+	return <p className="mt-1 text-micro text-destructive">{message}</p>;
 }
 
 function FormError({ message }: { message?: string }) {
@@ -416,7 +416,7 @@ function Step1Account({
 					{formErrors.password ? (
 						<FieldError message={formErrors.password} />
 					) : (
-						<p className="mt-1 text-[11px] text-muted-foreground">
+						<p className="mt-1 text-micro text-muted-foreground">
 							Use at least 8 characters. This secures your admin account.
 						</p>
 					)}
@@ -541,7 +541,7 @@ function Step2Profile({
 						</Label>
 						<span
 							className={cn(
-								"font-mono text-[10px] tabular-nums transition-colors",
+								"font-mono text-micro tabular-nums transition-colors",
 								bio.length > BIO_MAX ? "text-destructive" : "text-muted-foreground",
 							)}
 						>
@@ -564,7 +564,7 @@ function Step2Profile({
 						)}
 					/>
 					{bio.length > BIO_MAX && (
-						<p id="profile-bio-error" className="mt-1 text-[11px] text-destructive">
+						<p id="profile-bio-error" className="mt-1 text-micro text-destructive">
 							Bio is {bio.length - BIO_MAX} character{bio.length - BIO_MAX === 1 ? "" : "s"} over
 							the {BIO_MAX} limit.
 						</p>
@@ -660,7 +660,7 @@ function ThemeCard({
 
 			{/* Label */}
 			<div className="bg-muted px-2 py-1.5 flex items-center justify-between">
-				<span className="truncate text-[10px] font-semibold text-foreground">{preset.label}</span>
+				<span className="truncate text-micro font-semibold text-foreground">{preset.label}</span>
 				{selected && <Check className="h-3 w-3 shrink-0 text-primary stroke-[3]" />}
 			</div>
 
@@ -788,7 +788,7 @@ function Step4Done({ displayName, onContinue }: { displayName: string; onContinu
 				Open Dashboard
 			</Button>
 
-			<p className="mt-4 text-[11px] text-muted-foreground">
+			<p className="mt-4 text-micro text-muted-foreground">
 				Profile, theme, and settings are always editable from the admin panel.
 			</p>
 		</div>
@@ -1113,7 +1113,7 @@ export default function SetupPage() {
 
 						{/* Resume notice — shown when progress was restored mid-wizard */}
 						{step > 1 && step < 4 && hydrated && (
-							<p className="mt-3 text-center text-[11px] text-muted-foreground">
+							<p className="mt-3 text-center text-micro text-muted-foreground">
 								Progress saved —{" "}
 								<button
 									type="button"

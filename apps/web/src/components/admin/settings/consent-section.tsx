@@ -1,8 +1,29 @@
 "use client";
 
+import { Switch } from "@linkden/ui";
+import { httpUrlSchema } from "@linkden/validators/blocks";
+import { z } from "zod";
+import { CharCount, FieldError } from "@/components/admin/field-feedback";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@linkden/ui";
+import { fieldError } from "@/lib/validate";
+
+const CONSENT_TEXT_MAX = 500;
+
+/** Field → message for invalid consent values. Only checked while the banner is enabled (the fields are hidden otherwise). */
+export function consentErrors(v: {
+	enabled: boolean;
+	bannerText: string;
+	privacyUrl: string;
+}): Record<string, string> {
+	if (!v.enabled) return {};
+	const errors: Record<string, string> = {};
+	const text = fieldError(z.string().max(CONSENT_TEXT_MAX), v.bannerText);
+	if (text) errors.bannerText = text;
+	const url = v.privacyUrl ? fieldError(httpUrlSchema, v.privacyUrl) : null;
+	if (url) errors.privacyUrl = url;
+	return errors;
+}
 
 interface ConsentCategories {
 	analytics: boolean;
@@ -31,13 +52,14 @@ export function ConsentSection({
 	onPrivacyUrlChange,
 	onCategoriesChange,
 }: ConsentSectionProps) {
+	const errors = consentErrors({ enabled, bannerText, privacyUrl });
 	return (
 		<div className="space-y-6">
 			{/* Enable/disable toggle */}
 			<div className="flex items-center justify-between">
 				<div>
 					<Label className="text-sm font-medium">Show Consent Banner</Label>
-					<p className="text-[11px] text-muted-foreground">
+					<p className="text-micro text-muted-foreground">
 						Display a cookie consent banner to visitors
 					</p>
 				</div>
@@ -59,11 +81,17 @@ export function ConsentSection({
 							onChange={(e) => onBannerTextChange(e.target.value)}
 							rows={3}
 							placeholder="This site uses cookies for authentication and optional analytics..."
-							className="dark:bg-input/30 border-input w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
+							aria-invalid={!!errors.bannerText}
+							aria-describedby={errors.bannerText ? "consent-text-error" : "consent-text-hint"}
+							className="dark:bg-input/30 border-input aria-invalid:border-destructive w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
 						/>
-						<p className="text-[11px] text-muted-foreground">
-							Customize the message shown in the consent banner
-						</p>
+						<div className="flex items-start justify-between gap-2">
+							<p id="consent-text-hint" className="text-micro text-muted-foreground">
+								Customize the message shown in the consent banner
+							</p>
+							<CharCount value={bannerText} max={CONSENT_TEXT_MAX} />
+						</div>
+						<FieldError id="consent-text-error" error={errors.bannerText} />
 					</div>
 
 					{/* Privacy Policy URL */}
@@ -73,11 +101,18 @@ export function ConsentSection({
 							id="consent-privacy-url"
 							value={privacyUrl}
 							onChange={(e) => onPrivacyUrlChange(e.target.value)}
-							placeholder="https://example.com/privacy"
+							placeholder="https://yourdomain.com/privacy"
+							type="url"
+							inputMode="url"
+							aria-invalid={!!errors.privacyUrl}
+							aria-describedby={
+								errors.privacyUrl ? "consent-privacy-url-error" : "consent-privacy-url-hint"
+							}
 						/>
-						<p className="text-[11px] text-muted-foreground">
+						<p id="consent-privacy-url-hint" className="text-micro text-muted-foreground">
 							Link shown in the banner for your privacy policy
 						</p>
+						<FieldError id="consent-privacy-url-error" error={errors.privacyUrl} />
 					</div>
 
 					{/* Cookie Categories */}
@@ -91,7 +126,7 @@ export function ConsentSection({
 							<div className="flex items-center justify-between">
 								<div>
 									<p className="text-xs font-medium">Essential</p>
-									<p className="text-[11px] text-muted-foreground">
+									<p className="text-micro text-muted-foreground">
 										Required for authentication and core features
 									</p>
 								</div>
@@ -104,7 +139,7 @@ export function ConsentSection({
 							<div className="flex items-center justify-between">
 								<div>
 									<p className="text-xs font-medium">Analytics</p>
-									<p className="text-[11px] text-muted-foreground">
+									<p className="text-micro text-muted-foreground">
 										Track page views, clicks, and visitor behaviour
 									</p>
 								</div>
@@ -121,7 +156,7 @@ export function ConsentSection({
 							<div className="flex items-center justify-between">
 								<div>
 									<p className="text-xs font-medium">Marketing</p>
-									<p className="text-[11px] text-muted-foreground">
+									<p className="text-micro text-muted-foreground">
 										Personalized content and recommendations
 									</p>
 								</div>
@@ -138,7 +173,7 @@ export function ConsentSection({
 							<div className="flex items-center justify-between">
 								<div>
 									<p className="text-xs font-medium">Functional</p>
-									<p className="text-[11px] text-muted-foreground">
+									<p className="text-micro text-muted-foreground">
 										Enhanced features like themes and preferences
 									</p>
 								</div>

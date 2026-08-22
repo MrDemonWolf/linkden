@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import type { SettingKey } from "@linkden/validators/settings";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { trpc } from "@/utils/trpc";
 import { useUnsavedChanges } from "./use-unsaved-changes";
 
@@ -16,6 +16,12 @@ interface Options<T> {
 	errorMessage?: string;
 	/** Called after a successful save. */
 	onSaved?: (state: T) => void;
+	/**
+	 * Field-level validation: return `{ fieldName: message }` for every invalid
+	 * field (empty object = valid). While non-empty, `save()` is a no-op and
+	 * `hasErrors` is true so callers can disable the button.
+	 */
+	validate?: (state: T) => Record<string, string>;
 }
 
 /**
@@ -24,7 +30,7 @@ interface Options<T> {
  * persist via updateBulk, invalidate the query, and toast.
  */
 export function useSettingsForm<T>(opts: Options<T>) {
-	const { parse, serialize, successMessage, errorMessage, onSaved } = opts;
+	const { parse, serialize, successMessage, errorMessage, onSaved, validate } = opts;
 	const qc = useQueryClient();
 	const query = useQuery(trpc.settings.getAll.queryOptions());
 	const mutation = useMutation(trpc.settings.updateBulk.mutationOptions());
@@ -42,8 +48,11 @@ export function useSettingsForm<T>(opts: Options<T>) {
 	const isDirty = state !== null && saved !== null && !shallowEqual(state, saved);
 	useUnsavedChanges(isDirty);
 
+	const errors = state && validate ? validate(state) : {};
+	const hasErrors = Object.keys(errors).length > 0;
+
 	const save = useCallback(async () => {
-		if (!state) return;
+		if (!state || (validate && Object.keys(validate(state)).length > 0)) return;
 		try {
 			await mutation.mutateAsync(serialize(state));
 			setSaved(state);
@@ -53,7 +62,7 @@ export function useSettingsForm<T>(opts: Options<T>) {
 		} catch {
 			toast.error(errorMessage ?? "Failed to save settings");
 		}
-	}, [state, mutation, serialize, qc, successMessage, errorMessage, onSaved]);
+	}, [state, mutation, serialize, qc, successMessage, errorMessage, onSaved, validate]);
 
 	const reset = useCallback(() => {
 		if (saved) setState(saved);
@@ -63,6 +72,8 @@ export function useSettingsForm<T>(opts: Options<T>) {
 		state,
 		setState,
 		isDirty,
+		errors,
+		hasErrors,
 		isLoading: query.isLoading,
 		isSaving: mutation.isPending,
 		save,

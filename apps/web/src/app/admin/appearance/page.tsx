@@ -1,28 +1,38 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { Save, Undo2, Eye } from "lucide-react";
-import { themePresets } from "@linkden/ui/themes";
 import { getBannerPresetsForTheme } from "@linkden/ui/banner-presets";
-import { trpc } from "@/utils/trpc";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
-import { PageHeader } from "@/components/admin/page-header";
-import { PreviewRenderer } from "@/components/admin/preview-renderer";
-import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
-import { ThemePresetsSection } from "@/components/admin/appearance/theme-presets-section";
-import { ColorsSection } from "@/components/admin/appearance/colors-section";
+import { themePresets } from "@linkden/ui/themes";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Eye } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { z } from "zod";
 import { BannerSection } from "@/components/admin/appearance/banner-section";
 import { VerifiedBadgeSection } from "@/components/admin/appearance/branding-section";
+import { ColorsSection } from "@/components/admin/appearance/colors-section";
 import { CustomCssSection } from "@/components/admin/appearance/custom-css-section";
 import {
-	SocialIconShapeSection,
 	type SocialIconShape,
+	SocialIconShapeSection,
 } from "@/components/admin/appearance/social-icon-shape-section";
+import { ThemePresetsSection } from "@/components/admin/appearance/theme-presets-section";
+import { QueryError } from "@/components/admin/dashboard/query-error";
+import { FieldError } from "@/components/admin/field-feedback";
+import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
+import { PageHeader } from "@/components/admin/page-header";
+import { PagePreview, type PreviewOverrides } from "@/components/admin/page-preview";
+import { PageShell } from "@/components/admin/page-shell";
+import { StickySaveBar } from "@/components/admin/sticky-save-bar";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
+import { cn } from "@/lib/utils";
+import { fieldError } from "@/lib/validate";
+import { trpc } from "@/utils/trpc";
+
+// The public page only injects the first 20k chars of custom CSS.
+const CUSTOM_CSS_MAX = 20_000;
+const customCssSchema = z.string().max(CUSTOM_CSS_MAX);
 
 interface SavedState {
 	theme: string;
@@ -172,7 +182,10 @@ export default function AppearancePage() {
 		}
 	};
 
+	const cssError = fieldError(customCssSchema, customCss);
+
 	const handleSave = async () => {
+		if (cssError) return;
 		try {
 			await updateSettings.mutateAsync([
 				{ key: "theme_preset", value: selectedTheme },
@@ -230,13 +243,12 @@ export default function AppearancePage() {
 	const resolvedThemeVars = useMemo(() => {
 		const preset = themePresets.find((t) => t.name === selectedTheme) ?? themePresets[0];
 		const mode = previewDark ? "dark" : "light";
+		// Custom colors apply in both modes, same as getThemeColors on the live page.
 		const vars = { ...preset.cssVars[mode] };
-		if (!previewDark) {
-			vars["--ld-primary"] = primaryColor;
-			vars["--ld-secondary"] = secondaryColor;
-			vars["--ld-accent"] = accentColor;
-			vars["--ld-background"] = bgColor;
-		}
+		if (primaryColor) vars["--ld-primary"] = primaryColor;
+		if (secondaryColor) vars["--ld-secondary"] = secondaryColor;
+		if (accentColor) vars["--ld-accent"] = accentColor;
+		if (bgColor) vars["--ld-background"] = bgColor;
 		return vars;
 	}, [selectedTheme, previewDark, primaryColor, secondaryColor, accentColor, bgColor]);
 
@@ -250,12 +262,7 @@ export default function AppearancePage() {
 
 	if (settingsQuery.isLoading) {
 		return (
-			<div
-				className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6"
-				aria-busy="true"
-				role="status"
-				aria-label="Loading appearance settings"
-			>
+			<PageShell aria-busy="true" role="status" aria-label="Loading appearance settings">
 				<Skeleton className="h-8 w-48" />
 				<div className="flex gap-6">
 					<div className="flex-1 space-y-4">
@@ -267,40 +274,39 @@ export default function AppearancePage() {
 						<Skeleton className="h-[640px] rounded-[2rem]" />
 					</div>
 				</div>
-			</div>
+			</PageShell>
 		);
 	}
 
-	const previewOverrides = {
-		profile: {
-			name: settings.profile_name || "Your Name",
-			bio: settings.bio || null,
-			image: settings.avatar_url || null,
-			isVerified: verifiedBadge,
-		},
-		themeColors: {
-			primary: resolvedThemeVars["--ld-primary"],
-			secondary: resolvedThemeVars["--ld-secondary"],
-			accent: resolvedThemeVars["--ld-accent"],
-			bg: resolvedThemeVars["--ld-background"],
-			fg: resolvedThemeVars["--ld-foreground"],
-			card: resolvedThemeVars["--ld-card"],
-			cardFg: resolvedThemeVars["--ld-card-foreground"],
-			border: resolvedThemeVars["--ld-border"],
-			muted: resolvedThemeVars["--ld-muted"],
-			mutedFg: resolvedThemeVars["--ld-muted-foreground"],
-		},
+	if (settingsQuery.isError) {
+		return (
+			<PageShell>
+				<QueryError message="Couldn't load settings" onRetry={() => settingsQuery.refetch()} />
+			</PageShell>
+		);
+	}
+
+	// Unsaved edits in `public.getPage` shape — PublicPage resolves the theme
+	// from these exactly as the live page does.
+	const previewOverrides: PreviewOverrides = {
+		profile: { isVerified: verifiedBadge },
 		settings: {
+			themePreset: selectedTheme,
+			customPrimary: primaryColor,
+			customSecondary: secondaryColor,
+			customAccent: accentColor,
+			customBackground: bgColor,
+			customCss,
 			bannerEnabled,
-			bannerPreset: bannerEnabled && bannerMode === "preset" ? bannerPreset : null,
+			bannerPreset,
 			bannerMode,
-			bannerCustomUrl: bannerEnabled && bannerMode === "custom" ? bannerCustomUrl : undefined,
+			bannerCustomUrl,
 			socialIconShape,
 		},
 	};
 
 	return (
-		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
+		<PageShell>
 			{/* Page header */}
 			<PageHeader
 				title="Appearance"
@@ -339,7 +345,6 @@ export default function AppearancePage() {
 						secondaryColor={secondaryColor}
 						accentColor={accentColor}
 						bgColor={bgColor}
-						previewDark={previewDark}
 						onColorModeChange={setColorMode}
 						onPrimaryChange={setPrimaryColor}
 						onSecondaryChange={setSecondaryColor}
@@ -367,15 +372,21 @@ export default function AppearancePage() {
 					/>
 
 					<CustomCssSection customCss={customCss} onCustomCssChange={setCustomCss} />
+					<FieldError id="custom-css-error" error={cssError} />
 
-					{/* Spacer for sticky publish bar */}
-					{isDirty && <div className="h-16" />}
+					<StickySaveBar
+						isDirty={isDirty}
+						isSaving={updateSettings.isPending}
+						hasErrors={!!cssError}
+						onSave={handleSave}
+						onDiscard={handleDiscard}
+					/>
 				</div>
 
 				{/* Preview column (desktop) */}
 				<div className="hidden w-[360px] shrink-0 lg:block">
 					<div className="sticky top-6">
-						<PreviewRenderer
+						<PagePreview
 							overrides={previewOverrides}
 							mode={previewDark ? "dark" : "light"}
 							onModeChange={(m) => setPreviewDark(m === "dark")}
@@ -386,35 +397,13 @@ export default function AppearancePage() {
 
 			{/* Mobile preview sheet */}
 			<MobilePreviewSheet open={showMobilePreview} onOpenChange={setShowMobilePreview}>
-				<PreviewRenderer
+				<PagePreview
 					overrides={previewOverrides}
 					mode={previewDark ? "dark" : "light"}
 					onModeChange={(m) => setPreviewDark(m === "dark")}
 					showHeader={false}
 				/>
 			</MobilePreviewSheet>
-
-			{/* Sticky bottom save bar */}
-			{isDirty && (
-				<div className="fixed bottom-16 md:bottom-0 inset-x-0 md:left-56 z-30 border-t border-border/50 bg-background/80 backdrop-blur-xl px-4 py-3 flex items-center justify-between shadow-lg animate-in slide-in-from-bottom-2 duration-200">
-					<span className="text-sm text-muted-foreground">You have unsaved changes</span>
-					<div className="flex gap-2">
-						<Button variant="ghost" size="sm" onClick={handleDiscard}>
-							<Undo2 className="mr-1.5 h-3.5 w-3.5" />
-							Discard
-						</Button>
-						<Button
-							size="sm"
-							disabled={updateSettings.isPending}
-							onClick={handleSave}
-							className="shadow-sm"
-						>
-							<Save className="mr-1.5 h-3.5 w-3.5" />
-							{updateSettings.isPending ? "Saving…" : "Save changes"}
-						</Button>
-					</div>
-				</div>
-			)}
-		</div>
+		</PageShell>
 	);
 }

@@ -50,6 +50,14 @@
   --data-down: oklch(0.51 0.2 27);
   --dim: oklch(0.55 0 0);
   --radius: 1rem;
+  /* Studio surface tokens */
+  --rule: oklch(0.86 0 0);
+  --glass-bg: oklch(1 0 0 / 0.7);
+  --glass-border: oklch(0 0 0 / 0.08);
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.05), 0 10px 28px -14px oklch(0 0 0 / 0.28);
+  --shadow-glow: 0 0 0 1px oklch(from var(--primary) l c h / 0.3), 0 14px 40px -16px oklch(from var(--primary) l c h / 0.4);
+  /* Signal line: 2px cerulean -> cornflower. The brand's signature mark. */
+  --signal: linear-gradient(90deg, var(--primary), var(--glass-tint-2));
 }
 
 .dark {
@@ -90,12 +98,33 @@
   --data-up: #6be0a8;
   --data-down: #ff9aa8;
   --dim: #4e6287;
+  --rule: rgba(231, 236, 247, 0.16);
+  --glass-bg: oklch(1 0 0 / 0.06);
+  --glass-border: oklch(1 0 0 / 0.1);
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.05), 0 10px 28px -14px oklch(0 0 0 / 0.28);
+  --shadow-glow: 0 0 0 1px oklch(from var(--primary) l c h / 0.3), 0 14px 40px -16px oklch(from var(--primary) l c h / 0.4);
+  --signal: linear-gradient(90deg, #00ACED, #6B8BF5);
 }
 
 @theme inline {
-  --font-sans: var(--font-sans), sans-serif;
-  --font-display: var(--font-display), sans-serif;
+  --font-sans: var(--font-sans), system-ui, sans-serif;
+  --font-display: var(--font-display), system-ui, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, monospace;
+
+  /* Fluid type scale (375px -> 1280px). `micro` is the floor: nothing in the
+     UI renders below 12px, which is what retired text-[10px]/text-[11px]. */
+  --text-h1: clamp(1.75rem, 1.3rem + 2vw, 2.5rem);
+  --text-h1--line-height: 1.05;
+  --text-h1--letter-spacing: -0.03em;
+  --text-h2: clamp(1.125rem, 1rem + 0.6vw, 1.375rem);
+  --text-h2--line-height: 1.2;
+  --text-h2--letter-spacing: -0.02em;
+  --text-body: clamp(1rem, 0.95rem + 0.25vw, 1.0625rem);
+  --text-body--line-height: 1.55;
+  --text-small: clamp(0.875rem, 0.85rem + 0.15vw, 0.9375rem);
+  --text-small--line-height: 1.45;
+  --text-micro: clamp(0.75rem, 0.72rem + 0.1vw, 0.8125rem);
+  --text-micro--line-height: 1.35;
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -125,13 +154,22 @@
   --color-foreground: var(--foreground);
   --color-background: var(--background);
   --color-sidebar: var(--sidebar);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  --color-rule: var(--rule);
+  --color-glass: var(--glass-bg);
+  --color-glass-border: var(--glass-border);
+  --shadow-card: var(--shadow-card);
+  --shadow-glow: var(--shadow-glow);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Explicit radius scale (was a calc() chain off --radius) */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.125rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 1.75rem;
+  --radius-3xl: 2rem;
+  --radius-4xl: 2.5rem;
+  --radius-pill: 9999px;
 }
 
 @layer base {
@@ -189,7 +227,7 @@
   background-attachment: fixed;
 }
 
-/* Numeric / data text — JetBrains Mono + tabular figures */
+/* Numeric / data text — Geist Mono + tabular figures */
 .data-mono {
   font-family: var(--font-mono);
   font-feature-settings: 'tnum';
@@ -220,55 +258,38 @@
   backdrop-filter: blur(12px);
 }
 
-/* Profile header entrance */
-@keyframes ld-profile-enter {
-  from { opacity: 0; transform: translateY(12px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-.ld-profile {
-  animation: ld-profile-enter 0.5s ease-out both;
+/* Public page root: a size container (so `@4xl:` on the page reacts to the
+   frame it sits in — the admin preview stays single-column) that paints the
+   resolved theme background plus an ambient glow in the page's own primary. */
+.ld-page {
+  container-type: inline-size;
+  background-color: var(--ld-background);
+  background-image: radial-gradient(
+    900px 500px at 50% -10%,
+    color-mix(in srgb, var(--ld-primary) 12%, transparent),
+    transparent 60%
+  );
 }
 
-/* Social icons entrance in profile header */
-@keyframes ld-social-enter {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
-}
-.ld-social-icons {
-  animation: ld-social-enter 0.4s ease-out 0.25s both;
-}
-.ld-social-icons > a {
-  animation: ld-social-enter 0.3s ease-out both;
-}
-.ld-social-icons > a:nth-child(1) { animation-delay: 0.3s; }
-.ld-social-icons > a:nth-child(2) { animation-delay: 0.35s; }
-.ld-social-icons > a:nth-child(3) { animation-delay: 0.4s; }
-.ld-social-icons > a:nth-child(4) { animation-delay: 0.45s; }
-.ld-social-icons > a:nth-child(5) { animation-delay: 0.5s; }
-.ld-social-icons > a:nth-child(6) { animation-delay: 0.55s; }
-.ld-social-icons > a:nth-child(7) { animation-delay: 0.6s; }
-.ld-social-icons > a:nth-child(8) { animation-delay: 0.65s; }
-
-/* Public page staggered block entrance */
-@keyframes ld-block-enter {
-  from { opacity: 0; transform: translateY(10px); }
+/* Public page entrance — one mechanism. Components set `--ld-i` (stagger index)
+   inline; unset = delay 0. */
+@keyframes ld-rise {
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.ld-blocks > * {
-  animation: ld-block-enter 0.4s ease-out both;
+.ld-hero,
+.ld-blocks > *,
+.ld-social-icons > a {
+  animation: ld-rise 480ms var(--ease-out) both;
+  animation-delay: calc(var(--ld-i, 0) * 45ms);
 }
-.ld-blocks > *:nth-child(1) { animation-delay: 0.05s; }
-.ld-blocks > *:nth-child(2) { animation-delay: 0.1s; }
-.ld-blocks > *:nth-child(3) { animation-delay: 0.15s; }
-.ld-blocks > *:nth-child(4) { animation-delay: 0.2s; }
-.ld-blocks > *:nth-child(5) { animation-delay: 0.25s; }
-.ld-blocks > *:nth-child(6) { animation-delay: 0.3s; }
-.ld-blocks > *:nth-child(7) { animation-delay: 0.35s; }
-.ld-blocks > *:nth-child(8) { animation-delay: 0.4s; }
-.ld-blocks > *:nth-child(9) { animation-delay: 0.45s; }
-.ld-blocks > *:nth-child(10) { animation-delay: 0.5s; }
-
-/* Inline row: children animate together */
-.ld-inline-row > * {
-  animation: ld-block-enter 0.4s ease-out both;
+/* The global reduced-motion reset above is a universal selector, so these
+   class rules would outrank it (and `both` would hold late blocks at opacity
+   0 for the whole delay). Switch the entrance off explicitly. */
+@media (prefers-reduced-motion: reduce) {
+  .ld-hero,
+  .ld-blocks > *,
+  .ld-social-icons > a {
+    animation: none;
+  }
 }

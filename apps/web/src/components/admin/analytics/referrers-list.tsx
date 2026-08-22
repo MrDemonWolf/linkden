@@ -55,7 +55,7 @@ export function ReferrersList({
 								<div key={String(ref.referrer ?? i)}>
 									<div className="flex items-center justify-between mb-1 gap-2">
 										<div className="flex items-center gap-2 min-w-0">
-											<span className="text-[10px] text-muted-foreground tabular-nums shrink-0 font-mono">
+											<span className="text-micro text-muted-foreground tabular-nums shrink-0 font-mono">
 												{String(i + 1).padStart(2, "0")}
 											</span>
 											<span className="truncate text-xs font-medium font-mono">
@@ -63,7 +63,7 @@ export function ReferrersList({
 											</span>
 										</div>
 										<div className="flex items-center gap-2 shrink-0">
-											<span className="text-[10px] text-muted-foreground tabular-nums">{pct}%</span>
+											<span className="text-micro text-muted-foreground tabular-nums">{pct}%</span>
 											<span className="text-xs font-mono tabular-nums text-muted-foreground">
 												{ref.count.toLocaleString()}
 											</span>

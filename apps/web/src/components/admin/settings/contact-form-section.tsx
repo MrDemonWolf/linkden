@@ -15,7 +15,7 @@ export function ContactFormSection({
 			<div className="flex items-center justify-between">
 				<div className="space-y-0.5">
 					<Label>Enable Contact Form</Label>
-					<p className="text-[11px] text-muted-foreground">
+					<p className="text-micro text-muted-foreground">
 						Allow visitors to send messages via a contact form on your page
 					</p>
 				</div>

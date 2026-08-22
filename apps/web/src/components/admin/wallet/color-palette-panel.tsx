@@ -2,7 +2,7 @@
 
 import { ColorField } from "@/components/admin/color-field";
 
-export interface WalletPalette {
+interface WalletPalette {
 	name: string;
 	bg: string;
 	fg: string;
@@ -10,7 +10,7 @@ export interface WalletPalette {
 }
 
 // Curated palettes — one tap sets background/foreground/label together.
-export const WALLET_PALETTES: WalletPalette[] = [
+const WALLET_PALETTES: WalletPalette[] = [
 	{ name: "Midnight", bg: "#0E1116", fg: "#FFFFFF", label: "#3AD2A6" },
 	{ name: "Navy", bg: "#091533", fg: "#FFFFFF", label: "#0FACED" },
 	{ name: "Indigo", bg: "#241A52", fg: "#FFFFFF", label: "#C7B6FF" },
@@ -52,7 +52,7 @@ export function ColorPalettePanel({
 	return (
 		<div className="space-y-5">
 			<div className="space-y-2">
-				<h3 className="text-[11px] font-semibold uppercase tracking-wider text-foreground/80">
+				<h3 className="text-micro font-semibold uppercase tracking-wider text-foreground/80">
 					Colors and Palettes
 				</h3>
 				<div role="radiogroup" aria-label="Color palettes" className="grid grid-cols-3 gap-2">
@@ -84,7 +84,7 @@ export function ColorPalettePanel({
 			</div>
 
 			<div className="space-y-2">
-				<h3 className="text-[11px] font-semibold uppercase tracking-wider text-foreground/80">
+				<h3 className="text-micro font-semibold uppercase tracking-wider text-foreground/80">
 					Custom
 				</h3>
 				<div className="grid grid-cols-2 gap-3">

@@ -12,18 +12,20 @@ import {
 	QrCode,
 	Save,
 	Shield,
-	Undo2,
 	X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ProfileSection } from "@/components/admin/appearance/profile-section";
 import { PageHeader } from "@/components/admin/page-header";
+import { PageShell } from "@/components/admin/page-shell";
 import { SectionHeader } from "@/components/admin/section-header";
+import { StickySaveBar } from "@/components/admin/sticky-save-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -169,7 +171,9 @@ export default function AccountPage() {
 		setIsChangingPw(true);
 		try {
 			await authClient.changePassword(
-				{ currentPassword, newPassword },
+				// A password change is usually "someone else may have my session":
+				// drop every other session so a stolen one stops working.
+				{ currentPassword, newPassword, revokeOtherSessions: true },
 				{
 					onSuccess: () => {
 						toast.success("Password updated");
@@ -200,49 +204,6 @@ export default function AccountPage() {
 	const [is2faLoading, setIs2faLoading] = useState(false);
 	const [twoFaModalOpen, setTwoFaModalOpen] = useState(false);
 	const [twoFaMode, setTwoFaMode] = useState<"enable" | "disable" | "verify">("enable");
-	const twoFaDialogRef = useRef<HTMLDivElement>(null);
-	const twoFaCloseRef = useRef<HTMLButtonElement>(null);
-	const twoFaTriggerRef = useRef<HTMLElement | null>(null);
-
-	const handleTwoFaKeyDown = useCallback(
-		(e: KeyboardEvent) => {
-			if (e.key === "Escape" && !is2faLoading) {
-				setTwoFaModalOpen(false);
-			}
-			// Focus trap
-			if (e.key === "Tab" && twoFaDialogRef.current) {
-				const focusable = twoFaDialogRef.current.querySelectorAll<HTMLElement>(
-					'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-				);
-				const first = focusable[0];
-				const last = focusable[focusable.length - 1];
-
-				if (e.shiftKey && document.activeElement === first) {
-					e.preventDefault();
-					last?.focus();
-				} else if (!e.shiftKey && document.activeElement === last) {
-					e.preventDefault();
-					first?.focus();
-				}
-			}
-		},
-		[is2faLoading],
-	);
-
-	useEffect(() => {
-		if (twoFaModalOpen) {
-			twoFaTriggerRef.current = document.activeElement as HTMLElement | null;
-			document.addEventListener("keydown", handleTwoFaKeyDown);
-			// Focus the close button on open
-			requestAnimationFrame(() => twoFaCloseRef.current?.focus());
-			return () => {
-				document.removeEventListener("keydown", handleTwoFaKeyDown);
-				twoFaTriggerRef.current?.focus();
-				twoFaTriggerRef.current = null;
-			};
-		}
-	}, [twoFaModalOpen, handleTwoFaKeyDown]);
-
 	useEffect(() => {
 		if (user && "twoFactorEnabled" in user) {
 			setIs2faEnabled(!!(user as Record<string, unknown>).twoFactorEnabled);
@@ -418,7 +379,7 @@ export default function AccountPage() {
 	}
 
 	return (
-		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6 max-w-2xl">
+		<PageShell className="max-w-2xl">
 			<PageHeader
 				title="Account"
 				description={
@@ -471,7 +432,7 @@ export default function AccountPage() {
 										<Mail className="h-3 w-3 text-muted-foreground" />
 										Email
 									</div>
-									<div className="text-[11px] font-mono text-muted-foreground truncate">
+									<div className="text-micro font-mono text-muted-foreground truncate">
 										{user?.email ?? "—"}
 									</div>
 								</div>
@@ -522,11 +483,11 @@ export default function AccountPage() {
 										</Button>
 									</div>
 									{emailError ? (
-										<p id="newEmail-error" role="alert" className="text-[11px] text-destructive">
+										<p id="newEmail-error" role="alert" className="text-micro text-destructive">
 											{emailError}
 										</p>
 									) : (
-										<p className="text-[10px] text-muted-foreground">
+										<p className="text-micro text-muted-foreground">
 											A verification link will be sent to your current email.
 										</p>
 									)}
@@ -537,7 +498,7 @@ export default function AccountPage() {
 							<div className="grid grid-cols-[1fr_auto] gap-3 items-center py-3 border-b border-dashed border-border">
 								<div className="min-w-0">
 									<div className="text-xs font-medium">Password</div>
-									<div className="text-[11px] text-muted-foreground">
+									<div className="text-micro text-muted-foreground">
 										{relativeDays(userUpdatedAt)}
 									</div>
 								</div>
@@ -621,7 +582,7 @@ export default function AccountPage() {
 											</button>
 										</div>
 										{newPwError && (
-											<p id="newPw-error" role="alert" className="text-[11px] text-destructive">
+											<p id="newPw-error" role="alert" className="text-micro text-destructive">
 												{newPwError}
 											</p>
 										)}
@@ -650,7 +611,7 @@ export default function AccountPage() {
 											aria-describedby={confirmPwError ? "confirmPw-error" : undefined}
 										/>
 										{confirmPwError && (
-											<p id="confirmPw-error" role="alert" className="text-[11px] text-destructive">
+											<p id="confirmPw-error" role="alert" className="text-micro text-destructive">
 												{confirmPwError}
 											</p>
 										)}
@@ -670,11 +631,9 @@ export default function AccountPage() {
 							<div className="grid grid-cols-[1fr_auto_auto] gap-3 items-center py-3 border-b border-dashed border-border">
 								<div className="min-w-0">
 									<div className="text-xs font-medium">Two-factor authentication</div>
-									<div className="text-[11px] text-muted-foreground">
-										TOTP via authenticator app
-									</div>
+									<div className="text-micro text-muted-foreground">TOTP via authenticator app</div>
 								</div>
-								<Badge variant={is2faEnabled ? "default" : "secondary"} className="text-[10px]">
+								<Badge variant={is2faEnabled ? "default" : "secondary"} className="text-micro">
 									{is2faEnabled ? "enabled" : "disabled"}
 								</Badge>
 								<Switch
@@ -688,7 +647,7 @@ export default function AccountPage() {
 							<div className="grid grid-cols-[1fr_auto] gap-3 items-center py-3">
 								<div className="min-w-0">
 									<div className="text-xs font-medium">Magic link sign-in</div>
-									<div className="text-[11px] text-muted-foreground">passwordless · email-only</div>
+									<div className="text-micro text-muted-foreground">passwordless · email-only</div>
 								</div>
 								<Switch
 									checked={magicLinkEnabled}
@@ -709,7 +668,7 @@ export default function AccountPage() {
 							<div className="grid grid-cols-[1fr_auto] gap-3 items-center">
 								<div className="min-w-0">
 									<div className="text-xs font-medium">Delete all content</div>
-									<div className="text-[11px] text-muted-foreground">
+									<div className="text-micro text-muted-foreground">
 										removes blocks + analytics · keeps account
 									</div>
 								</div>
@@ -721,7 +680,7 @@ export default function AccountPage() {
 							<div className="grid grid-cols-[1fr_auto] gap-3 items-center pt-3 border-t border-dashed border-destructive/30">
 								<div className="min-w-0">
 									<div className="text-xs font-medium">Reset everything</div>
-									<div className="text-[11px] text-muted-foreground">
+									<div className="text-micro text-muted-foreground">
 										full wipe · returns to setup wizard
 									</div>
 								</div>
@@ -733,198 +692,165 @@ export default function AccountPage() {
 					</Card>
 				</div>
 
-				{/* Sticky profile save bar — mirrors the Settings sticky-pill pattern */}
-				{profileDirty && (
-					<div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-lg border border-primary/60 bg-background/95 px-4 py-2.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.4)] backdrop-blur">
-						<span className="text-xs text-muted-foreground">You have unsaved profile changes</span>
-						<div className="flex gap-2">
-							<Button variant="ghost" size="sm" onClick={handleDiscardProfile}>
-								<Undo2 className="mr-1.5 h-3.5 w-3.5" />
-								Discard
-							</Button>
-							<Button size="sm" disabled={updateSettings.isPending} onClick={handleSaveProfile}>
-								<Save className="mr-1.5 h-3.5 w-3.5" />
-								{updateSettings.isPending ? "Saving…" : "Save changes"}
-							</Button>
-						</div>
-					</div>
-				)}
+				<StickySaveBar
+					isDirty={profileDirty}
+					isSaving={updateSettings.isPending}
+					onSave={handleSaveProfile}
+					onDiscard={handleDiscardProfile}
+					message="You have unsaved profile changes"
+				/>
 			</div>
 
 			{/* ─── 2FA Modal ─── */}
-			{twoFaModalOpen && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center">
-					<button
-						type="button"
-						aria-label="Close"
-						className="fixed inset-0 bg-black/40 backdrop-blur-sm"
-						onClick={() => !is2faLoading && setTwoFaModalOpen(false)}
-					/>
-					<div
-						ref={twoFaDialogRef}
-						role="dialog"
-						aria-modal="true"
-						aria-labelledby="twofa-dialog-title"
-						className="relative z-10 w-full max-w-md mx-4 rounded-2xl border border-border bg-white dark:bg-neutral-900 p-6 shadow-xl animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto"
-					>
-						<div className="flex items-center justify-between mb-4">
-							<h2
-								id="twofa-dialog-title"
-								className="text-sm font-semibold flex items-center gap-1.5"
-							>
-								<Key className="h-4 w-4" />
+			<Dialog
+				open={twoFaModalOpen}
+				onOpenChange={(v) => !v && !is2faLoading && setTwoFaModalOpen(false)}
+			>
+				<DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle className="flex items-center gap-1.5 text-sm font-semibold">
+							<Key className="h-4 w-4" />
+							{twoFaMode === "disable"
+								? "Disable two-factor"
+								: twoFaMode === "verify"
+									? "Verify authenticator"
+									: "Enable two-factor"}
+						</DialogTitle>
+					</DialogHeader>
+
+					{twoFaMode !== "verify" && (
+						<div className="space-y-4">
+							<p className="text-xs text-muted-foreground">
 								{twoFaMode === "disable"
-									? "Disable two-factor"
-									: twoFaMode === "verify"
-										? "Verify authenticator"
-										: "Enable two-factor"}
-							</h2>
-							<Button
-								ref={twoFaCloseRef}
-								size="sm"
-								variant="ghost"
-								onClick={() => setTwoFaModalOpen(false)}
-								disabled={is2faLoading}
-								aria-label="Close dialog"
-							>
-								<X className="h-3.5 w-3.5" />
-							</Button>
-						</div>
-
-						{twoFaMode !== "verify" && (
-							<div className="space-y-4">
-								<p className="text-xs text-muted-foreground">
-									{twoFaMode === "disable"
-										? "Confirm your password to disable two-factor authentication."
-										: "Add an extra layer of security by requiring a code from your authenticator app when signing in."}
-								</p>
-								<div className="space-y-1.5">
-									<Label htmlFor="twoFaPw" className="text-xs text-muted-foreground">
-										Current password
-									</Label>
-									<Input
-										id="twoFaPw"
-										type="password"
-										value={twoFaPassword}
-										onChange={(e) => setTwoFaPassword(e.target.value)}
-										autoComplete="current-password"
-									/>
-								</div>
-								<div className="flex justify-end gap-2">
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() => setTwoFaModalOpen(false)}
-										disabled={is2faLoading}
-									>
-										Cancel
-									</Button>
-									{twoFaMode === "disable" ? (
-										<Button
-											variant="destructive"
-											size="sm"
-											onClick={handleDisable2FA}
-											disabled={is2faLoading || !twoFaPassword}
-										>
-											{is2faLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-											Disable
-										</Button>
-									) : (
-										<Button
-											size="sm"
-											onClick={handleEnable2FA}
-											disabled={is2faLoading || !twoFaPassword}
-										>
-											{is2faLoading ? (
-												<Loader2 className="h-3.5 w-3.5 animate-spin" />
-											) : (
-												<Shield className="h-3.5 w-3.5" />
-											)}
-											Continue
-										</Button>
-									)}
-								</div>
+									? "Confirm your password to disable two-factor authentication."
+									: "Add an extra layer of security by requiring a code from your authenticator app when signing in."}
+							</p>
+							<div className="space-y-1.5">
+								<Label htmlFor="twoFaPw" className="text-xs text-muted-foreground">
+									Current password
+								</Label>
+								<Input
+									id="twoFaPw"
+									type="password"
+									value={twoFaPassword}
+									onChange={(e) => setTwoFaPassword(e.target.value)}
+									autoComplete="current-password"
+								/>
 							</div>
-						)}
-
-						{twoFaMode === "verify" && (
-							<div className="space-y-4">
-								<div className="rounded-lg border border-border/50 bg-muted/30 p-4 space-y-3">
-									<p className="text-xs font-medium flex items-center gap-1.5">
-										<QrCode className="h-3.5 w-3.5" />
-										Scan with your authenticator app
-									</p>
-									{qrDataUrl ? (
-										<img src={qrDataUrl} alt="TOTP QR code" className="rounded-md mx-auto" />
-									) : (
-										<div className="h-[200px] w-[200px] mx-auto flex items-center justify-center">
-											<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-										</div>
-									)}
-									{totpUri && (
-										<details className="text-xs">
-											<summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-												Manual entry key
-											</summary>
-											<code className="mt-1 block break-all rounded bg-muted px-2 py-1 text-[10px]">
-												{totpUri}
-											</code>
-										</details>
-									)}
-								</div>
-								{backupCodes.length > 0 && (
-									<div className="rounded-lg border border-warning/30 bg-warning/10 p-3 space-y-2">
-										<p className="text-xs font-medium text-warning flex items-center gap-1.5">
-											<Key className="h-3.5 w-3.5" />
-											Save your backup codes
-										</p>
-										<div className="grid grid-cols-2 gap-1">
-											{backupCodes.map((code) => (
-												<code key={code} className="text-[10px] font-mono text-muted-foreground">
-													{code}
-												</code>
-											))}
-										</div>
-									</div>
-								)}
-								<div className="space-y-1.5">
-									<Label htmlFor="twoFaCode" className="text-xs text-muted-foreground">
-										Verification code
-									</Label>
-									<Input
-										id="twoFaCode"
-										type="text"
-										inputMode="numeric"
-										autoComplete="one-time-code"
-										maxLength={6}
-										value={twoFaCode}
-										onChange={(e) => setTwoFaCode(e.target.value.replace(/\D/g, ""))}
-										placeholder="123456"
-									/>
-								</div>
-								<div className="flex justify-end gap-2">
+							<div className="flex justify-end gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => setTwoFaModalOpen(false)}
+									disabled={is2faLoading}
+								>
+									Cancel
+								</Button>
+								{twoFaMode === "disable" ? (
 									<Button
-										variant="outline"
+										variant="destructive"
 										size="sm"
-										onClick={() => setTwoFaModalOpen(false)}
-										disabled={is2faLoading}
-									>
-										Cancel
-									</Button>
-									<Button
-										size="sm"
-										onClick={handleVerify2FA}
-										disabled={is2faLoading || twoFaCode.length !== 6}
+										onClick={handleDisable2FA}
+										disabled={is2faLoading || !twoFaPassword}
 									>
 										{is2faLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-										Verify & activate
+										Disable
 									</Button>
-								</div>
+								) : (
+									<Button
+										size="sm"
+										onClick={handleEnable2FA}
+										disabled={is2faLoading || !twoFaPassword}
+									>
+										{is2faLoading ? (
+											<Loader2 className="h-3.5 w-3.5 animate-spin" />
+										) : (
+											<Shield className="h-3.5 w-3.5" />
+										)}
+										Continue
+									</Button>
+								)}
 							</div>
-						)}
-					</div>
-				</div>
-			)}
+						</div>
+					)}
+
+					{twoFaMode === "verify" && (
+						<div className="space-y-4">
+							<div className="rounded-lg border border-border/50 bg-muted/30 p-4 space-y-3">
+								<p className="text-xs font-medium flex items-center gap-1.5">
+									<QrCode className="h-3.5 w-3.5" />
+									Scan with your authenticator app
+								</p>
+								{qrDataUrl ? (
+									<img src={qrDataUrl} alt="TOTP QR code" className="rounded-md mx-auto" />
+								) : (
+									<div className="h-[200px] w-[200px] mx-auto flex items-center justify-center">
+										<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+									</div>
+								)}
+								{totpUri && (
+									<details className="text-xs">
+										<summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+											Manual entry key
+										</summary>
+										<code className="mt-1 block break-all rounded bg-muted px-2 py-1 text-micro">
+											{totpUri}
+										</code>
+									</details>
+								)}
+							</div>
+							{backupCodes.length > 0 && (
+								<div className="rounded-lg border border-warning/30 bg-warning/10 p-3 space-y-2">
+									<p className="text-xs font-medium text-warning flex items-center gap-1.5">
+										<Key className="h-3.5 w-3.5" />
+										Save your backup codes
+									</p>
+									<div className="grid grid-cols-2 gap-1">
+										{backupCodes.map((code) => (
+											<code key={code} className="text-micro font-mono text-muted-foreground">
+												{code}
+											</code>
+										))}
+									</div>
+								</div>
+							)}
+							<div className="space-y-1.5">
+								<Label htmlFor="twoFaCode" className="text-xs text-muted-foreground">
+									Verification code
+								</Label>
+								<Input
+									id="twoFaCode"
+									type="text"
+									inputMode="numeric"
+									autoComplete="one-time-code"
+									maxLength={6}
+									value={twoFaCode}
+									onChange={(e) => setTwoFaCode(e.target.value.replace(/\D/g, ""))}
+									placeholder="123456"
+								/>
+							</div>
+							<div className="flex justify-end gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => setTwoFaModalOpen(false)}
+									disabled={is2faLoading}
+								>
+									Cancel
+								</Button>
+								<Button
+									size="sm"
+									onClick={handleVerify2FA}
+									disabled={is2faLoading || twoFaCode.length !== 6}
+								>
+									{is2faLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+									Verify & activate
+								</Button>
+							</div>
+						</div>
+					)}
+				</DialogContent>
+			</Dialog>
 
 			{/* ─── Danger-zone confirm dialogs (identical type-to-confirm ceremony) ─── */}
 			<DangerConfirmDialog
@@ -948,6 +874,6 @@ export default function AccountPage() {
 				isPending={resetEverything.isPending}
 				onConfirm={handleResetEverything}
 			/>
-		</div>
+		</PageShell>
 	);
 }

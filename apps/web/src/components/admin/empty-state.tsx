@@ -1,17 +1,17 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import type { Route } from "next";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface EmptyStateProps {
 	icon: LucideIcon;
 	title: string;
 	description: string;
-	action?: {
-		label: string;
-		onClick: () => void;
-	};
+	/** Pass `href` to render the action as a link, `onClick` for a button. */
+	action?: { label: string; onClick: () => void } | { label: string; href: Route };
 }
 
 export function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps) {
@@ -26,11 +26,21 @@ export function EmptyState({ icon: Icon, title, description, action }: EmptyStat
 				<p className="mx-auto mt-1.5 max-w-xs text-xs text-muted-foreground leading-relaxed">
 					{description}
 				</p>
-				{action && (
-					<Button variant="outline" size="sm" className="mt-5" onClick={action.onClick}>
-						{action.label}
-					</Button>
-				)}
+				{action &&
+					("href" in action ? (
+						<Button
+							variant="outline"
+							size="sm"
+							className="mt-5"
+							render={<Link href={action.href} />}
+						>
+							{action.label}
+						</Button>
+					) : (
+						<Button variant="outline" size="sm" className="mt-5" onClick={action.onClick}>
+							{action.label}
+						</Button>
+					))}
 			</CardContent>
 		</Card>
 	);

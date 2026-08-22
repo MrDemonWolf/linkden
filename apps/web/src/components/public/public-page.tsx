@@ -2,8 +2,15 @@
 
 import { getContrastRatio, getReadableTextColor } from "@linkden/ui/color-contrast";
 import { themePresets } from "@linkden/ui/themes";
-import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { trpc } from "@/utils/trpc";
+import { AdminBadge } from "./admin-badge";
+import { COLOR_MODE_COOKIE } from "./color-mode-script";
+import { ConsentBanner, hasAnalyticsConsent } from "./consent-banner";
+import { PreviewProvider } from "./preview-context";
 import { PageContent } from "./public-page-content";
+import { ShareButton } from "./share-button";
 import { ThemeToggle } from "./theme-toggle";
 
 interface PageData {
@@ -33,7 +40,7 @@ interface PageData {
 		hex: string;
 		svgPath: string;
 	}>;
-	theme: {
+	theme?: {
 		preset?: string;
 		customColors?: Record<string, string>;
 	} | null;
@@ -61,7 +68,25 @@ interface PageData {
 		customCss: string | null;
 		brandingPpUrl?: string | null;
 		socialIconShape: "circle" | "rounded-square" | null;
+		consentBannerEnabled?: boolean;
+		consentBannerText?: string | null;
+		consentPrivacyUrl?: string | null;
+		consentCategories?: string | null;
 	};
+}
+
+export type ColorMode = "light" | "dark";
+
+interface PublicPageProps {
+	data: PageData;
+	/** Resolved on the server from the `linkden-color-mode` cookie (else the admin default). */
+	initialColorMode?: ColorMode;
+	/**
+	 * Admin previewer: color mode follows this prop, floating controls and the
+	 * consent banner are hidden, nothing is tracked, and the wrapper fills its
+	 * frame (`min-h-full`) instead of the viewport.
+	 */
+	previewMode?: ColorMode;
 }
 
 export interface ThemeColors {
@@ -119,27 +144,33 @@ export function getThemeColors(
 	return colors;
 }
 
-export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolean }) {
-	const getInitialColorMode = (): "light" | "dark" => {
-		if (typeof window === "undefined") {
-			return data.settings.defaultColorMode === "dark" ? "dark" : "light";
-		}
-		const saved = localStorage.getItem("linkden-color-mode");
-		if (saved === "light" || saved === "dark") return saved;
-		if (data.settings.defaultColorMode === "dark") return "dark";
-		if (data.settings.defaultColorMode === "system") {
-			return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-		}
-		return "light";
-	};
+export function PublicPage({ data, initialColorMode, previewMode }: PublicPageProps) {
+	const [storedMode, setStoredMode] = useState<ColorMode>(
+		initialColorMode ?? (data.settings.defaultColorMode === "dark" ? "dark" : "light"),
+	);
+	const colorMode = previewMode ?? storedMode;
 
-	const [colorMode, setColorMode] = useState<"light" | "dark">(getInitialColorMode);
+	// ColorModeScript stamps the pre-paint resolution (cookie, else system
+	// preference) on <html>; adopt it once so a `system` default lands right.
+	useEffect(() => {
+		if (previewMode) return;
+		const stamped = document.documentElement.dataset.ldMode;
+		if (stamped === "light" || stamped === "dark") setStoredMode(stamped);
+	}, [previewMode]);
 
 	const toggleColorMode = () => {
-		const next = colorMode === "light" ? "dark" : "light";
-		setColorMode(next);
-		localStorage.setItem("linkden-color-mode", next);
+		const next: ColorMode = colorMode === "light" ? "dark" : "light";
+		setStoredMode(next);
+		document.documentElement.dataset.ldMode = next;
+		// biome-ignore lint/suspicious/noDocumentCookie: Cookie Store API is Chromium-only
+		document.cookie = `${COLOR_MODE_COOKIE}=${next}; path=/; max-age=31536000; SameSite=Lax`;
 	};
+
+	const { mutate: trackView } = useMutation(trpc.public.trackView.mutationOptions());
+	useEffect(() => {
+		// Referrer / UA / country are derived server-side from request headers.
+		if (!previewMode && hasAnalyticsConsent(data.settings.consentBannerEnabled)) trackView();
+	}, [previewMode, data.settings.consentBannerEnabled, trackView]);
 
 	const themeColors = getThemeColors(data.settings.themePreset, colorMode, {
 		primary: data.settings.customPrimary,
@@ -148,84 +179,78 @@ export function PublicPage({ data, isAdmin }: { data: PageData; isAdmin?: boolea
 		background: data.settings.customBackground,
 	});
 
+	const content = (
+		<PageContent
+			profile={data.profile}
+			blocks={data.blocks}
+			socialNetworks={data.socialNetworks}
+			settings={{
+				brandingEnabled: data.settings.brandingEnabled,
+				brandingText: data.settings.brandingText,
+				walletPassEnabled: data.settings.walletPassEnabled,
+				vcardEnabled: data.settings.vcardEnabled,
+				contactFormEnabled: data.settings.contactFormEnabled,
+				captchaProvider: data.settings.captchaProvider,
+				captchaSiteKey: data.settings.captchaSiteKey,
+				bannerPreset: data.settings.bannerPreset,
+				bannerEnabled: data.settings.bannerEnabled,
+				bannerMode: data.settings.bannerMode,
+				bannerCustomUrl: data.settings.bannerCustomUrl,
+				customCss: data.settings.customCss,
+				brandingPpUrl: data.settings.brandingPpUrl,
+				socialIconShape: data.settings.socialIconShape,
+			}}
+			themeColors={themeColors}
+			colorMode={colorMode}
+		/>
+	);
+
+	// Floating controls stay outside `.ld-page`: it is a size container, and a
+	// container's layout containment would turn it into the containing block
+	// for `position: fixed` descendants (they'd scroll with the page).
 	return (
 		<div
-			className="min-h-dvh"
+			className={previewMode ? "min-h-full" : "min-h-dvh"}
 			style={{
 				backgroundColor: themeColors.bg,
 				color: themeColors.fg,
 				transition: "background-color 0.5s ease, color 0.5s ease",
 			}}
 		>
-			{/* Fixed navy/white pair (not admin tokens): AA-safe over any public theme */}
-			<a
-				href="#main-content"
-				className={`sr-only focus:not-sr-only focus:fixed focus:left-4 focus:z-[60] focus:rounded-md focus:bg-[#091533] focus:px-4 focus:py-2 focus:text-white ${
-					isAdmin ? "focus:top-16" : "focus:top-4"
-				}`}
-			>
-				Skip to content
-			</a>
-
-			{isAdmin && (
-				<a
-					href="/admin"
-					className="fixed left-4 top-4 z-50 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium backdrop-blur-xl transition-colors"
-					style={{
-						backgroundColor: `${themeColors.card}cc`,
-						color: themeColors.cardFg,
-						border: `1px solid ${themeColors.border}`,
-						transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
-					}}
-				>
-					<svg
-						className="h-3 w-3"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke="currentColor"
-						strokeWidth={2}
-						aria-hidden="true"
+			{previewMode ? (
+				<PreviewProvider>{content}</PreviewProvider>
+			) : (
+				<>
+					{/* Fixed navy/white pair (not admin tokens): AA-safe over any public theme.
+					    ponytail: sits above the admin pill (z-60 vs z-50) instead of dodging it. */}
+					<a
+						href="#main-content"
+						className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-[#091533] focus:px-4 focus:py-2 focus:text-white"
 					>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+						Skip to content
+					</a>
+					<AdminBadge themeColors={themeColors} />
+					<div className="fixed right-4 top-4 z-50 flex items-center gap-2">
+						<ShareButton title={data.profile.name} themeColors={themeColors} />
+						<ThemeToggle
+							colorMode={colorMode}
+							onToggle={toggleColorMode}
+							themeColors={themeColors}
 						/>
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-						/>
-					</svg>
-					Admin
-				</a>
+					</div>
+					{content}
+					<ConsentBanner
+						settings={{
+							consentBannerEnabled: data.settings.consentBannerEnabled !== false,
+							consentBannerText: data.settings.consentBannerText ?? null,
+							consentPrivacyUrl: data.settings.consentPrivacyUrl ?? null,
+							consentCategories: data.settings.consentCategories ?? null,
+						}}
+						themeColors={themeColors}
+						colorMode={colorMode}
+					/>
+				</>
 			)}
-
-			<ThemeToggle colorMode={colorMode} onToggle={toggleColorMode} themeColors={themeColors} />
-
-			<PageContent
-				profile={data.profile}
-				blocks={data.blocks}
-				socialNetworks={data.socialNetworks}
-				settings={{
-					brandingEnabled: data.settings.brandingEnabled,
-					brandingText: data.settings.brandingText,
-					walletPassEnabled: data.settings.walletPassEnabled,
-					vcardEnabled: data.settings.vcardEnabled,
-					contactFormEnabled: data.settings.contactFormEnabled,
-					captchaProvider: data.settings.captchaProvider,
-					captchaSiteKey: data.settings.captchaSiteKey,
-					bannerPreset: data.settings.bannerPreset,
-					bannerEnabled: data.settings.bannerEnabled,
-					bannerMode: data.settings.bannerMode,
-					bannerCustomUrl: data.settings.bannerCustomUrl,
-					customCss: data.settings.customCss,
-					brandingPpUrl: data.settings.brandingPpUrl,
-					socialIconShape: data.settings.socialIconShape,
-				}}
-				themeColors={themeColors}
-				colorMode={colorMode}
-			/>
 		</div>
 	);
 }

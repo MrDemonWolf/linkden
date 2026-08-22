@@ -29,7 +29,7 @@ export default function AdminError({
 					Something broke while rendering this admin page. Try again, or reload if it persists.
 				</p>
 				{error.digest ? (
-					<p className="mt-3 font-mono text-[11px] text-muted-foreground/60">ref: {error.digest}</p>
+					<p className="mt-3 font-mono text-micro text-muted-foreground/60">ref: {error.digest}</p>
 				) : null}
 				<div className="mt-6 flex items-center justify-center gap-3">
 					<Button onClick={reset} className="h-10 px-5 text-sm">

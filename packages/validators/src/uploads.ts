@@ -12,6 +12,8 @@ export const uploadPurposeEnum = z.enum([
 	"favicon",
 	"login_logo",
 	"login_background",
+	"block_thumbnail",
+	"block_image",
 ]);
 
 export type UploadPurpose = z.infer<typeof uploadPurposeEnum>;
