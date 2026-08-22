@@ -176,7 +176,7 @@ export default function AnalyticsPage() {
 			{/* Retention note */}
 			<p
 				{...getAnimationProps(9)}
-				className="text-center text-[11px] text-muted-foreground font-mono pt-2"
+				className="text-center text-micro text-muted-foreground font-mono pt-2"
 			>
 				ⓘ analytics retained 90 days · stored locally · no third parties
 			</p>

@@ -143,7 +143,7 @@ export function SharedPreview({
 		<div className={className}>
 			{showHeader && (
 				<div className="mb-3 flex items-center justify-between px-1">
-					<span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+					<span className="text-micro font-semibold uppercase tracking-widest text-muted-foreground">
 						Preview
 					</span>
 					<div className="flex items-center gap-1">

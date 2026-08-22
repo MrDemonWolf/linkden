@@ -400,7 +400,7 @@ export default function AdminDashboardPage() {
 							<Eye className="h-4 w-4 text-primary" aria-hidden="true" />
 							Views vs Clicks
 						</CardTitle>
-						<span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+						<span className="text-micro uppercase tracking-wider text-muted-foreground">
 							Last {periodLabel}
 							{periodLabel === "all" ? "" : " days"}
 						</span>
@@ -726,13 +726,13 @@ export default function AdminDashboardPage() {
 												<p className="font-medium truncate">
 													{(click.title as string | null) || "Untitled"}
 												</p>
-												<p className="text-[10px] text-muted-foreground truncate flex items-center gap-1">
+												<p className="text-micro text-muted-foreground truncate flex items-center gap-1">
 													<ExternalLink className="h-2.5 w-2.5 shrink-0" />
 													{extractDomain(click.url as string | null)}
 													{click.country ? ` · ${click.country}` : ""}
 												</p>
 											</div>
-											<span className="text-[10px] text-muted-foreground shrink-0 font-mono">
+											<span className="text-micro text-muted-foreground shrink-0 font-mono">
 												{relativeTime(click.createdAt)}
 											</span>
 										</div>

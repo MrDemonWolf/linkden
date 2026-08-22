@@ -231,7 +231,7 @@ export default function AdminLoginPage() {
 						</p>
 					</div>
 
-					<div className="data-mono text-[11px] text-muted-foreground/70">
+					<div className="data-mono text-micro text-muted-foreground/70">
 						v{process.env.NEXT_PUBLIC_APP_VERSION} · self-hosted
 					</div>
 				</aside>
@@ -515,7 +515,7 @@ export default function AdminLoginPage() {
 										<div className="mt-6 space-y-4">
 											<div className="relative">
 												<Separator className="bg-border" />
-												<span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+												<span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-micro font-medium uppercase tracking-wider text-muted-foreground">
 													or
 												</span>
 											</div>

@@ -30,7 +30,7 @@ export function VerifiedBadgeSection({
 						<span className="text-xs font-medium group-hover:text-foreground transition-colors">
 							Show verified badge
 						</span>
-						<p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+						<p className="text-micro text-muted-foreground leading-tight mt-0.5">
 							Displays a blue checkmark next to your name on the public page
 						</p>
 					</div>

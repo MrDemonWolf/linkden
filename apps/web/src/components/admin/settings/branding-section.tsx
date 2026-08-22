@@ -67,7 +67,7 @@ function Toggle({
 				<span className="text-xs font-medium group-hover:text-foreground transition-colors">
 					{label}
 				</span>
-				<p className="text-[11px] text-muted-foreground leading-tight mt-0.5">{description}</p>
+				<p className="text-micro text-muted-foreground leading-tight mt-0.5">{description}</p>
 			</div>
 			<button
 				id={id}
@@ -94,7 +94,7 @@ function Toggle({
 
 function ModeToggle({ value, onChange }: { value: string; onChange: (v: string) => void }) {
 	return (
-		<div className="inline-flex rounded-md border border-border overflow-hidden text-[10px]">
+		<div className="inline-flex rounded-md border border-border overflow-hidden text-micro">
 			<button
 				type="button"
 				className={cn(
@@ -170,7 +170,7 @@ export function BrandingSection({
 					placeholder="LinkDen"
 					maxLength={50}
 				/>
-				<p className="text-[11px] text-muted-foreground">
+				<p className="text-micro text-muted-foreground">
 					Displayed in sidebar, login page, and browser tab
 				</p>
 			</div>
@@ -179,7 +179,7 @@ export function BrandingSection({
 			<div className="grid gap-6 sm:grid-cols-2">
 				<div className="space-y-1.5">
 					<p className="text-xs font-medium">Logo</p>
-					<p className="text-[11px] text-muted-foreground">Shown on login page and admin sidebar</p>
+					<p className="text-micro text-muted-foreground">Shown on login page and admin sidebar</p>
 					<ImageUploadField
 						value={logoUrl}
 						purpose="logo"
@@ -189,7 +189,7 @@ export function BrandingSection({
 				</div>
 				<div className="space-y-1.5">
 					<p className="text-xs font-medium">Favicon</p>
-					<p className="text-[11px] text-muted-foreground">
+					<p className="text-micro text-muted-foreground">
 						Browser tab icon (auto-cropped to square)
 					</p>
 					<ImageUploadField
@@ -205,14 +205,14 @@ export function BrandingSection({
 			<div className="space-y-4 rounded-lg border border-border/60 bg-muted/20 p-4">
 				<div>
 					<p className="text-xs font-medium">Login Page</p>
-					<p className="text-[11px] text-muted-foreground">
+					<p className="text-micro text-muted-foreground">
 						Customize the login + setup screens with a dedicated logo and background
 					</p>
 				</div>
 
 				<div className="space-y-1.5">
-					<p className="text-[11px] font-medium text-muted-foreground">Login Logo</p>
-					<p className="text-[11px] text-muted-foreground">
+					<p className="text-micro font-medium text-muted-foreground">Login Logo</p>
+					<p className="text-micro text-muted-foreground">
 						Optional — falls back to the main logo above when empty
 					</p>
 					<ImageUploadField
@@ -224,7 +224,7 @@ export function BrandingSection({
 				</div>
 
 				<div className="space-y-2">
-					<p className="text-[11px] font-medium text-muted-foreground">Login Background</p>
+					<p className="text-micro font-medium text-muted-foreground">Login Background</p>
 					<div
 						className="inline-flex flex-wrap gap-1 rounded-lg border border-border/60 bg-background p-1"
 						role="tablist"
@@ -257,7 +257,7 @@ export function BrandingSection({
 					</div>
 
 					{resolvedBgMode === "default" && (
-						<p className="text-[11px] text-muted-foreground">
+						<p className="text-micro text-muted-foreground">
 							Theme-aware glow over the base background — adapts to the active theme.
 						</p>
 					)}
@@ -289,7 +289,7 @@ export function BrandingSection({
 											<Check className="h-4 w-4 text-white drop-shadow-lg" />
 										</div>
 									)}
-									<span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-1.5 py-1 text-[10px] font-medium text-white truncate">
+									<span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-1.5 py-1 text-micro font-medium text-white truncate">
 										{preset.name}
 									</span>
 								</button>
@@ -336,13 +336,13 @@ export function BrandingSection({
 								onChange={(e) => onFooterBrandingTextChange(e.target.value)}
 								placeholder="Powered by LinkDen"
 							/>
-							<p className="text-[11px] text-muted-foreground leading-tight">
+							<p className="text-micro text-muted-foreground leading-tight">
 								Variables: <code className="rounded bg-muted px-1">{"{{year}}"}</code>{" "}
 								<code className="rounded bg-muted px-1">{"{{copyright}}"}</code>{" "}
 								<code className="rounded bg-muted px-1">{"{{name}}"}</code>
 							</p>
 							{footerBrandingText && /\{\{(year|copyright|name)\}\}/.test(footerBrandingText) && (
-								<p className="text-[11px] text-muted-foreground">
+								<p className="text-micro text-muted-foreground">
 									Preview:{" "}
 									<span className="font-medium text-foreground">
 										{replaceTemplateVars(footerBrandingText, profileName || "Your Name")}
@@ -366,7 +366,7 @@ export function BrandingSection({
 			{/* Legal Links */}
 			<div className="space-y-3">
 				<p className="text-xs font-medium">Legal Links</p>
-				<p className="text-[11px] text-muted-foreground -mt-2">Shown in the login page footer</p>
+				<p className="text-micro text-muted-foreground -mt-2">Shown in the login page footer</p>
 				<div className="grid gap-3 sm:grid-cols-2">
 					<div className="space-y-1.5">
 						<div className="flex items-center gap-2">

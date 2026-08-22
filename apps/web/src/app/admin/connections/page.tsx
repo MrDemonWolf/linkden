@@ -227,14 +227,14 @@ export default function ConnectionsPage() {
 			{/* Form block filter pills */}
 			{formBlocks.length > 1 && (
 				<div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-					<span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+					<span className="shrink-0 text-micro font-medium uppercase tracking-wider text-muted-foreground">
 						Form:
 					</span>
 					<button
 						type="button"
 						onClick={() => setFormBlockFilter(null)}
 						className={cn(
-							"inline-flex h-11 shrink-0 items-center rounded-full px-3 text-[11px] font-medium transition-colors md:h-auto md:py-1",
+							"inline-flex h-11 shrink-0 items-center rounded-full px-3 text-micro font-medium transition-colors md:h-auto md:py-1",
 							formBlockFilter === null
 								? "bg-primary text-primary-foreground"
 								: "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -249,7 +249,7 @@ export default function ConnectionsPage() {
 							type="button"
 							onClick={() => setFormBlockFilter(fb.id)}
 							className={cn(
-								"inline-flex h-11 shrink-0 items-center gap-1 rounded-full px-3 text-[11px] font-medium transition-colors md:h-auto md:py-1",
+								"inline-flex h-11 shrink-0 items-center gap-1 rounded-full px-3 text-micro font-medium transition-colors md:h-auto md:py-1",
 								formBlockFilter === fb.id
 									? "bg-primary text-primary-foreground"
 									: "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",

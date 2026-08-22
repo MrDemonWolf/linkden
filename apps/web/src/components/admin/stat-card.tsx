@@ -57,7 +57,7 @@ export function StatCard({
 					<Icon className={cn("h-4 w-4", iconColor)} />
 				</div>
 				<div className="min-w-0 flex-1">
-					<p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-mono">
+					<p className="text-micro uppercase tracking-[0.14em] text-muted-foreground font-mono">
 						{label}
 					</p>
 					{/* Error is checked before loading/value so a failed (re)fetch surfaces
@@ -73,7 +73,7 @@ export function StatCard({
 									size="sm"
 									variant="outline"
 									onClick={onRetry}
-									className="h-6 gap-1 px-2 text-[11px]"
+									className="h-6 gap-1 px-2 text-micro"
 								>
 									<RotateCw className="h-3 w-3" />
 									Retry
@@ -90,7 +90,7 @@ export function StatCard({
 							{trend != null && (
 								<span
 									className={cn(
-										"inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-medium",
+										"inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-micro font-medium",
 										trend.value > 0 && "bg-success/15 text-success",
 										trend.value < 0 && "bg-destructive/15 text-destructive",
 										trend.value === 0 && "bg-muted text-muted-foreground",
@@ -108,7 +108,7 @@ export function StatCard({
 						</div>
 					)}
 					{subtitle && !isLoading && !isError && (
-						<p className="text-[10px] text-muted-foreground mt-0.5">{subtitle}</p>
+						<p className="text-micro text-muted-foreground mt-0.5">{subtitle}</p>
 					)}
 				</div>
 				{href && !isError && (

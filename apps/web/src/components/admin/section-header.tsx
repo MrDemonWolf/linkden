@@ -32,7 +32,7 @@ export function SectionHeader({ icon: Icon, title, count, variant = "muted" }: S
 					{title}
 					{count !== undefined &&
 						(variant === "primary" ? (
-							<Badge variant="outline" className="ml-1 text-[10px] border-primary/30 text-primary">
+							<Badge variant="outline" className="ml-1 text-micro border-primary/30 text-primary">
 								{count}
 							</Badge>
 						) : (
@@ -76,7 +76,7 @@ export function SectionCard({
 					<div className="min-w-0">
 						<h2 className="text-sm font-semibold">{title}</h2>
 						{description && (
-							<p className="mt-0.5 text-[11px] text-muted-foreground">{description}</p>
+							<p className="mt-0.5 text-micro text-muted-foreground">{description}</p>
 						)}
 					</div>
 				</div>

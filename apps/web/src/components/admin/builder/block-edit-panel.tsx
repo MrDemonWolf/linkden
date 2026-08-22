@@ -50,7 +50,7 @@ function ToggleSwitch({
 		<div className="flex items-center justify-between">
 			<div className="space-y-0.5">
 				<Label htmlFor={id}>{label}</Label>
-				{description && <p className="text-[11px] text-muted-foreground">{description}</p>}
+				{description && <p className="text-micro text-muted-foreground">{description}</p>}
 			</div>
 			<Switch id={id} checked={checked} onCheckedChange={() => onToggle()} aria-label={label} />
 		</div>
@@ -296,7 +296,7 @@ export function BlockEditPanel({
 										embedUrlError && "border-destructive",
 									)}
 								/>
-								{embedUrlError && <p className="text-[11px] text-destructive">{embedUrlError}</p>}
+								{embedUrlError && <p className="text-micro text-destructive">{embedUrlError}</p>}
 							</div>
 						</>
 					)}
@@ -595,7 +595,7 @@ export function BlockEditPanel({
 								(urlItem: { label: string; url: string }, idx: number) => (
 									<div key={idx} className="flex gap-2 items-end">
 										<div className="flex-1 space-y-1">
-											<Label className="text-[11px]">Label</Label>
+											<Label className="text-micro">Label</Label>
 											<Input
 												aria-label="URL label"
 												value={urlItem.label}
@@ -609,7 +609,7 @@ export function BlockEditPanel({
 											/>
 										</div>
 										<div className="flex-[2] space-y-1">
-											<Label className="text-[11px]">URL</Label>
+											<Label className="text-micro">URL</Label>
 											<Input
 												aria-label="URL address"
 												value={urlItem.url}
@@ -692,8 +692,8 @@ export function BlockEditPanel({
 							{(parsedConfig.linkType === "google" || parsedConfig.linkType === "apple") &&
 								parsedConfig.address && (
 									<div className="space-y-1">
-										<Label className="text-[11px] text-muted-foreground">Generated URL</Label>
-										<p className="text-[11px] font-mono text-muted-foreground break-all">
+										<Label className="text-micro text-muted-foreground">Generated URL</Label>
+										<p className="text-micro font-mono text-muted-foreground break-all">
 											{parsedConfig.linkType === "google"
 												? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(parsedConfig.address as string)}`
 												: `https://maps.apple.com/?q=${encodeURIComponent(parsedConfig.address as string)}`}
@@ -955,7 +955,7 @@ export function BlockEditPanel({
 							)}
 						/>
 						{configError && (
-							<p id="edit-config-error" className="text-[11px] text-destructive">
+							<p id="edit-config-error" className="text-micro text-destructive">
 								{configError}
 							</p>
 						)}

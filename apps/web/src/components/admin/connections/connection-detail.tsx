@@ -66,7 +66,7 @@ function AttendingBadge({ attending }: { attending: string }) {
 	const cls = variants[attending.toLowerCase()] ?? "bg-muted text-muted-foreground";
 	return (
 		<span
-			className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${cls}`}
+			className={`inline-flex items-center rounded-full px-2 py-0.5 text-micro font-medium ${cls}`}
 		>
 			{attending.charAt(0).toUpperCase() + attending.slice(1)}
 		</span>
@@ -104,21 +104,21 @@ export function ConnectionDetail({
 					</div>
 					<div className="min-w-0 flex-1">
 						<p className="text-sm font-semibold truncate">{connection.name || "Anonymous"}</p>
-						<p className="text-[11px] text-muted-foreground truncate">{connection.email}</p>
+						<p className="text-micro text-muted-foreground truncate">{connection.email}</p>
 					</div>
 					{connection.isRead ? (
-						<Badge variant="secondary" className="shrink-0 text-[10px]">
+						<Badge variant="secondary" className="shrink-0 text-micro">
 							Read
 						</Badge>
 					) : (
-						<Badge variant="outline" className="shrink-0 gap-1 text-[10px]">
+						<Badge variant="outline" className="shrink-0 gap-1 text-micro">
 							<span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />
 							Unread
 						</Badge>
 					)}
 				</div>
 				<div className="flex items-center gap-2">
-					<p className="text-[11px] text-muted-foreground">
+					<p className="text-micro text-muted-foreground">
 						{new Date(connection.createdAt).toLocaleString()}
 					</p>
 				</div>
@@ -129,7 +129,7 @@ export function ConnectionDetail({
 				{/* Where Met - prominent placement for connections */}
 				{connection.whereMet && (
 					<div className="space-y-1">
-						<h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+						<h3 className="text-micro font-medium uppercase tracking-wider text-muted-foreground">
 							Where You Met
 						</h3>
 						<div className="flex items-center gap-2 text-xs">
@@ -141,7 +141,7 @@ export function ConnectionDetail({
 
 				{/* Contact info */}
 				<div className="space-y-2">
-					<h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+					<h3 className="text-micro font-medium uppercase tracking-wider text-muted-foreground">
 						Contact Info
 					</h3>
 					<div className="space-y-1.5">
@@ -171,7 +171,7 @@ export function ConnectionDetail({
 				{/* Subject */}
 				{connection.subject && (
 					<div className="space-y-1">
-						<h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+						<h3 className="text-micro font-medium uppercase tracking-wider text-muted-foreground">
 							Subject
 						</h3>
 						<p className="text-xs font-medium">{connection.subject}</p>
@@ -180,7 +180,7 @@ export function ConnectionDetail({
 
 				{/* Message */}
 				<div className="space-y-1">
-					<h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+					<h3 className="text-micro font-medium uppercase tracking-wider text-muted-foreground">
 						Message
 					</h3>
 					<p className="whitespace-pre-wrap text-xs leading-relaxed">
@@ -191,7 +191,7 @@ export function ConnectionDetail({
 				{/* Extra fields */}
 				{hasExtraFields && (
 					<div className="space-y-2">
-						<h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+						<h3 className="text-micro font-medium uppercase tracking-wider text-muted-foreground">
 							Additional Info
 						</h3>
 						<div className="space-y-2">

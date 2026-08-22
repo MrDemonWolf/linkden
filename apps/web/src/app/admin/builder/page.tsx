@@ -446,11 +446,11 @@ export default function BuilderPage() {
 
 							{/* List label */}
 							<div className="flex items-center justify-between">
-								<p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-mono">
+								<p className="text-micro uppercase tracking-[0.14em] text-muted-foreground font-mono">
 									Blocks · drag to reorder
 								</p>
 								{blocks.length > 0 && (
-									<p className="text-[10px] text-muted-foreground">
+									<p className="text-micro text-muted-foreground">
 										{blocks.length} block{blocks.length !== 1 ? "s" : ""}
 									</p>
 								)}
@@ -567,7 +567,7 @@ export default function BuilderPage() {
 													<div className="text-xs font-semibold group-hover/picker:text-primary transition-colors">
 														{item.label}
 													</div>
-													<div className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+													<div className="text-micro text-muted-foreground leading-tight mt-0.5">
 														{item.description}
 													</div>
 												</div>
