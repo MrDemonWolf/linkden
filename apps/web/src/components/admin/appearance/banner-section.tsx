@@ -69,7 +69,7 @@ export function BannerSection({
 								aria-pressed={bannerMode === "preset"}
 								onClick={() => onBannerModeChange("preset")}
 								className={cn(
-									"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
+									"flex min-h-11 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all md:min-h-8",
 									"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 									bannerMode === "preset"
 										? "border-primary/60 bg-primary/10 text-primary shadow-sm"
@@ -84,7 +84,7 @@ export function BannerSection({
 								aria-pressed={bannerMode === "custom"}
 								onClick={() => onBannerModeChange("custom")}
 								className={cn(
-									"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all",
+									"flex min-h-11 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all md:min-h-8",
 									"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 									bannerMode === "custom"
 										? "border-primary/60 bg-primary/10 text-primary shadow-sm"

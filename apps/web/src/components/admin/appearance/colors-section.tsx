@@ -1,9 +1,10 @@
 "use client";
 
 import { Monitor, Moon, Paintbrush, Sun } from "lucide-react";
+import { useId } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ColorField } from "../color-field";
 
 const COLOR_MODE_OPTIONS = [
@@ -35,6 +36,8 @@ export function ColorsSection({
 	onAccentChange: (value: string) => void;
 	onBgChange: (value: string) => void;
 }) {
+	const colorModeLabelId = useId();
+
 	return (
 		<Card>
 			<CardHeader>
@@ -46,32 +49,34 @@ export function ColorsSection({
 				</h2>
 			</CardHeader>
 			<CardContent className="space-y-4">
-				{/* Color mode toggle */}
+				{/* Color mode toggle — single-select ToggleGroup (Base UI `multiple`
+				    defaults to false). An empty `next` means the pressed segment was
+				    re-pressed; ignoring it keeps exactly one mode selected. */}
 				<div>
-					<Label className="mb-2 block text-xs">Default Color Mode</Label>
-					<div className="inline-flex rounded-lg border border-border/50 p-0.5 bg-muted/30">
-						{COLOR_MODE_OPTIONS.map((opt) => {
-							const Icon = opt.icon;
-							return (
-								<button
-									key={opt.value}
-									type="button"
-									aria-pressed={colorMode === opt.value}
-									onClick={() => onColorModeChange(opt.value)}
-									className={cn(
-										"flex min-h-11 items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all md:min-h-8",
-										"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-										colorMode === opt.value
-											? "bg-background text-foreground shadow-sm"
-											: "text-muted-foreground hover:text-foreground",
-									)}
-								>
-									<Icon className="h-3.5 w-3.5" />
-									{opt.label}
-								</button>
-							);
-						})}
-					</div>
+					<Label id={colorModeLabelId} className="mb-2 block text-xs">
+						Default Color Mode
+					</Label>
+					<ToggleGroup
+						value={[colorMode]}
+						onValueChange={(next) => {
+							const picked = next[0];
+							if (picked) onColorModeChange(picked);
+						}}
+						spacing={0}
+						aria-labelledby={colorModeLabelId}
+						className="rounded-lg border border-border/50 bg-muted/30 p-0.5"
+					>
+						{COLOR_MODE_OPTIONS.map(({ value, label, icon: Icon }) => (
+							<ToggleGroupItem
+								key={value}
+								value={value}
+								className="min-h-11 gap-1.5 px-3 text-muted-foreground md:min-h-8 aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow-sm hover:aria-pressed:bg-background"
+							>
+								<Icon className="size-3.5" />
+								{label}
+							</ToggleGroupItem>
+						))}
+					</ToggleGroup>
 				</div>
 
 				<div className="border-t border-border/40" />

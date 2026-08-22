@@ -2,7 +2,9 @@
 
 import { getContrastRatio, getReadableTextColor } from "@linkden/ui/color-contrast";
 import { useState } from "react";
-import { Input } from "@/components/ui/input";
+import { FieldError } from "@/components/admin/field-feedback";
+import { Button } from "@/components/ui/button";
+import { InputGroup, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 
 interface ColorFieldProps {
@@ -83,8 +85,13 @@ export function ColorField({
 	return (
 		<div className="space-y-1.5">
 			<Label htmlFor={id}>{label}</Label>
-			<div className="flex gap-2">
-				<Input
+			{/* The hex field and the swatch are one control: InputGroup owns the
+			    border, the focus ring and the invalid state, so the two halves can
+			    never drift apart. The swatch is a direct child rather than an
+			    InputGroupAddon because the addon refocuses the text input on click,
+			    which would fight the native colour picker. */}
+			<InputGroup className="min-h-11 md:h-8 md:min-h-0">
+				<InputGroupInput
 					id={id}
 					value={value}
 					onChange={(e) => {
@@ -95,7 +102,8 @@ export function ColorField({
 					placeholder={placeholder}
 					aria-invalid={error ? true : undefined}
 					aria-describedby={error ? errorId : undefined}
-					className="flex-1"
+					// `h-full` alone resolved to 42px — the group's 44px minus its border.
+					className="min-h-11 md:h-full md:min-h-0"
 				/>
 				<input
 					type="color"
@@ -105,28 +113,24 @@ export function ColorField({
 						onChange(e.target.value.toUpperCase());
 					}}
 					aria-label={`${label} color`}
-					className="h-11 w-12 shrink-0 cursor-pointer appearance-none rounded-lg md:h-8 md:w-10 border border-border p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-md [&::-moz-color-swatch]:border-none"
+					className="h-11 w-11 shrink-0 cursor-pointer appearance-none rounded-md bg-transparent p-1 md:h-6 md:w-8 md:p-0.5 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-sm [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:rounded-sm [&::-moz-color-swatch]:border-none"
 				/>
-			</div>
-			{error && (
-				<p id={errorId} role="alert" className="text-micro text-destructive">
-					{error}
-				</p>
-			)}
+			</InputGroup>
+			<FieldError id={errorId} error={error} delay={0} />
 			{ratio !== null && contrastAgainst && (
-				<p className="flex items-center gap-2 text-micro">
+				<p className="flex flex-wrap items-center gap-2 text-micro">
 					<span className={passesAA ? "font-medium text-success" : "font-medium text-warning"}>
 						{ratio.toFixed(1)}:1 vs {contrastAgainst.label}
 						{passesAA ? " — passes AA" : " — fails AA (4.5:1 needed)"}
 					</span>
 					{!passesAA && contrastHex && (
-						<button
-							type="button"
+						<Button
+							variant="outline"
+							size="xs"
 							onClick={() => onChange(getReadableTextColor(contrastHex).toUpperCase())}
-							className="rounded-full border border-border px-2 py-0.5 font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 						>
 							Fix
-						</button>
+						</Button>
 					)}
 				</p>
 			)}

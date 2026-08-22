@@ -1,1 +1,1 @@
-export { Avatar, AvatarImage, AvatarFallback } from "@linkden/ui";
+export { Avatar, AvatarFallback, AvatarImage } from "@linkden/ui";

@@ -36,7 +36,7 @@ export function SubTabs({
 		<nav
 			aria-label={ariaLabel}
 			className={cn(
-				"-mx-4 mb-6 flex gap-1 overflow-x-auto border-b border-border px-4 [scrollbar-width:none] md:mx-0 md:px-0",
+				"-mx-6 mb-6 flex gap-1 overflow-x-auto border-b border-border px-6 [scrollbar-width:none] md:mx-0 md:px-0",
 				className,
 			)}
 		>

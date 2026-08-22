@@ -42,8 +42,9 @@ import { EmptyState } from "@/components/admin/empty-state";
 import type { PreviewBlock } from "@/components/admin/page-preview";
 import { usePreviewSlot } from "@/components/admin/preview-slot";
 import { SkeletonRows } from "@/components/admin/skeleton-rows";
-import { Button } from "@/components/ui/button";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
@@ -319,34 +320,40 @@ export default function LinksBlocksPage() {
 
 	return (
 		<div className="space-y-4">
-			{/* Filter chips + the single Publish control */}
-			<div className="flex flex-wrap items-center gap-2">
-				<fieldset className="flex gap-1" aria-label="Filter blocks">
+			{/* One toolbar line, edge-to-edge with the block list panel below it:
+			    the single-select filter group on the left, Publish on the right.
+			    No wrapping — the two always share a row. */}
+			<div className="flex items-center gap-2">
+				<ToggleGroup
+					aria-label="Filter blocks"
+					value={[filter]}
+					// Base UI reports the whole pressed set; single-select still lets
+					// you un-press the active chip, which would clear the view — so an
+					// empty selection keeps the current filter.
+					onValueChange={(next) => {
+						const picked = next[0] as Filter | undefined;
+						if (picked) setFilter(picked);
+					}}
+					className="min-w-0 gap-1 overflow-x-auto [scrollbar-width:none]"
+				>
 					{FILTERS.map((f) => (
-						<button
+						<ToggleGroupItem
 							key={f.id}
-							type="button"
-							aria-pressed={filter === f.id}
-							onClick={() => setFilter(f.id)}
-							className={cn(
-								"inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors md:min-h-8",
-								filter === f.id
-									? "border-border bg-surface-2 text-foreground"
-									: "border-transparent text-muted-foreground hover:text-foreground",
-							)}
+							value={f.id}
+							className="h-11 gap-1.5 rounded-full border border-transparent px-3 text-xs font-medium text-muted-foreground hover:bg-transparent aria-pressed:border-border aria-pressed:bg-surface-2 aria-pressed:text-foreground md:h-8"
 						>
 							{f.label}
 							<span className="font-mono text-micro tabular-nums text-muted-foreground">
 								{countFor(f.id)}
 							</span>
-						</button>
+						</ToggleGroupItem>
 					))}
-				</fieldset>
+				</ToggleGroup>
 				<Button
 					size="sm"
 					disabled={!hasDrafts || publishAll.isPending}
 					onClick={handlePublishAll}
-					className={cn("ml-auto gap-2", hasDrafts && "shadow-glow")}
+					className={cn("ml-auto shrink-0 gap-2", hasDrafts && "shadow-glow")}
 				>
 					{publishAll.isPending ? (
 						<>
@@ -375,7 +382,7 @@ export default function LinksBlocksPage() {
 						<SkeletonRows count={4} />
 					</div>
 				) : blocksQuery.isError ? (
-					<div className="rounded-xl border border-border py-8 text-center">
+					<div className="rounded-lg border border-border py-8 text-center">
 						<p className="text-sm text-destructive">
 							Failed to load blocks — your page may be out of date
 						</p>
@@ -404,7 +411,7 @@ export default function LinksBlocksPage() {
 						strategy={verticalListSortingStrategy}
 					>
 						{/* One bordered panel; the rows are flat and divided, never individually rounded. */}
-						<div className="overflow-hidden rounded-xl border border-border bg-card shadow-surface">
+						<div className="overflow-hidden rounded-lg border border-border bg-card shadow-surface">
 							<ul className="divide-y divide-border" aria-label="Page blocks">
 								{visibleBlocks.map((block) => (
 									<li key={block.id} data-block-id={block.id}>
@@ -425,7 +432,7 @@ export default function LinksBlocksPage() {
 
 				<DragOverlay dropAnimation={dropAnimation}>
 					{activeBlock && (
-						<div className="pointer-events-none overflow-hidden rotate-[0.5deg] rounded-xl border border-border bg-card shadow-card ring-2 ring-primary/30">
+						<div className="pointer-events-none overflow-hidden rotate-[0.5deg] rounded-lg border border-border bg-card shadow-card ring-2 ring-primary/30">
 							<BlockRow
 								block={activeBlock}
 								onToggle={() => {}}
@@ -445,7 +452,7 @@ export default function LinksBlocksPage() {
 					onClick={() => setShowPicker(!showPicker)}
 					aria-expanded={showPicker}
 					className={cn(
-						"flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed p-4 text-sm transition-all",
+						"flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed p-4 text-sm transition-all",
 						showPicker
 							? "border-primary/40 bg-primary/5 text-primary"
 							: "border-border text-muted-foreground hover:border-primary/30 hover:text-primary hover:shadow-glow",
@@ -467,7 +474,7 @@ export default function LinksBlocksPage() {
 									handleAddBlock(item.type);
 									setShowPicker(false);
 								}}
-								className="group/picker flex flex-col items-start gap-2 rounded-xl border border-border bg-card p-3 text-left transition-colors hover:border-primary/30 hover:bg-primary/5"
+								className="group/picker flex flex-col items-start gap-2 rounded-lg border border-border bg-card p-3 text-left transition-colors hover:border-primary/30 hover:bg-primary/5"
 							>
 								<div
 									className={cn(

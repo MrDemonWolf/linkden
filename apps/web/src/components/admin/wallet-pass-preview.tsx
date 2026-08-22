@@ -147,7 +147,7 @@ export function WalletPassPreview({
 					<button
 						type="button"
 						onClick={() => setShowBack(false)}
-						className={`${microLabel} opacity-60 transition-opacity hover:opacity-100`}
+						className={`${microLabel} relative opacity-60 transition-opacity after:absolute after:-inset-x-2 after:-inset-y-3.5 after:content-[''] hover:opacity-100`}
 					>
 						Front ›
 					</button>
@@ -384,7 +384,7 @@ export function WalletPassPreview({
 				<button
 					type="button"
 					onClick={() => setShowBack(true)}
-					className={`absolute right-3 top-3 rounded px-1.5 py-0.5 ${microLabel} opacity-50 transition-opacity hover:opacity-100`}
+					className={`absolute right-3 top-3 rounded px-1.5 py-0.5 ${microLabel} opacity-50 transition-opacity after:absolute after:-inset-x-2 after:-inset-y-4 after:content-[''] hover:opacity-100`}
 					style={{ color: fg }}
 				>
 					Back ›

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Filter, Handshake, MailCheck, MessageSquare, Trash2 } from "lucide-react";
+import { Handshake, MailCheck, MessageSquare, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
@@ -11,10 +11,10 @@ import { EmptyState } from "@/components/admin/empty-state";
 import { PageHeader } from "@/components/admin/page-header";
 import { PageShell } from "@/components/admin/page-shell";
 import { SkeletonRows } from "@/components/admin/skeleton-rows";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
@@ -232,7 +232,6 @@ export default function InboxPage() {
 							/>
 						</Label>
 						<div className="flex items-center gap-1">
-							<Filter className="mr-1 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
 							{readFilters.map((f) => (
 								<Button
 									key={f.value}
@@ -350,8 +349,12 @@ export default function InboxPage() {
 					/>
 				) : (
 					<div className="flex gap-4">
-						{/* List panel */}
-						<Card className="flex-1 min-w-0 overflow-hidden">
+						{/* Stretch, not items-start: the detail panel takes its height
+						    from the list, which is what gives ConnectionDetail's
+						    ScrollArea a bounded region to scroll in. */}
+						{/* List panel — `py-0` so the divided rows sit flush with the
+						    panel edge, same as the block list on Links. */}
+						<Card className="min-w-0 flex-1 overflow-hidden py-0">
 							<ul className="divide-y" aria-label="Messages">
 								{connections.map((connection) => (
 									<ConnectionListItem
@@ -367,8 +370,9 @@ export default function InboxPage() {
 							</ul>
 						</Card>
 
-						{/* Desktop detail panel */}
-						<Card className="hidden w-[400px] shrink-0 overflow-hidden md:block">
+						{/* Desktop detail panel — `py-0` so its own header/action rules
+						    are the panel's top and bottom edges. */}
+						<Card className="hidden w-[400px] shrink-0 overflow-hidden py-0 md:block">
 							{selectedConnection ? (
 								<ConnectionDetail
 									connection={selectedConnection}

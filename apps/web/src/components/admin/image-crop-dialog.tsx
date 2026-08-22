@@ -1,16 +1,16 @@
 "use client";
 
+import { Check, RotateCw, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Cropper, { type Area } from "react-easy-crop";
-import { RotateCw, ZoomIn, ZoomOut, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
-	DialogHeader,
-	DialogTitle,
 	DialogDescription,
 	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 } from "@/components/ui/dialog";
 import type { CropPreset } from "@/lib/image-crop-presets";
 
@@ -169,7 +169,7 @@ export function ImageCropDialog({
 					<DialogTitle className="text-base font-semibold tracking-tight">Adjust image</DialogTitle>
 					<DialogDescription className="text-xs text-muted-foreground">
 						Drag to reposition · pinch or scroll to zoom · output{" "}
-						<span className="font-mono text-[10.5px]">{preset.dimensions}</span> · {aspectLabel}
+						<span className="font-mono text-micro">{preset.dimensions}</span> · {aspectLabel}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -225,10 +225,10 @@ export function ImageCropDialog({
 						className="gap-1.5"
 					>
 						<RotateCw className="h-3.5 w-3.5" />
-						<span className="font-mono text-[10.5px] tabular-nums">{rotation}°</span>
+						<span className="font-mono text-micro tabular-nums">{rotation}°</span>
 					</Button>
 
-					<div className="ml-auto font-mono text-[10.5px] uppercase tracking-wider text-muted-foreground">
+					<div className="ml-auto font-mono text-micro uppercase tracking-wider text-muted-foreground">
 						{aspectLabel}
 					</div>
 				</div>

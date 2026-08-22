@@ -404,7 +404,7 @@ export function AccountTab() {
 									/>
 									<button
 										type="button"
-										className="absolute right-0.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-muted-foreground hover:text-foreground"
+										className="absolute right-0.5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-muted-foreground hover:text-foreground md:h-9 md:w-9"
 										onClick={() => setShowCurrentPw(!showCurrentPw)}
 										aria-label={showCurrentPw ? "Hide password" : "Show password"}
 									>
@@ -443,7 +443,7 @@ export function AccountTab() {
 									/>
 									<button
 										type="button"
-										className="absolute right-0.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-muted-foreground hover:text-foreground"
+										className="absolute right-0.5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-muted-foreground hover:text-foreground md:h-9 md:w-9"
 										onClick={() => setShowNewPw(!showNewPw)}
 										aria-label={showNewPw ? "Hide password" : "Show password"}
 									>

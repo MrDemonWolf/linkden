@@ -1,13 +1,12 @@
 "use client";
 
-import { Menu } from "@base-ui/react/menu";
 import { useQuery } from "@tanstack/react-query";
-import { Globe, LogOut, Smartphone, UserCog, Wallet } from "lucide-react";
+import { ChevronsUpDown, Globe, LogOut, Smartphone, UserCog, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
-import { activeNavItem, isNavActive, NAV_ITEMS, NavList } from "@/components/admin/nav-list";
+import { activeNavItem, isNavActive, NAV_ITEMS } from "@/components/admin/nav-list";
 import { KickerSetter } from "@/components/admin/page-header";
 import { PagePreview } from "@/components/admin/page-preview";
 import { PreviewColumn } from "@/components/admin/preview-column";
@@ -20,11 +19,43 @@ import {
 import { SharePopover } from "@/components/admin/share-popover";
 import { StatePill } from "@/components/admin/state-pill";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Separator } from "@/components/ui/separator";
+import {
+	Sidebar,
+	SidebarContent,
+	SidebarFooter,
+	SidebarGroup,
+	SidebarGroupContent,
+	SidebarHeader,
+	SidebarInset,
+	SidebarMenu,
+	SidebarMenuBadge,
+	SidebarMenuButton,
+	SidebarMenuItem,
+	SidebarProvider,
+	SidebarRail,
+	SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { TooltipHint } from "@/components/ui/tooltip";
 import { WolfLogo } from "@/components/wolf-logo";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import { authClient } from "@/lib/auth-client";
 import { initials } from "@/lib/format";
 import { getGravatarUrl } from "@/lib/gravatar";
@@ -33,178 +64,214 @@ import { trpc } from "@/utils/trpc";
 
 type SessionUser = { name: string; email: string; image?: string | null };
 
-/** `LINKS / PROFILE`: destination from NAV_ITEMS + the page's sub-tab label (or its path segment). */
-function kickerFor(pathname: string, subLabel: string | null) {
+const APP_VERSION = `v${process.env.NEXT_PUBLIC_APP_VERSION}${
+	process.env.NODE_ENV === "development" ? " · DEV" : ""
+}`;
+
+/** Destination + the page's sub-tab (label, or the path segment) — the breadcrumb trail. */
+function crumbsFor(pathname: string, subLabel: string | null) {
 	const item = activeNavItem(pathname);
-	if (!item) return subLabel ?? "";
+	if (!item) return { destination: null, sub: subLabel };
 	const segment = pathname.slice(item.href.length + 1).split("/")[0];
-	const sub = subLabel ?? (segment ? segment.replace(/-/g, " ") : "");
-	return sub ? `${item.label} / ${sub}` : item.label;
+	const sub = subLabel ?? (segment ? segment.replace(/-/g, " ") : null);
+	return { destination: item, sub };
+}
+
+function UserAvatar({ user, className }: { user: SessionUser; className?: string }) {
+	return (
+		<Avatar className={cn("size-8 shrink-0 rounded-md", className)}>
+			<AvatarImage
+				src={user.image ?? (user.email ? getGravatarUrl(user.email, 56) : undefined)}
+				alt=""
+			/>
+			<AvatarFallback className="rounded-md text-xs font-semibold">
+				{initials(user.name)}
+			</AvatarFallback>
+		</Avatar>
+	);
 }
 
 /**
- * Fixed left sidebar (≥lg): 208px at xl with icon + label rows, a 64px
- * icon-only rail with Tooltip labels between lg and xl. Brand mark on top,
- * account identity + version at the bottom; sign-out stays in the top-bar
- * avatar menu so it exists exactly once.
+ * The one account surface: identity, Account, Wallet pass, Sign out. It lives
+ * in the sidebar footer at lg and up and — because the sidebar is not rendered
+ * below lg (the bottom tab bar is the only navigation there) — in the top bar
+ * below lg. Exactly one instance is ever visible, so sign-out has one home per
+ * breakpoint.
  */
-function Sidebar({
+function AccountMenu({
+	user,
+	onSignOut,
+	adminBrandingEnabled,
+	side,
+	children,
+}: {
+	user: SessionUser;
+	onSignOut: () => void;
+	adminBrandingEnabled: boolean;
+	/** "top" from the sidebar footer, "bottom" from the top bar. */
+	side: "top" | "bottom";
+	children: React.ReactNode;
+}) {
+	return (
+		<DropdownMenu>
+			{children}
+			<DropdownMenuContent align="end" side={side} sideOffset={8} className="w-56 p-1">
+				{/* Base UI's GroupLabel throws ("MenuGroupRootContext is missing") unless
+				    it sits inside a Group, so the identity header and the two account
+				    destinations it names are one group. Sign out stays outside it. */}
+				<DropdownMenuGroup>
+					<DropdownMenuLabel className="px-2 py-1.5">
+						<span className="block truncate text-xs font-semibold text-foreground">
+							{user.name || "Admin"}
+						</span>
+						<span className="block truncate text-micro font-normal text-muted-foreground">
+							{user.email}
+						</span>
+					</DropdownMenuLabel>
+					<DropdownMenuSeparator />
+					<DropdownMenuItem
+						className="min-h-11 md:min-h-9"
+						render={<Link href="/admin/settings" />}
+					>
+						<UserCog />
+						Account
+					</DropdownMenuItem>
+					<DropdownMenuItem
+						className="min-h-11 md:min-h-9"
+						render={<Link href="/admin/settings/wallet" />}
+					>
+						<Wallet />
+						Wallet pass
+					</DropdownMenuItem>
+				</DropdownMenuGroup>
+				<DropdownMenuSeparator />
+				<DropdownMenuItem variant="destructive" className="min-h-11 md:min-h-9" onClick={onSignOut}>
+					<LogOut />
+					Sign out
+				</DropdownMenuItem>
+				<p className="px-2 pt-2 pb-1 text-micro text-muted-foreground">
+					{adminBrandingEnabled && (
+						<>
+							Powered by{" "}
+							<a
+								href="https://github.com/mrdemonwolf/LinkDen"
+								target="_blank"
+								rel="noopener noreferrer"
+								className="transition-colors hover:text-foreground"
+							>
+								LinkDen
+								<span className="sr-only">(opens in new tab)</span>
+							</a>{" "}
+							·{" "}
+						</>
+					)}
+					{APP_VERSION}
+				</p>
+			</DropdownMenuContent>
+		</DropdownMenu>
+	);
+}
+
+/**
+ * The shadcn Sidebar, icon-collapsible: brand mark + site name on top (the
+ * name folds away when collapsed), the five destinations in one group, the
+ * account menu in the footer. Every button carries its label as a tooltip so
+ * the collapsed rail explains itself.
+ */
+function AdminSidebar({
 	pathname,
 	unreadCount,
 	logoUrl,
 	siteName,
 	user,
+	onSignOut,
+	adminBrandingEnabled,
 }: {
 	pathname: string;
 	unreadCount: number;
 	logoUrl: string;
 	siteName: string;
 	user: SessionUser;
-}) {
-	const isXl = useMediaQuery("(min-width: 1280px)", true);
-	const version = `v${process.env.NEXT_PUBLIC_APP_VERSION}${process.env.NODE_ENV === "development" ? " · DEV" : ""}`;
-	const avatar = (
-		<Avatar className="h-8 w-8 shrink-0">
-			<AvatarImage
-				src={user.image ?? (user.email ? getGravatarUrl(user.email, 56) : undefined)}
-				alt=""
-			/>
-			<AvatarFallback className="text-xs font-semibold">{initials(user.name)}</AvatarFallback>
-		</Avatar>
-	);
-
-	return (
-		<aside
-			aria-label="Sidebar"
-			className="fixed inset-y-0 left-0 z-40 hidden w-16 flex-col border-r border-border bg-card lg:flex xl:w-52"
-		>
-			<div className="flex h-[52px] shrink-0 items-center gap-3 border-b border-border px-3 max-xl:justify-center">
-				{logoUrl ? (
-					<img src={logoUrl} alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" />
-				) : (
-					<WolfLogo className="h-8 w-8 shrink-0" />
-				)}
-				<span className={cn("truncate font-display text-sm font-semibold", !isXl && "sr-only")}>
-					{siteName}
-				</span>
-			</div>
-			<div className="flex-1 overflow-y-auto">
-				<NavList
-					pathname={pathname}
-					unreadCount={unreadCount}
-					variant={isXl ? "sidebar" : "rail"}
-				/>
-			</div>
-			<div className="shrink-0 border-t border-border p-3">
-				{isXl ? (
-					<Link
-						href="/admin/settings"
-						className="flex h-10 items-center gap-3 rounded-lg px-1.5 transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-						aria-label={`Account settings — ${user.name || "Admin"}, ${version}`}
-					>
-						{avatar}
-						<span className="min-w-0 flex-1">
-							<span className="block truncate text-xs font-medium text-foreground">
-								{user.name || "Admin"}
-							</span>
-							<span className="block truncate font-mono text-micro text-muted-foreground">
-								{version}
-							</span>
-						</span>
-					</Link>
-				) : (
-					<TooltipHint content={`${user.name || "Admin"} · ${version}`} side="right">
-						<Link
-							href="/admin/settings"
-							className="flex h-10 w-10 items-center justify-center rounded-lg transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-							aria-label={`Account settings — ${user.name || "Admin"}, ${version}`}
-						>
-							{avatar}
-						</Link>
-					</TooltipHint>
-				)}
-			</div>
-		</aside>
-	);
-}
-
-function AvatarMenu({
-	user,
-	onSignOut,
-	adminBrandingEnabled,
-}: {
-	user: SessionUser;
 	onSignOut: () => void;
 	adminBrandingEnabled: boolean;
 }) {
-	const itemClass =
-		"flex min-h-11 cursor-default select-none items-center gap-2.5 rounded-lg px-3 text-xs outline-none data-[highlighted]:bg-muted data-[highlighted]:text-foreground md:min-h-9";
 	return (
-		<Menu.Root>
-			<Menu.Trigger
-				aria-label="Account menu"
-				className="flex h-11 w-11 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring md:h-9 md:w-9"
-			>
-				<Avatar className="h-8 w-8">
-					<AvatarImage
-						src={user.image ?? (user.email ? getGravatarUrl(user.email, 56) : undefined)}
-						alt=""
-					/>
-					<AvatarFallback className="text-xs font-semibold">{initials(user.name)}</AvatarFallback>
-				</Avatar>
-			</Menu.Trigger>
-			<Menu.Portal>
-				<Menu.Positioner side="bottom" align="end" sideOffset={8} className="z-50">
-					<Menu.Popup className="min-w-56 rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none data-[open]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:fade-in-0 duration-150">
-						<div className="px-3 py-2">
-							<p className="truncate text-xs font-semibold">{user.name || "Admin"}</p>
-							<p className="truncate text-micro text-muted-foreground">{user.email}</p>
-						</div>
-						<Menu.Separator className="my-1 h-px bg-border" />
-						<Menu.LinkItem
-							closeOnClick
-							className={itemClass}
-							render={<Link href="/admin/settings" />}
+		<Sidebar collapsible="icon" className="border-r border-sidebar-border">
+			<SidebarHeader className="h-13 shrink-0 justify-center border-b border-sidebar-border">
+				<div className="flex items-center gap-2 overflow-hidden px-1 group-data-[collapsible=icon]:px-0">
+					{logoUrl ? (
+						<img src={logoUrl} alt="" className="size-8 shrink-0 rounded-md object-cover" />
+					) : (
+						<WolfLogo className="size-8 shrink-0" />
+					)}
+					<span className="truncate font-display text-sm font-semibold group-data-[collapsible=icon]:hidden">
+						{siteName}
+					</span>
+				</div>
+			</SidebarHeader>
+
+			<SidebarContent>
+				<SidebarGroup>
+					<SidebarGroupContent>
+						<SidebarMenu>
+							{NAV_ITEMS.map((item) => {
+								const isActive = isNavActive(item.href, pathname);
+								const showBadge = item.label === "Inbox" && unreadCount > 0;
+								const Icon = item.icon;
+								return (
+									<SidebarMenuItem key={item.href}>
+										<SidebarMenuButton
+											isActive={isActive}
+											tooltip={item.label}
+											aria-label={showBadge ? `${item.label}, ${unreadCount} unread` : undefined}
+											className="min-h-11 md:min-h-8 data-active:[&_svg]:text-sidebar-primary"
+											render={<Link href={item.href} />}
+										>
+											<Icon />
+											<span>{item.label}</span>
+										</SidebarMenuButton>
+										{showBadge && (
+											<SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground peer-hover/menu-button:text-sidebar-primary-foreground peer-data-active/menu-button:text-sidebar-primary-foreground">
+												{unreadCount > 99 ? "99+" : unreadCount}
+											</SidebarMenuBadge>
+										)}
+									</SidebarMenuItem>
+								);
+							})}
+						</SidebarMenu>
+					</SidebarGroupContent>
+				</SidebarGroup>
+			</SidebarContent>
+
+			<SidebarFooter className="border-t border-sidebar-border">
+				<SidebarMenu>
+					<SidebarMenuItem>
+						<AccountMenu
+							user={user}
+							onSignOut={onSignOut}
+							adminBrandingEnabled={adminBrandingEnabled}
+							side="top"
 						>
-							<UserCog className="h-4 w-4" />
-							Account
-						</Menu.LinkItem>
-						<Menu.LinkItem
-							closeOnClick
-							className={itemClass}
-							render={<Link href="/admin/settings/wallet" />}
-						>
-							<Wallet className="h-4 w-4" />
-							Wallet pass
-						</Menu.LinkItem>
-						<Menu.Separator className="my-1 h-px bg-border" />
-						<Menu.Item className={cn(itemClass, "text-destructive")} onClick={onSignOut}>
-							<LogOut className="h-4 w-4" />
-							Sign out
-						</Menu.Item>
-						<p className="px-3 pt-2 pb-1 text-micro text-muted-foreground">
-							{adminBrandingEnabled && (
-								<>
-									Powered by{" "}
-									<a
-										href="https://github.com/mrdemonwolf/LinkDen"
-										target="_blank"
-										rel="noopener noreferrer"
-										className="transition-colors hover:text-foreground"
-									>
-										LinkDen
-										<span className="sr-only">(opens in new tab)</span>
-									</a>{" "}
-									·{" "}
-								</>
-							)}
-							v{process.env.NEXT_PUBLIC_APP_VERSION}
-							{process.env.NODE_ENV === "development" && " · DEV"}
-						</p>
-					</Menu.Popup>
-				</Menu.Positioner>
-			</Menu.Portal>
-		</Menu.Root>
+							<DropdownMenuTrigger
+								aria-label="Account menu"
+								render={<SidebarMenuButton size="lg" />}
+							>
+								<UserAvatar user={user} />
+								<span className="grid min-w-0 flex-1 text-left">
+									<span className="truncate text-xs font-medium">{user.name || "Admin"}</span>
+									<span className="truncate font-mono text-micro text-muted-foreground">
+										{APP_VERSION}
+									</span>
+								</span>
+								<ChevronsUpDown className="ml-auto" />
+							</DropdownMenuTrigger>
+						</AccountMenu>
+					</SidebarMenuItem>
+				</SidebarMenu>
+			</SidebarFooter>
+
+			<SidebarRail />
+		</Sidebar>
 	);
 }
 
@@ -275,8 +342,8 @@ function MobilePreview() {
 
 /**
  * Main grid, left-aligned (never centered in the leftover space). With a
- * preview registered: tool column (≤760px) + the preview column, 32px gap.
- * Alone: a single ≤960px column.
+ * preview registered: tool column (<=760px) + the preview column, 32px gap.
+ * Alone: a single <=960px column.
  */
 function MainGrid({ children }: { children: React.ReactNode }) {
 	const hasPreview = usePreviewRegistration() !== null;
@@ -284,7 +351,10 @@ function MainGrid({ children }: { children: React.ReactNode }) {
 		<div
 			className={cn(
 				hasPreview
-					? "lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-8"
+					? // The rail track is `auto`, not a fixed 360px: PreviewColumn owns its
+						// own width (300px at lg, 372px at xl, 40px collapsed) and a fixed
+						// track would either overflow at xl or leave dead space collapsed.
+						"lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-8"
 					: "max-w-[960px]",
 			)}
 		>
@@ -295,9 +365,10 @@ function MainGrid({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Client-side admin chrome: session gate, sidebar (≥lg), top bar, main grid
- * with the shell-owned preview column, FAB + preview sheet and bottom tab bar
- * (<lg). Rendered by the server `app/admin/layout.tsx`, which owns the metadata.
+ * Client-side admin chrome: session gate, shadcn Sidebar (>=lg), 52px top bar
+ * with the breadcrumb and page actions, main grid with the shell-owned preview
+ * column, FAB + preview sheet and bottom tab bar (<lg). Rendered by the server
+ * `app/admin/layout.tsx`, which owns the metadata.
  */
 export function AdminShell({ children }: { children: React.ReactNode }) {
 	const router = useRouter();
@@ -333,6 +404,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 		pathname === "/admin/login" ||
 		pathname === "/admin/setup" ||
 		pathname.startsWith("/admin/reset-password");
+
+	// Portalled surfaces — dropdown menus, popovers, tooltips, dialogs, sheets —
+	// mount on `document.body`, outside the shell root, so the `.admin-scope`
+	// class on the provider below can't reach them and they'd keep the public
+	// page's 18px corners next to the console's 8px ones. Mirroring the class
+	// onto <body> for as long as the console is mounted is what makes the
+	// tighter radius scale actually console-wide.
+	useEffect(() => {
+		if (isPublicRoute) return;
+		document.body.classList.add("admin-scope");
+		return () => document.body.classList.remove("admin-scope");
+	}, [isPublicRoute]);
 
 	useEffect(() => {
 		if (!isPending && !session?.user && !isPublicRoute) {
@@ -370,13 +453,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 		email: session.user.email ?? "",
 		image: session.user.image,
 	};
-	const kicker = kickerFor(pathname, subLabel);
+	const { destination, sub } = crumbsFor(pathname, subLabel);
 
 	return (
 		<PreviewSlotSetter value={setRegistration}>
 			<PreviewSlotState value={registration}>
 				<KickerSetter value={setSubLabel}>
-					<div className="min-h-dvh bg-background">
+					{/* `admin-scope` retunes the radius scale for the whole console. */}
+					<SidebarProvider className="admin-scope min-h-dvh bg-background">
 						<a
 							href="#main-content"
 							className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg"
@@ -384,20 +468,54 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 							Skip to main content
 						</a>
 
-						<Sidebar
-							pathname={pathname}
-							unreadCount={unreadCount}
-							logoUrl={logoUrl}
-							siteName={siteName}
-							user={sessionUser}
-						/>
+						{/* One navigation system per breakpoint: the sidebar (and its mobile
+						    drawer) never renders below lg, where the bottom tab bar rules. */}
+						<div className="hidden lg:contents">
+							<AdminSidebar
+								pathname={pathname}
+								unreadCount={unreadCount}
+								logoUrl={logoUrl}
+								siteName={siteName}
+								user={sessionUser}
+								onSignOut={handleSignOut}
+								adminBrandingEnabled={adminBrandingEnabled}
+							/>
+						</div>
 
-						{/* Offset by the sidebar: 64px rail at lg, 208px at xl. */}
-						<div className="lg:pl-16 xl:pl-52">
-							<header className="sticky top-0 z-30 flex h-[52px] items-center gap-3 border-b border-border bg-card px-4 lg:px-6">
-								<span className="min-w-0 flex-1 truncate font-mono text-micro font-medium uppercase tracking-[0.14em] text-muted-foreground">
-									{kicker}
-								</span>
+						<SidebarInset className="min-w-0">
+							<header className="sticky top-0 z-30 flex h-13 shrink-0 items-center gap-2 border-b border-border bg-card px-4">
+								<SidebarTrigger className="-ml-1 hidden lg:inline-flex" />
+								<Separator
+									orientation="vertical"
+									className="hidden h-4 data-vertical:self-center lg:block"
+								/>
+								<Breadcrumb className="min-w-0 flex-1">
+									<BreadcrumbList className="flex-nowrap text-micro">
+										{destination &&
+											(sub ? (
+												<>
+													<BreadcrumbItem className="min-w-0">
+														<BreadcrumbLink
+															// 16px of type in a 52px bar: a pseudo-element carries the
+															// 44px touch target below md without changing the layout.
+															className="relative truncate after:absolute after:inset-x-0 after:-inset-y-3.5 after:content-[''] md:after:hidden"
+															render={<Link href={destination.href} />}
+														>
+															{destination.label}
+														</BreadcrumbLink>
+													</BreadcrumbItem>
+													<BreadcrumbSeparator />
+													<BreadcrumbItem className="min-w-0">
+														<BreadcrumbPage className="truncate capitalize">{sub}</BreadcrumbPage>
+													</BreadcrumbItem>
+												</>
+											) : (
+												<BreadcrumbItem className="min-w-0">
+													<BreadcrumbPage className="truncate">{destination.label}</BreadcrumbPage>
+												</BreadcrumbItem>
+											))}
+									</BreadcrumbList>
+								</Breadcrumb>
 								<div className="flex shrink-0 items-center gap-1 lg:gap-2">
 									<StatePill />
 									<SharePopover />
@@ -414,25 +532,40 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 									<span className="hidden lg:inline-flex">
 										<ThemeToggle />
 									</span>
-									<AvatarMenu
-										user={sessionUser}
-										onSignOut={handleSignOut}
-										adminBrandingEnabled={adminBrandingEnabled}
-									/>
+									{/* Below lg the sidebar footer is not rendered, so the account
+									    menu (and with it, sign-out) lives here instead. */}
+									<span className="lg:hidden">
+										<AccountMenu
+											user={sessionUser}
+											onSignOut={handleSignOut}
+											adminBrandingEnabled={adminBrandingEnabled}
+											side="bottom"
+										>
+											<DropdownMenuTrigger
+												aria-label="Account menu"
+												render={<Button variant="ghost" size="icon" />}
+											>
+												<UserAvatar user={sessionUser} />
+											</DropdownMenuTrigger>
+										</AccountMenu>
+									</span>
 								</div>
 							</header>
 
-							<main
+							{/* SidebarInset is itself the <main> landmark, so this is a div —
+							    two nested <main> elements would be one landmark too many. */}
+							<div
 								id="main-content"
-								className="px-4 py-4 pb-[calc(56px+env(safe-area-inset-bottom)+1.5rem)] md:px-6 md:py-6 md:pb-[calc(56px+env(safe-area-inset-bottom)+1.5rem)] lg:px-8 lg:pb-6"
+								tabIndex={-1}
+								className="px-6 py-6 pb-[calc(56px+env(safe-area-inset-bottom)+1.5rem)] outline-none lg:px-8 lg:pb-6"
 							>
 								<MainGrid>{children}</MainGrid>
-							</main>
-						</div>
+							</div>
+						</SidebarInset>
 
 						<MobilePreview />
 						<BottomTabBar pathname={pathname} unreadCount={unreadCount} />
-					</div>
+					</SidebarProvider>
 				</KickerSetter>
 			</PreviewSlotState>
 		</PreviewSlotSetter>
