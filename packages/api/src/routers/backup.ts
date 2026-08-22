@@ -4,6 +4,8 @@ import {
 	blockImportSchema,
 	contactSubmissionImportSchema,
 	socialNetworkImportSchema,
+	socialNetworkUpdateSchema,
+	validateBlockImport,
 } from "@linkden/validators";
 import {
 	getSettingMeta,
@@ -80,6 +82,8 @@ export const backupRouter = router({
 			// upsert semantics (no read-then-write), so both modes are atomic.
 			const stmts: BatchItem<"sqlite">[] = [];
 			let skippedSettings = 0;
+			let skippedBlocks = 0;
+			let skippedSocials = 0;
 
 			if (mode === "replace") {
 				if (data.blocks) stmts.push(db.delete(block));
@@ -89,7 +93,14 @@ export const backupRouter = router({
 			}
 
 			if (data.blocks) {
+				// Same gate as blocks.create (http(s) URLs, icon format, per-type
+				// config): the public page renders stored rows verbatim, so a
+				// crafted backup must not be able to plant a javascript: href.
 				for (const b of data.blocks) {
+					if (!validateBlockImport(b)) {
+						skippedBlocks++;
+						continue;
+					}
 					const values = b as typeof block.$inferInsert;
 					stmts.push(
 						db.insert(block).values(values).onConflictDoUpdate({ target: block.id, set: values }),
@@ -124,6 +135,11 @@ export const backupRouter = router({
 					const url = s.url || "";
 					if (!url) continue;
 					const isActive = s.isActive ?? true;
+					// Known slug + http(s) URL, as social.updateBulk enforces.
+					if (!socialNetworkUpdateSchema.safeParse({ slug: s.slug, url, isActive }).success) {
+						skippedSocials++;
+						continue;
+					}
 					stmts.push(
 						db
 							.insert(socialNetwork)
@@ -147,8 +163,14 @@ export const backupRouter = router({
 					count: skippedSettings,
 				});
 			}
+			if (skippedBlocks > 0 || skippedSocials > 0) {
+				await logAudit("backup.import.skipped_rows", undefined, undefined, {
+					blocks: skippedBlocks,
+					socialNetworks: skippedSocials,
+				});
+			}
 			await logAudit("backup.import", undefined, undefined, { mode });
-			return { success: true };
+			return { success: true, skipped: { blocks: skippedBlocks, socialNetworks: skippedSocials } };
 		}),
 
 	importLinkStack: protectedProcedure

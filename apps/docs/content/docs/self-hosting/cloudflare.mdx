@@ -113,7 +113,18 @@ That shared worker is specific to the MrDemonWolf account. As a third-party self
 1. **Deploy your own `alchemy-state` worker** in your account (see the [Alchemy docs for `CloudflareStateStore`](https://alchemy.run/state-store)) and set `ALCHEMY_STATE_TOKEN` to the token you gave it, or
 2. **Switch the `stateStore`** in `packages/infra/alchemy.run.ts` to something local, for example the default file-system store, by removing the `stateStore` option. Then `ALCHEMY_STATE_TOKEN` is not needed and state lives in `packages/infra/.alchemy/` (keep it out of git, but do not lose it: it is how Alchemy knows what it already deployed).
 
-`ALCHEMY_STAGE` separates deployments of the same app. It defaults to `prod`; set it to `dev` for a throwaway staging copy.
+`ALCHEMY_STAGE` separates deployments of the same app. It defaults to `prod`; set it to `dev` for a throwaway staging copy. Every resource of a non-`prod` stage gets the stage as a name suffix (`linkden-db-dev`, `linkden-images-dev`, `linkden-backups-dev`, `linkden-api-dev`, `linkden-dev`), so a staging deploy — and `ALCHEMY_STAGE=dev bun run destroy` — can never touch the production database, buckets, or Workers.
+
+### Upgrading a deploy made before 0.5.0
+
+Before 0.5.0 the D1 database and R2 bucket had no fixed names, so Alchemy generated them: a GitHub Actions deploy created **`linkden-database-runner`** and **`linkden-images-runner`** (a local `bun ship` used your login name instead of `runner`). 0.5.0 pins the names to `linkden-db` / `linkden-images` and moves state to the `prod` stage. On its own that would create a brand-new, empty database and bucket, put the public page back on the Welcome screen, and reopen `/admin/setup` to anyone — so **before you deploy 0.5.0 over an existing install**, set two variables to the names you already have (Cloudflare dashboard → Storage & Databases → D1 / R2):
+
+```bash
+LINKDEN_DB_NAME=linkden-database-runner
+LINKDEN_IMAGES_BUCKET=linkden-images-runner
+```
+
+In GitHub Actions these are **variables** on the `production` environment (next to `SITE_DOMAIN`). The `prod` stage then adopts your existing resources by name, runs any pending migrations against them, and nothing is re-created. The old `runner` (or `<login>`) stage's state is simply left behind. Do **not** try to keep the old stage by setting `ALCHEMY_STAGE` to it instead: in the same stage Alchemy treats the new name as a rename, which creates the new resource and deletes the old one.
 
 > 💡 **What's my subdomain?** It's the account name shown in the Cloudflare dashboard sidebar (e.g. `myname` → `linkden-api.myname.workers.dev`). You can also find it after the first deploy in the command output.
 

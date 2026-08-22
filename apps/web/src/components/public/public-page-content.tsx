@@ -117,7 +117,7 @@ const sectionLayoutClass: Record<SectionLayout, string> = {
 	list: "space-y-3",
 	grid: "grid grid-cols-2 gap-3",
 	carousel:
-		"flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 [&>*]:min-w-[72%] [&>*]:snap-start [&>*]:shrink-0",
+		"flex gap-3 overflow-x-auto snap-x snap-mandatory rounded-xl pb-2 focus-visible:outline-2 focus-visible:outline-offset-2 [&>*]:min-w-[72%] [&>*]:snap-start [&>*]:shrink-0",
 };
 
 function renderBlock(
@@ -427,7 +427,21 @@ export function PageContent({
 									{section.blocks.length > 0 && (
 										<ul
 											className={`ld-blocks ${sectionLayoutClass[section.layout]}`}
-											aria-label={section.header?.title || "Links and content"}
+											aria-label={
+												section.layout === "carousel"
+													? `${section.header?.title || "Links and content"}, scrollable`
+													: section.header?.title || "Links and content"
+											}
+											// A carousel of non-interactive blocks (images without a link,
+											// text, dividers) has nothing focusable inside it; making the
+											// scroller itself a tab stop lets the arrow keys scroll it in
+											// every browser (Safari does not focus overflow boxes on its own).
+											tabIndex={section.layout === "carousel" ? 0 : undefined}
+											style={
+												section.layout === "carousel"
+													? ({ outlineColor: themeColors.primary } as React.CSSProperties)
+													: undefined
+											}
 										>
 											{section.blocks.map((blockData, i) => (
 												// The wrapper <li> owns both the list semantics and the

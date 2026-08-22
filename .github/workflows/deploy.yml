@@ -74,6 +74,13 @@ jobs:
           # site origin baked into robots/sitemap/metadataBase.
           SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
           NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+          # Only for installs that deployed before 0.5.0 pinned the resource
+          # names: the D1 database / R2 bucket Alchemy generated back then
+          # (typically linkden-database-runner / linkden-images-runner), so
+          # the prod stage adopts the existing data instead of creating empty
+          # resources. Leave unset for a fresh install.
+          LINKDEN_DB_NAME: ${{ vars.LINKDEN_DB_NAME }}
+          LINKDEN_IMAGES_BUCKET: ${{ vars.LINKDEN_IMAGES_BUCKET }}
           WALLET_SIGNER_CERT: ${{ secrets.WALLET_SIGNER_CERT }}
           WALLET_SIGNER_KEY: ${{ secrets.WALLET_SIGNER_KEY }}
           WALLET_WWDR_CERT: ${{ secrets.WALLET_WWDR_CERT }}
@@ -86,8 +93,8 @@ jobs:
           # With a custom domain the API is routed under the site origin
           # (/api/* route on the web worker's domain); otherwise probe the
           # server's workers.dev URL directly.
-          if [ -n "$SITE_URL" ]; then
-            HEALTH_URL="${SITE_URL%/}/api/health"
+          if [ -n "$SITE_DOMAIN" ]; then
+            HEALTH_URL="https://${SITE_DOMAIN}/api/health"
           else
             HEALTH_URL="${SERVER_URL%/}/api/health"
           fi
@@ -109,5 +116,5 @@ jobs:
             echo "ERROR: email status missing from health response"; exit 1
           fi
         env:
-          SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+          SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
           SERVER_URL: ${{ secrets.NEXT_PUBLIC_SERVER_URL }}

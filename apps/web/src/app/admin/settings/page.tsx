@@ -550,12 +550,17 @@ export default function SettingsPage() {
 				if (fileInputRef.current) fileInputRef.current.value = "";
 				return;
 			}
-			await importData.mutateAsync({
+			const result = await importData.mutateAsync({
 				mode: "merge",
 				data: parsed.data,
 			});
 			invalidate();
-			toast.success("Import successful");
+			const skipped = result.skipped.blocks + result.skipped.socialNetworks;
+			if (skipped > 0) {
+				toast.warning(`Imported with ${skipped} invalid row${skipped === 1 ? "" : "s"} skipped`);
+			} else {
+				toast.success("Import successful");
+			}
 		} catch {
 			toast.error("Failed to import. Make sure the file is valid JSON.");
 		}

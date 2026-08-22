@@ -2,6 +2,8 @@
  * Transforms a LinkStack export into LinkDen-compatible blocks and settings.
  */
 
+import { httpUrlSchema } from "@linkden/validators/blocks";
+
 interface LinkStackLink {
 	button_id?: string;
 	link?: string;
@@ -101,8 +103,10 @@ export function isLinkStackExport(data: unknown): data is LinkStackExport {
 
 export function transformLinkStackData(raw: LinkStackExport): TransformResult {
 	const now = new Date();
+	// Only http(s) links become blocks — the public page renders `url` as a
+	// raw href, so the export's javascript:/data: entries must not get through.
 	const blocks: LinkDenBlock[] = (raw.links ?? [])
-		.filter((link) => link.link)
+		.filter((link) => httpUrlSchema.safeParse(link.link).success)
 		.map((link, index) => ({
 			id: generateId(),
 			type: "link" as const,

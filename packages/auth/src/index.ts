@@ -7,7 +7,10 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { magicLink, twoFactor } from "better-auth/plugins";
 
+import { cookieAttributes, sessionOptions } from "./auth-options";
 import { devLoginPlugin, isDevLoginEnabled } from "./dev-login";
+
+export { getSessionQuery } from "./auth-options";
 
 async function getEmailSettings() {
 	const allRows = await db.select().from(siteSettings);
@@ -68,14 +71,9 @@ export const auth = betterAuth({
 			},
 		},
 	},
-	session: {
-		// Cache the session in a signed cookie for 5 minutes so every tRPC call
-		// does not hit D1 for a session lookup.
-		cookieCache: {
-			enabled: true,
-			maxAge: 300,
-		},
-	},
+	// Signed-cookie session cache for reads; see auth-options.ts for the
+	// revocation trade-off and why mutations bypass it.
+	session: sessionOptions,
 	secret: env.BETTER_AUTH_SECRET,
 	baseURL: env.BETTER_AUTH_URL,
 	advanced: {
@@ -85,14 +83,7 @@ export const auth = betterAuth({
 		ipAddress: {
 			ipAddressHeaders: ["cf-connecting-ip"],
 		},
-		// Web and API share one origin in production (API is routed under the
-		// site domain), so host-only cookies are enough. A split-origin deploy
-		// would need crossSubDomainCookies with a shared parent domain.
-		defaultCookieAttributes: {
-			sameSite: "lax",
-			secure: !!env.BETTER_AUTH_URL?.startsWith("https"),
-			httpOnly: true,
-		},
+		defaultCookieAttributes: cookieAttributes(env.BETTER_AUTH_URL),
 	},
 	plugins: [
 		// DEV ONLY: the bypass-login endpoint (POST /api/auth/dev-login) exists only

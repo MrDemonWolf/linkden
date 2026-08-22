@@ -135,7 +135,7 @@ export function BlockRow({
 						onToggle();
 					}}
 					className={cn(
-						"flex h-11 w-11 items-center justify-center rounded-lg sm:h-8 sm:w-8 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+						"flex h-11 w-11 items-center justify-center rounded-lg lg:h-8 lg:w-8 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
 						block.isEnabled
 							? "text-success hover:bg-success/10"
 							: "text-muted-foreground hover:text-foreground hover:bg-muted",
@@ -150,7 +150,7 @@ export function BlockRow({
 						e.stopPropagation();
 						onEdit();
 					}}
-					className="flex h-11 w-11 items-center justify-center rounded-lg sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors sm:hidden"
+					className="flex h-11 w-11 items-center justify-center rounded-lg lg:h-8 lg:w-8 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors sm:hidden"
 					aria-label="Edit block"
 				>
 					<Pencil className="h-3.5 w-3.5" />
@@ -161,7 +161,7 @@ export function BlockRow({
 						e.stopPropagation();
 						onDelete();
 					}}
-					className="flex h-11 w-11 items-center justify-center rounded-lg sm:h-8 sm:w-8 text-muted-foreground transition-all opacity-60 hover:text-destructive hover:bg-destructive/10 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:opacity-70 group-hover:opacity-100"
+					className="flex h-11 w-11 items-center justify-center rounded-lg lg:h-8 lg:w-8 text-muted-foreground transition-all opacity-60 hover:text-destructive hover:bg-destructive/10 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:opacity-70 group-hover:opacity-100"
 					aria-label="Delete block"
 				>
 					<Trash2 className="h-3.5 w-3.5" />

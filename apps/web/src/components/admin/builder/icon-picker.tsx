@@ -22,6 +22,49 @@ function humanize(name: string) {
 	return name.replace(/-/g, " ");
 }
 
+/**
+ * Roving focus for the icon grids (ARIA toolbar pattern): one Tab stop (the
+ * selected icon, else the first), Arrow keys move between cells, Home/End
+ * jump. Up/Down use the rendered column count, since the grid is auto-fill.
+ */
+function moveGridFocus(e: React.KeyboardEvent<HTMLDivElement>) {
+	const cells = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>("button"));
+	const current = cells.indexOf(document.activeElement as HTMLButtonElement);
+	if (current < 0 || cells.length === 0) return;
+	const firstTop = cells[0]?.offsetTop;
+	const columns = Math.max(1, cells.filter((c) => c.offsetTop === firstTop).length);
+	let next = current;
+	switch (e.key) {
+		case "ArrowRight":
+			next = Math.min(cells.length - 1, current + 1);
+			break;
+		case "ArrowLeft":
+			next = Math.max(0, current - 1);
+			break;
+		case "ArrowDown":
+			next = Math.min(cells.length - 1, current + columns);
+			break;
+		case "ArrowUp":
+			next = Math.max(0, current - columns);
+			break;
+		case "Home":
+			next = 0;
+			break;
+		case "End":
+			next = cells.length - 1;
+			break;
+		default:
+			return;
+	}
+	e.preventDefault();
+	cells[next]?.focus();
+}
+
+/** Tab stop index for roving focus: the selected cell, else the first one. */
+function rovingTabIndex(index: number, selected: boolean, hasSelection: boolean) {
+	return (hasSelection ? selected : index === 0) ? 0 : -1;
+}
+
 /** Label shown on the trigger for the current `icon` column value. */
 function describeIcon(value: string): string | null {
 	if (!value) return null;
@@ -76,6 +119,20 @@ export function IconPicker({
 	};
 
 	const label = describeIcon(value);
+	const lucideHasSelection = lucideMatches.some((n) => value === `lucide:${n}` || value === n);
+	const brandHasSelection = brandMatches.some((b) => value === `brand:${b.slug}`);
+	// Announced to screen readers as the search narrows the grid; sighted users
+	// see the grid itself change, so this line stays visually subtle.
+	const resultSummary =
+		tab === "icons"
+			? lucideMatches.length === 0
+				? `No icons match “${query}”.`
+				: lucideMatches.length >= MAX_RESULTS
+					? `Showing the first ${MAX_RESULTS} icons — keep typing to narrow it down.`
+					: `${lucideMatches.length} icon${lucideMatches.length === 1 ? "" : "s"} match.`
+			: brandMatches.length === 0
+				? `No brands match “${query}”.`
+				: `${brandMatches.length} brand${brandMatches.length === 1 ? "" : "s"} match.`;
 
 	return (
 		<Popover.Root open={open} onOpenChange={setOpen}>
@@ -146,21 +203,27 @@ export function IconPicker({
 							</TabsList>
 						</Tabs>
 
+						<p role="status" className="text-micro text-muted-foreground">
+							{resultSummary}
+						</p>
+
 						<div className="min-h-0 flex-1 overflow-y-auto">
 							{tab === "icons" ? (
-								lucideMatches.length === 0 ? (
-									<p className="px-1 py-4 text-center text-small text-muted-foreground">
-										No icons match “{query}”.
-									</p>
-								) : (
-									<div className="grid grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-1">
-										{lucideMatches.map((name) => {
+								lucideMatches.length === 0 ? null : (
+									<div
+										role="toolbar"
+										aria-label="Icons"
+										onKeyDown={moveGridFocus}
+										className="grid grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-1"
+									>
+										{lucideMatches.map((name, index) => {
 											const next = `lucide:${name}`;
 											const selected = value === next || value === name;
 											return (
 												<button
 													key={name}
 													type="button"
+													tabIndex={rovingTabIndex(index, selected, lucideHasSelection)}
 													onClick={() => pick(next)}
 													aria-label={humanize(name)}
 													aria-pressed={selected}
@@ -179,19 +242,21 @@ export function IconPicker({
 										})}
 									</div>
 								)
-							) : brandMatches.length === 0 ? (
-								<p className="px-1 py-4 text-center text-small text-muted-foreground">
-									No brands match “{query}”.
-								</p>
-							) : (
-								<div className="grid grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-1">
-									{brandMatches.map((brand) => {
+							) : brandMatches.length === 0 ? null : (
+								<div
+									role="toolbar"
+									aria-label="Brands"
+									onKeyDown={moveGridFocus}
+									className="grid grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-1"
+								>
+									{brandMatches.map((brand, index) => {
 										const next = `brand:${brand.slug}`;
 										const selected = value === next;
 										return (
 											<button
 												key={brand.slug}
 												type="button"
+												tabIndex={rovingTabIndex(index, selected, brandHasSelection)}
 												onClick={() => pick(next)}
 												aria-label={brand.name}
 												aria-pressed={selected}
@@ -218,12 +283,6 @@ export function IconPicker({
 								</div>
 							)}
 						</div>
-
-						{tab === "icons" && lucideMatches.length >= MAX_RESULTS && (
-							<p className="text-micro text-muted-foreground">
-								Showing the first {MAX_RESULTS} — keep typing to narrow it down.
-							</p>
-						)}
 
 						<div className="flex items-center justify-between gap-2 border-t border-border pt-2">
 							<button

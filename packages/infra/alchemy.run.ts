@@ -11,11 +11,19 @@ config({ path: "../../apps/server/.env" });
 // Alchemy program (exit 132/SIGILL), the same lesson as wolfathon and dirework.
 // The deploy/destroy scripts in package.json use tsx; `--destroy` selects the
 // teardown phase, otherwise Alchemy auto-detects (deploy / dev).
+const stage = process.env.ALCHEMY_STAGE ?? "prod";
+const isDestroy = process.argv.includes("--destroy");
+// Physical resource names are pinned (with adopt: true) so re-deploys find the
+// same D1/R2/Workers. Any stage other than prod gets a suffix, so a throwaway
+// `ALCHEMY_STAGE=dev` deploy really is independent instead of adopting — and
+// on destroy, deleting — the production database and buckets.
+const suffix = stage === "prod" ? "" : `-${stage}`;
+
 const app = await alchemy("linkden", {
 	// Explicit stage so state never keys off $USER (which is "runner" in CI and
 	// your login name locally — two different stages for the same resources).
-	stage: process.env.ALCHEMY_STAGE ?? "prod",
-	phase: process.argv.includes("--destroy") ? "destroy" : undefined,
+	stage,
+	phase: isDestroy ? "destroy" : undefined,
 	// Shared account-wide state store: the `alchemy-state` worker, a SQLite
 	// Durable Object shared by every MrDemonWolf Alchemy app (website, wolfathon,
 	// dirework, linkden). Alchemy namespaces state by app, so linkden's state
@@ -35,18 +43,42 @@ const app = await alchemy("linkden", {
 // both workers stay on their workers.dev URLs.
 const siteDomain = process.env.SITE_DOMAIN;
 
+// The public origin is baked into robots/sitemap/OG URLs at build time. An
+// unset GitHub variable arrives as "" (not undefined), which `alchemy.env`
+// would pass through silently, so check it here and fail the deploy early.
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+if (!isDestroy) {
+	if (!siteUrl) {
+		throw new Error(
+			"NEXT_PUBLIC_SITE_URL is not set. Set it to the public origin of the site (https://SITE_DOMAIN, or the web worker's workers.dev URL for staging).",
+		);
+	}
+	if (siteDomain && siteUrl.replace(/\/$/, "") !== `https://${siteDomain}`) {
+		throw new Error(
+			`NEXT_PUBLIC_SITE_URL (${siteUrl}) must be https://${siteDomain} when SITE_DOMAIN is set.`,
+		);
+	}
+}
+
+// Upgrading from a deploy made before the names were pinned? Those CI deploys
+// created `linkden-database-runner` / `linkden-images-runner` (Alchemy's
+// generated names). Point these at your existing resources so the prod stage
+// adopts them instead of creating empty ones; see docs/self-hosting/cloudflare.
 const db = await D1Database("database", {
-	name: "linkden-db",
+	name: process.env.LINKDEN_DB_NAME || `linkden-db${suffix}`,
 	adopt: true,
 	migrationsDir: "../../packages/db/src/migrations",
 });
 
-const imagesBucket = await R2Bucket("images", { name: "linkden-images", adopt: true });
+const imagesBucket = await R2Bucket("images", {
+	name: process.env.LINKDEN_IMAGES_BUCKET || `linkden-images${suffix}`,
+	adopt: true,
+});
 
 // Nightly D1 dumps land here (see .github/workflows/backup-db.yml); R2 expires
 // them after 30 days so the bucket never grows unbounded.
 await R2Bucket("backups", {
-	name: "linkden-backups",
+	name: `linkden-backups${suffix}`,
 	adopt: true,
 	lifecycle: [
 		{
@@ -57,10 +89,13 @@ await R2Bucket("backups", {
 	],
 });
 
-const rlAuth = RateLimit({ namespace_id: 1001, simple: { limit: 10, period: 60 } });
-const rlStrict = RateLimit({ namespace_id: 1002, simple: { limit: 5, period: 60 } });
-const rlUpload = RateLimit({ namespace_id: 1003, simple: { limit: 20, period: 60 } });
-const rlPublic = RateLimit({ namespace_id: 1004, simple: { limit: 60, period: 60 } });
+// Rate-limit namespaces are account-wide counters; non-prod stages share a
+// second block so they never eat into production's buckets.
+const rlBase = stage === "prod" ? 1000 : 2000;
+const rlAuth = RateLimit({ namespace_id: rlBase + 1, simple: { limit: 10, period: 60 } });
+const rlStrict = RateLimit({ namespace_id: rlBase + 2, simple: { limit: 5, period: 60 } });
+const rlUpload = RateLimit({ namespace_id: rlBase + 3, simple: { limit: 20, period: 60 } });
+const rlPublic = RateLimit({ namespace_id: rlBase + 4, simple: { limit: 60, period: 60 } });
 
 // Wallet signing material is optional; bind each key only when it is set so
 // an unset value never becomes an empty-string binding.
@@ -87,7 +122,7 @@ const walletBindings = {
 // API through the binding rather than over HTTP).
 export const server = await Worker("server", {
 	adopt: true,
-	name: "linkden-api",
+	name: `linkden-api${suffix}`,
 	cwd: "../../apps/server",
 	entrypoint: "src/index.ts",
 	compatibility: "node",
@@ -122,13 +157,13 @@ export const server = await Worker("server", {
 
 export const web = await Nextjs("linkden", {
 	adopt: true,
-	name: "linkden",
+	name: `linkden${suffix}`,
 	cwd: "../../apps/web",
 	...(siteDomain && { domains: [{ domainName: siteDomain, adopt: true }] }),
 	bindings: {
 		API: server,
 		NEXT_PUBLIC_SERVER_URL: alchemy.env.NEXT_PUBLIC_SERVER_URL!,
-		NEXT_PUBLIC_SITE_URL: alchemy.env.NEXT_PUBLIC_SITE_URL!,
+		NEXT_PUBLIC_SITE_URL: siteUrl,
 		DB: db,
 		IMAGES_BUCKET: imagesBucket,
 		CORS_ORIGIN: alchemy.env.CORS_ORIGIN!,
