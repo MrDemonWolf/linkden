@@ -349,7 +349,7 @@ export default function AdminLoginPage() {
 
 										<Button
 											type="submit"
-											className="w-full h-11 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
+											className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-medium shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
 											disabled={isForgotSubmitting}
 										>
 											{isForgotSubmitting ? (
@@ -494,7 +494,7 @@ export default function AdminLoginPage() {
 
 										<Button
 											type="submit"
-											className="w-full h-11 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
+											className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-medium shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
 											disabled={isSubmitting}
 										>
 											{isSubmitting ? (

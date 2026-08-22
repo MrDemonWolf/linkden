@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SectionRule } from "@/components/ui/section-rule";
 import { cn } from "@/lib/utils";
 
 interface SectionHeaderProps {
@@ -87,9 +88,8 @@ export function SectionCard({
 }
 
 /**
- * Uppercase eyebrow label used to group fields inside a section. Consolidates the
- * ~30 copy-pasted `text-[10px|11px|xs] font-medium uppercase tracking-wider
- * text-muted-foreground` clusters into one place.
+ * Group label inside a section: Signal dash + title + hairline rule. Renders as
+ * an `h3` because it always sits under a `SectionCard` `h2`.
  */
 export function SectionLabel({
 	children,
@@ -99,13 +99,8 @@ export function SectionLabel({
 	className?: string;
 }) {
 	return (
-		<p
-			className={cn(
-				"text-xs font-medium uppercase tracking-wider text-muted-foreground",
-				className,
-			)}
-		>
+		<SectionRule as="h3" className={cn("text-small", className)}>
 			{children}
-		</p>
+		</SectionRule>
 	);
 }

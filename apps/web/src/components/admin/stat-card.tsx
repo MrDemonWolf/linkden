@@ -12,49 +12,38 @@ interface StatCardProps {
 	icon: LucideIcon;
 	label: string;
 	value: number | string;
-	iconColor?: string;
-	iconBg?: string;
 	href?: string;
 	isLoading?: boolean;
 	isError?: boolean;
 	onRetry?: () => void;
 	trend?: { value: number; label: string } | null;
 	subtitle?: string;
-	/** Optional gradient wash, e.g. "from-primary/10 via-primary/5 to-transparent" */
-	gradient?: string;
 }
 
 export function StatCard({
 	icon: Icon,
 	label,
 	value,
-	iconColor = "text-primary",
-	iconBg = "bg-primary/10",
 	href,
 	isLoading,
 	isError,
 	onRetry,
 	trend,
 	subtitle,
-	gradient,
 }: StatCardProps) {
 	return (
 		<Card size="sm" className="group relative overflow-hidden">
-			{gradient && (
-				<div
-					className={cn("pointer-events-none absolute inset-0 bg-gradient-to-br", gradient)}
-					aria-hidden="true"
-				/>
-			)}
+			{/* Every stat tints with primary — the per-card rainbow carried no meaning. */}
+			<div
+				className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent"
+				aria-hidden="true"
+			/>
 			<CardContent className="relative flex items-center gap-3">
 				<div
-					className={cn(
-						"flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/30",
-						iconBg,
-					)}
+					className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10"
 					aria-hidden="true"
 				>
-					<Icon className={cn("h-4 w-4", iconColor)} />
+					<Icon className="h-4 w-4 text-primary" />
 				</div>
 				<div className="min-w-0 flex-1">
 					<p className="text-micro uppercase tracking-[0.14em] text-muted-foreground font-mono">

@@ -14,12 +14,12 @@ import {
 	Search,
 	Settings2,
 	Shield,
-	Undo2,
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/admin/page-header";
+import { PageShell } from "@/components/admin/page-shell";
 import { SectionCard } from "@/components/admin/section-header";
 import { BrandingSection } from "@/components/admin/settings/branding-section";
 import { CaptchaSection } from "@/components/admin/settings/captcha-section";
@@ -31,8 +31,10 @@ import { MapKitSection } from "@/components/admin/settings/mapkit-section";
 import { MigrationSection } from "@/components/admin/settings/migration-section";
 import { SeoSection } from "@/components/admin/settings/seo-section";
 import { VCardSection, type VCardSectionHandle } from "@/components/admin/settings/vcard-section";
+import { StickySaveBar } from "@/components/admin/sticky-save-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
@@ -544,7 +546,7 @@ export default function SettingsPage() {
 	}
 
 	return (
-		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
+		<PageShell>
 			<PageHeader
 				title="Settings"
 				description={isDirty ? "You have unsaved changes" : "Configure your LinkDen instance"}
@@ -662,21 +664,18 @@ export default function SettingsPage() {
 							>
 								Timezone
 							</label>
-							<select
+							<Select
 								id="timezone-select"
 								value={timezone}
-								onChange={(e) => setTimezone(e.target.value)}
-								className="dark:bg-input/30 border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
-							>
-								<option value="">
-									Browser default ({Intl.DateTimeFormat().resolvedOptions().timeZone})
-								</option>
-								{COMMON_TIMEZONES.map((tz) => (
-									<option key={tz.value} value={tz.value}>
-										{tz.label}
-									</option>
-								))}
-							</select>
+								onValueChange={setTimezone}
+								items={[
+									{
+										value: "",
+										label: `Browser default (${Intl.DateTimeFormat().resolvedOptions().timeZone})`,
+									},
+									...COMMON_TIMEZONES,
+								]}
+							/>
 							<p className="text-micro text-muted-foreground">
 								Used for timestamps on the dashboard. Defaults to your browser&apos;s timezone.
 							</p>
@@ -799,22 +798,13 @@ export default function SettingsPage() {
 				</TabsContent>
 
 				{/* Sticky save bar — visible across tabs while dirty */}
-				{isDirty && (
-					<div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-lg border border-primary/60 bg-background/95 px-4 py-2.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.4)] backdrop-blur">
-						<span className="text-xs text-muted-foreground">You have unsaved changes</span>
-						<div className="flex gap-2">
-							<Button variant="ghost" size="sm" onClick={handleDiscard}>
-								<Undo2 className="mr-1.5 h-3.5 w-3.5" />
-								Discard
-							</Button>
-							<Button size="sm" disabled={updateSettings.isPending} onClick={handleSave}>
-								<Save className="mr-1.5 h-3.5 w-3.5" />
-								{updateSettings.isPending ? "Saving…" : "Save changes"}
-							</Button>
-						</div>
-					</div>
-				)}
+				<StickySaveBar
+					isDirty={isDirty}
+					isSaving={updateSettings.isPending}
+					onSave={handleSave}
+					onDiscard={handleDiscard}
+				/>
 			</Tabs>
-		</div>
+		</PageShell>
 	);
 }

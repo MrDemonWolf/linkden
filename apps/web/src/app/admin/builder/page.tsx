@@ -35,13 +35,14 @@ import {
 	type Block,
 	type BlockType,
 	generateId,
-	TYPE_BADGE_BG,
+	TYPE_CHIP,
 } from "@/components/admin/builder/builder-constants";
 import { ProfileTab } from "@/components/admin/builder/profile-tab";
 import { SocialTab } from "@/components/admin/builder/social-tab";
 import { EmptyState } from "@/components/admin/empty-state";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
 import { PageHeader } from "@/components/admin/page-header";
+import { PageShell } from "@/components/admin/page-shell";
 import { SharedPreview } from "@/components/admin/shared-preview";
 import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { Badge } from "@/components/ui/badge";
@@ -361,7 +362,7 @@ export default function BuilderPage() {
 		: "All changes are live";
 
 	return (
-		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
+		<PageShell>
 			{/* Header bar */}
 			<PageHeader
 				title="Page Builder"
@@ -416,9 +417,9 @@ export default function BuilderPage() {
 					}
 				}}
 			>
-				<TabsList className="bg-muted/30 border border-border/50">
+				<TabsList className="h-auto bg-muted/30 border border-border/50">
 					{TABS.map((tab) => (
-						<TabsTrigger key={tab.id} value={tab.id} className="gap-1.5 text-xs">
+						<TabsTrigger key={tab.id} value={tab.id} className="min-h-11 gap-1.5 text-sm">
 							<tab.icon className="h-3.5 w-3.5" />
 							{tab.label}
 						</TabsTrigger>
@@ -558,7 +559,7 @@ export default function BuilderPage() {
 												<div
 													className={cn(
 														"flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
-														TYPE_BADGE_BG[item.type],
+														TYPE_CHIP,
 													)}
 												>
 													<item.icon className="h-4 w-4" />
@@ -664,6 +665,6 @@ export default function BuilderPage() {
 					/>
 				</Sheet>
 			)}
-		</div>
+		</PageShell>
 	);
 }

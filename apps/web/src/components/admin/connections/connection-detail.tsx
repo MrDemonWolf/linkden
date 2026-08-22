@@ -49,7 +49,7 @@ function StarRating({ rating }: { rating: number }) {
 				<Star
 					key={i}
 					className={`h-3.5 w-3.5 ${
-						i < rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"
+						i < rating ? "fill-warning text-warning" : "text-muted-foreground/30"
 					}`}
 				/>
 			))}
@@ -59,9 +59,9 @@ function StarRating({ rating }: { rating: number }) {
 
 function AttendingBadge({ attending }: { attending: string }) {
 	const variants: Record<string, string> = {
-		yes: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-		no: "bg-red-500/10 text-red-600 dark:text-red-400",
-		maybe: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+		yes: "bg-success/10 text-success",
+		no: "bg-destructive/10 text-destructive",
+		maybe: "bg-warning/10 text-warning",
 	};
 	const cls = variants[attending.toLowerCase()] ?? "bg-muted text-muted-foreground";
 	return (

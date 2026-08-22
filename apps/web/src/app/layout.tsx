@@ -1,6 +1,6 @@
 import { env } from "@linkden/env/web";
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono, Montserrat, Roboto } from "next/font/google";
+import { DM_Sans, Geist_Mono, Sora } from "next/font/google";
 import "../index.css";
 import Providers from "@/components/providers";
 import { getPublicPagePayload } from "@/lib/server-api";
@@ -11,25 +11,31 @@ export const viewport: Viewport = {
 	maximumScale: 5,
 };
 
-const montserrat = Montserrat({
+const sora = Sora({
 	subsets: ["latin"],
 	variable: "--font-display",
 	weight: ["600", "700", "800"],
 	display: "swap",
+	preload: true,
 });
 
-const roboto = Roboto({
+// next/font only allows `axes` on the variable build, so DM Sans ships as a
+// variable font (covers 400/500/600) to get the optical-size axis.
+const dmSans = DM_Sans({
 	subsets: ["latin"],
 	variable: "--font-sans",
-	weight: ["400", "500"],
+	weight: "variable",
+	axes: ["opsz"],
 	display: "swap",
+	preload: true,
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const geistMono = Geist_Mono({
 	subsets: ["latin"],
 	variable: "--font-mono",
-	weight: ["400", "500", "600"],
+	weight: ["400", "500"],
 	display: "swap",
+	preload: false,
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -110,10 +116,8 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" className="dark" suppressHydrationWarning>
-			<body
-				className={`${montserrat.variable} ${roboto.variable} ${jetbrainsMono.variable} antialiased`}
-			>
+		<html lang="en" suppressHydrationWarning>
+			<body className={`${sora.variable} ${dmSans.variable} ${geistMono.variable} antialiased`}>
 				<Providers>{children}</Providers>
 			</body>
 		</html>

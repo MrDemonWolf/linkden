@@ -44,7 +44,7 @@ export function CountriesList({
 		<Card>
 			<CardHeader>
 				<CardTitle className="flex items-center gap-1.5">
-					<Globe className="h-4 w-4 text-emerald-400" aria-hidden="true" />
+					<Globe className="h-4 w-4 text-primary" aria-hidden="true" />
 					{title}
 				</CardTitle>
 			</CardHeader>
@@ -73,7 +73,7 @@ export function CountriesList({
 									</span>
 									<div className="hidden sm:block h-1 w-24 rounded-full bg-muted/50 overflow-hidden">
 										<div
-											className="h-full rounded-full bg-emerald-500/70 transition-all duration-500"
+											className="h-full rounded-full bg-primary/70 transition-all duration-500"
 											style={{ width: `${pct}%` }}
 										/>
 									</div>
