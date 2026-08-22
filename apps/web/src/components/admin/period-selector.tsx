@@ -27,7 +27,7 @@ export function PeriodSelector({ value, onChange, className }: PeriodSelectorPro
 					onClick={() => onChange(p.value)}
 					aria-pressed={value === p.value}
 					className={cn(
-						"rounded-md px-3 py-1.5 text-xs font-medium transition-all min-h-11 md:min-h-0",
+						"min-h-11 min-w-11 rounded-md px-3 py-1.5 text-xs font-medium transition-all md:min-h-0 md:min-w-0",
 						"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 						value === p.value
 							? "bg-card text-foreground shadow-sm"
