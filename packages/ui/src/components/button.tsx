@@ -7,7 +7,7 @@ import { type VariantProps, cva } from "class-variance-authority";
 // They are not merged on purpose: different runtimes and variant sets. Import
 // the one that matches your surface; don't cross-import buttonVariants.
 const buttonVariants = cva(
-	"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 select-none",
+	"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 select-none",
 	{
 		variants: {
 			variant: {
@@ -15,11 +15,13 @@ const buttonVariants = cva(
 				primary: "bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring",
 				secondary: "bg-secondary text-foreground hover:bg-secondary/80 focus-visible:ring-ring",
 				ghost: "hover:bg-muted hover:text-foreground focus-visible:ring-ring",
-				danger: "bg-red-600 text-primary-foreground hover:bg-red-700 focus-visible:ring-red-600",
+				// text-white (not text-primary-foreground): these backgrounds are fixed
+				// saturated colors, and --primary-foreground is dark navy in dark mode.
+				danger: "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600",
 				outline:
 					"border border-border bg-transparent hover:bg-muted hover:text-foreground focus-visible:ring-ring",
 				gradient:
-					"bg-gradient-to-r from-blue-500 to-indigo-600 text-primary-foreground hover:from-blue-600 hover:to-indigo-700 focus-visible:ring-blue-500 shadow-lg shadow-blue-500/20",
+					"bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 focus-visible:ring-blue-500 shadow-lg shadow-blue-500/20",
 			},
 			size: {
 				sm: "h-8 px-3 text-xs",

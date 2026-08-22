@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 import { themePresets } from "@linkden/ui/themes";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
+	AlertTriangle,
 	ArrowLeft,
 	ArrowRight,
 	Check,
@@ -814,8 +815,21 @@ export default function SetupPage() {
 	const [themePreset, setThemePreset] = useState("default");
 	const [hydrated, setHydrated] = useState(false);
 
-	const { data: hasUsersData, isLoading } = useQuery(trpc.public.hasUsers.queryOptions());
-	const setupStatus = useQuery(trpc.public.getSetupStatus.queryOptions());
+	const {
+		data: hasUsersData,
+		isLoading,
+		isError: hasUsersError,
+		isFetching: hasUsersFetching,
+		refetch: refetchHasUsers,
+	} = useQuery({
+		...trpc.public.hasUsers.queryOptions(),
+		// Failures render the inline error card below — the global toast would be redundant
+		meta: { skipErrorToast: true },
+	});
+	const setupStatus = useQuery({
+		...trpc.public.getSetupStatus.queryOptions(),
+		meta: { skipErrorToast: true },
+	});
 	const branding = setupStatus.data?.branding;
 	const loginBgStyle = getLoginBgStyle(branding);
 	const loginShaderPreset = getLoginShaderPreset(branding);
@@ -864,16 +878,54 @@ export default function SetupPage() {
 		}
 	}, [hasUsersData, router, testMode]);
 
+	// API unreachable — surface an error card with a retry path instead of spinning forever
+	if (hasUsersError && !hasUsersData) {
+		return (
+			<main className="login-bg flex min-h-screen items-center justify-center p-4 sm:p-6">
+				<div
+					className="login-glass-card w-full max-w-[420px] rounded-2xl p-6 text-center shadow-2xl sm:p-8"
+					role="alert"
+				>
+					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-destructive/20 bg-destructive/10">
+						<AlertTriangle className="h-6 w-6 text-destructive" />
+					</div>
+					<h1 className="text-xl font-bold tracking-tight text-foreground">
+						Can&apos;t reach the server
+					</h1>
+					<p className="mx-auto mt-2 max-w-xs text-sm text-muted-foreground">
+						Setup couldn&apos;t load because the API isn&apos;t responding. Check that the server is
+						running, then try again.
+					</p>
+					<Button
+						onClick={() => {
+							refetchHasUsers();
+							setupStatus.refetch();
+						}}
+						disabled={hasUsersFetching}
+						className="mt-6 shadow-lg shadow-primary/20 active:scale-[0.98]"
+					>
+						{hasUsersFetching ? (
+							<>
+								<Loader2 className="h-4 w-4 animate-spin" />
+								Retrying...
+							</>
+						) : (
+							"Retry"
+						)}
+					</Button>
+				</div>
+			</main>
+		);
+	}
+
 	if (isLoading || hasUsersData?.hasUsers) {
 		return (
-			<div
-				className="login-bg flex min-h-screen items-center justify-center"
-				role="status"
-				aria-label="Loading"
-			>
-				<div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-				<span className="sr-only">Loading</span>
-			</div>
+			<main className="login-bg flex min-h-screen items-center justify-center">
+				<div role="status" aria-label="Loading" className="flex items-center justify-center">
+					<div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+					<span className="sr-only">Loading</span>
+				</div>
+			</main>
 		);
 	}
 
@@ -978,7 +1030,7 @@ export default function SetupPage() {
 				<ThemeToggle />
 			</div>
 
-			<div className="relative z-10 flex min-h-screen items-center justify-center p-4 sm:p-6">
+			<main className="relative z-10 flex min-h-screen items-center justify-center p-4 sm:p-6">
 				<div
 					className={cn(
 						"login-card-enter w-full",
@@ -1077,7 +1129,7 @@ export default function SetupPage() {
 						)}
 					</div>
 				</div>
-			</div>
+			</main>
 		</div>
 	);
 }

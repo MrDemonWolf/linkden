@@ -124,7 +124,7 @@ export const publicRouter = router({
 				seoOgMode: settings.seo_og_mode || null,
 				seoOgTemplate: settings.seo_og_template || null,
 				brandingEnabled: settings.branding_enabled !== "false",
-				brandingText: settings.branding_text || "Powered by LinkDen made by MrDemonWolf, Inc.",
+				brandingText: settings.branding_text || "Powered by LinkDen · by MrDemonWolf, Inc.",
 				defaultColorMode: settings.default_color_mode || "system",
 				walletPassEnabled: settings.wallet_pass_enabled === "true",
 				vcardEnabled: settings.vcard_enabled === "true",
