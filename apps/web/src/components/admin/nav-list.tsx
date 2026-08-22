@@ -3,7 +3,7 @@
 import { BarChart3, Inbox, Link2, type LucideIcon, Palette, Settings } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
-import { Tooltip } from "@/components/ui/tooltip";
+import { TooltipHint } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export interface NavItem {
@@ -82,7 +82,7 @@ export function NavList({
 
 				if (rail) {
 					return (
-						<Tooltip key={item.href} content={item.label} side="right">
+						<TooltipHint key={item.href} content={item.label} side="right">
 							<Link
 								href={item.href}
 								aria-current={isActive ? "page" : undefined}
@@ -96,7 +96,7 @@ export function NavList({
 								<Icon className={cn("h-4 w-4 shrink-0", isActive && "text-primary")} />
 								{showBadge && <Badge count={unreadCount} className="absolute -right-1 -top-1" />}
 							</Link>
-						</Tooltip>
+						</TooltipHint>
 					);
 				}
 

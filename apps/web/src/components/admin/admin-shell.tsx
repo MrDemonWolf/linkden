@@ -22,7 +22,7 @@ import { StatePill } from "@/components/admin/state-pill";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { Tooltip } from "@/components/ui/tooltip";
+import { TooltipHint } from "@/components/ui/tooltip";
 import { WolfLogo } from "@/components/wolf-logo";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { authClient } from "@/lib/auth-client";
@@ -113,7 +113,7 @@ function Sidebar({
 						</span>
 					</Link>
 				) : (
-					<Tooltip content={`${user.name || "Admin"} · ${version}`} side="right">
+					<TooltipHint content={`${user.name || "Admin"} · ${version}`} side="right">
 						<Link
 							href="/admin/settings"
 							className="flex h-10 w-10 items-center justify-center rounded-lg transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -121,7 +121,7 @@ function Sidebar({
 						>
 							{avatar}
 						</Link>
-					</Tooltip>
+					</TooltipHint>
 				)}
 			</div>
 		</aside>

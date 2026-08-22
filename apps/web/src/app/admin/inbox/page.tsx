@@ -14,7 +14,7 @@ import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Sheet } from "@/components/ui/sheet";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
@@ -391,7 +391,7 @@ export default function InboxPage() {
 
 			{/* Mobile detail overlay */}
 			{selectedConnection && (
-				<Sheet
+				<BottomSheet
 					open={mobileDetailOpen}
 					onOpenChange={setMobileDetailOpen}
 					title="Message"
@@ -408,7 +408,7 @@ export default function InboxPage() {
 						isMarkingRead={markRead.isPending}
 						isMarkingUnread={markUnread.isPending}
 					/>
-				</Sheet>
+				</BottomSheet>
 			)}
 
 			{/* Single delete confirm */}

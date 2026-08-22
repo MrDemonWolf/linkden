@@ -8,7 +8,7 @@ import { QueryError } from "@/components/admin/dashboard/query-error";
 import { PhoneFrame } from "@/components/admin/phone-frame";
 import { type ColorMode, PublicPage } from "@/components/public/public-page";
 import { Button } from "@/components/ui/button";
-import { Tooltip } from "@/components/ui/tooltip";
+import { TooltipHint } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 
@@ -182,7 +182,7 @@ export function PagePreview({
 					</span>
 					<div className="flex shrink-0 items-center gap-1">
 						<div className="flex rounded-lg border border-border/50 bg-muted/30 p-0.5">
-							<Tooltip content="Light preview">
+							<TooltipHint content="Light preview">
 								<Button
 									variant="ghost"
 									size="icon"
@@ -196,8 +196,8 @@ export function PagePreview({
 								>
 									<Sun className="h-3.5 w-3.5" />
 								</Button>
-							</Tooltip>
-							<Tooltip content="Dark preview">
+							</TooltipHint>
+							<TooltipHint content="Dark preview">
 								<Button
 									variant="ghost"
 									size="icon"
@@ -211,9 +211,9 @@ export function PagePreview({
 								>
 									<Moon className="h-3.5 w-3.5" />
 								</Button>
-							</Tooltip>
+							</TooltipHint>
 						</div>
-						<Tooltip content="Copy link">
+						<TooltipHint content="Copy link">
 							<Button
 								variant="ghost"
 								size="icon"
@@ -223,8 +223,8 @@ export function PagePreview({
 							>
 								<Copy className="h-3.5 w-3.5" />
 							</Button>
-						</Tooltip>
-						<Tooltip content="Open live page">
+						</TooltipHint>
+						<TooltipHint content="Open live page">
 							<Button
 								variant="ghost"
 								size="icon"
@@ -235,7 +235,7 @@ export function PagePreview({
 							>
 								<ExternalLink className="h-3.5 w-3.5" />
 							</Button>
-						</Tooltip>
+						</TooltipHint>
 						{headerEnd}
 					</div>
 				</div>

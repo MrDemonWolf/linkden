@@ -3,7 +3,7 @@
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { Tooltip } from "@/components/ui/tooltip";
+import { TooltipHint } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const THEME_OPTIONS = [
@@ -29,7 +29,7 @@ export function ThemeToggle() {
 			{THEME_OPTIONS.map((opt) => {
 				const Icon = opt.icon;
 				return (
-					<Tooltip key={opt.value} content={opt.label} side="bottom">
+					<TooltipHint key={opt.value} content={opt.label} side="bottom">
 						<button
 							type="button"
 							onClick={() => setTheme(opt.value)}
@@ -45,7 +45,7 @@ export function ThemeToggle() {
 						>
 							<Icon className="h-3.5 w-3.5" />
 						</button>
-					</Tooltip>
+					</TooltipHint>
 				);
 			})}
 		</div>
