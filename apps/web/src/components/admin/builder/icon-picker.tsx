@@ -6,7 +6,9 @@ import { ChevronDown, Search } from "lucide-react";
 import { DynamicIcon, dynamicIconImports, type IconName } from "lucide-react/dynamic";
 import { useMemo, useRef, useState } from "react";
 import { BlockIcon } from "@/components/public/block-icon";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
@@ -207,14 +209,18 @@ export function IconPicker({
 							{resultSummary}
 						</p>
 
-						<div className="min-h-0 flex-1 overflow-y-auto">
+						{/* The cap lives on the ScrollArea's viewport, not its root: the
+						    root's height is content-derived here, so a `max-h-*` there would
+						    clip without ever scrolling. `min-h-0 flex-1` still lets the box
+						    shrink below the cap when the popup itself runs out of room. */}
+						<ScrollArea className="min-h-0 flex-1 [&>[data-slot=scroll-area-viewport]]:max-h-64">
 							{tab === "icons" ? (
 								lucideMatches.length === 0 ? null : (
 									<div
 										role="toolbar"
 										aria-label="Icons"
 										onKeyDown={moveGridFocus}
-										className="grid grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-1"
+										className="grid grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-1 pr-2.5"
 									>
 										{lucideMatches.map((name, index) => {
 											const next = `lucide:${name}`;
@@ -247,7 +253,7 @@ export function IconPicker({
 									role="toolbar"
 									aria-label="Brands"
 									onKeyDown={moveGridFocus}
-									className="grid grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-1"
+									className="grid grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] gap-1 pr-2.5"
 								>
 									{brandMatches.map((brand, index) => {
 										const next = `brand:${brand.slug}`;
@@ -282,18 +288,20 @@ export function IconPicker({
 									})}
 								</div>
 							)}
-						</div>
+						</ScrollArea>
 
+						{/* Footer actions ride the shared Button so their height, focus ring
+						    and disabled state match every other control in the panel. */}
 						<div className="flex items-center justify-between gap-2 border-t border-border pt-2">
-							<button
-								type="button"
+							<Button
+								variant="ghost"
 								onClick={() => pick("")}
 								disabled={!value}
-								className="min-h-11 rounded-lg px-3 text-small font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-50 md:min-h-8"
+								className="text-muted-foreground"
 							>
 								None
-							</button>
-							<Popover.Close className="min-h-11 rounded-lg px-3 text-small font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:min-h-8">
+							</Button>
+							<Popover.Close render={<Button variant="ghost" className="text-muted-foreground" />}>
 								Done
 							</Popover.Close>
 						</div>

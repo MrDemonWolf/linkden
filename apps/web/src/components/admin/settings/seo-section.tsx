@@ -129,7 +129,7 @@ export function SeoSection({
 						aria-pressed={seoOgMode === "template"}
 						onClick={() => onSeoOgModeChange("template")}
 						className={cn(
-							"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+							"flex min-h-11 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors md:min-h-8",
 							focusRing,
 							seoOgMode === "template"
 								? "border-primary/50 bg-primary/10 text-primary"
@@ -144,7 +144,7 @@ export function SeoSection({
 						aria-pressed={seoOgMode === "custom"}
 						onClick={() => onSeoOgModeChange("custom")}
 						className={cn(
-							"flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
+							"flex min-h-11 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors md:min-h-8",
 							focusRing,
 							seoOgMode === "custom"
 								? "border-primary/50 bg-primary/10 text-primary"

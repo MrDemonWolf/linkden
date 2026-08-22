@@ -3,8 +3,7 @@
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { Tooltip } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const THEME_OPTIONS = [
 	{ value: "light", icon: Sun, label: "Light" },
@@ -12,42 +11,46 @@ const THEME_OPTIONS = [
 	{ value: "system", icon: Monitor, label: "System" },
 ] as const;
 
+/**
+ * Light / dark / system as one shadcn ToggleGroup (single-select), so the
+ * control uses the system's own segmented-button sizing instead of a bespoke
+ * pill. Pressed state is Base UI's `aria-pressed`; the label is the accessible
+ * name on each icon item.
+ *
+ * `mounted` gates only the *value*, not the markup: the first client render
+ * has to match the server's (no theme known yet), or next-themes' localStorage
+ * read would trip a hydration mismatch.
+ */
 export function ThemeToggle() {
 	const { setTheme, theme } = useTheme();
 	const [mounted, setMounted] = useState(false);
 	useEffect(() => setMounted(true), []);
 
-	// Render a size-matched placeholder during SSR to prevent hydration mismatch
-	if (!mounted) {
-		return (
-			<div className="flex rounded-lg border border-border/50 p-0.5 bg-card/80 backdrop-blur-sm shadow-sm h-[36px] w-[104px]" />
-		);
-	}
-
 	return (
-		<div className="flex rounded-lg border border-border/50 p-0.5 bg-card/80 backdrop-blur-sm shadow-sm">
+		<ToggleGroup
+			aria-label="Color theme"
+			spacing={0}
+			value={mounted && theme ? [theme] : []}
+			onValueChange={(next) => {
+				// Single-select: pressing the active item would otherwise clear it.
+				const [value] = next;
+				if (value) setTheme(value);
+			}}
+			className="rounded-md border border-border bg-card p-0.5"
+		>
 			{THEME_OPTIONS.map((opt) => {
 				const Icon = opt.icon;
 				return (
-					<Tooltip key={opt.value} content={opt.label} side="bottom">
-						<button
-							type="button"
-							onClick={() => setTheme(opt.value)}
-							aria-pressed={theme === opt.value}
-							className={cn(
-								"flex items-center justify-center rounded-md p-2 min-h-[32px] min-w-[32px] transition-all",
-								"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-								theme === opt.value
-									? "bg-primary/15 text-primary shadow-sm ring-1 ring-inset ring-primary/40"
-									: "text-muted-foreground hover:text-foreground",
-							)}
-							aria-label={`Switch to ${opt.label} theme`}
-						>
-							<Icon className="h-3.5 w-3.5" />
-						</button>
-					</Tooltip>
+					<ToggleGroupItem
+						key={opt.value}
+						value={opt.value}
+						aria-label={`${opt.label} theme`}
+						className="size-11 md:size-7 aria-pressed:bg-primary/15 aria-pressed:text-primary"
+					>
+						<Icon className="size-3.5" />
+					</ToggleGroupItem>
 				);
 			})}
-		</div>
+		</ToggleGroup>
 	);
 }

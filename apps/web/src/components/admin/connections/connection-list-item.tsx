@@ -33,22 +33,16 @@ export function ConnectionListItem({
 	showCheckbox,
 }: ConnectionListItemProps) {
 	return (
+		// Same row idiom as the block list on Links: hover lifts to --surface-2,
+		// the selected row is a primary tint, and there is no edge indicator bar.
+		// Unread reads from the avatar tint, the bold name and the dot instead —
+		// it can't also be a row tint without colliding with selection.
 		<li
 			className={cn(
-				"relative flex w-full items-center gap-3 px-3 py-2.5 transition-colors",
-				!connection.isRead && !isSelected && "bg-primary/5",
-				isSelected
-					? "bg-primary/10 ring-1 ring-inset ring-primary/30 dark:bg-primary/15"
-					: "hover:bg-muted/30",
+				"flex min-h-14 w-full items-center gap-3 px-3 py-2.5 transition-colors",
+				isSelected ? "bg-primary/5" : "hover:bg-surface-2",
 			)}
 		>
-			{/* Left accent bar for unread */}
-			<div
-				className={cn(
-					"absolute left-0 top-2 bottom-2 w-0.5 rounded-full transition-all",
-					!connection.isRead ? "bg-primary" : "bg-transparent",
-				)}
-			/>
 			{showCheckbox && (
 				<span className="-my-2 flex h-11 w-11 shrink-0 items-center justify-center md:my-0 md:h-6 md:w-6">
 					<input
@@ -79,6 +73,13 @@ export function ConnectionListItem({
 						<p className={cn("truncate text-sm", !connection.isRead && "font-semibold")}>
 							{connection.name || "Anonymous"}
 						</p>
+						{!connection.isRead && (
+							<span
+								className="h-2 w-2 shrink-0 self-center rounded-full bg-primary"
+								role="img"
+								aria-label="Unread"
+							/>
+						)}
 						<span className="ml-auto shrink-0 text-xs text-muted-foreground">
 							{relativeTime(connection.createdAt)}
 						</span>

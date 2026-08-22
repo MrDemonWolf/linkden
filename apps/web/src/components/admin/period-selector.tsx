@@ -1,5 +1,6 @@
 "use client";
 
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 
 export type Period = "7d" | "30d" | "90d" | "all";
@@ -17,26 +18,36 @@ interface PeriodSelectorProps {
 	className?: string;
 }
 
+/**
+ * Segmented period picker on the shared `ToggleGroup`. Base UI's `multiple`
+ * defaults to `false`, which is the single-select ("type=single") behaviour —
+ * pressing the active segment would otherwise clear the group, so an empty
+ * `next` is ignored and the control always keeps exactly one value.
+ *
+ * Sizing/focus/disabled states all come from `toggleVariants`; only the track
+ * and the pressed surface are set here.
+ */
 export function PeriodSelector({ value, onChange, className }: PeriodSelectorProps) {
 	return (
-		<div className={cn("flex gap-1 rounded-lg bg-muted/50 p-1 w-fit", className)}>
+		<ToggleGroup
+			value={[value]}
+			onValueChange={(next) => {
+				const picked = next[0];
+				if (picked) onChange(picked as Period);
+			}}
+			spacing={1}
+			aria-label="Time period"
+			className={cn("rounded-lg bg-muted/50 p-1", className)}
+		>
 			{PERIODS.map((p) => (
-				<button
+				<ToggleGroupItem
 					key={p.value}
-					type="button"
-					onClick={() => onChange(p.value)}
-					aria-pressed={value === p.value}
-					className={cn(
-						"min-h-11 min-w-11 rounded-md px-3 py-1.5 text-xs font-medium transition-all md:min-h-0 md:min-w-0",
-						"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-						value === p.value
-							? "bg-card text-foreground shadow-sm"
-							: "text-muted-foreground hover:text-foreground",
-					)}
+					value={p.value}
+					className="min-h-11 min-w-11 px-3 text-muted-foreground md:min-h-8 md:min-w-8 aria-pressed:bg-card aria-pressed:text-foreground aria-pressed:shadow-sm hover:aria-pressed:bg-card"
 				>
 					{p.label}
-				</button>
+				</ToggleGroupItem>
 			))}
-		</div>
+		</ToggleGroup>
 	);
 }

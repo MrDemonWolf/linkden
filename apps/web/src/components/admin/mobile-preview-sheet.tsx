@@ -2,7 +2,7 @@
 
 import { X } from "lucide-react";
 import { SharePopover } from "@/components/admin/share-popover";
-import { Sheet } from "@/components/ui/sheet";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
 
 interface MobilePreviewSheetProps {
 	open: boolean;
@@ -16,7 +16,7 @@ interface MobilePreviewSheetProps {
  */
 export function MobilePreviewSheet({ open, onOpenChange, children }: MobilePreviewSheetProps) {
 	return (
-		<Sheet
+		<BottomSheet
 			open={open}
 			onOpenChange={onOpenChange}
 			ariaLabel="Preview"
@@ -40,6 +40,6 @@ export function MobilePreviewSheet({ open, onOpenChange, children }: MobilePrevi
 			<div className="flex min-h-0 flex-1 justify-center overflow-y-auto overflow-x-hidden p-4 pb-8">
 				{children}
 			</div>
-		</Sheet>
+		</BottomSheet>
 	);
 }

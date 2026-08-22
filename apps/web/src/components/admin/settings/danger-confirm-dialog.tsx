@@ -1,17 +1,19 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 
 interface DangerConfirmDialogProps {
 	open: boolean;
@@ -26,10 +28,12 @@ interface DangerConfirmDialogProps {
 }
 
 /**
- * Destructive-action dialog with a type-to-confirm ceremony. Both danger-zone
- * actions on Settings → Data use this so the confirmation experience is
- * identical: the keyword input lives inside the dialog and is reset whenever the
- * dialog opens or closes (so a half-typed word never carries over).
+ * Destructive-action dialog with a type-to-confirm ceremony, on the shared
+ * `AlertDialog`. Both danger-zone actions on Settings → Data use this so the
+ * confirmation experience is identical: the keyword input lives inside the
+ * dialog and is reset whenever the dialog opens or closes (so a half-typed word
+ * never carries over), and the confirm button stays disabled until the typed
+ * text matches `confirmWord` exactly.
  */
 export function DangerConfirmDialog({
 	open,
@@ -51,15 +55,15 @@ export function DangerConfirmDialog({
 	useEffect(() => setTyped(""), [open]);
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent role="alertdialog" initialFocus={inputRef} className="max-w-sm">
-				<DialogHeader>
-					<DialogTitle className="text-sm font-semibold">{title}</DialogTitle>
-					<DialogDescription className="text-xs">{description}</DialogDescription>
-				</DialogHeader>
+		<AlertDialog open={open} onOpenChange={onOpenChange}>
+			<AlertDialogContent initialFocus={inputRef}>
+				<AlertDialogHeader>
+					<AlertDialogTitle>{title}</AlertDialogTitle>
+					<AlertDialogDescription>{description}</AlertDialogDescription>
+				</AlertDialogHeader>
 
 				<div className="space-y-1.5">
-					<Label htmlFor={inputId} className="text-xs text-muted-foreground">
+					<Label htmlFor={inputId} className="text-muted-foreground">
 						Type <span className="font-mono font-semibold text-foreground">{confirmWord}</span> to
 						confirm
 					</Label>
@@ -72,29 +76,22 @@ export function DangerConfirmDialog({
 						autoComplete="off"
 						autoCapitalize="characters"
 						spellCheck={false}
-						className="font-mono text-xs"
+						className="font-mono"
 					/>
 				</div>
 
-				<DialogFooter className="gap-2">
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => onOpenChange(false)}
-						disabled={isPending}
-					>
-						Cancel
-					</Button>
-					<Button
+				<AlertDialogFooter>
+					<AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+					<AlertDialogAction
 						variant="destructive"
-						size="sm"
 						onClick={onConfirm}
 						disabled={isPending || !armed}
 					>
-						{isPending ? "…" : confirmLabel}
-					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+						{isPending && <Spinner />}
+						{confirmLabel}
+					</AlertDialogAction>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
 	);
 }

@@ -8,7 +8,7 @@ import { QueryError } from "@/components/admin/dashboard/query-error";
 import { PhoneFrame } from "@/components/admin/phone-frame";
 import { type ColorMode, PublicPage } from "@/components/public/public-page";
 import { Button } from "@/components/ui/button";
-import { Tooltip } from "@/components/ui/tooltip";
+import { TooltipHint } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 
@@ -31,6 +31,10 @@ interface PagePreviewProps {
 	mode?: ColorMode;
 	onModeChange?: (mode: ColorMode) => void;
 	showHeader?: boolean;
+	/** `null` drops the "Preview" label (the column above already said it) and keeps the toolbar. */
+	headerLabel?: React.ReactNode;
+	/** Column-level controls (collapse, peek) appended after the phone toolbar. */
+	headerEnd?: React.ReactNode;
 	className?: string;
 }
 
@@ -100,6 +104,8 @@ export function PagePreview({
 	mode: controlledMode,
 	onModeChange,
 	showHeader = true,
+	headerLabel = "Preview",
+	headerEnd,
 	className,
 }: PagePreviewProps) {
 	const qc = useQueryClient();
@@ -165,18 +171,18 @@ export function PagePreview({
 	return (
 		<div className={className}>
 			{showHeader && (
-				<div className="mb-3 flex items-center justify-between px-1">
-					<span className="text-micro font-semibold uppercase tracking-widest text-muted-foreground">
-						Preview
+				<div className="mb-4 flex min-h-8 items-center justify-between gap-2">
+					<span className="flex min-w-0 items-center gap-1.5 text-small font-medium text-foreground">
+						{headerLabel}
 						{isSample && data && (
-							<span className="ml-1.5 rounded-full border border-border bg-muted px-1.5 py-px normal-case tracking-normal">
+							<span className="rounded-full border border-border bg-surface-2 px-1.5 py-px text-micro font-medium text-muted-foreground">
 								Sample
 							</span>
 						)}
 					</span>
-					<div className="flex items-center gap-1">
+					<div className="flex shrink-0 items-center gap-1">
 						<div className="flex rounded-lg border border-border/50 bg-muted/30 p-0.5">
-							<Tooltip content="Light preview">
+							<TooltipHint content="Light preview">
 								<Button
 									variant="ghost"
 									size="icon"
@@ -190,8 +196,8 @@ export function PagePreview({
 								>
 									<Sun className="h-3.5 w-3.5" />
 								</Button>
-							</Tooltip>
-							<Tooltip content="Dark preview">
+							</TooltipHint>
+							<TooltipHint content="Dark preview">
 								<Button
 									variant="ghost"
 									size="icon"
@@ -205,9 +211,9 @@ export function PagePreview({
 								>
 									<Moon className="h-3.5 w-3.5" />
 								</Button>
-							</Tooltip>
+							</TooltipHint>
 						</div>
-						<Tooltip content="Copy link">
+						<TooltipHint content="Copy link">
 							<Button
 								variant="ghost"
 								size="icon"
@@ -217,8 +223,8 @@ export function PagePreview({
 							>
 								<Copy className="h-3.5 w-3.5" />
 							</Button>
-						</Tooltip>
-						<Tooltip content="Open live page">
+						</TooltipHint>
+						<TooltipHint content="Open live page">
 							<Button
 								variant="ghost"
 								size="icon"
@@ -229,7 +235,8 @@ export function PagePreview({
 							>
 								<ExternalLink className="h-3.5 w-3.5" />
 							</Button>
-						</Tooltip>
+						</TooltipHint>
+						{headerEnd}
 					</div>
 				</div>
 			)}

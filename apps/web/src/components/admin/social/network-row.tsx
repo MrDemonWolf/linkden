@@ -1,18 +1,18 @@
 "use client";
 
-import { useTheme } from "next-themes";
-import type { socialBrands } from "@linkden/ui/social-brands";
 import { getAccessibleIconFill, isLowLuminance } from "@linkden/ui/color-contrast";
+import type { socialBrands } from "@linkden/ui/social-brands";
+import { useTheme } from "next-themes";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { cn, getAdminThemeColors } from "@/lib/utils";
 import {
-	isFullUrlTemplate,
+	buildUrl,
+	extractUsername,
 	getPrefix,
 	getSuffix,
-	extractUsername,
-	buildUrl,
+	isFullUrlTemplate,
 } from "@/lib/social-url-utils";
+import { cn, getAdminThemeColors } from "@/lib/utils";
 import type { NetworkDraft } from "./social-constants";
 
 type SocialBrand = (typeof socialBrands)[number];
@@ -86,13 +86,13 @@ export function NetworkRow({
 								value={draft.url}
 								onChange={(e) => onUrlChange(social.slug, e.target.value)}
 								placeholder="https://..."
-								className="h-8 text-xs"
+								className="h-11 text-base md:h-8 md:text-xs"
 								aria-label={`URL for ${social.name}`}
 							/>
 						) : (
-							<div className="flex items-center rounded-lg border border-input bg-transparent h-8 overflow-hidden focus-within:ring-1 focus-within:ring-ring">
+							<div className="flex h-11 items-center overflow-hidden rounded-lg border border-input bg-transparent focus-within:ring-1 focus-within:ring-ring md:h-8">
 								{prefix && (
-									<span className="shrink-0 select-none pl-2.5 text-xs text-muted-foreground">
+									<span className="shrink-0 select-none pl-2.5 text-base text-muted-foreground md:text-xs">
 										{prefix}
 									</span>
 								)}
@@ -101,7 +101,7 @@ export function NetworkRow({
 									value={displayValue}
 									onChange={(e) => onUrlChange(social.slug, buildUrl(e.target.value, template))}
 									placeholder="username"
-									className="min-w-0 flex-1 bg-transparent px-1.5 text-xs outline-none placeholder:text-muted-foreground/50"
+									className="min-w-0 flex-1 bg-transparent px-1.5 text-base outline-none placeholder:text-muted-foreground/50 md:text-xs"
 									aria-label={`URL for ${social.name}`}
 								/>
 								{suffix && (

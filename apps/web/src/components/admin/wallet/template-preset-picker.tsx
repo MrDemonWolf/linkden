@@ -1,8 +1,8 @@
 "use client";
 
+import type { PassTemplatePreset } from "@linkden/validators/wallet";
 import { Contact, IdCard, KeyRound, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { PassTemplatePreset } from "@linkden/validators/wallet";
 
 const PRESETS: {
 	id: PassTemplatePreset;
@@ -47,13 +47,13 @@ export function TemplatePresetPicker({ value, onChange, disabled }: Props) {
 							<Icon
 								className={cn("h-3.5 w-3.5", active ? "text-primary" : "text-muted-foreground")}
 							/>
-							<span className="font-mono text-[8.5px] uppercase tracking-wider text-muted-foreground/70">
+							<span className="font-mono text-micro uppercase tracking-wider text-muted-foreground/70">
 								{p.tag}
 							</span>
 						</div>
 						<span
 							className={cn(
-								"text-[12px] font-semibold tracking-tight",
+								"text-xs font-semibold tracking-tight",
 								active ? "text-foreground" : "text-foreground/85",
 							)}
 						>

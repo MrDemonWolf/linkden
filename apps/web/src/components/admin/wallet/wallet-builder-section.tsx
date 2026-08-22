@@ -401,7 +401,7 @@ function Section({
 				<h3 className="text-micro font-semibold uppercase tracking-wider text-foreground/80">
 					{title}
 				</h3>
-				{hint && <span className="text-[10.5px] text-muted-foreground/60">· {hint}</span>}
+				{hint && <span className="text-micro text-muted-foreground/60">· {hint}</span>}
 			</div>
 			{children}
 		</div>

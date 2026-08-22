@@ -128,7 +128,7 @@ export default function WalletSettingsPage() {
 			{/* Below lg: centered stack, the editor sheet overlaps the frame bottom.
 			    lg+: two columns — sticky preview left, editor right. */}
 			<div className="mx-auto w-full max-w-[420px] lg:flex lg:max-w-none lg:items-start lg:gap-6">
-				<div className="flex justify-center lg:sticky lg:top-[68px] lg:shrink-0">
+				<div className="flex justify-center lg:sticky lg:top-[calc(52px+1.5rem)] lg:shrink-0">
 					<DeviceFrame width={300} height="auto" previewDark>
 						{/* pb-14 leaves room for the overlapping sheet; no overlap at lg+ */}
 						<div className="px-3 pb-14 pt-1 lg:pb-4">

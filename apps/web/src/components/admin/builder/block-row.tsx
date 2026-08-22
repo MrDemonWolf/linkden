@@ -5,9 +5,9 @@ import { CSS } from "@dnd-kit/utilities";
 import { ChevronRight, GripVertical, Trash2, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip } from "@/components/ui/tooltip";
+import { TooltipHint } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { type Block, blockTypeIcon, TYPE_CHIP } from "./builder-constants";
+import { type Block, blockTypeIcon } from "./builder-constants";
 
 export function BlockRow({
 	block,
@@ -49,22 +49,24 @@ export function BlockRow({
 			style={style}
 			role="group"
 			aria-roledescription="sortable"
+			// One flat 56px row of the list panel (the panel owns the border, radius
+			// and dividers): hover lifts to --surface-2, the selected row tints
+			// primary. No edge bar — the tint alone marks selection.
+			//
+			// GRID, not flex: the four tracks (handle · 32px type mark · body ·
+			// action cluster) are fixed widths so every row's columns line up down
+			// the list and the right cluster never drifts as titles change length.
 			className={cn(
-				"group relative flex min-h-14 items-center overflow-hidden rounded-xl border bg-card transition-colors",
-				accent ? "border-primary/40" : "border-border",
-				isDragging && "opacity-30 ring-2 ring-primary/40",
+				"group relative grid h-14 grid-cols-[2.75rem_2rem_minmax(0,1fr)_5.25rem] items-center gap-x-1 bg-card px-2 transition-colors hover:bg-surface-2 sm:grid-cols-[1.75rem_2rem_minmax(0,1fr)_7rem] sm:gap-x-2 sm:px-3 lg:grid-cols-[1.75rem_2rem_minmax(0,1fr)_6.25rem]",
+				accent && "bg-primary/5 hover:bg-primary/5",
+				isDragging && "opacity-30 ring-2 ring-inset ring-primary/40",
 				!block.isEnabled && !isDragging && "opacity-60",
 			)}
 		>
-			{/* Signal edge marks the selected row — the only place it appears in a list */}
-			{accent && (
-				<span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-[image:var(--signal)]" />
-			)}
-
-			{/* Drag handle — wider on mobile (44px), prevents page scroll on grab */}
+			{/* Drag handle — fills its track (44px on touch, 28px from sm) */}
 			<button
 				type="button"
-				className="flex w-11 shrink-0 cursor-grab touch-none items-center justify-center self-stretch text-muted-foreground/50 transition-colors hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing sm:w-9"
+				className="flex w-full cursor-grab touch-none select-none items-center justify-center self-stretch rounded-md text-muted-foreground/50 transition-colors hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
 				aria-label="Drag to reorder"
 				{...attributes}
 				{...listeners}
@@ -72,22 +74,30 @@ export function BlockRow({
 				<GripVertical className="h-4 w-4" />
 			</button>
 
-			<div
-				className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", TYPE_CHIP)}
-			>
-				<Icon className="h-4 w-4" aria-hidden="true" />
+			{/* Type mark: 32px inset square; section headers show a display "T" glyph */}
+			<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-2 text-foreground/70">
+				{block.type === "header" ? (
+					<span aria-hidden="true" className="font-display text-sm font-semibold leading-none">
+						T
+					</span>
+				) : (
+					<Icon className="h-4 w-4" aria-hidden="true" />
+				)}
 			</div>
 
-			{/* Body — tapping it opens the editor */}
-			<button
-				type="button"
-				onClick={onEdit}
-				className="flex min-h-14 min-w-0 flex-1 items-center gap-3 px-3 text-left"
-				aria-label={`Edit ${block.title || "Untitled"}`}
-			>
-				<div className="min-w-0 flex-1">
-					<div className="flex items-center gap-1.5">
-						<p className="truncate text-sm font-medium leading-snug">{block.title || "Untitled"}</p>
+			{/* Body track — title over url; tapping it opens the editor. The
+			    feature-gate chip shares this track so the action cluster stays put. */}
+			<div className="flex min-w-0 items-center gap-2 self-stretch">
+				<button
+					type="button"
+					onClick={onEdit}
+					className="flex h-full min-w-0 flex-1 flex-col justify-center px-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+					aria-label={`Edit ${block.title || "Untitled"}`}
+				>
+					<span className="flex min-w-0 items-center gap-1.5">
+						<span className="truncate text-sm font-medium leading-snug">
+							{block.title || "Untitled"}
+						</span>
 						{block.status === "draft" && (
 							<span
 								className="inline-block h-2 w-2 shrink-0 rounded-full bg-warning"
@@ -95,34 +105,35 @@ export function BlockRow({
 								aria-label="Unpublished changes"
 							/>
 						)}
-					</div>
-					<p className="truncate text-micro capitalize text-muted-foreground">
+					</span>
+					<span className="truncate text-micro capitalize text-muted-foreground">
 						{block.url ? (
 							<span className="normal-case">{block.url.replace(/^https?:\/\//, "")}</span>
 						) : (
 							typeLabel
 						)}
-					</p>
-				</div>
-			</button>
+					</span>
+				</button>
 
-			{/* Feature-gate warning — the site-wide toggle is off, so the public
-			    page silently skips this block. Link straight to where it lives. */}
-			{featureHidden && (
-				<Tooltip content="This block's feature is turned off, so it won't appear on your public page">
-					<Link
-						href={featureHref}
-						className="mr-1 inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full border border-warning/40 bg-warning/10 px-2 text-micro font-medium leading-none text-warning transition-colors hover:bg-warning/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-7"
-					>
-						<TriangleAlert className="h-3 w-3" aria-hidden="true" />
-						<span className="max-sm:hidden">Hidden — turn on in {featureLabel}</span>
-						<span className="sm:hidden">Hidden</span>
-					</Link>
-				</Tooltip>
-			)}
+				{/* Feature-gate warning — the site-wide toggle is off, so the public
+				    page silently skips this block. Link straight to where it lives. */}
+				{featureHidden && (
+					<TooltipHint content="This block's feature is turned off, so it won't appear on your public page">
+						<Link
+							href={featureHref}
+							className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full border border-warning/40 bg-warning/10 px-2 text-micro font-medium leading-none text-warning transition-colors hover:bg-warning/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-7"
+						>
+							<TriangleAlert className="h-3 w-3" aria-hidden="true" />
+							<span className="max-sm:hidden">Hidden — turn on in {featureLabel}</span>
+							<span className="sm:hidden">Hidden</span>
+						</Link>
+					</TooltipHint>
+				)}
+			</div>
 
-			{/* Actions: visibility Switch · delete · chevron */}
-			<div className="flex shrink-0 items-center gap-1 pr-2">
+			{/* Actions track: visibility Switch · delete · chevron. Fixed width, so
+			    the cluster sits on the same vertical line in every row. */}
+			<div className="flex items-center justify-end gap-1">
 				<Switch
 					checked={block.isEnabled}
 					onCheckedChange={onToggle}

@@ -7,8 +7,14 @@ import Link from "next/link";
 import { createContext, useContext, useEffect, useId, useRef, useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import {
+	Field,
+	FieldContent,
+	FieldDescription,
+	FieldError,
+	FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, type SelectItem } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,18 +54,12 @@ function useVisibleError(error: string | null | undefined) {
 	};
 }
 
-function FieldError({ id, error }: { id: string; error: string | null | undefined }) {
-	if (!error) return null;
-	return (
-		<p id={id} role="status" className="text-micro text-destructive">
-			{error}
-		</p>
-	);
-}
-
-function Hint({ children }: { children: React.ReactNode }) {
-	return <p className="text-micro text-muted-foreground">{children}</p>;
-}
+// Labels, controls, hints and errors are the shadcn `Field` stack throughout
+// this panel. `FieldError` renders nothing when its children are empty, so a
+// possibly-null message goes straight through, and every call site re-declares
+// `role="status"` to keep the announcement polite (shadcn defaults to the
+// assertive `role="alert"`, which would interrupt on every keystroke-fixed
+// error).
 
 function TextField({
 	id,
@@ -85,10 +85,10 @@ function TextField({
 	const errorId = `${id}-error`;
 	const { visibleError, markTouched } = useVisibleError(error);
 	return (
-		<div className="space-y-1.5">
-			<Label htmlFor={id} className="text-small">
+		<Field>
+			<FieldLabel htmlFor={id} className="text-small">
 				{label}
-			</Label>
+			</FieldLabel>
 			<Input
 				id={id}
 				type={type}
@@ -101,9 +101,11 @@ function TextField({
 				aria-describedby={visibleError ? errorId : undefined}
 				className="dark:bg-input/30 border-input"
 			/>
-			{hint && !visibleError && <Hint>{hint}</Hint>}
-			<FieldError id={errorId} error={visibleError} />
-		</div>
+			{hint && !visibleError && <FieldDescription>{hint}</FieldDescription>}
+			<FieldError id={errorId} role="status" className="text-micro">
+				{visibleError}
+			</FieldError>
+		</Field>
 	);
 }
 
@@ -125,10 +127,10 @@ function SelectField({
 	placeholder?: string;
 }) {
 	return (
-		<div className="space-y-1.5">
-			<Label htmlFor={id} className="text-small">
+		<Field>
+			<FieldLabel htmlFor={id} className="text-small">
 				{label}
-			</Label>
+			</FieldLabel>
 			<Select
 				id={id}
 				value={value}
@@ -136,8 +138,8 @@ function SelectField({
 				items={items}
 				placeholder={placeholder}
 			/>
-			{hint && <Hint>{hint}</Hint>}
-		</div>
+			{hint && <FieldDescription>{hint}</FieldDescription>}
+		</Field>
 	);
 }
 
@@ -154,15 +156,15 @@ function ToggleSwitch({
 }) {
 	const id = useId();
 	return (
-		<div className="flex items-center justify-between gap-3">
-			<div className="space-y-0.5">
-				<Label htmlFor={id} className="text-small">
+		<Field orientation="horizontal">
+			<FieldContent>
+				<FieldLabel htmlFor={id} className="text-small">
 					{label}
-				</Label>
-				{description && <Hint>{description}</Hint>}
-			</div>
+				</FieldLabel>
+				{description && <FieldDescription>{description}</FieldDescription>}
+			</FieldContent>
 			<Switch id={id} checked={checked} onCheckedChange={() => onToggle()} aria-label={label} />
-		</div>
+		</Field>
 	);
 }
 
@@ -492,7 +494,7 @@ export function BlockEditPanel({
 								]}
 							/>
 							{linkVariant === "thumbnail" && (
-								<div className="space-y-1.5">
+								<Field>
 									<ImageUploadField
 										label="Thumbnail"
 										value={str("thumbnail")}
@@ -501,11 +503,13 @@ export function BlockEditPanel({
 										hint="256 × 256"
 										onUploadComplete={(u) => updateConfigField("thumbnail", u || undefined)}
 									/>
-									<FieldError id="edit-thumbnail-error" error={cfgErrors.thumbnail} />
-								</div>
+									<FieldError id="edit-thumbnail-error" role="status" className="text-micro">
+										{cfgErrors.thumbnail}
+									</FieldError>
+								</Field>
 							)}
 							{linkVariant === "featured" && (
-								<div className="space-y-1.5">
+								<Field>
 									<ImageUploadField
 										label="Featured image"
 										value={str("thumbnail")}
@@ -514,8 +518,10 @@ export function BlockEditPanel({
 										hint="16:9, at least 1280×720"
 										onUploadComplete={(u) => updateConfigField("thumbnail", u || undefined)}
 									/>
-									<FieldError id="edit-thumbnail-error" error={cfgErrors.thumbnail} />
-								</div>
+									<FieldError id="edit-thumbnail-error" role="status" className="text-micro">
+										{cfgErrors.thumbnail}
+									</FieldError>
+								</Field>
 							)}
 							<TextField
 								id="edit-description"
@@ -560,7 +566,7 @@ export function BlockEditPanel({
 
 					{block.type === "image" && (
 						<>
-							<div className="space-y-1.5">
+							<Field>
 								<ImageUploadField
 									label="Image"
 									value={str("src")}
@@ -569,8 +575,10 @@ export function BlockEditPanel({
 									hint="up to 1600px"
 									onUploadComplete={(u) => updateConfigField("src", u)}
 								/>
-								<FieldError id="edit-src-error" error={cfgErrors.src} />
-							</div>
+								<FieldError id="edit-src-error" role="status" className="text-micro">
+									{cfgErrors.src}
+								</FieldError>
+							</Field>
 							<TextField
 								id="edit-alt"
 								label="Alt text"
@@ -617,10 +625,10 @@ export function BlockEditPanel({
 
 					{block.type === "text" && (
 						<>
-							<div className="space-y-1.5">
-								<Label htmlFor="edit-body" className="text-small">
+							<Field>
+								<FieldLabel htmlFor="edit-body" className="text-small">
 									Text
-								</Label>
+								</FieldLabel>
 								<Textarea
 									id="edit-body"
 									value={textBody}
@@ -633,7 +641,9 @@ export function BlockEditPanel({
 									className="text-base md:text-sm"
 								/>
 								<div className="flex items-start justify-between gap-2">
-									<FieldError id="edit-body-error" error={cfgErrors.body} />
+									<FieldError id="edit-body-error" role="status" className="text-micro">
+										{cfgErrors.body}
+									</FieldError>
 									<p
 										id="edit-body-count"
 										className={cn(
@@ -646,7 +656,7 @@ export function BlockEditPanel({
 										{textBody.length}/{TEXT_BODY_MAX}
 									</p>
 								</div>
-							</div>
+							</Field>
 							<SelectField
 								id="edit-text-align"
 								label="Alignment"
@@ -760,17 +770,17 @@ export function BlockEditPanel({
 								error={cfgErrors.buttonEmoji}
 								maxLength={16}
 							/>
-							<div className="space-y-1.5">
-								<Label id="edit-emoji-position-label" className="text-small">
+							<Field>
+								<FieldLabel id="edit-emoji-position-label" className="text-small">
 									Emoji position
-								</Label>
+								</FieldLabel>
 								<SegmentedControl
 									value={str("buttonEmojiPosition", "left")}
 									options={EMOJI_SIDE_OPTIONS}
 									onChange={(v) => updateConfigField("buttonEmojiPosition", v)}
 									ariaLabelledby="edit-emoji-position-label"
 								/>
-							</div>
+							</Field>
 							<TextField
 								id="edit-success-msg"
 								label="Success message"
@@ -803,17 +813,17 @@ export function BlockEditPanel({
 								error={cfgErrors.buttonEmoji}
 								maxLength={16}
 							/>
-							<div className="space-y-1.5">
-								<Label id="edit-vcard-emoji-position-label" className="text-small">
+							<Field>
+								<FieldLabel id="edit-vcard-emoji-position-label" className="text-small">
 									Emoji position
-								</Label>
+								</FieldLabel>
 								<SegmentedControl
 									value={str("buttonEmojiPosition", "left")}
 									options={EMOJI_SIDE_OPTIONS}
 									onChange={(v) => updateConfigField("buttonEmojiPosition", v)}
 									ariaLabelledby="edit-vcard-emoji-position-label"
 								/>
-							</div>
+							</Field>
 
 							<SectionLabel>Personal</SectionLabel>
 							<TextField
@@ -937,10 +947,10 @@ export function BlockEditPanel({
 								return (
 									<div key={idx} className="space-y-1">
 										<div className="flex items-end gap-2">
-											<div className="flex-1 space-y-1">
-												<Label htmlFor={`vc-url-${idx}-label`} className="text-small">
+											<Field className="flex-1">
+												<FieldLabel htmlFor={`vc-url-${idx}-label`} className="text-small">
 													Label
-												</Label>
+												</FieldLabel>
 												<Input
 													id={`vc-url-${idx}-label`}
 													value={urlItem.label ?? ""}
@@ -953,11 +963,11 @@ export function BlockEditPanel({
 													maxLength={40}
 													className="dark:bg-input/30 border-input"
 												/>
-											</div>
-											<div className="flex-[2] space-y-1">
-												<Label htmlFor={`vc-url-${idx}-url`} className="text-small">
+											</Field>
+											<Field className="flex-[2]">
+												<FieldLabel htmlFor={`vc-url-${idx}-url`} className="text-small">
 													URL
-												</Label>
+												</FieldLabel>
 												<Input
 													id={`vc-url-${idx}-url`}
 													type="url"
@@ -972,7 +982,7 @@ export function BlockEditPanel({
 													aria-describedby={rowError ? rowErrorId : undefined}
 													className="dark:bg-input/30 border-input"
 												/>
-											</div>
+											</Field>
 											<button
 												type="button"
 												aria-label={`Remove URL ${idx + 1}`}
@@ -986,7 +996,9 @@ export function BlockEditPanel({
 												<Trash2 className="h-4 w-4" />
 											</button>
 										</div>
-										<FieldError id={rowErrorId} error={rowError} />
+										<FieldError id={rowErrorId} role="status" className="text-micro">
+											{rowError}
+										</FieldError>
 									</div>
 								);
 							})}
@@ -1005,7 +1017,7 @@ export function BlockEditPanel({
 					{block.type === "location" && (
 						<>
 							{siteSettings && siteSettings.mapkit_enabled !== "true" && (
-								<Hint>
+								<FieldDescription>
 									Want an embedded Apple Map?{" "}
 									<Link
 										href="/admin/settings/integrations"
@@ -1014,7 +1026,7 @@ export function BlockEditPanel({
 										Configure MapKit in Settings → Integrations
 									</Link>
 									.
-								</Hint>
+								</FieldDescription>
 							)}
 							<TextField
 								id="edit-address"
@@ -1025,10 +1037,10 @@ export function BlockEditPanel({
 								error={cfgErrors.address}
 								maxLength={300}
 							/>
-							<div className="space-y-1.5">
-								<Label id="edit-link-type-label" className="text-small">
+							<Field>
+								<FieldLabel id="edit-link-type-label" className="text-small">
 									Link type
-								</Label>
+								</FieldLabel>
 								<SegmentedControl
 									value={str("linkType", "none")}
 									options={[
@@ -1040,7 +1052,7 @@ export function BlockEditPanel({
 									onChange={(v) => updateConfigField("linkType", v)}
 									ariaLabelledby="edit-link-type-label"
 								/>
-							</div>
+							</Field>
 							{parsedConfig.linkType === "custom" && (
 								<TextField
 									id="edit-custom-link"
@@ -1072,13 +1084,15 @@ export function BlockEditPanel({
 					<CollapsibleSection label="Style" defaultOpen>
 						{block.type === "link" && (
 							<>
-								<div className="space-y-1.5">
-									<Label htmlFor="edit-icon" className="text-small">
+								<Field>
+									<FieldLabel htmlFor="edit-icon" className="text-small">
 										Icon
-									</Label>
+									</FieldLabel>
 									<IconPicker id="edit-icon" value={icon} onChange={setIcon} />
-									<Hint>Shown on the left of the button, exactly as it appears live.</Hint>
-								</div>
+									<FieldDescription>
+										Shown on the left of the button, exactly as it appears live.
+									</FieldDescription>
+								</Field>
 								<ToggleSwitch
 									checked={!!parsedConfig.isHighlighted}
 									onToggle={() => updateConfigField("isHighlighted", !parsedConfig.isHighlighted)}
@@ -1221,7 +1235,9 @@ export function BlockEditPanel({
 
 				{/* SCHEDULE (collapsible) */}
 				<CollapsibleSection label="Schedule" defaultOpen={hasSchedule}>
-					<Hint>Optionally show this block only during a specific time window.</Hint>
+					<FieldDescription>
+						Optionally show this block only during a specific time window.
+					</FieldDescription>
 					<TextField
 						id="edit-start"
 						label="Start date/time"
@@ -1254,10 +1270,10 @@ export function BlockEditPanel({
 
 				{/* ADVANCED (collapsible) */}
 				<CollapsibleSection label="Advanced">
-					<div className="space-y-1.5">
-						<Label htmlFor="edit-config" className="text-small">
+					<Field>
+						<FieldLabel htmlFor="edit-config" className="text-small">
 							Config JSON
-						</Label>
+						</FieldLabel>
 						<Textarea
 							id="edit-config"
 							value={config}
@@ -1268,7 +1284,9 @@ export function BlockEditPanel({
 							aria-describedby={configError ? "edit-config-error" : undefined}
 							className="font-mono"
 						/>
-						<FieldError id="edit-config-error" error={configError} />
+						<FieldError id="edit-config-error" role="status" className="text-micro">
+							{configError}
+						</FieldError>
 						{!configError && Object.keys(cfgErrors).length > 0 && (
 							<ul className="space-y-0.5 text-micro text-destructive">
 								{Object.entries(cfgErrors).map(([key, message]) => (
@@ -1278,7 +1296,7 @@ export function BlockEditPanel({
 								))}
 							</ul>
 						)}
-					</div>
+					</Field>
 				</CollapsibleSection>
 			</div>
 

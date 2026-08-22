@@ -1,7 +1,7 @@
 "use client";
 
-import { lazy, Suspense } from "react";
 import type { ShaderBannerPreset } from "@linkden/ui/banner-presets";
+import { lazy, Suspense } from "react";
 
 const MeshGradient = lazy(() =>
 	import("@paper-design/shaders-react").then((m) => ({ default: m.MeshGradient })),
