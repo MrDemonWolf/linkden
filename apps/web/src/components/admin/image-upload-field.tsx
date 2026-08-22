@@ -152,7 +152,7 @@ export function ImageUploadField({
 					<label htmlFor={inputId} className="flex items-center gap-2 text-sm font-medium">
 						{label}
 						{hint && (
-							<span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground/70">
+							<span className="font-mono text-micro uppercase tracking-wider text-muted-foreground/70">
 								{hint}
 							</span>
 						)}
@@ -195,7 +195,7 @@ export function ImageUploadField({
 							) : (
 								<>
 									<ImageIcon className="h-5 w-5" />
-									<span className="text-[10px]">
+									<span className="text-micro">
 										{isBanner ? "Drop banner image" : isLogo ? "Drop logo" : "Upload"}
 									</span>
 								</>

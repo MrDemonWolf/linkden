@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
 import type { EditorView } from "@codemirror/view";
-import { Code2, Info, ChevronDown } from "lucide-react";
+import { ChevronDown, Code2, Info } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -58,25 +58,25 @@ function CssEditor({ value, onChange }: { value: string; onChange: (value: strin
 					padding: "8px 0",
 				},
 				".cm-gutters": {
-					borderRight: "1px solid hsl(var(--border) / 0.3)",
+					borderRight: "1px solid color-mix(in srgb, var(--border) 30%, transparent)",
 					backgroundColor: "transparent",
 				},
 				".cm-lineNumbers .cm-gutterElement": {
-					fontSize: "10px",
-					color: "hsl(var(--muted-foreground) / 0.5)",
+					fontSize: "12px", // micro floor: nothing renders below 12px
+					color: "color-mix(in srgb, var(--muted-foreground) 50%, transparent)",
 					padding: "0 8px 0 4px",
 				},
 				".cm-activeLine": {
-					backgroundColor: "hsl(var(--accent) / 0.06)",
+					backgroundColor: "color-mix(in srgb, var(--accent) 6%, transparent)",
 				},
 				".cm-selectionBackground": {
-					backgroundColor: "hsl(var(--primary) / 0.15) !important",
+					backgroundColor: "color-mix(in srgb, var(--primary) 15%, transparent) !important",
 				},
 				".cm-cursor": {
-					borderLeftColor: "hsl(var(--primary))",
+					borderLeftColor: "var(--primary)",
 				},
 				"&.cm-focused .cm-selectionBackground": {
-					backgroundColor: "hsl(var(--primary) / 0.2) !important",
+					backgroundColor: "color-mix(in srgb, var(--primary) 20%, transparent) !important",
 				},
 				".cm-scroller": {
 					overflow: "auto",
@@ -177,10 +177,10 @@ function CssReference() {
 			{open && (
 				<div className="border-t border-border/40 px-3 py-3 space-y-3 animate-in fade-in-0 slide-in-from-top-1 duration-150">
 					<div>
-						<p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+						<p className="mb-1.5 text-micro font-semibold uppercase tracking-wider text-muted-foreground">
 							Classes
 						</p>
-						<div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-[11px]">
+						<div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-micro">
 							<span className="text-primary">.ld-page</span>
 							<span className="text-muted-foreground">Page container</span>
 							<span className="text-primary">.ld-profile</span>
@@ -206,10 +206,10 @@ function CssReference() {
 						</div>
 					</div>
 					<div>
-						<p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+						<p className="mb-1.5 text-micro font-semibold uppercase tracking-wider text-muted-foreground">
 							Variables
 						</p>
-						<div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-[11px]">
+						<div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-micro">
 							<span className="text-primary">--ld-primary</span>
 							<span className="text-muted-foreground">Primary color</span>
 							<span className="text-primary">--ld-accent</span>
@@ -252,7 +252,7 @@ export function CustomCssSection({
 						Custom CSS
 					</CardTitle>
 				</h2>
-				<p className="text-[11px] text-muted-foreground mt-0.5">
+				<p className="text-micro text-muted-foreground mt-0.5">
 					Add custom styles to your public page
 				</p>
 			</CardHeader>

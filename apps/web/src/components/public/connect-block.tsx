@@ -83,12 +83,12 @@ function FloatingField({
 
 	const labelBase = "pointer-events-none absolute left-4 text-sm transition-all duration-200";
 
-	const labelClasses = `${labelBase} top-1/2 -translate-y-1/2 peer-focus:top-3 peer-focus:translate-y-0 peer-focus:text-[10px] peer-focus:font-medium ${
-		value ? "top-3 translate-y-0 text-[10px] font-medium" : ""
+	const labelClasses = `${labelBase} top-1/2 -translate-y-1/2 peer-focus:top-3 peer-focus:translate-y-0 peer-focus:text-micro peer-focus:font-medium ${
+		value ? "top-3 translate-y-0 text-micro font-medium" : ""
 	}`;
 
-	const labelClassesMultiline = `${labelBase} top-4 peer-focus:top-2 peer-focus:text-[10px] peer-focus:font-medium ${
-		value ? "top-2 text-[10px] font-medium" : ""
+	const labelClassesMultiline = `${labelBase} top-4 peer-focus:top-2 peer-focus:text-micro peer-focus:font-medium ${
+		value ? "top-2 text-micro font-medium" : ""
 	}`;
 
 	const labelStyle: React.CSSProperties = themeColors ? { color: themeColors.mutedFg } : {};
@@ -234,7 +234,7 @@ function WhereMetSelect({
 				</select>
 				<label
 					htmlFor={id}
-					className="pointer-events-none absolute left-4 top-3 translate-y-0 text-[10px] font-medium transition-all duration-200"
+					className="pointer-events-none absolute left-4 top-3 translate-y-0 text-micro font-medium transition-all duration-200"
 					style={labelStyle}
 				>
 					Where did we meet?{" "}
@@ -462,7 +462,7 @@ function ConnectForm({
 	return (
 		<form onSubmit={handleSubmit} className="space-y-3" noValidate>
 			{isPreview && (
-				<p className="mb-3 text-center text-[10px] uppercase tracking-widest opacity-40">Preview</p>
+				<p className="mb-3 text-center text-micro uppercase tracking-widest opacity-40">Preview</p>
 			)}
 
 			<div className="grid gap-3 sm:grid-cols-2">

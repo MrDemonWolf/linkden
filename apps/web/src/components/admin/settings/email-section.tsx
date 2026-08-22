@@ -79,23 +79,23 @@ export function EmailSection({
 									<p className="text-xs font-medium">
 										{p.name}
 										{p.comingSoon && (
-											<span className="ml-1.5 rounded-sm bg-muted px-1 py-0.5 text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
+											<span className="ml-1.5 rounded-sm bg-muted px-1 py-0.5 text-micro font-medium uppercase tracking-wider text-muted-foreground">
 												Coming soon
 											</span>
 										)}
 									</p>
-									<p className="mt-0.5 text-[10px] text-muted-foreground">{p.description}</p>
+									<p className="mt-0.5 text-micro text-muted-foreground">{p.description}</p>
 								</div>
 							</button>
 						);
 					})}
 				</div>
-				<p className="text-[11px] text-muted-foreground">
+				<p className="text-micro text-muted-foreground">
 					Resend is currently the only supported provider — Cloudflare Email Workers support is
 					coming soon.
 				</p>
 				{emailProvider === "cloudflare" && (
-					<p className="text-[11px] text-warning">
+					<p className="text-micro text-warning">
 						This instance is still set to Cloudflare Email Workers, which isn't wired up yet —
 						password reset and magic-link emails won't send until you switch to Resend.
 					</p>

@@ -83,7 +83,7 @@ export function SocialIconShapeSection({
 								</div>
 								<div className="space-y-0.5">
 									<div className="text-xs font-medium">{opt.label}</div>
-									<div className="text-[11px] text-muted-foreground leading-tight">
+									<div className="text-micro text-muted-foreground leading-tight">
 										{opt.description}
 									</div>
 								</div>

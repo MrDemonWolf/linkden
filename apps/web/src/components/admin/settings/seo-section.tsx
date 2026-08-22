@@ -65,7 +65,7 @@ export function SeoSection({
 							onChange={(e) => onSeoTitleChange(e.target.value)}
 							placeholder="My Links"
 						/>
-						<p className="text-[11px] text-muted-foreground">
+						<p className="text-micro text-muted-foreground">
 							Shown in browser tab and search results
 						</p>
 					</div>
@@ -79,7 +79,7 @@ export function SeoSection({
 							placeholder="Check out all my links"
 							className="dark:bg-input/30 border-input w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
 						/>
-						<p className="text-[11px] text-muted-foreground">
+						<p className="text-micro text-muted-foreground">
 							Appears below the title in search engine results
 						</p>
 					</div>
@@ -149,7 +149,7 @@ export function SeoSection({
 										</div>
 									)}
 									<p className="text-xs font-medium">{t.name}</p>
-									<p className="mt-0.5 text-[10px] text-muted-foreground">{t.description}</p>
+									<p className="mt-0.5 text-micro text-muted-foreground">{t.description}</p>
 								</button>
 							);
 						})}
@@ -165,7 +165,7 @@ export function SeoSection({
 							onUploadComplete={onSeoOgImageChange}
 							aspectRatio="banner"
 						/>
-						<p className="text-[11px] text-muted-foreground">
+						<p className="text-micro text-muted-foreground">
 							Recommended size: 1200 x 630 pixels. Max 5MB.
 						</p>
 					</div>
@@ -175,7 +175,7 @@ export function SeoSection({
 			{/* Live Social Preview */}
 			<div className="space-y-3">
 				<SectionLabel>Social Media Preview</SectionLabel>
-				<p className="text-[11px] text-muted-foreground -mt-2">
+				<p className="text-micro text-muted-foreground -mt-2">
 					How your page will look when shared on social media
 				</p>
 				<OgPreviewCard

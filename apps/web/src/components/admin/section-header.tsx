@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SectionRule } from "@/components/ui/section-rule";
 import { cn } from "@/lib/utils";
 
 interface SectionHeaderProps {
@@ -32,7 +33,7 @@ export function SectionHeader({ icon: Icon, title, count, variant = "muted" }: S
 					{title}
 					{count !== undefined &&
 						(variant === "primary" ? (
-							<Badge variant="outline" className="ml-1 text-[10px] border-primary/30 text-primary">
+							<Badge variant="outline" className="ml-1 text-micro border-primary/30 text-primary">
 								{count}
 							</Badge>
 						) : (
@@ -76,7 +77,7 @@ export function SectionCard({
 					<div className="min-w-0">
 						<h2 className="text-sm font-semibold">{title}</h2>
 						{description && (
-							<p className="mt-0.5 text-[11px] text-muted-foreground">{description}</p>
+							<p className="mt-0.5 text-micro text-muted-foreground">{description}</p>
 						)}
 					</div>
 				</div>
@@ -87,9 +88,8 @@ export function SectionCard({
 }
 
 /**
- * Uppercase eyebrow label used to group fields inside a section. Consolidates the
- * ~30 copy-pasted `text-[10px|11px|xs] font-medium uppercase tracking-wider
- * text-muted-foreground` clusters into one place.
+ * Group label inside a section: Signal dash + title + hairline rule. Renders as
+ * an `h3` because it always sits under a `SectionCard` `h2`.
  */
 export function SectionLabel({
 	children,
@@ -99,13 +99,8 @@ export function SectionLabel({
 	className?: string;
 }) {
 	return (
-		<p
-			className={cn(
-				"text-xs font-medium uppercase tracking-wider text-muted-foreground",
-				className,
-			)}
-		>
+		<SectionRule as="h3" className={cn("text-small", className)}>
 			{children}
-		</p>
+		</SectionRule>
 	);
 }

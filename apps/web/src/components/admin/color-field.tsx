@@ -109,12 +109,12 @@ export function ColorField({
 				/>
 			</div>
 			{error && (
-				<p id={errorId} role="alert" className="text-[11px] text-destructive">
+				<p id={errorId} role="alert" className="text-micro text-destructive">
 					{error}
 				</p>
 			)}
 			{ratio !== null && contrastAgainst && (
-				<p className="flex items-center gap-2 text-[11px]">
+				<p className="flex items-center gap-2 text-micro">
 					<span className={passesAA ? "font-medium text-success" : "font-medium text-warning"}>
 						{ratio.toFixed(1)}:1 vs {contrastAgainst.label}
 						{passesAA ? " — passes AA" : " — fails AA (4.5:1 needed)"}

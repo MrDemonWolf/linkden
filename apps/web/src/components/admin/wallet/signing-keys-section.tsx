@@ -197,14 +197,14 @@ export function SigningKeysSection() {
 							<span className="text-muted-foreground">
 								{item.label}
 								{item.src && item.src !== "missing" && (
-									<span className="ml-0.5 text-[10px] opacity-60">({item.src})</span>
+									<span className="ml-0.5 text-micro opacity-60">({item.src})</span>
 								)}
 							</span>
 						</span>
 					))}
 				</div>
 				{!allSet && (
-					<p className="mt-1.5 pl-1.5 text-[11px] leading-relaxed text-muted-foreground">
+					<p className="mt-1.5 pl-1.5 text-micro leading-relaxed text-muted-foreground">
 						Upload signing keys below or set them as environment variables.
 					</p>
 				)}

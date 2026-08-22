@@ -1,7 +1,8 @@
 "use client";
 
-import { Wallet, Download } from "lucide-react";
-import { buttonVariants, cn } from "@linkden/ui";
+import { Download, Wallet } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { ThemeColors } from "./public-page";
 
 interface FooterActionsProps {
@@ -12,11 +13,12 @@ interface FooterActionsProps {
 }
 
 const pillClass = cn(
-	buttonVariants({ variant: "outline", size: "md" }),
-	// hover:text-inherit beats the variant's admin-token hover:text-foreground
-	// (twMerge keeps last) so hover text stays the page's themed color, which the
+	buttonVariants({ variant: "outline", size: "lg" }),
+	// The outline variant's admin-token colors (bg-background/input, border-input,
+	// hover:text-foreground) are all overridden here (twMerge keeps last) so the
+	// pills stay glass and hover text stays the page's themed color, which the
 	// anchors inherit from the ld-page wrapper's inline `color: themeColors.fg`.
-	"rounded-full backdrop-blur-2xl bg-white/5 dark:bg-white/5 border-white/20 hover:bg-white/10 hover:text-inherit hover:-translate-y-0.5 hover:opacity-90 transition-all duration-300 no-underline",
+	"rounded-full gap-2 px-4 text-sm backdrop-blur-2xl bg-white/5 dark:bg-white/5 border-white/20 dark:border-white/20 hover:bg-white/10 dark:hover:bg-white/10 hover:text-inherit hover:-translate-y-0.5 hover:opacity-90 transition-all duration-300 no-underline",
 );
 
 // Wallet pass + vCard are served by the Hono API, not the Next app.
