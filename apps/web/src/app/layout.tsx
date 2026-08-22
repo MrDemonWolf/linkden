@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { DM_Sans, Geist_Mono, Sora } from "next/font/google";
 import "../index.css";
 import Providers from "@/components/providers";
-import { getPublicPagePayload } from "@/lib/server-api";
+import { getPublicPage } from "@/lib/public-page";
 
 export const viewport: Viewport = {
 	width: "device-width",
@@ -39,20 +39,22 @@ const geistMono = Geist_Mono({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-	const { profile, settings = {} } = await getPublicPagePayload();
+	const data = await getPublicPage();
+	const profile = data?.profile;
+	const settings = data?.settings;
 
-	const title = settings.seoTitle || "LinkDen";
-	const description = settings.seoDescription || "Your personal link-in-bio page";
+	const title = settings?.seoTitle || "LinkDen";
+	const description = settings?.seoDescription || "Your personal link-in-bio page";
 
 	let ogImageUrl: string | undefined;
-	if (settings.seoOgMode === "template") {
+	if (settings?.seoOgMode === "template") {
 		const template = settings.seoOgTemplate || "minimal";
 		const name = encodeURIComponent(profile?.name || "My Links");
 		const bio = encodeURIComponent(profile?.bio || "");
 		const theme = encodeURIComponent(settings.customPrimary || "#6366f1");
 		const avatar = profile?.image ? `&avatar=${encodeURIComponent(profile.image)}` : "";
 		ogImageUrl = `/og?template=${template}&name=${name}&bio=${bio}&theme=${theme}${avatar}`;
-	} else if (settings.seoOgImage) {
+	} else if (settings?.seoOgImage) {
 		ogImageUrl = settings.seoOgImage;
 	}
 
@@ -61,7 +63,7 @@ export async function generateMetadata(): Promise<Metadata> {
 		metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
 		title,
 		description,
-		icons: settings.brandingFaviconUrl
+		icons: settings?.brandingFaviconUrl
 			? {
 					icon: settings.brandingFaviconUrl,
 					apple: settings.brandingFaviconUrl,

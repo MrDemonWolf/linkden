@@ -1,43 +1,71 @@
 import { z } from "zod";
 
-export const blockTypeSchema = z.enum(["link", "header", "embed", "connect", "vcard", "location"]);
+// ─── Block schemas ───────────────────────────────────────────────────────────
+// Single source of truth for block shapes, shared by the tRPC router (server
+// validation) and the admin builder (inline errors). Every string is bounded,
+// every URL must be http(s), and unknown config keys are stripped on parse.
+
+export const blockTypeSchema = z.enum([
+	"link",
+	"header",
+	"embed",
+	"connect",
+	"vcard",
+	"location",
+	"image",
+	"text",
+	"divider",
+]);
 
 export type BlockType = z.infer<typeof blockTypeSchema>;
 
-export const blockConfigBaseSchema = z.object({
-	layout: z.enum(["full", "inline"]).default("full").optional(),
-	colorVariant: z.string().optional(),
-	customBgColor: z.string().optional(),
-	customTextColor: z.string().optional(),
-	customBorderColor: z.string().optional(),
-	borderRadius: z.string().optional(),
-	borderWidth: z.number().optional(),
-	shadow: z.string().optional(),
-	animation: z.string().optional(),
-	padding: z.string().optional(),
+export const httpUrlSchema = z.url({ protocol: /^https?$/ }).max(2048);
+export const hexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Expected a 6-digit hex color");
+export const embedTypeSchema = z.enum(["youtube", "spotify", "soundcloud", "custom"]);
+export type EmbedType = z.infer<typeof embedTypeSchema>;
+
+const textAlignSchema = z.enum(["left", "center", "right"]);
+const sideSchema = z.enum(["left", "right"]);
+const emojiSchema = z.string().max(16);
+/** Empty string means "cleared" — the admin sends "" when a field is blanked. */
+const blankable = <T extends z.ZodType>(schema: T) => schema.optional().or(z.literal(""));
+
+// Per-block style overrides the admin Style section writes for link/connect/vcard.
+const styleSchema = z.object({
+	customBgColor: blankable(hexColorSchema),
+	customTextColor: blankable(hexColorSchema),
+	customBorderColor: blankable(hexColorSchema),
+	borderRadius: z.enum(["none", "sm", "md", "lg", "xl", "2xl", "full"]).optional(),
+	shadow: z.enum(["none", "sm", "md", "lg"]).optional(),
 });
 
-export const linkConfigSchema = blockConfigBaseSchema.extend({
-	emoji: z.string().optional(),
-	emojiPosition: z.enum(["left", "right"]).optional(),
-	iconSlug: z.string().optional(),
-	iconPosition: z.enum(["left", "right"]).optional(),
-	textAlign: z.enum(["left", "center", "right"]).optional(),
-	fontWeight: z.string().optional(),
-	isOutlined: z.boolean().optional(),
-	openInNewTab: z.boolean().optional(),
-	description: z.string().optional(),
-	thumbnail: z.string().optional(),
+export const linkConfigSchema = styleSchema.extend({
+	variant: z.enum(["classic", "thumbnail", "featured"]).optional(),
+	thumbnail: blankable(httpUrlSchema),
+	description: z.string().max(200).optional(),
+	emoji: emojiSchema.optional(),
+	emojiPosition: sideSchema.optional(),
+	textAlign: textAlignSchema.optional(),
 	isHighlighted: z.boolean().optional(),
+	isOutlined: z.boolean().optional(),
+	newTab: z.boolean().optional(),
+	noFollow: z.boolean().optional(),
 });
 
-export const headerConfigSchema = blockConfigBaseSchema.extend({
+export const headerConfigSchema = z.object({
 	headingLevel: z.enum(["h1", "h2", "h3", "h4", "h5", "h6"]).optional(),
-	textAlign: z.enum(["left", "center", "right"]).optional(),
-	fontWeight: z.string().optional(),
-	emoji: z.string().optional(),
-	emojiPosition: z.enum(["left", "right"]).optional(),
+	textAlign: textAlignSchema.optional(),
+	emoji: emojiSchema.optional(),
+	emojiPosition: sideSchema.optional(),
 	showDivider: z.boolean().optional(),
+	/** Layout for the blocks that follow this header, up to the next header. */
+	layout: z.enum(["list", "grid", "carousel"]).optional(),
+});
+
+export const embedConfigSchema = z.object({
+	aspectRatio: z.enum(["16:9", "4:3", "1:1"]).optional(),
+	maxWidth: z.enum(["sm", "md", "lg", "full"]).optional(),
+	showTitle: z.boolean().optional(),
 });
 
 export const whereMetOptions = [
@@ -49,21 +77,190 @@ export const whereMetOptions = [
 	"Other",
 ] as const;
 
-export const connectConfigSchema = blockConfigBaseSchema.extend({
-	displayMode: z.enum(["inline", "modal"]).default("modal"),
-	buttonText: z.string().optional(),
-	buttonEmoji: z.string().optional(),
-	buttonEmojiPosition: z.enum(["left", "right"]).optional(),
-	successMessage: z.string().optional(),
+export const connectConfigSchema = styleSchema.extend({
+	preset: z.enum(["contact", "connect", "feedback", "rsvp"]).optional(),
+	displayMode: z.enum(["inline", "modal"]).optional(),
+	buttonText: z.string().max(80).optional(),
+	buttonEmoji: emojiSchema.optional(),
+	buttonEmojiPosition: sideSchema.optional(),
+	successMessage: z.string().max(200).optional(),
 	isOutlined: z.boolean().optional(),
-	textAlign: z.enum(["left", "center", "right"]).optional(),
+	textAlign: textAlignSchema.optional(),
+	showPhone: z.boolean().optional(),
+	showSubject: z.boolean().optional(),
+	showCompany: z.boolean().optional(),
+	showWhereMet: z.boolean().optional(),
+	showRating: z.boolean().optional(),
+	showAttending: z.boolean().optional(),
+	showGuests: z.boolean().optional(),
 });
 
-export const embedConfigSchema = blockConfigBaseSchema.extend({
-	aspectRatio: z.string().optional(),
-	maxWidth: z.string().optional(),
-	showTitle: z.boolean().optional(),
+export const vcardConfigSchema = styleSchema.extend({
+	fullName: z.string().max(120).optional(),
+	nickname: z.string().max(80).optional(),
+	birthday: z.string().max(10).optional(),
+	photo: blankable(httpUrlSchema),
+	org: z.string().max(120).optional(),
+	title: z.string().max(120).optional(),
+	department: z.string().max(120).optional(),
+	workEmail: z.string().max(254).optional(),
+	workPhone: z.string().max(40).optional(),
+	email: z.string().max(254).optional(),
+	phone: z.string().max(40).optional(),
+	address: z.string().max(300).optional(),
+	urls: z
+		.array(z.object({ label: z.string().max(80), url: blankable(httpUrlSchema) }))
+		.max(20)
+		.optional(),
+	buttonText: z.string().max(80).optional(),
+	buttonEmoji: emojiSchema.optional(),
+	buttonEmojiPosition: sideSchema.optional(),
+	isOutlined: z.boolean().optional(),
 });
+
+export const locationConfigSchema = z.object({
+	address: z.string().max(300).optional(),
+	linkType: z.enum(["google", "apple", "custom", "none"]).optional(),
+	customLinkUrl: blankable(httpUrlSchema),
+	coordinates: z
+		.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) })
+		.optional(),
+});
+
+export const imageConfigSchema = z.object({
+	/** Blank until the user uploads — renderers skip the block when empty. */
+	src: blankable(httpUrlSchema),
+	alt: z.string().max(200).optional(),
+	caption: z.string().max(200).optional(),
+	aspect: z.enum(["auto", "16:9", "1:1", "4:5"]).optional(),
+});
+
+export const textConfigSchema = z.object({
+	body: z.string().max(2000),
+	textAlign: textAlignSchema.optional(),
+});
+
+export const dividerConfigSchema = z.object({
+	style: z.enum(["line", "space", "dots"]).optional(),
+	size: z.enum(["sm", "md", "lg"]).optional(),
+});
+
+export type LinkConfig = z.infer<typeof linkConfigSchema>;
+export type HeaderConfig = z.infer<typeof headerConfigSchema>;
+export type EmbedConfig = z.infer<typeof embedConfigSchema>;
+export type ConnectConfig = z.infer<typeof connectConfigSchema>;
+export type VcardConfig = z.infer<typeof vcardConfigSchema>;
+export type LocationConfig = z.infer<typeof locationConfigSchema>;
+export type ImageConfig = z.infer<typeof imageConfigSchema>;
+export type TextConfig = z.infer<typeof textConfigSchema>;
+export type DividerConfig = z.infer<typeof dividerConfigSchema>;
+
+const CONFIG_SCHEMAS = {
+	link: linkConfigSchema,
+	header: headerConfigSchema,
+	embed: embedConfigSchema,
+	connect: connectConfigSchema,
+	vcard: vcardConfigSchema,
+	location: locationConfigSchema,
+	image: imageConfigSchema,
+	text: textConfigSchema,
+	divider: dividerConfigSchema,
+} as const;
+
+export function blockConfigSchemaFor<T extends BlockType>(type: T): (typeof CONFIG_SCHEMAS)[T] {
+	return CONFIG_SCHEMAS[type];
+}
+
+export type ParseBlockConfigResult<T extends BlockType = BlockType> =
+	| { ok: true; data: z.infer<(typeof CONFIG_SCHEMAS)[T]> }
+	| { ok: false; issues: string[] };
+
+/** Parse a stored/incoming config JSON string against the schema for `type`. */
+export function parseBlockConfig<T extends BlockType>(
+	type: T,
+	json: string | null | undefined,
+): ParseBlockConfigResult<T> {
+	let raw: unknown = {};
+	if (json?.trim()) {
+		try {
+			raw = JSON.parse(json);
+		} catch {
+			return { ok: false, issues: ["config: invalid JSON"] };
+		}
+	}
+	const result = blockConfigSchemaFor(type).safeParse(raw);
+	if (result.success) return { ok: true, data: result.data as z.infer<(typeof CONFIG_SCHEMAS)[T]> };
+	return {
+		ok: false,
+		issues: result.error.issues.map((i) => `config.${i.path.join(".") || "(root)"}: ${i.message}`),
+	};
+}
+
+export const MAX_BLOCK_CONFIG_LENGTH = 50_000;
+
+// ISO string over the wire (no tRPC transformer), Date when called in-process.
+const scheduleDateSchema = z
+	.union([z.iso.datetime({ offset: true }), z.date()])
+	.transform((v) => new Date(v));
+
+const blockFieldsSchema = z.object({
+	id: z.string().min(1).max(64),
+	type: blockTypeSchema,
+	title: z.string().max(200).optional(),
+	url: blankable(httpUrlSchema),
+	icon: blankable(
+		z
+			.string()
+			.max(80)
+			.regex(/^(lucide:|brand:)?[a-z0-9-]+$/i, "Expected lucide:<name> or brand:<slug>"),
+	),
+	embedType: blankable(embedTypeSchema),
+	embedUrl: blankable(httpUrlSchema),
+	isEnabled: z.boolean().optional(),
+	position: z.number().int().min(0),
+	scheduledStart: scheduleDateSchema.nullable().optional(),
+	scheduledEnd: scheduleDateSchema.nullable().optional(),
+	config: z.string().max(MAX_BLOCK_CONFIG_LENGTH).optional(),
+});
+
+type BlockRefineInput = {
+	type?: BlockType;
+	config?: string;
+	scheduledStart?: Date | null;
+	scheduledEnd?: Date | null;
+};
+
+function refineBlock(val: BlockRefineInput, ctx: z.RefinementCtx) {
+	if (val.type && val.config !== undefined) {
+		const parsed = parseBlockConfig(val.type, val.config);
+		if (!parsed.ok) {
+			for (const issue of parsed.issues) {
+				ctx.addIssue({ code: "custom", path: ["config"], message: issue });
+			}
+		}
+	}
+	if (val.scheduledStart && val.scheduledEnd && val.scheduledStart >= val.scheduledEnd) {
+		ctx.addIssue({
+			code: "custom",
+			path: ["scheduledEnd"],
+			message: "Schedule end must be after schedule start",
+		});
+	}
+}
+
+export const createBlockSchema = blockFieldsSchema.superRefine(refineBlock);
+
+export const updateBlockSchema = blockFieldsSchema
+	.partial()
+	.required({ id: true })
+	.superRefine(refineBlock);
+
+export const reorderBlocksSchema = z
+	.array(z.object({ id: z.string().min(1).max(64), position: z.number().int().min(0) }))
+	.max(200);
+
+export type CreateBlockInput = z.input<typeof createBlockSchema>;
+export type UpdateBlockInput = z.input<typeof updateBlockSchema>;
 
 // ─── Embed providers ────────────────────────────────────────────────────────
 // One registry for every supported embed provider: the URL it accepts, its
@@ -139,90 +336,6 @@ export function getEmbedSrc(embedType: string | null, embedUrl: string | null): 
 	}
 	return embedUrl;
 }
-
-export const vcardConfigSchema = blockConfigBaseSchema.extend({
-	fullName: z.string().optional(),
-	nickname: z.string().optional(),
-	birthday: z.string().optional(),
-	photo: z.string().optional(),
-	org: z.string().optional(),
-	title: z.string().optional(),
-	department: z.string().optional(),
-	workEmail: z.string().optional(),
-	workPhone: z.string().optional(),
-	email: z.string().optional(),
-	phone: z.string().optional(),
-	address: z.string().optional(),
-	urls: z.array(z.object({ label: z.string(), url: z.string() })).optional(),
-	buttonText: z.string().optional(),
-	buttonEmoji: z.string().optional(),
-	buttonEmojiPosition: z.enum(["left", "right"]).optional(),
-	isOutlined: z.boolean().optional(),
-});
-
-export const locationConfigSchema = blockConfigBaseSchema.extend({
-	address: z.string().optional(),
-	displayMode: z.enum(["text", "map"]).default("text"),
-	linkType: z.enum(["google", "apple", "custom", "none"]).default("none"),
-	customLinkUrl: z.string().optional(),
-	coordinates: z.object({ lat: z.number(), lng: z.number() }).optional(),
-});
-
-export const createBlockSchema = z.object({
-	type: blockTypeSchema,
-	title: z.string().optional(),
-	url: z.string().url().optional(),
-	icon: z.string().optional(),
-	embedType: z.string().optional(),
-	embedUrl: z.string().url().optional(),
-	isEnabled: z.boolean().optional(),
-	position: z.number(),
-	scheduledStart: z.number().optional(),
-	scheduledEnd: z.number().optional(),
-	config: z
-		.union([
-			linkConfigSchema,
-			headerConfigSchema,
-			embedConfigSchema,
-			connectConfigSchema,
-			vcardConfigSchema,
-			locationConfigSchema,
-			blockConfigBaseSchema,
-		])
-		.optional(),
-});
-
-export const updateBlockSchema = z.object({
-	id: z.string(),
-	type: blockTypeSchema.optional(),
-	title: z.string().optional(),
-	url: z.string().url().optional(),
-	icon: z.string().optional(),
-	embedType: z.string().optional(),
-	embedUrl: z.string().url().optional(),
-	isEnabled: z.boolean().optional(),
-	position: z.number().optional(),
-	scheduledStart: z.number().optional(),
-	scheduledEnd: z.number().optional(),
-	config: z
-		.union([
-			linkConfigSchema,
-			headerConfigSchema,
-			embedConfigSchema,
-			connectConfigSchema,
-			vcardConfigSchema,
-			locationConfigSchema,
-			blockConfigBaseSchema,
-		])
-		.optional(),
-});
-
-export const reorderBlocksSchema = z.array(
-	z.object({
-		id: z.string(),
-		position: z.number(),
-	}),
-);
 
 // ─── Backup/Import schemas ─────────────────────────────────────────────────
 // These mirror DB columns so backup imports are validated against the actual schema

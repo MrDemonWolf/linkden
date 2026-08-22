@@ -258,6 +258,19 @@
   backdrop-filter: blur(12px);
 }
 
+/* Public page root: a size container (so `@4xl:` on the page reacts to the
+   frame it sits in — the admin preview stays single-column) that paints the
+   resolved theme background plus an ambient glow in the page's own primary. */
+.ld-page {
+  container-type: inline-size;
+  background-color: var(--ld-background);
+  background-image: radial-gradient(
+    900px 500px at 50% -10%,
+    color-mix(in srgb, var(--ld-primary) 12%, transparent),
+    transparent 60%
+  );
+}
+
 /* Public page entrance — one mechanism. Components set `--ld-i` (stagger index)
    inline; unset = delay 0. */
 @keyframes ld-rise {

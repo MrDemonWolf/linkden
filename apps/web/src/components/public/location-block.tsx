@@ -1,9 +1,10 @@
 "use client";
 
-import { MapPin, ExternalLink } from "lucide-react";
+import { ExternalLink, MapPin } from "lucide-react";
 import { getMapUrl } from "@/lib/map-url";
-import type { ThemeColors } from "./public-page";
+import { trackClick } from "@/lib/track";
 import { usePreview } from "./preview-context";
+import type { ThemeColors } from "./public-page";
 
 interface LocationBlockProps {
 	block: {
@@ -51,8 +52,11 @@ export function LocationBlock({ block, config, themeColors }: LocationBlockProps
 					href={isPreview ? undefined : mapUrl}
 					target={isPreview ? undefined : "_blank"}
 					rel={isPreview ? undefined : "noopener noreferrer"}
-					onClick={isPreview ? (e: React.MouseEvent) => e.preventDefault() : undefined}
-					className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 py-2 text-sm underline decoration-dotted underline-offset-4 transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2"
+					onClick={(e: React.MouseEvent) => {
+						if (isPreview) e.preventDefault();
+						trackClick(block.id, { preview: isPreview });
+					}}
+					className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-small underline decoration-dotted underline-offset-4 transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2"
 					style={{ ...style, outlineColor: themeColors?.primary || "#3b82f6" }}
 				>
 					{content}
@@ -64,8 +68,8 @@ export function LocationBlock({ block, config, themeColors }: LocationBlockProps
 	}
 
 	return (
-		<div className="ld-location-block flex min-h-[44px] items-center justify-center py-1">
-			<span className="text-sm" style={style}>
+		<div className="ld-location-block flex min-h-11 items-center justify-center py-1">
+			<span className="text-small" style={style}>
 				{content}
 			</span>
 		</div>

@@ -1,3 +1,6 @@
+import { SectionRule } from "@/components/ui/section-rule";
+import type { ThemeColors } from "./public-page";
+
 interface HeaderBlockProps {
 	block: {
 		id: string;
@@ -5,62 +8,63 @@ interface HeaderBlockProps {
 	};
 	config: Record<string, unknown>;
 	colorMode: "light" | "dark";
-	themeColors?: {
-		border?: string;
-	};
+	themeColors: ThemeColors;
 }
 
-export function HeaderBlock({ block, config, colorMode, themeColors }: HeaderBlockProps) {
-	const headingLevel = (config.headingLevel as string) || "h2";
-	const textAlign = (config.textAlign as string) || "center";
-	const fontWeight = (config.fontWeight as string) || "bold";
+type Level = "h1" | "h2" | "h3" | "h4" | "h5" | "h6";
+
+const sizeClasses: Record<Level, string> = {
+	h1: "text-h1 font-bold",
+	h2: "text-h2 font-semibold",
+	h3: "text-body font-semibold",
+	h4: "text-small font-semibold",
+	h5: "text-small font-medium",
+	h6: "text-micro font-semibold uppercase tracking-wider",
+};
+
+export function HeaderBlock({ block, config, themeColors }: HeaderBlockProps) {
+	const level =
+		(config.headingLevel as Level) in sizeClasses ? (config.headingLevel as Level) : "h2";
+	const textAlign = (config.textAlign as string) || "left";
 	const emoji = config.emoji as string | undefined;
 	const emojiPosition = (config.emojiPosition as string) || "left";
-	const showDivider = config.showDivider as boolean | undefined;
-
-	const textAlignClasses: Record<string, string> = {
-		left: "text-left",
-		center: "text-center",
-		right: "text-right",
-	};
-
-	const fontWeightClasses: Record<string, string> = {
-		normal: "font-normal",
-		medium: "font-medium",
-		bold: "font-bold",
-	};
-
-	const sizeClasses: Record<string, string> = {
-		h2: "text-xl",
-		h3: "text-lg",
-		h4: "text-base",
-	};
-
-	const HeadingTag = headingLevel as "h2" | "h3" | "h4";
-
-	const content = (
-		<span className="flex items-center justify-center gap-2">
-			{emoji && emojiPosition === "left" && <span aria-hidden="true">{emoji}</span>}
-			<span>{block.title || ""}</span>
-			{emoji && emojiPosition === "right" && <span aria-hidden="true">{emoji}</span>}
-		</span>
-	);
+	// The running hairline *is* the divider now; `showDivider: false` hides it.
+	const showRule = config.showDivider !== false;
+	const HeadingTag = level;
 
 	return (
-		<div className="ld-header-block py-2">
-			<HeadingTag
-				className={`${sizeClasses[headingLevel] || "text-xl"} ${fontWeightClasses[fontWeight] || "font-bold"} ${textAlignClasses[textAlign] || "text-center"}`}
+		<div
+			className="ld-header-block py-2"
+			style={
+				{
+					color: themeColors.fg,
+					// SectionRule paints from these two vars; set them from the page theme.
+					"--signal": `linear-gradient(90deg, ${themeColors.primary}, ${themeColors.accent})`,
+					"--rule": themeColors.border,
+				} as React.CSSProperties
+			}
+		>
+			{/* as="div" so the real h1–h6 below keeps its own size/weight classes. */}
+			<SectionRule
+				as="div"
+				className={
+					textAlign === "center"
+						? "justify-center"
+						: textAlign === "right"
+							? "flex-row-reverse"
+							: undefined
+				}
+				// A centered title has no "after" edge for a running rule; it gets the full-width one below.
+				ruleClassName={!showRule || textAlign === "center" ? "hidden" : undefined}
 			>
-				{content}
-			</HeadingTag>
-			{showDivider && (
-				<hr
-					className="mt-2"
-					style={{
-						borderColor: themeColors?.border || (colorMode === "dark" ? "#374151" : "#e5e7eb"),
-						transition: "border-color 0.5s ease",
-					}}
-				/>
+				<HeadingTag className={`flex items-center gap-2 ${sizeClasses[level]}`}>
+					{emoji && emojiPosition === "left" && <span aria-hidden="true">{emoji}</span>}
+					<span>{block.title || ""}</span>
+					{emoji && emojiPosition === "right" && <span aria-hidden="true">{emoji}</span>}
+				</HeadingTag>
+			</SectionRule>
+			{showRule && textAlign === "center" && (
+				<hr className="mt-2 h-px border-0 bg-[color:var(--rule)]" />
 			)}
 		</div>
 	);

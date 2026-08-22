@@ -35,34 +35,3 @@ export async function apiFetch(path: string, init?: RequestInit): Promise<Respon
 	}
 	return fetch(`${env.NEXT_PUBLIC_SERVER_URL}${path}`, init);
 }
-
-// ponytail: hand-typed subset of public.getPage — PR 3 replaces this with
-// inferRouterOutputs<AppRouter> in lib/public-page.ts.
-export type PublicPagePayload = {
-	profile?: {
-		name?: string | null;
-		image?: string | null;
-		bio?: string | null;
-	} | null;
-	settings?: {
-		seoTitle?: string | null;
-		seoDescription?: string | null;
-		seoOgImage?: string | null;
-		seoOgMode?: string | null;
-		seoOgTemplate?: string | null;
-		customPrimary?: string | null;
-		brandingFaviconUrl?: string | null;
-	};
-};
-
-/** Public page payload for metadata. Never throws — returns `{}` on any failure. */
-export async function getPublicPagePayload(): Promise<PublicPagePayload> {
-	try {
-		const res = await apiFetch("/trpc/public.getPage", { next: { revalidate: 60 } });
-		if (!res.ok) return {};
-		const json = (await res.json()) as { result?: { data?: PublicPagePayload } };
-		return json?.result?.data ?? {};
-	} catch {
-		return {};
-	}
-}
