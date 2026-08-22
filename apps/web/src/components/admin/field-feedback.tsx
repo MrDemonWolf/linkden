@@ -1,11 +1,39 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
-/** Inline validation message. Pair with `aria-invalid` + `aria-describedby={id}` on the input. */
-export function FieldError({ id, error }: { id: string; error: string | null | undefined }) {
-	if (!error) return null;
+/**
+ * Inline validation message. Pair with `aria-invalid` + `aria-describedby={id}`
+ * on the input.
+ *
+ * The message only appears once the error has been stable for a moment, so a
+ * half-typed URL does not flash red on every keystroke; it clears immediately
+ * when the value becomes valid. `role="status"` keeps screen-reader
+ * announcements polite.
+ */
+export function FieldError({
+	id,
+	error,
+	delay = 700,
+}: {
+	id: string;
+	error: string | null | undefined;
+	delay?: number;
+}) {
+	const [shown, setShown] = useState<string | null>(null);
+	useEffect(() => {
+		if (!error) {
+			setShown(null);
+			return;
+		}
+		const t = setTimeout(() => setShown(error), delay);
+		return () => clearTimeout(t);
+	}, [error, delay]);
+	if (!shown) return null;
 	return (
-		<p id={id} role="alert" className="text-micro text-destructive">
-			{error}
+		<p id={id} role="status" className="text-micro text-destructive">
+			{shown}
 		</p>
 	);
 }
