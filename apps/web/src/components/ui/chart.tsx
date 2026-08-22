@@ -141,4 +141,4 @@ function ChartTooltipContent({
 	);
 }
 
-export { ChartContainer, ChartTooltipContent, ChartStyle, useChart };
+export { ChartContainer, ChartTooltipContent };

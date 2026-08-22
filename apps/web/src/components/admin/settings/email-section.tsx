@@ -1,10 +1,28 @@
 "use client";
 
+import { SETTING_REGISTRY } from "@linkden/validators/settings-registry";
 import { AtSign, Cloud, Key, Mail } from "lucide-react";
+import { z } from "zod";
+import { FieldError } from "@/components/admin/field-feedback";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { fieldError } from "@/lib/validate";
 import { FieldGroup } from "./field-group";
+
+const API_KEY_MAX = SETTING_REGISTRY.email_api_key?.maxLength ?? 512;
+
+/** Field → message for invalid email settings. Blank values are "cleared". */
+export function emailErrors(v: { emailApiKey: string; emailFrom: string }): Record<string, string> {
+	const errors: Record<string, string> = {};
+	const key = fieldError(z.string().max(API_KEY_MAX), v.emailApiKey);
+	if (key) errors.emailApiKey = key;
+	// Resend accepts `Name <address>` — validate the address part only.
+	const address = v.emailFrom.match(/<([^>]*)>\s*$/)?.[1] ?? v.emailFrom;
+	const from = v.emailFrom ? fieldError(z.email(), address.trim()) : null;
+	if (from) errors.emailFrom = from;
+	return errors;
+}
 
 interface EmailSectionProps {
 	emailProvider: string;
@@ -40,6 +58,7 @@ export function EmailSection({
 	onEmailApiKeyChange,
 	onEmailFromChange,
 }: EmailSectionProps) {
+	const errors = emailErrors({ emailApiKey, emailFrom });
 	return (
 		<div className="space-y-4">
 			{/* Provider selection cards */}
@@ -117,7 +136,10 @@ export function EmailSection({
 						value={emailApiKey}
 						onChange={(e) => onEmailApiKeyChange(e.target.value)}
 						placeholder={emailProvider === "resend" ? "re_..." : "API key"}
+						aria-invalid={!!errors.emailApiKey}
+						aria-describedby={errors.emailApiKey ? "s-email-key-error" : undefined}
 					/>
+					<FieldError id="s-email-key-error" error={errors.emailApiKey} />
 				</div>
 				<div className="space-y-1.5">
 					<Label htmlFor="s-email-from">
@@ -131,7 +153,15 @@ export function EmailSection({
 						value={emailFrom}
 						onChange={(e) => onEmailFromChange(e.target.value)}
 						placeholder="noreply@yourdomain.com"
+						inputMode="email"
+						aria-invalid={!!errors.emailFrom}
+						aria-describedby={errors.emailFrom ? "s-email-from-error" : "s-email-from-hint"}
 					/>
+					<p id="s-email-from-hint" className="text-micro text-muted-foreground">
+						A verified sender, or{" "}
+						<code className="rounded bg-muted px-1">Name &lt;address&gt;</code>
+					</p>
+					<FieldError id="s-email-from-error" error={errors.emailFrom} />
 				</div>
 			</FieldGroup>
 		</div>

@@ -32,10 +32,3 @@ export function buildUrl(username: string, template: string): string {
 	if (!username || isFullUrlTemplate(template)) return username;
 	return template.replace("{}", username);
 }
-
-export function resolveUrl(url: string, template: string): string {
-	if (!url) return "";
-	if (isFullUrlTemplate(template)) return url;
-	const username = extractUsername(url, template);
-	return buildUrl(username, template);
-}

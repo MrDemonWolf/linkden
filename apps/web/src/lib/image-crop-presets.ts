@@ -9,7 +9,9 @@ export type ImagePurpose =
 	| "logo"
 	| "favicon"
 	| "login_logo"
-	| "login_background";
+	| "login_background"
+	| "block_thumbnail"
+	| "block_image";
 
 export interface CropPreset {
 	aspect: number | undefined;
@@ -30,8 +32,6 @@ export const CROP_PRESETS: Record<ImagePurpose, CropPreset> = {
 	logo: { aspect: undefined, maxSize: 1024, format: "png", dimensions: "≤ 1024" },
 	login_logo: { aspect: undefined, maxSize: 512, format: "png", dimensions: "≤ 512" },
 	login_background: { aspect: 16 / 9, maxSize: 2560, format: "webp", dimensions: "2560 × 1440" },
+	block_thumbnail: { aspect: 1, maxSize: 256, format: "webp", dimensions: "256 × 256" },
+	block_image: { aspect: undefined, maxSize: 1600, format: "webp", dimensions: "≤ 1600" },
 };
-
-export function getCropPreset(purpose: ImagePurpose): CropPreset {
-	return CROP_PRESETS[purpose];
-}

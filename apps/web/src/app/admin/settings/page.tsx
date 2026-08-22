@@ -18,18 +18,19 @@ import {
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { QueryError } from "@/components/admin/dashboard/query-error";
 import { PageHeader } from "@/components/admin/page-header";
 import { PageShell } from "@/components/admin/page-shell";
 import { SectionCard } from "@/components/admin/section-header";
-import { BrandingSection } from "@/components/admin/settings/branding-section";
-import { CaptchaSection } from "@/components/admin/settings/captcha-section";
-import { ConsentSection } from "@/components/admin/settings/consent-section";
+import { BrandingSection, brandingErrors } from "@/components/admin/settings/branding-section";
+import { CaptchaSection, captchaErrors } from "@/components/admin/settings/captcha-section";
+import { ConsentSection, consentErrors } from "@/components/admin/settings/consent-section";
 import { ContactFormSection } from "@/components/admin/settings/contact-form-section";
 import { DataSection } from "@/components/admin/settings/data-section";
-import { EmailSection } from "@/components/admin/settings/email-section";
+import { EmailSection, emailErrors } from "@/components/admin/settings/email-section";
 import { MapKitSection } from "@/components/admin/settings/mapkit-section";
 import { MigrationSection } from "@/components/admin/settings/migration-section";
-import { SeoSection } from "@/components/admin/settings/seo-section";
+import { SeoSection, seoErrors } from "@/components/admin/settings/seo-section";
 import { VCardSection, type VCardSectionHandle } from "@/components/admin/settings/vcard-section";
 import { StickySaveBar } from "@/components/admin/sticky-save-bar";
 import { Badge } from "@/components/ui/badge";
@@ -271,6 +272,7 @@ export default function SettingsPage() {
 
 	// vCard section (saves via its own tRPC mutation; the global save awaits it via the ref)
 	const [vcardDirty, setVcardDirty] = useState(false);
+	const [vcardHasErrors, setVcardHasErrors] = useState(false);
 	const vcardSectionRef = useRef<VCardSectionHandle>(null);
 
 	// Load settings
@@ -354,6 +356,31 @@ export default function SettingsPage() {
 
 	useUnsavedChanges(isDirty);
 
+	// Same per-field checks each section renders inline; any error anywhere
+	// (including on a tab that isn't open) disables Save.
+	const hasErrors =
+		vcardHasErrors ||
+		[
+			seoErrors({ seoTitle, seoDescription }),
+			brandingErrors({
+				siteName,
+				footerBrandingEnabled,
+				footerBrandingText,
+				footerBrandingLink,
+				ppMode,
+				ppUrl,
+				tosMode,
+				tosUrl,
+			}),
+			emailErrors({ emailApiKey, emailFrom }),
+			captchaErrors({ captchaProvider, captchaSiteKey, captchaSecretKey }),
+			consentErrors({
+				enabled: consentBannerEnabled,
+				bannerText: consentBannerText,
+				privacyUrl: consentPrivacyUrl,
+			}),
+		].some((e) => Object.keys(e).length > 0);
+
 	const invalidate = useCallback(() => {
 		qc.invalidateQueries({
 			queryKey: trpc.settings.getAll.queryOptions().queryKey,
@@ -398,6 +425,7 @@ export default function SettingsPage() {
 	};
 
 	const handleSave = async () => {
+		if (hasErrors) return;
 		try {
 			// Awaited so a vCard save failure surfaces in this try/catch instead of
 			// racing an independent success toast (it persists via its own tRPC mutation).
@@ -522,12 +550,17 @@ export default function SettingsPage() {
 				if (fileInputRef.current) fileInputRef.current.value = "";
 				return;
 			}
-			await importData.mutateAsync({
+			const result = await importData.mutateAsync({
 				mode: "merge",
 				data: parsed.data,
 			});
 			invalidate();
-			toast.success("Import successful");
+			const skipped = result.skipped.blocks + result.skipped.socialNetworks;
+			if (skipped > 0) {
+				toast.warning(`Imported with ${skipped} invalid row${skipped === 1 ? "" : "s"} skipped`);
+			} else {
+				toast.success("Import successful");
+			}
 		} catch {
 			toast.error("Failed to import. Make sure the file is valid JSON.");
 		}
@@ -542,6 +575,14 @@ export default function SettingsPage() {
 					<Skeleton key={`sk-${i}`} className="h-40" />
 				))}
 			</div>
+		);
+	}
+
+	if (settingsQuery.isError) {
+		return (
+			<PageShell>
+				<QueryError message="Couldn't load settings" onRetry={() => settingsQuery.refetch()} />
+			</PageShell>
 		);
 	}
 
@@ -561,7 +602,7 @@ export default function SettingsPage() {
 					<Button
 						size="sm"
 						variant={isDirty ? "default" : "outline"}
-						disabled={!isDirty || updateSettings.isPending}
+						disabled={!isDirty || hasErrors || updateSettings.isPending}
 						onClick={handleSave}
 					>
 						<Save className="mr-1.5 h-3.5 w-3.5" />
@@ -708,7 +749,11 @@ export default function SettingsPage() {
 						title="Digital business card (vCard)"
 						description="Let visitors save your contact details to their phone with one tap"
 					>
-						<VCardSection ref={vcardSectionRef} onDirtyChange={setVcardDirty} />
+						<VCardSection
+							ref={vcardSectionRef}
+							onDirtyChange={setVcardDirty}
+							onErrorsChange={setVcardHasErrors}
+						/>
 					</SectionCard>
 
 					<SectionCard
@@ -801,6 +846,7 @@ export default function SettingsPage() {
 				<StickySaveBar
 					isDirty={isDirty}
 					isSaving={updateSettings.isPending}
+					hasErrors={hasErrors}
 					onSave={handleSave}
 					onDiscard={handleDiscard}
 				/>

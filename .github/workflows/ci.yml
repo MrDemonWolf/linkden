@@ -1,8 +1,9 @@
 name: CI
 
 on:
+  # Every PR, whatever its base, so stacked PRs get checks before they
+  # land on main. Deploy still keys off pushes to main only.
   pull_request:
-    branches: [main]
   push:
     branches: [main]
 
@@ -56,6 +57,7 @@ jobs:
         run: bun run build
         env:
           NEXT_PUBLIC_SERVER_URL: http://localhost:3000
+          NEXT_PUBLIC_SITE_URL: http://localhost:3001
           BETTER_AUTH_URL: http://localhost:3000
           BETTER_AUTH_SECRET: ci-placeholder-secret-for-build
           CORS_ORIGIN: http://localhost:3001
