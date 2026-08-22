@@ -8,7 +8,8 @@ export default defineConfig({
 		environment: "jsdom",
 		setupFiles: ["./vitest.setup.ts"],
 		include: ["**/__tests__/**/*.test.{ts,tsx}", "**/*.test.{ts,tsx}"],
-		exclude: ["**/node_modules/**", "**/.next/**", "**/dist/**", "**/.wrangler/**"],
+		// e2e/ is Playwright's — run via `bun run test:e2e`, never by Vitest.
+		exclude: ["**/node_modules/**", "**/.next/**", "**/dist/**", "**/.wrangler/**", "e2e/**"],
 		coverage: {
 			provider: "v8",
 			reporter: ["text", "html", "lcov"],

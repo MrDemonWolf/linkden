@@ -230,14 +230,14 @@ export function PageContent({
 			: null;
 
 	return (
-		<div className="ld-page min-h-dvh" style={cssVarStyle}>
+		<div className="ld-page flex min-h-dvh flex-col" style={cssVarStyle}>
 			{settings.customCss && (
 				<style>{settings.customCss.slice(0, 20000).replace(/<\/style/gi, "<\\/style")}</style>
 			)}
 
 			<Wrapper
 				{...(!isPreview ? { id: "main-content", role: "main" } : {})}
-				className="mx-auto max-w-lg px-4 py-10 md:py-14"
+				className="mx-auto w-full max-w-lg px-4 py-10 md:py-14"
 			>
 				{/* Hero card: cover + avatar + name + bio + socials */}
 				<ProfileWrapper
