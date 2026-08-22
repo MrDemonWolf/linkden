@@ -27,7 +27,7 @@ interface DangerConfirmDialogProps {
 
 /**
  * Destructive-action dialog with a type-to-confirm ceremony. Both danger-zone
- * actions on the Account page use this so the confirmation experience is
+ * actions on Settings → Data use this so the confirmation experience is
  * identical: the keyword input lives inside the dialog and is reset whenever the
  * dialog opens or closes (so a half-typed word never carries over).
  */

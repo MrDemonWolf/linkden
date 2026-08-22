@@ -45,7 +45,8 @@
   /* Light-mode counterparts of the dark-only admin tokens (were undefined) */
   --glass-tint-1: #00aced;
   --glass-tint-2: #6b8bf5;
-  --sidebar: rgba(255, 255, 255, 0.72);
+  /* Shell chrome (rail, top bar, tab bar): --card flattened to 100% over --background */
+  --sidebar: oklch(1 0 0);
   --data-up: oklch(0.52 0.13 160);
   --data-down: oklch(0.51 0.2 27);
   --dim: oklch(0.55 0 0);
@@ -58,6 +59,8 @@
   --shadow-glow: 0 0 0 1px oklch(from var(--primary) l c h / 0.3), 0 14px 40px -16px oklch(from var(--primary) l c h / 0.4);
   /* Signal line: 2px cerulean -> cornflower. The brand's signature mark. */
   --signal: linear-gradient(90deg, var(--primary), var(--glass-tint-2));
+  /* Preview-column desk ground: 12px dot grid, foreground at ~8% */
+  --canvas-dot: oklch(0 0 0 / 0.08);
 }
 
 .dark {
@@ -94,7 +97,8 @@
   --chart-5: #4e6287;
   --glass-tint-1: #00ACED;
   --glass-tint-2: #6B8BF5;
-  --sidebar: rgba(5, 11, 33, 0.8);
+  /* Shell chrome: --card (5% white) flattened over Black Pearl */
+  --sidebar: #15213d;
   --data-up: #6be0a8;
   --data-down: #ff9aa8;
   --dim: #4e6287;
@@ -104,6 +108,7 @@
   --shadow-card: 0 1px 2px oklch(0 0 0 / 0.05), 0 10px 28px -14px oklch(0 0 0 / 0.28);
   --shadow-glow: 0 0 0 1px oklch(from var(--primary) l c h / 0.3), 0 14px 40px -16px oklch(from var(--primary) l c h / 0.4);
   --signal: linear-gradient(90deg, #00ACED, #6B8BF5);
+  --canvas-dot: oklch(1 0 0 / 0.08);
 }
 
 @theme inline {
@@ -155,12 +160,20 @@
   --color-background: var(--background);
   --color-sidebar: var(--sidebar);
   --color-rule: var(--rule);
+  --color-canvas-dot: var(--canvas-dot);
   --color-glass: var(--glass-bg);
   --color-glass-border: var(--glass-border);
   --shadow-card: var(--shadow-card);
   --shadow-glow: var(--shadow-glow);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Top-bar Unsaved dot: one 600ms pulse when the pill appears, then still. */
+  --animate-pulse-once: pulse-once 600ms var(--ease-out) 1;
+  @keyframes pulse-once {
+    0% { transform: scale(1); opacity: 1; }
+    40% { transform: scale(1.9); opacity: 0.45; }
+    100% { transform: scale(1); opacity: 1; }
+  }
   /* Explicit radius scale (was a calc() chain off --radius) */
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
@@ -204,27 +217,6 @@
     transition-duration: 0.01ms;
     scroll-behavior: auto;
   }
-}
-
-/* Midnight Studio aurora — light "day" tint keeps the cerulean/cornflower
-   identity over a light surface so the light foreground palette is legible. */
-.admin-glass-bg {
-  background:
-    radial-gradient(1200px 600px at 10% -10%, #e4ecfb 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, color-mix(in srgb, var(--glass-tint-2, #6B8BF5) 10%, transparent), transparent 55%),
-    radial-gradient(ellipse at 20% 90%, color-mix(in srgb, var(--glass-tint-1, #00ACED) 8%, transparent), transparent 55%),
-    linear-gradient(160deg, #f6f8fd 0%, #eef2fb 100%);
-  background-attachment: fixed;
-}
-
-/* V1 Midnight Studio aurora — cerulean/cornflower over Black Pearl (dark) */
-.dark .admin-glass-bg {
-  background:
-    radial-gradient(1200px 600px at 10% -10%, #142352 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, color-mix(in srgb, var(--glass-tint-2, #6B8BF5) 14%, transparent), transparent 55%),
-    radial-gradient(ellipse at 20% 90%, color-mix(in srgb, var(--glass-tint-1, #00ACED) 10%, transparent), transparent 55%),
-    linear-gradient(160deg, #091533 0%, #0a1840 100%);
-  background-attachment: fixed;
 }
 
 /* Numeric / data text — Geist Mono + tabular figures */

@@ -19,7 +19,7 @@ Release notes live in [`CHANGELOG.md`](./CHANGELOG.md).
 ## When PR 2–5 merge (design + admin + validation)
 
 - [ ] `bun dev:server` + `bun dev:web` → `/admin/setup` locally → create your account, import LinkStack export (Settings → Data → Import)
-- [ ] Walk `/admin/builder` on your phone (same Wi-Fi: `http://<mac-ip>:3001`). Add a Featured link, a Grid header, an Image block
+- [ ] Walk `/admin/links` on your phone (same Wi-Fi: `http://<mac-ip>:3001`). Add a Featured link, a Grid header, an Image block
 - [ ] Settings → Email → paste Resend key → send yourself a password reset to prove it
 
 ## Cutover day (15 min, reversible)
@@ -28,7 +28,7 @@ Release notes live in [`CHANGELOG.md`](./CHANGELOG.md).
 - [ ] GitHub → `production` variables → set `SITE_DOMAIN=l.mrdemonwolf.com` **and** `NEXT_PUBLIC_SITE_URL=https://l.mrdemonwolf.com` (the deploy checks they match)
 - [ ] Actions → Deploy → **Run workflow** (or re-run last) → wait green
 - [ ] `https://l.mrdemonwolf.com/api/health` → ok; `https://l.mrdemonwolf.com/admin` → login works, no loop
-- [ ] `/admin/setup` → account → Settings → Data → **Import** your LinkStack export → Builder → Publish
+- [ ] `/admin/setup` → account → Settings → Data → **Import** your LinkStack export → Links → Publish
 - [ ] Phone: open site, Share → "Add to Home Screen" works
 - [ ] Actions → `backup-db` → Run workflow → check `linkden-backups` bucket has today's file
 - [ ] `git tag -a v0.5.0 -m "Go live" && git push --tags`

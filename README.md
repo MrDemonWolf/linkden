@@ -18,7 +18,7 @@ Own your presence. Host your own link page.
   color customization and social icon shape control per-theme.
 - **Analytics dashboard** — Track page views and link clicks with
   privacy-first data collection.
-- **Connections inbox** — Receive visitor contact form messages directly in
+- **Inbox** — Receive visitor contact form messages directly in
   the admin panel with read/unread management and optional CAPTCHA.
 - **Apple Wallet pass** — Generate and distribute a digital business
   card as a `.pkpass` file.
