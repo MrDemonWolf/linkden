@@ -1,7 +1,9 @@
+import { env } from "@linkden/env/web";
 import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono, Montserrat, Roboto } from "next/font/google";
 import "../index.css";
 import Providers from "@/components/providers";
+import { getPublicPagePayload } from "@/lib/server-api";
 
 export const viewport: Viewport = {
 	width: "device-width",
@@ -30,42 +32,8 @@ const jetbrainsMono = JetBrains_Mono({
 	display: "swap",
 });
 
-type PublicPagePayload = {
-	profile?: {
-		name?: string | null;
-		image?: string | null;
-		bio?: string | null;
-	} | null;
-	settings?: {
-		seoTitle?: string | null;
-		seoDescription?: string | null;
-		seoOgImage?: string | null;
-		seoOgMode?: string | null;
-		seoOgTemplate?: string | null;
-		customPrimary?: string | null;
-		brandingFaviconUrl?: string | null;
-	};
-};
-
-async function fetchPage(): Promise<PublicPagePayload> {
-	try {
-		const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL;
-		if (!serverUrl) return {};
-		const res = await fetch(`${serverUrl}/trpc/public.getPage`, {
-			next: { revalidate: 60 },
-		});
-		if (!res.ok) return {};
-		const json = (await res.json()) as {
-			result?: { data?: PublicPagePayload };
-		};
-		return json?.result?.data ?? {};
-	} catch {
-		return {};
-	}
-}
-
 export async function generateMetadata(): Promise<Metadata> {
-	const { profile, settings = {} } = await fetchPage();
+	const { profile, settings = {} } = await getPublicPagePayload();
 
 	const title = settings.seoTitle || "LinkDen";
 	const description = settings.seoDescription || "Your personal link-in-bio page";
@@ -77,12 +45,14 @@ export async function generateMetadata(): Promise<Metadata> {
 		const bio = encodeURIComponent(profile?.bio || "");
 		const theme = encodeURIComponent(settings.customPrimary || "#6366f1");
 		const avatar = profile?.image ? `&avatar=${encodeURIComponent(profile.image)}` : "";
-		ogImageUrl = `/api/og?template=${template}&name=${name}&bio=${bio}&theme=${theme}${avatar}`;
+		ogImageUrl = `/og?template=${template}&name=${name}&bio=${bio}&theme=${theme}${avatar}`;
 	} else if (settings.seoOgImage) {
 		ogImageUrl = settings.seoOgImage;
 	}
 
 	return {
+		// Makes relative icon/OG URLs absolute — crawlers need absolute OG images.
+		metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
 		title,
 		description,
 		icons: settings.brandingFaviconUrl

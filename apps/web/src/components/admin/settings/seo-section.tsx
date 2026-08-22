@@ -46,7 +46,7 @@ export function SeoSection({
 	onSeoOgModeChange,
 	onSeoOgTemplateChange,
 }: SeoSectionProps) {
-	const previewUrl = `/api/og?template=${encodeURIComponent(seoOgTemplate || "minimal")}&name=${encodeURIComponent(profileName || "My Links")}&bio=${encodeURIComponent(bio || "")}&theme=${encodeURIComponent(primaryColor || "#6366f1")}${avatarUrl ? `&avatar=${encodeURIComponent(avatarUrl)}` : ""}&_preview=1`;
+	const previewUrl = `/og?template=${encodeURIComponent(seoOgTemplate || "minimal")}&name=${encodeURIComponent(profileName || "My Links")}&bio=${encodeURIComponent(bio || "")}&theme=${encodeURIComponent(primaryColor || "#6366f1")}${avatarUrl ? `&avatar=${encodeURIComponent(avatarUrl)}` : ""}&_preview=1`;
 
 	// Determine the OG image URL for the preview card
 	const ogImageForPreview = seoOgMode === "template" ? previewUrl : seoOgImage || "";

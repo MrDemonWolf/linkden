@@ -2,7 +2,8 @@
 
 **Date:** 2026-07-10
 **Method:** scaffolded a throwaway `better-t-stack@latest` (v3.36.3) with LinkDen's exact
-flags, diffed every subsystem against LinkDen v1.0 (8 area agents, 76 raw findings).
+flags, diffed every subsystem against LinkDen 0.4.0 (the current version is in `version.json`;
+8 area agents, 76 raw findings).
 
 ## Bottom line
 
@@ -12,7 +13,7 @@ deployed via **Alchemy IaC + OpenNext** — which is the scaffold's *own* deploy
 premise that the scaffold uses OpenNext+Wrangler scripts is wrong; v3.36.3 uses Alchemy too).
 The shared `tsconfig.base.json`, drizzle config, and postcss/tailwind setup are byte-identical.
 
-A full rewrite is unwarranted — it would delete a shipped v1.0 to rebuild the same stack.
+A full rewrite is unwarranted — it would delete a working app to rebuild the same stack.
 The real delta is **version freshness + a handful of config knobs**, plus a few genuine
 architecture decisions the maintainer should make deliberately.
 

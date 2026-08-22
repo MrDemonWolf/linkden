@@ -40,9 +40,9 @@ jobs:
       # (exit 132/SIGILL), same as wolfathon and dirework. Bun is still used for
       # installs and the turbo run.
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22
+          node-version-file: .node-version
 
       - name: Cache bun install
         uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
@@ -69,6 +69,11 @@ jobs:
           BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
           NEXT_PUBLIC_SERVER_URL: ${{ secrets.NEXT_PUBLIC_SERVER_URL }}
           CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
+          # Repository/environment *variables*, not secrets: the custom domain
+          # the web worker owns (unset = stay on workers.dev) and the public
+          # site origin baked into robots/sitemap/metadataBase.
+          SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
+          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
           WALLET_SIGNER_CERT: ${{ secrets.WALLET_SIGNER_CERT }}
           WALLET_SIGNER_KEY: ${{ secrets.WALLET_SIGNER_KEY }}
           WALLET_WWDR_CERT: ${{ secrets.WALLET_WWDR_CERT }}
@@ -78,7 +83,14 @@ jobs:
       - name: Smoke test production
         run: |
           sleep 5
-          HEALTH_URL="${{ secrets.NEXT_PUBLIC_SERVER_URL }}/api/health"
+          # With a custom domain the API is routed under the site origin
+          # (/api/* route on the web worker's domain); otherwise probe the
+          # server's workers.dev URL directly.
+          if [ -n "$SITE_URL" ]; then
+            HEALTH_URL="${SITE_URL%/}/api/health"
+          else
+            HEALTH_URL="${SERVER_URL%/}/api/health"
+          fi
           echo "Probing $HEALTH_URL"
           RESPONSE=$(curl -fsS --max-time 15 "$HEALTH_URL" || echo "FAILED")
           echo "Response: $RESPONSE"
@@ -93,3 +105,9 @@ jobs:
           if ! echo "$RESPONSE" | grep -q '"version":"'; then
             echo "ERROR: version missing from health response"; exit 1
           fi
+          if ! echo "$RESPONSE" | grep -q '"email":"'; then
+            echo "ERROR: email status missing from health response"; exit 1
+          fi
+        env:
+          SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+          SERVER_URL: ${{ secrets.NEXT_PUBLIC_SERVER_URL }}
