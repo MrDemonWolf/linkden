@@ -2,8 +2,9 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Eye, EyeOff, GripVertical, Pencil, Trash2, TriangleAlert } from "lucide-react";
+import { ChevronRight, GripVertical, Trash2, TriangleAlert } from "lucide-react";
 import Link from "next/link";
+import { Switch } from "@/components/ui/switch";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { type Block, blockTypeIcon, TYPE_CHIP } from "./builder-constants";
@@ -26,6 +27,9 @@ export function BlockRow({
 }) {
 	const Icon = blockTypeIcon(block.type);
 	const typeLabel = block.type === "connect" ? "Connect" : block.type.replace(/_/g, " ");
+	// Where the feature toggle lives: messages in Inbox, vCard under Design → Branding.
+	const featureHref = block.type === "connect" ? "/admin/inbox" : "/admin/design/branding";
+	const featureLabel = block.type === "connect" ? "Inbox" : "Branding";
 
 	const { attributes, listeners, setNodeRef, transform, transition, isDragging, isSorting } =
 		useSortable({ id: block.id });
@@ -38,8 +42,6 @@ export function BlockRow({
 		willChange: isSorting ? "transform" : undefined,
 	};
 
-	const badgeClass = TYPE_CHIP;
-
 	return (
 		// biome-ignore lint/a11y/useSemanticElements: non-semantic container required for dnd-kit sortable ref (setNodeRef)
 		<div
@@ -48,18 +50,21 @@ export function BlockRow({
 			role="group"
 			aria-roledescription="sortable"
 			className={cn(
-				"group flex items-center gap-0 rounded-xl bg-card/80 backdrop-blur-xl border shadow-sm overflow-hidden transition-all hover:shadow-md min-h-[56px]",
-				accent
-					? "border-primary/40 bg-primary/[0.04] hover:border-primary/60"
-					: "border-border hover:border-foreground/20",
+				"group relative flex min-h-14 items-center overflow-hidden rounded-xl border bg-card transition-colors",
+				accent ? "border-primary/40" : "border-border",
 				isDragging && "opacity-30 ring-2 ring-primary/40",
-				!block.isEnabled && !isDragging && "opacity-50",
+				!block.isEnabled && !isDragging && "opacity-60",
 			)}
 		>
+			{/* Signal edge marks the selected row — the only place it appears in a list */}
+			{accent && (
+				<span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-[image:var(--signal)]" />
+			)}
+
 			{/* Drag handle — wider on mobile (44px), prevents page scroll on grab */}
 			<button
 				type="button"
-				className="flex w-11 sm:w-9 shrink-0 items-center justify-center border-r border-border text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing transition-colors self-stretch focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring touch-none"
+				className="flex w-11 shrink-0 cursor-grab touch-none items-center justify-center self-stretch text-muted-foreground/50 transition-colors hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing sm:w-9"
 				aria-label="Drag to reorder"
 				{...attributes}
 				{...listeners}
@@ -67,107 +72,79 @@ export function BlockRow({
 				<GripVertical className="h-4 w-4" />
 			</button>
 
-			{/* Left accent bar */}
 			<div
-				className={cn("w-[3px] self-stretch shrink-0", accent ? "bg-primary" : "bg-primary/40")}
-			/>
-
-			{/* Icon circle */}
-			<div
-				className={cn(
-					"ml-3 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-					badgeClass,
-				)}
+				className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", TYPE_CHIP)}
 			>
 				<Icon className="h-4 w-4" aria-hidden="true" />
 			</div>
 
-			{/* Content -- tapping the body opens edit */}
+			{/* Body — tapping it opens the editor */}
 			<button
 				type="button"
 				onClick={onEdit}
-				className="flex flex-1 items-center gap-3 px-3 py-3 min-w-0 text-left"
+				className="flex min-h-14 min-w-0 flex-1 items-center gap-3 px-3 text-left"
 				aria-label={`Edit ${block.title || "Untitled"}`}
 			>
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-1.5">
-						<p className="line-clamp-2 text-sm font-medium leading-snug lg:line-clamp-1">
-							{block.title || "Untitled"}
-						</p>
+						<p className="truncate text-sm font-medium leading-snug">{block.title || "Untitled"}</p>
 						{block.status === "draft" && (
 							<span
-								className="inline-block h-2 w-2 shrink-0 rounded-full bg-warning animate-pulse"
+								className="inline-block h-2 w-2 shrink-0 rounded-full bg-warning"
 								role="img"
 								aria-label="Unpublished changes"
 							/>
 						)}
 					</div>
-					<span
-						className={cn(
-							"inline-block mt-1 rounded-full px-1.5 py-0.5 text-micro font-medium leading-none capitalize",
-							badgeClass,
+					<p className="truncate text-micro capitalize text-muted-foreground">
+						{block.url ? (
+							<span className="normal-case">{block.url.replace(/^https?:\/\//, "")}</span>
+						) : (
+							typeLabel
 						)}
-					>
-						{typeLabel}
-					</span>
+					</p>
 				</div>
 			</button>
 
-			{/* Feature-gate warning — this block's site-wide toggle is off, so the
-			    public page silently skips it. Link straight to Settings to fix. */}
+			{/* Feature-gate warning — the site-wide toggle is off, so the public
+			    page silently skips this block. Link straight to where it lives. */}
 			{featureHidden && (
 				<Tooltip content="This block's feature is turned off, so it won't appear on your public page">
 					<Link
-						href="/admin/settings"
-						className="mr-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-warning/40 bg-warning/10 px-2 py-1 text-micro font-medium leading-none text-warning transition-colors hover:bg-warning/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+						href={featureHref}
+						className="mr-1 inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full border border-warning/40 bg-warning/10 px-2 text-micro font-medium leading-none text-warning transition-colors hover:bg-warning/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-7"
 					>
 						<TriangleAlert className="h-3 w-3" aria-hidden="true" />
-						<span className="max-sm:hidden">Hidden — enable in Settings</span>
+						<span className="max-sm:hidden">Hidden — turn on in {featureLabel}</span>
 						<span className="sm:hidden">Hidden</span>
 					</Link>
 				</Tooltip>
 			)}
 
-			{/* Actions */}
-			<div className="flex shrink-0 items-center gap-0 pr-1 lg:gap-0.5 lg:pr-2">
-				<button
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						onToggle();
-					}}
-					className={cn(
-						"flex h-11 w-11 items-center justify-center rounded-lg lg:h-8 lg:w-8 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-						block.isEnabled
-							? "text-success hover:bg-success/10"
-							: "text-muted-foreground hover:text-foreground hover:bg-muted",
-					)}
-					aria-label={block.isEnabled ? "Disable block" : "Enable block"}
-				>
-					{block.isEnabled ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
-				</button>
-				<button
-					type="button"
-					onClick={(e) => {
-						e.stopPropagation();
-						onEdit();
-					}}
-					className="flex h-11 w-11 items-center justify-center rounded-lg lg:h-8 lg:w-8 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors sm:hidden"
-					aria-label="Edit block"
-				>
-					<Pencil className="h-3.5 w-3.5" />
-				</button>
+			{/* Actions: visibility Switch · delete · chevron */}
+			<div className="flex shrink-0 items-center gap-1 pr-2">
+				<Switch
+					checked={block.isEnabled}
+					onCheckedChange={onToggle}
+					aria-label={block.isEnabled ? "Hide block" : "Show block"}
+				/>
 				<button
 					type="button"
 					onClick={(e) => {
 						e.stopPropagation();
 						onDelete();
 					}}
-					className="flex h-11 w-11 items-center justify-center rounded-lg lg:h-8 lg:w-8 text-muted-foreground transition-all opacity-60 hover:text-destructive hover:bg-destructive/10 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:opacity-70 group-hover:opacity-100"
+					className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground opacity-70 transition-colors hover:bg-destructive/10 hover:text-destructive hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100 lg:h-8 lg:w-8"
 					aria-label="Delete block"
 				>
 					<Trash2 className="h-3.5 w-3.5" />
 				</button>
+				<span
+					aria-hidden
+					className="hidden h-8 w-6 items-center justify-center text-muted-foreground/60 sm:flex"
+				>
+					<ChevronRight className="h-4 w-4" />
+				</span>
 			</div>
 		</div>
 	);

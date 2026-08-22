@@ -2,53 +2,38 @@
 
 import { SETTING_REGISTRY } from "@linkden/validators/settings-registry";
 import { Info } from "lucide-react";
-import { useCallback } from "react";
 import { z } from "zod";
 import { FieldError } from "@/components/admin/field-feedback";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { useSettingsForm } from "@/hooks/use-settings-form";
 import { fieldError } from "@/lib/validate";
 
 // Same cap the server applies (it truncates silently past this).
 const TOKEN_MAX = SETTING_REGISTRY.mapkit_token?.maxLength ?? 512;
 const tokenSchema = z.string().max(TOKEN_MAX);
 
-interface MapKitState {
-	enabled: boolean;
-	token: string;
+/** Field → message for an invalid MapKit token; `{}` when valid. */
+export function mapkitErrors(v: { mapkitToken: string }): Record<string, string> {
+	const token = fieldError(tokenSchema, v.mapkitToken);
+	return token ? { mapkitToken: token } : {};
 }
 
-export function MapKitSection() {
-	const form = useSettingsForm<MapKitState>({
-		parse: useCallback(
-			(d) => ({ enabled: d.mapkit_enabled === "true", token: d.mapkit_token ?? "" }),
-			[],
-		),
-		serialize: useCallback(
-			(s) => [
-				{ key: "mapkit_enabled", value: String(s.enabled) },
-				{ key: "mapkit_token", value: s.token },
-			],
-			[],
-		),
-		successMessage: "MapKit settings saved",
-		errorMessage: "Failed to save MapKit settings",
-		validate: useCallback((s: MapKitState): Record<string, string> => {
-			const token = fieldError(tokenSchema, s.token);
-			return token ? { token } : {};
-		}, []),
-	});
+interface MapKitSectionProps {
+	mapkitEnabled: boolean;
+	mapkitToken: string;
+	onMapkitEnabledChange: (v: boolean) => void;
+	onMapkitTokenChange: (v: string) => void;
+}
 
-	if (form.isLoading || !form.state) {
-		return <Skeleton className="h-16 w-full" />;
-	}
-
-	const { state, setState } = form;
-
+/** Controlled like the other settings sections; the Integrations page owns the form scope. */
+export function MapKitSection({
+	mapkitEnabled,
+	mapkitToken,
+	onMapkitEnabledChange,
+	onMapkitTokenChange,
+}: MapKitSectionProps) {
+	const errors = mapkitErrors({ mapkitToken });
 	return (
 		<div className="space-y-3">
 			<div className="flex items-start gap-2 rounded-lg border border-border/40 bg-muted/20 px-3 py-2">
@@ -65,33 +50,28 @@ export function MapKitSection() {
 
 			<div className="flex items-center gap-3">
 				<Switch
-					checked={state.enabled}
-					onCheckedChange={(enabled) => setState({ ...state, enabled })}
+					id="s-mapkit-enabled"
+					checked={mapkitEnabled}
+					onCheckedChange={onMapkitEnabledChange}
 					aria-label="Enable MapKit JS"
 				/>
-				<Label>Enable MapKit JS</Label>
+				<Label htmlFor="s-mapkit-enabled">Enable MapKit JS</Label>
 			</div>
 
-			{state.enabled && (
+			{mapkitEnabled && (
 				<div className="space-y-1.5">
 					<Label htmlFor="s-mapkit-token">MapKit JS JWT Token</Label>
 					<Input
 						id="s-mapkit-token"
-						value={state.token}
-						onChange={(e) => setState({ ...state, token: e.target.value })}
+						value={mapkitToken}
+						onChange={(e) => onMapkitTokenChange(e.target.value)}
 						placeholder="eyJ..."
 						className="font-mono text-xs"
-						aria-invalid={!!form.errors.token}
-						aria-describedby={form.errors.token ? "s-mapkit-token-error" : undefined}
+						aria-invalid={!!errors.mapkitToken}
+						aria-describedby={errors.mapkitToken ? "s-mapkit-token-error" : undefined}
 					/>
-					<FieldError id="s-mapkit-token-error" error={form.errors.token} />
+					<FieldError id="s-mapkit-token-error" error={errors.mapkitToken} />
 				</div>
-			)}
-
-			{form.isDirty && (
-				<Button onClick={form.save} disabled={form.isSaving || form.hasErrors} size="sm">
-					{form.isSaving ? "Saving..." : "Save MapKit Settings"}
-				</Button>
 			)}
 		</div>
 	);

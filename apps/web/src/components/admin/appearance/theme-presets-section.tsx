@@ -1,7 +1,7 @@
 "use client";
 
-import { Palette, Check } from "lucide-react";
 import { themePresets } from "@linkden/ui/themes";
+import { Check, Palette } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 

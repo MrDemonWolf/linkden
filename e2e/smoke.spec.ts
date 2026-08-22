@@ -35,10 +35,50 @@ test("/og is served by Next, not proxied to the API", async ({ request }) => {
 
 test("/admin is gated", async ({ page }) => {
 	await page.goto("/admin");
-	// proxy.ts redirects unauthenticated /admin/* to the login page.
-	await expect(page).toHaveURL(/\/admin\/login/);
+	// proxy.ts first 307s the legacy /admin root to /admin/links, then redirects
+	// the unauthenticated request to the login page carrying that canonical path.
+	await expect(page).toHaveURL(/\/admin\/login\?from=%2Fadmin%2Flinks$/);
 	await expect(page.getByRole("heading").first()).toBeVisible();
 });
+
+// Every destination and every legacy shim must exist as a route. Unauthenticated
+// they land on login (the edge proxy runs first), which still proves no 404/500.
+const ADMIN_ROUTES = [
+	"/admin/links",
+	"/admin/links/profile",
+	"/admin/links/social",
+	"/admin/design",
+	"/admin/design/banner",
+	"/admin/design/branding",
+	"/admin/design/seo",
+	"/admin/insights",
+	"/admin/inbox",
+	"/admin/settings",
+	"/admin/settings/email",
+	"/admin/settings/integrations",
+	"/admin/settings/wallet",
+	"/admin/settings/data",
+	// legacy shims → lib/admin-redirects.ts
+	"/admin/builder",
+	"/admin/builder?tab=social",
+	"/admin/appearance",
+	"/admin/analytics",
+	"/admin/connections",
+	"/admin/forms",
+	"/admin/social",
+	"/admin/account",
+	"/admin/wallet",
+	"/admin/settings?tab=seo",
+];
+
+for (const route of ADMIN_ROUTES) {
+	test(`${route} resolves`, async ({ page }) => {
+		const res = await page.goto(route);
+		expect(res?.status()).toBeLessThan(400);
+		await expect(page).toHaveURL(/\/admin\//);
+		await expect(page.locator("body")).not.toContainText(/404|This page could not be found/);
+	});
+}
 
 test("setup wizard or login is reachable", async ({ page }) => {
 	// Fresh DB: /admin/setup shows the wizard. Configured DB: it redirects to

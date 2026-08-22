@@ -1,10 +1,12 @@
 "use client";
 
-import { Image as ImageIcon, Palette, Upload, Check } from "lucide-react";
 import type { BannerPreset } from "@linkden/ui/banner-presets";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Check, Image as ImageIcon, Palette, Upload } from "lucide-react";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { ShaderBanner } from "@/components/public/shader-banner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 export function BannerSection({
@@ -40,39 +42,22 @@ export function BannerSection({
 			</CardHeader>
 			<CardContent className="space-y-3">
 				{/* Enable toggle */}
-				<label
-					htmlFor="a-banner-enabled"
-					className="flex items-start gap-3 cursor-pointer group rounded-lg border border-border/40 p-3 transition-colors hover:border-border/60"
-				>
+				<div className="flex items-start gap-3 rounded-lg border border-border p-3">
 					<div className="min-w-0 flex-1">
-						<span className="text-xs font-medium group-hover:text-foreground transition-colors">
+						<Label htmlFor="a-banner-enabled" className="text-xs font-medium">
 							Show banner on public page
-						</span>
-						<p className="text-micro text-muted-foreground leading-tight mt-0.5">
+						</Label>
+						<p className="mt-0.5 text-micro leading-tight text-muted-foreground">
 							Displays a banner behind your avatar
 						</p>
 					</div>
-					<button
+					<Switch
 						id="a-banner-enabled"
-						type="button"
-						role="switch"
-						aria-checked={bannerEnabled}
+						checked={bannerEnabled}
+						onCheckedChange={onBannerEnabledChange}
 						aria-label="Show banner on public page"
-						onClick={() => onBannerEnabledChange(!bannerEnabled)}
-						className={cn(
-							"relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
-							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-							bannerEnabled ? "bg-primary" : "bg-muted",
-						)}
-					>
-						<span
-							className={cn(
-								"inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform",
-								bannerEnabled ? "translate-x-[18px]" : "translate-x-[3px]",
-							)}
-						/>
-					</button>
-				</label>
+					/>
+				</div>
 
 				{/* Banner options (when enabled) */}
 				{bannerEnabled && (

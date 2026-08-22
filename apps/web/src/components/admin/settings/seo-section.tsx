@@ -11,7 +11,6 @@ import { OG_TEMPLATES } from "@/lib/og-templates";
 import { cn } from "@/lib/utils";
 import { fieldError } from "@/lib/validate";
 import { FieldGroup } from "./field-group";
-import { OgPreviewCard } from "./og-preview-card";
 
 // Search engines truncate titles past ~70 and descriptions past ~160 chars.
 const SEO_TITLE_MAX = 70;
@@ -33,16 +32,23 @@ export function seoErrors(v: { seoTitle: string; seoDescription: string }): Reco
 const focusRing =
 	"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
+/** The `/og` template render for the social preview card (same params the live page uses). */
+export function ogTemplatePreviewUrl(v: {
+	template: string;
+	profileName: string;
+	bio: string;
+	primaryColor: string;
+	avatarUrl: string;
+}): string {
+	return `/og?template=${encodeURIComponent(v.template || "minimal")}&name=${encodeURIComponent(v.profileName || "My Links")}&bio=${encodeURIComponent(v.bio || "")}&theme=${encodeURIComponent(v.primaryColor || "#6366f1")}${v.avatarUrl ? `&avatar=${encodeURIComponent(v.avatarUrl)}` : ""}&_preview=1`;
+}
+
 interface SeoSectionProps {
 	seoTitle: string;
 	seoDescription: string;
 	seoOgImage: string;
 	seoOgMode: string;
 	seoOgTemplate: string;
-	profileName: string;
-	bio: string;
-	primaryColor: string;
-	avatarUrl: string;
 	onSeoTitleChange: (v: string) => void;
 	onSeoDescriptionChange: (v: string) => void;
 	onSeoOgImageChange: (v: string) => void;
@@ -56,20 +62,13 @@ export function SeoSection({
 	seoOgImage,
 	seoOgMode,
 	seoOgTemplate,
-	profileName,
-	bio,
-	primaryColor,
-	avatarUrl,
 	onSeoTitleChange,
 	onSeoDescriptionChange,
 	onSeoOgImageChange,
 	onSeoOgModeChange,
 	onSeoOgTemplateChange,
 }: SeoSectionProps) {
-	const previewUrl = `/og?template=${encodeURIComponent(seoOgTemplate || "minimal")}&name=${encodeURIComponent(profileName || "My Links")}&bio=${encodeURIComponent(bio || "")}&theme=${encodeURIComponent(primaryColor || "#6366f1")}${avatarUrl ? `&avatar=${encodeURIComponent(avatarUrl)}` : ""}&_preview=1`;
-
-	// Determine the OG image URL for the preview card
-	const ogImageForPreview = seoOgMode === "template" ? previewUrl : seoOgImage || "";
+	// ponytail: the social preview card moved to the page (Design → SEO preview column toggle).
 	const errors = seoErrors({ seoTitle, seoDescription });
 
 	return (
@@ -203,19 +202,6 @@ export function SeoSection({
 						</p>
 					</div>
 				)}
-			</div>
-
-			{/* Live Social Preview */}
-			<div className="space-y-3">
-				<SectionLabel>Social Media Preview</SectionLabel>
-				<p className="text-micro text-muted-foreground -mt-2">
-					How your page will look when shared on social media
-				</p>
-				<OgPreviewCard
-					title={seoTitle || profileName || "My Links"}
-					description={seoDescription || bio || "Check out all my links"}
-					imageUrl={ogImageForPreview}
-				/>
 			</div>
 		</div>
 	);

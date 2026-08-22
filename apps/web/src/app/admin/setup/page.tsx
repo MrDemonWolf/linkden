@@ -1011,10 +1011,10 @@ export default function SetupPage() {
 		}
 	};
 
-	// Step 4 — go to dashboard (also clears progress if not cleared yet)
+	// Step 4 — launch into Links (also clears progress if not cleared yet)
 	const handleDone = () => {
 		clearProgress();
-		router.push("/admin");
+		router.push("/admin/links");
 	};
 
 	return (
