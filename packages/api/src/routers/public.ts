@@ -108,7 +108,7 @@ export const publicRouter = router({
 		return {
 			profile: profile
 				? {
-						name: profile.name,
+						name: settings.profile_name || profile.name,
 						image: settings.avatar_url || profile.image,
 						bio: settings.bio || null,
 						isVerified: settings.verified_badge === "true",
