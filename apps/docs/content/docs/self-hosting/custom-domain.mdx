@@ -59,7 +59,7 @@ Without `SITE_DOMAIN` the deploy targets `workers.dev`, where the two Workers ar
 - [ ] Verify:
 
   - `https://links.yourdomain.com` loads your link page with a lock icon.
-  - `curl -I https://links.yourdomain.com/api/health` returns `"status":"ok"`. The response carries the API's `Strict-Transport-Security` header, which proves the route won over the web Worker.
+  - `curl https://links.yourdomain.com/api/health` returns `"status":"ok"`, and `curl -I` on the same URL shows the API's `Strict-Transport-Security` header, which proves the route won over the web Worker.
   - `/admin/login` signs you in and stays signed in.
 
 ## 🌐 Apex Domains

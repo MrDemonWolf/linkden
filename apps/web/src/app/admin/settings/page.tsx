@@ -173,7 +173,10 @@ export default function SettingsPage() {
 		tabParam && SETTINGS_TABS.includes(tabParam) ? tabParam : "seo",
 	);
 	useEffect(() => {
-		if (tabParam && SETTINGS_TABS.includes(tabParam)) return;
+		if (tabParam && SETTINGS_TABS.includes(tabParam)) {
+			setActiveTab(tabParam);
+			return;
+		}
 		const stored = window.localStorage.getItem("admin.settings.tab");
 		if (stored && SETTINGS_TABS.includes(stored)) setActiveTab(stored);
 	}, [tabParam]);
