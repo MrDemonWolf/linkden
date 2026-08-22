@@ -86,6 +86,7 @@ jobs:
           WALLET_WWDR_CERT: ${{ secrets.WALLET_WWDR_CERT }}
           WALLET_TEAM_ID: ${{ secrets.WALLET_TEAM_ID }}
           WALLET_PASS_TYPE_ID: ${{ secrets.WALLET_PASS_TYPE_ID }}
+          WALLET_SIGNER_KEY_PASSPHRASE: ${{ secrets.WALLET_SIGNER_KEY_PASSPHRASE }}
 
       - name: Smoke test production
         run: |
