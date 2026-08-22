@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Eye } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { BannerSection } from "@/components/admin/appearance/banner-section";
 import { VerifiedBadgeSection } from "@/components/admin/appearance/branding-section";
 import { ColorsSection } from "@/components/admin/appearance/colors-section";
@@ -16,6 +17,7 @@ import {
 } from "@/components/admin/appearance/social-icon-shape-section";
 import { ThemePresetsSection } from "@/components/admin/appearance/theme-presets-section";
 import { QueryError } from "@/components/admin/dashboard/query-error";
+import { FieldError } from "@/components/admin/field-feedback";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
 import { PageHeader } from "@/components/admin/page-header";
 import { PagePreview, type PreviewOverrides } from "@/components/admin/page-preview";
@@ -25,7 +27,12 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { cn } from "@/lib/utils";
+import { fieldError } from "@/lib/validate";
 import { trpc } from "@/utils/trpc";
+
+// The public page only injects the first 20k chars of custom CSS.
+const CUSTOM_CSS_MAX = 20_000;
+const customCssSchema = z.string().max(CUSTOM_CSS_MAX);
 
 interface SavedState {
 	theme: string;
@@ -170,7 +177,10 @@ export default function AppearancePage() {
 		}
 	};
 
+	const cssError = fieldError(customCssSchema, customCss);
+
 	const handleSave = async () => {
+		if (cssError) return;
 		try {
 			await updateSettings.mutateAsync([
 				{ key: "theme_preset", value: selectedTheme },
@@ -357,10 +367,12 @@ export default function AppearancePage() {
 					/>
 
 					<CustomCssSection customCss={customCss} onCustomCssChange={setCustomCss} />
+					<FieldError id="custom-css-error" error={cssError} />
 
 					<StickySaveBar
 						isDirty={isDirty}
 						isSaving={updateSettings.isPending}
+						hasErrors={!!cssError}
 						onSave={handleSave}
 						onDiscard={handleDiscard}
 					/>

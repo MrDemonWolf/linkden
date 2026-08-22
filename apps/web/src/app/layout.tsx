@@ -3,13 +3,19 @@ import type { Metadata, Viewport } from "next";
 import { DM_Sans, Geist_Mono, Sora } from "next/font/google";
 import "../index.css";
 import Providers from "@/components/providers";
+import { SwRegister } from "@/components/sw-register";
 import { getPublicPage } from "@/lib/public-page";
 
-export const viewport: Viewport = {
-	width: "device-width",
-	initialScale: 1,
-	maximumScale: 5,
-};
+export async function generateViewport(): Promise<Viewport> {
+	const data = await getPublicPage();
+	return {
+		width: "device-width",
+		initialScale: 1,
+		maximumScale: 5,
+		// Browser chrome matches the page's primary colour (same as the manifest).
+		themeColor: data?.settings.customPrimary || "#00ACED",
+	};
+}
 
 const sora = Sora({
 	subsets: ["latin"],
@@ -75,7 +81,6 @@ export async function generateMetadata(): Promise<Metadata> {
 					],
 					apple: "/favicon/apple-touch-icon.png",
 				},
-		manifest: "/favicon/site.webmanifest",
 		openGraph: {
 			title,
 			description,
@@ -121,6 +126,7 @@ export default function RootLayout({
 		<html lang="en" suppressHydrationWarning>
 			<body className={`${sora.variable} ${dmSans.variable} ${geistMono.variable} antialiased`}>
 				<Providers>{children}</Providers>
+				<SwRegister />
 			</body>
 		</html>
 	);

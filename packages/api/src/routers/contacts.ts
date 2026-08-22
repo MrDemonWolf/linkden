@@ -11,7 +11,7 @@ export const formsRouter = router({
 			z
 				.object({
 					isRead: z.boolean().optional(),
-					blockId: z.string().optional(),
+					blockId: z.string().max(100).optional(),
 					limit: z.number().min(1).max(100).default(50),
 					offset: z.number().min(0).default(0),
 				})
@@ -37,7 +37,7 @@ export const formsRouter = router({
 			return results;
 		}),
 
-	get: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
+	get: protectedProcedure.input(z.object({ id: z.string().max(100) })).query(async ({ input }) => {
 		const [result] = await db
 			.select()
 			.from(contactSubmission)
@@ -45,27 +45,33 @@ export const formsRouter = router({
 		return result ?? null;
 	}),
 
-	markRead: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
-		await db
-			.update(contactSubmission)
-			.set({ isRead: true, updatedAt: new Date() })
-			.where(eq(contactSubmission.id, input.id));
-		return { success: true };
-	}),
+	markRead: protectedProcedure
+		.input(z.object({ id: z.string().max(100) }))
+		.mutation(async ({ input }) => {
+			await db
+				.update(contactSubmission)
+				.set({ isRead: true, updatedAt: new Date() })
+				.where(eq(contactSubmission.id, input.id));
+			return { success: true };
+		}),
 
-	markUnread: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
-		await db
-			.update(contactSubmission)
-			.set({ isRead: false, updatedAt: new Date() })
-			.where(eq(contactSubmission.id, input.id));
-		return { success: true };
-	}),
+	markUnread: protectedProcedure
+		.input(z.object({ id: z.string().max(100) }))
+		.mutation(async ({ input }) => {
+			await db
+				.update(contactSubmission)
+				.set({ isRead: false, updatedAt: new Date() })
+				.where(eq(contactSubmission.id, input.id));
+			return { success: true };
+		}),
 
-	delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
-		await db.delete(contactSubmission).where(eq(contactSubmission.id, input.id));
-		void logAudit("contact.delete", "contact", input.id);
-		return { success: true };
-	}),
+	delete: protectedProcedure
+		.input(z.object({ id: z.string().max(100) }))
+		.mutation(async ({ input }) => {
+			await db.delete(contactSubmission).where(eq(contactSubmission.id, input.id));
+			void logAudit("contact.delete", "contact", input.id);
+			return { success: true };
+		}),
 
 	markAllRead: protectedProcedure.mutation(async () => {
 		await db
@@ -76,7 +82,7 @@ export const formsRouter = router({
 	}),
 
 	deleteMultiple: protectedProcedure
-		.input(z.object({ ids: z.array(z.string()).min(1).max(100) }))
+		.input(z.object({ ids: z.array(z.string().max(100)).min(1).max(100) }))
 		.mutation(async ({ input }) => {
 			await db.delete(contactSubmission).where(inArray(contactSubmission.id, input.ids));
 			await logAudit("contact.deleteMultiple", "contact", undefined, { count: input.ids.length });

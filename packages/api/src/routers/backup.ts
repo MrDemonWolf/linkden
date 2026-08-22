@@ -1,20 +1,23 @@
-import { router, protectedProcedure } from "../index";
 import { db } from "@linkden/db";
-import { block, siteSettings, socialNetwork, contactSubmission } from "@linkden/db/schema/index";
-import { logAudit } from "../utils/audit";
+import { block, contactSubmission, siteSettings, socialNetwork } from "@linkden/db/schema/index";
+import {
+	blockImportSchema,
+	contactSubmissionImportSchema,
+	socialNetworkImportSchema,
+} from "@linkden/validators";
+import {
+	getSettingMeta,
+	MAX_SETTING_VALUE_LENGTH,
+	shouldBackup,
+} from "@linkden/validators/settings-registry";
 import { asc } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { z } from "zod";
+import { protectedProcedure, router } from "../index";
+import { logAudit } from "../utils/audit";
 import { transformLinkStackData } from "../utils/linkstack-transformer";
 import { runBatch, settingUpsertStmt } from "../utils/settings";
-import { shouldBackup } from "@linkden/validators/settings-registry";
-import { VALID_SETTING_KEYS } from "@linkden/validators/settings";
 import { sanitizeSetting } from "./settings";
-import {
-	blockImportSchema,
-	socialNetworkImportSchema,
-	contactSubmissionImportSchema,
-} from "@linkden/validators";
 
 // ─── Backup Router ─────────────────────────────────────────────────────────
 // Export format is versioned ("1.0") so future migrations can detect and upgrade
@@ -61,7 +64,9 @@ export const backupRouter = router({
 				mode: z.enum(["merge", "replace"]),
 				data: z.object({
 					blocks: z.array(blockImportSchema).max(500).optional(),
-					settings: z.record(z.string().max(100), z.string().max(100000)).optional(),
+					settings: z
+						.record(z.string().max(100), z.string().max(MAX_SETTING_VALUE_LENGTH))
+						.optional(),
 					socialNetworks: z.array(socialNetworkImportSchema).max(500).optional(),
 					contactSubmissions: z.array(contactSubmissionImportSchema).max(500).optional(),
 				}),
@@ -93,21 +98,22 @@ export const backupRouter = router({
 			}
 
 			if (data.settings) {
-				// Run the same whitelist + sanitization pipeline as settings.update —
+				// Run the same registry-driven sanitization pipeline as settings.update —
 				// otherwise a crafted backup can plant unvalidated values (e.g. a
 				// non-#RRGGBB custom color that downstream inline styling relies on).
-				// Sanitization happens while building the batch; the writes still land
-				// atomically via runBatch below.
+				// The registry (not the settings-router whitelist) is the gate so the
+				// wallet/vcard keys that export writes round-trip. Sanitization happens
+				// while building the batch; the writes still land atomically below.
 				for (const [key, value] of Object.entries(data.settings)) {
-					if (!(VALID_SETTING_KEYS as readonly string[]).includes(key)) {
+					if (!getSettingMeta(key)) {
 						skippedSettings++;
 						continue;
 					}
 					try {
 						stmts.push(settingUpsertStmt(key, sanitizeSetting(key, value)));
 					} catch {
-						// Value failed validation (bad URL/color/timezone/…) — skip it
-						// rather than aborting the whole restore.
+						// Unknown key or value failed validation (bad URL/color/enum/…) —
+						// skip it rather than aborting the whole restore.
 						skippedSettings++;
 					}
 				}
@@ -148,26 +154,28 @@ export const backupRouter = router({
 	importLinkStack: protectedProcedure
 		.input(
 			z.object({
+				// LinkStack's export is untrusted JSON: bound every string, cap the link list.
 				data: z.object({
-					name: z.string().optional(),
-					littlelink_name: z.string().optional(),
-					littlelink_description: z.string().optional(),
-					theme: z.string().optional(),
-					profile_image: z.string().optional(),
+					name: z.string().max(100).optional(),
+					littlelink_name: z.string().max(100).optional(),
+					littlelink_description: z.string().max(1000).optional(),
+					theme: z.string().max(2000).optional(),
+					profile_image: z.string().max(2048).optional(),
 					links: z
 						.array(
 							z.object({
-								button_id: z.string().optional(),
-								link: z.string().optional(),
-								title: z.string().optional(),
+								button_id: z.string().max(100).optional(),
+								link: z.string().max(2048).optional(),
+								title: z.string().max(200).optional(),
 								order: z.number().optional(),
 								click_number: z.number().optional(),
-								custom_css: z.string().optional(),
-								custom_icon: z.string().optional(),
+								custom_css: z.string().max(5000).optional(),
+								custom_icon: z.string().max(200).optional(),
 								type: z.number().optional(),
-								type_params: z.string().optional(),
+								type_params: z.string().max(2000).optional(),
 							}),
 						)
+						.max(500)
 						.optional(),
 				}),
 				options: z.object({
@@ -197,7 +205,7 @@ export const backupRouter = router({
 
 				if (options.importProfile) {
 					if (transformed.settings.display_name) {
-						settingsToImport.display_name = transformed.settings.display_name;
+						settingsToImport.profile_name = transformed.settings.display_name;
 					}
 					if (transformed.settings.bio) {
 						settingsToImport.bio = transformed.settings.bio;
@@ -209,7 +217,7 @@ export const backupRouter = router({
 				}
 
 				for (const [key, value] of Object.entries(settingsToImport)) {
-					stmts.push(settingUpsertStmt(key, value));
+					stmts.push(settingUpsertStmt(key, sanitizeSetting(key, value)));
 				}
 
 				if (Object.keys(settingsToImport).length > 0) {

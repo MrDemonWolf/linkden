@@ -29,7 +29,7 @@ export const blocksRouter = router({
 		return db.select().from(block).orderBy(asc(block.position));
 	}),
 
-	get: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
+	get: protectedProcedure.input(z.object({ id: z.string().max(100) })).query(async ({ input }) => {
 		const [result] = await db.select().from(block).where(eq(block.id, input.id));
 		return result ?? null;
 	}),
@@ -75,11 +75,13 @@ export const blocksRouter = router({
 		return result;
 	}),
 
-	delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
-		await db.delete(block).where(eq(block.id, input.id));
-		await logAudit("blocks.delete", "block", input.id);
-		return { success: true };
-	}),
+	delete: protectedProcedure
+		.input(z.object({ id: z.string().max(100) }))
+		.mutation(async ({ input }) => {
+			await db.delete(block).where(eq(block.id, input.id));
+			await logAudit("blocks.delete", "block", input.id);
+			return { success: true };
+		}),
 
 	reorder: protectedProcedure.input(reorderBlocksSchema).mutation(async ({ input }) => {
 		// One transactional batch — a partial failure must not leave blocks in
@@ -98,7 +100,7 @@ export const blocksRouter = router({
 	toggleEnabled: protectedProcedure
 		.input(
 			z.object({
-				id: z.string(),
+				id: z.string().max(100),
 				isEnabled: z.boolean(),
 			}),
 		)

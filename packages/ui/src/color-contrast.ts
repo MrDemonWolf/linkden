@@ -15,7 +15,7 @@ export function hexToRgb(hex: string): { r: number; g: number; b: number } | nul
 	};
 }
 
-export function getRelativeLuminance(hex: string): number {
+function getRelativeLuminance(hex: string): number {
 	const rgb = hexToRgb(hex);
 	if (!rgb) return 1;
 	const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);

@@ -1,3 +1,5 @@
+import type { SocialSlug } from "@linkden/validators/social";
+
 export const SOCIAL_CATEGORIES = [
 	"social",
 	"messaging",
@@ -11,7 +13,7 @@ export const SOCIAL_CATEGORIES = [
 export type SocialCategory = (typeof SOCIAL_CATEGORIES)[number];
 
 export interface SocialBrand {
-	slug: string;
+	slug: SocialSlug;
 	name: string;
 	hex: string;
 	svgPath: string;

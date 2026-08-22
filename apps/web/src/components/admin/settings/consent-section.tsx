@@ -1,8 +1,29 @@
 "use client";
 
+import { Switch } from "@linkden/ui";
+import { httpUrlSchema } from "@linkden/validators/blocks";
+import { z } from "zod";
+import { CharCount, FieldError } from "@/components/admin/field-feedback";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@linkden/ui";
+import { fieldError } from "@/lib/validate";
+
+const CONSENT_TEXT_MAX = 500;
+
+/** Field → message for invalid consent values. Only checked while the banner is enabled (the fields are hidden otherwise). */
+export function consentErrors(v: {
+	enabled: boolean;
+	bannerText: string;
+	privacyUrl: string;
+}): Record<string, string> {
+	if (!v.enabled) return {};
+	const errors: Record<string, string> = {};
+	const text = fieldError(z.string().max(CONSENT_TEXT_MAX), v.bannerText);
+	if (text) errors.bannerText = text;
+	const url = v.privacyUrl ? fieldError(httpUrlSchema, v.privacyUrl) : null;
+	if (url) errors.privacyUrl = url;
+	return errors;
+}
 
 interface ConsentCategories {
 	analytics: boolean;
@@ -31,6 +52,7 @@ export function ConsentSection({
 	onPrivacyUrlChange,
 	onCategoriesChange,
 }: ConsentSectionProps) {
+	const errors = consentErrors({ enabled, bannerText, privacyUrl });
 	return (
 		<div className="space-y-6">
 			{/* Enable/disable toggle */}
@@ -59,11 +81,17 @@ export function ConsentSection({
 							onChange={(e) => onBannerTextChange(e.target.value)}
 							rows={3}
 							placeholder="This site uses cookies for authentication and optional analytics..."
-							className="dark:bg-input/30 border-input w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
+							aria-invalid={!!errors.bannerText}
+							aria-describedby={errors.bannerText ? "consent-text-error" : "consent-text-hint"}
+							className="dark:bg-input/30 border-input aria-invalid:border-destructive w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
 						/>
-						<p className="text-micro text-muted-foreground">
-							Customize the message shown in the consent banner
-						</p>
+						<div className="flex items-start justify-between gap-2">
+							<p id="consent-text-hint" className="text-micro text-muted-foreground">
+								Customize the message shown in the consent banner
+							</p>
+							<CharCount value={bannerText} max={CONSENT_TEXT_MAX} />
+						</div>
+						<FieldError id="consent-text-error" error={errors.bannerText} />
 					</div>
 
 					{/* Privacy Policy URL */}
@@ -73,11 +101,18 @@ export function ConsentSection({
 							id="consent-privacy-url"
 							value={privacyUrl}
 							onChange={(e) => onPrivacyUrlChange(e.target.value)}
-							placeholder="https://example.com/privacy"
+							placeholder="https://yourdomain.com/privacy"
+							type="url"
+							inputMode="url"
+							aria-invalid={!!errors.privacyUrl}
+							aria-describedby={
+								errors.privacyUrl ? "consent-privacy-url-error" : "consent-privacy-url-hint"
+							}
 						/>
-						<p className="text-micro text-muted-foreground">
+						<p id="consent-privacy-url-hint" className="text-micro text-muted-foreground">
 							Link shown in the banner for your privacy policy
 						</p>
+						<FieldError id="consent-privacy-url-error" error={errors.privacyUrl} />
 					</div>
 
 					{/* Cookie Categories */}

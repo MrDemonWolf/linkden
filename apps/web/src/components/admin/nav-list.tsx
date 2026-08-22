@@ -15,7 +15,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-export interface NavItem {
+interface NavItem {
 	href: Route;
 	label: string;
 	icon: LucideIcon;

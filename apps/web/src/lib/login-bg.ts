@@ -1,14 +1,14 @@
+import { type BannerPreset, bannerPresets, type ShaderBannerPreset } from "@linkden/ui";
 import type { CSSProperties } from "react";
-import { bannerPresets, type BannerPreset, type ShaderBannerPreset } from "@linkden/ui";
 
-export interface LoginBranding {
+interface LoginBranding {
 	loginBgMode?: "default" | "preset" | "custom" | null;
 	loginBgPreset?: string | null;
 	loginBgCustomUrl?: string | null;
 }
 
 // Curated subset shown in branding settings — past customs + a few shader options.
-export const LOGIN_BG_PRESET_IDS = [
+const LOGIN_BG_PRESET_IDS = [
 	"wolf-shadow",
 	"void-rift",
 	"midnight",
@@ -23,7 +23,7 @@ export function getLoginBgPresets(): BannerPreset[] {
 	return bannerPresets.filter((p) => (LOGIN_BG_PRESET_IDS as readonly string[]).includes(p.id));
 }
 
-export function findLoginBgPreset(id: string | null | undefined): BannerPreset | null {
+function findLoginBgPreset(id: string | null | undefined): BannerPreset | null {
 	if (!id) return null;
 	return bannerPresets.find((p) => p.id === id) ?? null;
 }
@@ -70,7 +70,7 @@ export function isCustomLoginBg(branding: LoginBranding | null | undefined): boo
 export function getLoginShaderPreset(
 	branding: LoginBranding | null | undefined,
 ): ShaderBannerPreset | null {
-	if (!branding || branding.loginBgMode !== "preset") return null;
+	if (branding?.loginBgMode !== "preset") return null;
 	const preset = findLoginBgPreset(branding.loginBgPreset);
 	if (preset && preset.type === "shader") return preset;
 	return null;

@@ -1,11 +1,11 @@
 import { db } from "@linkden/db";
-import { siteSettings } from "@linkden/db/schema/index";
 import * as schema from "@linkden/db/schema/auth";
+import { siteSettings } from "@linkden/db/schema/index";
 import { createResendEmailService } from "@linkden/email";
 import { env } from "@linkden/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { twoFactor, magicLink } from "better-auth/plugins";
+import { magicLink, twoFactor } from "better-auth/plugins";
 
 import { devLoginPlugin, isDevLoginEnabled } from "./dev-login";
 
@@ -21,8 +21,7 @@ async function getEmailSettings() {
 	};
 }
 
-// Single Resend path (via packages/email) for every auth email — no more three
-// hand-rolled fetches that silently ignored non-2xx responses.
+// Single Resend path (via packages/email) for every auth email.
 async function sendAuthEmail(to: string, subject: string, html: string): Promise<void> {
 	const { apiKey, from } = await getEmailSettings();
 	if (!apiKey) {

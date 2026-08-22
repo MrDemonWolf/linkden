@@ -1,18 +1,19 @@
 export * from "./blocks";
-export * from "./contacts";
 export * from "./settings";
-export * from "./analytics";
-export * from "./pages";
+export * from "./social";
 export * from "./uploads";
-export type { VcardData } from "./vcard";
+export * from "./vcard";
 export {
-	walletConfigSchema,
-	passFieldSchema,
-	seedFromPreset,
-	PASS_TEMPLATE_PRESETS,
 	PASS_FIELD_LIMITS,
-	type WalletConfig,
+	PASS_TEMPLATE_PRESETS,
 	type PassField,
 	type PassTemplatePreset,
+	PEM_MAX_LENGTH,
 	type PresetSeed,
+	passFieldSchema,
+	seedFromPreset,
+	type WalletConfig,
+	type WalletSigningKeys,
+	walletConfigSchema,
+	walletSigningKeysSchema,
 } from "./wallet";
