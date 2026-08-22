@@ -1,8 +1,8 @@
+import type { Route } from "next";
 import { redirect } from "next/navigation";
+import { legacyAdminPath } from "@/lib/admin-redirects";
 
-// Social editing is now consolidated into the Page Builder's "Social Links"
-// tab (the canonical, single social-editing UI). This standalone route is kept
-// only as a redirect so any existing bookmarks or deep links keep working.
+// Social editing lives under Links → Social; kept so old bookmarks keep working.
 export default function SocialRedirectPage() {
-	redirect("/admin/builder?tab=social");
+	redirect(legacyAdminPath("/admin/social") as Route);
 }

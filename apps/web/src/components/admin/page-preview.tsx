@@ -22,6 +22,8 @@ export interface PreviewOverrides {
 	settings?: Partial<PageData["settings"]>;
 	/** Replace the block list entirely (builder: live block with in-progress edits applied). */
 	blocks?: PreviewBlock[];
+	/** Unsaved social-link edits (Links → Social) replacing the live icon row. */
+	socialNetworks?: PageData["socialNetworks"];
 }
 
 interface PagePreviewProps {
@@ -141,6 +143,7 @@ export function PagePreview({
 			? {
 					...page,
 					profile: { ...(page.profile ?? FALLBACK_PROFILE), ...overrides?.profile },
+					socialNetworks: overrides?.socialNetworks ?? page.socialNetworks,
 					settings,
 					blocks: isSample ? SAMPLE_BLOCKS : blocks,
 				}

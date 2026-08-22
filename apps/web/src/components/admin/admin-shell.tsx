@@ -1,171 +1,313 @@
 "use client";
 
+import { Menu } from "@base-ui/react/menu";
 import { useQuery } from "@tanstack/react-query";
-import { Globe, LogOut, Menu } from "lucide-react";
+import { Globe, LogOut, Pin, PinOff, Smartphone, UserCog, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { isNavActive, NAV_GROUPS, NavList } from "@/components/admin/nav-list";
+import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
+import { activeNavItem, isNavActive, NAV_ITEMS, NavList } from "@/components/admin/nav-list";
+import { KickerSetter } from "@/components/admin/page-header";
+import { PagePreview } from "@/components/admin/page-preview";
+import { PreviewColumn } from "@/components/admin/preview-column";
+import {
+	type PreviewRegistration,
+	PreviewSlotSetter,
+	PreviewSlotState,
+	usePreviewRegistration,
+} from "@/components/admin/preview-slot";
+import { SharePopover } from "@/components/admin/share-popover";
+import { StatePill } from "@/components/admin/state-pill";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Sheet } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { WolfLogo } from "@/components/wolf-logo";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { authClient } from "@/lib/auth-client";
 import { initials } from "@/lib/format";
 import { getGravatarUrl } from "@/lib/gravatar";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 
-const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
-const BOTTOM_NAV_ITEMS = ALL_NAV_ITEMS.filter((i) => i.bottom);
+const RAIL_PINNED_KEY = "admin.rail.pinned";
 
-type SessionUser = { name: string; email: string; image?: string | null } | null;
+type SessionUser = { name: string; email: string; image?: string | null };
 
-function DesktopTopBar({ pathname }: { pathname: string }) {
-	const currentPageLabel =
-		ALL_NAV_ITEMS.find((item) => isNavActive(item.href, pathname))?.label ?? "";
-
-	return (
-		<div className="hidden md:flex h-14 shrink-0 items-center justify-between border-b border-border px-6">
-			{/* Non-heading label: pages own their single h1 via PageHeader */}
-			<span className="text-micro font-mono font-medium uppercase tracking-[0.14em] text-muted-foreground">
-				{currentPageLabel}
-			</span>
-			<div className="flex items-center gap-3">
-				<ThemeToggle />
-				<a href="/" target="_blank" rel="noopener noreferrer">
-					<Button size="sm" variant="default">
-						<Globe className="mr-1.5 h-3.5 w-3.5" />
-						View Live
-					</Button>
-				</a>
-			</div>
-		</div>
-	);
+/** `LINKS / PROFILE`: destination from NAV_ITEMS + the page's sub-tab label (or its path segment). */
+function kickerFor(pathname: string, subLabel: string | null) {
+	const item = activeNavItem(pathname);
+	if (!item) return subLabel ?? "";
+	const segment = pathname.slice(item.href.length + 1).split("/")[0];
+	const sub = subLabel ?? (segment ? segment.replace(/-/g, " ") : "");
+	return sub ? `${item.label} / ${sub}` : item.label;
 }
 
-/** Avatar + name/email + sign-out. Shared by the sidebar and the mobile Sheet. */
-function UserFooter({ user, onSignOut }: { user: SessionUser; onSignOut: () => void }) {
-	return (
-		<div className="border-t border-border/50 px-3 py-3">
-			<div className="flex items-center gap-2.5">
-				<Avatar className="h-8 w-8 shrink-0">
-					<AvatarImage
-						src={user?.image ?? (user?.email ? getGravatarUrl(user.email, 56) : undefined)}
-						alt={user?.name ?? "Admin"}
-					/>
-					<AvatarFallback className="text-xs font-semibold">{initials(user?.name)}</AvatarFallback>
-				</Avatar>
-				<div className="flex-1 min-w-0">
-					<p className="text-xs font-semibold truncate" title={user?.name}>
-						{user?.name ?? "Admin"}
-					</p>
-					<p className="text-micro text-muted-foreground truncate" title={user?.email}>
-						{user?.email}
-					</p>
-				</div>
-				<button
-					type="button"
-					onClick={onSignOut}
-					className="-my-2 -mr-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-destructive"
-					aria-label="Sign out"
-				>
-					<LogOut className="h-3.5 w-3.5" />
-				</button>
-			</div>
-		</div>
-	);
-}
-
-function SidebarContent({
+/** 64px icon rail; at xl it expands to 208px on hover/focus-within, or stays open when pinned. */
+function Rail({
 	pathname,
 	unreadCount,
-	adminBrandingEnabled,
 	logoUrl,
 	siteName,
-	user,
-	onSignOut,
+	pinned,
+	onTogglePin,
 }: {
 	pathname: string;
 	unreadCount: number;
-	adminBrandingEnabled: boolean;
 	logoUrl: string;
 	siteName: string;
-	user: SessionUser;
-	onSignOut: () => void;
+	pinned: boolean;
+	onTogglePin: () => void;
 }) {
-	const isDev = process.env.NODE_ENV === "development";
+	const canExpand = useMediaQuery("(min-width: 1280px)", true);
+	const [hover, setHover] = useState(false);
+	const expanded = canExpand && (pinned || hover);
 
 	return (
-		<div className="flex h-full flex-col">
-			{/* Logo + subtitle */}
-			<div className="flex items-center gap-3 px-4 h-14 border-b border-border/50">
+		<aside
+			aria-label="Sidebar"
+			onMouseEnter={() => setHover(true)}
+			onMouseLeave={() => setHover(false)}
+			onFocus={() => setHover(true)}
+			onBlur={(e) => {
+				if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHover(false);
+			}}
+			className={cn(
+				"fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-rule bg-sidebar transition-[width] duration-180 ease-out lg:flex",
+				expanded ? "w-52" : "w-16",
+				expanded && !pinned && "shadow-card",
+			)}
+		>
+			<div className="flex h-[52px] shrink-0 items-center gap-3 border-b border-rule px-4">
 				{logoUrl ? (
-					<img src={logoUrl} alt="" className="h-8 w-8 rounded-lg object-cover" />
+					<img src={logoUrl} alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" />
 				) : (
-					<WolfLogo className="h-9 w-9 shrink-0" />
+					<WolfLogo className="h-8 w-8 shrink-0" />
 				)}
-				<div className="flex flex-col min-w-0">
-					<span className="text-sm font-semibold leading-tight truncate">{siteName}</span>
-					<span className="text-micro font-bold uppercase tracking-wider text-muted-foreground">
-						Admin Console
-					</span>
-				</div>
+				<span className={cn("truncate text-sm font-semibold", !expanded && "sr-only")}>
+					{siteName}
+				</span>
 			</div>
-
 			<div className="flex-1 overflow-y-auto">
-				<NavList pathname={pathname} unreadCount={unreadCount} />
+				<NavList pathname={pathname} unreadCount={unreadCount} expanded={expanded} />
 			</div>
+			{canExpand && (
+				<div className="border-t border-rule p-2">
+					<button
+						type="button"
+						onClick={onTogglePin}
+						aria-pressed={pinned}
+						aria-label={pinned ? "Unpin sidebar" : "Pin sidebar open"}
+						className={cn(
+							"flex min-h-[44px] w-full items-center gap-3 rounded-lg px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+							!expanded && "justify-center px-0",
+						)}
+					>
+						{pinned ? (
+							<PinOff className="h-4 w-4 shrink-0" />
+						) : (
+							<Pin className="h-4 w-4 shrink-0" />
+						)}
+						<span className={cn(!expanded && "sr-only")}>{pinned ? "Unpin" : "Pin open"}</span>
+					</button>
+				</div>
+			)}
+		</aside>
+	);
+}
 
-			{/* Branding + version */}
-			<div className="px-4 pb-2">
-				{adminBrandingEnabled && (
-					<p className="text-xs text-muted-foreground">
-						Powered by{" "}
-						<a
-							href="https://github.com/mrdemonwolf/LinkDen"
-							target="_blank"
-							rel="noopener noreferrer"
-							className="hover:text-foreground transition-colors"
+function AvatarMenu({
+	user,
+	onSignOut,
+	adminBrandingEnabled,
+}: {
+	user: SessionUser;
+	onSignOut: () => void;
+	adminBrandingEnabled: boolean;
+}) {
+	const itemClass =
+		"flex min-h-11 cursor-default select-none items-center gap-2.5 rounded-lg px-3 text-xs outline-none data-[highlighted]:bg-muted data-[highlighted]:text-foreground md:min-h-9";
+	return (
+		<Menu.Root>
+			<Menu.Trigger
+				aria-label="Account menu"
+				className="flex h-11 w-11 items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring md:h-9 md:w-9"
+			>
+				<Avatar className="h-8 w-8">
+					<AvatarImage
+						src={user.image ?? (user.email ? getGravatarUrl(user.email, 56) : undefined)}
+						alt=""
+					/>
+					<AvatarFallback className="text-xs font-semibold">{initials(user.name)}</AvatarFallback>
+				</Avatar>
+			</Menu.Trigger>
+			<Menu.Portal>
+				<Menu.Positioner side="bottom" align="end" sideOffset={8} className="z-50">
+					<Menu.Popup className="min-w-56 rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none data-[open]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:fade-in-0 duration-150">
+						<div className="px-3 py-2">
+							<p className="truncate text-xs font-semibold">{user.name || "Admin"}</p>
+							<p className="truncate text-micro text-muted-foreground">{user.email}</p>
+						</div>
+						<Menu.Separator className="my-1 h-px bg-border" />
+						<Menu.LinkItem
+							closeOnClick
+							className={itemClass}
+							render={<Link href="/admin/settings" />}
 						>
-							LinkDen
-							<span className="sr-only">(opens in new tab)</span>
-						</a>
-					</p>
-				)}
-				<p className="text-xs text-muted-foreground">
-					v{process.env.NEXT_PUBLIC_APP_VERSION}
-					{isDev && " · DEV"}
-				</p>
-			</div>
+							<UserCog className="h-4 w-4" />
+							Account
+						</Menu.LinkItem>
+						<Menu.LinkItem
+							closeOnClick
+							className={itemClass}
+							render={<Link href="/admin/settings/wallet" />}
+						>
+							<Wallet className="h-4 w-4" />
+							Wallet pass
+						</Menu.LinkItem>
+						<Menu.Separator className="my-1 h-px bg-border" />
+						<Menu.Item className={cn(itemClass, "text-destructive")} onClick={onSignOut}>
+							<LogOut className="h-4 w-4" />
+							Sign out
+						</Menu.Item>
+						<p className="px-3 pt-2 pb-1 text-micro text-muted-foreground">
+							{adminBrandingEnabled && (
+								<>
+									Powered by{" "}
+									<a
+										href="https://github.com/mrdemonwolf/LinkDen"
+										target="_blank"
+										rel="noopener noreferrer"
+										className="transition-colors hover:text-foreground"
+									>
+										LinkDen
+										<span className="sr-only">(opens in new tab)</span>
+									</a>{" "}
+									·{" "}
+								</>
+							)}
+							v{process.env.NEXT_PUBLIC_APP_VERSION}
+							{process.env.NODE_ENV === "development" && " · DEV"}
+						</p>
+					</Menu.Popup>
+				</Menu.Positioner>
+			</Menu.Portal>
+		</Menu.Root>
+	);
+}
 
-			<UserFooter user={user} onSignOut={onSignOut} />
+function BottomTabBar({ pathname, unreadCount }: { pathname: string; unreadCount: number }) {
+	return (
+		<nav
+			aria-label="Main navigation"
+			className="fixed inset-x-0 bottom-0 z-40 flex border-t border-rule bg-sidebar pb-[env(safe-area-inset-bottom)] lg:hidden"
+		>
+			{NAV_ITEMS.map((item) => {
+				const isActive = isNavActive(item.href, pathname);
+				const Icon = item.icon;
+				const showBadge = item.label === "Inbox" && unreadCount > 0;
+				return (
+					<Link
+						key={item.href}
+						href={item.href}
+						aria-current={isActive ? "page" : undefined}
+						aria-label={showBadge ? `${item.label}, ${unreadCount} unread` : undefined}
+						className={cn(
+							"flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 text-micro font-medium transition-colors",
+							isActive ? "text-primary" : "text-muted-foreground",
+						)}
+					>
+						<span className="relative">
+							<Icon className="h-5 w-5" />
+							{showBadge && (
+								<span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-micro font-semibold text-primary-foreground">
+									{unreadCount > 99 ? "99+" : unreadCount}
+								</span>
+							)}
+						</span>
+						<span className="max-w-full truncate">{item.label}</span>
+					</Link>
+				);
+			})}
+		</nav>
+	);
+}
+
+/** Below lg: FAB + MobilePreviewSheet, only while a page has a preview registered. */
+function MobilePreview() {
+	const reg = usePreviewRegistration();
+	const [open, setOpen] = useState(false);
+	if (!reg) return null;
+	return (
+		<>
+			<Button
+				type="button"
+				size="icon"
+				onClick={() => setOpen(true)}
+				className="fixed right-4 bottom-[calc(56px+env(safe-area-inset-bottom)+1rem)] z-40 h-12 w-12 rounded-full shadow-glow lg:hidden"
+				aria-label="Open live preview"
+			>
+				<Smartphone className="h-5 w-5" />
+			</Button>
+			<MobilePreviewSheet open={open} onOpenChange={setOpen}>
+				<PagePreview
+					overrides={reg.overrides}
+					mode={reg.mode}
+					onModeChange={reg.onModeChange}
+					showHeader={false}
+				/>
+			</MobilePreviewSheet>
+		</>
+	);
+}
+
+/** Main grid: tool column (720px beside a preview, 880px alone) + the preview column. */
+function MainGrid({ children }: { children: React.ReactNode }) {
+	const hasPreview = usePreviewRegistration() !== null;
+	return (
+		<div
+			className={cn(
+				"mx-auto flex items-start gap-6",
+				hasPreview ? "max-w-[calc(720px+1.5rem+360px)]" : "max-w-[880px]",
+			)}
+		>
+			<div className={cn("min-w-0 flex-1", hasPreview && "max-w-[720px]")}>{children}</div>
+			<PreviewColumn />
 		</div>
 	);
 }
 
 /**
- * Client-side admin chrome: session gate, sidebar, mobile header/sheet/bottom
- * nav. Rendered by the server `app/admin/layout.tsx`, which owns the metadata.
+ * Client-side admin chrome: session gate, icon rail (≥lg), top bar, main grid
+ * with the shell-owned preview column, FAB + preview sheet and bottom tab bar
+ * (<lg). Rendered by the server `app/admin/layout.tsx`, which owns the metadata.
  */
 export function AdminShell({ children }: { children: React.ReactNode }) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const { data: session, isPending } = authClient.useSession();
-	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+	const [registration, setRegistration] = useState<PreviewRegistration | null>(null);
+	const [subLabel, setSubLabel] = useState<string | null>(null);
+	const [railPinned, setRailPinned] = useState(false);
+	useEffect(() => {
+		setRailPinned(localStorage.getItem(RAIL_PINNED_KEY) === "1");
+	}, []);
+	const toggleRailPin = () => {
+		setRailPinned((p) => {
+			localStorage.setItem(RAIL_PINNED_KEY, p ? "0" : "1");
+			return !p;
+		});
+	};
 
 	const unreadQuery = useQuery({
 		...trpc.forms.unreadCount.queryOptions(),
 		enabled: !!session?.user,
 		refetchInterval: 30000,
 	});
-
 	const brandingQuery = useQuery({
 		...trpc.settings.get.queryOptions({ key: "branding_enabled" }),
 		enabled: !!session?.user,
 	});
-
 	const logoQuery = useQuery({
 		...trpc.settings.get.queryOptions({ key: "branding_logo_url" }),
 		enabled: !!session?.user,
@@ -183,7 +325,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 	const isPublicRoute =
 		pathname === "/admin/login" ||
 		pathname === "/admin/setup" ||
-		pathname === "/admin/reset-password" ||
 		pathname.startsWith("/admin/reset-password");
 
 	useEffect(() => {
@@ -193,7 +334,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 	}, [isPending, session, isPublicRoute, router]);
 
 	async function handleSignOut() {
-		setMobileMenuOpen(false);
 		await authClient.signOut();
 		router.push("/admin/login");
 	}
@@ -223,120 +363,73 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 		email: session.user.email ?? "",
 		image: session.user.image,
 	};
+	const kicker = kickerFor(pathname, subLabel);
 
 	return (
-		<div className="admin-glass-bg flex min-h-screen">
-			{/* Skip to content */}
-			<a
-				href="#main-content"
-				className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg"
-			>
-				Skip to main content
-			</a>
-
-			{/* Desktop sidebar */}
-			<aside
-				aria-label="Sidebar"
-				className="hidden w-56 shrink-0 border-r border-border bg-sidebar backdrop-blur-2xl z-20 md:block"
-			>
-				<div className="sticky top-0 h-screen overflow-y-auto">
-					<SidebarContent
-						pathname={pathname}
-						unreadCount={unreadCount}
-						adminBrandingEnabled={adminBrandingEnabled}
-						logoUrl={logoUrl}
-						siteName={siteName}
-						user={sessionUser}
-						onSignOut={handleSignOut}
-					/>
-				</div>
-			</aside>
-
-			{/* Mobile header */}
-			<div className="fixed inset-x-0 top-0 z-40 flex h-12 items-center border-b border-border backdrop-blur-2xl bg-sidebar px-4 md:hidden">
-				<div className="flex items-center shrink-0">
-					{logoUrl ? (
-						<img src={logoUrl} alt="" className="h-7 w-7 rounded-md object-cover" />
-					) : (
-						<WolfLogo className="h-7 w-7" />
-					)}
-					<span className="sr-only">{siteName}</span>
-				</div>
-				{/* Current page — centered absolute */}
-				<span className="absolute inset-x-0 text-center text-xs font-medium text-muted-foreground pointer-events-none">
-					{ALL_NAV_ITEMS.find((item) => isNavActive(item.href, pathname))?.label ?? ""}
-				</span>
-				<button
-					type="button"
-					onClick={() => setMobileMenuOpen(true)}
-					className="relative flex h-11 w-11 items-center justify-center text-muted-foreground ml-auto"
-					aria-label={
-						unreadCount > 0 ? `Open menu, ${unreadCount} unread connections` : "Open menu"
-					}
-					aria-expanded={mobileMenuOpen}
-				>
-					<Menu className="h-4 w-4" />
-					{unreadCount > 0 && (
-						<span
-							className="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary ring-2 ring-sidebar"
-							aria-hidden="true"
-						/>
-					)}
-				</button>
-			</div>
-
-			{/* Mobile menu — Sheet owns focus trap, Escape, scroll lock and focus restore */}
-			<Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen} title="Menu" breakpoint="md">
-				<NavList
-					pathname={pathname}
-					unreadCount={unreadCount}
-					onNavClick={() => setMobileMenuOpen(false)}
-				/>
-				<UserFooter user={sessionUser} onSignOut={handleSignOut} />
-			</Sheet>
-
-			{/* Mobile bottom nav */}
-			<nav
-				aria-label="Quick navigation"
-				className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border backdrop-blur-2xl bg-sidebar md:hidden"
-			>
-				{BOTTOM_NAV_ITEMS.map((item) => {
-					const isActive = isNavActive(item.href, pathname);
-					const Icon = item.icon;
-					const showBadge = item.label === "Connections" && unreadCount > 0;
-
-					return (
-						<Link
-							key={item.href}
-							href={item.href}
-							aria-current={isActive ? "page" : undefined}
-							aria-label={showBadge ? `${item.label}, ${unreadCount} unread` : undefined}
-							className={cn(
-								"flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 min-h-[48px] text-xs font-medium transition-colors",
-								isActive ? "text-primary" : "text-muted-foreground",
-							)}
+		<PreviewSlotSetter value={setRegistration}>
+			<PreviewSlotState value={registration}>
+				<KickerSetter value={setSubLabel}>
+					<div className="min-h-dvh bg-background">
+						<a
+							href="#main-content"
+							className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg"
 						>
-							<span className="relative">
-								<Icon className="h-5 w-5" />
-								{showBadge && (
-									<span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-micro font-semibold text-primary-foreground">
-										{unreadCount > 99 ? "99+" : unreadCount}
-									</span>
-								)}
-							</span>
-							<span className="max-w-full truncate">{item.label}</span>
-						</Link>
-					);
-				})}
-			</nav>
+							Skip to main content
+						</a>
 
-			{/* Right side: top bar + main content */}
-			<div className="flex flex-1 flex-col overflow-hidden">
-				<DesktopTopBar pathname={pathname} />
-				<main id="main-content" className="flex-1 overflow-y-auto pt-12 pb-16 md:pt-0 md:pb-0">
-					<div className="mx-auto max-w-6xl px-4 py-4 sm:px-4 md:p-6">{children}</div>
-				</main>
-			</div>
-		</div>
+						<Rail
+							pathname={pathname}
+							unreadCount={unreadCount}
+							logoUrl={logoUrl}
+							siteName={siteName}
+							pinned={railPinned}
+							onTogglePin={toggleRailPin}
+						/>
+
+						{/* Offset by the rail: 64px, or 208px when pinned open (xl only — the
+						    rail never expands below xl). Hover-expand overlays instead. */}
+						<div className={cn("lg:pl-16", railPinned && "xl:pl-52")}>
+							<header className="sticky top-0 z-30 flex h-12 items-center gap-2 border-b border-rule bg-sidebar px-3 lg:h-[52px] lg:px-6">
+								<span className="min-w-0 flex-1 truncate font-mono text-micro font-medium uppercase tracking-[0.14em] text-muted-foreground">
+									{kicker}
+								</span>
+								<StatePill />
+								<div className="flex flex-1 items-center justify-end gap-1 lg:gap-2">
+									<SharePopover />
+									<Button
+										size="sm"
+										variant="outline"
+										className="hidden lg:inline-flex"
+										nativeButton={false}
+										render={<a href="/" target="_blank" rel="noopener noreferrer" />}
+									>
+										<Globe className="h-3.5 w-3.5" />
+										View live
+									</Button>
+									<span className="hidden lg:inline-flex">
+										<ThemeToggle />
+									</span>
+									<AvatarMenu
+										user={sessionUser}
+										onSignOut={handleSignOut}
+										adminBrandingEnabled={adminBrandingEnabled}
+									/>
+								</div>
+							</header>
+
+							<main
+								id="main-content"
+								className="px-4 py-4 pb-[calc(56px+env(safe-area-inset-bottom)+1.5rem)] md:p-6 md:pb-[calc(56px+env(safe-area-inset-bottom)+1.5rem)] lg:pb-6"
+							>
+								<MainGrid>{children}</MainGrid>
+							</main>
+						</div>
+
+						<MobilePreview />
+						<BottomTabBar pathname={pathname} unreadCount={unreadCount} />
+					</div>
+				</KickerSetter>
+			</PreviewSlotState>
+		</PreviewSlotSetter>
 	);
 }

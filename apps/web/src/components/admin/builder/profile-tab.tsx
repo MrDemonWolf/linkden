@@ -23,11 +23,19 @@ const BIO_MAX = SETTING_REGISTRY.bio?.maxLength ?? 300;
 const nameSchema = z.string().max(NAME_MAX);
 const bioSchema = z.string().max(BIO_MAX);
 
-interface ProfileTabProps {
-	onDirtyChange: (dirty: boolean) => void;
+export interface ProfileLive {
+	name: string;
+	bio: string | null;
+	image: string | null;
 }
 
-export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
+interface ProfileTabProps {
+	onDirtyChange: (dirty: boolean) => void;
+	/** In-progress values for the live preview (`overrides.profile`); null once everything is saved. */
+	onLiveChange?: (profile: ProfileLive | null) => void;
+}
+
+export function ProfileTab({ onDirtyChange, onLiveChange }: ProfileTabProps) {
 	const qc = useQueryClient();
 	const settingsQuery = useQuery(trpc.settings.getAll.queryOptions());
 	const updateSettings = useMutation(trpc.settings.updateBulk.mutationOptions());
@@ -61,6 +69,13 @@ export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
 	useEffect(() => {
 		onDirtyChange(profileDirty);
 	}, [profileDirty, onDirtyChange]);
+
+	useEffect(() => {
+		onLiveChange?.(
+			profileDirty ? { name: profileName, bio: bio || null, image: avatarUrl || null } : null,
+		);
+		return () => onLiveChange?.(null);
+	}, [profileDirty, profileName, bio, avatarUrl, onLiveChange]);
 
 	const nameError = fieldError(nameSchema, profileName);
 	const bioError = fieldError(bioSchema, bio);

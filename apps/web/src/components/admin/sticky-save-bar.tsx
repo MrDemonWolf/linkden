@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Unsaved-changes pill that sticks to the bottom of the page while a form is
- * dirty. `bottom-20` on mobile keeps it above the bottom nav bar.
+ * dirty. Below lg it sits above the shell's 56px bottom tab bar (+ safe area).
  */
 export function StickySaveBar({
 	isDirty,
@@ -26,7 +26,7 @@ export function StickySaveBar({
 }) {
 	if (!isDirty) return null;
 	return (
-		<div className="sticky bottom-20 z-10 flex items-center justify-between gap-3 rounded-lg border border-primary/60 bg-background/95 px-4 py-2.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.4)] backdrop-blur md:bottom-4">
+		<div className="sticky bottom-[calc(56px+env(safe-area-inset-bottom)+8px)] z-10 flex items-center justify-between gap-3 rounded-lg border border-primary/60 bg-background px-4 py-2.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.4)] lg:bottom-4">
 			<span
 				role={hasErrors ? "status" : undefined}
 				className={cn("text-xs", hasErrors ? "text-destructive" : "text-muted-foreground")}

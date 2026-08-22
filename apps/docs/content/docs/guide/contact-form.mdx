@@ -13,21 +13,17 @@ Let visitors send you messages without exposing your email address. Messages are
 2. If CAPTCHA is configured, it verifies the submission is from a real person.
 3. The message is saved to your database.
 4. If email is configured, you receive a notification with the full submission details.
-5. You can view and manage all submissions at `/admin/contacts`.
+5. You can view and manage all submissions at `/admin/inbox`.
 
 ## Setting Up
 
 ### 1. Enable the Form
 
-Go to `/admin/settings` and find the **Contact Form** section. Toggle it on and choose a delivery mode:
-
-- **Database only** -- Messages are stored but no emails are sent.
-- **Email notification** -- Messages are stored and you receive an email.
-- **Database + email** -- Both storage and email notification.
+Go to `/admin/inbox` and turn on **Accepting messages** in the header. Messages are always stored in your database; when email is configured you also receive a notification.
 
 ### 2. Configure Email (Optional)
 
-Under the **Email** section in `/admin/settings`:
+At `/admin/settings/email`:
 
 1. Select a provider: **Resend** or **Cloudflare Email Workers**.
 2. Enter your API key.
@@ -37,7 +33,7 @@ When email is enabled, LinkDen sends a **Contact Notification** email to you wit
 
 ### 3. Configure CAPTCHA (Recommended)
 
-Under the **CAPTCHA** section in `/admin/settings`, choose a provider:
+At `/admin/settings/integrations` → **CAPTCHA**, choose a provider:
 
 **Cloudflare Turnstile** -- A privacy-friendly, invisible challenge.
 
@@ -55,7 +51,7 @@ Under the **CAPTCHA** section in `/admin/settings`, choose a provider:
 
 ## Managing Submissions
 
-Navigate to `/admin/contacts` to view all submissions. Each one shows:
+Navigate to `/admin/inbox` to view all submissions. Each one shows:
 
 - Sender name and email
 - Message content
@@ -64,7 +60,7 @@ Navigate to `/admin/contacts` to view all submissions. Each one shows:
 
 You can **mark as read**, **mark as unread**, or **delete** any submission.
 
-The dashboard at `/admin` shows an **Unread Contacts** stat card with a quick link to your messages.
+The **Inbox** item in the navigation shows an unread badge.
 
 ## Form Fields
 

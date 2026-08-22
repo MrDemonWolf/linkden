@@ -8,8 +8,14 @@ export const metadata: Metadata = {
 	appleWebApp: { capable: true, title: "LinkDen Admin", statusBarStyle: "black-translucent" },
 };
 
-// Overrides the public page's brand colour for the admin's dark chrome.
-export const viewport: Viewport = { themeColor: "#0a0a0a" };
+// Matches the shell chrome (`--sidebar`: card flattened over the background) so
+// the PWA status bar blends into the top bar in both colour modes.
+export const viewport: Viewport = {
+	themeColor: [
+		{ media: "(prefers-color-scheme: light)", color: "#ffffff" },
+		{ media: "(prefers-color-scheme: dark)", color: "#15213d" },
+	],
+};
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
 	return <AdminShell>{children}</AdminShell>;
