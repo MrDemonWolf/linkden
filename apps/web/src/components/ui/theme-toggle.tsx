@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Sun, Moon, Monitor } from "lucide-react";
+import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
+import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const THEME_OPTIONS = [
@@ -28,23 +29,23 @@ export function ThemeToggle() {
 			{THEME_OPTIONS.map((opt) => {
 				const Icon = opt.icon;
 				return (
-					<button
-						key={opt.value}
-						type="button"
-						onClick={() => setTheme(opt.value)}
-						aria-pressed={theme === opt.value}
-						className={cn(
-							"flex items-center justify-center rounded-md p-2 min-h-[32px] min-w-[32px] transition-all",
-							"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-							theme === opt.value
-								? "bg-primary/15 text-primary shadow-sm ring-1 ring-inset ring-primary/40"
-								: "text-muted-foreground hover:text-foreground",
-						)}
-						title={opt.label}
-						aria-label={`Switch to ${opt.label} theme`}
-					>
-						<Icon className="h-3.5 w-3.5" />
-					</button>
+					<Tooltip key={opt.value} content={opt.label} side="bottom">
+						<button
+							type="button"
+							onClick={() => setTheme(opt.value)}
+							aria-pressed={theme === opt.value}
+							className={cn(
+								"flex items-center justify-center rounded-md p-2 min-h-[32px] min-w-[32px] transition-all",
+								"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+								theme === opt.value
+									? "bg-primary/15 text-primary shadow-sm ring-1 ring-inset ring-primary/40"
+									: "text-muted-foreground hover:text-foreground",
+							)}
+							aria-label={`Switch to ${opt.label} theme`}
+						>
+							<Icon className="h-3.5 w-3.5" />
+						</button>
+					</Tooltip>
 				);
 			})}
 		</div>

@@ -31,7 +31,9 @@ function StatusBar({ dark }: { dark: boolean }) {
 			aria-hidden="true"
 		>
 			{/* Left: time */}
-			<span className="text-micro font-semibold leading-none w-12">{time}</span>
+			<span className="w-14 whitespace-nowrap text-micro font-semibold leading-none tabular-nums">
+				{time}
+			</span>
 
 			{/* Center: Dynamic Island */}
 			<div

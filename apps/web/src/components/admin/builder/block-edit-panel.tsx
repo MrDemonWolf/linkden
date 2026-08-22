@@ -1,38 +1,16 @@
 "use client";
 
-import { useState, useEffect, useId, useRef } from "react";
-import { X, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, X } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { ColorField } from "../color-field";
 import { type Block, EMBED_URL_PATTERNS, validateEmbedUrl } from "./builder-constants";
 import { CollapsibleSection } from "./collapsible-section";
-
-function GlassSelect({
-	id,
-	value,
-	onChange,
-	children,
-}: {
-	id?: string;
-	value: string;
-	onChange: (value: string) => void;
-	children: React.ReactNode;
-}) {
-	return (
-		<select
-			id={id}
-			value={value}
-			onChange={(e) => onChange(e.target.value)}
-			className="dark:bg-input/30 border-input h-8 w-full rounded-lg border bg-transparent px-2.5 text-xs outline-none focus:ring-1 focus:ring-ring appearance-none cursor-pointer"
-		>
-			{children}
-		</select>
-	);
-}
 
 function ToggleSwitch({
 	checked,
@@ -225,7 +203,7 @@ export function BlockEditPanel({
 				<button
 					type="button"
 					onClick={onClose}
-					className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+					className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors sm:h-8 sm:w-8"
 					aria-label="Close edit panel"
 				>
 					<X className="h-4 w-4" />
@@ -276,13 +254,18 @@ export function BlockEditPanel({
 						<>
 							<div className="space-y-1.5">
 								<Label htmlFor="edit-embed-type">Embed Type</Label>
-								<GlassSelect id="edit-embed-type" value={embedType} onChange={setEmbedType}>
-									<option value="">Select type</option>
-									<option value="youtube">YouTube</option>
-									<option value="spotify">Spotify</option>
-									<option value="soundcloud">SoundCloud</option>
-									<option value="custom">Custom</option>
-								</GlassSelect>
+								<Select
+									id="edit-embed-type"
+									value={embedType}
+									onValueChange={setEmbedType}
+									placeholder="Select type"
+									items={[
+										{ value: "youtube", label: "YouTube" },
+										{ value: "spotify", label: "Spotify" },
+										{ value: "soundcloud", label: "SoundCloud" },
+										{ value: "custom", label: "Custom" },
+									]}
+								/>
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="edit-embed-url">Embed URL</Label>
@@ -305,10 +288,10 @@ export function BlockEditPanel({
 						<>
 							<div className="space-y-1.5">
 								<Label htmlFor="edit-preset">Preset</Label>
-								<GlassSelect
+								<Select
 									id="edit-preset"
 									value={parsedConfig.preset ?? "contact"}
-									onChange={(v) => {
+									onValueChange={(v) => {
 										updateConfigField("preset", v);
 										const presetDefaults: Record<
 											string,
@@ -357,12 +340,13 @@ export function BlockEditPanel({
 											setConfig(JSON.stringify(updated, null, 2));
 										}
 									}}
-								>
-									<option value="contact">Contact Form</option>
-									<option value="connect">Connect with Me</option>
-									<option value="feedback">Feedback</option>
-									<option value="rsvp">RSVP</option>
-								</GlassSelect>
+									items={[
+										{ value: "contact", label: "Contact Form" },
+										{ value: "connect", label: "Connect with Me" },
+										{ value: "feedback", label: "Feedback" },
+										{ value: "rsvp", label: "RSVP" },
+									]}
+								/>
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="edit-button-text">Button Text</Label>
@@ -737,15 +721,16 @@ export function BlockEditPanel({
 							/>
 							<div className="space-y-1.5">
 								<Label htmlFor="edit-animation">Animation</Label>
-								<GlassSelect
+								<Select
 									id="edit-animation"
 									value={parsedConfig.animation ?? "none"}
-									onChange={(v) => updateConfigField("animation", v)}
-								>
-									<option value="none">None</option>
-									<option value="pulse">Pulse</option>
-									<option value="shake">Shake</option>
-								</GlassSelect>
+									onValueChange={(v) => updateConfigField("animation", v)}
+									items={[
+										{ value: "none", label: "None" },
+										{ value: "pulse", label: "Pulse" },
+										{ value: "shake", label: "Shake" },
+									]}
+								/>
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="edit-thumbnail">Thumbnail URL</Label>
@@ -769,15 +754,16 @@ export function BlockEditPanel({
 							/>
 							<div className="space-y-1.5">
 								<Label htmlFor="edit-animation">Animation</Label>
-								<GlassSelect
+								<Select
 									id="edit-animation"
 									value={parsedConfig.animation ?? "none"}
-									onChange={(v) => updateConfigField("animation", v)}
-								>
-									<option value="none">None</option>
-									<option value="pulse">Pulse</option>
-									<option value="shake">Shake</option>
-								</GlassSelect>
+									onValueChange={(v) => updateConfigField("animation", v)}
+									items={[
+										{ value: "none", label: "None" },
+										{ value: "pulse", label: "Pulse" },
+										{ value: "shake", label: "Shake" },
+									]}
+								/>
 							</div>
 						</>
 					)}
@@ -813,28 +799,30 @@ export function BlockEditPanel({
 						<>
 							<div className="space-y-1.5">
 								<Label htmlFor="edit-aspect-ratio">Aspect Ratio</Label>
-								<GlassSelect
+								<Select
 									id="edit-aspect-ratio"
 									value={parsedConfig.aspectRatio ?? "16:9"}
-									onChange={(v) => updateConfigField("aspectRatio", v)}
-								>
-									<option value="16:9">16:9</option>
-									<option value="4:3">4:3</option>
-									<option value="1:1">1:1</option>
-								</GlassSelect>
+									onValueChange={(v) => updateConfigField("aspectRatio", v)}
+									items={[
+										{ value: "16:9", label: "16:9" },
+										{ value: "4:3", label: "4:3" },
+										{ value: "1:1", label: "1:1" },
+									]}
+								/>
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="edit-max-width">Max Width</Label>
-								<GlassSelect
+								<Select
 									id="edit-max-width"
 									value={parsedConfig.maxWidth ?? "full"}
-									onChange={(v) => updateConfigField("maxWidth", v)}
-								>
-									<option value="sm">Small</option>
-									<option value="md">Medium</option>
-									<option value="lg">Large</option>
-									<option value="full">Full</option>
-								</GlassSelect>
+									onValueChange={(v) => updateConfigField("maxWidth", v)}
+									items={[
+										{ value: "sm", label: "Small" },
+										{ value: "md", label: "Medium" },
+										{ value: "lg", label: "Large" },
+										{ value: "full", label: "Full" },
+									]}
+								/>
 							</div>
 							<ToggleSwitch
 								checked={parsedConfig.showTitle !== false}

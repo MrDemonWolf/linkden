@@ -4,8 +4,9 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Eye, EyeOff, GripVertical, Pencil, Trash2, TriangleAlert } from "lucide-react";
 import Link from "next/link";
+import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { type Block, blockTypeIcon, TYPE_ACCENT, TYPE_BADGE_BG } from "./builder-constants";
+import { type Block, blockTypeIcon, TYPE_CHIP } from "./builder-constants";
 
 export function BlockRow({
 	block,
@@ -37,8 +38,7 @@ export function BlockRow({
 		willChange: isSorting ? "transform" : undefined,
 	};
 
-	const accentClass = TYPE_ACCENT[block.type] ?? "bg-muted";
-	const badgeClass = TYPE_BADGE_BG[block.type] ?? "bg-muted/10 text-muted-foreground";
+	const badgeClass = TYPE_CHIP;
 
 	return (
 		// biome-ignore lint/a11y/useSemanticElements: non-semantic container required for dnd-kit sortable ref (setNodeRef)
@@ -68,7 +68,9 @@ export function BlockRow({
 			</button>
 
 			{/* Left accent bar */}
-			<div className={cn("w-[3px] self-stretch shrink-0", accent ? "bg-primary" : accentClass)} />
+			<div
+				className={cn("w-[3px] self-stretch shrink-0", accent ? "bg-primary" : "bg-primary/40")}
+			/>
 
 			{/* Icon circle */}
 			<div
@@ -93,7 +95,6 @@ export function BlockRow({
 						{block.status === "draft" && (
 							<span
 								className="inline-block h-2 w-2 shrink-0 rounded-full bg-warning animate-pulse"
-								title="Unpublished changes"
 								role="img"
 								aria-label="Unpublished changes"
 							/>
@@ -113,15 +114,16 @@ export function BlockRow({
 			{/* Feature-gate warning — this block's site-wide toggle is off, so the
 			    public page silently skips it. Link straight to Settings to fix. */}
 			{featureHidden && (
-				<Link
-					href="/admin/settings"
-					className="mr-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-warning/40 bg-warning/10 px-2 py-1 text-micro font-medium leading-none text-warning transition-colors hover:bg-warning/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-					title="This block's feature is turned off, so it won't appear on your public page"
-				>
-					<TriangleAlert className="h-3 w-3" aria-hidden="true" />
-					<span className="max-sm:hidden">Hidden — enable in Settings</span>
-					<span className="sm:hidden">Hidden</span>
-				</Link>
+				<Tooltip content="This block's feature is turned off, so it won't appear on your public page">
+					<Link
+						href="/admin/settings"
+						className="mr-1 inline-flex shrink-0 items-center gap-1 rounded-full border border-warning/40 bg-warning/10 px-2 py-1 text-micro font-medium leading-none text-warning transition-colors hover:bg-warning/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+					>
+						<TriangleAlert className="h-3 w-3" aria-hidden="true" />
+						<span className="max-sm:hidden">Hidden — enable in Settings</span>
+						<span className="sm:hidden">Hidden</span>
+					</Link>
+				</Tooltip>
 			)}
 
 			{/* Actions */}
@@ -133,7 +135,7 @@ export function BlockRow({
 						onToggle();
 					}}
 					className={cn(
-						"flex h-8 w-8 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+						"flex h-11 w-11 items-center justify-center rounded-lg sm:h-8 sm:w-8 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
 						block.isEnabled
 							? "text-success hover:bg-success/10"
 							: "text-muted-foreground hover:text-foreground hover:bg-muted",
@@ -148,7 +150,7 @@ export function BlockRow({
 						e.stopPropagation();
 						onEdit();
 					}}
-					className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors sm:hidden"
+					className="flex h-11 w-11 items-center justify-center rounded-lg sm:h-8 sm:w-8 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors sm:hidden"
 					aria-label="Edit block"
 				>
 					<Pencil className="h-3.5 w-3.5" />
@@ -159,7 +161,7 @@ export function BlockRow({
 						e.stopPropagation();
 						onDelete();
 					}}
-					className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all opacity-60 hover:text-destructive hover:bg-destructive/10 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:opacity-70 group-hover:opacity-100"
+					className="flex h-11 w-11 items-center justify-center rounded-lg sm:h-8 sm:w-8 text-muted-foreground transition-all opacity-60 hover:text-destructive hover:bg-destructive/10 hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:opacity-70 group-hover:opacity-100"
 					aria-label="Delete block"
 				>
 					<Trash2 className="h-3.5 w-3.5" />

@@ -9,6 +9,7 @@ import { ConnectionDetail } from "@/components/admin/connections/connection-deta
 import { ConnectionListItem } from "@/components/admin/connections/connection-list-item";
 import { EmptyState } from "@/components/admin/empty-state";
 import { PageHeader } from "@/components/admin/page-header";
+import { PageShell } from "@/components/admin/page-shell";
 import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -188,7 +189,7 @@ export default function ConnectionsPage() {
 	const unreadCount = connections.filter((c) => !c.isRead).length;
 
 	return (
-		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
+		<PageShell>
 			<PageHeader
 				title="Connections"
 				description="People who connected with you through your page"
@@ -401,6 +402,6 @@ export default function ConnectionsPage() {
 				}}
 				isPending={deleteMultiple.isPending}
 			/>
-		</div>
+		</PageShell>
 	);
 }

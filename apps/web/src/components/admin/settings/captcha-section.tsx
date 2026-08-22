@@ -1,6 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { FieldGroup, selectClassName } from "./field-group";
+import { Select } from "@/components/ui/select";
+import { FieldGroup } from "./field-group";
 
 interface CaptchaSectionProps {
 	captchaProvider: string;
@@ -23,16 +24,16 @@ export function CaptchaSection({
 		<div className="space-y-4">
 			<div className="space-y-1.5">
 				<Label htmlFor="s-captcha-provider">Provider</Label>
-				<select
+				<Select
 					id="s-captcha-provider"
 					value={captchaProvider}
-					onChange={(e) => onCaptchaProviderChange(e.target.value)}
-					className={selectClassName}
-				>
-					<option value="none">None</option>
-					<option value="turnstile">Cloudflare Turnstile</option>
-					<option value="recaptcha">Google reCAPTCHA</option>
-				</select>
+					onValueChange={onCaptchaProviderChange}
+					items={[
+						{ value: "none", label: "None" },
+						{ value: "turnstile", label: "Cloudflare Turnstile" },
+						{ value: "recaptcha", label: "Google reCAPTCHA" },
+					]}
+				/>
 			</div>
 			{captchaProvider !== "none" && (
 				<FieldGroup columns={2}>
