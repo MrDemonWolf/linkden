@@ -47,21 +47,6 @@ export function hasAnalyticsConsent(bannerEnabled = consentBannerEnabled): boole
 	}
 }
 
-/** Get full consent state */
-export function getConsent(): ConsentCategories {
-	if (typeof window === "undefined") return DEFAULT_CONSENT;
-	try {
-		const stored = localStorage.getItem(CONSENT_KEY);
-		if (!stored) return DEFAULT_CONSENT;
-		if (stored === "accepted")
-			return { essential: true, analytics: true, marketing: true, functional: true };
-		if (stored === "declined") return { ...DEFAULT_CONSENT };
-		return JSON.parse(stored) as ConsentCategories;
-	} catch {
-		return DEFAULT_CONSENT;
-	}
-}
-
 interface ConsentSettings {
 	consentBannerEnabled: boolean;
 	consentBannerText: string | null;

@@ -1,5 +1,6 @@
 "use client";
 
+import { safeHttpUrl } from "@/lib/safe-url";
 import { trackClick } from "@/lib/track";
 import { usePreview } from "./preview-context";
 import type { ThemeColors } from "./public-page";
@@ -24,8 +25,9 @@ const aspectClasses: Record<string, string> = {
 
 export function ImageBlock({ block, config, themeColors }: ImageBlockProps) {
 	const { isPreview } = usePreview();
-	const src = config.src as string | undefined;
+	const src = safeHttpUrl(config.src);
 	if (!src) return null;
+	const href = safeHttpUrl(block.url);
 	const alt = (config.alt as string) || block.title || "";
 	const caption = config.caption as string | undefined;
 	const aspect = aspectClasses[(config.aspect as string) || "auto"] ?? "";
@@ -41,9 +43,9 @@ export function ImageBlock({ block, config, themeColors }: ImageBlockProps) {
 
 	return (
 		<figure className="ld-image-block">
-			{block.url ? (
+			{href ? (
 				<a
-					href={block.url}
+					href={href}
 					target="_blank"
 					rel="noopener noreferrer"
 					onClick={(e) => {

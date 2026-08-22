@@ -2,7 +2,7 @@
 
 import { type BlockType, blockTypeSchema, httpUrlSchema } from "@linkden/validators/blocks";
 import { Plus, Trash2, X } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useId, useRef, useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, type SelectItem } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { isoToLocal } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { configErrors, fieldError } from "@/lib/validate";
 import { ColorField } from "../color-field";
@@ -29,10 +30,25 @@ function optionalError(schema: z.ZodType, value: unknown): string | null {
 	return typeof value === "string" && value ? fieldError(schema, value) : null;
 }
 
+// Flipped by a save attempt: every field shows its error, not just the ones
+// the admin has already left. Until then a field validates on blur, so typing
+// "h" into a URL doesn't immediately announce "Enter a full URL…".
+const ShowAllErrors = createContext(false);
+
+/** Blur-gated error: null until the field has been left or a save was attempted. */
+function useVisibleError(error: string | null | undefined) {
+	const [touched, setTouched] = useState(false);
+	const showAll = useContext(ShowAllErrors);
+	return {
+		visibleError: touched || showAll ? (error ?? null) : null,
+		markTouched: () => setTouched(true),
+	};
+}
+
 function FieldError({ id, error }: { id: string; error: string | null | undefined }) {
 	if (!error) return null;
 	return (
-		<p id={id} role="alert" className="text-micro text-destructive">
+		<p id={id} role="status" className="text-micro text-destructive">
 			{error}
 		</p>
 	);
@@ -64,6 +80,7 @@ function TextField({
 	maxLength?: number;
 }) {
 	const errorId = `${id}-error`;
+	const { visibleError, markTouched } = useVisibleError(error);
 	return (
 		<div className="space-y-1.5">
 			<Label htmlFor={id} className="text-small">
@@ -74,14 +91,15 @@ function TextField({
 				type={type}
 				value={value}
 				onChange={(e) => onChange(e.target.value)}
+				onBlur={markTouched}
 				placeholder={placeholder}
 				maxLength={maxLength}
-				aria-invalid={!!error}
-				aria-describedby={error ? errorId : undefined}
+				aria-invalid={!!visibleError}
+				aria-describedby={visibleError ? errorId : undefined}
 				className="dark:bg-input/30 border-input"
 			/>
-			{hint && !error && <Hint>{hint}</Hint>}
-			<FieldError id={errorId} error={error} />
+			{hint && !visibleError && <Hint>{hint}</Hint>}
+			<FieldError id={errorId} error={visibleError} />
 		</div>
 	);
 }
@@ -278,12 +296,9 @@ export function BlockEditPanel({
 	const [embedType, setEmbedType] = useState(block.embedType ?? "");
 	const [embedUrl, setEmbedUrl] = useState(block.embedUrl ?? "");
 	const [config, setConfig] = useState(block.config ?? "{}");
-	const [scheduledStart, setScheduledStart] = useState(
-		block.scheduledStart ? new Date(block.scheduledStart).toISOString().slice(0, 16) : "",
-	);
-	const [scheduledEnd, setScheduledEnd] = useState(
-		block.scheduledEnd ? new Date(block.scheduledEnd).toISOString().slice(0, 16) : "",
-	);
+	const [scheduledStart, setScheduledStart] = useState(isoToLocal(block.scheduledStart));
+	const [scheduledEnd, setScheduledEnd] = useState(isoToLocal(block.scheduledEnd));
+	const [showAllErrors, setShowAllErrors] = useState(false);
 
 	// Emit changes for real-time preview
 	useEffect(() => {
@@ -312,8 +327,11 @@ export function BlockEditPanel({
 		block.id,
 	]);
 
-	// Auto-focus first input when panel opens
+	// Auto-focus the first input when the inline (lg+) panel opens. Below lg
+	// the panel lives in a Sheet whose dialog already manages focus, and a
+	// second programmatic focus would pop the on-screen keyboard over it.
 	useEffect(() => {
+		if (!window.matchMedia("(min-width: 1024px)").matches) return;
 		const timer = setTimeout(() => {
 			const firstInput =
 				panelRef.current?.querySelector<HTMLInputElement>("input, textarea, select");
@@ -383,15 +401,22 @@ export function BlockEditPanel({
 	);
 
 	const handleSave = () => {
+		if (hasErrors) {
+			setShowAllErrors(true);
+			return;
+		}
+		// Blank fields are sent as "" on purpose: the schema's `clearable` turns
+		// "" into null so the column is cleared (null/undefined would mean "not
+		// provided" and leave the old value in place).
 		onSave({
 			id: block.id,
-			title: title || null,
-			url: url || null,
-			icon: icon || null,
-			embedType: embedType || null,
-			embedUrl: embedUrl || null,
+			title,
+			url,
+			icon,
+			embedType,
+			embedUrl,
 			socialIcons: null,
-			config: config || null,
+			config: config || "{}",
 			scheduledStart: scheduledStart ? new Date(scheduledStart) : null,
 			scheduledEnd: scheduledEnd ? new Date(scheduledEnd) : null,
 		});
@@ -404,7 +429,7 @@ export function BlockEditPanel({
 	const linkVariant = str("variant", "classic");
 	const textBody = str("body");
 
-	return (
+	const panel = (
 		<div
 			ref={panelRef}
 			className="flex h-full flex-col rounded-xl border border-border bg-card/80 backdrop-blur-xl shadow-xl"
@@ -417,7 +442,7 @@ export function BlockEditPanel({
 				<button
 					type="button"
 					onClick={onClose}
-					className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors sm:h-8 sm:w-8"
+					className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors lg:h-8 lg:w-8"
 					aria-label="Close edit panel"
 				>
 					<X className="h-4 w-4" />
@@ -506,17 +531,15 @@ export function BlockEditPanel({
 						<>
 							<SelectField
 								id="edit-heading-level"
-								label="Heading size"
+								label="Heading level"
 								value={str("headingLevel", "h2")}
 								onValueChange={(v) => updateConfigField("headingLevel", v)}
 								items={[
-									{ value: "h1", label: "H1 — largest" },
-									{ value: "h2", label: "H2" },
-									{ value: "h3", label: "H3" },
-									{ value: "h4", label: "H4" },
-									{ value: "h5", label: "H5" },
-									{ value: "h6", label: "H6 — smallest" },
+									{ value: "h2", label: "H2 — section" },
+									{ value: "h3", label: "H3 — sub-section" },
+									{ value: "h4", label: "H4 — minor" },
 								]}
+								hint="Your name is the page's H1. Pick the level by structure, not size."
 							/>
 							<SelectField
 								id="edit-layout"
@@ -786,7 +809,7 @@ export function BlockEditPanel({
 								onChange={(v) => updateConfigField("fullName", v)}
 								placeholder="John Doe"
 								error={cfgErrors.fullName}
-								maxLength={120}
+								maxLength={100}
 							/>
 							<TextField
 								id="vc-nickname"
@@ -795,7 +818,7 @@ export function BlockEditPanel({
 								onChange={(v) => updateConfigField("nickname", v)}
 								placeholder="Johnny"
 								error={cfgErrors.nickname}
-								maxLength={80}
+								maxLength={100}
 							/>
 							<TextField
 								id="vc-birthday"
@@ -823,7 +846,7 @@ export function BlockEditPanel({
 								onChange={(v) => updateConfigField("org", v)}
 								placeholder="Acme Inc."
 								error={cfgErrors.org}
-								maxLength={120}
+								maxLength={100}
 							/>
 							<TextField
 								id="vc-jobtitle"
@@ -832,7 +855,7 @@ export function BlockEditPanel({
 								onChange={(v) => updateConfigField("title", v)}
 								placeholder="Software Engineer"
 								error={cfgErrors.title}
-								maxLength={120}
+								maxLength={100}
 							/>
 							<TextField
 								id="vc-department"
@@ -841,7 +864,7 @@ export function BlockEditPanel({
 								onChange={(v) => updateConfigField("department", v)}
 								placeholder="Engineering"
 								error={cfgErrors.department}
-								maxLength={120}
+								maxLength={100}
 							/>
 
 							<SectionLabel>Contact</SectionLabel>
@@ -913,7 +936,7 @@ export function BlockEditPanel({
 														updateConfigField("urls", urls);
 													}}
 													placeholder="Website"
-													maxLength={80}
+													maxLength={40}
 													className="dark:bg-input/30 border-input"
 												/>
 											</div>
@@ -1235,8 +1258,8 @@ export function BlockEditPanel({
 
 			{/* Footer */}
 			<div className="space-y-2 border-t border-border px-4 py-3">
-				{hasErrors && !isSaving && (
-					<p role="status" className="text-micro text-destructive">
+				{hasErrors && showAllErrors && !isSaving && (
+					<p role="alert" className="text-micro text-destructive">
 						Fix the highlighted fields to save.
 					</p>
 				)}
@@ -1244,22 +1267,19 @@ export function BlockEditPanel({
 					{onDelete && (
 						<Button
 							variant="outline"
-							className="h-11 w-11 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive md:h-8 md:w-8"
+							className="h-11 w-11 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive lg:h-8 lg:w-8"
 							onClick={onDelete}
 							aria-label="Delete block"
 						>
 							<Trash2 className="h-4 w-4" />
 						</Button>
 					)}
-					<Button
-						className="h-11 flex-1 md:h-8"
-						onClick={handleSave}
-						disabled={isSaving || hasErrors}
-					>
+					<Button className="h-11 flex-1 lg:h-8" onClick={handleSave} disabled={isSaving}>
 						{isSaving ? "Saving..." : "Save Changes"}
 					</Button>
 				</div>
 			</div>
 		</div>
 	);
+	return <ShowAllErrors.Provider value={showAllErrors}>{panel}</ShowAllErrors.Provider>;
 }

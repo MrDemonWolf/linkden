@@ -3,11 +3,19 @@ title: Custom Domain
 description: Point a custom domain at your LinkDen instance.
 ---
 
-# Custom Domain Setup
+# 🌐 Custom Domain Setup
 
 Give your LinkDen instance a custom domain instead of the default `*.workers.dev` URLs. This is the recommended production setup: on a custom domain the web app and the API share one origin, so admin login works without any cookie or CORS tricks.
 
-## How It Works
+### ⚡ TL;DR
+- Your domain must be a zone in your Cloudflare account, and the hostname must have **no existing DNS record**.
+- Set `SITE_DOMAIN` and point `BETTER_AUTH_URL`, `NEXT_PUBLIC_SERVER_URL`, `CORS_ORIGIN`, and `NEXT_PUBLIC_SITE_URL` at it.
+- Run `bun ship`. Alchemy creates the Custom Domain (DNS + certificate) and the `/api/*` and `/trpc/*` routes.
+- Verify: the page loads over HTTPS, `/api/health` returns `"status":"ok"`, and `/admin/login` stays signed in.
+
+---
+
+## 🧭 How It Works
 
 Alchemy does the wiring for you from a single variable, `SITE_DOMAIN`:
 
@@ -20,49 +28,49 @@ Cloudflare matches routes before the custom-domain Worker, so requests to `/api/
 
 Without `SITE_DOMAIN` the deploy targets `workers.dev`, where the two Workers are different origins and `/admin` cannot hold a session. Treat `workers.dev` as staging only.
 
-## Requirements
+## ✅ Requirements
 
 1. Your domain is a **zone in your Cloudflare account** (Cloudflare nameservers). If it is not yet, go to the [Cloudflare dashboard](https://dash.cloudflare.com) → **Add a site**, pick the Free plan, and switch your registrar's nameservers to the ones Cloudflare shows you. Propagation takes anywhere from 15 minutes to 24 hours.
 2. The hostname you choose **must not already have a DNS record**. Cloudflare creates the record when it attaches the Custom Domain and refuses to overwrite an existing A, AAAA, or CNAME. If something lives there today, delete that record first.
 3. Your `CLOUDFLARE_API_TOKEN` has the Zone permissions listed in the [Cloudflare guide](/docs/self-hosting/cloudflare): Workers Routes:Edit, Zone:Read, DNS:Edit, SSL and Certificates:Edit.
 
-## Set It Up
+## 🚀 Set It Up
 
-1. Set `SITE_DOMAIN` and point every URL at it. In production all four URLs are the same value:
+- [ ] Set `SITE_DOMAIN` and point every URL at it. In production all four URLs are the same value:
 
-```bash
-SITE_DOMAIN=links.yourdomain.com
-BETTER_AUTH_URL=https://links.yourdomain.com
-NEXT_PUBLIC_SERVER_URL=https://links.yourdomain.com
-CORS_ORIGIN=https://links.yourdomain.com
-NEXT_PUBLIC_SITE_URL=https://links.yourdomain.com
-```
+  ```bash
+  SITE_DOMAIN=links.yourdomain.com
+  BETTER_AUTH_URL=https://links.yourdomain.com
+  NEXT_PUBLIC_SERVER_URL=https://links.yourdomain.com
+  CORS_ORIGIN=https://links.yourdomain.com
+  NEXT_PUBLIC_SITE_URL=https://links.yourdomain.com
+  ```
 
-   If you deploy from GitHub Actions, `SITE_DOMAIN` and `NEXT_PUBLIC_SITE_URL` go in as **variables** on the `production` environment; the rest are **secrets**.
+  If you deploy from GitHub Actions, `SITE_DOMAIN` and `NEXT_PUBLIC_SITE_URL` go in as **variables** on the `production` environment; the rest are **secrets**.
 
-2. Redeploy:
+- [ ] Redeploy:
 
-```bash
-bun ship
-```
+  ```bash
+  bun ship
+  ```
 
-   The deploy log lists the custom domain and the two routes as they are created. Certificate issuance usually finishes within a minute.
+  The deploy log lists the custom domain and the two routes as they are created. Certificate issuance usually finishes within a minute.
 
-3. Verify:
+- [ ] Verify:
 
-   - `https://links.yourdomain.com` loads your link page with a lock icon.
-   - `curl -I https://links.yourdomain.com/api/health` returns `"status":"ok"`. The response carries the API's `Strict-Transport-Security` header, which proves the route won over the web Worker.
-   - `/admin/login` signs you in and stays signed in.
+  - `https://links.yourdomain.com` loads your link page with a lock icon.
+  - `curl -I https://links.yourdomain.com/api/health` returns `"status":"ok"`. The response carries the API's `Strict-Transport-Security` header, which proves the route won over the web Worker.
+  - `/admin/login` signs you in and stays signed in.
 
-## Apex Domains
+## 🌐 Apex Domains
 
 An apex domain is `yourdomain.com` with no subdomain. Cloudflare Custom Domains support it directly (CNAME flattening is automatic), so `SITE_DOMAIN=yourdomain.com` works as long as the apex has no existing record. Most people still prefer a subdomain such as `links.yourdomain.com` so the apex stays free for a main website.
 
-## External DNS
+## 🔀 External DNS
 
 Custom Domains require the zone to be on Cloudflare DNS. If your DNS lives elsewhere (Namecheap, GoDaddy, Route 53, and so on), move the zone to Cloudflare first. The Free plan is enough, the registrar stays where it is, and switching the nameservers is the only change. Cloudflare imports your existing records when you add the site, so nothing else breaks.
 
-## Changing or Removing the Domain
+## 🔄 Changing or Removing the Domain
 
 - **Change:** update `SITE_DOMAIN` and the four URLs, make sure the new hostname has no DNS record, and run `bun ship`. Alchemy removes the old domain and routes and creates the new ones.
 - **Remove:** unset `SITE_DOMAIN`, point the URLs back at the `workers.dev` addresses, and run `bun ship`. The DNS record Cloudflare created is deleted with the Custom Domain.

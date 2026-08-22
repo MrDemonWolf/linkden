@@ -48,9 +48,10 @@ Canonical version: [`version.json`](./version.json) — workspace
   goes out, so a mail failure never loses a message.
 - **Password reset works.** The reset link on the login page now calls
   the right endpoint.
-- **Faster admin sessions.** Session lookups are cached in the cookie
-  for five minutes, so admin pages stop hitting the database on every
-  request.
+- **Faster admin sessions.** Session lookups for page loads are cached
+  in the cookie for one minute, so admin pages stop hitting the database
+  on every request. Anything that changes data still checks the database,
+  and changing your password now signs out every other browser.
 
 ### 🔧 Technical
 
@@ -69,10 +70,20 @@ Canonical version: [`version.json`](./version.json) — workspace
   to `NEXT_PUBLIC_SERVER_URL` in local dev.
 - `NEXT_PUBLIC_SITE_URL` (validated with `z.url()` in
   `packages/env/src/web.ts`) drives `metadataBase`, `robots.ts`, and
-  `sitemap.ts`. The `example.com` fallbacks are gone.
+  `sitemap.ts`. The `example.com` fallbacks are gone; the `localhost`
+  default only applies outside production builds, and `alchemy.run.ts`
+  fails the deploy when the variable is empty or does not match
+  `https://SITE_DOMAIN`.
 - Explicit Alchemy stage (`ALCHEMY_STAGE`, default `prod`) and resource
   names: `linkden-db`, `linkden-images`, `linkden`, `linkden-api`,
-  `linkden-backups` (R2, 30-day lifecycle expiry).
+  `linkden-backups` (R2, 30-day lifecycle expiry). Non-`prod` stages get
+  the stage as a name suffix so a `dev` deploy is independent of
+  production. **Upgrade note:** installs deployed before this release have
+  Alchemy-generated names (`linkden-database-runner`,
+  `linkden-images-runner` from CI); set `LINKDEN_DB_NAME` and
+  `LINKDEN_IMAGES_BUCKET` to those before deploying or the `prod` stage
+  creates an empty database and bucket. See the Cloudflare self-hosting
+  guide.
 - `.github/workflows/backup-db.yml`: daily `wrangler d1 export` to
   `linkden-backups/d1/<date>.sql`.
 - Structured JSON error logs: Hono `app.onError`, tRPC `onError`, and a
@@ -107,14 +118,19 @@ Canonical version: [`version.json`](./version.json) — workspace
   ([#53](https://github.com/MrDemonWolf/linkden/pull/53)). The scan is
   report-only for now (open advisories are all dev-tooling transitives);
   `osv-scanner.toml` is in place for dated ignores once it is switched to
-  blocking. `next` bumped to 16.2.11 and `hono` to 4.12.34.
+  blocking. `next` bumped to 16.2.11 and `hono` to 4.13.3.
 
 #### Changed
 
 - `apps/web/src/app/api/og/route.tsx` moved to `app/og/route.tsx` so the
   OG image route no longer collides with the `/api/*` Worker route.
   `layout.tsx` and the SEO settings section point at `/og`.
-- Better Auth `session.cookieCache` enabled (`maxAge: 300`); stale
+- Better Auth `session.cookieCache` enabled (`maxAge: 60`, options in
+  `packages/auth/src/auth-options.ts`, shared with the cookie test).
+  `createContext` and `/api/upload` pass `disableCookieCache` for non-GET
+  requests, so mutations always read the session table and a factory
+  reset or revoke takes effect immediately; GET reads may lag by up to
+  60 s. `changePassword` sends `revokeOtherSessions: true`. Stale
   cross-subdomain cookie comments removed from `packages/auth/src/index.ts`.
 - Deploy workflow: Node version pinned via `.node-version` (`24`),
   `setup-node` SHA-pinned, `SITE_DOMAIN` and `NEXT_PUBLIC_SITE_URL` read
@@ -182,7 +198,23 @@ Canonical version: [`version.json`](./version.json) — workspace
 - Setup wizard surfaces real server errors instead of swallowing them
   ([#51](https://github.com/MrDemonWolf/linkden/pull/51)).
 - Backup imports are sanitized; hex-alpha styling guarded
-  ([#51](https://github.com/MrDemonWolf/linkden/pull/51)).
+  ([#51](https://github.com/MrDemonWolf/linkden/pull/51)). Imported
+  blocks and social networks now go through the same gate as
+  `blocks.create` / `social.updateBulk` (`validateBlockImport`,
+  `socialNetworkUpdateSchema`): http(s)-only URLs, icon format, per-type
+  config. Invalid rows are skipped and counted (`skipped` in the result,
+  `backup.import.skipped_rows` audit entry) instead of landing as raw
+  `javascript:` hrefs on the public page. The LinkStack importer drops
+  non-http(s) links the same way.
+- Clearing a block's URL, icon, embed URL, or embed type in the builder
+  now persists: the editor sends `""` and the schema's `clearable`
+  fields turn it into `null` for the row (`packages/validators/src/blocks.ts`).
+- `vcardConfigSchema` is derived from `vcardDataSchema`, so a vCard block
+  the builder accepts always passes the stricter download-path parse
+  (`/api/vcard`, `public.getVCard`) instead of silently 404ing.
+- Public renderers guard stored URLs (`safeHttpUrl`) and look up heading
+  levels / icon names with `Object.hasOwn`, so an imported
+  `headingLevel: "__proto__"` can no longer crash the server render.
 
 #### Security
 

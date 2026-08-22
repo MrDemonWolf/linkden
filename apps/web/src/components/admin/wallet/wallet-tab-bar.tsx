@@ -4,15 +4,13 @@ import { Briefcase, Image as ImageIcon, Layers, MapPin, Palette } from "lucide-r
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
-export const WALLET_TABS = [
+const WALLET_TABS = [
 	{ value: "business", label: "Business", icon: Briefcase },
 	{ value: "images", label: "Images", icon: ImageIcon },
 	{ value: "context", label: "Context", icon: MapPin },
 	{ value: "colors", label: "Colors", icon: Palette },
 	{ value: "background", label: "Background", icon: Layers },
 ] as const;
-
-export type WalletTab = (typeof WALLET_TABS)[number]["value"];
 
 /**
  * iOS-Wallet-style bottom tab bar for the pass editor. Keyboard navigation

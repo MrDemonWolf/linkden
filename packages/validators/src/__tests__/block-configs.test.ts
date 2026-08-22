@@ -14,7 +14,10 @@ import {
 	reorderBlocksSchema,
 	textConfigSchema,
 	updateBlockSchema,
+	validateBlockImport,
+	vcardConfigSchema,
 } from "../blocks";
+import { vcardDataSchema } from "../vcard";
 
 const baseBlock = { id: "blk_1", type: "link" as const, position: 0 };
 
@@ -218,10 +221,20 @@ describe("createBlockSchema", () => {
 		).toBe(false);
 	});
 
-	it("accepts blank url/icon/embedType (cleared fields)", () => {
-		expect(
-			createBlockSchema.safeParse({ ...baseBlock, url: "", icon: "", embedType: "" }).success,
-		).toBe(true);
+	it("parses blank url/icon/embedType/embedUrl (cleared fields) to null", () => {
+		const result = createBlockSchema.parse({
+			...baseBlock,
+			url: "",
+			icon: "",
+			embedType: "",
+			embedUrl: "",
+		});
+		expect(result.url).toBeNull();
+		expect(result.icon).toBeNull();
+		expect(result.embedType).toBeNull();
+		expect(result.embedUrl).toBeNull();
+		// Absent stays absent — only "" means "clear".
+		expect(createBlockSchema.parse(baseBlock).url).toBeUndefined();
 	});
 
 	it("validates icon format", () => {
@@ -308,6 +321,15 @@ describe("updateBlockSchema", () => {
 		).toBe(false);
 	});
 
+	it('clears a column when the admin sends "" (the row update receives null)', () => {
+		expect(updateBlockSchema.parse({ id: "blk_1", url: "" })).toEqual({ id: "blk_1", url: null });
+		expect(updateBlockSchema.parse({ id: "blk_1", icon: "", embedUrl: "" })).toEqual({
+			id: "blk_1",
+			icon: null,
+			embedUrl: null,
+		});
+	});
+
 	it("allows clearing the schedule with null", () => {
 		const result = updateBlockSchema.parse({
 			id: "blk_1",
@@ -323,5 +345,69 @@ describe("reorderBlocksSchema", () => {
 		expect(reorderBlocksSchema.parse([{ id: "a", position: 0 }])).toHaveLength(1);
 		const tooMany = Array.from({ length: 201 }, (_, i) => ({ id: `b${i}`, position: i }));
 		expect(reorderBlocksSchema.safeParse(tooMany).success).toBe(false);
+	});
+});
+
+describe("vcardConfigSchema", () => {
+	// The download routes (/api/vcard, public.getVCard) parse the stored block
+	// config with vcardDataSchema; anything the block schema accepts must pass it.
+	const fixtures: Record<string, unknown>[] = [
+		{},
+		{ fullName: "Ada Lovelace", org: "Analytical Engines", email: "ada@example.com" },
+		{ fullName: "x".repeat(100), org: "o".repeat(100), title: "t".repeat(100) },
+		{ urls: [{ label: "l".repeat(40), url: "https://ada.dev" }], workEmail: "" },
+		{ buttonText: "Save me", buttonEmoji: "📇", isOutlined: true, customBgColor: "#112233" },
+	];
+
+	it("every accepted config is accepted by vcardDataSchema", () => {
+		for (const fixture of fixtures) {
+			const block = vcardConfigSchema.safeParse(fixture);
+			expect(block.success, JSON.stringify(fixture)).toBe(true);
+			expect(vcardDataSchema.safeParse(fixture).success, JSON.stringify(fixture)).toBe(true);
+		}
+	});
+
+	it("shares vcardDataSchema's bounds and email checks", () => {
+		for (const bad of [
+			{ fullName: "x".repeat(101) },
+			{ org: "x".repeat(101) },
+			{ urls: [{ label: "l".repeat(41), url: "https://x.y" }] },
+			{ workEmail: "not-an-email" },
+			{ email: "ada@" },
+		]) {
+			expect(vcardConfigSchema.safeParse(bad).success, JSON.stringify(bad)).toBe(false);
+			expect(parseBlockConfig("vcard", JSON.stringify(bad)).ok, JSON.stringify(bad)).toBe(false);
+		}
+	});
+});
+
+describe("validateBlockImport", () => {
+	const row = {
+		id: "blk_1",
+		type: "link" as const,
+		position: 0,
+		isEnabled: true,
+		status: "published" as const,
+	};
+
+	it("accepts a clean row, null columns and a blank url", () => {
+		expect(
+			validateBlockImport({ ...row, url: "https://a.b", icon: null, config: null }),
+		).not.toBeNull();
+		expect(validateBlockImport({ ...row, url: "" })).not.toBeNull();
+	});
+
+	it("rejects the rows blocks.create would reject", () => {
+		for (const bad of [
+			{ ...row, url: "javascript:fetch('/trpc/danger.resetEverything',{method:'POST'})" },
+			{ ...row, url: `https://a.b/${"x".repeat(2048)}` },
+			{ ...row, icon: "<svg onload=1>" },
+			{ ...row, type: "embed" as const, embedUrl: "javascript:1" },
+			{ ...row, type: "header" as const, config: JSON.stringify({ headingLevel: "__proto__" }) },
+			{ ...row, type: "image" as const, config: JSON.stringify({ src: "data:text/html,hi" }) },
+			{ ...row, title: "x".repeat(201) },
+		]) {
+			expect(validateBlockImport(bad), JSON.stringify(bad)).toBeNull();
+		}
 	});
 });

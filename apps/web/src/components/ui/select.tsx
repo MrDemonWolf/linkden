@@ -66,7 +66,10 @@ export function Select({
 								<SelectPrimitive.Item
 									key={item.value}
 									value={item.value}
-									className="relative flex cursor-default items-center gap-2 rounded-md py-1.5 pr-2 pl-7 text-base outline-none select-none data-[highlighted]:bg-muted data-[highlighted]:text-foreground md:text-sm"
+									// The highlighted option has DOM focus (roving tabindex) and this is
+									// its only indicator: bg-muted alone is ~1.03:1 against the popover,
+									// so add a primary tint + inset ring (≥3:1 non-text contrast).
+									className="relative flex cursor-default items-center gap-2 rounded-md py-1.5 pr-2 pl-7 text-base outline-none select-none data-[highlighted]:bg-primary/10 data-[highlighted]:ring-1 data-[highlighted]:ring-inset data-[highlighted]:ring-ring md:text-sm"
 								>
 									<SelectPrimitive.ItemIndicator className="absolute left-2 flex items-center">
 										<Check className="h-3.5 w-3.5" aria-hidden="true" />

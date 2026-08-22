@@ -1,16 +1,34 @@
 "use client";
 
+import { vcardDataSchema } from "@linkden/validators/vcard";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Save, Trash2 } from "lucide-react";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { toast } from "sonner";
+import { FieldError } from "@/components/admin/field-feedback";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
+import { friendlyMessage } from "@/lib/validate";
 import { trpc } from "@/utils/trpc";
 import { FieldGroup } from "./field-group";
+
+/**
+ * Same schema the vcard router validates against, so an inline error here is
+ * exactly what the server would reject. Keyed by dotted path (`urls.2.url`).
+ */
+function vcardErrors(data: VCardData): Record<string, string> {
+	const result = vcardDataSchema.safeParse(data);
+	if (result.success) return {};
+	const errors: Record<string, string> = {};
+	for (const issue of result.error.issues) {
+		const key = issue.path.map(String).join(".");
+		if (!(key in errors)) errors[key] = friendlyMessage(issue.message);
+	}
+	return errors;
+}
 
 interface UrlEntry {
 	label: string;
@@ -57,10 +75,12 @@ export interface VCardSectionHandle {
 interface VCardSectionProps {
 	/** Notifies the parent whenever this section's dirty state changes. */
 	onDirtyChange?: (dirty: boolean) => void;
+	/** Notifies the parent whenever this section gains or clears validation errors, so its global Save can disable. */
+	onErrorsChange?: (hasErrors: boolean) => void;
 }
 
 export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(function VCardSection(
-	{ onDirtyChange },
+	{ onDirtyChange, onErrorsChange },
 	ref,
 ) {
 	const qc = useQueryClient();
@@ -89,7 +109,7 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 				email: raw.email ?? "",
 				phone: raw.phone ?? "",
 				address: raw.address ?? "",
-				urls: raw.urls ?? [],
+				urls: (raw.urls ?? []).map((u) => ({ label: u.label ?? "", url: u.url ?? "" })),
 			};
 			setEnabled(e);
 			setData(d);
@@ -99,6 +119,8 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 	}, [configQuery.data]);
 
 	const isDirty = enabled !== savedEnabled || JSON.stringify(data) !== JSON.stringify(savedData);
+	const errors = enabled ? vcardErrors(data) : {};
+	const hasErrors = Object.keys(errors).length > 0;
 
 	// Report dirty state to the parent so the global unsaved-changes bar covers vCard edits.
 	// The cleanup clears the flag on unmount (tab switch discards local edits with the component).
@@ -106,6 +128,10 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 		onDirtyChange?.(isDirty);
 		return () => onDirtyChange?.(false);
 	}, [isDirty, onDirtyChange]);
+	useEffect(() => {
+		onErrorsChange?.(hasErrors);
+		return () => onErrorsChange?.(false);
+	}, [hasErrors, onErrorsChange]);
 
 	const updateField = (field: keyof Omit<VCardData, "urls">, value: string) => {
 		setData((prev) => ({ ...prev, [field]: value }));
@@ -133,6 +159,10 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 	};
 
 	const handleSave = async (opts?: { silent?: boolean }) => {
+		if (hasErrors) {
+			if (!opts?.silent) toast.error("Fix the highlighted vCard fields first");
+			throw new Error("vCard has invalid fields");
+		}
 		try {
 			await updateConfig.mutateAsync({
 				enabled,
@@ -218,7 +248,10 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 									id="s-vc-name"
 									value={data.fullName}
 									onChange={(e) => updateField("fullName", e.target.value)}
+									aria-invalid={!!errors.fullName}
+									aria-describedby={errors.fullName ? "s-vc-name-error" : undefined}
 								/>
+								<FieldError id="s-vc-name-error" error={errors.fullName} />
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="s-vc-nick">Nickname</Label>
@@ -226,7 +259,10 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 									id="s-vc-nick"
 									value={data.nickname}
 									onChange={(e) => updateField("nickname", e.target.value)}
+									aria-invalid={!!errors.nickname}
+									aria-describedby={errors.nickname ? "s-vc-nick-error" : undefined}
 								/>
+								<FieldError id="s-vc-nick-error" error={errors.nickname} />
 							</div>
 						</FieldGroup>
 						<FieldGroup columns={2}>
@@ -246,7 +282,10 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 									value={data.photo}
 									onChange={(e) => updateField("photo", e.target.value)}
 									placeholder="https://..."
+									aria-invalid={!!errors.photo}
+									aria-describedby={errors.photo ? "s-vc-photo-error" : undefined}
 								/>
+								<FieldError id="s-vc-photo-error" error={errors.photo} />
 							</div>
 						</FieldGroup>
 					</div>
@@ -263,7 +302,10 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 									id="s-vc-org"
 									value={data.org}
 									onChange={(e) => updateField("org", e.target.value)}
+									aria-invalid={!!errors.org}
+									aria-describedby={errors.org ? "s-vc-org-error" : undefined}
 								/>
+								<FieldError id="s-vc-org-error" error={errors.org} />
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="s-vc-title">Job Title</Label>
@@ -271,7 +313,10 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 									id="s-vc-title"
 									value={data.title}
 									onChange={(e) => updateField("title", e.target.value)}
+									aria-invalid={!!errors.title}
+									aria-describedby={errors.title ? "s-vc-title-error" : undefined}
 								/>
+								<FieldError id="s-vc-title-error" error={errors.title} />
 							</div>
 						</FieldGroup>
 						<div className="space-y-1.5">
@@ -280,7 +325,10 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 								id="s-vc-dept"
 								value={data.department}
 								onChange={(e) => updateField("department", e.target.value)}
+								aria-invalid={!!errors.department}
+								aria-describedby={errors.department ? "s-vc-dept-error" : undefined}
 							/>
+							<FieldError id="s-vc-dept-error" error={errors.department} />
 						</div>
 					</div>
 
@@ -297,7 +345,10 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 									type="email"
 									value={data.email}
 									onChange={(e) => updateField("email", e.target.value)}
+									aria-invalid={!!errors.email}
+									aria-describedby={errors.email ? "s-vc-email-error" : undefined}
 								/>
+								<FieldError id="s-vc-email-error" error={errors.email} />
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="s-vc-wemail">Work Email</Label>
@@ -306,7 +357,10 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 									type="email"
 									value={data.workEmail}
 									onChange={(e) => updateField("workEmail", e.target.value)}
+									aria-invalid={!!errors.workEmail}
+									aria-describedby={errors.workEmail ? "s-vc-wemail-error" : undefined}
 								/>
+								<FieldError id="s-vc-wemail-error" error={errors.workEmail} />
 							</div>
 						</FieldGroup>
 						<FieldGroup columns={2}>
@@ -336,7 +390,10 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 								value={data.address}
 								onChange={(e) => updateField("address", e.target.value)}
 								placeholder="123 Main St, City, Country"
+								aria-invalid={!!errors.address}
+								aria-describedby={errors.address ? "s-vc-addr-error" : undefined}
 							/>
+							<FieldError id="s-vc-addr-error" error={errors.address} />
 						</div>
 					</div>
 
@@ -360,6 +417,7 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 										value={entry.label}
 										onChange={(e) => updateUrl(i, "label", e.target.value)}
 										placeholder="Website"
+										maxLength={40}
 									/>
 								</div>
 								<div className="flex-[2] space-y-1.5">
@@ -369,7 +427,13 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 										value={entry.url}
 										onChange={(e) => updateUrl(i, "url", e.target.value)}
 										placeholder="https://..."
+										inputMode="url"
+										aria-invalid={!!errors[`urls.${i}.url`]}
+										aria-describedby={
+											errors[`urls.${i}.url`] ? `s-vc-url-val-${i}-error` : undefined
+										}
 									/>
+									<FieldError id={`s-vc-url-val-${i}-error`} error={errors[`urls.${i}.url`]} />
 								</div>
 								<Button
 									variant="ghost"
@@ -387,7 +451,11 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 			)}
 
 			{isDirty && (
-				<Button size="sm" onClick={() => handleSave()} disabled={updateConfig.isPending}>
+				<Button
+					size="sm"
+					onClick={() => handleSave().catch(() => {})}
+					disabled={updateConfig.isPending || hasErrors}
+				>
 					<Save className="mr-1.5 h-3.5 w-3.5" />
 					{updateConfig.isPending ? "Saving..." : "Save vCard Settings"}
 				</Button>

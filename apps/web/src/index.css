@@ -283,3 +283,13 @@
   animation: ld-rise 480ms var(--ease-out) both;
   animation-delay: calc(var(--ld-i, 0) * 45ms);
 }
+/* The global reduced-motion reset above is a universal selector, so these
+   class rules would outrank it (and `both` would hold late blocks at opacity
+   0 for the whole delay). Switch the entrance off explicitly. */
+@media (prefers-reduced-motion: reduce) {
+  .ld-hero,
+  .ld-blocks > *,
+  .ld-social-icons > a {
+    animation: none;
+  }
+}

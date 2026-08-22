@@ -6,7 +6,7 @@ import { apiFetch } from "./server-api";
 // Wire shape of `public.getPage`. The tRPC client uses no transformer, so Date
 // columns (block.scheduledStart/End, createdAt…) arrive as ISO strings even
 // though this type says Date; the public page never reads them.
-export type PublicPageData = inferRouterOutputs<AppRouter>["public"]["getPage"];
+type PublicPageData = inferRouterOutputs<AppRouter>["public"]["getPage"];
 
 /**
  * Server-side public page payload, deduped per request with React `cache` so

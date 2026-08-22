@@ -31,7 +31,7 @@ export function BlockIcon({ icon, className }: { icon: string | null; className?
 
 	const name = icon.startsWith("lucide:") ? icon.slice("lucide:".length) : icon;
 	// DynamicIcon throws (and console.errors) on unknown names — guard first.
-	if (!(name in dynamicIconImports)) return null;
+	if (!Object.hasOwn(dynamicIconImports, name)) return null;
 	return (
 		<span className={cn("inline-flex h-5 w-5 shrink-0", className)} aria-hidden="true">
 			<DynamicIcon name={name as IconName} className="h-full w-full" strokeWidth={2} />

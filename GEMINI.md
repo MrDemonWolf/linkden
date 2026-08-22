@@ -78,7 +78,7 @@ All user-facing documentation and guides MUST be optimized for visual scanning a
 - Always run `bun run db:generate` after schema changes.
 
 ### 5. UI/UX Patterns
-- **Fonts:** `Montserrat` for display/headers, `Roboto` for sans/body.
+- **Fonts:** `Sora` for display/headers, `DM Sans` for sans/body, `Geist Mono` for mono (loaded via `next/font` in `apps/web/src/app/layout.tsx`).
 - **Components:** Prefer Radix UI primitives and the shared library in `packages/ui`.
 - **Images:** Use the `ImageUploadField` component for file uploads; it communicates with the R2-backed `/api/upload` endpoint.
 - **Animations:** Use the `useEntranceAnimation` hook for staggered entry effects.
@@ -90,7 +90,7 @@ All user-facing documentation and guides MUST be optimized for visual scanning a
 ### 7. Storage (R2)
 - Avatars and banners are stored in Cloudflare R2.
 - Uploads are handled via `POST /api/upload` on the server Worker.
-- **File Validation:** Includes a triple-check on file size (5MB max), extension, and MIME type before writing to R2.
+- **File Validation:** `Content-Length` precheck (5MB max) + magic-byte signature must match the extension (`apps/server/src/lib/upload-validation.ts`) before writing to R2; replaced objects are deleted.
 - Images are served via `GET /api/images/*` with optimized cache headers.
 
 ### 8. Audit & Backup

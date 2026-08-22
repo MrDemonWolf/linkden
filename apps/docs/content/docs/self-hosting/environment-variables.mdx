@@ -23,7 +23,7 @@ LinkDen uses a single `.env` file at the monorepo root. Five variables are requi
 | `BETTER_AUTH_URL` | Base URL of the API server | `http://localhost:3000` |
 | `CORS_ORIGIN` | Frontend URL (must match exactly, including protocol, no trailing slash) | `http://localhost:3001` |
 | `NEXT_PUBLIC_SERVER_URL` | Public URL of the API server, used by the Next.js frontend | `http://localhost:3000` |
-| `NEXT_PUBLIC_SITE_URL` | Public URL of the site itself. Used for `robots.txt`, `sitemap.xml`, canonical links, and Open Graph URLs | `http://localhost:3001` |
+| `NEXT_PUBLIC_SITE_URL` | Public URL of the site itself. Used for `robots.txt`, `sitemap.xml`, and Open Graph URLs. Required for a production build and deploy (the deploy fails early when it is empty); only local dev falls back to `http://localhost:3001` | `http://localhost:3001` |
 
 **In production these are all the same hostname.** LinkDen runs same-origin: the web Worker owns `SITE_DOMAIN` and the API Worker is routed under it at `/api/*` and `/trpc/*`. So with `SITE_DOMAIN=links.yourdomain.com`:
 
@@ -46,7 +46,8 @@ Only needed when deploying with `bun ship` or the GitHub Actions deploy workflow
 | `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID |
 | `ALCHEMY_PASSWORD` | Encrypts secrets inside Alchemy's deploy state. Generate with `openssl rand -base64 32` and never change it once deployed |
 | `ALCHEMY_STATE_TOKEN` | Auth token for the `alchemy-state` `CloudflareStateStore` Worker. The one LinkDen is configured for is MrDemonWolf's; third-party self-hosters deploy their own state worker or switch `stateStore` in `packages/infra/alchemy.run.ts`. See the [Cloudflare guide](/docs/self-hosting/cloudflare) |
-| `ALCHEMY_STAGE` | Alchemy stage name. Defaults to `prod`; use another value (for example `dev`) for a second, independent deployment |
+| `ALCHEMY_STAGE` | Alchemy stage name. Defaults to `prod`. Any other value (for example `dev`) deploys a second, independent copy whose resources carry the stage as a suffix (`linkden-db-dev`, `linkden-images-dev`, `linkden-api-dev`, `linkden-dev`) so it can never adopt, overwrite, or destroy the production ones |
+| `LINKDEN_DB_NAME` / `LINKDEN_IMAGES_BUCKET` | **Upgrades only.** Deploys made before 0.5.0 let Alchemy generate the D1/R2 names (a CI deploy produced `linkden-database-runner` and `linkden-images-runner`). Set these to those existing names so the `prod` stage adopts your data instead of creating an empty `linkden-db` / `linkden-images`. See [upgrading an older deploy](/docs/self-hosting/cloudflare#upgrading-a-deploy-made-before-050) |
 | `SITE_DOMAIN` | Your hostname, for example `links.yourdomain.com`. When set, Alchemy attaches a Custom Domain to the web Worker and `/api/*` + `/trpc/*` routes to the API Worker. Leave unset to deploy to `workers.dev` (staging; admin login does not work there) |
 
 ## Runtime Configuration
