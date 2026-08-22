@@ -43,7 +43,7 @@ import type { PreviewBlock } from "@/components/admin/page-preview";
 import { usePreviewSlot } from "@/components/admin/preview-slot";
 import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { Button } from "@/components/ui/button";
-import { Sheet } from "@/components/ui/sheet";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
@@ -494,7 +494,7 @@ export default function LinksBlocksPage() {
 			{/* Below lg the edit panel is a full-screen bottom sheet (hidden at ≥lg
 			    by `breakpoint`, which is the correct usage of that prop). */}
 			{editPanel && (
-				<Sheet
+				<BottomSheet
 					open={!isLg}
 					onOpenChange={(open) => {
 						if (!open) closeEdit();
@@ -505,7 +505,7 @@ export default function LinksBlocksPage() {
 					scrollBody={false}
 				>
 					{editPanel}
-				</Sheet>
+				</BottomSheet>
 			)}
 		</div>
 	);

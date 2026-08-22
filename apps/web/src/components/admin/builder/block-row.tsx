@@ -5,7 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { ChevronRight, GripVertical, Trash2, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { Switch } from "@/components/ui/switch";
-import { Tooltip } from "@/components/ui/tooltip";
+import { TooltipHint } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { type Block, blockTypeIcon } from "./builder-constants";
 
@@ -112,7 +112,7 @@ export function BlockRow({
 			{/* Feature-gate warning — the site-wide toggle is off, so the public
 			    page silently skips this block. Link straight to where it lives. */}
 			{featureHidden && (
-				<Tooltip content="This block's feature is turned off, so it won't appear on your public page">
+				<TooltipHint content="This block's feature is turned off, so it won't appear on your public page">
 					<Link
 						href={featureHref}
 						className="mr-1 inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full border border-warning/40 bg-warning/10 px-2 text-micro font-medium leading-none text-warning transition-colors hover:bg-warning/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-7"
@@ -121,7 +121,7 @@ export function BlockRow({
 						<span className="max-sm:hidden">Hidden — turn on in {featureLabel}</span>
 						<span className="sm:hidden">Hidden</span>
 					</Link>
-				</Tooltip>
+				</TooltipHint>
 			)}
 
 			{/* Actions: visibility Switch · delete · chevron */}

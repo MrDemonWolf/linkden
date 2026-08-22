@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { PagePreview } from "@/components/admin/page-preview";
 import { usePreviewRegistration } from "@/components/admin/preview-slot";
 import { Button } from "@/components/ui/button";
-import { Tooltip } from "@/components/ui/tooltip";
+import { TooltipHint } from "@/components/ui/tooltip";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 
@@ -64,7 +64,7 @@ export function PreviewColumn() {
 					{peek ? "Back to editor" : "Show preview"}
 				</Button>
 			)}
-			<Tooltip content="Hide preview" side="left">
+			<TooltipHint content="Hide preview" side="left">
 				<Button
 					variant="ghost"
 					size="icon"
@@ -74,7 +74,7 @@ export function PreviewColumn() {
 				>
 					<PanelRightClose className="h-4 w-4" />
 				</Button>
-			</Tooltip>
+			</TooltipHint>
 		</>
 	);
 
@@ -89,7 +89,7 @@ export function PreviewColumn() {
 			)}
 		>
 			{collapsed ? (
-				<Tooltip content="Show preview" side="left">
+				<TooltipHint content="Show preview" side="left">
 					<button
 						type="button"
 						onClick={toggleCollapsed}
@@ -99,7 +99,7 @@ export function PreviewColumn() {
 						<PanelRightOpen className="h-4 w-4" />
 						<Smartphone className="h-4 w-4" />
 					</button>
-				</Tooltip>
+				</TooltipHint>
 			) : (
 				<div className="rounded-2xl border border-border bg-surface-2/60 bg-[radial-gradient(var(--canvas-dot)_1px,transparent_1px)] bg-[size:12px_12px] p-4 animate-in fade-in-0 duration-120">
 					{!phoneIsHeader && (
