@@ -15,8 +15,7 @@ const { version } = JSON.parse(
 // Same-origin is what keeps auth working: the Better Auth cookie is SameSite=Lax
 // (packages/auth/src/index.ts) and src/proxy.ts reads it from the web domain's
 // own jar, so splitting web and API across hostnames breaks both.
-const devApiOrigin =
-	process.env.NODE_ENV !== "production" ? process.env.DEV_API_ORIGIN : undefined;
+const devApiOrigin = process.env.NODE_ENV !== "production" ? process.env.DEV_API_ORIGIN : undefined;
 
 const nextConfig: NextConfig = {
 	env: {
