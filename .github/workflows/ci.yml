@@ -1,8 +1,9 @@
 name: CI
 
 on:
+  # Every PR, whatever its base, so stacked PRs get checks before they
+  # land on main. Deploy still keys off pushes to main only.
   pull_request:
-    branches: [main]
   push:
     branches: [main]
 
