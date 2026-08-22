@@ -1,20 +1,16 @@
 // Banner presets
-export type { BannerPreset, CssBannerPreset, ShaderBannerPreset } from "./banner-presets";
+export type { BannerPreset, ShaderBannerPreset } from "./banner-presets";
 export { bannerPresets, getBannerPresetsForTheme, getPresetById } from "./banner-presets";
 export { Avatar, AvatarFallback, AvatarImage } from "./components/avatar";
 export type { CheckboxProps } from "./components/checkbox";
 export { Checkbox } from "./components/checkbox";
 export {
 	Dialog,
-	DialogClose,
 	DialogContent,
 	DialogDescription,
 	DialogFooter,
 	DialogHeader,
-	DialogOverlay,
-	DialogPortal,
 	DialogTitle,
-	DialogTrigger,
 } from "./components/dialog";
 export { Separator } from "./components/separator";
 // Components

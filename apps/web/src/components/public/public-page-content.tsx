@@ -26,7 +26,7 @@ interface SocialNetwork {
 	svgPath: string;
 }
 
-export interface PageContentProps {
+interface PageContentProps {
 	profile: {
 		name: string;
 		email?: string;
@@ -92,7 +92,7 @@ interface Section {
  * of every block after it until the next header. Blocks before the first header
  * form a plain list section.
  */
-export function groupSections(blocks: Block[]): Section[] {
+function groupSections(blocks: Block[]): Section[] {
 	const sections: Section[] = [];
 	let current: Section = { header: null, layout: "list", blocks: [], start: 0 };
 	for (const [i, b] of blocks.entries()) {

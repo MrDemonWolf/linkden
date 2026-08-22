@@ -6,7 +6,9 @@ import type { NextRequest } from "next/server";
 // server-side by tRPC protectedProcedure. This prevents unauthenticated users
 // from loading admin page bundles at the edge.
 
-const PUBLIC_ADMIN_ROUTES = ["/admin/login", "/admin/setup"];
+// The admin manifest is fetched by the browser without credentials (PWA
+// install); it is static and secret-free, so it must bypass the cookie gate.
+const PUBLIC_ADMIN_ROUTES = ["/admin/login", "/admin/setup", "/admin/manifest.webmanifest"];
 
 /**
  * Edge proxy that protects all /admin/* routes.

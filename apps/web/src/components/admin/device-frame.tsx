@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 function useCurrentTime() {
@@ -95,7 +95,7 @@ function StatusBar({ dark }: { dark: boolean }) {
 	);
 }
 
-export function PreviewSkeleton() {
+function PreviewSkeleton() {
 	return (
 		<div className="flex flex-col items-center px-6 pt-16 pb-8 gap-4">
 			{/* Avatar placeholder */}

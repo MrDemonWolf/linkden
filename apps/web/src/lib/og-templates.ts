@@ -1,4 +1,4 @@
-export interface OgTemplate {
+interface OgTemplate {
 	id: string;
 	name: string;
 	description: string;

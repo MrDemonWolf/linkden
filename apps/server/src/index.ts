@@ -3,6 +3,8 @@
 //   1. Auth routes (Better Auth)
 //   2. tRPC API (all admin + public endpoints)
 //   3. Image upload/serving (R2)
+//   4. Public downloads: /api/vcard, /api/wallet-pass (.pkpass)
+//   5. /api/health + the daily retention cron (`scheduled`)
 //
 // Rate limiting uses Cloudflare's native rate limiter with four limiters
 // (configured in wrangler.jsonc + packages/infra/alchemy.run.ts, per IP):
@@ -15,12 +17,12 @@
 // so Workers observability can filter on `level` / `path`.
 //
 // Security patterns:
-//   - Signup lock: after the first user registers, /sign-up returns 403.
-//     This is a single-user app — registration is only for initial setup.
+//   - Signup lock: after the first user registers, /sign-up returns 403 here;
+//     the DB trigger (0007_single_admin_trigger.sql) is the real enforcement.
 //   - Magic link gate: checks the magic_link_enabled setting before allowing
 //     magic link auth requests, so admins can disable it at runtime.
-//   - File upload validation: triple-checks extension, MIME type, and size
-//     before writing to R2. This defends against content-type spoofing.
+//   - File upload validation: extension + MIME + Content-Length precheck, then
+//     the magic-byte signature must match the extension before writing to R2.
 
 import { trpcServer } from "@hono/trpc-server";
 import { cloudflareRateLimiter } from "@hono-rate-limiter/cloudflare";

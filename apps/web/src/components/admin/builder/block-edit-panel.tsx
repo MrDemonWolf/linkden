@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, type SelectItem } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { isoToLocal } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { configErrors, fieldError } from "@/lib/validate";
 import { ColorField } from "../color-field";
@@ -278,12 +279,8 @@ export function BlockEditPanel({
 	const [embedType, setEmbedType] = useState(block.embedType ?? "");
 	const [embedUrl, setEmbedUrl] = useState(block.embedUrl ?? "");
 	const [config, setConfig] = useState(block.config ?? "{}");
-	const [scheduledStart, setScheduledStart] = useState(
-		block.scheduledStart ? new Date(block.scheduledStart).toISOString().slice(0, 16) : "",
-	);
-	const [scheduledEnd, setScheduledEnd] = useState(
-		block.scheduledEnd ? new Date(block.scheduledEnd).toISOString().slice(0, 16) : "",
-	);
+	const [scheduledStart, setScheduledStart] = useState(isoToLocal(block.scheduledStart));
+	const [scheduledEnd, setScheduledEnd] = useState(isoToLocal(block.scheduledEnd));
 
 	// Emit changes for real-time preview
 	useEffect(() => {

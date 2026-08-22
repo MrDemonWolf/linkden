@@ -2,7 +2,7 @@
 
 import { ColorField } from "@/components/admin/color-field";
 
-export interface WalletPalette {
+interface WalletPalette {
 	name: string;
 	bg: string;
 	fg: string;
@@ -10,7 +10,7 @@ export interface WalletPalette {
 }
 
 // Curated palettes — one tap sets background/foreground/label together.
-export const WALLET_PALETTES: WalletPalette[] = [
+const WALLET_PALETTES: WalletPalette[] = [
 	{ name: "Midnight", bg: "#0E1116", fg: "#FFFFFF", label: "#3AD2A6" },
 	{ name: "Navy", bg: "#091533", fg: "#FFFFFF", label: "#0FACED" },
 	{ name: "Indigo", bg: "#241A52", fg: "#FFFFFF", label: "#C7B6FF" },

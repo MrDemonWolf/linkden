@@ -74,8 +74,13 @@ Key production-readiness invariants added in the hardening pass — don't regres
   `runBatch`/`settingUpsertStmt` (`packages/api/src/utils/settings.ts`). Never
   reintroduce sequential-await write loops.
 - **Canonical settings registry.** `packages/validators/src/settings-registry.ts`
-  is the single source for each key's sanitizer kind, max length, secret/mask, and
-  backup policy. Settings/wallet/backup routers derive from it — don't add drifting
+  is the single source for each key's sanitizer kind (`text`/`url`/`color`/`css`/
+  `timezone`/`emailFrom`/`apiKey`/`boolean`/`enum` + `values`/`opaque`), max length,
+  secret/mask, and backup policy. Every text/opaque key declares a `maxLength`;
+  `*_enabled` flags are `boolean` (only `"true"`/`"false"`); preset/mode keys are
+  `enum` with exported value lists (`THEME_PRESET_NAMES`, `BANNER_PRESET_IDS`, …)
+  that parity tests pin to the UI catalogues. `sanitizeSetting` rejects with
+  `BAD_REQUEST`. Settings/wallet/backup routers derive from it — don't add drifting
   key lists.
 - **Server-derived request data.** Analytics/CAPTCHA use `requestMeta`
   (`cf-connecting-ip`/`cf-ipcountry`/UA/referer) — never client-supplied. CAPTCHA
@@ -107,12 +112,15 @@ Key production-readiness invariants added in the hardening pass — don't regres
 - **Cleanup:** replaced objects deleted immediately; unreferenced orphans swept by the daily retention cron
 
 ### UI/UX Patterns
-- **Color pickers:** hex `<Input>` + native `<input type="color">` swatch side by side
+- **Color pickers:** `ColorField` — hex `<Input>` + native `<input type="color">` swatch, with a contrast guard
 - **Image uploads:** always use `ImageUploadField` (never plain URL text inputs)
 - **Form layouts:** `FieldGroup` component with `columns` prop for grid layouts
-- **Metrics:** `StatCard` component (icon, label, value, color)
+- **Metrics:** `StatCard` component (icon, label, value, optional href/trend/subtitle)
 - **Page headers:** `PageHeader` with optional badge and description
 - **Entrance animations:** `useEntranceAnimation` hook with staggered `getAnimationProps(index)`
+- **Previewer:** `PagePreview` renders the real `PublicPage` with `previewMode` — never fork the public components for preview
+- **Block editor validation:** shared zod schemas from `@linkden/validators` via `lib/validate.ts` `fieldError`/`configErrors`
+- **Fonts:** Sora / DM Sans / Geist Mono; type scale `text-h1`..`text-micro` (12px floor)
 - **Section grouping:** uppercase `tracking-wider` label headers (`text-xs font-medium text-muted-foreground`)
 - **Social icon shape:** `SocialIconShapeSection` component — `"circle"` | `"rounded-square"`, setting key `social_icon_shape`
 - **Consent banner:** `consent_banner_enabled` + `consent_banner_text` settings, shown on public page footer
@@ -124,7 +132,7 @@ Key production-readiness invariants added in the hardening pass — don't regres
 - Apple HIG generic pass layout (header → primary + thumbnail → secondary → QR)
 - QR generation via `qrcode` library (`QRCode.toDataURL`) — preview only
 - Preview component: `WalletPassPreview` with live color/content props (business-card style: gradient/texture surface, org kicker, avatar, big QR)
-- Palette picker: `WALLET_PALETTES` in `wallet-builder-section.tsx` — one tap sets bg/fg/label; custom hex under `<details>`
+- Palette picker: `WALLET_PALETTES` in `wallet/color-palette-panel.tsx` — one tap sets bg/fg/label; custom fg/label `ColorField`s below
 - **`.pkpass` generator:** `apps/server/src/lib/pkpass.ts` — signed bundle built entirely in the Workers runtime (`node-forge` PKCS#7 detached sig, `fflate` zip, Web Crypto SHA-1, hand-rolled solid-PNG icon fallback). Colors → `rgb()` (Apple requires it, not hex). QR = `barcodes[]` (Wallet renders it; not embedded).
 - **Route:** `GET /api/wallet-pass` in `apps/server/src/index.ts` — public download; gated on `wallet_pass_enabled`, 503 if signing certs missing. Footer button (`footer-actions.tsx`) points at `NEXT_PUBLIC_SERVER_URL` (served by Hono, not Next).
 - **Signing certs:** settings (`wallet_signer_cert/key`, `wallet_wwdr_cert`) or env (`WALLET_SIGNER_CERT/KEY`, `WALLET_WWDR_CERT`, `WALLET_TEAM_ID`, `WALLET_PASS_TYPE_ID`); optional `WALLET_SIGNER_KEY_PASSPHRASE` env for encrypted keys.

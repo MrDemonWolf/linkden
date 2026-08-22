@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, type CSSProperties } from "react";
 import QRCode from "qrcode";
+import { type CSSProperties, useEffect, useState } from "react";
 
-export interface PassFieldView {
+interface PassFieldView {
 	key: string;
 	label: string;
 	value: string;

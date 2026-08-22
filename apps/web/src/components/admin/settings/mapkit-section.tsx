@@ -1,13 +1,21 @@
 "use client";
 
+import { SETTING_REGISTRY } from "@linkden/validators/settings-registry";
 import { Info } from "lucide-react";
 import { useCallback } from "react";
+import { z } from "zod";
+import { FieldError } from "@/components/admin/field-feedback";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useSettingsForm } from "@/hooks/use-settings-form";
+import { fieldError } from "@/lib/validate";
+
+// Same cap the server applies (it truncates silently past this).
+const TOKEN_MAX = SETTING_REGISTRY.mapkit_token?.maxLength ?? 512;
+const tokenSchema = z.string().max(TOKEN_MAX);
 
 interface MapKitState {
 	enabled: boolean;
@@ -29,6 +37,10 @@ export function MapKitSection() {
 		),
 		successMessage: "MapKit settings saved",
 		errorMessage: "Failed to save MapKit settings",
+		validate: useCallback((s: MapKitState): Record<string, string> => {
+			const token = fieldError(tokenSchema, s.token);
+			return token ? { token } : {};
+		}, []),
 	});
 
 	if (form.isLoading || !form.state) {
@@ -69,12 +81,15 @@ export function MapKitSection() {
 						onChange={(e) => setState({ ...state, token: e.target.value })}
 						placeholder="eyJ..."
 						className="font-mono text-xs"
+						aria-invalid={!!form.errors.token}
+						aria-describedby={form.errors.token ? "s-mapkit-token-error" : undefined}
 					/>
+					<FieldError id="s-mapkit-token-error" error={form.errors.token} />
 				</div>
 			)}
 
 			{form.isDirty && (
-				<Button onClick={form.save} disabled={form.isSaving} size="sm">
+				<Button onClick={form.save} disabled={form.isSaving || form.hasErrors} size="sm">
 					{form.isSaving ? "Saving..." : "Save MapKit Settings"}
 				</Button>
 			)}
