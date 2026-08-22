@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { blankable, httpUrlSchema } from "./primitives";
+import { vcardDataSchema } from "./vcard";
+
+export { httpUrlSchema };
 
 // ─── Block schemas ───────────────────────────────────────────────────────────
 // Single source of truth for block shapes, shared by the tRPC router (server
@@ -19,7 +23,6 @@ export const blockTypeSchema = z.enum([
 
 export type BlockType = z.infer<typeof blockTypeSchema>;
 
-export const httpUrlSchema = z.url({ protocol: /^https?$/ }).max(2048);
 export const hexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Expected a 6-digit hex color");
 export const embedTypeSchema = z.enum(["youtube", "spotify", "soundcloud", "custom"]);
 export type EmbedType = z.infer<typeof embedTypeSchema>;
@@ -27,8 +30,13 @@ export type EmbedType = z.infer<typeof embedTypeSchema>;
 const textAlignSchema = z.enum(["left", "center", "right"]);
 const sideSchema = z.enum(["left", "right"]);
 const emojiSchema = z.string().max(16);
-/** Empty string means "cleared" — the admin sends "" when a field is blanked. */
-const blankable = <T extends z.ZodType>(schema: T) => schema.optional().or(z.literal(""));
+/**
+ * Like `blankable`, but "" parses to `null` so the router's `.set()` actually
+ * clears the column instead of storing an empty string (or, with undefined,
+ * leaving the old value in place).
+ */
+const clearable = <T extends z.ZodType>(schema: T) =>
+	blankable(schema).transform((v) => (v === "" ? null : v));
 
 // Per-block style overrides the admin Style section writes for link/connect/vcard.
 const styleSchema = z.object({
@@ -95,23 +103,10 @@ export const connectConfigSchema = styleSchema.extend({
 	showGuests: z.boolean().optional(),
 });
 
-export const vcardConfigSchema = styleSchema.extend({
-	fullName: z.string().max(120).optional(),
-	nickname: z.string().max(80).optional(),
-	birthday: z.string().max(10).optional(),
-	photo: blankable(httpUrlSchema),
-	org: z.string().max(120).optional(),
-	title: z.string().max(120).optional(),
-	department: z.string().max(120).optional(),
-	workEmail: z.string().max(254).optional(),
-	workPhone: z.string().max(40).optional(),
-	email: z.string().max(254).optional(),
-	phone: z.string().max(40).optional(),
-	address: z.string().max(300).optional(),
-	urls: z
-		.array(z.object({ label: z.string().max(80), url: blankable(httpUrlSchema) }))
-		.max(20)
-		.optional(),
+// Derived from vcardDataSchema so the block editor / blocks router (write) and
+// /api/vcard + public.getVCard (read, which parse the stored block config with
+// vcardDataSchema) enforce identical bounds. A block that saves must download.
+export const vcardConfigSchema = styleSchema.extend(vcardDataSchema.shape).extend({
 	buttonText: z.string().max(80).optional(),
 	buttonEmoji: emojiSchema.optional(),
 	buttonEmojiPosition: sideSchema.optional(),
@@ -207,15 +202,15 @@ const blockFieldsSchema = z.object({
 	id: z.string().min(1).max(64),
 	type: blockTypeSchema,
 	title: z.string().max(200).optional(),
-	url: blankable(httpUrlSchema),
-	icon: blankable(
+	url: clearable(httpUrlSchema),
+	icon: clearable(
 		z
 			.string()
 			.max(80)
 			.regex(/^(lucide:|brand:)?[a-z0-9-]+$/i, "Expected lucide:<name> or brand:<slug>"),
 	),
-	embedType: blankable(embedTypeSchema),
-	embedUrl: blankable(httpUrlSchema),
+	embedType: clearable(embedTypeSchema),
+	embedUrl: clearable(httpUrlSchema),
 	isEnabled: z.boolean().optional(),
 	position: z.number().int().min(0),
 	scheduledStart: scheduleDateSchema.nullable().optional(),
@@ -359,6 +354,29 @@ export const blockImportSchema = z.object({
 	createdAt: z.number().nullable().optional(),
 	updatedAt: z.number().nullable().optional(),
 });
+
+export type BlockImport = z.infer<typeof blockImportSchema>;
+
+/**
+ * Re-check one backup row against the rules blocks.create enforces (http(s)
+ * URLs, icon format, bounded title, per-type config). The wire schema above
+ * stays loose so one bad row can't fail the whole restore; the importer skips
+ * (and counts) rows this rejects, the same way settings are handled.
+ */
+export function validateBlockImport(row: BlockImport): BlockImport | null {
+	const result = createBlockSchema.safeParse({
+		id: row.id,
+		type: row.type,
+		title: row.title ?? undefined,
+		url: row.url ?? undefined,
+		icon: row.icon ?? undefined,
+		embedType: row.embedType ?? undefined,
+		embedUrl: row.embedUrl ?? undefined,
+		position: row.position,
+		config: row.config ?? undefined,
+	});
+	return result.success ? row : null;
+}
 
 export const contactSubmissionImportSchema = z.object({
 	id: z.string(),

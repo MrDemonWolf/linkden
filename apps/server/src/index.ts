@@ -29,7 +29,7 @@ import { cloudflareRateLimiter } from "@hono-rate-limiter/cloudflare";
 import { createContext } from "@linkden/api/context";
 import { appRouter } from "@linkden/api/routers/index";
 import { generateVCardString, vcardDataSchema } from "@linkden/api/routers/vcard";
-import { auth } from "@linkden/auth";
+import { auth, getSessionQuery } from "@linkden/auth";
 import { db } from "@linkden/db";
 import { block, siteSettings, user } from "@linkden/db/schema/index";
 import { parsePassFieldsJson, parsePassLocationsJson } from "@linkden/validators/wallet";
@@ -207,6 +207,7 @@ app.post("/api/upload", async (c) => {
 	// Verify auth
 	const session = await auth.api.getSession({
 		headers: c.req.raw.headers,
+		query: getSessionQuery(c.req.method),
 	});
 	if (!session) {
 		return c.json({ error: "Unauthorized" }, 401);

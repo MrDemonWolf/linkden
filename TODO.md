@@ -7,7 +7,7 @@ Release notes live in [`CHANGELOG.md`](./CHANGELOG.md).
 ## Today (you, no code)
 
 - [ ] GitHub → repo → Settings → Environments → `production` → add **secrets**: `CLOUDFLARE_API_TOKEN` (perms: Workers Scripts:Edit, Workers Routes:Edit, D1:Edit, R2:Edit, Zone:Read, DNS:Edit, SSL and Certificates:Edit), `CLOUDFLARE_ACCOUNT_ID`, `ALCHEMY_PASSWORD`, `ALCHEMY_STATE_TOKEN` (same as wolfathon), `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), `BETTER_AUTH_URL=https://l.mrdemonwolf.com`, `NEXT_PUBLIC_SERVER_URL=https://l.mrdemonwolf.com`, `CORS_ORIGIN=https://l.mrdemonwolf.com`
-- [ ] Same page → **variables**: `NEXT_PUBLIC_SITE_URL=https://l.mrdemonwolf.com`. Leave `SITE_DOMAIN` **empty** for now (= staging on workers.dev)
+- [ ] Same page → **variables**: `NEXT_PUBLIC_SITE_URL=https://linkden.mrdemonwolf.workers.dev` for now (it must be the origin the site is actually served from — the deploy refuses an empty value). Leave `SITE_DOMAIN` **empty** (= staging on workers.dev)
 - [ ] Resend: create API key + verify sending domain (needed for password reset)
 
 ## When PR 1 merges (staging)
@@ -25,7 +25,7 @@ Release notes live in [`CHANGELOG.md`](./CHANGELOG.md).
 ## Cutover day (15 min, reversible)
 
 - [ ] Cloudflare DNS → `mrdemonwolf.com` zone → **delete** the existing `l` record (Custom Domain can't be created over a CNAME)
-- [ ] GitHub → `production` variables → set `SITE_DOMAIN=l.mrdemonwolf.com`
+- [ ] GitHub → `production` variables → set `SITE_DOMAIN=l.mrdemonwolf.com` **and** `NEXT_PUBLIC_SITE_URL=https://l.mrdemonwolf.com` (the deploy checks they match)
 - [ ] Actions → Deploy → **Run workflow** (or re-run last) → wait green
 - [ ] `https://l.mrdemonwolf.com/api/health` → ok; `https://l.mrdemonwolf.com/admin` → login works, no loop
 - [ ] `/admin/setup` → account → Settings → Data → **Import** your LinkStack export → Builder → Publish

@@ -23,14 +23,17 @@ const sizeClasses: Record<Level, string> = {
 };
 
 export function HeaderBlock({ block, config, themeColors }: HeaderBlockProps) {
-	const level =
-		(config.headingLevel as Level) in sizeClasses ? (config.headingLevel as Level) : "h2";
+	const level = Object.hasOwn(sizeClasses, String(config.headingLevel))
+		? (config.headingLevel as Level)
+		: "h2";
 	const textAlign = (config.textAlign as string) || "left";
 	const emoji = config.emoji as string | undefined;
 	const emojiPosition = (config.emojiPosition as string) || "left";
 	// The running hairline *is* the divider now; `showDivider: false` hides it.
 	const showRule = config.showDivider !== false;
-	const HeadingTag = level;
+	// The profile name is the page's only <h1>; a stored h1 keeps its size but
+	// renders as <h2> so the document outline never has two top-level headings.
+	const HeadingTag = level === "h1" ? "h2" : level;
 
 	return (
 		<div

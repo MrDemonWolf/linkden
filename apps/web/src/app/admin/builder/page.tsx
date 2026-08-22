@@ -255,14 +255,16 @@ export default function BuilderPage() {
 
 	const handleSaveEdit = async (data: Partial<Block>) => {
 		try {
+			// "" means "cleared" to updateBlockSchema (it becomes null in the row);
+			// only a missing key is "not provided", so null maps to "" here too.
 			await updateBlock.mutateAsync({
 				id: data.id!,
-				title: data.title ?? undefined,
-				url: data.url ?? undefined,
-				icon: data.icon ?? undefined,
-				embedType: (data.embedType as EmbedType | null) ?? undefined,
-				embedUrl: data.embedUrl ?? undefined,
-				config: data.config ?? undefined,
+				title: data.title ?? "",
+				url: data.url ?? "",
+				icon: data.icon ?? "",
+				embedType: (data.embedType as EmbedType | null) ?? "",
+				embedUrl: data.embedUrl ?? "",
+				config: data.config ?? "{}",
 				scheduledStart: data.scheduledStart,
 				scheduledEnd: data.scheduledEnd,
 			});

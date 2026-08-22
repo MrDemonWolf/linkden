@@ -2,6 +2,7 @@
 
 import { getReadableTextColor } from "@linkden/ui/color-contrast";
 import { ArrowRight } from "lucide-react";
+import { safeHttpUrl } from "@/lib/safe-url";
 import { trackClick } from "@/lib/track";
 import { BlockIcon } from "./block-icon";
 import { usePreview } from "./preview-context";
@@ -65,7 +66,7 @@ export function LinkBlock({ block, config, themeColors: colors, tile }: LinkBloc
 	const emojiPosition = (config.emojiPosition as string) || "left";
 	const textAlign = (config.textAlign as string) || "center";
 	const description = config.description as string | undefined;
-	const thumbnail = config.thumbnail as string | undefined;
+	const thumbnail = safeHttpUrl(config.thumbnail) ?? undefined;
 	const variant = (config.variant as string) || (thumbnail ? "thumbnail" : "classic");
 	const isHighlighted = config.isHighlighted as boolean | undefined;
 	const isOutlined = config.isOutlined as boolean | undefined;
@@ -107,7 +108,7 @@ export function LinkBlock({ block, config, themeColors: colors, tile }: LinkBloc
 	};
 
 	const anchorProps = {
-		href: block.url || "#",
+		href: safeHttpUrl(block.url) ?? "#",
 		target: newTab ? "_blank" : undefined,
 		rel: config.noFollow ? "noopener noreferrer nofollow" : "noopener noreferrer",
 		onClick: handleClick,
@@ -134,9 +135,10 @@ export function LinkBlock({ block, config, themeColors: colors, tile }: LinkBloc
 						className="relative block overflow-hidden rounded-2xl border shadow-card transition-[border-color,box-shadow] duration-[220ms] ease-out group-hover:border-(--ld-primary) group-hover:shadow-(--ld-glow)"
 						style={{ borderColor: colors.border }}
 					>
+						{/* alt="" — the pill below names the link; a title alt would read twice. */}
 						<img
 							src={thumbnail}
-							alt={title}
+							alt=""
 							loading="lazy"
 							className="aspect-video w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
 						/>

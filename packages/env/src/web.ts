@@ -6,7 +6,11 @@ export const env = createEnv({
 		NEXT_PUBLIC_SERVER_URL: z.url(),
 		// Public origin of the web app — used for metadataBase, robots, sitemap
 		// (the API origin is the wrong base for those on a split deployment).
-		NEXT_PUBLIC_SITE_URL: z.url().default("http://localhost:3001"),
+		// The localhost default is dev-only: a production build must be told
+		// its origin, or robots/sitemap/OG URLs would silently point at
+		// localhost (an unset GitHub variable arrives as "").
+		NEXT_PUBLIC_SITE_URL:
+			process.env.NODE_ENV === "production" ? z.url() : z.url().default("http://localhost:3001"),
 	},
 	runtimeEnv: {
 		NEXT_PUBLIC_SERVER_URL: process.env.NEXT_PUBLIC_SERVER_URL,

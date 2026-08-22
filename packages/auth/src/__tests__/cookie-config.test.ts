@@ -3,11 +3,17 @@ import { createTestDb } from "@linkden/db/testing";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { beforeEach, describe, expect, it } from "vitest";
+import {
+	cookieAttributes,
+	getSessionQuery,
+	SESSION_COOKIE_CACHE_MAX_AGE,
+	sessionOptions,
+} from "../auth-options";
 
 // Locks the production cookie contract: web and API share one origin, so the
 // session cookie must be Secure + HttpOnly + SameSite=Lax and host-only (no
-// Domain= attribute). Mirrors the `advanced` + `session` config in ../index.ts
-// with an https baseURL, which is what flips `secure` on.
+// Domain= attribute). Built from the same `auth-options` export that
+// ../index.ts spreads into betterAuth(), so a drift there fails here.
 
 const BASE_URL = "https://l.example.test";
 const EMAIL = "admin@example.com";
@@ -17,17 +23,15 @@ function makeAuth(db: Awaited<ReturnType<typeof createTestDb>>["db"]) {
 	return betterAuth({
 		database: drizzleAdapter(db, { provider: "sqlite", schema: authSchema }),
 		emailAndPassword: { enabled: true },
-		session: { cookieCache: { enabled: true, maxAge: 300 } },
+		session: sessionOptions,
 		secret: "test-secret-0123456789-0123456789-0123456789",
 		baseURL: BASE_URL,
-		advanced: {
-			defaultCookieAttributes: {
-				sameSite: "lax",
-				secure: BASE_URL.startsWith("https"),
-				httpOnly: true,
-			},
-		},
+		advanced: { defaultCookieAttributes: cookieAttributes(BASE_URL) },
 	});
+}
+
+function cookieHeader(setCookies: string[]): string {
+	return setCookies.map((c) => c.split(";")[0]).join("; ");
 }
 
 function setCookies(headers: Headers): string[] {
@@ -74,5 +78,44 @@ describe("session cookie attributes", () => {
 		// https baseURL => the __Secure- prefix; cookieCache adds session_data.
 		expect(cookies.some((c) => c.startsWith("__Secure-better-auth.session_token="))).toBe(true);
 		expect(cookies.some((c) => c.startsWith("__Secure-better-auth.session_data="))).toBe(true);
+	});
+});
+
+describe("session cookie cache", () => {
+	it("is bounded to one minute and off for non-GET requests", () => {
+		expect(SESSION_COOKIE_CACHE_MAX_AGE).toBeLessThanOrEqual(60);
+		expect(cookieAttributes("http://localhost:3000").secure).toBe(false);
+		expect(getSessionQuery("GET")).toEqual({ disableCookieCache: false });
+		expect(getSessionQuery("POST")).toEqual({ disableCookieCache: true });
+		expect(getSessionQuery("delete")).toEqual({ disableCookieCache: true });
+	});
+
+	it("a deleted session is rejected as soon as the cache is bypassed (mutations)", async () => {
+		const { db } = await createTestDb();
+		const auth = makeAuth(db);
+		await auth.api.signUpEmail({ body: { email: EMAIL, password: PASSWORD, name: "Admin" } });
+		const { headers } = await auth.api.signInEmail({
+			body: { email: EMAIL, password: PASSWORD },
+			returnHeaders: true,
+		});
+		const cookie = cookieHeader(setCookies(headers));
+
+		// Same wipe as danger.resetEverything.
+		await db.delete(authSchema.session);
+		await db.delete(authSchema.account);
+		await db.delete(authSchema.user);
+
+		const cached = await auth.api.getSession({
+			headers: new Headers({ cookie }),
+			query: getSessionQuery("GET"),
+		});
+		const authoritative = await auth.api.getSession({
+			headers: new Headers({ cookie }),
+			query: getSessionQuery("POST"),
+		});
+		// The GET path may still answer from the signed cookie (≤ maxAge); the
+		// POST path must not.
+		expect(cached === null || cached.user.email === EMAIL).toBe(true);
+		expect(authoritative).toBeNull();
 	});
 });

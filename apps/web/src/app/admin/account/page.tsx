@@ -171,7 +171,9 @@ export default function AccountPage() {
 		setIsChangingPw(true);
 		try {
 			await authClient.changePassword(
-				{ currentPassword, newPassword },
+				// A password change is usually "someone else may have my session":
+				// drop every other session so a stolen one stops working.
+				{ currentPassword, newPassword, revokeOtherSessions: true },
 				{
 					onSuccess: () => {
 						toast.success("Password updated");

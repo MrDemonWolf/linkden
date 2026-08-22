@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { httpUrlSchema } from "./blocks";
+import { blankable, httpUrlSchema } from "./primitives";
 
 // ─── vCard data ──────────────────────────────────────────────────────────────
 // Single schema for the global vCard (settings → vcard_data) shared by the
@@ -8,7 +8,6 @@ import { httpUrlSchema } from "./blocks";
 // `undefined` by the client, and an empty url entry is tolerated and skipped.
 
 const text = (max = 100) => z.string().max(max).optional();
-const blankable = <T extends z.ZodType>(schema: T) => schema.optional().or(z.literal(""));
 
 export const vcardUrlEntrySchema = z.object({
 	label: z.string().max(40),
