@@ -18,6 +18,7 @@ import {
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { QueryError } from "@/components/admin/dashboard/query-error";
 import { PageHeader } from "@/components/admin/page-header";
 import { PageShell } from "@/components/admin/page-shell";
 import { SectionCard } from "@/components/admin/section-header";
@@ -542,6 +543,14 @@ export default function SettingsPage() {
 					<Skeleton key={`sk-${i}`} className="h-40" />
 				))}
 			</div>
+		);
+	}
+
+	if (settingsQuery.isError) {
+		return (
+			<PageShell>
+				<QueryError message="Couldn't load settings" onRetry={() => settingsQuery.refetch()} />
+			</PageShell>
 		);
 	}
 
