@@ -112,7 +112,7 @@ function ModeToggle({ value, onChange }: { value: string; onChange: (v: string) 
 			<button
 				type="button"
 				className={cn(
-					"px-2 py-0.5 transition-colors",
+					"min-h-11 px-3 py-0.5 transition-colors md:min-h-0 md:px-2",
 					value === "url" ? "bg-primary text-primary-foreground" : "hover:bg-muted",
 				)}
 				onClick={() => onChange("url")}
@@ -122,7 +122,7 @@ function ModeToggle({ value, onChange }: { value: string; onChange: (v: string) 
 			<button
 				type="button"
 				className={cn(
-					"px-2 py-0.5 transition-colors",
+					"min-h-11 px-3 py-0.5 transition-colors md:min-h-0 md:px-2",
 					value === "text" ? "bg-primary text-primary-foreground" : "hover:bg-muted",
 				)}
 				onClick={() => onChange("text")}

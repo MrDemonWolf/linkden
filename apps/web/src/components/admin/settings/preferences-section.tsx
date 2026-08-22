@@ -163,7 +163,7 @@ export function PreferencesSection({
 								aria-selected={bgMode === id}
 								onClick={() => set("loginBgMode", id)}
 								className={cn(
-									"flex min-h-9 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors",
+									"flex min-h-11 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors md:min-h-9",
 									bgMode === id
 										? "bg-primary/10 text-primary"
 										: "text-muted-foreground hover:text-foreground",
