@@ -1,6 +1,6 @@
+import { hexToRgb } from "@linkden/ui/color-contrast";
 import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
-import { hexToRgb } from "@linkden/ui/color-contrast";
 
 export const runtime = "edge";
 
@@ -10,13 +10,34 @@ function darken(hex: string, amount: number): string {
 	return `rgb(${Math.round(rgb.r * f)}, ${Math.round(rgb.g * f)}, ${Math.round(rgb.b * f)})`;
 }
 
+// The avatar is fetched by the image renderer on the edge, so an arbitrary URL
+// would turn this route into an open image proxy (and an SSRF vector). Only
+// images served by this deployment are allowed: same-origin, the API origin,
+// or the site origin; everything else renders the initials fallback.
+function safeAvatarUrl(raw: string | null, origin: string): string {
+	if (!raw) return "";
+	let url: URL;
+	try {
+		url = new URL(raw, origin);
+	} catch {
+		return "";
+	}
+	if (url.protocol !== "https:" && url.protocol !== "http:") return "";
+	const allowed = new Set(
+		[origin, process.env.NEXT_PUBLIC_SERVER_URL, process.env.NEXT_PUBLIC_SITE_URL]
+			.filter((o): o is string => !!o)
+			.map((o) => new URL(o).origin),
+	);
+	return allowed.has(url.origin) ? url.toString() : "";
+}
+
 export async function GET(req: NextRequest) {
 	const { searchParams } = req.nextUrl;
 	const template = searchParams.get("template") ?? "minimal";
 	const name = searchParams.get("name") ?? "My Links";
 	const bio = searchParams.get("bio") ?? "";
 	const theme = searchParams.get("theme") ?? "#6366f1";
-	const avatar = searchParams.get("avatar") ?? "";
+	const avatar = safeAvatarUrl(searchParams.get("avatar"), req.nextUrl.origin);
 
 	const width = 1200;
 	const height = 630;
