@@ -2,6 +2,7 @@
 
 import { getPresetById } from "@linkden/ui/banner-presets";
 import { Avatar } from "./avatar";
+import { Carousel } from "./carousel";
 import { ConnectBlock } from "./connect-block";
 import { DividerBlock } from "./divider-block";
 import { EmbedBlock } from "./embed-block";
@@ -427,37 +428,64 @@ export function PageContent({
 											{renderBlock(section.header, { colorMode, themeColors, settings })}
 										</div>
 									)}
-									{section.blocks.length > 0 && (
-										<ul
-											className={`ld-blocks ${sectionLayoutClass[section.layout]}`}
-											aria-label={
-												section.layout === "carousel"
-													? `${section.header?.title || "Links and content"}, scrollable`
-													: section.header?.title || "Links and content"
-											}
-											// A carousel of non-interactive blocks (images without a link,
-											// text, dividers) has nothing focusable inside it; making the
-											// scroller itself a tab stop lets the arrow keys scroll it in
-											// every browser (Safari does not focus overflow boxes on its own).
-											tabIndex={section.layout === "carousel" ? 0 : undefined}
-											style={
-												section.layout === "carousel"
-													? ({ outlineColor: themeColors.primary } as React.CSSProperties)
-													: undefined
-											}
-										>
-											{section.blocks.map((blockData, i) => (
-												// The wrapper <li> owns both the list semantics and the
-												// stagger index, so each block renders a plain <a>/<div>.
-												<li
-													key={blockData.id}
-													style={{ "--ld-i": Math.min(firstBlock + i, 12) } as React.CSSProperties}
-												>
-													{renderBlock(blockData, { colorMode, themeColors, settings, tile })}
-												</li>
-											))}
-										</ul>
-									)}
+									{section.blocks.length > 0 &&
+										(section.layout === "carousel" ? (
+											<Carousel
+												themeColors={themeColors}
+												label={section.header?.title || "Links and content"}
+											>
+												{(listRef) => (
+													<ul
+														ref={listRef}
+														className={`ld-blocks ${sectionLayoutClass[section.layout]}`}
+														aria-label={
+															section.layout === "carousel"
+																? `${section.header?.title || "Links and content"}, scrollable`
+																: section.header?.title || "Links and content"
+														}
+														// A carousel of non-interactive blocks (images without a link,
+														// text, dividers) has nothing focusable inside it; making the
+														// scroller itself a tab stop lets the arrow keys scroll it in
+														// every browser (Safari does not focus overflow boxes on its own).
+														tabIndex={section.layout === "carousel" ? 0 : undefined}
+														style={
+															section.layout === "carousel"
+																? ({ outlineColor: themeColors.primary } as React.CSSProperties)
+																: undefined
+														}
+													>
+														{section.blocks.map((blockData, i) => (
+															// The wrapper <li> owns both the list semantics and the
+															// stagger index, so each block renders a plain <a>/<div>.
+															<li
+																key={blockData.id}
+																style={
+																	{ "--ld-i": Math.min(firstBlock + i, 12) } as React.CSSProperties
+																}
+															>
+																{renderBlock(blockData, { colorMode, themeColors, settings, tile })}
+															</li>
+														))}
+													</ul>
+												)}
+											</Carousel>
+										) : (
+											<ul
+												className={`ld-blocks ${sectionLayoutClass[section.layout]}`}
+												aria-label={section.header?.title || "Links and content"}
+											>
+												{section.blocks.map((blockData, i) => (
+													<li
+														key={blockData.id}
+														style={
+															{ "--ld-i": Math.min(firstBlock + i, 12) } as React.CSSProperties
+														}
+													>
+														{renderBlock(blockData, { colorMode, themeColors, settings, tile })}
+													</li>
+												))}
+											</ul>
+										))}
 								</section>
 							);
 						})}

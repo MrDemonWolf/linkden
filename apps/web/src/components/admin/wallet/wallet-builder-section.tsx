@@ -231,6 +231,7 @@ export function WalletBuilderSection({
 
 	return (
 		<Tabs defaultValue="business" className="flex min-h-0 flex-col">
+			<WalletTabBar className="mb-6" />
 			{/* Business — identity, template, QR, card fields */}
 			<TabsContent value="business" keepMounted className="mt-0 space-y-6">
 				<Section icon={Layers} title="Template" hint="Pick a starting layout">
@@ -378,9 +379,6 @@ export function WalletBuilderSection({
 					</div>
 				</Section>
 			</TabsContent>
-
-			{/* iOS-style tab bar — floats above the admin mobile nav, bottom-docked on desktop */}
-			<WalletTabBar className="sticky bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] z-30 mt-6 md:bottom-4" />
 		</Tabs>
 	);
 }

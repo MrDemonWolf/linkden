@@ -13,23 +13,28 @@ const WALLET_TABS = [
 ] as const;
 
 /**
- * iOS-Wallet-style bottom tab bar for the pass editor. Keyboard navigation
+ * Section tabs for the pass editor. Same look as the shell's SubTabs (in-flow,
+ * hairline, Signal underline) so the Wallet page has one navigation idiom and
+ * nothing floats over the mobile tab bar or the save bar. Keyboard navigation
  * (roving tabindex + arrow keys) comes from the Base UI Tabs primitive.
  */
 export function WalletTabBar({ className }: { className?: string }) {
 	return (
 		<TabsList
-			variant="bar"
 			className={cn(
-				"rounded-2xl border border-border/70 bg-background/90 px-1 py-0.5 shadow-lg backdrop-blur-xl",
+				"-mx-4 flex h-auto gap-1 overflow-x-auto rounded-none border-b border-rule bg-transparent px-4 [scrollbar-width:none] md:mx-0 md:px-0",
 				className,
 			)}
 		>
 			{WALLET_TABS.map((tab) => {
 				const Icon = tab.icon;
 				return (
-					<TabsTrigger key={tab.value} value={tab.value}>
-						<Icon className="h-5 w-5" aria-hidden="true" />
+					<TabsTrigger
+						key={tab.value}
+						value={tab.value}
+						className="relative min-h-11 shrink-0 gap-1.5 whitespace-nowrap rounded-none border-0 bg-transparent px-3 text-xs font-medium text-muted-foreground shadow-none ring-0 hover:bg-transparent hover:text-foreground data-[active]:bg-transparent data-[active]:text-foreground data-[active]:shadow-none data-[active]:ring-0 data-[active]:after:absolute data-[active]:after:inset-x-3 data-[active]:after:-bottom-px data-[active]:after:h-0.5 data-[active]:after:rounded-full data-[active]:after:bg-[image:var(--signal)] data-[active]:after:content-[''] md:min-h-10"
+					>
+						<Icon className="h-4 w-4" aria-hidden="true" />
 						{tab.label}
 					</TabsTrigger>
 				);
