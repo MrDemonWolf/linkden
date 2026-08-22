@@ -128,12 +128,15 @@ export default function WalletPage() {
 				}
 			/>
 
-			{/* Centered iOS-Wallet-style editor: pass preview hero + editing panel */}
-			<div className="mx-auto w-full max-w-[420px] lg:max-w-[460px]">
+			{/* iOS-Wallet-style editor. Below lg: centered stack, sheet overlaps the
+			    frame bottom. lg+: builder-style two-column split — sticky preview
+			    left, editor panel right — so both stay fully visible. */}
+			<div className="mx-auto w-full max-w-[420px] lg:flex lg:max-w-4xl lg:items-start lg:gap-6">
 				{/* Preview stage */}
-				<div className="flex justify-center">
+				<div className="flex justify-center lg:sticky lg:top-6 lg:shrink-0">
 					<DeviceFrame width={300} height="auto" previewDark>
-						<div className="px-3 pb-14 pt-1">
+						{/* pb-14 leaves room for the overlapping sheet; no overlap at lg+ */}
+						<div className="px-3 pb-14 pt-1 lg:pb-4">
 							<WalletPassPreview
 								backgroundColor={view.backgroundColor || undefined}
 								foregroundColor={view.foregroundColor || undefined}
@@ -157,14 +160,15 @@ export default function WalletPage() {
 					</DeviceFrame>
 				</div>
 
-				{/* Editing panel — non-modal, in-flow sheet overlapping the frame bottom */}
+				{/* Editing panel — non-modal, in-flow sheet overlapping the frame bottom
+				    below lg; plain side-by-side column at lg+ */}
 				<section
 					ref={panelRef}
 					tabIndex={-1}
 					aria-label="Pass editor"
-					className="relative z-10 -mt-10 rounded-t-3xl border border-b-0 border-border bg-background/85 px-4 pb-2 pt-2 shadow-2xl outline-none backdrop-blur-xl"
+					className="relative z-10 -mt-10 rounded-t-3xl border border-b-0 border-border bg-background/85 px-4 pb-2 pt-2 shadow-2xl outline-none backdrop-blur-xl lg:mt-0 lg:min-w-0 lg:flex-1 lg:rounded-2xl lg:border-b lg:pb-4 lg:pt-4 lg:shadow-none"
 				>
-					<div className="mb-3 flex items-center justify-between">
+					<div className="mb-3 flex items-center justify-between lg:hidden">
 						{/* Grabber */}
 						<span aria-hidden="true" className="mx-auto block h-1 w-9 rounded-full bg-border" />
 					</div>

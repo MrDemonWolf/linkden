@@ -294,7 +294,10 @@ export function PageContent({
 			: null;
 
 	return (
-		<div className={isPreview ? "ld-page min-h-full" : "ld-page min-h-dvh"} style={cssVarStyle}>
+		<div
+			className={isPreview ? "ld-page flex min-h-full flex-col" : "ld-page flex min-h-dvh flex-col"}
+			style={cssVarStyle}
+		>
 			{settings.customCss && (
 				<style>{settings.customCss.slice(0, 20000).replace(/<\/style/gi, "<\\/style")}</style>
 			)}

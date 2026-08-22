@@ -50,14 +50,19 @@ interface SavedState {
 	socialIconShape: SocialIconShape;
 }
 
+// Fresh-install fallbacks mirror the default preset's light palette so the
+// pickers (and their contrast badges) match what the public page actually
+// renders before any custom color is saved.
+const defaultLightVars = themePresets[0].cssVars.light;
+
 function buildSavedState(settings: Record<string, string>): SavedState {
 	return {
 		theme: settings.theme_preset ?? "default",
 		colorMode: settings.default_color_mode ?? "light",
-		primaryColor: settings.custom_primary ?? "#0FACED",
-		secondaryColor: settings.custom_secondary ?? "#E2E8F0",
-		accentColor: settings.custom_accent ?? "#38BDF8",
-		bgColor: settings.custom_background ?? "#FFFFFF",
+		primaryColor: settings.custom_primary ?? defaultLightVars["--ld-primary"],
+		secondaryColor: settings.custom_secondary ?? defaultLightVars["--ld-secondary"],
+		accentColor: settings.custom_accent ?? defaultLightVars["--ld-accent"],
+		bgColor: settings.custom_background ?? defaultLightVars["--ld-background"],
 		customCss: settings.custom_css ?? "",
 		bannerEnabled: settings.banner_enabled === "true",
 		bannerPreset: settings.banner_preset ?? "",
@@ -78,10 +83,10 @@ export default function AppearancePage() {
 	const [savedState, setSavedState] = useState<SavedState>({
 		theme: "default",
 		colorMode: "light",
-		primaryColor: "#0FACED",
-		secondaryColor: "#E2E8F0",
-		accentColor: "#38BDF8",
-		bgColor: "#FFFFFF",
+		primaryColor: defaultLightVars["--ld-primary"],
+		secondaryColor: defaultLightVars["--ld-secondary"],
+		accentColor: defaultLightVars["--ld-accent"],
+		bgColor: defaultLightVars["--ld-background"],
 		customCss: "",
 		bannerEnabled: false,
 		bannerPreset: "",
@@ -93,10 +98,10 @@ export default function AppearancePage() {
 
 	const [selectedTheme, setSelectedTheme] = useState("default");
 	const [colorMode, setColorMode] = useState("light");
-	const [primaryColor, setPrimaryColor] = useState("#0FACED");
-	const [secondaryColor, setSecondaryColor] = useState("#E2E8F0");
-	const [accentColor, setAccentColor] = useState("#38BDF8");
-	const [bgColor, setBgColor] = useState("#FFFFFF");
+	const [primaryColor, setPrimaryColor] = useState(defaultLightVars["--ld-primary"]);
+	const [secondaryColor, setSecondaryColor] = useState(defaultLightVars["--ld-secondary"]);
+	const [accentColor, setAccentColor] = useState(defaultLightVars["--ld-accent"]);
+	const [bgColor, setBgColor] = useState(defaultLightVars["--ld-background"]);
 	const [customCss, setCustomCss] = useState("");
 	const [previewDark, setPreviewDark] = useState(false);
 	const [bannerEnabled, setBannerEnabled] = useState(false);

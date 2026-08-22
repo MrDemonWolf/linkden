@@ -58,8 +58,12 @@ function UserFooter({ user, onSignOut }: { user: SessionUser; onSignOut: () => v
 					<AvatarFallback className="text-xs font-semibold">{initials(user?.name)}</AvatarFallback>
 				</Avatar>
 				<div className="flex-1 min-w-0">
-					<p className="text-xs font-semibold truncate">{user?.name ?? "Admin"}</p>
-					<p className="text-micro text-muted-foreground truncate">{user?.email}</p>
+					<p className="text-xs font-semibold truncate" title={user?.name}>
+						{user?.name ?? "Admin"}
+					</p>
+					<p className="text-micro text-muted-foreground truncate" title={user?.email}>
+						{user?.email}
+					</p>
 				</div>
 				<button
 					type="button"
