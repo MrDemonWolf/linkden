@@ -91,7 +91,9 @@ export function BlockRow({
 			>
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-1.5">
-						<p className="truncate text-sm font-medium">{block.title || "Untitled"}</p>
+						<p className="line-clamp-2 text-sm font-medium leading-snug lg:line-clamp-1">
+							{block.title || "Untitled"}
+						</p>
 						{block.status === "draft" && (
 							<span
 								className="inline-block h-2 w-2 shrink-0 rounded-full bg-warning animate-pulse"
@@ -127,7 +129,7 @@ export function BlockRow({
 			)}
 
 			{/* Actions */}
-			<div className="flex items-center gap-0.5 pr-2">
+			<div className="flex shrink-0 items-center gap-0 pr-1 lg:gap-0.5 lg:pr-2">
 				<button
 					type="button"
 					onClick={(e) => {
