@@ -19,7 +19,7 @@ interface PageHeaderProps {
 	style?: React.CSSProperties;
 }
 
-/** Page h1 row (title · badge · actions). The kicker lives in the shell top bar. */
+/** Page h1 row (title · badge · actions), 16px above whatever follows (sub-tabs or content). The kicker lives in the shell top bar. */
 export function PageHeader({
 	title,
 	kicker,
@@ -36,10 +36,12 @@ export function PageHeader({
 	}, [kicker, setKicker]);
 
 	return (
-		<header style={style} className={cn(className)}>
+		<header style={style} className={cn("mb-4", className)}>
 			<div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
 				<div className="flex min-w-0 items-center gap-2">
-					<h1 className="text-xl font-semibold tracking-[-0.015em] truncate">{title}</h1>
+					<h1 className="truncate font-display text-[22px] font-semibold leading-tight tracking-[-0.015em]">
+						{title}
+					</h1>
 					{badge}
 				</div>
 				{actions && <div className="flex items-center gap-2 shrink-0 mt-2 sm:mt-0">{actions}</div>}

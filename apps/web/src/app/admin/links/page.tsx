@@ -331,7 +331,7 @@ export default function LinksBlocksPage() {
 							className={cn(
 								"inline-flex min-h-11 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors md:min-h-8",
 								filter === f.id
-									? "border-foreground/20 bg-muted text-foreground"
+									? "border-border bg-surface-2 text-foreground"
 									: "border-transparent text-muted-foreground hover:text-foreground",
 							)}
 						>
@@ -403,26 +403,29 @@ export default function LinksBlocksPage() {
 						items={visibleBlocks.map((b) => b.id)}
 						strategy={verticalListSortingStrategy}
 					>
-						<ul className="flex flex-col gap-2" aria-label="Page blocks">
-							{visibleBlocks.map((block) => (
-								<li key={block.id} data-block-id={block.id}>
-									<BlockRow
-										block={block}
-										onToggle={() => handleToggle(block.id, block.isEnabled)}
-										onEdit={() => setEditingBlock(block)}
-										onDelete={() => handleDelete(block)}
-										accent={editingBlock?.id === block.id}
-										featureHidden={isFeatureHidden(block.type)}
-									/>
-								</li>
-							))}
-						</ul>
+						{/* One bordered panel; the rows are flat and divided, never individually rounded. */}
+						<div className="overflow-hidden rounded-xl border border-border bg-card shadow-surface">
+							<ul className="divide-y divide-border" aria-label="Page blocks">
+								{visibleBlocks.map((block) => (
+									<li key={block.id} data-block-id={block.id}>
+										<BlockRow
+											block={block}
+											onToggle={() => handleToggle(block.id, block.isEnabled)}
+											onEdit={() => setEditingBlock(block)}
+											onDelete={() => handleDelete(block)}
+											accent={editingBlock?.id === block.id}
+											featureHidden={isFeatureHidden(block.type)}
+										/>
+									</li>
+								))}
+							</ul>
+						</div>
 					</SortableContext>
 				)}
 
 				<DragOverlay dropAnimation={dropAnimation}>
 					{activeBlock && (
-						<div className="pointer-events-none rotate-[0.5deg] rounded-xl bg-card shadow-card ring-2 ring-primary/30">
+						<div className="pointer-events-none overflow-hidden rotate-[0.5deg] rounded-xl border border-border bg-card shadow-card ring-2 ring-primary/30">
 							<BlockRow
 								block={activeBlock}
 								onToggle={() => {}}

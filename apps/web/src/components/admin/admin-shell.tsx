@@ -2,7 +2,7 @@
 
 import { Menu } from "@base-ui/react/menu";
 import { useQuery } from "@tanstack/react-query";
-import { Globe, LogOut, Pin, PinOff, Smartphone, UserCog, Wallet } from "lucide-react";
+import { Globe, LogOut, Smartphone, UserCog, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -22,6 +22,7 @@ import { StatePill } from "@/components/admin/state-pill";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { Tooltip } from "@/components/ui/tooltip";
 import { WolfLogo } from "@/components/wolf-logo";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { authClient } from "@/lib/auth-client";
@@ -29,8 +30,6 @@ import { initials } from "@/lib/format";
 import { getGravatarUrl } from "@/lib/gravatar";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
-
-const RAIL_PINNED_KEY = "admin.rail.pinned";
 
 type SessionUser = { name: string; email: string; image?: string | null };
 
@@ -43,75 +42,88 @@ function kickerFor(pathname: string, subLabel: string | null) {
 	return sub ? `${item.label} / ${sub}` : item.label;
 }
 
-/** 64px icon rail; at xl it expands to 208px on hover/focus-within, or stays open when pinned. */
-function Rail({
+/**
+ * Fixed left sidebar (≥lg): 208px at xl with icon + label rows, a 64px
+ * icon-only rail with Tooltip labels between lg and xl. Brand mark on top,
+ * account identity + version at the bottom; sign-out stays in the top-bar
+ * avatar menu so it exists exactly once.
+ */
+function Sidebar({
 	pathname,
 	unreadCount,
 	logoUrl,
 	siteName,
-	pinned,
-	onTogglePin,
+	user,
 }: {
 	pathname: string;
 	unreadCount: number;
 	logoUrl: string;
 	siteName: string;
-	pinned: boolean;
-	onTogglePin: () => void;
+	user: SessionUser;
 }) {
-	const canExpand = useMediaQuery("(min-width: 1280px)", true);
-	const [hover, setHover] = useState(false);
-	const expanded = canExpand && (pinned || hover);
+	const isXl = useMediaQuery("(min-width: 1280px)", true);
+	const version = `v${process.env.NEXT_PUBLIC_APP_VERSION}${process.env.NODE_ENV === "development" ? " · DEV" : ""}`;
+	const avatar = (
+		<Avatar className="h-8 w-8 shrink-0">
+			<AvatarImage
+				src={user.image ?? (user.email ? getGravatarUrl(user.email, 56) : undefined)}
+				alt=""
+			/>
+			<AvatarFallback className="text-xs font-semibold">{initials(user.name)}</AvatarFallback>
+		</Avatar>
+	);
 
 	return (
 		<aside
 			aria-label="Sidebar"
-			onMouseEnter={() => setHover(true)}
-			onMouseLeave={() => setHover(false)}
-			onFocus={() => setHover(true)}
-			onBlur={(e) => {
-				if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHover(false);
-			}}
-			className={cn(
-				"fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-rule bg-sidebar transition-[width] duration-180 ease-out lg:flex",
-				expanded ? "w-52" : "w-16",
-				expanded && !pinned && "shadow-card",
-			)}
+			className="fixed inset-y-0 left-0 z-40 hidden w-16 flex-col border-r border-border bg-card lg:flex xl:w-52"
 		>
-			<div className="flex h-[52px] shrink-0 items-center gap-3 border-b border-rule px-4">
+			<div className="flex h-[52px] shrink-0 items-center gap-3 border-b border-border px-3 max-xl:justify-center">
 				{logoUrl ? (
 					<img src={logoUrl} alt="" className="h-8 w-8 shrink-0 rounded-lg object-cover" />
 				) : (
 					<WolfLogo className="h-8 w-8 shrink-0" />
 				)}
-				<span className={cn("truncate text-sm font-semibold", !expanded && "sr-only")}>
+				<span className={cn("truncate font-display text-sm font-semibold", !isXl && "sr-only")}>
 					{siteName}
 				</span>
 			</div>
 			<div className="flex-1 overflow-y-auto">
-				<NavList pathname={pathname} unreadCount={unreadCount} expanded={expanded} />
+				<NavList
+					pathname={pathname}
+					unreadCount={unreadCount}
+					variant={isXl ? "sidebar" : "rail"}
+				/>
 			</div>
-			{canExpand && (
-				<div className="border-t border-rule p-2">
-					<button
-						type="button"
-						onClick={onTogglePin}
-						aria-pressed={pinned}
-						aria-label={pinned ? "Unpin sidebar" : "Pin sidebar open"}
-						className={cn(
-							"flex min-h-[44px] w-full items-center gap-3 rounded-lg px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
-							!expanded && "justify-center px-0",
-						)}
+			<div className="shrink-0 border-t border-border p-3">
+				{isXl ? (
+					<Link
+						href="/admin/settings"
+						className="flex h-10 items-center gap-3 rounded-lg px-1.5 transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+						aria-label={`Account settings — ${user.name || "Admin"}, ${version}`}
 					>
-						{pinned ? (
-							<PinOff className="h-4 w-4 shrink-0" />
-						) : (
-							<Pin className="h-4 w-4 shrink-0" />
-						)}
-						<span className={cn(!expanded && "sr-only")}>{pinned ? "Unpin" : "Pin open"}</span>
-					</button>
-				</div>
-			)}
+						{avatar}
+						<span className="min-w-0 flex-1">
+							<span className="block truncate text-xs font-medium text-foreground">
+								{user.name || "Admin"}
+							</span>
+							<span className="block truncate font-mono text-micro text-muted-foreground">
+								{version}
+							</span>
+						</span>
+					</Link>
+				) : (
+					<Tooltip content={`${user.name || "Admin"} · ${version}`} side="right">
+						<Link
+							href="/admin/settings"
+							className="flex h-10 w-10 items-center justify-center rounded-lg transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+							aria-label={`Account settings — ${user.name || "Admin"}, ${version}`}
+						>
+							{avatar}
+						</Link>
+					</Tooltip>
+				)}
+			</div>
 		</aside>
 	);
 }
@@ -200,7 +212,7 @@ function BottomTabBar({ pathname, unreadCount }: { pathname: string; unreadCount
 	return (
 		<nav
 			aria-label="Main navigation"
-			className="fixed inset-x-0 bottom-0 z-40 flex border-t border-rule bg-sidebar pb-[env(safe-area-inset-bottom)] lg:hidden"
+			className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border bg-card pb-[env(safe-area-inset-bottom)] lg:hidden"
 		>
 			{NAV_ITEMS.map((item) => {
 				const isActive = isNavActive(item.href, pathname);
@@ -261,24 +273,29 @@ function MobilePreview() {
 	);
 }
 
-/** Main grid: tool column (720px beside a preview, 880px alone) + the preview column. */
+/**
+ * Main grid, left-aligned (never centered in the leftover space). With a
+ * preview registered: tool column (≤760px) + the preview column, 32px gap.
+ * Alone: a single ≤960px column.
+ */
 function MainGrid({ children }: { children: React.ReactNode }) {
 	const hasPreview = usePreviewRegistration() !== null;
 	return (
 		<div
 			className={cn(
-				"mx-auto flex items-start gap-6",
-				hasPreview ? "max-w-[calc(720px+1.5rem+360px)]" : "max-w-[880px]",
+				hasPreview
+					? "lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-8"
+					: "max-w-[960px]",
 			)}
 		>
-			<div className={cn("min-w-0 flex-1", hasPreview && "max-w-[720px]")}>{children}</div>
+			<div className={cn("min-w-0", hasPreview && "max-w-[760px]")}>{children}</div>
 			<PreviewColumn />
 		</div>
 	);
 }
 
 /**
- * Client-side admin chrome: session gate, icon rail (≥lg), top bar, main grid
+ * Client-side admin chrome: session gate, sidebar (≥lg), top bar, main grid
  * with the shell-owned preview column, FAB + preview sheet and bottom tab bar
  * (<lg). Rendered by the server `app/admin/layout.tsx`, which owns the metadata.
  */
@@ -288,16 +305,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 	const { data: session, isPending } = authClient.useSession();
 	const [registration, setRegistration] = useState<PreviewRegistration | null>(null);
 	const [subLabel, setSubLabel] = useState<string | null>(null);
-	const [railPinned, setRailPinned] = useState(false);
-	useEffect(() => {
-		setRailPinned(localStorage.getItem(RAIL_PINNED_KEY) === "1");
-	}, []);
-	const toggleRailPin = () => {
-		setRailPinned((p) => {
-			localStorage.setItem(RAIL_PINNED_KEY, p ? "0" : "1");
-			return !p;
-		});
-	};
 
 	const unreadQuery = useQuery({
 		...trpc.forms.unreadCount.queryOptions(),
@@ -377,24 +384,22 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 							Skip to main content
 						</a>
 
-						<Rail
+						<Sidebar
 							pathname={pathname}
 							unreadCount={unreadCount}
 							logoUrl={logoUrl}
 							siteName={siteName}
-							pinned={railPinned}
-							onTogglePin={toggleRailPin}
+							user={sessionUser}
 						/>
 
-						{/* Offset by the rail: 64px, or 208px when pinned open (xl only — the
-						    rail never expands below xl). Hover-expand overlays instead. */}
-						<div className={cn("lg:pl-16", railPinned && "xl:pl-52")}>
-							<header className="sticky top-0 z-30 flex h-12 items-center gap-2 border-b border-rule bg-sidebar px-3 lg:h-[52px] lg:px-6">
+						{/* Offset by the sidebar: 64px rail at lg, 208px at xl. */}
+						<div className="lg:pl-16 xl:pl-52">
+							<header className="sticky top-0 z-30 flex h-[52px] items-center gap-3 border-b border-border bg-card px-4 lg:px-6">
 								<span className="min-w-0 flex-1 truncate font-mono text-micro font-medium uppercase tracking-[0.14em] text-muted-foreground">
 									{kicker}
 								</span>
-								<StatePill />
-								<div className="flex flex-1 items-center justify-end gap-1 lg:gap-2">
+								<div className="flex shrink-0 items-center gap-1 lg:gap-2">
+									<StatePill />
 									<SharePopover />
 									<Button
 										size="sm"
@@ -419,7 +424,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
 							<main
 								id="main-content"
-								className="px-4 py-4 pb-[calc(56px+env(safe-area-inset-bottom)+1.5rem)] md:p-6 md:pb-[calc(56px+env(safe-area-inset-bottom)+1.5rem)] lg:pb-6"
+								className="px-4 py-4 pb-[calc(56px+env(safe-area-inset-bottom)+1.5rem)] md:px-6 md:py-6 md:pb-[calc(56px+env(safe-area-inset-bottom)+1.5rem)] lg:px-8 lg:pb-6"
 							>
 								<MainGrid>{children}</MainGrid>
 							</main>
