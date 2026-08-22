@@ -9,11 +9,14 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Midnight Studio — light "day" mode. Branded, not generic grey. */
-  --background: oklch(0.98 0 0);
+  /* Midnight Studio — light "day" mode. Branded, not generic grey.
+     Surface layering: page ground is off-white, cards are pure white, inset
+     lists/chips sit on --surface-2 — three distinct planes, not one. */
+  --background: oklch(0.975 0.004 250);
   --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0 / 85%);
+  --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
+  --surface-2: oklch(0.96 0.005 250);
   --popover: oklch(0.98 0 0);
   --popover-foreground: oklch(0.145 0 0);
   /* Deep cerulean: white-on ~5.4:1, as-text ~4.6:1 (was 4.03/3.92 — sub-AA) */
@@ -33,8 +36,8 @@
   --success-foreground: oklch(0.985 0 0);
   --warning: oklch(0.55 0.13 70);
   --warning-foreground: oklch(0.985 0 0);
-  /* Solid ~3:1 border on white (was 30%-alpha ~1.08:1) */
-  --border: oklch(0.8 0 0);
+  /* Hairline that reads as an edge on both white cards and the off-white ground */
+  --border: oklch(0.88 0.01 250);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.55 0.16 233);
   --chart-1: oklch(0.809 0.105 251.813);
@@ -45,8 +48,8 @@
   /* Light-mode counterparts of the dark-only admin tokens (were undefined) */
   --glass-tint-1: #00aced;
   --glass-tint-2: #6b8bf5;
-  /* Shell chrome (rail, top bar, tab bar): --card flattened to 100% over --background */
-  --sidebar: oklch(1 0 0);
+  /* Shell chrome (sidebar, top bar, tab bar) sits on the card plane */
+  --sidebar: var(--card);
   --data-up: oklch(0.52 0.13 160);
   --data-down: oklch(0.51 0.2 27);
   --dim: oklch(0.55 0 0);
@@ -56,20 +59,24 @@
   --glass-bg: oklch(1 0 0 / 0.7);
   --glass-border: oklch(0 0 0 / 0.08);
   --shadow-card: 0 1px 2px oklch(0 0 0 / 0.05), 0 10px 28px -14px oklch(0 0 0 / 0.28);
+  /* Card lift: a whisper of shadow in light only (dark relies on the border edge) */
+  --shadow-surface: 0 1px 2px oklch(0 0 0 / 0.04);
   --shadow-glow: 0 0 0 1px oklch(from var(--primary) l c h / 0.3), 0 14px 40px -16px oklch(from var(--primary) l c h / 0.4);
   /* Signal line: 2px cerulean -> cornflower. The brand's signature mark. */
   --signal: linear-gradient(90deg, var(--primary), var(--glass-tint-2));
-  /* Preview-column desk ground: 12px dot grid, foreground at ~8% */
-  --canvas-dot: oklch(0 0 0 / 0.08);
+  /* Preview-column desk ground: 12px dot grid, foreground at ~14% */
+  --canvas-dot: oklch(0 0 0 / 0.14);
 }
 
 .dark {
-  /* V1 Midnight Studio — Black Pearl bg, Cerulean accent */
+  /* V1 Midnight Studio — Black Pearl bg, Cerulean accent.
+     Surface layering: Black Pearl ground, one step lighter for cards, one
+     more for inset lists — solid fills so the planes have real edges. */
   --background: #091533;
   --foreground: #e7ecf7;
-  /* 5% fill + 14% border reach ~3:1 card/border edge over the aurora (was 3%/8% ~1.2:1) */
-  --card: rgba(255, 255, 255, 0.05);
+  --card: #0f1c3d;
   --card-foreground: #e7ecf7;
+  --surface-2: #152549;
   --popover: #0e1b40;
   --popover-foreground: #e7ecf7;
   --primary: #00ACED;
@@ -87,7 +94,7 @@
   --success-foreground: #091533;
   --warning: #fbbf24;
   --warning-foreground: #091533;
-  --border: rgba(255, 255, 255, 0.14);
+  --border: rgba(231, 236, 247, 0.12);
   --input: rgba(255, 255, 255, 0.06);
   --ring: #00ACED;
   --chart-1: #00ACED;
@@ -97,8 +104,8 @@
   --chart-5: #4e6287;
   --glass-tint-1: #00ACED;
   --glass-tint-2: #6B8BF5;
-  /* Shell chrome: --card (5% white) flattened over Black Pearl */
-  --sidebar: #15213d;
+  /* Shell chrome (sidebar, top bar, tab bar) sits on the card plane */
+  --sidebar: var(--card);
   --data-up: #6be0a8;
   --data-down: #ff9aa8;
   --dim: #4e6287;
@@ -106,9 +113,10 @@
   --glass-bg: oklch(1 0 0 / 0.06);
   --glass-border: oklch(1 0 0 / 0.1);
   --shadow-card: 0 1px 2px oklch(0 0 0 / 0.05), 0 10px 28px -14px oklch(0 0 0 / 0.28);
+  --shadow-surface: none;
   --shadow-glow: 0 0 0 1px oklch(from var(--primary) l c h / 0.3), 0 14px 40px -16px oklch(from var(--primary) l c h / 0.4);
   --signal: linear-gradient(90deg, #00ACED, #6B8BF5);
-  --canvas-dot: oklch(1 0 0 / 0.08);
+  --canvas-dot: oklch(1 0 0 / 0.14);
 }
 
 @theme inline {
@@ -158,12 +166,14 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
+  --color-surface-2: var(--surface-2);
   --color-sidebar: var(--sidebar);
   --color-rule: var(--rule);
   --color-canvas-dot: var(--canvas-dot);
   --color-glass: var(--glass-bg);
   --color-glass-border: var(--glass-border);
   --shadow-card: var(--shadow-card);
+  --shadow-surface: var(--shadow-surface);
   --shadow-glow: var(--shadow-glow);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -244,7 +254,8 @@
 
 /* Shared glass card for login, setup, and reset-password — theme-aware */
 .login-glass-card {
-  background: var(--card);
+  /* --glass-bg, not --card: the admin card plane went solid, the login keeps its glass */
+  background: var(--glass-bg);
   border: 1px solid var(--border);
   box-shadow: 0 0 40px -10px oklch(from var(--primary) l c h / 0.15);
   backdrop-filter: blur(12px);

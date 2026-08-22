@@ -3,7 +3,7 @@
 import { BarChart3, Inbox, Link2, type LucideIcon, Palette, Settings } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
-import { useLayoutEffect, useRef, useState } from "react";
+import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export interface NavItem {
@@ -12,7 +12,7 @@ export interface NavItem {
 	icon: LucideIcon;
 }
 
-/** The five destinations. One data source for the rail, the bottom tab bar and the kicker. */
+/** The five destinations. One data source for the sidebar, the bottom tab bar and the kicker. */
 export const NAV_ITEMS: readonly NavItem[] = [
 	{ href: "/admin/links", label: "Links", icon: Link2 },
 	{ href: "/admin/design", label: "Design", icon: Palette },
@@ -31,82 +31,90 @@ export function activeNavItem(pathname: string) {
 }
 
 /**
- * Rail navigation: icon over a text-micro label when collapsed (64px), icon
- * beside a text-sm label when `expanded` (hover/pin at xl). aria-current on
- * the active route; one Signal bar slides (180ms) to the active item's
- * left edge — measured from the DOM so it survives the collapsed/expanded
- * height change.
+ * Shared row recipe: 40px, static states only — the active row is a primary
+ * tint, the idle row lifts to --surface-2 on hover. No indicator bar.
+ * Reused by the settings vertical nav so both lists read as one idiom.
+ */
+export const NAV_ROW_CLASS =
+	"relative flex h-10 items-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+export const NAV_ROW_ACTIVE_CLASS = "bg-primary/10 font-medium text-foreground";
+export const NAV_ROW_IDLE_CLASS = "text-muted-foreground hover:bg-surface-2 hover:text-foreground";
+
+function Badge({ count, className }: { count: number; className?: string }) {
+	return (
+		<span
+			className={cn(
+				"flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-micro font-semibold text-primary-foreground",
+				className,
+			)}
+		>
+			{count > 99 ? "99+" : count}
+		</span>
+	);
+}
+
+/**
+ * Sidebar navigation. `sidebar` (xl, 208px): icon beside a text-sm label per
+ * 40px row. `rail` (lg–xl, 64px): icon-only 40px squares with Tooltip labels.
+ * aria-current marks the active route; its state is the static row tint.
  */
 export function NavList({
 	pathname,
 	unreadCount,
-	expanded = false,
+	variant = "sidebar",
 }: {
 	pathname: string;
 	unreadCount: number;
-	expanded?: boolean;
+	variant?: "sidebar" | "rail";
 }) {
-	const navRef = useRef<HTMLElement>(null);
-	const [bar, setBar] = useState<{ top: number; height: number } | null>(null);
-	// Re-measured after every render (route or expanded change), cheap; the
-	// equality guard keeps it from re-rendering when nothing moved.
-	useLayoutEffect(() => {
-		const active = navRef.current?.querySelector<HTMLElement>('[aria-current="page"]');
-		// inset-y-2 of the old per-item bar: 8px in from the link's top and bottom.
-		const next = active ? { top: active.offsetTop + 8, height: active.offsetHeight - 16 } : null;
-		setBar((prev) =>
-			prev?.top === next?.top && prev?.height === next?.height && !!prev === !!next ? prev : next,
-		);
-	});
+	const rail = variant === "rail";
 
 	return (
 		<nav
-			ref={navRef}
 			aria-label="Main navigation"
-			className="relative flex flex-col gap-1 px-2 py-2"
+			className={cn("flex flex-col gap-1 py-3", rail ? "items-center px-3" : "px-3")}
 		>
-			{bar && (
-				<span
-					aria-hidden
-					style={{ top: bar.top, height: bar.height }}
-					className="absolute left-2 w-0.5 rounded-full bg-[image:var(--signal)] transition-[top,height] duration-180 ease-out"
-				/>
-			)}
 			{NAV_ITEMS.map((item) => {
 				const isActive = isNavActive(item.href, pathname);
 				const showBadge = item.label === "Inbox" && unreadCount > 0;
 				const Icon = item.icon;
+				const accessibleName = showBadge ? `${item.label}, ${unreadCount} unread` : item.label;
+
+				if (rail) {
+					return (
+						<Tooltip key={item.href} content={item.label} side="right">
+							<Link
+								href={item.href}
+								aria-current={isActive ? "page" : undefined}
+								aria-label={accessibleName}
+								className={cn(
+									NAV_ROW_CLASS,
+									"w-10 justify-center",
+									isActive ? NAV_ROW_ACTIVE_CLASS : NAV_ROW_IDLE_CLASS,
+								)}
+							>
+								<Icon className={cn("h-4 w-4 shrink-0", isActive && "text-primary")} />
+								{showBadge && <Badge count={unreadCount} className="absolute -right-1 -top-1" />}
+							</Link>
+						</Tooltip>
+					);
+				}
 
 				return (
 					<Link
 						key={item.href}
 						href={item.href}
 						aria-current={isActive ? "page" : undefined}
-						aria-label={showBadge ? `${item.label}, ${unreadCount} unread` : undefined}
+						aria-label={showBadge ? accessibleName : undefined}
 						className={cn(
-							"relative flex min-h-[44px] items-center rounded-lg font-medium transition-colors",
-							expanded
-								? "flex-row gap-3 px-3 py-2 text-sm"
-								: "flex-col justify-center gap-1 px-1 py-1.5 text-micro",
-							isActive
-								? "bg-primary/10 text-foreground"
-								: "text-muted-foreground hover:bg-muted hover:text-foreground",
+							NAV_ROW_CLASS,
+							"gap-3 px-3 text-sm",
+							isActive ? NAV_ROW_ACTIVE_CLASS : NAV_ROW_IDLE_CLASS,
 						)}
 					>
-						<span className="relative">
-							<Icon className={cn("h-4 w-4 shrink-0", isActive && "text-primary")} />
-							{showBadge && !expanded && (
-								<span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-micro font-semibold text-primary-foreground">
-									{unreadCount > 99 ? "99+" : unreadCount}
-								</span>
-							)}
-						</span>
+						<Icon className={cn("h-4 w-4 shrink-0", isActive && "text-primary")} />
 						<span className="truncate">{item.label}</span>
-						{showBadge && expanded && (
-							<span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-micro font-semibold text-primary-foreground">
-								{unreadCount > 99 ? "99+" : unreadCount}
-							</span>
-						)}
+						{showBadge && <Badge count={unreadCount} className="ml-auto" />}
 					</Link>
 				);
 			})}

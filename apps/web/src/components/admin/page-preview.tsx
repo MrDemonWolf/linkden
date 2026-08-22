@@ -31,6 +31,10 @@ interface PagePreviewProps {
 	mode?: ColorMode;
 	onModeChange?: (mode: ColorMode) => void;
 	showHeader?: boolean;
+	/** `null` drops the "Preview" label (the column above already said it) and keeps the toolbar. */
+	headerLabel?: React.ReactNode;
+	/** Column-level controls (collapse, peek) appended after the phone toolbar. */
+	headerEnd?: React.ReactNode;
 	className?: string;
 }
 
@@ -100,6 +104,8 @@ export function PagePreview({
 	mode: controlledMode,
 	onModeChange,
 	showHeader = true,
+	headerLabel = "Preview",
+	headerEnd,
 	className,
 }: PagePreviewProps) {
 	const qc = useQueryClient();
@@ -165,16 +171,16 @@ export function PagePreview({
 	return (
 		<div className={className}>
 			{showHeader && (
-				<div className="mb-3 flex items-center justify-between px-1">
-					<span className="text-micro font-semibold uppercase tracking-widest text-muted-foreground">
-						Preview
+				<div className="mb-4 flex min-h-8 items-center justify-between gap-2">
+					<span className="flex min-w-0 items-center gap-1.5 text-small font-medium text-foreground">
+						{headerLabel}
 						{isSample && data && (
-							<span className="ml-1.5 rounded-full border border-border bg-muted px-1.5 py-px normal-case tracking-normal">
+							<span className="rounded-full border border-border bg-surface-2 px-1.5 py-px text-micro font-medium text-muted-foreground">
 								Sample
 							</span>
 						)}
 					</span>
-					<div className="flex items-center gap-1">
+					<div className="flex shrink-0 items-center gap-1">
 						<div className="flex rounded-lg border border-border/50 bg-muted/30 p-0.5">
 							<Tooltip content="Light preview">
 								<Button
@@ -230,6 +236,7 @@ export function PagePreview({
 								<ExternalLink className="h-3.5 w-3.5" />
 							</Button>
 						</Tooltip>
+						{headerEnd}
 					</div>
 				</div>
 			)}
