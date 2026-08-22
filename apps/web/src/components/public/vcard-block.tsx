@@ -1,8 +1,9 @@
 "use client";
 
 import { getReadableTextColor } from "@linkden/ui/color-contrast";
-import type { ThemeColors } from "./public-page";
+import { trackClick } from "@/lib/track";
 import { usePreview } from "./preview-context";
+import type { ThemeColors } from "./public-page";
 
 interface VCardBlockProps {
 	block: {
@@ -14,11 +15,6 @@ interface VCardBlockProps {
 	themeColors?: ThemeColors;
 }
 
-const animationClasses: Record<string, string> = {
-	pulse: "hover:animate-pulse",
-	shake: "hover:animate-[shake_0.3s]",
-};
-
 const apiBase = process.env.NEXT_PUBLIC_SERVER_URL ?? "";
 
 export function VCardBlock({ block, config, colorMode, themeColors }: VCardBlockProps) {
@@ -27,7 +23,6 @@ export function VCardBlock({ block, config, colorMode, themeColors }: VCardBlock
 	const buttonEmoji = config.buttonEmoji as string | undefined;
 	const buttonEmojiPosition = (config.buttonEmojiPosition as string) || "left";
 	const isOutlined = config.isOutlined as boolean | undefined;
-	const animation = config.animation as string | undefined;
 	const borderRadius = (config.borderRadius as string) || "lg";
 	const shadow = config.shadow as string | undefined;
 	const customBgColor = config.customBgColor as string | undefined;
@@ -48,11 +43,9 @@ export function VCardBlock({ block, config, colorMode, themeColors }: VCardBlock
 		lg: "shadow-lg",
 	};
 
-	const baseClasses = `block w-full px-6 py-3.5 font-medium text-center transition-all duration-200 ${
+	const baseClasses = `flex min-h-11 w-full items-center justify-center px-6 py-3 text-body font-medium transition-all duration-200 ${
 		radiusClasses[borderRadius] || "rounded-lg"
-	} ${shadowClasses[shadow || "none"]} ${
-		animation && animationClasses[animation] ? animationClasses[animation] : ""
-	}`;
+	} ${shadowClasses[shadow || "none"]}`;
 
 	const style: React.CSSProperties = {
 		transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
@@ -87,7 +80,10 @@ export function VCardBlock({ block, config, colorMode, themeColors }: VCardBlock
 		<a
 			href={isPreview ? undefined : `${apiBase}/api/vcard`}
 			download={isPreview ? undefined : "contact.vcf"}
-			onClick={isPreview ? (e: React.MouseEvent) => e.preventDefault() : undefined}
+			onClick={(e: React.MouseEvent) => {
+				if (isPreview) e.preventDefault();
+				trackClick(block.id, { preview: isPreview });
+			}}
 			className={`ld-vcard-block ${baseClasses} ${colorClasses} cursor-pointer hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 no-underline`}
 			style={{ ...style, outlineColor: themeColors?.primary || "#3b82f6" }}
 		>

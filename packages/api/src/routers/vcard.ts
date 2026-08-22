@@ -1,27 +1,13 @@
-import { router, protectedProcedure } from "../index";
 import { db } from "@linkden/db";
 import { siteSettings } from "@linkden/db/schema/index";
+import { type VcardData, vcardDataSchema } from "@linkden/validators/vcard";
 import { eq } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
 import { z } from "zod";
-import { upsertSetting } from "../utils/settings";
+import { protectedProcedure, router } from "../index";
+import { runBatch, settingUpsertStmt } from "../utils/settings";
 
-const vcardDataSchema = z.object({
-	fullName: z.string().optional(),
-	nickname: z.string().optional(),
-	birthday: z.string().optional(),
-	photo: z.string().optional(),
-	org: z.string().optional(),
-	title: z.string().optional(),
-	department: z.string().optional(),
-	workEmail: z.string().optional(),
-	workPhone: z.string().optional(),
-	email: z.string().optional(),
-	phone: z.string().optional(),
-	address: z.string().optional(),
-	urls: z.array(z.object({ label: z.string(), url: z.string() })).optional(),
-});
-
-function generateVCardString(data: z.infer<typeof vcardDataSchema>): string {
+function generateVCardString(data: VcardData): string {
 	const lines: string[] = ["BEGIN:VCARD", "VERSION:3.0"];
 
 	if (data.fullName) lines.push(`FN:${data.fullName}`);
@@ -37,7 +23,7 @@ function generateVCardString(data: z.infer<typeof vcardDataSchema>): string {
 	if (data.photo) lines.push(`PHOTO;VALUE=uri:${data.photo}`);
 	if (data.urls) {
 		for (const u of data.urls) {
-			lines.push(`URL;TYPE=${u.label}:${u.url}`);
+			if (u.url) lines.push(`URL;TYPE=${u.label}:${u.url}`);
 		}
 	}
 
@@ -45,7 +31,7 @@ function generateVCardString(data: z.infer<typeof vcardDataSchema>): string {
 	return lines.join("\r\n");
 }
 
-function safeParseVcardData(value?: string): z.infer<typeof vcardDataSchema> {
+function safeParseVcardData(value?: string): VcardData {
 	if (!value) return {};
 	try {
 		const parsed = JSON.parse(value);
@@ -81,14 +67,14 @@ export const vcardRouter = router({
 			}),
 		)
 		.mutation(async ({ input }) => {
+			const stmts: BatchItem<"sqlite">[] = [];
 			if (input.enabled !== undefined) {
-				await upsertSetting("vcard_enabled", String(input.enabled));
+				stmts.push(settingUpsertStmt("vcard_enabled", String(input.enabled)));
 			}
-
 			if (input.data) {
-				await upsertSetting("vcard_data", JSON.stringify(input.data));
+				stmts.push(settingUpsertStmt("vcard_data", JSON.stringify(input.data)));
 			}
-
+			await runBatch(stmts);
 			return { success: true };
 		}),
 

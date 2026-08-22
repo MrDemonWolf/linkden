@@ -1,27 +1,25 @@
-import { router, protectedProcedure } from "../index";
 import { db } from "@linkden/db";
-import { siteSettings, block, user } from "@linkden/db/schema/index";
-import { eq, asc } from "drizzle-orm";
+import { block, siteSettings, user } from "@linkden/db/schema/index";
 import { env } from "@linkden/env/server";
-import { z } from "zod";
-import { stripHtml } from "../utils/sanitize";
-import { logAudit } from "../utils/audit";
-import { buildSettingsMap, runBatch, settingUpsertStmt } from "../utils/settings";
 import { maskSecret, WALLET_SETTING_KEYS } from "@linkden/validators/settings-registry";
 import {
-	passFieldSchema,
-	passLocationSchema,
+	PASS_FIELD_LIMITS,
+	PASS_LOCATION_LIMIT,
+	PASS_TEMPLATE_PRESETS,
+	type PassField,
+	type PassTemplatePreset,
 	parsePassFieldsJson,
 	parsePassLocationsJson,
 	seedFromPreset,
-	PASS_TEMPLATE_PRESETS,
-	PASS_FIELD_LIMITS,
-	PASS_LOCATION_LIMIT,
-	type PassField,
-	type PassTemplatePreset,
+	walletConfigSchema,
+	walletSigningKeysSchema,
 } from "@linkden/validators/wallet";
-
-const hexColorRegex = /^#[0-9a-fA-F]{6}$/;
+import { asc, eq } from "drizzle-orm";
+import { z } from "zod";
+import { protectedProcedure, router } from "../index";
+import { logAudit } from "../utils/audit";
+import { stripHtml } from "../utils/sanitize";
+import { buildSettingsMap, runBatch, settingUpsertStmt } from "../utils/settings";
 
 const walletKeys: readonly string[] = WALLET_SETTING_KEYS;
 
@@ -45,96 +43,68 @@ export const walletRouter = router({
 		return config;
 	}),
 
-	updateConfig: protectedProcedure
-		.input(
-			z.object({
-				enabled: z.boolean().optional(),
-				showEmail: z.boolean().optional(),
-				showName: z.boolean().optional(),
-				showQrCode: z.boolean().optional(),
-				templatePreset: z.enum(PASS_TEMPLATE_PRESETS).optional(),
-				organizationName: z.string().max(100).optional(),
-				passDescription: z.string().max(200).optional(),
-				backgroundColor: z.string().regex(hexColorRegex).optional().or(z.literal("")),
-				foregroundColor: z.string().regex(hexColorRegex).optional().or(z.literal("")),
-				labelColor: z.string().regex(hexColorRegex).optional().or(z.literal("")),
-				logoUrl: z.string().url().optional().or(z.literal("")),
-				iconUrl: z.string().url().optional().or(z.literal("")),
-				thumbnailUrl: z.string().url().optional().or(z.literal("")),
-				stripUrl: z.string().url().optional().or(z.literal("")),
-				headerFields: z.array(passFieldSchema).max(PASS_FIELD_LIMITS.header).optional(),
-				primaryFields: z.array(passFieldSchema).max(PASS_FIELD_LIMITS.primary).optional(),
-				secondaryFields: z.array(passFieldSchema).max(PASS_FIELD_LIMITS.secondary).optional(),
-				auxiliaryFields: z.array(passFieldSchema).max(PASS_FIELD_LIMITS.auxiliary).optional(),
-				backFields: z.array(passFieldSchema).max(PASS_FIELD_LIMITS.back).optional(),
-				relevantDate: z.string().max(40).optional().or(z.literal("")),
-				locations: z.array(passLocationSchema).max(PASS_LOCATION_LIMIT).optional(),
-			}),
-		)
-		.mutation(async ({ input }) => {
-			const updates: { key: string; value: string }[] = [];
-			const push = (key: string, value: string) => updates.push({ key, value });
+	updateConfig: protectedProcedure.input(walletConfigSchema).mutation(async ({ input }) => {
+		const updates: { key: string; value: string }[] = [];
+		const push = (key: string, value: string) => updates.push({ key, value });
 
-			if (input.enabled !== undefined) push("wallet_pass_enabled", JSON.stringify(input.enabled));
-			if (input.showEmail !== undefined) push("wallet_show_email", JSON.stringify(input.showEmail));
-			if (input.showName !== undefined) push("wallet_show_name", JSON.stringify(input.showName));
-			if (input.showQrCode !== undefined)
-				push("wallet_show_qr_code", JSON.stringify(input.showQrCode));
-			if (input.templatePreset !== undefined) push("wallet_template_preset", input.templatePreset);
-			if (input.organizationName !== undefined)
-				push("wallet_organization_name", stripHtml(input.organizationName));
-			if (input.passDescription !== undefined)
-				push("wallet_pass_description", stripHtml(input.passDescription));
-			if (input.backgroundColor !== undefined)
-				push("wallet_background_color", input.backgroundColor);
-			if (input.foregroundColor !== undefined)
-				push("wallet_foreground_color", input.foregroundColor);
-			if (input.labelColor !== undefined) push("wallet_label_color", input.labelColor);
-			if (input.logoUrl !== undefined) push("wallet_logo_url", input.logoUrl);
-			if (input.iconUrl !== undefined) push("wallet_icon_url", input.iconUrl);
-			if (input.thumbnailUrl !== undefined) push("wallet_thumbnail_url", input.thumbnailUrl);
-			if (input.stripUrl !== undefined) push("wallet_strip_url", input.stripUrl);
-			if (input.headerFields !== undefined)
-				push(
-					"wallet_header_fields",
-					JSON.stringify(clampFields(input.headerFields, PASS_FIELD_LIMITS.header)),
-				);
-			if (input.primaryFields !== undefined)
-				push(
-					"wallet_primary_fields",
-					JSON.stringify(clampFields(input.primaryFields, PASS_FIELD_LIMITS.primary)),
-				);
-			if (input.secondaryFields !== undefined)
-				push(
-					"wallet_secondary_fields",
-					JSON.stringify(clampFields(input.secondaryFields, PASS_FIELD_LIMITS.secondary)),
-				);
-			if (input.auxiliaryFields !== undefined)
-				push(
-					"wallet_auxiliary_fields",
-					JSON.stringify(clampFields(input.auxiliaryFields, PASS_FIELD_LIMITS.auxiliary)),
-				);
-			if (input.backFields !== undefined)
-				push(
-					"wallet_back_fields",
-					JSON.stringify(clampFields(input.backFields, PASS_FIELD_LIMITS.back)),
-				);
-			if (input.relevantDate !== undefined) push("wallet_relevant_date", input.relevantDate);
-			if (input.locations !== undefined)
-				push(
-					"wallet_locations",
-					JSON.stringify(
-						input.locations.slice(0, PASS_LOCATION_LIMIT).map((l) => ({
-							...l,
-							relevantText: l.relevantText ? stripHtml(l.relevantText) : l.relevantText,
-						})),
-					),
-				);
+		if (input.enabled !== undefined) push("wallet_pass_enabled", JSON.stringify(input.enabled));
+		if (input.showEmail !== undefined) push("wallet_show_email", JSON.stringify(input.showEmail));
+		if (input.showName !== undefined) push("wallet_show_name", JSON.stringify(input.showName));
+		if (input.showQrCode !== undefined)
+			push("wallet_show_qr_code", JSON.stringify(input.showQrCode));
+		if (input.templatePreset !== undefined) push("wallet_template_preset", input.templatePreset);
+		if (input.organizationName !== undefined)
+			push("wallet_organization_name", stripHtml(input.organizationName));
+		if (input.passDescription !== undefined)
+			push("wallet_pass_description", stripHtml(input.passDescription));
+		if (input.backgroundColor !== undefined) push("wallet_background_color", input.backgroundColor);
+		if (input.foregroundColor !== undefined) push("wallet_foreground_color", input.foregroundColor);
+		if (input.labelColor !== undefined) push("wallet_label_color", input.labelColor);
+		if (input.logoUrl !== undefined) push("wallet_logo_url", input.logoUrl);
+		if (input.iconUrl !== undefined) push("wallet_icon_url", input.iconUrl);
+		if (input.thumbnailUrl !== undefined) push("wallet_thumbnail_url", input.thumbnailUrl);
+		if (input.stripUrl !== undefined) push("wallet_strip_url", input.stripUrl);
+		if (input.headerFields !== undefined)
+			push(
+				"wallet_header_fields",
+				JSON.stringify(clampFields(input.headerFields, PASS_FIELD_LIMITS.header)),
+			);
+		if (input.primaryFields !== undefined)
+			push(
+				"wallet_primary_fields",
+				JSON.stringify(clampFields(input.primaryFields, PASS_FIELD_LIMITS.primary)),
+			);
+		if (input.secondaryFields !== undefined)
+			push(
+				"wallet_secondary_fields",
+				JSON.stringify(clampFields(input.secondaryFields, PASS_FIELD_LIMITS.secondary)),
+			);
+		if (input.auxiliaryFields !== undefined)
+			push(
+				"wallet_auxiliary_fields",
+				JSON.stringify(clampFields(input.auxiliaryFields, PASS_FIELD_LIMITS.auxiliary)),
+			);
+		if (input.backFields !== undefined)
+			push(
+				"wallet_back_fields",
+				JSON.stringify(clampFields(input.backFields, PASS_FIELD_LIMITS.back)),
+			);
+		if (input.relevantDate !== undefined) push("wallet_relevant_date", input.relevantDate);
+		if (input.locations !== undefined)
+			push(
+				"wallet_locations",
+				JSON.stringify(
+					input.locations.slice(0, PASS_LOCATION_LIMIT).map((l) => ({
+						...l,
+						relevantText: l.relevantText ? stripHtml(l.relevantText) : l.relevantText,
+					})),
+				),
+			);
 
-			await runBatch(updates.map(({ key, value }) => settingUpsertStmt(key, value)));
-			await logAudit("wallet.updateConfig", "wallet");
-			return { success: true };
-		}),
+		await runBatch(updates.map(({ key, value }) => settingUpsertStmt(key, value)));
+		await logAudit("wallet.updateConfig", "wallet");
+		return { success: true };
+	}),
 
 	applyPreset: protectedProcedure
 		.input(z.object({ preset: z.enum(PASS_TEMPLATE_PRESETS) }))
@@ -198,15 +168,7 @@ export const walletRouter = router({
 	}),
 
 	updateSigningKeys: protectedProcedure
-		.input(
-			z.object({
-				teamId: z.string().max(20).optional(),
-				passTypeId: z.string().max(100).optional(),
-				signerCert: z.string().optional(),
-				signerKey: z.string().optional(),
-				wwdrCert: z.string().optional(),
-			}),
-		)
+		.input(walletSigningKeysSchema)
 		.mutation(async ({ input }) => {
 			const updates: { key: string; value: string }[] = [];
 			if (input.teamId !== undefined) updates.push({ key: "wallet_team_id", value: input.teamId });

@@ -46,7 +46,7 @@ export function Select({
 				id={id}
 				aria-label={ariaLabel}
 				className={cn(
-					"dark:bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring focus-visible:ring-offset-background disabled:bg-input/50 dark:disabled:bg-input/80 flex h-9 w-full min-w-0 cursor-default items-center gap-2 rounded-lg border bg-transparent px-2.5 py-1 text-left text-base backdrop-blur-sm transition-colors outline-none select-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:h-8 md:text-sm",
+					"dark:bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring focus-visible:ring-offset-background disabled:bg-input/50 dark:disabled:bg-input/80 flex h-11 w-full min-w-0 cursor-default items-center gap-2 rounded-lg border bg-transparent px-2.5 py-1 text-left text-base backdrop-blur-sm transition-colors outline-none select-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:h-8 md:text-sm",
 					className,
 				)}
 			>
@@ -66,7 +66,10 @@ export function Select({
 								<SelectPrimitive.Item
 									key={item.value}
 									value={item.value}
-									className="relative flex cursor-default items-center gap-2 rounded-md py-1.5 pr-2 pl-7 text-base outline-none select-none data-[highlighted]:bg-muted data-[highlighted]:text-foreground md:text-sm"
+									// The highlighted option has DOM focus (roving tabindex) and this is
+									// its only indicator: bg-muted alone is ~1.03:1 against the popover,
+									// so add a primary tint + inset ring (≥3:1 non-text contrast).
+									className="relative flex cursor-default items-center gap-2 rounded-md py-1.5 pr-2 pl-7 text-base outline-none select-none data-[highlighted]:bg-primary/10 data-[highlighted]:ring-1 data-[highlighted]:ring-inset data-[highlighted]:ring-ring md:text-sm"
 								>
 									<SelectPrimitive.ItemIndicator className="absolute left-2 flex items-center">
 										<Check className="h-3.5 w-3.5" aria-hidden="true" />

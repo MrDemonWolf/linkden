@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface Connection {
@@ -93,14 +94,7 @@ export function ConnectionDetail({
 			<div className="space-y-1 border-b px-4 py-3">
 				<div className="flex items-center gap-2">
 					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-						{connection.name
-							? connection.name
-									.split(/\s+/)
-									.slice(0, 2)
-									.map((p) => p[0])
-									.join("")
-									.toUpperCase()
-							: "?"}
+						{initials(connection.name)}
 					</div>
 					<div className="min-w-0 flex-1">
 						<p className="text-sm font-semibold truncate">{connection.name || "Anonymous"}</p>

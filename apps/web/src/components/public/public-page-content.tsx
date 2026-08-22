@@ -1,20 +1,22 @@
 "use client";
 
+import { getPresetById } from "@linkden/ui/banner-presets";
 import { Avatar } from "./avatar";
-import { LinkBlock } from "./link-block";
-import { HeaderBlock } from "./header-block";
-import { EmbedBlock } from "./embed-block";
 import { ConnectBlock } from "./connect-block";
-import { VCardBlock } from "./vcard-block";
-import { LocationBlock } from "./location-block";
-import { WhitelabelFooter } from "./whitelabel-footer";
+import { DividerBlock } from "./divider-block";
+import { EmbedBlock } from "./embed-block";
 import { FooterActions } from "./footer-actions";
-import { ShaderBanner } from "./shader-banner";
+import { HeaderBlock } from "./header-block";
+import { ImageBlock } from "./image-block";
+import { LinkBlock } from "./link-block";
+import { LocationBlock } from "./location-block";
 import { usePreview } from "./preview-context";
 import { ProfileSocialIcons } from "./profile-social-icons";
 import type { ThemeColors } from "./public-page";
-import { getPresetById } from "@linkden/ui/banner-presets";
-import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
+import { ShaderBanner } from "./shader-banner";
+import { TextBlock } from "./text-block";
+import { VCardBlock } from "./vcard-block";
+import { WhitelabelFooter } from "./whitelabel-footer";
 
 interface SocialNetwork {
 	slug: string;
@@ -24,7 +26,7 @@ interface SocialNetwork {
 	svgPath: string;
 }
 
-export interface PageContentProps {
+interface PageContentProps {
 	profile: {
 		name: string;
 		email?: string;
@@ -74,32 +76,63 @@ function parseConfig(config: string | null): Record<string, unknown> {
 	}
 }
 
-export function PageSkeleton() {
-	return (
-		<div className="flex flex-col items-center gap-4 animate-pulse px-4 py-8">
-			<div className="h-20 w-20 rounded-full bg-muted" />
-			<div className="h-5 w-36 rounded-full bg-muted" />
-			<div className="space-y-1.5 w-full max-w-xs">
-				<div className="h-4 w-48 rounded-full bg-muted mx-auto" />
-				<div className="h-4 w-32 rounded-full bg-muted mx-auto" />
-			</div>
-			{[0, 1, 2].map((i) => (
-				<div key={i} className="h-12 w-full max-w-sm rounded-xl bg-muted" />
-			))}
-		</div>
-	);
+type Block = PageContentProps["blocks"][number];
+type SectionLayout = "list" | "grid" | "carousel";
+
+interface Section {
+	header: Block | null;
+	layout: SectionLayout;
+	blocks: Block[];
+	/** Entrance index of the section's first element (header or block), page-wide. */
+	start: number;
 }
 
+/**
+ * A header block starts a new section; its `config.layout` drives the container
+ * of every block after it until the next header. Blocks before the first header
+ * form a plain list section.
+ */
+function groupSections(blocks: Block[]): Section[] {
+	const sections: Section[] = [];
+	let current: Section = { header: null, layout: "list", blocks: [], start: 0 };
+	for (const [i, b] of blocks.entries()) {
+		if (b.type === "header") {
+			if (current.header || current.blocks.length) sections.push(current);
+			const layout = parseConfig(b.config).layout;
+			current = {
+				header: b,
+				layout: layout === "grid" || layout === "carousel" ? layout : "list",
+				blocks: [],
+				start: i,
+			};
+		} else {
+			current.blocks.push(b);
+		}
+	}
+	if (current.header || current.blocks.length) sections.push(current);
+	return sections;
+}
+
+const sectionLayoutClass: Record<SectionLayout, string> = {
+	list: "space-y-3",
+	grid: "grid grid-cols-2 gap-3",
+	carousel:
+		"flex gap-3 overflow-x-auto snap-x snap-mandatory rounded-xl pb-2 focus-visible:outline-2 focus-visible:outline-offset-2 [&>*]:min-w-[72%] [&>*]:snap-start [&>*]:shrink-0",
+};
+
 function renderBlock(
-	blockData: PageContentProps["blocks"][number],
+	blockData: Block,
 	{
 		colorMode,
 		themeColors,
 		settings,
+		tile,
 	}: {
 		colorMode: "light" | "dark";
 		themeColors: ThemeColors;
 		settings: PageContentProps["settings"];
+		/** Inside a grid section: links render as square tiles. */
+		tile?: boolean;
 	},
 ) {
 	const config = parseConfig(blockData.config);
@@ -113,6 +146,7 @@ function renderBlock(
 					config={config}
 					colorMode={colorMode}
 					themeColors={themeColors}
+					tile={tile}
 				/>
 			);
 		case "header":
@@ -167,6 +201,36 @@ function renderBlock(
 					themeColors={themeColors}
 				/>
 			);
+		case "image":
+			return (
+				<ImageBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={colorMode}
+					themeColors={themeColors}
+				/>
+			);
+		case "text":
+			return (
+				<TextBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={colorMode}
+					themeColors={themeColors}
+				/>
+			);
+		case "divider":
+			return (
+				<DividerBlock
+					key={blockData.id}
+					block={blockData}
+					config={config}
+					colorMode={colorMode}
+					themeColors={themeColors}
+				/>
+			);
 		default:
 			return null;
 	}
@@ -193,12 +257,11 @@ export function PageContent({
 	// Filter out social_icons blocks — social icons now render in the hero card
 	const contentBlocks = blocks.filter((b) => b.type !== "social_icons");
 	const hasVcardBlock = contentBlocks.some((b) => b.type === "vcard");
-
-	// Stagger entrance animation on block stream — 50ms cascade
-	const { getAnimationProps } = useEntranceAnimation({ baseDelay: 0, stagger: 50 });
+	const sections = groupSections(contentBlocks);
 
 	// Project resolved theme into CSS variables so shared @linkden/ui components
 	// (which read var(--ld-*)) inherit the live theme without prop threading.
+	// `.ld-page` paints `--ld-background` + the ambient glow itself (index.css).
 	const cssVarStyle = {
 		"--ld-primary": themeColors.primary,
 		"--ld-secondary": themeColors.secondary,
@@ -210,7 +273,8 @@ export function PageContent({
 		"--ld-border": themeColors.border,
 		"--ld-muted": themeColors.muted,
 		"--ld-muted-foreground": themeColors.mutedFg,
-		backgroundColor: themeColors.bg,
+		// Signal line in the page's own palette (the admin token uses brand colors).
+		"--signal": "linear-gradient(90deg, var(--ld-primary), var(--ld-secondary))",
 		color: themeColors.fg,
 		transition: "background-color 0.5s ease, color 0.5s ease",
 	} as React.CSSProperties;
@@ -230,18 +294,20 @@ export function PageContent({
 			: null;
 
 	return (
-		<div className="ld-page min-h-dvh" style={cssVarStyle}>
+		<div className={isPreview ? "ld-page min-h-full" : "ld-page min-h-dvh"} style={cssVarStyle}>
 			{settings.customCss && (
 				<style>{settings.customCss.slice(0, 20000).replace(/<\/style/gi, "<\\/style")}</style>
 			)}
 
+			{/* Container query (not viewport): the 512px admin preview stays single
+			    column while the live page goes two-column from 896px. */}
 			<Wrapper
 				{...(!isPreview ? { id: "main-content", role: "main" } : {})}
-				className="mx-auto max-w-lg px-4 py-10 md:py-14"
+				className="mx-auto w-full max-w-lg px-4 py-8 @4xl:grid @4xl:max-w-5xl @4xl:grid-cols-[360px_minmax(0,1fr)] @4xl:items-start @4xl:gap-10"
 			>
 				{/* Hero card: cover + avatar + name + bio + socials */}
 				<ProfileWrapper
-					className="ld-hero relative mb-6 overflow-hidden rounded-3xl border shadow-lg shadow-black/5 backdrop-blur-2xl"
+					className="ld-hero relative mb-6 overflow-hidden rounded-3xl border shadow-lg shadow-black/5 backdrop-blur-2xl @4xl:sticky @4xl:top-8 @4xl:mb-0"
 					style={heroCardStyle}
 				>
 					{showCover && (
@@ -281,7 +347,7 @@ export function PageContent({
 							}}
 						/>
 
-						<h1 className="mt-4 inline-flex items-center justify-center gap-1.5 text-2xl font-bold tracking-tight">
+						<h1 className="mt-4 inline-flex items-center justify-center gap-1.5 text-h1 font-bold">
 							{profile.name}
 							{profile.isVerified && (
 								<svg
@@ -304,10 +370,15 @@ export function PageContent({
 								</svg>
 							)}
 						</h1>
+						{/* Signal line — the brand's signature mark, in the page palette. */}
+						<span
+							aria-hidden="true"
+							className="mx-auto mt-3 block h-0.5 w-10 rounded-full bg-[image:var(--signal)]"
+						/>
 
 						{profile.bio && (
 							<p
-								className="ld-bio mt-3 text-[15px] leading-relaxed max-w-sm mx-auto"
+								className="ld-bio mx-auto mt-3 max-w-sm text-body"
 								style={{ color: themeColors.mutedFg, transition: "color 0.5s ease" }}
 							>
 								{profile.bio}
@@ -325,26 +396,78 @@ export function PageContent({
 					</div>
 				</ProfileWrapper>
 
-				{/* Single-column block stream — 50ms staggered fade-in */}
-				<ul className="ld-blocks space-y-3.5 pb-8" aria-label="Links and content">
-					{contentBlocks.map((blockData, index) => (
-						// The wrapper <li> owns both the list semantics and the per-index
-						// stagger delay, so each block renders a plain <a>/<div>. Letting a
-						// block emit its own <li> would nest <li> in <li>, and a bare block
-						// element as a direct <ul> child is equally invalid HTML.
-						<li key={blockData.id} style={getAnimationProps(index).style}>
-							{renderBlock(blockData, { colorMode, themeColors, settings })}
-						</li>
-					))}
-				</ul>
+				<div className="min-w-0">
+					{sections.length === 0 && (
+						<div
+							className="rounded-2xl px-6 py-10 text-center text-small"
+							style={{ backgroundColor: themeColors.muted, color: themeColors.mutedFg }}
+						>
+							<p>Nothing here yet.</p>
+							{isPreview && <p className="mt-1">Add blocks in the builder.</p>}
+						</div>
+					)}
 
-				{!isPreview && (
-					<FooterActions
-						walletEnabled={!!settings.walletPassEnabled}
-						vcardEnabled={!!settings.vcardEnabled && !hasVcardBlock}
-						themeColors={themeColors}
-					/>
-				)}
+					{/* One entrance mechanism: `.ld-blocks > *` rises with a delay of
+					    `--ld-i` × 45ms (index.css). The index runs across sections and
+					    caps at 12 so a long page doesn't keep the fold waiting. */}
+					<div className="space-y-6 pb-8">
+						{sections.map((section) => {
+							const tile = section.layout === "grid";
+							const firstBlock = section.start + (section.header ? 1 : 0);
+							return (
+								<section key={section.header?.id ?? "lead"} className="space-y-3">
+									{section.header && (
+										<div
+											className="ld-blocks"
+											style={{ "--ld-i": Math.min(section.start, 12) } as React.CSSProperties}
+										>
+											{renderBlock(section.header, { colorMode, themeColors, settings })}
+										</div>
+									)}
+									{section.blocks.length > 0 && (
+										<ul
+											className={`ld-blocks ${sectionLayoutClass[section.layout]}`}
+											aria-label={
+												section.layout === "carousel"
+													? `${section.header?.title || "Links and content"}, scrollable`
+													: section.header?.title || "Links and content"
+											}
+											// A carousel of non-interactive blocks (images without a link,
+											// text, dividers) has nothing focusable inside it; making the
+											// scroller itself a tab stop lets the arrow keys scroll it in
+											// every browser (Safari does not focus overflow boxes on its own).
+											tabIndex={section.layout === "carousel" ? 0 : undefined}
+											style={
+												section.layout === "carousel"
+													? ({ outlineColor: themeColors.primary } as React.CSSProperties)
+													: undefined
+											}
+										>
+											{section.blocks.map((blockData, i) => (
+												// The wrapper <li> owns both the list semantics and the
+												// stagger index, so each block renders a plain <a>/<div>.
+												<li
+													key={blockData.id}
+													style={{ "--ld-i": Math.min(firstBlock + i, 12) } as React.CSSProperties}
+												>
+													{renderBlock(blockData, { colorMode, themeColors, settings, tile })}
+												</li>
+											))}
+										</ul>
+									)}
+								</section>
+							);
+						})}
+					</div>
+
+					{!isPreview && (
+						<FooterActions
+							walletEnabled={!!settings.walletPassEnabled}
+							vcardEnabled={!!settings.vcardEnabled && !hasVcardBlock}
+							themeColors={themeColors}
+						/>
+					)}
+				</div>
 			</Wrapper>
 
 			{settings.brandingEnabled && (

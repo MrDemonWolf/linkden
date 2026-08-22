@@ -7,6 +7,7 @@ import { Save, Undo2, Globe, Search, Plus, Trash2 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { trpc } from "@/utils/trpc";
 import { socialBrands } from "@linkden/ui/social-brands";
+import type { SocialNetworkUpdate } from "@linkden/validators/social";
 import { getAccessibleIconFill, isLowLuminance } from "@linkden/ui/color-contrast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -234,7 +235,7 @@ export function SocialTab({ onDirtyChange }: SocialTabProps) {
 
 	const handleSaveSocial = async () => {
 		const dbMap = new Map(dbRows.map((r) => [r.slug, r]));
-		const changes: Array<{ slug: string; url: string; isActive: boolean }> = [];
+		const changes: SocialNetworkUpdate[] = [];
 
 		for (const brand of socialBrands) {
 			const draft = drafts[brand.slug];

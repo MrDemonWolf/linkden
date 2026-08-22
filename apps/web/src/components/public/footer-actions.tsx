@@ -14,8 +14,8 @@ interface FooterActionsProps {
 
 const pillClass = cn(
 	buttonVariants({ variant: "outline", size: "lg" }),
-	// The outline variant's admin-token colors (bg-background/input, border-input,
-	// hover:text-foreground) are all overridden here (twMerge keeps last) so the
+	// The outline variant's admin-token colors (background, border, and hover
+	// text) are all overridden here (twMerge keeps last) so the
 	// pills stay glass and hover text stays the page's themed color, which the
 	// anchors inherit from the ld-page wrapper's inline `color: themeColors.fg`.
 	"rounded-full gap-2 px-4 text-sm backdrop-blur-2xl bg-white/5 dark:bg-white/5 border-white/20 dark:border-white/20 hover:bg-white/10 dark:hover:bg-white/10 hover:text-inherit hover:-translate-y-0.5 hover:opacity-90 transition-all duration-300 no-underline",
