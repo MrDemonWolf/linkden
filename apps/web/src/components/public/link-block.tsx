@@ -1,11 +1,11 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
-import { ArrowRight } from "lucide-react";
 import { getReadableTextColor } from "@linkden/ui/color-contrast";
-import { trpc } from "@/utils/trpc";
-import type { ThemeColors } from "./public-page";
+import { ArrowRight } from "lucide-react";
+import { trackClick } from "@/lib/track";
+import { BlockIcon } from "./block-icon";
 import { usePreview } from "./preview-context";
+import type { ThemeColors } from "./public-page";
 
 interface LinkBlockProps {
 	block: {
@@ -16,183 +16,233 @@ interface LinkBlockProps {
 	};
 	config: Record<string, unknown>;
 	colorMode: "light" | "dark";
-	themeColors?: ThemeColors;
+	themeColors: ThemeColors;
+	/** Grid-section tile: square thumbnail/icon above a centered title. */
+	tile?: boolean;
 }
 
-const animationClasses: Record<string, string> = {
-	fade: "animate-[fadeIn_0.5s_ease-in-out]",
-	slide: "animate-[slideIn_0.3s_ease-out]",
-	bounce: "hover:animate-[bounce_0.3s]",
-	pulse: "hover:animate-pulse",
+const radiusClasses: Record<string, string> = {
+	none: "rounded-none",
+	sm: "rounded-sm",
+	md: "rounded-md",
+	lg: "rounded-lg",
+	xl: "rounded-xl",
+	"2xl": "rounded-2xl",
+	full: "rounded-full",
 };
 
-export function LinkBlock({ block, config, colorMode, themeColors }: LinkBlockProps) {
+const textAlignClasses: Record<string, string> = {
+	left: "text-left",
+	center: "text-center",
+	right: "text-right",
+};
+
+// Hover border/glow read CSS vars that the anchor sets inline (see `vars`), so
+// the same markup works in the admin preview, which renders outside `.ld-page`.
+const CARD =
+	"ld-link-block group relative w-full border shadow-card backdrop-blur-xl transition-[transform,border-color,box-shadow,background-color,color] duration-[220ms] ease-out hover:-translate-y-px hover:border-(--ld-primary) hover:shadow-(--ld-glow) active:scale-[.985] focus-visible:outline-2 focus-visible:outline-offset-2";
+
+/**
+ * Signal accent: grows from the left edge on hover. Parent needs `group` +
+ * `overflow-hidden`. primary→accent rather than →secondary: every preset's
+ * `--ld-secondary` is a surface tint, not a second hue.
+ */
+function Accent({ colors }: { colors: ThemeColors }) {
+	return (
+		<span
+			aria-hidden="true"
+			className="pointer-events-none absolute left-0 top-1/2 h-0 w-0.5 -translate-y-1/2 rounded-r-full transition-[height] duration-[220ms] ease-out group-hover:h-6"
+			style={{ backgroundImage: `linear-gradient(${colors.primary}, ${colors.accent})` }}
+		/>
+	);
+}
+
+export function LinkBlock({ block, config, themeColors: colors, tile }: LinkBlockProps) {
 	const { isPreview } = usePreview();
-	const trackClick = useMutation(trpc.public.trackClick.mutationOptions());
 
-	const handleClick = (e: React.MouseEvent) => {
-		if (isPreview) {
-			e.preventDefault();
-			return;
-		}
-		// Referrer / UA / country are derived server-side from request headers.
-		trackClick.mutate({ blockId: block.id });
-	};
-
+	const title = block.title || "Untitled Link";
 	const emoji = config.emoji as string | undefined;
 	const emojiPosition = (config.emojiPosition as string) || "left";
 	const textAlign = (config.textAlign as string) || "center";
-	const isOutlined = config.isOutlined as boolean | undefined;
-	const openInNewTab = config.openInNewTab !== false;
-	const animation = config.animation as string | undefined;
-	const borderRadius = (config.borderRadius as string) || "2xl";
-	const shadow = config.shadow as string | undefined;
-	const customBgColor = config.customBgColor as string | undefined;
-	const customTextColor = config.customTextColor as string | undefined;
 	const description = config.description as string | undefined;
 	const thumbnail = config.thumbnail as string | undefined;
+	const variant = (config.variant as string) || (thumbnail ? "thumbnail" : "classic");
 	const isHighlighted = config.isHighlighted as boolean | undefined;
+	const isOutlined = config.isOutlined as boolean | undefined;
+	const customBgColor = config.customBgColor as string | undefined;
+	const radius = radiusClasses[(config.borderRadius as string) || "2xl"] || "rounded-2xl";
+	const newTab = config.newTab !== false;
 
-	const hasRichContent = !!(description || thumbnail);
-
-	const radiusClasses: Record<string, string> = {
-		none: "rounded-none",
-		sm: "rounded-sm",
-		md: "rounded-md",
-		lg: "rounded-lg",
-		xl: "rounded-xl",
-		"2xl": "rounded-2xl",
-		full: "rounded-full",
+	const handleClick = (e: React.MouseEvent) => {
+		if (isPreview) e.preventDefault();
+		trackClick(block.id, { preview: isPreview });
 	};
 
-	const shadowClasses: Record<string, string> = {
-		none: "",
-		sm: "shadow-sm",
-		md: "shadow-md",
-		lg: "shadow-lg",
+	// Solid surface + its readable text. White-on-bright-primary fails contrast
+	// (1.37–2.58:1), so highlighted/custom surfaces pick the legible one.
+	const surface = isHighlighted ? colors.primary : customBgColor || colors.card;
+	const ink = isHighlighted
+		? getReadableTextColor(colors.primary)
+		: customBgColor
+			? (config.customTextColor as string) || getReadableTextColor(customBgColor)
+			: isOutlined
+				? colors.fg
+				: colors.cardFg;
+	const descriptionColor = isHighlighted || customBgColor ? ink : colors.mutedFg;
+
+	const vars = {
+		"--ld-primary": colors.primary,
+		"--ld-glow": `0 0 0 1px color-mix(in srgb, ${colors.primary} 30%, transparent), 0 14px 40px -16px color-mix(in srgb, ${colors.primary} 40%, transparent)`,
+		outlineColor: colors.primary,
+	} as React.CSSProperties;
+	const cardStyle: React.CSSProperties = {
+		...vars,
+		backgroundColor: isOutlined
+			? "transparent"
+			: isHighlighted || customBgColor
+				? surface
+				: `color-mix(in srgb, ${surface} 85%, transparent)`,
+		borderColor: isHighlighted ? colors.primary : colors.border,
+		color: ink,
 	};
 
-	const textAlignClasses: Record<string, string> = {
-		left: "text-left",
-		center: "text-center",
-		right: "text-right",
+	const anchorProps = {
+		href: block.url || "#",
+		target: newTab ? "_blank" : undefined,
+		rel: config.noFollow ? "noopener noreferrer nofollow" : "noopener noreferrer",
+		onClick: handleClick,
 	};
 
-	const effectiveTextAlign = hasRichContent ? "left" : textAlign;
+	const iconOrEmoji = block.icon ? (
+		<BlockIcon icon={block.icon} />
+	) : emoji && emojiPosition === "left" ? (
+		<span className="text-xl leading-none" aria-hidden="true">
+			{emoji}
+		</span>
+	) : null;
 
-	const justifyClasses: Record<string, string> = {
-		left: "justify-start",
-		center: "justify-center",
-		right: "justify-end",
-	};
-
-	const baseClasses = hasRichContent
-		? `group block w-full px-6 py-5 font-semibold tracking-wide transition-all duration-300 hover:-translate-y-0.5 ${
-				radiusClasses[borderRadius] || "rounded-2xl"
-			} ${shadowClasses[shadow || "none"]} ${
-				textAlignClasses[effectiveTextAlign] || "text-center"
-			} ${animation && animationClasses[animation] ? animationClasses[animation] : ""}`
-		: `group relative flex items-center w-full py-4 px-6 font-semibold tracking-wide transition-all duration-300 hover:-translate-y-0.5 ${
-				justifyClasses[textAlign] || "justify-center"
-			} ${radiusClasses[borderRadius] || "rounded-2xl"} ${shadowClasses[shadow || "none"]} ${animation && animationClasses[animation] ? animationClasses[animation] : ""}`;
-
-	const style: React.CSSProperties = {
-		transition:
-			"background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, transform 0.3s cubic-bezier(0.4,0,0.2,1)",
-	};
-
-	if (isHighlighted && themeColors) {
-		style.backgroundColor = themeColors.primary;
-		// White-on-bright-primary fails contrast (1.37–2.58:1); pick the legible one.
-		style.color = getReadableTextColor(themeColors.primary);
-		style.boxShadow = `0 10px 25px -5px ${themeColors.primary}33`;
-	} else if (customBgColor) {
-		style.backgroundColor = customBgColor;
-		if (customTextColor) style.color = customTextColor;
-	} else if (isOutlined && themeColors) {
-		style.border = `2px solid ${themeColors.border}`;
-		style.color = themeColors.cardFg;
-		style.backgroundColor = "transparent";
+	// ── Featured: 16:9 cover, title as a solid pill over the bottom-left edge ──
+	if (variant === "featured" && thumbnail && !tile) {
+		return (
+			<a
+				{...anchorProps}
+				className="ld-link-block group block w-full rounded-2xl transition-transform duration-[220ms] ease-out hover:-translate-y-px active:scale-[.985] focus-visible:outline-2 focus-visible:outline-offset-2"
+				style={vars}
+			>
+				<span className="relative block">
+					<span
+						className="relative block overflow-hidden rounded-2xl border shadow-card transition-[border-color,box-shadow] duration-[220ms] ease-out group-hover:border-(--ld-primary) group-hover:shadow-(--ld-glow)"
+						style={{ borderColor: colors.border }}
+					>
+						<img
+							src={thumbnail}
+							alt={title}
+							loading="lazy"
+							className="aspect-video w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.02]"
+						/>
+						<Accent colors={colors} />
+					</span>
+					<span
+						className="absolute -bottom-3 left-3 inline-flex min-h-11 max-w-[calc(100%-1.5rem)] items-center gap-2 rounded-pill px-4 text-body font-semibold shadow-card"
+						style={{ backgroundColor: surface, color: ink }}
+					>
+						{iconOrEmoji}
+						<span className="truncate">{title}</span>
+					</span>
+				</span>
+				{description && (
+					<span
+						className="mt-5 block px-1 text-small line-clamp-2"
+						style={{ color: colors.mutedFg }}
+					>
+						{description}
+					</span>
+				)}
+			</a>
+		);
 	}
 
-	if (!isHighlighted && !customBgColor && !isOutlined) {
-		if (themeColors) {
-			// Solid theme card surface — reads as a tappable button over the flat page
-			// background instead of relying on a blur backdrop that has nothing behind it.
-			style.backgroundColor = themeColors.card;
-			style.borderColor = themeColors.border;
-			style.color = themeColors.cardFg;
-			style.boxShadow = `0 8px 20px -12px ${themeColors.primary}26`;
-		} else {
-			style.backgroundColor =
-				colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.7)";
-			style.borderColor = colorMode === "dark" ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.6)";
-			style.color = colorMode === "dark" ? "#ffffff" : "#0f172a";
-		}
+	// ── Tile (grid sections): square thumbnail / icon above a centered title ──
+	if (tile) {
+		return (
+			<a
+				{...anchorProps}
+				className={`${CARD} flex h-full min-h-11 flex-col items-center gap-2 overflow-hidden p-3 text-center ${radius}`}
+				style={cardStyle}
+			>
+				<Accent colors={colors} />
+				{thumbnail ? (
+					<img
+						src={thumbnail}
+						alt=""
+						loading="lazy"
+						className="aspect-square w-full rounded-xl object-cover"
+					/>
+				) : (
+					iconOrEmoji && (
+						<span
+							className="flex h-11 w-11 items-center justify-center rounded-xl"
+							style={{ backgroundColor: isHighlighted ? "transparent" : colors.muted }}
+						>
+							{iconOrEmoji}
+						</span>
+					)
+				)}
+				<span className="line-clamp-2 text-small font-semibold">{title}</span>
+				{description && (
+					<span className="line-clamp-1 text-micro" style={{ color: descriptionColor }}>
+						{description}
+					</span>
+				)}
+			</a>
+		);
 	}
 
-	const glassClasses =
-		!isHighlighted && !customBgColor && !isOutlined
-			? "hover:brightness-110 backdrop-blur-2xl border shadow-lg shadow-black/5"
-			: "";
-
-	const colorClasses = isHighlighted || customBgColor || isOutlined ? "" : glassClasses;
+	// ── Classic / thumbnail row: 60px card, 44×44 leading slot, trailing arrow ──
+	const lead =
+		variant === "thumbnail" && thumbnail ? (
+			<img src={thumbnail} alt="" loading="lazy" className="h-11 w-11 rounded-md object-cover" />
+		) : (
+			iconOrEmoji
+		);
+	const trail =
+		emoji && emojiPosition === "right" ? (
+			<span className="text-xl leading-none" aria-hidden="true">
+				{emoji}
+			</span>
+		) : (
+			<ArrowRight
+				className="h-5 w-5 opacity-40 transition-[opacity,transform] duration-[220ms] ease-out group-hover:translate-x-0.5 group-hover:opacity-80"
+				aria-hidden="true"
+			/>
+		);
 
 	return (
 		<a
-			href={block.url || "#"}
-			target={openInNewTab ? "_blank" : "_self"}
-			rel={openInNewTab ? "noopener noreferrer" : undefined}
-			onClick={handleClick}
-			className={`ld-link-block ${baseClasses} ${colorClasses} focus-visible:outline-2 focus-visible:outline-offset-2`}
-			style={{ ...style, outlineColor: themeColors?.primary || "#3b82f6" }}
+			{...anchorProps}
+			className={`${CARD} flex min-h-[60px] items-center gap-3 overflow-hidden py-2 pl-3 pr-2 ${radius}`}
+			style={cardStyle}
 		>
-			{hasRichContent ? (
-				<span className="flex items-center gap-2">
-					{emoji && emojiPosition === "left" && (
-						<span className="shrink-0" aria-hidden="true">
-							{emoji}
-						</span>
-					)}
-					<span className="flex-1 min-w-0">
-						<span className="block">{block.title || "Untitled Link"}</span>
-						{description && (
-							<span
-								className="block text-xs font-normal opacity-70 truncate mt-0.5"
-								title={description}
-							>
-								{description}
-							</span>
-						)}
-					</span>
-					{emoji && emojiPosition === "right" && (
-						<span className="shrink-0" aria-hidden="true">
-							{emoji}
-						</span>
-					)}
-					{thumbnail && (
-						<img src={thumbnail} alt="" className="h-12 w-12 shrink-0 rounded-md object-cover" />
-					)}
-				</span>
+			<Accent colors={colors} />
+			{lead ? (
+				<span className="flex h-11 w-11 shrink-0 items-center justify-center">{lead}</span>
 			) : (
-				<span className="inline-flex items-center gap-2 pr-12 overflow-hidden">
-					{emoji && emojiPosition === "left" && (
-						<span className="shrink-0" aria-hidden="true">
-							{emoji}
-						</span>
-					)}
-					<span className="truncate">{block.title || "Untitled Link"}</span>
-					{emoji && emojiPosition === "right" && (
-						<span className="shrink-0" aria-hidden="true">
-							{emoji}
-						</span>
-					)}
-					<ArrowRight
-						className="absolute right-4 h-4 w-4 shrink-0 opacity-30 group-hover:opacity-70 group-hover:translate-x-0.5 transition-all duration-300"
-						aria-hidden="true"
-					/>
-				</span>
+				// Balance the trailing 44px slot so a centered title is truly centered.
+				textAlign === "center" && <span className="w-11 shrink-0" aria-hidden="true" />
 			)}
+			<span className={`min-w-0 flex-1 ${textAlignClasses[textAlign] || "text-center"}`}>
+				<span className="block truncate text-body font-semibold">{title}</span>
+				{description && (
+					<span
+						className="line-clamp-1 block text-small font-normal"
+						style={{ color: descriptionColor }}
+						title={description}
+					>
+						{description}
+					</span>
+				)}
+			</span>
+			<span className="flex h-11 w-11 shrink-0 items-center justify-center">{trail}</span>
 		</a>
 	);
 }

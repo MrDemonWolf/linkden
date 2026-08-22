@@ -23,6 +23,7 @@ import {
 	sortableKeyboardCoordinates,
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import type { EmbedType } from "@linkden/validators/blocks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Blocks, Globe, Plus, Rocket, Smartphone, Upload, User } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -34,6 +35,7 @@ import {
 	BLOCK_TYPES,
 	type Block,
 	type BlockType,
+	DEFAULT_BLOCK_CONFIG,
 	generateId,
 	TYPE_CHIP,
 } from "@/components/admin/builder/builder-constants";
@@ -165,16 +167,9 @@ export default function BuilderPage() {
 			connect: "Connect With Me",
 			vcard: "Download Contact",
 			location: "Location",
-		};
-		const defaultConfigs: Partial<Record<string, string>> = {
-			vcard: JSON.stringify({ buttonText: "Download Contact", buttonEmoji: "" }),
-			connect: JSON.stringify({
-				preset: "contact",
-				buttonText: "Contact Me",
-				buttonEmoji: "",
-				successMessage: "Thanks for reaching out!",
-			}),
-			location: JSON.stringify({ address: "", linkType: "none" }),
+			image: "Image",
+			text: "Text",
+			divider: "Divider",
 		};
 		try {
 			await createBlock.mutateAsync({
@@ -183,7 +178,7 @@ export default function BuilderPage() {
 				title: defaults[type] ?? "New Block",
 				position,
 				isEnabled: true,
-				config: defaultConfigs[type],
+				config: JSON.stringify(DEFAULT_BLOCK_CONFIG[type]),
 			});
 			invalidate();
 			setNewlyAddedId(id);
@@ -217,9 +212,8 @@ export default function BuilderPage() {
 								title: block.title ?? undefined,
 								url: block.url ?? undefined,
 								icon: block.icon ?? undefined,
-								embedType: block.embedType ?? undefined,
+								embedType: (block.embedType as EmbedType | null) ?? undefined,
 								embedUrl: block.embedUrl ?? undefined,
-								socialIcons: block.socialIcons ?? undefined,
 								isEnabled: block.isEnabled,
 								position: block.position,
 								scheduledStart: block.scheduledStart ?? undefined,
@@ -266,9 +260,8 @@ export default function BuilderPage() {
 				title: data.title ?? undefined,
 				url: data.url ?? undefined,
 				icon: data.icon ?? undefined,
-				embedType: data.embedType ?? undefined,
+				embedType: (data.embedType as EmbedType | null) ?? undefined,
 				embedUrl: data.embedUrl ?? undefined,
-				socialIcons: data.socialIcons ?? undefined,
 				config: data.config ?? undefined,
 				scheduledStart: data.scheduledStart,
 				scheduledEnd: data.scheduledEnd,

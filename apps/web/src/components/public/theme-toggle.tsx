@@ -1,27 +1,31 @@
 import type { ThemeColors } from "./public-page";
 
+/** 44×44 glass circle. Positioning is the parent's job (PublicPage's top-right cluster). */
 interface ThemeToggleProps {
 	colorMode: "light" | "dark";
 	onToggle: () => void;
 	themeColors?: ThemeColors;
 }
 
+/** Translucent theme-card surface shared by the floating controls (toggle, share, admin pill). */
+export function glassStyle(themeColors: ThemeColors): React.CSSProperties {
+	return {
+		backgroundColor: `${themeColors.card}cc`,
+		color: themeColors.cardFg,
+		border: `1px solid ${themeColors.border}`,
+		backdropFilter: "blur(12px)",
+		WebkitBackdropFilter: "blur(12px)",
+		transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
+	};
+}
+
 export function ThemeToggle({ colorMode, onToggle, themeColors }: ThemeToggleProps) {
-	const style: React.CSSProperties = themeColors
-		? {
-				backgroundColor: `${themeColors.card}cc`,
-				color: themeColors.cardFg,
-				border: `1px solid ${themeColors.border}`,
-				backdropFilter: "blur(12px)",
-				WebkitBackdropFilter: "blur(12px)",
-				transition: "background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease",
-			}
-		: {};
+	const style = themeColors ? glassStyle(themeColors) : {};
 
 	return (
 		<button
 			onClick={onToggle}
-			className={`fixed right-4 top-4 z-50 rounded-full p-3 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-current ${
+			className={`inline-flex h-11 w-11 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-current ${
 				themeColors
 					? ""
 					: colorMode === "dark"

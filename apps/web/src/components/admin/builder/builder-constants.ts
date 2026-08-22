@@ -1,6 +1,16 @@
 import { type BlockType, blockTypeSchema, EMBED_PROVIDERS } from "@linkden/validators/blocks";
 import type { LucideIcon } from "lucide-react";
-import { Code, Contact, Link as LinkIcon, MapPin, Type, Users } from "lucide-react";
+import {
+	AlignLeft,
+	Code,
+	Contact,
+	Image,
+	Link as LinkIcon,
+	MapPin,
+	Minus,
+	Type,
+	Users,
+} from "lucide-react";
 
 export type { BlockType };
 
@@ -26,7 +36,35 @@ export const BLOCK_TYPES: ReadonlyArray<{
 		icon: MapPin,
 		description: "Show your location on a map",
 	},
+	{
+		type: "image",
+		label: "Image",
+		icon: Image,
+		description: "Photo with optional caption and link",
+	},
+	{ type: "text", label: "Text", icon: AlignLeft, description: "A short paragraph" },
+	{ type: "divider", label: "Divider", icon: Minus, description: "Line or spacing" },
 ];
+
+// Config a freshly added block starts with (PR4 wires it into handleAddBlock).
+// An image block is valid with an empty `src` — the renderer skips it until the
+// user uploads a picture.
+export const DEFAULT_BLOCK_CONFIG: Record<BlockType, object> = {
+	link: {},
+	header: {},
+	embed: {},
+	connect: {
+		preset: "contact",
+		buttonText: "Contact Me",
+		buttonEmoji: "",
+		successMessage: "Thanks for reaching out!",
+	},
+	vcard: { buttonText: "Download Contact", buttonEmoji: "" },
+	location: { address: "", linkType: "none" },
+	image: { src: "", alt: "", aspect: "16:9" },
+	text: { body: "Write something here." },
+	divider: { style: "line", size: "md" },
+};
 
 // Runtime sanity: BLOCK_TYPES must list every BlockType from the validator enum.
 if (process.env.NODE_ENV !== "production") {

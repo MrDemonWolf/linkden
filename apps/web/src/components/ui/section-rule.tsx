@@ -21,7 +21,7 @@ export function SectionRule({
 	return (
 		<div className={cn("flex items-center gap-3", className)}>
 			<span aria-hidden className="h-0.5 w-4 shrink-0 rounded-full bg-[image:var(--signal)]" />
-			<Tag className="shrink-0 font-display font-semibold tracking-tight">{children}</Tag>
+			<Tag className="min-w-0 font-display font-semibold tracking-tight">{children}</Tag>
 			<span
 				aria-hidden
 				className={cn("h-px min-w-4 flex-1 bg-[color:var(--rule)]", ruleClassName)}

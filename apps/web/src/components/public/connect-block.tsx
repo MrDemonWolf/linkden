@@ -3,6 +3,7 @@
 import { getReadableTextColor } from "@linkden/ui/color-contrast";
 import { useMutation } from "@tanstack/react-query";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { trackClick } from "@/lib/track";
 import { trpc } from "@/utils/trpc";
 import { usePreview } from "./preview-context";
 import type { ThemeColors } from "./public-page";
@@ -332,6 +333,7 @@ function ConnectForm({
 	const submitContact = useMutation({
 		...trpc.public.submitContact.mutationOptions(),
 		onSuccess: () => {
+			trackClick(blockId, { preview: !!isPreview });
 			setSubmitted(true);
 			setFormData({
 				firstName: "",
@@ -450,7 +452,7 @@ function ConnectForm({
 				<button
 					type="button"
 					onClick={() => setSubmitted(false)}
-					className="mt-3 text-xs transition-colors hover:opacity-70"
+					className="mt-3 min-h-11 px-3 text-small underline underline-offset-4 transition-colors hover:opacity-70"
 					style={{ color: primaryColor }}
 				>
 					Send another message
@@ -546,7 +548,7 @@ function ConnectForm({
 						aria-invalid={errors.consent ? true : undefined}
 					/>
 					<span
-						className="text-xs leading-relaxed"
+						className="text-small leading-relaxed"
 						style={{
 							color: themeColors?.mutedFg || (colorMode === "dark" ? "#9ca3af" : "#6b7280"),
 						}}
@@ -578,7 +580,7 @@ function ConnectForm({
 			<button
 				type="submit"
 				disabled={submitContact.isPending}
-				className="w-full rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 hover:brightness-110"
+				className="min-h-11 w-full rounded-xl px-4 py-3 text-small font-semibold transition-all duration-200 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 hover:brightness-110"
 				style={{
 					backgroundColor: primaryColor,
 					color: getReadableTextColor(primaryColor),
