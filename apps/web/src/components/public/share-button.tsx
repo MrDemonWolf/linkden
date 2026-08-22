@@ -49,8 +49,13 @@ export function ShareButton({ title, themeColors }: { title: string; themeColors
 		color: themeColors.cardFg,
 		borderColor: themeColors.border,
 	};
+	// The highlight fill alone is invisible on the presets where `muted`
+	// equals `card` (most dark ones), so the roving focus also draws a 2px
+	// outline in the theme's primary colour — the same indicator the page's
+	// links use — independent of the muted token.
 	const itemClass =
-		"flex min-h-11 cursor-default select-none items-center gap-2.5 rounded-lg px-3 text-small outline-none data-[highlighted]:bg-(--ld-muted)";
+		"flex min-h-11 cursor-default select-none items-center gap-2.5 rounded-lg px-3 text-small outline-none data-[highlighted]:bg-(--ld-muted) data-[highlighted]:outline-solid data-[highlighted]:outline-2 data-[highlighted]:-outline-offset-2";
+	const itemStyle: React.CSSProperties = { outlineColor: themeColors.primary };
 
 	return (
 		<>
@@ -68,7 +73,7 @@ export function ShareButton({ title, themeColors }: { title: string; themeColors
 							className="min-w-44 rounded-xl border p-1 shadow-card outline-none data-[open]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:fade-in-0 duration-150"
 							style={{ ...surface, "--ld-muted": themeColors.muted } as React.CSSProperties}
 						>
-							<Menu.Item className={itemClass} onClick={share}>
+							<Menu.Item className={itemClass} style={itemStyle} onClick={share}>
 								{canShare ? (
 									<Share2 className="h-4 w-4" aria-hidden="true" />
 								) : (
@@ -76,7 +81,7 @@ export function ShareButton({ title, themeColors }: { title: string; themeColors
 								)}
 								{canShare ? "Share…" : "Copy link"}
 							</Menu.Item>
-							<Menu.Item className={itemClass} onClick={openQr}>
+							<Menu.Item className={itemClass} style={itemStyle} onClick={openQr}>
 								<QrCode className="h-4 w-4" aria-hidden="true" />
 								QR code
 							</Menu.Item>
@@ -86,7 +91,10 @@ export function ShareButton({ title, themeColors }: { title: string; themeColors
 			</Menu.Root>
 
 			<Dialog open={qr !== null} onOpenChange={(open) => !open && setQr(null)}>
-				<DialogContent className="max-w-xs rounded-2xl" style={surface}>
+				<DialogContent
+					className="max-w-xs rounded-2xl [&_[data-slot=dialog-close]]:focus:ring-current"
+					style={surface}
+				>
 					<DialogTitle style={{ color: themeColors.cardFg }}>Scan to open this page</DialogTitle>
 					<DialogDescription style={{ color: themeColors.mutedFg }}>
 						Point a phone camera at the code.

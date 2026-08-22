@@ -1,20 +1,20 @@
-import { router, protectedProcedure } from "../index";
 import { db } from "@linkden/db";
 import { siteSettings } from "@linkden/db/schema/index";
-import { eq } from "drizzle-orm";
-import { z } from "zod";
-import { sanitizeUrl, stripHtml } from "../utils/sanitize";
-import { runBatch, settingUpsertStmt, upsertSetting } from "../utils/settings";
-import { logAudit } from "../utils/audit";
 import { settingKeySchema, VALID_SETTING_KEYS } from "@linkden/validators/settings";
 import {
-	CAPTCHA_PROVIDERS,
 	getSettingMeta,
 	isSecretKey,
-	maskSecret,
 	MAX_SETTING_VALUE_LENGTH,
+	maskSecret,
 	SECRET_MASK,
 } from "@linkden/validators/settings-registry";
+import { TRPCError } from "@trpc/server";
+import { eq } from "drizzle-orm";
+import { z } from "zod";
+import { protectedProcedure, router } from "../index";
+import { logAudit } from "../utils/audit";
+import { sanitizeUrl, stripHtml } from "../utils/sanitize";
+import { runBatch, settingUpsertStmt, upsertSetting } from "../utils/settings";
 
 // ─── Settings Router ───────────────────────────────────────────────────────
 // Settings are key-value pairs stored in site_settings. The key whitelist
@@ -49,65 +49,54 @@ function sanitizeCss(css: string): string {
 		.replace(/-moz-binding\s*:/gi, "");
 }
 
+const bad = (message: string) => new TRPCError({ code: "BAD_REQUEST", message });
+
 // Exported so backup.import runs the same whitelist + sanitization pipeline
-// instead of raw upserts. Per-key behavior comes from the settings registry.
+// instead of raw upserts. Per-key behavior comes from the settings registry;
+// invalid values throw BAD_REQUEST (backup.import catches and skips them).
 export function sanitizeSetting(key: string, value: string): string {
 	const meta = getSettingMeta(key);
-	switch (meta?.kind) {
-		case "text": {
-			let sanitized = stripHtml(value);
-			if (meta.maxLength && sanitized.length > meta.maxLength) {
-				sanitized = sanitized.slice(0, meta.maxLength);
-			}
-			return sanitized;
-		}
+	if (!meta) throw bad(`Unknown setting: ${key}`);
+	// text/apiKey clamp to maxLength; every other bounded kind rejects overflow.
+	const clamps = meta.kind === "text" || meta.kind === "apiKey";
+	if (meta.maxLength && !clamps && value.length > meta.maxLength) {
+		throw bad(`${key} exceeds ${meta.maxLength} characters`);
+	}
+	switch (meta.kind) {
+		case "text":
+			return stripHtml(value).slice(0, meta.maxLength ?? MAX_SETTING_VALUE_LENGTH);
 		case "url":
-			if (value && !isValidUrl(value)) throw new Error(`Invalid URL for ${key}`);
+			if (value && (value.length > 2048 || !isValidUrl(value))) throw bad(`Invalid URL for ${key}`);
 			return value;
 		case "color":
-			if (value && !isValidHexColor(value)) {
-				throw new Error(`Invalid color for ${key}: must be #RRGGBB`);
-			}
+			if (value && !isValidHexColor(value)) throw bad(`Invalid color for ${key}: must be #RRGGBB`);
 			return value;
 		case "css":
 			return sanitizeCss(value);
 		case "timezone": {
 			if (value === "") return value; // empty = browser default
+			let supported: string[] | undefined;
 			try {
-				const supported = Intl.supportedValuesOf("timeZone");
-				if (!supported.includes(value)) throw new Error(`Invalid timezone: ${value}`);
-			} catch (e) {
-				if (e instanceof Error && e.message.startsWith("Invalid timezone")) throw e;
+				supported = Intl.supportedValuesOf("timeZone");
+			} catch {
 				// Intl.supportedValuesOf not available — skip validation
 			}
-			return value;
-		}
-		case "emailProvider": {
-			const allowed = ["resend", "sendgrid", "mailgun", "smtp", "cloudflare", "none"];
-			if (value && !allowed.includes(value)) throw new Error(`Invalid email provider: ${value}`);
+			if (supported && !supported.includes(value)) throw bad(`Invalid timezone: ${value}`);
 			return value;
 		}
 		case "emailFrom":
-			if (value && !value.includes("@")) throw new Error("Invalid email address for email_from");
+			if (value && !value.includes("@")) throw bad("Invalid email address for email_from");
 			return value;
-		case "apiKey": {
+		case "apiKey":
 			// biome-ignore lint/suspicious/noControlCharactersInRegex: intentionally strips control characters
-			const cleaned = value.replace(/[\x00-\x1f\x7f]/g, "");
-			const cap = meta.maxLength ?? 512;
-			return cleaned.length > cap ? cleaned.slice(0, cap) : cleaned;
-		}
+			return value.replace(/[\x00-\x1f\x7f]/g, "").slice(0, meta.maxLength ?? 512);
 		case "boolean":
-			return value === "true" ? "true" : "false";
-		case "contactDelivery": {
-			const allowed = ["email", "database", "both"];
-			return value && !allowed.includes(value) ? "database" : value;
-		}
-		case "captchaProvider":
-			if (value && !CAPTCHA_PROVIDERS.includes(value as (typeof CAPTCHA_PROVIDERS)[number])) {
-				throw new Error(`Invalid CAPTCHA provider: ${value}`);
-			}
+			if (value !== "true" && value !== "false") throw bad(`${key} must be "true" or "false"`);
 			return value;
-		default:
+		case "enum":
+			if (value && !meta.values.includes(value)) throw bad(`Invalid value for ${key}: ${value}`);
+			return value;
+		case "opaque":
 			return value;
 	}
 }

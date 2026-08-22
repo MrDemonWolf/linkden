@@ -1,14 +1,59 @@
 "use client";
 
-import { Check, Sparkles, Upload, Image as ImageIcon } from "lucide-react";
 import type { BannerPreset } from "@linkden/ui";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { httpUrlSchema } from "@linkden/validators/blocks";
+import { SETTING_REGISTRY } from "@linkden/validators/settings-registry";
+import { Check, Image as ImageIcon, Sparkles, Upload } from "lucide-react";
+import { z } from "zod";
+import { FieldError } from "@/components/admin/field-feedback";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { ShaderBanner } from "@/components/public/shader-banner";
-import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { replaceTemplateVars } from "@/lib/format";
 import { getLoginBgPresets } from "@/lib/login-bg";
+import { cn } from "@/lib/utils";
+import { fieldError } from "@/lib/validate";
+
+// Same caps the server applies (it truncates silently past them).
+const SITE_NAME_MAX = SETTING_REGISTRY.branding_site_name?.maxLength ?? 50;
+const FOOTER_TEXT_MAX = SETTING_REGISTRY.branding_text?.maxLength ?? 100;
+
+/** Blank means "cleared"; only filled URLs are checked. */
+function urlError(value: string): string | null {
+	return value ? fieldError(httpUrlSchema, value) : null;
+}
+
+/**
+ * Field → message for invalid branding values; `{}` when all valid. Hidden
+ * fields (footer link while the footer is off, legal URLs in text mode) are
+ * skipped. Upload fields hold relative `/api/images/…` paths and are not URLs.
+ */
+export function brandingErrors(v: {
+	siteName: string;
+	footerBrandingEnabled: boolean;
+	footerBrandingText: string;
+	footerBrandingLink: string;
+	ppMode: string;
+	ppUrl: string;
+	tosMode: string;
+	tosUrl: string;
+}): Record<string, string> {
+	const errors: Record<string, string> = {};
+	const siteName = fieldError(z.string().max(SITE_NAME_MAX), v.siteName);
+	if (siteName) errors.siteName = siteName;
+	if (v.footerBrandingEnabled) {
+		const text = fieldError(z.string().max(FOOTER_TEXT_MAX), v.footerBrandingText);
+		if (text) errors.footerBrandingText = text;
+		const link = urlError(v.footerBrandingLink);
+		if (link) errors.footerBrandingLink = link;
+	}
+	const pp = v.ppMode === "url" ? urlError(v.ppUrl) : null;
+	if (pp) errors.ppUrl = pp;
+	const tos = v.tosMode === "url" ? urlError(v.tosUrl) : null;
+	if (tos) errors.tosUrl = tos;
+	return errors;
+}
 
 interface BrandingSectionProps {
 	siteName: string;
@@ -158,6 +203,16 @@ export function BrandingSection({
 }: BrandingSectionProps) {
 	const loginBgPresets = getLoginBgPresets();
 	const resolvedBgMode = loginBgMode || "default";
+	const errors = brandingErrors({
+		siteName,
+		footerBrandingEnabled,
+		footerBrandingText,
+		footerBrandingLink,
+		ppMode,
+		ppUrl,
+		tosMode,
+		tosUrl,
+	});
 	return (
 		<div className="space-y-6">
 			{/* Site Name */}
@@ -168,11 +223,16 @@ export function BrandingSection({
 					value={siteName}
 					onChange={(e) => onSiteNameChange(e.target.value)}
 					placeholder="LinkDen"
-					maxLength={50}
+					maxLength={SITE_NAME_MAX}
+					aria-invalid={!!errors.siteName}
+					aria-describedby={
+						errors.siteName ? "branding-site-name-error" : "branding-site-name-hint"
+					}
 				/>
-				<p className="text-micro text-muted-foreground">
+				<p id="branding-site-name-hint" className="text-micro text-muted-foreground">
 					Displayed in sidebar, login page, and browser tab
 				</p>
+				<FieldError id="branding-site-name-error" error={errors.siteName} />
 			</div>
 
 			{/* Logo + Favicon side by side */}
@@ -335,7 +395,13 @@ export function BrandingSection({
 								value={footerBrandingText}
 								onChange={(e) => onFooterBrandingTextChange(e.target.value)}
 								placeholder="Powered by LinkDen"
+								maxLength={FOOTER_TEXT_MAX}
+								aria-invalid={!!errors.footerBrandingText}
+								aria-describedby={
+									errors.footerBrandingText ? "branding-footer-text-error" : undefined
+								}
 							/>
+							<FieldError id="branding-footer-text-error" error={errors.footerBrandingText} />
 							<p className="text-micro text-muted-foreground leading-tight">
 								Variables: <code className="rounded bg-muted px-1">{"{{year}}"}</code>{" "}
 								<code className="rounded bg-muted px-1">{"{{copyright}}"}</code>{" "}
@@ -356,8 +422,15 @@ export function BrandingSection({
 								id="branding-footer-link"
 								value={footerBrandingLink}
 								onChange={(e) => onFooterBrandingLinkChange(e.target.value)}
-								placeholder="https://linkden.io"
+								placeholder="https://yourdomain.com"
+								type="url"
+								inputMode="url"
+								aria-invalid={!!errors.footerBrandingLink}
+								aria-describedby={
+									errors.footerBrandingLink ? "branding-footer-link-error" : undefined
+								}
 							/>
+							<FieldError id="branding-footer-link-error" error={errors.footerBrandingLink} />
 						</div>
 					</div>
 				)}
@@ -379,7 +452,10 @@ export function BrandingSection({
 								type="url"
 								value={ppUrl}
 								onChange={(e) => onPpUrlChange(e.target.value)}
-								placeholder="https://example.com/privacy"
+								placeholder="https://yourdomain.com/privacy"
+								inputMode="url"
+								aria-invalid={!!errors.ppUrl}
+								aria-describedby={errors.ppUrl ? "branding-pp-error" : undefined}
 							/>
 						) : (
 							<textarea
@@ -391,6 +467,7 @@ export function BrandingSection({
 								rows={4}
 							/>
 						)}
+						<FieldError id="branding-pp-error" error={errors.ppUrl} />
 					</div>
 					<div className="space-y-1.5">
 						<div className="flex items-center gap-2">
@@ -403,7 +480,10 @@ export function BrandingSection({
 								type="url"
 								value={tosUrl}
 								onChange={(e) => onTosUrlChange(e.target.value)}
-								placeholder="https://example.com/terms"
+								placeholder="https://yourdomain.com/terms"
+								inputMode="url"
+								aria-invalid={!!errors.tosUrl}
+								aria-describedby={errors.tosUrl ? "branding-tos-error" : undefined}
 							/>
 						) : (
 							<textarea
@@ -415,6 +495,7 @@ export function BrandingSection({
 								rows={4}
 							/>
 						)}
+						<FieldError id="branding-tos-error" error={errors.tosUrl} />
 					</div>
 				</div>
 			</div>

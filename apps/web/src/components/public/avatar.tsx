@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { getReadableTextColor } from "@linkden/ui/color-contrast";
+import { useState } from "react";
+import { initials } from "@/lib/format";
 import { getGravatarUrl } from "@/lib/gravatar";
 
 interface AvatarProps {
@@ -35,12 +36,7 @@ export function Avatar({
 }: AvatarProps) {
 	const [imgError, setImgError] = useState(false);
 
-	const initials = name
-		.split(" ")
-		.map((n) => n[0])
-		.join("")
-		.toUpperCase()
-		.slice(0, 2);
+	const fallbackInitials = initials(name);
 
 	const ringStyle: React.CSSProperties =
 		hasBanner && ringColor
@@ -80,7 +76,7 @@ export function Avatar({
 			role="img"
 			aria-label={name}
 		>
-			{initials}
+			{fallbackInitials}
 		</div>
 	);
 

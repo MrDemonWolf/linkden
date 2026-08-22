@@ -1,9 +1,10 @@
-import { router, protectedProcedure } from "../index";
 import { db } from "@linkden/db";
 import { socialNetwork } from "@linkden/db/schema/index";
-import { eq, asc } from "drizzle-orm";
+import { updateSocialSchema } from "@linkden/validators/social";
+import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { sanitizeUrl } from "../utils/sanitize";
+import { protectedProcedure, router } from "../index";
+import { runBatch } from "../utils/settings";
 
 export const socialRouter = router({
 	list: protectedProcedure
@@ -26,42 +27,20 @@ export const socialRouter = router({
 			return results;
 		}),
 
-	updateBulk: protectedProcedure
-		.input(
-			z
-				.array(
-					z.object({
-						slug: z.string(),
-						url: z.string().url().max(2048),
-						isActive: z.boolean(),
-					}),
-				)
-				.max(50),
-		)
-		.mutation(async ({ input }) => {
-			for (const item of input) {
-				const safeUrl = sanitizeUrl(item.url);
-				if (safeUrl) {
-					// Upsert: insert or update (persist row even if inactive, so URL isn't lost)
-					await db
-						.insert(socialNetwork)
-						.values({
-							slug: item.slug,
-							url: safeUrl,
-							isActive: item.isActive,
-						})
-						.onConflictDoUpdate({
-							target: socialNetwork.slug,
-							set: {
-								url: safeUrl,
-								isActive: item.isActive,
-							},
-						});
-				} else {
-					// No URL — delete the row if it exists
-					await db.delete(socialNetwork).where(eq(socialNetwork.slug, item.slug));
-				}
-			}
-			return { success: true };
-		}),
+	updateBulk: protectedProcedure.input(updateSocialSchema).mutation(async ({ input }) => {
+		// Slug + http(s) URL are enforced by the schema. An empty URL clears the
+		// network; otherwise upsert so an inactive row keeps its URL. All writes
+		// land in one atomic batch.
+		await runBatch(
+			input.map(({ slug, url, isActive }) =>
+				url
+					? db
+							.insert(socialNetwork)
+							.values({ slug, url, isActive })
+							.onConflictDoUpdate({ target: socialNetwork.slug, set: { url, isActive } })
+					: db.delete(socialNetwork).where(eq(socialNetwork.slug, slug)),
+			),
+		);
+		return { success: true };
+	}),
 });

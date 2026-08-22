@@ -46,7 +46,7 @@ export const BLOCK_TYPES: ReadonlyArray<{
 	{ type: "divider", label: "Divider", icon: Minus, description: "Line or spacing" },
 ];
 
-// Config a freshly added block starts with (PR4 wires it into handleAddBlock).
+// Config a freshly added block starts with (handleAddBlock sends it on create).
 // An image block is valid with an empty `src` — the renderer skips it until the
 // user uploads a picture.
 export const DEFAULT_BLOCK_CONFIG: Record<BlockType, object> = {

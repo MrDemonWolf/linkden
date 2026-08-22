@@ -35,7 +35,3 @@ export const CROP_PRESETS: Record<ImagePurpose, CropPreset> = {
 	block_thumbnail: { aspect: 1, maxSize: 256, format: "webp", dimensions: "256 × 256" },
 	block_image: { aspect: undefined, maxSize: 1600, format: "webp", dimensions: "≤ 1600" },
 };
-
-export function getCropPreset(purpose: ImagePurpose): CropPreset {
-	return CROP_PRESETS[purpose];
-}

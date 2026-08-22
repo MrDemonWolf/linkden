@@ -1,24 +1,27 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { hexColorSchema } from "@linkden/validators/blocks";
+import type { PassField, PassLocation, PassTemplatePreset } from "@linkden/validators/wallet";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Layers, Type } from "lucide-react";
-import { trpc } from "@/utils/trpc";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { ColorField } from "@/components/admin/color-field";
+import { FieldGroup } from "@/components/admin/settings/field-group";
+import type { PassZone } from "@/components/admin/wallet-pass-preview";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { FieldGroup } from "@/components/admin/settings/field-group";
-import type { PassField, PassLocation, PassTemplatePreset } from "@linkden/validators/wallet";
-import { TemplatePresetPicker } from "./template-preset-picker";
-import { PassImageSlots } from "./pass-image-slots";
-import { PassFieldEditor } from "./pass-field-editor";
+import { isoToLocal, localToIso } from "@/lib/format";
+import { fieldError } from "@/lib/validate";
+import { trpc } from "@/utils/trpc";
 import { ColorPalettePanel } from "./color-palette-panel";
 import { ContextPanel } from "./context-panel";
+import { PassFieldEditor } from "./pass-field-editor";
+import { PassImageSlots } from "./pass-image-slots";
+import { TemplatePresetPicker } from "./template-preset-picker";
 import { WalletTabBar } from "./wallet-tab-bar";
-import { ColorField } from "@/components/admin/color-field";
-import type { PassZone } from "@/components/admin/wallet-pass-preview";
 
 export interface WalletLiveState {
 	templatePreset: PassTemplatePreset;
@@ -39,20 +42,6 @@ export interface WalletLiveState {
 	showQrCode: boolean;
 	relevantDate: string; // datetime-local string ("" when unset)
 	locations: PassLocation[];
-}
-
-// datetime-local <-> ISO (stored as UTC ISO so Wallet gets an unambiguous time)
-function isoToLocal(iso: string | undefined): string {
-	if (!iso) return "";
-	const d = new Date(iso);
-	if (Number.isNaN(d.getTime())) return "";
-	const p = (n: number) => String(n).padStart(2, "0");
-	return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
-}
-function localToIso(local: string): string {
-	if (!local) return "";
-	const d = new Date(local);
-	return Number.isNaN(d.getTime()) ? "" : d.toISOString();
 }
 
 interface Props {
@@ -169,7 +158,17 @@ export function WalletBuilderSection({
 		onPreviewChange?.(state);
 	}, [state, onPreviewChange]);
 
+	// ColorField already flags a bad hex inline on blur; this stops the save
+	// (and the parent's saveRef) from sending what the server would reject.
+	const colorError = [state.backgroundColor, state.foregroundColor, state.labelColor].some(
+		(c) => c && fieldError(hexColorSchema, c),
+	);
+
 	const handleSave = useCallback(async () => {
+		if (colorError) {
+			toast.error("Fix the highlighted colour fields first");
+			return;
+		}
 		try {
 			await updateConfig.mutateAsync({
 				templatePreset: state.templatePreset,
@@ -200,7 +199,7 @@ export function WalletBuilderSection({
 		} catch {
 			toast.error("Failed to save wallet pass");
 		}
-	}, [state, updateConfig, qc]);
+	}, [state, updateConfig, qc, colorError]);
 
 	useEffect(() => {
 		if (saveRef) saveRef.current = handleSave;

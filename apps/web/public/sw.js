@@ -1,9 +1,18 @@
-// LinkDen Admin Service Worker — Network-first with cache fallback
-const CACHE_NAME = "linkden-admin-v1";
-const ADMIN_ASSET_PATTERN = /\.(js|css|woff2?|ttf|png|svg|ico)(\?.*)?$/;
+// LinkDen service worker — root scope. Bump CACHE_NAME whenever this file changes.
+//
+//   navigations        → network-first, cached copy on failure, then /offline
+//   /_next/static/*    → cache-first (content-hashed, immutable)
+//   /api, /trpc, POST… → never touched (auth + data must always hit the network)
+const CACHE_NAME = "linkden-v2";
+const OFFLINE_URL = "/offline";
 
-self.addEventListener("install", (_event) => {
-	self.skipWaiting();
+self.addEventListener("install", (event) => {
+	event.waitUntil(
+		caches
+			.open(CACHE_NAME)
+			.then((cache) => cache.add(new Request(OFFLINE_URL, { cache: "reload" })))
+			.then(() => self.skipWaiting()),
+	);
 });
 
 self.addEventListener("activate", (event) => {
@@ -22,30 +31,44 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-	const url = new URL(event.request.url);
-
-	// Only handle same-origin requests within /admin scope
+	const { request } = event;
+	if (request.method !== "GET") return;
+	const url = new URL(request.url);
 	if (url.origin !== self.location.origin) return;
-	if (!url.pathname.startsWith("/admin") && !ADMIN_ASSET_PATTERN.test(url.pathname)) return;
+	if (url.pathname.startsWith("/api") || url.pathname.startsWith("/trpc")) return;
 
-	// Only cache GET requests
-	if (event.request.method !== "GET") return;
-
-	// Network-first for static assets, network-only for everything else
-	if (ADMIN_ASSET_PATTERN.test(url.pathname)) {
+	if (request.mode === "navigate") {
 		event.respondWith(
-			fetch(event.request)
+			fetch(request)
 				.then((response) => {
 					if (response.ok) {
 						const clone = response.clone();
-						event.waitUntil(
-							caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone)),
-						);
+						event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)));
 					}
 					return response;
 				})
-				.catch(() => caches.match(event.request)),
+				.catch(async () => {
+					const cached = await caches.match(request);
+					return cached || caches.match(OFFLINE_URL);
+				}),
+		);
+		return;
+	}
+
+	if (url.pathname.startsWith("/_next/static/")) {
+		event.respondWith(
+			caches.match(request).then(
+				(cached) =>
+					cached ||
+					fetch(request).then((response) => {
+						if (response.ok) {
+							const clone = response.clone();
+							event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)));
+						}
+						return response;
+					}),
+			),
 		);
 	}
-	// Navigation and API requests — always network, no interception on failure
+	// Everything else: network only.
 });

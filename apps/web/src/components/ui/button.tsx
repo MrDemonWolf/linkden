@@ -1,6 +1,5 @@
-import type { VariantProps } from "class-variance-authority";
-
 import { Button as ButtonPrimitive } from "@base-ui/react/button";
+import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
@@ -50,11 +49,15 @@ function Button({
 	size = "default",
 	...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+	// A `render` prop means the button is rendered as something else (usually a
+	// Next <Link>), so tell Base UI not to expect native <button> semantics.
+	const nativeButton = props.nativeButton ?? props.render === undefined;
 	return (
 		<ButtonPrimitive
 			data-slot="button"
 			className={cn(buttonVariants({ variant, size, className }))}
 			{...props}
+			nativeButton={nativeButton}
 		/>
 	);
 }
