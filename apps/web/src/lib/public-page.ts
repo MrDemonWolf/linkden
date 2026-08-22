@@ -8,19 +8,25 @@ import { apiFetch } from "./server-api";
 // though this type says Date; the public page never reads them.
 type PublicPageData = inferRouterOutputs<AppRouter>["public"]["getPage"];
 
+export type PublicPageResult = { ok: true; data: PublicPageData } | { ok: false; data: null };
+
 /**
  * Server-side public page payload, deduped per request with React `cache` so
  * `generateMetadata` and the page RSC share one API call. Never throws —
- * returns `null` when the API is unreachable or responds with an error, which
- * callers treat the same as "no profile yet" (welcome page / defaults).
+ * `ok: false` means the API was unreachable or errored (the page shows a
+ * retryable error card); `ok: true` with no profile means "not set up yet".
  */
-export const getPublicPage = cache(async (): Promise<PublicPageData | null> => {
+export const getPublicPageResult = cache(async (): Promise<PublicPageResult> => {
 	try {
 		const res = await apiFetch("/trpc/public.getPage", { cache: "no-store" });
-		if (!res.ok) return null;
+		if (!res.ok) return { ok: false, data: null };
 		const json = (await res.json()) as { result?: { data?: PublicPageData } };
-		return json.result?.data ?? null;
+		return json.result?.data ? { ok: true, data: json.result.data } : { ok: false, data: null };
 	} catch {
-		return null;
+		return { ok: false, data: null };
 	}
 });
+
+/** Convenience for callers that only need the payload (metadata, manifest). */
+export const getPublicPage = async (): Promise<PublicPageData | null> =>
+	(await getPublicPageResult()).data;

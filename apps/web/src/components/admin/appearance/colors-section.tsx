@@ -100,12 +100,13 @@ export function ColorsSection({
 						onChange={onPrimaryChange}
 						contrastAgainst={bgColor ? { hex: bgColor, label: "background" } : undefined}
 					/>
+					{/* No contrast check: secondary is a surface tint, never text on the
+					    background — preset light secondaries are near-background by design. */}
 					<ColorField
 						id="color-secondary"
 						label="Secondary"
 						value={secondaryColor}
 						onChange={onSecondaryChange}
-						contrastAgainst={bgColor ? { hex: bgColor, label: "background" } : undefined}
 					/>
 					<ColorField
 						id="color-accent"

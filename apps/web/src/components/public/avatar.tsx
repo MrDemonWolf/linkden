@@ -59,17 +59,35 @@ export function Avatar({
 		? ""
 		: `ring-2 ring-offset-2 ${colorMode === "dark" ? "ring-white/30" : "ring-black/15"}`;
 
+	// Soft tinted fallback (mirrors admin icon tiles: low-alpha primary bg +
+	// primary text) instead of a saturated gradient disc. Hex-alpha concat only
+	// works on #RRGGBB values; anything else falls back to the solid primary.
+	const primaryIsHex6 = themeColors ? /^#[0-9a-fA-F]{6}$/.test(themeColors.primary) : false;
+
+	// Single subtle ring — the shared offset double ring reads too heavy on a
+	// tinted disc. (The banner boxShadow ring still applies via ringStyle.)
+	const fallbackRingClasses = hasBanner
+		? ""
+		: `ring-1 ${colorMode === "dark" ? "ring-white/15" : "ring-black/10"}`;
+
 	const fallbackDiv = (
 		<div
-			className={`${sizeClasses[size]} flex items-center justify-center rounded-full font-bold shadow-xl ${ringClasses} ${className ?? ""}`}
+			className={`${sizeClasses[size]} flex items-center justify-center rounded-full font-bold shadow-xl ${fallbackRingClasses} ${className ?? ""}`}
 			style={{
-				...(themeColors
+				...(themeColors && primaryIsHex6
 					? {
-							background: `linear-gradient(135deg, ${themeColors.primary}, ${themeColors.accent})`,
-							color: getReadableTextColor(themeColors.primary),
+							// Opaque tint: page bg under a 15% primary wash, so a banner
+							// can't bleed through a translucent disc.
+							backgroundColor: themeColors.bg ?? (colorMode === "dark" ? "#141416" : "#FFFFFF"),
+							backgroundImage: `linear-gradient(0deg, ${themeColors.primary}26, ${themeColors.primary}26)`,
+							color: themeColors.primary,
 						}
-					: { background: "linear-gradient(135deg, #0FACED, #38BDF8)", color: "#FFFFFF" }),
-				...ringOffsetStyle,
+					: themeColors
+						? {
+								backgroundColor: themeColors.primary,
+								color: getReadableTextColor(themeColors.primary),
+							}
+						: { backgroundColor: "#0FACED26", color: "#0FACED" }),
 				...ringStyle,
 				transition: `background 0.5s ease, color 0.5s ease${ringStyle.transition ? `, ${ringStyle.transition}` : ", box-shadow 0.5s ease"}`,
 			}}

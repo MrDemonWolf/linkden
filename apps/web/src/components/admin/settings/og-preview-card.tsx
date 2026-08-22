@@ -27,7 +27,7 @@ export function OgPreviewCard({ title, description, imageUrl, siteUrl }: OgPrevi
 				<p className="mb-1.5 text-micro font-medium uppercase tracking-wider text-muted-foreground">
 					Twitter / X
 				</p>
-				<div className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
+				<div className="max-w-md overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
 					{imageUrl ? (
 						<div className="aspect-[1.91/1] w-full overflow-hidden bg-muted">
 							{/* eslint-disable-next-line @next/next/no-img-element */}
@@ -53,7 +53,7 @@ export function OgPreviewCard({ title, description, imageUrl, siteUrl }: OgPrevi
 				<p className="mb-1.5 text-micro font-medium uppercase tracking-wider text-muted-foreground">
 					Facebook / LinkedIn
 				</p>
-				<div className="overflow-hidden rounded-lg border border-border/60 bg-muted/30 shadow-sm">
+				<div className="max-w-md overflow-hidden rounded-lg border border-border/60 bg-muted/30 shadow-sm">
 					{imageUrl ? (
 						<div className="aspect-[1.91/1] w-full overflow-hidden bg-muted">
 							{/* eslint-disable-next-line @next/next/no-img-element */}

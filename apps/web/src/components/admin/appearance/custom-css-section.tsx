@@ -8,10 +8,16 @@ import { cn } from "@/lib/utils";
 
 /* ---------- lightweight CodeMirror wrapper (lazy-loaded) ---------- */
 
+// If the lazy CodeMirror chunk hasn't arrived by then, fall back to a plain textarea
+const EDITOR_LOAD_TIMEOUT_MS = 8000;
+
 function CssEditor({ value, onChange }: { value: string; onChange: (value: string) => void }) {
 	const editorRef = useRef<HTMLDivElement>(null);
 	const viewRef = useRef<EditorView | null>(null);
 	const [loaded, setLoaded] = useState(false);
+	const [fallback, setFallback] = useState(false);
+	// Ref mirror of `fallback` so the async loader can bail without a stale closure
+	const fallbackRef = useRef(false);
 
 	// Keep a ref to the latest onChange so the editor extension stays stable
 	const onChangeRef = useRef(onChange);
@@ -21,6 +27,11 @@ function CssEditor({ value, onChange }: { value: string; onChange: (value: strin
 	useEffect(() => {
 		if (!editorRef.current) return;
 		let destroyed = false;
+
+		const fallbackTimer = setTimeout(() => {
+			fallbackRef.current = true;
+			setFallback(true);
+		}, EDITOR_LOAD_TIMEOUT_MS);
 
 		(async () => {
 			const {
@@ -40,7 +51,7 @@ function CssEditor({ value, onChange }: { value: string; onChange: (value: strin
 			);
 			const { closeBrackets, closeBracketsKeymap } = await import("@codemirror/autocomplete");
 
-			if (destroyed || !editorRef.current) return;
+			if (destroyed || fallbackRef.current || !editorRef.current) return;
 
 			const updateListener = EditorView.updateListener.of((update) => {
 				if (update.docChanged) {
@@ -110,11 +121,19 @@ function CssEditor({ value, onChange }: { value: string; onChange: (value: strin
 				parent: editorRef.current!,
 			});
 			viewRef.current = view;
+			clearTimeout(fallbackTimer);
 			setLoaded(true);
-		})();
+		})().catch(() => {
+			// Chunk failed to load — the textarea fallback takes over
+			if (!destroyed) {
+				fallbackRef.current = true;
+				setFallback(true);
+			}
+		});
 
 		return () => {
 			destroyed = true;
+			clearTimeout(fallbackTimer);
 			viewRef.current?.destroy();
 			viewRef.current = null;
 		};
@@ -133,6 +152,24 @@ function CssEditor({ value, onChange }: { value: string; onChange: (value: strin
 			});
 		}
 	}, [value]);
+
+	if (fallback && !loaded) {
+		return (
+			<div className="space-y-1.5">
+				<textarea
+					value={value}
+					onChange={(e) => onChange(e.target.value)}
+					rows={12}
+					spellCheck={false}
+					aria-label="Custom CSS"
+					className="w-full resize-y rounded-lg border border-border/60 bg-[#282c34] px-3 py-2 font-mono text-xs text-zinc-100 outline-none focus-visible:ring-1 focus-visible:ring-ring"
+				/>
+				<p className="text-[11px] text-muted-foreground">
+					The rich editor failed to load — using a plain text editor instead.
+				</p>
+			</div>
+		);
+	}
 
 	return (
 		<div className="relative">
