@@ -1,6 +1,6 @@
 "use client";
 
-import { Paintbrush, Sun, Moon, Monitor } from "lucide-react";
+import { Monitor, Moon, Paintbrush, Sun } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -18,7 +18,6 @@ export function ColorsSection({
 	secondaryColor,
 	accentColor,
 	bgColor,
-	previewDark = false,
 	onColorModeChange,
 	onPrimaryChange,
 	onSecondaryChange,
@@ -30,7 +29,6 @@ export function ColorsSection({
 	secondaryColor: string;
 	accentColor: string;
 	bgColor: string;
-	previewDark?: boolean;
 	onColorModeChange: (value: string) => void;
 	onPrimaryChange: (value: string) => void;
 	onSecondaryChange: (value: string) => void;
@@ -86,22 +84,12 @@ export function ColorsSection({
 					<div className="flex-1 transition-colors" style={{ backgroundColor: bgColor }} />
 				</div>
 
-				{/* Custom color pickers — light mode only */}
-				<div className="flex items-center justify-between gap-2">
-					<Label className="text-xs">Custom colors</Label>
-					<span className="rounded-full border border-border bg-muted px-2 py-0.5 text-micro font-medium text-muted-foreground">
-						Light mode only
-					</span>
-				</div>
+				{/* Custom color pickers apply in both light and dark mode (see getThemeColors) */}
+				<Label className="text-xs">Custom colors</Label>
 				<p className="text-micro text-muted-foreground -mt-2">
-					These override the preset&apos;s light palette. Dark mode always uses the selected
-					preset&apos;s built-in dark colors.
+					These override the preset in both light and dark mode. Leave a field empty to keep the
+					preset&apos;s color.
 				</p>
-				{previewDark && (
-					<p className="flex items-center gap-1.5 rounded-md border border-warning/30 bg-warning/10 px-2.5 py-1.5 text-micro text-warning">
-						You&apos;re previewing dark mode — changes below won&apos;t affect this preview.
-					</p>
-				)}
 
 				{/* Color pickers grid */}
 				<div className="grid gap-3 sm:grid-cols-2">
