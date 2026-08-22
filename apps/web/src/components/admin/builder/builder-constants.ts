@@ -1,6 +1,16 @@
-import { Link as LinkIcon, Type, Code, Contact, MapPin, Users } from "lucide-react";
+import { type BlockType, blockTypeSchema, EMBED_PROVIDERS } from "@linkden/validators/blocks";
 import type { LucideIcon } from "lucide-react";
-import { blockTypeSchema, type BlockType, EMBED_PROVIDERS } from "@linkden/validators/blocks";
+import {
+	AlignLeft,
+	Code,
+	Contact,
+	Image,
+	Link as LinkIcon,
+	MapPin,
+	Minus,
+	Type,
+	Users,
+} from "lucide-react";
 
 export type { BlockType };
 
@@ -26,7 +36,35 @@ export const BLOCK_TYPES: ReadonlyArray<{
 		icon: MapPin,
 		description: "Show your location on a map",
 	},
+	{
+		type: "image",
+		label: "Image",
+		icon: Image,
+		description: "Photo with optional caption and link",
+	},
+	{ type: "text", label: "Text", icon: AlignLeft, description: "A short paragraph" },
+	{ type: "divider", label: "Divider", icon: Minus, description: "Line or spacing" },
 ];
+
+// Config a freshly added block starts with (handleAddBlock sends it on create).
+// An image block is valid with an empty `src` — the renderer skips it until the
+// user uploads a picture.
+export const DEFAULT_BLOCK_CONFIG: Record<BlockType, object> = {
+	link: {},
+	header: {},
+	embed: {},
+	connect: {
+		preset: "contact",
+		buttonText: "Contact Me",
+		buttonEmoji: "",
+		successMessage: "Thanks for reaching out!",
+	},
+	vcard: { buttonText: "Download Contact", buttonEmoji: "" },
+	location: { address: "", linkType: "none" },
+	image: { src: "", alt: "", aspect: "16:9" },
+	text: { body: "Write something here." },
+	divider: { style: "line", size: "md" },
+};
 
 // Runtime sanity: BLOCK_TYPES must list every BlockType from the validator enum.
 if (process.env.NODE_ENV !== "production") {
@@ -94,34 +132,7 @@ export function blockTypeIcon(type: string) {
 	return found ? found.icon : LinkIcon;
 }
 
-export function blockTypeColor(type: string): string {
-	const map: Record<string, string> = {
-		link: "hsl(var(--primary))",
-		header: "#7C3AED",
-		embed: "#10B981",
-		connect: "#F59E0B",
-		vcard: "#EC4899",
-		location: "#3B82F6",
-	};
-	return map[type] ?? "hsl(var(--muted))";
-}
-
-export const TYPE_ACCENT: Record<string, string> = {
-	link: "bg-blue-500",
-	header: "bg-violet-500",
-	embed: "bg-emerald-500",
-	connect: "bg-amber-500",
-	vcard: "bg-pink-500",
-	location: "bg-sky-500",
-};
-
-// Badge/icon-chip tints. Text uses -700 in light (AA-legible on the -500/10
-// tint) and -400 in dark; background tint kept identical across modes.
-export const TYPE_BADGE_BG: Record<string, string> = {
-	link: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
-	header: "bg-violet-500/10 text-violet-700 dark:text-violet-400",
-	embed: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-	connect: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
-	vcard: "bg-pink-500/10 text-pink-700 dark:text-pink-400",
-	location: "bg-sky-500/10 text-sky-700 dark:text-sky-400",
-};
+// One chip tint for every block type. The per-type rainbow (blue/violet/
+// emerald/amber/pink/sky) was the only place in the admin using raw palette
+// classes; the block icon already carries the type.
+export const TYPE_CHIP = "bg-primary/10 text-primary";

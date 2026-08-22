@@ -1,20 +1,13 @@
+import { env } from "@linkden/env/web";
 import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-	const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL || "https://example.com";
-
 	return [
 		{
-			url: baseUrl,
+			url: env.NEXT_PUBLIC_SITE_URL,
 			lastModified: new Date(),
 			changeFrequency: "weekly",
 			priority: 1,
-		},
-		{
-			url: `${baseUrl}/qr`,
-			lastModified: new Date(),
-			changeFrequency: "monthly",
-			priority: 0.5,
 		},
 	];
 }

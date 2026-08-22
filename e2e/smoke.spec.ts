@@ -27,8 +27,8 @@ test("health endpoint responds through the web origin", async ({ request }) => {
 	expect(body.database).toBe("ok");
 });
 
-test("/api/og is served by Next, not proxied to the API", async ({ request }) => {
-	const res = await request.get("/api/og");
+test("/og is served by Next, not proxied to the API", async ({ request }) => {
+	const res = await request.get("/og");
 	expect(res.status()).toBe(200);
 	expect(res.headers()["content-type"]).toContain("image/png");
 });

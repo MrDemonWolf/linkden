@@ -1,6 +1,11 @@
 import { z } from "zod";
+import { hexColorSchema, httpUrlSchema } from "./blocks";
 
-const hexColorRegex = /^#[0-9a-fA-F]{6}$/;
+/** Empty string means "cleared" — the admin sends "" when a field is blanked. */
+const blankable = <T extends z.ZodType>(schema: T) => schema.optional().or(z.literal(""));
+
+/** PEM certificates / keys pasted into the signing form. */
+export const PEM_MAX_LENGTH = 20_000;
 
 export const PASS_TEMPLATE_PRESETS = [
 	"contact-card",
@@ -117,13 +122,13 @@ export const walletConfigSchema = z.object({
 	templatePreset: z.enum(PASS_TEMPLATE_PRESETS).optional(),
 	organizationName: z.string().max(100).optional(),
 	passDescription: z.string().max(200).optional(),
-	backgroundColor: z.string().regex(hexColorRegex).optional(),
-	foregroundColor: z.string().regex(hexColorRegex).optional(),
-	labelColor: z.string().regex(hexColorRegex).optional(),
-	logoUrl: z.string().url().optional().or(z.literal("")),
-	iconUrl: z.string().url().optional().or(z.literal("")),
-	thumbnailUrl: z.string().url().optional().or(z.literal("")),
-	stripUrl: z.string().url().optional().or(z.literal("")),
+	backgroundColor: blankable(hexColorSchema),
+	foregroundColor: blankable(hexColorSchema),
+	labelColor: blankable(hexColorSchema),
+	logoUrl: blankable(httpUrlSchema),
+	iconUrl: blankable(httpUrlSchema),
+	thumbnailUrl: blankable(httpUrlSchema),
+	stripUrl: blankable(httpUrlSchema),
 	headerFields: headerFieldsSchema.optional(),
 	primaryFields: primaryFieldsSchema.optional(),
 	secondaryFields: secondaryFieldsSchema.optional(),
@@ -133,6 +138,16 @@ export const walletConfigSchema = z.object({
 	locations: z.array(passLocationSchema).max(PASS_LOCATION_LIMIT).optional(),
 });
 export type WalletConfig = z.infer<typeof walletConfigSchema>;
+
+/** wallet.updateSigningKeys input — PEM blobs are bounded, ids are short. */
+export const walletSigningKeysSchema = z.object({
+	teamId: z.string().max(20).optional(),
+	passTypeId: z.string().max(100).optional(),
+	signerCert: z.string().max(PEM_MAX_LENGTH).optional(),
+	signerKey: z.string().max(PEM_MAX_LENGTH).optional(),
+	wwdrCert: z.string().max(PEM_MAX_LENGTH).optional(),
+});
+export type WalletSigningKeys = z.infer<typeof walletSigningKeysSchema>;
 
 export interface PresetSeed {
 	templatePreset: PassTemplatePreset;

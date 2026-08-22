@@ -1,13 +1,16 @@
 import { db } from "@linkden/db";
-import { siteSettings } from "@linkden/db/schema/index";
 import * as schema from "@linkden/db/schema/auth";
+import { siteSettings } from "@linkden/db/schema/index";
 import { createResendEmailService } from "@linkden/email";
 import { env } from "@linkden/env/server";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { twoFactor, magicLink } from "better-auth/plugins";
+import { magicLink, twoFactor } from "better-auth/plugins";
 
+import { cookieAttributes, sessionOptions } from "./auth-options";
 import { devLoginPlugin, isDevLoginEnabled } from "./dev-login";
+
+export { getSessionQuery } from "./auth-options";
 
 async function getEmailSettings() {
 	const allRows = await db.select().from(siteSettings);
@@ -21,8 +24,7 @@ async function getEmailSettings() {
 	};
 }
 
-// Single Resend path (via packages/email) for every auth email — no more three
-// hand-rolled fetches that silently ignored non-2xx responses.
+// Single Resend path (via packages/email) for every auth email.
 async function sendAuthEmail(to: string, subject: string, html: string): Promise<void> {
 	const { apiKey, from } = await getEmailSettings();
 	if (!apiKey) {
@@ -69,13 +71,9 @@ export const auth = betterAuth({
 			},
 		},
 	},
-	// uncomment cookieCache setting when ready to deploy to Cloudflare using *.workers.dev domains
-	// session: {
-	//   cookieCache: {
-	//     enabled: true,
-	//     maxAge: 60,
-	//   },
-	// },
+	// Signed-cookie session cache for reads; see auth-options.ts for the
+	// revocation trade-off and why mutations bypass it.
+	session: sessionOptions,
 	secret: env.BETTER_AUTH_SECRET,
 	baseURL: env.BETTER_AUTH_URL,
 	advanced: {
@@ -85,17 +83,7 @@ export const auth = betterAuth({
 		ipAddress: {
 			ipAddressHeaders: ["cf-connecting-ip"],
 		},
-		defaultCookieAttributes: {
-			sameSite: "lax",
-			secure: !!env.BETTER_AUTH_URL?.startsWith("https"),
-			httpOnly: true,
-		},
-		// uncomment crossSubDomainCookies setting when ready to deploy and replace <your-workers-subdomain> with your actual workers subdomain
-		// https://developers.cloudflare.com/workers/wrangler/configuration/#workersdev
-		// crossSubDomainCookies: {
-		//   enabled: true,
-		//   domain: "<your-workers-subdomain>",
-		// },
+		defaultCookieAttributes: cookieAttributes(env.BETTER_AUTH_URL),
 	},
 	plugins: [
 		// DEV ONLY: the bypass-login endpoint (POST /api/auth/dev-login) exists only

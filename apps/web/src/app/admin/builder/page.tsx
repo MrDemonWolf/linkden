@@ -23,6 +23,7 @@ import {
 	sortableKeyboardCoordinates,
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import type { EmbedType } from "@linkden/validators/blocks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Blocks, Globe, Plus, Rocket, Smartphone, Upload, User } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -34,15 +35,17 @@ import {
 	BLOCK_TYPES,
 	type Block,
 	type BlockType,
+	DEFAULT_BLOCK_CONFIG,
 	generateId,
-	TYPE_BADGE_BG,
+	TYPE_CHIP,
 } from "@/components/admin/builder/builder-constants";
 import { ProfileTab } from "@/components/admin/builder/profile-tab";
 import { SocialTab } from "@/components/admin/builder/social-tab";
 import { EmptyState } from "@/components/admin/empty-state";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
 import { PageHeader } from "@/components/admin/page-header";
-import { SharedPreview } from "@/components/admin/shared-preview";
+import { PagePreview, type PreviewBlock } from "@/components/admin/page-preview";
+import { PageShell } from "@/components/admin/page-shell";
 import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -111,8 +114,8 @@ export default function BuilderPage() {
 	const handleProfileDirtyChange = useCallback((dirty: boolean) => setProfileDirty(dirty), []);
 	const handleSocialDirtyChange = useCallback((dirty: boolean) => setSocialDirty(dirty), []);
 
-	const hasAnyChanges = hasDrafts || profileDirty || socialDirty;
-	useUnsavedChanges(hasAnyChanges);
+	// Drafts are already saved server-side — only in-flight form edits are "unsaved".
+	useUnsavedChanges(profileDirty || socialDirty);
 
 	useEffect(() => {
 		if (newlyAddedId && blocks.some((b) => b.id === newlyAddedId)) {
@@ -164,16 +167,9 @@ export default function BuilderPage() {
 			connect: "Connect With Me",
 			vcard: "Download Contact",
 			location: "Location",
-		};
-		const defaultConfigs: Partial<Record<string, string>> = {
-			vcard: JSON.stringify({ buttonText: "Download Contact", buttonEmoji: "" }),
-			connect: JSON.stringify({
-				preset: "contact",
-				buttonText: "Contact Me",
-				buttonEmoji: "",
-				successMessage: "Thanks for reaching out!",
-			}),
-			location: JSON.stringify({ address: "", linkType: "none" }),
+			image: "Image",
+			text: "Text",
+			divider: "Divider",
 		};
 		try {
 			await createBlock.mutateAsync({
@@ -182,7 +178,7 @@ export default function BuilderPage() {
 				title: defaults[type] ?? "New Block",
 				position,
 				isEnabled: true,
-				config: defaultConfigs[type],
+				config: JSON.stringify(DEFAULT_BLOCK_CONFIG[type]),
 			});
 			invalidate();
 			setNewlyAddedId(id);
@@ -216,9 +212,8 @@ export default function BuilderPage() {
 								title: block.title ?? undefined,
 								url: block.url ?? undefined,
 								icon: block.icon ?? undefined,
-								embedType: block.embedType ?? undefined,
+								embedType: (block.embedType as EmbedType | null) ?? undefined,
 								embedUrl: block.embedUrl ?? undefined,
-								socialIcons: block.socialIcons ?? undefined,
 								isEnabled: block.isEnabled,
 								position: block.position,
 								scheduledStart: block.scheduledStart ?? undefined,
@@ -260,15 +255,16 @@ export default function BuilderPage() {
 
 	const handleSaveEdit = async (data: Partial<Block>) => {
 		try {
+			// "" means "cleared" to updateBlockSchema (it becomes null in the row);
+			// only a missing key is "not provided", so null maps to "" here too.
 			await updateBlock.mutateAsync({
 				id: data.id!,
-				title: data.title ?? undefined,
-				url: data.url ?? undefined,
-				icon: data.icon ?? undefined,
-				embedType: data.embedType ?? undefined,
-				embedUrl: data.embedUrl ?? undefined,
-				socialIcons: data.socialIcons ?? undefined,
-				config: data.config ?? undefined,
+				title: data.title ?? "",
+				url: data.url ?? "",
+				icon: data.icon ?? "",
+				embedType: (data.embedType as EmbedType | null) ?? "",
+				embedUrl: data.embedUrl ?? "",
+				config: data.config ?? "{}",
 				scheduledStart: data.scheduledStart,
 				scheduledEnd: data.scheduledEnd,
 			});
@@ -323,27 +319,17 @@ export default function BuilderPage() {
 		}
 	};
 
-	const previewBlocksData = useMemo(() => {
+	// While a block is being edited, the preview shows the enabled blocks with
+	// the in-progress edits applied; otherwise PagePreview reads blocks itself.
+	const previewBlocks = useMemo<PreviewBlock[] | undefined>(() => {
+		if (!editingOverrides) return undefined;
 		return blocks
 			.filter((b) => b.isEnabled)
-			.map((b) => {
-				const base = {
-					id: b.id,
-					type: b.type,
-					title: b.title,
-					url: b.url,
-					icon: b.icon,
-					embedType: b.embedType,
-					embedUrl: b.embedUrl,
-					socialIcons: b.socialIcons,
-					config: b.config,
-					position: b.position,
-				};
-				if (editingOverrides && editingOverrides.id === b.id) {
-					return { ...base, ...editingOverrides, position: base.position, type: base.type };
-				}
-				return base;
-			});
+			.map((b) =>
+				b.id === editingOverrides.id
+					? { ...b, ...editingOverrides, position: b.position, type: b.type }
+					: b,
+			);
 	}, [blocks, editingOverrides]);
 
 	const activeBlock = activeId ? blocks.find((b) => b.id === activeId) : null;
@@ -361,7 +347,7 @@ export default function BuilderPage() {
 		: "All changes are live";
 
 	return (
-		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
+		<PageShell>
 			{/* Header bar */}
 			<PageHeader
 				title="Page Builder"
@@ -416,9 +402,9 @@ export default function BuilderPage() {
 					}
 				}}
 			>
-				<TabsList className="bg-muted/30 border border-border/50">
+				<TabsList className="h-auto bg-muted/30 border border-border/50">
 					{TABS.map((tab) => (
-						<TabsTrigger key={tab.id} value={tab.id} className="gap-1.5 text-xs">
+						<TabsTrigger key={tab.id} value={tab.id} className="min-h-11 gap-1.5 text-sm">
 							<tab.icon className="h-3.5 w-3.5" />
 							{tab.label}
 						</TabsTrigger>
@@ -446,11 +432,11 @@ export default function BuilderPage() {
 
 							{/* List label */}
 							<div className="flex items-center justify-between">
-								<p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-mono">
+								<p className="text-micro uppercase tracking-[0.14em] text-muted-foreground font-mono">
 									Blocks · drag to reorder
 								</p>
 								{blocks.length > 0 && (
-									<p className="text-[10px] text-muted-foreground">
+									<p className="text-micro text-muted-foreground">
 										{blocks.length} block{blocks.length !== 1 ? "s" : ""}
 									</p>
 								)}
@@ -558,7 +544,7 @@ export default function BuilderPage() {
 												<div
 													className={cn(
 														"flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
-														TYPE_BADGE_BG[item.type],
+														TYPE_CHIP,
 													)}
 												>
 													<item.icon className="h-4 w-4" />
@@ -567,7 +553,7 @@ export default function BuilderPage() {
 													<div className="text-xs font-semibold group-hover/picker:text-primary transition-colors">
 														{item.label}
 													</div>
-													<div className="text-[10px] text-muted-foreground leading-tight mt-0.5">
+													<div className="text-micro text-muted-foreground leading-tight mt-0.5">
 														{item.description}
 													</div>
 												</div>
@@ -584,8 +570,9 @@ export default function BuilderPage() {
 					{activeTab === "social" && <SocialTab onDirtyChange={handleSocialDirtyChange} />}
 				</div>
 
-				{/* Right side: Edit panel and/or Preview */}
-				<div className="hidden lg:flex lg:gap-4 shrink-0">
+				{/* Right side: edit panel stacks above the preview at lg, sits beside
+				    it at xl. The preview never unmounts while editing. */}
+				<div className="hidden lg:flex lg:flex-col xl:flex-row gap-4 shrink-0 sticky top-6 max-h-[calc(100dvh-3rem)] overflow-y-auto items-start">
 					{/* Edit panel — inline at lg+ only; below lg it renders inside the
 						    bottom sheet instead (never both, to avoid duplicate input IDs) */}
 					{activeTab === "blocks" && editingBlock && isLg && (
@@ -606,17 +593,8 @@ export default function BuilderPage() {
 					)}
 
 					{/* Permanent live preview sidebar */}
-					<div
-						className={cn(
-							"w-[360px] shrink-0 sticky top-6",
-							activeTab === "blocks" && editingBlock ? "hidden xl:block" : "block",
-						)}
-					>
-						<SharedPreview
-							overrides={{
-								blocks: editingOverrides ? previewBlocksData : undefined,
-							}}
-						/>
+					<div className="w-[360px] shrink-0">
+						<PagePreview overrides={{ blocks: previewBlocks }} />
 					</div>
 				</div>
 			</div>
@@ -634,7 +612,7 @@ export default function BuilderPage() {
 
 			{/* Mobile preview sheet */}
 			<MobilePreviewSheet open={showMobilePreview} onOpenChange={setShowMobilePreview}>
-				<SharedPreview overrides={{ blocks: previewBlocksData }} showHeader={false} />
+				<PagePreview overrides={{ blocks: previewBlocks }} showHeader={false} />
 			</MobilePreviewSheet>
 
 			{/* Mobile block edit sheet — below lg the edit panel is impossible to
@@ -664,6 +642,6 @@ export default function BuilderPage() {
 					/>
 				</Sheet>
 			)}
-		</div>
+		</PageShell>
 	);
 }

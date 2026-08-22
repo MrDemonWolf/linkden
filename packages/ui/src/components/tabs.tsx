@@ -50,7 +50,7 @@ const TabsTrigger = React.forwardRef<
 
 	// iOS-style tab-bar trigger: icon stacked over a small label, tinted when active.
 	const barClasses = [
-		"flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1.5 text-[10px] font-medium transition-colors",
+		"flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1.5 text-micro font-medium transition-colors",
 		"text-muted-foreground hover:text-foreground",
 		"data-[active]:text-primary",
 		"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",

@@ -1,160 +1,106 @@
-import { router, protectedProcedure } from "../index";
 import { db } from "@linkden/db";
 import { block } from "@linkden/db/schema/index";
-import { eq, asc, sql } from "drizzle-orm";
+import {
+	createBlockSchema,
+	parseBlockConfig,
+	reorderBlocksSchema,
+	updateBlockSchema,
+} from "@linkden/validators/blocks";
+import { TRPCError } from "@trpc/server";
+import { asc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
-import { stripHtml, sanitizeUrl } from "../utils/sanitize";
+import { protectedProcedure, router } from "../index";
 import { logAudit } from "../utils/audit";
+import { stripHtml } from "../utils/sanitize";
 import { runBatch } from "../utils/settings";
 
 // ─── Block Router ──────────────────────────────────────────────────────────
 // Blocks are the core content units on the public page. Each block has a type
-// (link, header, embed, connect, vcard, location) that determines its rendering
-// and config schema. Blocks follow a draft/published flow: every mutation sets
-// status="draft", and publishAll promotes all drafts at once. This lets the admin
-// preview changes before they go live.
+// that determines its rendering and config schema — both come from
+// @linkden/validators/blocks, shared with the admin builder so client and
+// server validate identically. Blocks follow a draft/published flow: every
+// mutation sets status="draft", and publishAll promotes all drafts at once.
 //
-// Sanitization strategy: all user-entered strings are run through stripHtml (to
-// prevent stored XSS) and sanitizeUrl (to block javascript:/data: schemes).
-// The socialIcons field is a JSON string — parsed, sanitized per-entry, then
-// re-serialized.
-
-function sanitizeBlockInput<T extends Record<string, unknown>>(input: T): T {
-	const sanitized = { ...input };
-	if (typeof sanitized.title === "string") {
-		(sanitized as Record<string, unknown>).title = stripHtml(sanitized.title as string);
-	}
-	if (typeof sanitized.url === "string") {
-		(sanitized as Record<string, unknown>).url = sanitizeUrl(sanitized.url as string);
-	}
-	if (typeof sanitized.embedUrl === "string") {
-		(sanitized as Record<string, unknown>).embedUrl = sanitizeUrl(sanitized.embedUrl as string);
-	}
-	if (typeof sanitized.socialIcons === "string") {
-		try {
-			const icons = JSON.parse(sanitized.socialIcons as string) as Array<{
-				platform: string;
-				url: string;
-			}>;
-			const sanitizedIcons = icons.map((icon) => ({
-				platform: stripHtml(icon.platform || ""),
-				url: sanitizeUrl(icon.url || ""),
-			}));
-			(sanitized as Record<string, unknown>).socialIcons = JSON.stringify(sanitizedIcons);
-		} catch (err) {
-			console.warn("Failed to parse socialIcons JSON, resetting to empty array:", err);
-			(sanitized as Record<string, unknown>).socialIcons = "[]";
-		}
-	}
-	return sanitized;
-}
+// URLs are rejected by the shared httpUrlSchema (no silent blanking); titles
+// still go through stripHtml as a last line of defence against stored XSS.
 
 export const blocksRouter = router({
 	list: protectedProcedure.query(async () => {
 		return db.select().from(block).orderBy(asc(block.position));
 	}),
 
-	get: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
+	get: protectedProcedure.input(z.object({ id: z.string().max(100) })).query(async ({ input }) => {
 		const [result] = await db.select().from(block).where(eq(block.id, input.id));
 		return result ?? null;
 	}),
 
-	create: protectedProcedure
-		.input(
-			z.object({
-				id: z.string(),
-				type: z.enum(["link", "header", "embed", "connect", "vcard", "location"]),
-				title: z.string().max(200).optional(),
-				url: z.string().max(2048).optional(),
-				icon: z.string().max(100).optional(),
-				embedType: z.string().max(50).optional(),
-				embedUrl: z.string().max(2048).optional(),
-				socialIcons: z.string().max(50000).optional(),
-				isEnabled: z.boolean().default(true),
-				position: z.number(),
-				scheduledStart: z.date().optional(),
-				scheduledEnd: z.date().optional(),
-				config: z.string().max(50000).optional(),
-			}),
-		)
-		.mutation(async ({ input }) => {
-			const sanitized = sanitizeBlockInput(input);
-			const [result] = await db
-				.insert(block)
-				.values({
-					...sanitized,
-					status: "draft",
-					scheduledStart: input.scheduledStart ?? null,
-					scheduledEnd: input.scheduledEnd ?? null,
-					config: input.config ?? null,
-				})
-				.returning();
-			return result;
-		}),
-
-	update: protectedProcedure
-		.input(
-			z.object({
-				id: z.string(),
-				title: z.string().max(200).optional(),
-				url: z.string().max(2048).optional(),
-				icon: z.string().max(100).optional(),
-				embedType: z.string().max(50).optional(),
-				embedUrl: z.string().max(2048).optional(),
-				socialIcons: z.string().max(50000).optional(),
-				isEnabled: z.boolean().optional(),
-				position: z.number().optional(),
-				scheduledStart: z.date().nullable().optional(),
-				scheduledEnd: z.date().nullable().optional(),
-				config: z.string().max(50000).optional(),
-			}),
-		)
-		.mutation(async ({ input }) => {
-			const { id, ...data } = input;
-			const sanitized = sanitizeBlockInput(data);
-			const [result] = await db
-				.update(block)
-				.set({ ...sanitized, status: "draft", updatedAt: new Date() })
-				.where(eq(block.id, id))
-				.returning();
-			return result;
-		}),
-
-	delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
-		await db.delete(block).where(eq(block.id, input.id));
-		await logAudit("blocks.delete", "block", input.id);
-		return { success: true };
+	create: protectedProcedure.input(createBlockSchema).mutation(async ({ input }) => {
+		const [result] = await db
+			.insert(block)
+			.values({
+				...input,
+				title: input.title === undefined ? undefined : stripHtml(input.title),
+				isEnabled: input.isEnabled ?? true,
+				status: "draft",
+				scheduledStart: input.scheduledStart ?? null,
+				scheduledEnd: input.scheduledEnd ?? null,
+				config: input.config ?? null,
+			})
+			.returning();
+		return result;
 	}),
 
-	reorder: protectedProcedure
-		.input(
-			z
-				.array(
-					z.object({
-						id: z.string(),
-						position: z.number(),
-					}),
-				)
-				.max(200),
-		)
+	update: protectedProcedure.input(updateBlockSchema).mutation(async ({ input }) => {
+		const { id, ...data } = input;
+		// The schema only validates config against the type when both are sent;
+		// on a type-less update, check it against the stored row's type.
+		if (data.config !== undefined && !data.type) {
+			const [existing] = await db.select({ type: block.type }).from(block).where(eq(block.id, id));
+			if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
+			const parsed = parseBlockConfig(existing.type, data.config);
+			if (!parsed.ok) {
+				throw new TRPCError({ code: "BAD_REQUEST", message: parsed.issues.join("; ") });
+			}
+		}
+		const [result] = await db
+			.update(block)
+			.set({
+				...data,
+				title: data.title === undefined ? undefined : stripHtml(data.title),
+				status: "draft",
+				updatedAt: new Date(),
+			})
+			.where(eq(block.id, id))
+			.returning();
+		return result;
+	}),
+
+	delete: protectedProcedure
+		.input(z.object({ id: z.string().max(100) }))
 		.mutation(async ({ input }) => {
-			// One transactional batch — a partial failure must not leave blocks in
-			// an inconsistent order.
-			await runBatch(
-				input.map((item) =>
-					db
-						.update(block)
-						.set({ position: item.position, status: "draft", updatedAt: new Date() })
-						.where(eq(block.id, item.id)),
-				),
-			);
+			await db.delete(block).where(eq(block.id, input.id));
+			await logAudit("blocks.delete", "block", input.id);
 			return { success: true };
 		}),
+
+	reorder: protectedProcedure.input(reorderBlocksSchema).mutation(async ({ input }) => {
+		// One transactional batch — a partial failure must not leave blocks in
+		// an inconsistent order.
+		await runBatch(
+			input.map((item) =>
+				db
+					.update(block)
+					.set({ position: item.position, status: "draft", updatedAt: new Date() })
+					.where(eq(block.id, item.id)),
+			),
+		);
+		return { success: true };
+	}),
 
 	toggleEnabled: protectedProcedure
 		.input(
 			z.object({
-				id: z.string(),
+				id: z.string().max(100),
 				isEnabled: z.boolean(),
 			}),
 		)

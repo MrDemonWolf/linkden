@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 function useCurrentTime() {
@@ -31,7 +31,9 @@ function StatusBar({ dark }: { dark: boolean }) {
 			aria-hidden="true"
 		>
 			{/* Left: time */}
-			<span className="text-[10px] font-semibold leading-none w-12">{time}</span>
+			<span className="w-14 whitespace-nowrap text-micro font-semibold leading-none tabular-nums">
+				{time}
+			</span>
 
 			{/* Center: Dynamic Island */}
 			<div
@@ -93,7 +95,7 @@ function StatusBar({ dark }: { dark: boolean }) {
 	);
 }
 
-export function PreviewSkeleton() {
+function PreviewSkeleton() {
 	return (
 		<div className="flex flex-col items-center px-6 pt-16 pb-8 gap-4">
 			{/* Avatar placeholder */}

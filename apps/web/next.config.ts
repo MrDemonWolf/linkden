@@ -37,7 +37,7 @@ const nextConfig: NextConfig = {
 	async rewrites() {
 		if (!devApiOrigin) return [];
 		// afterFiles: Next's own filesystem routes are matched first, so
-		// src/app/api/og/route.tsx keeps serving /api/og. Sources are enumerated
+		// src/app/og/route.tsx serves /og outside the proxied /api prefix. Sources are enumerated
 		// rather than a blanket /api/:path* so this stays correct if another Next
 		// route handler is added under /api later.
 		return {

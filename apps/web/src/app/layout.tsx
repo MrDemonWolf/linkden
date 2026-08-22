@@ -1,96 +1,75 @@
+import { env } from "@linkden/env/web";
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono, Montserrat, Roboto } from "next/font/google";
+import { DM_Sans, Geist_Mono, Sora } from "next/font/google";
 import "../index.css";
 import Providers from "@/components/providers";
+import { SwRegister } from "@/components/sw-register";
+import { getPublicPage } from "@/lib/public-page";
 
-export const viewport: Viewport = {
-	width: "device-width",
-	initialScale: 1,
-	maximumScale: 5,
-};
+export async function generateViewport(): Promise<Viewport> {
+	const data = await getPublicPage();
+	return {
+		width: "device-width",
+		initialScale: 1,
+		maximumScale: 5,
+		// Browser chrome matches the page's primary colour (same as the manifest).
+		themeColor: data?.settings.customPrimary || "#00ACED",
+	};
+}
 
-const montserrat = Montserrat({
+const sora = Sora({
 	subsets: ["latin"],
 	variable: "--font-display",
 	weight: ["600", "700", "800"],
 	display: "swap",
+	preload: true,
 });
 
-const roboto = Roboto({
+// next/font only allows `axes` on the variable build, so DM Sans ships as a
+// variable font (covers 400/500/600) to get the optical-size axis.
+const dmSans = DM_Sans({
 	subsets: ["latin"],
 	variable: "--font-sans",
-	weight: ["400", "500"],
+	weight: "variable",
+	axes: ["opsz"],
 	display: "swap",
+	preload: true,
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const geistMono = Geist_Mono({
 	subsets: ["latin"],
 	variable: "--font-mono",
-	weight: ["400", "500", "600"],
+	weight: ["400", "500"],
 	display: "swap",
+	preload: false,
 });
 
-type PublicPagePayload = {
-	profile?: {
-		name?: string | null;
-		image?: string | null;
-		bio?: string | null;
-	} | null;
-	settings?: {
-		seoTitle?: string | null;
-		seoDescription?: string | null;
-		seoOgImage?: string | null;
-		seoOgMode?: string | null;
-		seoOgTemplate?: string | null;
-		customPrimary?: string | null;
-		brandingFaviconUrl?: string | null;
-	};
-};
-
-async function fetchPage(): Promise<PublicPagePayload> {
-	try {
-		// This runs in the Next server process, so prefer a loopback URL when one is
-		// configured — otherwise a tunnelled dev setup hairpins out to the public
-		// origin and back for every render. Deliberately not named NEXT_PUBLIC_*:
-		// those are inlined at compile time (even under `next dev`) and so cannot
-		// hold a different value on the server than in the browser bundle.
-		const serverUrl = process.env.INTERNAL_SERVER_URL ?? process.env.NEXT_PUBLIC_SERVER_URL;
-		if (!serverUrl) return {};
-		const res = await fetch(`${serverUrl}/trpc/public.getPage`, {
-			next: { revalidate: 60 },
-		});
-		if (!res.ok) return {};
-		const json = (await res.json()) as {
-			result?: { data?: PublicPagePayload };
-		};
-		return json?.result?.data ?? {};
-	} catch {
-		return {};
-	}
-}
-
 export async function generateMetadata(): Promise<Metadata> {
-	const { profile, settings = {} } = await fetchPage();
+	const data = await getPublicPage();
+	const profile = data?.profile;
+	const settings = data?.settings;
 
-	const title = settings.seoTitle || "LinkDen";
-	const description = settings.seoDescription || "Your personal link-in-bio page";
+	const title = settings?.seoTitle || "LinkDen";
+	const description = settings?.seoDescription || "Your personal link-in-bio page";
 
 	let ogImageUrl: string | undefined;
-	if (settings.seoOgMode === "template") {
+	if (settings?.seoOgMode === "template") {
 		const template = settings.seoOgTemplate || "minimal";
 		const name = encodeURIComponent(profile?.name || "My Links");
 		const bio = encodeURIComponent(profile?.bio || "");
 		const theme = encodeURIComponent(settings.customPrimary || "#6366f1");
 		const avatar = profile?.image ? `&avatar=${encodeURIComponent(profile.image)}` : "";
-		ogImageUrl = `/api/og?template=${template}&name=${name}&bio=${bio}&theme=${theme}${avatar}`;
-	} else if (settings.seoOgImage) {
+		ogImageUrl = `/og?template=${template}&name=${name}&bio=${bio}&theme=${theme}${avatar}`;
+	} else if (settings?.seoOgImage) {
 		ogImageUrl = settings.seoOgImage;
 	}
 
 	return {
+		// Makes relative icon/OG URLs absolute — crawlers need absolute OG images.
+		metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
 		title,
 		description,
-		icons: settings.brandingFaviconUrl
+		icons: settings?.brandingFaviconUrl
 			? {
 					icon: settings.brandingFaviconUrl,
 					apple: settings.brandingFaviconUrl,
@@ -102,7 +81,6 @@ export async function generateMetadata(): Promise<Metadata> {
 					],
 					apple: "/favicon/apple-touch-icon.png",
 				},
-		manifest: "/favicon/site.webmanifest",
 		openGraph: {
 			title,
 			description,
@@ -145,13 +123,10 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		// Theme class is applied pre-paint by next-themes (defaultTheme="system");
-		// hardcoding "dark" here would flash dark for light-OS first visits.
 		<html lang="en" suppressHydrationWarning>
-			<body
-				className={`${montserrat.variable} ${roboto.variable} ${jetbrainsMono.variable} antialiased`}
-			>
+			<body className={`${sora.variable} ${dmSans.variable} ${geistMono.variable} antialiased`}>
 				<Providers>{children}</Providers>
+				<SwRegister />
 			</body>
 		</html>
 	);

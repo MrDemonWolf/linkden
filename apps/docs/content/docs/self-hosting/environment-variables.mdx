@@ -13,7 +13,7 @@ A quick-reference for every environment variable used by LinkDen.
 cp .env.example .env
 ```
 
-LinkDen uses a single `.env` file at the monorepo root. Only four variables are required.
+LinkDen uses a single `.env` file at the monorepo root. Five variables are required to run the app; a few more are needed to deploy it.
 
 ## Required Variables
 
@@ -23,15 +23,32 @@ LinkDen uses a single `.env` file at the monorepo root. Only four variables are 
 | `BETTER_AUTH_URL` | Base URL of the API server | `http://localhost:3000` |
 | `CORS_ORIGIN` | Frontend URL (must match exactly, including protocol, no trailing slash) | `http://localhost:3001` |
 | `NEXT_PUBLIC_SERVER_URL` | Public URL of the API server, used by the Next.js frontend | `http://localhost:3000` |
+| `NEXT_PUBLIC_SITE_URL` | Public URL of the site itself. Used for `robots.txt`, `sitemap.xml`, and Open Graph URLs. Required for a production build and deploy (the deploy fails early when it is empty); only local dev falls back to `http://localhost:3001` | `http://localhost:3001` |
+
+**In production these are all the same hostname.** LinkDen runs same-origin: the web Worker owns `SITE_DOMAIN` and the API Worker is routed under it at `/api/*` and `/trpc/*`. So with `SITE_DOMAIN=links.yourdomain.com`:
+
+```bash
+BETTER_AUTH_URL=https://links.yourdomain.com
+NEXT_PUBLIC_SERVER_URL=https://links.yourdomain.com
+CORS_ORIGIN=https://links.yourdomain.com
+NEXT_PUBLIC_SITE_URL=https://links.yourdomain.com
+```
+
+Locally the web app (`:3001`) and API (`:3000`) are different origins, which is why the local examples differ.
 
 ## Cloudflare Deployment
 
-Only needed when deploying to Cloudflare:
+Only needed when deploying with `bun ship` or the GitHub Actions deploy workflow:
 
 | Variable | Description |
 |----------|-------------|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers, D1, and KV permissions |
+| `CLOUDFLARE_API_TOKEN` | API token with **Workers Scripts:Edit, Workers Routes:Edit, D1:Edit, R2:Edit, Zone:Read, DNS:Edit, SSL and Certificates:Edit**. The Zone permissions are only exercised when `SITE_DOMAIN` is set |
 | `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID |
+| `ALCHEMY_PASSWORD` | Encrypts secrets inside Alchemy's deploy state. Generate with `openssl rand -base64 32` and never change it once deployed |
+| `ALCHEMY_STATE_TOKEN` | Auth token for the `alchemy-state` `CloudflareStateStore` Worker. The one LinkDen is configured for is MrDemonWolf's; third-party self-hosters deploy their own state worker or switch `stateStore` in `packages/infra/alchemy.run.ts`. See the [Cloudflare guide](/docs/self-hosting/cloudflare) |
+| `ALCHEMY_STAGE` | Alchemy stage name. Defaults to `prod`. Any other value (for example `dev`) deploys a second, independent copy whose resources carry the stage as a suffix (`linkden-db-dev`, `linkden-images-dev`, `linkden-api-dev`, `linkden-dev`) so it can never adopt, overwrite, or destroy the production ones |
+| `LINKDEN_DB_NAME` / `LINKDEN_IMAGES_BUCKET` | **Upgrades only.** Deploys made before 0.5.0 let Alchemy generate the D1/R2 names (a CI deploy produced `linkden-database-runner` and `linkden-images-runner`). Set these to those existing names so the `prod` stage adopts your data instead of creating an empty `linkden-db` / `linkden-images`. See [upgrading an older deploy](/docs/self-hosting/cloudflare#upgrading-a-deploy-made-before-050) |
+| `SITE_DOMAIN` | Your hostname, for example `links.yourdomain.com`. When set, Alchemy attaches a Custom Domain to the web Worker and `/api/*` + `/trpc/*` routes to the API Worker. Leave unset to deploy to `workers.dev` (staging; admin login does not work there) |
 
 ## Runtime Configuration
 
@@ -59,7 +76,7 @@ Only required if you want to generate Apple Wallet passes. All five variables ar
 | `WALLET_TEAM_ID` | Your Apple Developer Team ID (e.g. `ABC12DEF34`) |
 | `WALLET_PASS_TYPE_ID` | Your Pass Type Identifier (e.g. `pass.com.yourname.linkden`) |
 
-> These are **secrets** — use the "Encrypt" option in Cloudflare's dashboard. Never commit them to git.
+> These are **secrets** — keep them in `.env` locally or in GitHub environment secrets. Never commit them to git.
 >
 > See the [Apple Wallet guide](/docs/guide/apple-wallet) for step-by-step certificate setup.
 
@@ -71,10 +88,15 @@ BETTER_AUTH_SECRET=your-generated-secret-key
 BETTER_AUTH_URL=http://localhost:3000
 CORS_ORIGIN=http://localhost:3001
 NEXT_PUBLIC_SERVER_URL=http://localhost:3000
+NEXT_PUBLIC_SITE_URL=http://localhost:3001
 
 # Cloudflare deployment only
 # CLOUDFLARE_API_TOKEN=your-cloudflare-api-token
 # CLOUDFLARE_ACCOUNT_ID=your-cloudflare-account-id
+# ALCHEMY_PASSWORD=your-generated-state-secret
+# ALCHEMY_STATE_TOKEN=your-state-worker-token
+# ALCHEMY_STAGE=prod
+# SITE_DOMAIN=links.yourdomain.com
 
 # Apple Wallet (optional — all 5 required together)
 # WALLET_SIGNER_CERT=base64encodedcert...
@@ -86,7 +108,7 @@ NEXT_PUBLIC_SERVER_URL=http://localhost:3000
 
 ## Setting Variables
 
-Set these in the Cloudflare dashboard under **Workers > Settings > Variables** (use "Encrypt" for secrets), or as secrets in your Alchemy deployment config.
+Alchemy binds these to the Workers at deploy time from your `.env` (local `bun ship`) or from the GitHub `production` environment (`deploy.yml`). In GitHub, store `SITE_DOMAIN` and `NEXT_PUBLIC_SITE_URL` as **variables** and everything else as **secrets**. Values set by hand in the Cloudflare dashboard are overwritten on the next deploy.
 
 ## First-Time Setup
 
@@ -96,15 +118,15 @@ LinkDen does not use environment variables or tokens for setup. After deployment
 
 ### CORS errors
 
-`CORS_ORIGIN` must exactly match the web app URL — including protocol (`https://`), no trailing slash.
+`CORS_ORIGIN` must exactly match the web app URL — including protocol (`https://`), no trailing slash. In production it equals `https://SITE_DOMAIN`.
 
 ### Authentication not working
 
 - Verify `BETTER_AUTH_SECRET` is set
-- Verify `BETTER_AUTH_URL` matches the actual URL where the API is running
-- For cross-origin setups, double-check `CORS_ORIGIN`
+- Verify `BETTER_AUTH_URL` matches the URL the browser actually reaches the API on (`https://SITE_DOMAIN` in production)
+- If you are on `workers.dev`, the web and API Workers are different origins and the session cookie cannot cross them. Set `SITE_DOMAIN` and redeploy
 
 ### Changes not taking effect
 
-- `NEXT_PUBLIC_SERVER_URL` is baked into the frontend at build time. Changing it requires a rebuild.
-- Server-side variables take effect on the next request (redeploy the Worker after changing them).
+- `NEXT_PUBLIC_SERVER_URL` and `NEXT_PUBLIC_SITE_URL` are baked into the frontend at build time. Changing either requires a redeploy (`bun ship` rebuilds).
+- Server-side variables take effect on the next request after a redeploy.

@@ -28,7 +28,7 @@ export function PageHeader({
 			<div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
 				<div className="min-w-0">
 					{kicker && (
-						<p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground font-mono mb-1">
+						<p className="text-micro uppercase tracking-[0.14em] text-muted-foreground font-mono mb-1">
 							{kicker}
 						</p>
 					)}

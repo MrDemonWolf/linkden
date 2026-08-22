@@ -231,7 +231,7 @@ export default function AdminLoginPage() {
 						</p>
 					</div>
 
-					<div className="data-mono text-[11px] text-muted-foreground/70">
+					<div className="data-mono text-micro text-muted-foreground/70">
 						v{process.env.NEXT_PUBLIC_APP_VERSION} · self-hosted
 					</div>
 				</aside>
@@ -349,7 +349,7 @@ export default function AdminLoginPage() {
 
 										<Button
 											type="submit"
-											className="w-full h-11 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
+											className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-medium shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
 											disabled={isForgotSubmitting}
 										>
 											{isForgotSubmitting ? (
@@ -494,7 +494,7 @@ export default function AdminLoginPage() {
 
 										<Button
 											type="submit"
-											className="w-full h-11 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
+											className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-medium shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
 											disabled={isSubmitting}
 										>
 											{isSubmitting ? (
@@ -515,7 +515,7 @@ export default function AdminLoginPage() {
 										<div className="mt-6 space-y-4">
 											<div className="relative">
 												<Separator className="bg-border" />
-												<span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+												<span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-micro font-medium uppercase tracking-wider text-muted-foreground">
 													or
 												</span>
 											</div>

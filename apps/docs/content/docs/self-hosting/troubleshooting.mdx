@@ -11,33 +11,57 @@ Solutions to common problems for self-hosted LinkDen instances. For deployment s
 
 ## Cloudflare Workers
 
+Worker names are `linkden` (web) and `linkden-api` (API). Their configuration lives in `apps/server/wrangler.jsonc` (local dev bindings) and `packages/infra/alchemy.run.ts` (what actually gets deployed). There is no `wrangler.toml`.
+
 ### D1 binding errors
 
 The API Worker can't find the database.
 
-- Verify the D1 database exists: `wrangler d1 list`
-- Check the binding name in `wrangler.toml` matches what the code expects
+- Verify the D1 database exists: `bunx wrangler d1 list` (it is named `linkden-db`)
+- Check the `DB` binding in `apps/server/wrangler.jsonc` and `packages/infra/alchemy.run.ts`
 - Redeploy with `bun ship` to recreate bindings
 
 ### R2 bucket not working
 
 Image uploads fail with "Image storage not configured".
 
-- Ensure the R2 bucket is created and bound as `IMAGES_BUCKET` in the Worker settings
-- Check the R2 binding in your `wrangler.toml` or Alchemy config
-- Verify with `wrangler r2 bucket list`
+- Ensure the `linkden-images` bucket exists and is bound as `IMAGES_BUCKET` in `packages/infra/alchemy.run.ts`
+- Verify with `bunx wrangler r2 bucket list`
 
 ### CORS errors on workers.dev subdomains
 
 - `CORS_ORIGIN` must exactly match the web Worker URL, including `https://` and no trailing slash
-- Example: `CORS_ORIGIN=https://linkden-web.your-subdomain.workers.dev`
+- Example: `CORS_ORIGIN=https://linkden.your-subdomain.workers.dev`
 
-### Auth cookies not working on workers.dev
+### Admin login loops back to the login page on workers.dev
 
-Better Auth cookies may not work across different `*.workers.dev` subdomains because they're treated as separate origins.
+On `workers.dev` the web Worker (`linkden.<sub>.workers.dev`) and the API Worker (`linkden-api.<sub>.workers.dev`) are separate origins. `workers.dev` is on the Public Suffix List, so the session cookie set by the API is never sent back from the web origin and `/admin` bounces to `/admin/login` on every request.
 
-- Use custom domains for both Workers (e.g., `yourdomain.com` and `api.yourdomain.com`)
-- Ensure `BETTER_AUTH_URL` matches the actual API domain
+This is expected. `workers.dev` is a staging target: the public page and `/api/health` prove the deploy, nothing more.
+
+**Fix:** set `SITE_DOMAIN` to your hostname, point `BETTER_AUTH_URL`, `NEXT_PUBLIC_SERVER_URL`, `CORS_ORIGIN`, and `NEXT_PUBLIC_SITE_URL` at `https://SITE_DOMAIN`, and redeploy. The web app gets the hostname as a Custom Domain and the API is routed under it at `/api/*` and `/trpc/*`, so everything is one origin. See [Custom Domain](/docs/self-hosting/custom-domain).
+
+### Reading API errors
+
+Unhandled errors in the API are logged as one JSON line with the request method, path, and error message. Stream them with:
+
+```bash
+bunx wrangler tail linkden-api --format=pretty
+```
+
+### Restore a D1 backup
+
+The `backup-db` workflow exports the database every day to the `linkden-backups` R2 bucket as `d1/<date>.sql` (kept 30 days). To restore one:
+
+```bash
+# 1. Download the export you want
+bunx wrangler r2 object get linkden-backups/d1/2026-08-21.sql --file=backup.sql --remote
+
+# 2. Replay it into the live database
+bunx wrangler d1 execute linkden-db --remote --file=backup.sql
+```
+
+The export contains `CREATE TABLE` and `INSERT` statements. Restoring over a database that already has data will fail on duplicate rows, so either restore into a fresh database or run the reset script first (`bun reset:factory`, then restore). Take a manual export before you start (`bunx wrangler d1 export linkden-db --remote --output=before-restore.sql`) so you can undo it.
 
 ---
 
@@ -58,12 +82,12 @@ Better Auth cookies may not work across different `*.workers.dev` subdomains bec
 
 **Causes:**
 - `BETTER_AUTH_URL` doesn't match the actual API URL the browser reaches
-- Frontend and API are on different domains without proper cookie settings
+- Frontend and API are on different origins (the `workers.dev` case above)
 - `BETTER_AUTH_SECRET` changed between deployments (invalidates existing sessions)
 
 **Fix:**
-- Ensure `BETTER_AUTH_URL` matches the publicly accessible API URL
-- For cross-domain setups, use custom domains on the same root domain
+- Ensure `BETTER_AUTH_URL` matches the publicly accessible API URL (`https://SITE_DOMAIN` in production)
+- Set `SITE_DOMAIN` so web and API share one origin
 - If you changed `BETTER_AUTH_SECRET`, users need to log in again
 
 ### Email sending failures
@@ -88,7 +112,7 @@ Better Auth cookies may not work across different `*.workers.dev` subdomains bec
 
 **Explanation:** This is expected behavior. LinkDen is a single-user platform. After the first admin account is created, registration is permanently locked. This protects your instance from unauthorized account creation.
 
-If you need to reset and create a new admin account, clear the user table in your D1 database using the D1 console in the Cloudflare dashboard (or `wrangler d1 execute <db> --command "DELETE FROM user;"`).
+If you need to reset and create a new admin account, clear the user table in your D1 database using the D1 console in the Cloudflare dashboard (or `bunx wrangler d1 execute linkden-db --remote --command "DELETE FROM user;"`).
 
 ### File upload errors
 
@@ -96,8 +120,8 @@ If you need to reset and create a new admin account, clear the user table in you
 
 **Possible causes:**
 - **413 error:** File exceeds the 5 MB size limit. Resize or compress the image.
-- **400 error (file type):** Only image files are allowed: jpg, jpeg, png, gif, webp, svg, ico.
-- **400 error (MIME type):** The file's MIME type doesn't match an allowed image type. Re-export the file in a supported format.
+- **400 error (file type):** Only image files are allowed: jpg, jpeg, png, gif, webp, ico.
+- **400 error (signature):** The file's bytes don't match its extension (for example an HTML file renamed to `.png`). Re-export the file in a supported format.
 - **500 error:** R2 bucket (Cloudflare) or image storage is not configured. Check your deployment's storage bindings.
 
 ### Settings validation errors

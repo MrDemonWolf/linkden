@@ -37,7 +37,7 @@ export default function RootError({
 					later.
 				</p>
 				{error.digest ? (
-					<p className="mt-3 font-mono text-[11px] text-muted-foreground/60">ref: {error.digest}</p>
+					<p className="mt-3 font-mono text-micro text-muted-foreground/60">ref: {error.digest}</p>
 				) : null}
 				<div className="mt-8 flex items-center justify-center gap-3">
 					<Button onClick={reset} className="h-10 px-5 text-sm">

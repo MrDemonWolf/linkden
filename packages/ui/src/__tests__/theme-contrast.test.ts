@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getContrastRatio } from "../color-contrast";
+import { getContrastRatio, getReadableTextColor } from "../color-contrast";
 import { themePresets } from "../themes";
 
 /**
@@ -19,6 +19,7 @@ const TEXT_PAIRS = [
 	},
 	{ label: "card-foreground on card", fg: "--ld-card-foreground", bg: "--ld-card", min: 4.5 },
 	{ label: "muted-foreground on card", fg: "--ld-muted-foreground", bg: "--ld-card", min: 4.5 },
+	{ label: "muted-foreground on muted", fg: "--ld-muted-foreground", bg: "--ld-muted", min: 4.5 },
 	{ label: "primary as text on background", fg: "--ld-primary", bg: "--ld-background", min: 4.5 },
 	{ label: "primary as fill on background", fg: "--ld-primary", bg: "--ld-background", min: 3 },
 ] as const;
@@ -39,6 +40,14 @@ describe("theme preset contrast (WCAG AA)", () => {
 						`${preset.name}/${mode} ${pair.label}: ${ratio.toFixed(2)}:1 < ${pair.min}:1 (${fg} on ${bg})`,
 					).toBeGreaterThanOrEqual(pair.min);
 				}
+				// Text placed ON the primary (highlighted links, avatar ring labels)
+				// uses getReadableTextColor — lock that pick to AA too.
+				const primary = vars["--ld-primary"] as string;
+				const onPrimary = getContrastRatio(getReadableTextColor(primary), primary);
+				expect(
+					onPrimary,
+					`${preset.name}/${mode} readable text on primary: ${onPrimary.toFixed(2)}:1 < 4.5:1 (${primary})`,
+				).toBeGreaterThanOrEqual(4.5);
 			});
 		}
 	}

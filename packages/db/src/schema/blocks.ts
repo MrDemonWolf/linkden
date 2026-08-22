@@ -1,12 +1,12 @@
 import { sql } from "drizzle-orm";
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const block = sqliteTable(
 	"block",
 	{
 		id: text("id").primaryKey(),
 		type: text("type", {
-			enum: ["link", "header", "embed", "connect", "vcard", "location"],
+			enum: ["link", "header", "embed", "connect", "vcard", "location", "image", "text", "divider"],
 		}).notNull(),
 		title: text("title"),
 		url: text("url"),

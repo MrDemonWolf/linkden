@@ -1,17 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { SETTING_REGISTRY } from "@linkden/validators/settings-registry";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Save, User } from "lucide-react";
-import { trpc } from "@/utils/trpc";
-import { Card, CardContent } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { z } from "zod";
+import { CharCount, FieldError } from "@/components/admin/field-feedback";
+import { ImageUploadField } from "@/components/admin/image-upload-field";
+import { SectionHeader } from "@/components/admin/section-header";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { SectionHeader } from "@/components/admin/section-header";
-import { ImageUploadField } from "@/components/admin/image-upload-field";
+import { fieldError } from "@/lib/validate";
+import { trpc } from "@/utils/trpc";
+
+// Same caps the server applies (it truncates silently past them).
+const NAME_MAX = SETTING_REGISTRY.profile_name?.maxLength ?? 50;
+const BIO_MAX = SETTING_REGISTRY.bio?.maxLength ?? 300;
+const nameSchema = z.string().max(NAME_MAX);
+const bioSchema = z.string().max(BIO_MAX);
 
 interface ProfileTabProps {
 	onDirtyChange: (dirty: boolean) => void;
@@ -52,7 +62,12 @@ export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
 		onDirtyChange(profileDirty);
 	}, [profileDirty, onDirtyChange]);
 
+	const nameError = fieldError(nameSchema, profileName);
+	const bioError = fieldError(bioSchema, bio);
+	const hasErrors = !!(nameError || bioError);
+
 	const handleSaveProfile = async () => {
+		if (hasErrors) return;
 		const changes: Array<{ key: string; value: string }> = [];
 		if (profileName !== savedProfileName) changes.push({ key: "profile_name", value: profileName });
 		if (bio !== savedBio) changes.push({ key: "bio", value: bio });
@@ -97,9 +112,11 @@ export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
 							value={profileName}
 							onChange={(e) => setProfileName(e.target.value)}
 							placeholder="Your name"
-							maxLength={50}
+							aria-invalid={!!nameError}
+							aria-describedby={nameError ? "profileName-error" : undefined}
 						/>
-						<p className="text-[10px] text-muted-foreground text-right">{profileName.length}/50</p>
+						<CharCount value={profileName} max={NAME_MAX} />
+						<FieldError id="profileName-error" error={nameError} />
 					</div>
 
 					<div className="space-y-1.5">
@@ -114,17 +131,19 @@ export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
 							value={bio}
 							onChange={(e) => setBio(e.target.value)}
 							placeholder="Tell visitors about yourself..."
-							maxLength={300}
 							rows={3}
+							aria-invalid={!!bioError}
+							aria-describedby={bioError ? "bio-error" : undefined}
 						/>
-						<p className="text-[10px] text-muted-foreground text-right">{bio.length}/300</p>
+						<CharCount value={bio} max={BIO_MAX} />
+						<FieldError id="bio-error" error={bioError} />
 					</div>
 
 					{profileDirty && (
 						<Button
 							size="sm"
 							onClick={handleSaveProfile}
-							disabled={updateSettings.isPending}
+							disabled={updateSettings.isPending || hasErrors}
 							className="w-full"
 						>
 							<Save className="mr-1.5 h-3.5 w-3.5" />

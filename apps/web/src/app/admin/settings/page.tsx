@@ -14,24 +14,28 @@ import {
 	Search,
 	Settings2,
 	Shield,
-	Undo2,
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { QueryError } from "@/components/admin/dashboard/query-error";
 import { PageHeader } from "@/components/admin/page-header";
+import { PageShell } from "@/components/admin/page-shell";
 import { SectionCard } from "@/components/admin/section-header";
-import { BrandingSection } from "@/components/admin/settings/branding-section";
-import { CaptchaSection } from "@/components/admin/settings/captcha-section";
-import { ConsentSection } from "@/components/admin/settings/consent-section";
+import { BrandingSection, brandingErrors } from "@/components/admin/settings/branding-section";
+import { CaptchaSection, captchaErrors } from "@/components/admin/settings/captcha-section";
+import { ConsentSection, consentErrors } from "@/components/admin/settings/consent-section";
 import { ContactFormSection } from "@/components/admin/settings/contact-form-section";
 import { DataSection } from "@/components/admin/settings/data-section";
-import { EmailSection } from "@/components/admin/settings/email-section";
+import { EmailSection, emailErrors } from "@/components/admin/settings/email-section";
 import { MapKitSection } from "@/components/admin/settings/mapkit-section";
 import { MigrationSection } from "@/components/admin/settings/migration-section";
-import { SeoSection } from "@/components/admin/settings/seo-section";
+import { SeoSection, seoErrors } from "@/components/admin/settings/seo-section";
 import { VCardSection, type VCardSectionHandle } from "@/components/admin/settings/vcard-section";
+import { StickySaveBar } from "@/components/admin/sticky-save-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
@@ -147,6 +151,8 @@ function buildSavedState(s: Record<string, string>): SavedState {
 	};
 }
 
+const SETTINGS_TABS = ["seo", "branding", "email", "features", "data", "privacy"];
+
 export default function SettingsPage() {
 	const qc = useQueryClient();
 	const settingsQuery = useQuery(trpc.settings.getAll.queryOptions());
@@ -160,13 +166,17 @@ export default function SettingsPage() {
 
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
-	// Active tab (persisted to localStorage so navigations land back where you were)
-	const [activeTab, setActiveTab] = useState<string>("seo");
+	// Active tab: `?tab=` wins (deep links from the dashboard), else the last
+	// tab from localStorage so navigations land back where you were.
+	const tabParam = useSearchParams().get("tab");
+	const [activeTab, setActiveTab] = useState<string>(
+		tabParam && SETTINGS_TABS.includes(tabParam) ? tabParam : "seo",
+	);
 	useEffect(() => {
-		if (typeof window === "undefined") return;
+		if (tabParam && SETTINGS_TABS.includes(tabParam)) return;
 		const stored = window.localStorage.getItem("admin.settings.tab");
-		if (stored) setActiveTab(stored);
-	}, []);
+		if (stored && SETTINGS_TABS.includes(stored)) setActiveTab(stored);
+	}, [tabParam]);
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 		window.localStorage.setItem("admin.settings.tab", activeTab);
@@ -262,6 +272,7 @@ export default function SettingsPage() {
 
 	// vCard section (saves via its own tRPC mutation; the global save awaits it via the ref)
 	const [vcardDirty, setVcardDirty] = useState(false);
+	const [vcardHasErrors, setVcardHasErrors] = useState(false);
 	const vcardSectionRef = useRef<VCardSectionHandle>(null);
 
 	// Load settings
@@ -345,6 +356,31 @@ export default function SettingsPage() {
 
 	useUnsavedChanges(isDirty);
 
+	// Same per-field checks each section renders inline; any error anywhere
+	// (including on a tab that isn't open) disables Save.
+	const hasErrors =
+		vcardHasErrors ||
+		[
+			seoErrors({ seoTitle, seoDescription }),
+			brandingErrors({
+				siteName,
+				footerBrandingEnabled,
+				footerBrandingText,
+				footerBrandingLink,
+				ppMode,
+				ppUrl,
+				tosMode,
+				tosUrl,
+			}),
+			emailErrors({ emailApiKey, emailFrom }),
+			captchaErrors({ captchaProvider, captchaSiteKey, captchaSecretKey }),
+			consentErrors({
+				enabled: consentBannerEnabled,
+				bannerText: consentBannerText,
+				privacyUrl: consentPrivacyUrl,
+			}),
+		].some((e) => Object.keys(e).length > 0);
+
 	const invalidate = useCallback(() => {
 		qc.invalidateQueries({
 			queryKey: trpc.settings.getAll.queryOptions().queryKey,
@@ -389,6 +425,7 @@ export default function SettingsPage() {
 	};
 
 	const handleSave = async () => {
+		if (hasErrors) return;
 		try {
 			// Awaited so a vCard save failure surfaces in this try/catch instead of
 			// racing an independent success toast (it persists via its own tRPC mutation).
@@ -513,12 +550,17 @@ export default function SettingsPage() {
 				if (fileInputRef.current) fileInputRef.current.value = "";
 				return;
 			}
-			await importData.mutateAsync({
+			const result = await importData.mutateAsync({
 				mode: "merge",
 				data: parsed.data,
 			});
 			invalidate();
-			toast.success("Import successful");
+			const skipped = result.skipped.blocks + result.skipped.socialNetworks;
+			if (skipped > 0) {
+				toast.warning(`Imported with ${skipped} invalid row${skipped === 1 ? "" : "s"} skipped`);
+			} else {
+				toast.success("Import successful");
+			}
 		} catch {
 			toast.error("Failed to import. Make sure the file is valid JSON.");
 		}
@@ -536,8 +578,16 @@ export default function SettingsPage() {
 		);
 	}
 
+	if (settingsQuery.isError) {
+		return (
+			<PageShell>
+				<QueryError message="Couldn't load settings" onRetry={() => settingsQuery.refetch()} />
+			</PageShell>
+		);
+	}
+
 	return (
-		<div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300 ease-out space-y-6">
+		<PageShell>
 			<PageHeader
 				title="Settings"
 				description={isDirty ? "You have unsaved changes" : "Configure your LinkDen instance"}
@@ -552,7 +602,7 @@ export default function SettingsPage() {
 					<Button
 						size="sm"
 						variant={isDirty ? "default" : "outline"}
-						disabled={!isDirty || updateSettings.isPending}
+						disabled={!isDirty || hasErrors || updateSettings.isPending}
 						onClick={handleSave}
 					>
 						<Save className="mr-1.5 h-3.5 w-3.5" />
@@ -655,22 +705,19 @@ export default function SettingsPage() {
 							>
 								Timezone
 							</label>
-							<select
+							<Select
 								id="timezone-select"
 								value={timezone}
-								onChange={(e) => setTimezone(e.target.value)}
-								className="dark:bg-input/30 border-input h-9 w-full rounded-md border bg-transparent px-3 text-sm outline-none focus-visible:ring-1 focus-visible:ring-ring"
-							>
-								<option value="">
-									Browser default ({Intl.DateTimeFormat().resolvedOptions().timeZone})
-								</option>
-								{COMMON_TIMEZONES.map((tz) => (
-									<option key={tz.value} value={tz.value}>
-										{tz.label}
-									</option>
-								))}
-							</select>
-							<p className="text-[11px] text-muted-foreground">
+								onValueChange={setTimezone}
+								items={[
+									{
+										value: "",
+										label: `Browser default (${Intl.DateTimeFormat().resolvedOptions().timeZone})`,
+									},
+									...COMMON_TIMEZONES,
+								]}
+							/>
+							<p className="text-micro text-muted-foreground">
 								Used for timestamps on the dashboard. Defaults to your browser&apos;s timezone.
 							</p>
 						</div>
@@ -702,7 +749,11 @@ export default function SettingsPage() {
 						title="Digital business card (vCard)"
 						description="Let visitors save your contact details to their phone with one tap"
 					>
-						<VCardSection ref={vcardSectionRef} onDirtyChange={setVcardDirty} />
+						<VCardSection
+							ref={vcardSectionRef}
+							onDirtyChange={setVcardDirty}
+							onErrorsChange={setVcardHasErrors}
+						/>
 					</SectionCard>
 
 					<SectionCard
@@ -792,22 +843,14 @@ export default function SettingsPage() {
 				</TabsContent>
 
 				{/* Sticky save bar — visible across tabs while dirty */}
-				{isDirty && (
-					<div className="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-lg border border-primary/60 bg-background/95 px-4 py-2.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.4)] backdrop-blur">
-						<span className="text-xs text-muted-foreground">You have unsaved changes</span>
-						<div className="flex gap-2">
-							<Button variant="ghost" size="sm" onClick={handleDiscard}>
-								<Undo2 className="mr-1.5 h-3.5 w-3.5" />
-								Discard
-							</Button>
-							<Button size="sm" disabled={updateSettings.isPending} onClick={handleSave}>
-								<Save className="mr-1.5 h-3.5 w-3.5" />
-								{updateSettings.isPending ? "Saving…" : "Save changes"}
-							</Button>
-						</div>
-					</div>
-				)}
+				<StickySaveBar
+					isDirty={isDirty}
+					isSaving={updateSettings.isPending}
+					hasErrors={hasErrors}
+					onSave={handleSave}
+					onDiscard={handleDiscard}
+				/>
 			</Tabs>
-		</div>
+		</PageShell>
 	);
 }

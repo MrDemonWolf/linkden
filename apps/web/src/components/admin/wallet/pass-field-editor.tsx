@@ -89,7 +89,7 @@ export function PassFieldEditor({ zone, fields, onChange, onZoneFocus }: FieldEd
 		>
 			<div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
 				<div className="flex items-center gap-2">
-					<h3 className="text-[11px] font-semibold uppercase tracking-wider text-foreground/80">
+					<h3 className="text-micro font-semibold uppercase tracking-wider text-foreground/80">
 						{meta.name}
 					</h3>
 					<span className="font-mono text-[9.5px] text-muted-foreground/70 tabular-nums">
@@ -110,7 +110,7 @@ export function PassFieldEditor({ zone, fields, onChange, onZoneFocus }: FieldEd
 			</div>
 
 			{fields.length === 0 ? (
-				<p className="px-3 py-3 text-[11px] italic text-muted-foreground/60">
+				<p className="px-3 py-3 text-micro italic text-muted-foreground/60">
 					No fields yet. Click <span className="font-semibold">Add</span> to insert one.
 				</p>
 			) : (
@@ -189,7 +189,7 @@ function SortableFieldRow({
 					placeholder="Label"
 					value={field.label}
 					onChange={(e) => onUpdate({ label: e.target.value })}
-					className="h-7 text-[11px]"
+					className="h-7 text-micro"
 					aria-label={`${zone} field ${idx + 1} label`}
 				/>
 				<Input
@@ -197,10 +197,10 @@ function SortableFieldRow({
 					placeholder="Value"
 					value={field.value}
 					onChange={(e) => onUpdate({ value: e.target.value })}
-					className="h-7 text-[11px]"
+					className="h-7 text-micro"
 					aria-label={`${zone} field ${idx + 1} value`}
 				/>
-				<p className="col-span-2 -mt-0.5 font-mono text-[9px] text-muted-foreground/40">
+				<p className="col-span-2 -mt-0.5 font-mono text-micro text-muted-foreground/40">
 					{jsonPath}
 				</p>
 			</div>

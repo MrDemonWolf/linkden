@@ -7,6 +7,7 @@ import { Save, Undo2, Globe, Search, Plus, Trash2 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { trpc } from "@/utils/trpc";
 import { socialBrands } from "@linkden/ui/social-brands";
+import type { SocialNetworkUpdate } from "@linkden/validators/social";
 import { getAccessibleIconFill, isLowLuminance } from "@linkden/ui/color-contrast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -234,7 +235,7 @@ export function SocialTab({ onDirtyChange }: SocialTabProps) {
 
 	const handleSaveSocial = async () => {
 		const dbMap = new Map(dbRows.map((r) => [r.slug, r]));
-		const changes: Array<{ slug: string; url: string; isActive: boolean }> = [];
+		const changes: SocialNetworkUpdate[] = [];
 
 		for (const brand of socialBrands) {
 			const draft = drafts[brand.slug];
@@ -279,7 +280,7 @@ export function SocialTab({ onDirtyChange }: SocialTabProps) {
 						<div className="py-8 text-center">
 							<Globe className="mx-auto h-8 w-8 text-muted-foreground/40" />
 							<p className="mt-2 text-xs text-muted-foreground">No social links yet</p>
-							<p className="mt-1 text-[11px] text-muted-foreground">
+							<p className="mt-1 text-micro text-muted-foreground">
 								Search below to add your first social network
 							</p>
 						</div>
@@ -379,7 +380,7 @@ export function SocialTab({ onDirtyChange }: SocialTabProps) {
 										</div>
 										<div className="min-w-0 flex-1">
 											<p className="text-xs font-medium truncate">{network.name}</p>
-											<p className="text-[10px] text-muted-foreground">
+											<p className="text-micro text-muted-foreground">
 												{CATEGORY_LABELS[network.category] || network.category}
 											</p>
 										</div>

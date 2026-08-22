@@ -5,11 +5,11 @@ import { Eye, Link2, MousePointerClick, Percent } from "lucide-react";
 import { useState } from "react";
 import { CountriesList } from "@/components/admin/analytics/countries-list";
 import { ReferrersList } from "@/components/admin/analytics/referrers-list";
-import { TopLinksList } from "@/components/admin/top-links-list";
 import { ViewsClicksChart } from "@/components/admin/analytics/views-clicks-chart";
 import { PageHeader } from "@/components/admin/page-header";
 import { type Period, PeriodSelector } from "@/components/admin/period-selector";
 import { StatCard } from "@/components/admin/stat-card";
+import { TopLinksList } from "@/components/admin/top-links-list";
 import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 import { trpc } from "@/utils/trpc";
 
@@ -73,7 +73,6 @@ export default function AnalyticsPage() {
 						icon={Eye}
 						label="Views"
 						value={totalViews}
-						gradient="from-primary/10 via-primary/5 to-transparent"
 						isLoading={overview.isLoading}
 						isError={overview.isError}
 						onRetry={() => overview.refetch()}
@@ -86,9 +85,6 @@ export default function AnalyticsPage() {
 						icon={MousePointerClick}
 						label="Clicks"
 						value={totalClicks}
-						iconColor="text-emerald-400"
-						iconBg="bg-emerald-500/10"
-						gradient="from-emerald-500/10 via-emerald-500/5 to-transparent"
 						isLoading={overview.isLoading}
 						isError={overview.isError}
 						onRetry={() => overview.refetch()}
@@ -101,9 +97,6 @@ export default function AnalyticsPage() {
 						icon={Percent}
 						label="CTR"
 						value={`${ctr.toFixed(1)}%`}
-						iconColor="text-violet-400"
-						iconBg="bg-violet-500/10"
-						gradient="from-violet-500/10 via-violet-500/5 to-transparent"
 						isLoading={overview.isLoading}
 						isError={overview.isError}
 						onRetry={() => overview.refetch()}
@@ -116,9 +109,6 @@ export default function AnalyticsPage() {
 						icon={Link2}
 						label="Active Links"
 						value={activeLinks}
-						iconColor="text-amber-400"
-						iconBg="bg-amber-500/10"
-						gradient="from-amber-500/10 via-amber-500/5 to-transparent"
 						isLoading={overview.isLoading}
 						isError={overview.isError}
 						onRetry={() => overview.refetch()}
@@ -176,7 +166,7 @@ export default function AnalyticsPage() {
 			{/* Retention note */}
 			<p
 				{...getAnimationProps(9)}
-				className="text-center text-[11px] text-muted-foreground font-mono pt-2"
+				className="text-center text-micro text-muted-foreground font-mono pt-2"
 			>
 				ⓘ analytics retained 90 days · stored locally · no third parties
 			</p>

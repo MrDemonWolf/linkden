@@ -68,7 +68,7 @@ export function ConnectionListItem({
 			>
 				<div
 					className={cn(
-						"flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
+						"flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-micro font-semibold",
 						connection.isRead ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary",
 					)}
 				>
@@ -88,7 +88,7 @@ export function ConnectionListItem({
 					</div>
 					<div className="flex items-center gap-1.5">
 						{connection.whereMet && (
-							<span className="inline-flex items-center gap-0.5 text-[11px] text-primary">
+							<span className="inline-flex items-center gap-0.5 text-micro text-primary">
 								<MapPin className="h-2.5 w-2.5" />
 								{connection.whereMet}
 							</span>
