@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
 import { AlertTriangle } from "lucide-react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
 // Admin error boundary — keeps admin chrome visible (the parent admin layout)
@@ -32,13 +32,14 @@ export default function AdminError({
 					<p className="mt-3 font-mono text-micro text-muted-foreground/60">ref: {error.digest}</p>
 				) : null}
 				<div className="mt-6 flex items-center justify-center gap-3">
-					<Button onClick={reset} className="h-10 px-5 text-sm">
+					<Button onClick={reset} size="lg" className="px-5 text-sm">
 						Try again
 					</Button>
 					<Button
 						variant="outline"
 						onClick={() => window.location.reload()}
-						className="h-10 px-5 text-sm"
+						size="lg"
+						className="px-5 text-sm"
 					>
 						Reload page
 					</Button>

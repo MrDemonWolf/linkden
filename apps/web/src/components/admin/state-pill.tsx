@@ -39,6 +39,9 @@ export function StatePill({ className }: { className?: string }) {
 				className={cn(
 					base,
 					"border-border text-muted-foreground transition-colors hover:text-foreground",
+					// The only interactive variant: keep the 28px pill but grow the hit
+					// area to 44px below md (WCAG 2.5.8) with a pseudo-element.
+					"relative after:absolute after:inset-x-0 after:-inset-y-2 after:content-[''] md:after:hidden",
 				)}
 			>
 				{draftCount} draft{draftCount === 1 ? "" : "s"}

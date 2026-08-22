@@ -1,8 +1,8 @@
 "use client";
 
+import { PASS_LOCATION_LIMIT, type PassLocation } from "@linkden/validators/wallet";
 import { CalendarPlus, MapPin, Trash2, X } from "lucide-react";
 import { useRef, useState } from "react";
-import { PASS_LOCATION_LIMIT, type PassLocation } from "@linkden/validators/wallet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -94,7 +94,7 @@ export function ContextPanel({
 						<button
 							type="button"
 							onClick={() => removeLocation(i)}
-							className="inline-flex min-h-8 items-center gap-1 rounded text-micro text-destructive hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+							className="inline-flex min-h-11 items-center gap-1 rounded text-micro text-destructive hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-8"
 						>
 							<Trash2 className="h-3 w-3" /> Remove
 						</button>
@@ -154,7 +154,7 @@ export function ContextPanel({
 				)}
 			</div>
 
-			<p className="text-[10.5px] leading-relaxed text-muted-foreground/70">
+			<p className="text-micro leading-relaxed text-muted-foreground/70">
 				Add places and timing so Wallet can surface this card when it is most useful.
 			</p>
 		</div>

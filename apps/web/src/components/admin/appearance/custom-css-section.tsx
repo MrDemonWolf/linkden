@@ -162,9 +162,9 @@ function CssEditor({ value, onChange }: { value: string; onChange: (value: strin
 					rows={12}
 					spellCheck={false}
 					aria-label="Custom CSS"
-					className="w-full resize-y rounded-lg border border-border/60 bg-[#282c34] px-3 py-2 font-mono text-xs text-zinc-100 outline-none focus-visible:ring-1 focus-visible:ring-ring"
+					className="w-full resize-y rounded-lg border border-border/60 bg-code-surface px-3 py-2 font-mono text-xs text-code-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
 				/>
-				<p className="text-[11px] text-muted-foreground">
+				<p className="text-micro text-muted-foreground">
 					The rich editor failed to load — using a plain text editor instead.
 				</p>
 			</div>
@@ -176,12 +176,12 @@ function CssEditor({ value, onChange }: { value: string; onChange: (value: strin
 			<div
 				ref={editorRef}
 				className={cn(
-					"overflow-hidden rounded-lg border border-border/60 bg-[#282c34] transition-opacity",
+					"overflow-hidden rounded-lg border border-border/60 bg-code-surface transition-opacity",
 					loaded ? "opacity-100" : "opacity-0",
 				)}
 			/>
 			{!loaded && (
-				<div className="h-[200px] rounded-lg border border-border/60 bg-[#282c34] flex items-center justify-center">
+				<div className="h-[200px] rounded-lg border border-border/60 bg-code-surface flex items-center justify-center">
 					<div className="flex items-center gap-2 text-xs text-muted-foreground">
 						<div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
 						Loading editor...
@@ -203,7 +203,7 @@ function CssReference() {
 				type="button"
 				onClick={() => setOpen(!open)}
 				aria-expanded={open}
-				className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+				className="flex min-h-11 w-full items-center justify-between px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground md:min-h-9"
 			>
 				<span className="flex items-center gap-1.5">
 					<Info className="h-3.5 w-3.5" />

@@ -8,8 +8,9 @@ import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { replaceTemplateVars } from "@/lib/format";
-import { cn } from "@/lib/utils";
 import { fieldError } from "@/lib/validate";
 
 // Same caps the server applies (it truncates silently past them).
@@ -106,30 +107,47 @@ function Toggle({
 	);
 }
 
-function ModeToggle({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+/**
+ * URL-vs-Text switch for a legal link. Single-select `ToggleGroup` (Base UI's
+ * `multiple` defaults to false); an empty `next` means the pressed segment was
+ * re-pressed, so it is ignored and one mode always stays selected. `label`
+ * names the group — the two segments read "URL"/"Text" in both instances, so
+ * without it a screen reader cannot tell the privacy group from the terms one.
+ */
+function ModeToggle({
+	value,
+	onChange,
+	label,
+}: {
+	value: string;
+	onChange: (v: string) => void;
+	label: string;
+}) {
 	return (
-		<div className="inline-flex rounded-md border border-border overflow-hidden text-micro">
-			<button
-				type="button"
-				className={cn(
-					"min-h-11 px-3 py-0.5 transition-colors md:min-h-0 md:px-2",
-					value === "url" ? "bg-primary text-primary-foreground" : "hover:bg-muted",
-				)}
-				onClick={() => onChange("url")}
+		<ToggleGroup
+			value={[value]}
+			onValueChange={(next) => {
+				const picked = next[0];
+				if (picked) onChange(picked);
+			}}
+			size="sm"
+			spacing={0}
+			aria-label={label}
+			className="rounded-md border border-border p-0.5"
+		>
+			<ToggleGroupItem
+				value="url"
+				className="min-h-11 px-3 md:min-h-7 md:px-2 aria-pressed:bg-primary aria-pressed:text-primary-foreground hover:aria-pressed:bg-primary hover:aria-pressed:text-primary-foreground"
 			>
 				URL
-			</button>
-			<button
-				type="button"
-				className={cn(
-					"min-h-11 px-3 py-0.5 transition-colors md:min-h-0 md:px-2",
-					value === "text" ? "bg-primary text-primary-foreground" : "hover:bg-muted",
-				)}
-				onClick={() => onChange("text")}
+			</ToggleGroupItem>
+			<ToggleGroupItem
+				value="text"
+				className="min-h-11 px-3 md:min-h-7 md:px-2 aria-pressed:bg-primary aria-pressed:text-primary-foreground hover:aria-pressed:bg-primary hover:aria-pressed:text-primary-foreground"
 			>
 				Text
-			</button>
-		</div>
+			</ToggleGroupItem>
+		</ToggleGroup>
 	);
 }
 
@@ -285,7 +303,7 @@ export function BrandingSection({
 					<div className="space-y-1.5">
 						<div className="flex items-center gap-2">
 							<Label htmlFor="branding-pp">Privacy Policy</Label>
-							<ModeToggle value={ppMode} onChange={onPpModeChange} />
+							<ModeToggle value={ppMode} onChange={onPpModeChange} label="Privacy policy source" />
 						</div>
 						{ppMode === "url" ? (
 							<Input
@@ -299,12 +317,11 @@ export function BrandingSection({
 								aria-describedby={errors.ppUrl ? "branding-pp-error" : undefined}
 							/>
 						) : (
-							<textarea
+							<Textarea
 								id="branding-pp"
 								value={ppText}
 								onChange={(e) => onPpTextChange(e.target.value)}
 								placeholder="Enter your privacy policy text..."
-								className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 								rows={4}
 							/>
 						)}
@@ -313,7 +330,11 @@ export function BrandingSection({
 					<div className="space-y-1.5">
 						<div className="flex items-center gap-2">
 							<Label htmlFor="branding-tos">Terms of Service</Label>
-							<ModeToggle value={tosMode} onChange={onTosModeChange} />
+							<ModeToggle
+								value={tosMode}
+								onChange={onTosModeChange}
+								label="Terms of service source"
+							/>
 						</div>
 						{tosMode === "url" ? (
 							<Input
@@ -327,12 +348,11 @@ export function BrandingSection({
 								aria-describedby={errors.tosUrl ? "branding-tos-error" : undefined}
 							/>
 						) : (
-							<textarea
+							<Textarea
 								id="branding-tos"
 								value={tosText}
 								onChange={(e) => onTosTextChange(e.target.value)}
 								placeholder="Enter your terms of service text..."
-								className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 								rows={4}
 							/>
 						)}

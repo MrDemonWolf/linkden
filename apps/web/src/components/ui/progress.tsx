@@ -27,5 +27,5 @@ function Progress({ className, value = 0, max = 100, ...props }: ProgressProps) 
 	);
 }
 
-export { Progress };
 export type { ProgressProps };
+export { Progress };

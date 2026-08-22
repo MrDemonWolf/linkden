@@ -32,7 +32,7 @@ export function StatCard({
 	subtitle,
 }: StatCardProps) {
 	return (
-		<Card size="sm" className="group relative overflow-hidden">
+		<Card size="sm" className="group relative h-full overflow-hidden">
 			{/* Every stat tints with primary — the per-card rainbow carried no meaning. */}
 			<div
 				className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent"
@@ -40,10 +40,10 @@ export function StatCard({
 			/>
 			<CardContent className="relative flex items-center gap-3">
 				<div
-					className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10"
+					className="flex size-9 shrink-0 items-center justify-center rounded-md border border-primary/30 bg-primary/10"
 					aria-hidden="true"
 				>
-					<Icon className="h-4 w-4 text-primary" />
+					<Icon className="size-4 text-primary" />
 				</div>
 				<div className="min-w-0 flex-1">
 					<p className="text-micro uppercase tracking-[0.14em] text-muted-foreground font-mono">
@@ -54,17 +54,15 @@ export function StatCard({
 					{isError ? (
 						<div className="mt-1 flex items-center gap-2">
 							<span className="inline-flex items-center gap-1 text-xs text-destructive">
-								<AlertCircle className="h-3.5 w-3.5" aria-hidden="true" />
+								<AlertCircle className="size-3.5" aria-hidden="true" />
 								Failed to load
 							</span>
+							{/* `size="xs"` keeps the 44px touch target below `md` and only
+							    then collapses to the dense 24px chip — the old `h-6`
+							    override applied the dense height at every width. */}
 							{onRetry && (
-								<Button
-									size="sm"
-									variant="outline"
-									onClick={onRetry}
-									className="h-6 gap-1 px-2 text-micro"
-								>
-									<RotateCw className="h-3 w-3" />
+								<Button size="xs" variant="outline" onClick={onRetry}>
+									<RotateCw className="size-3" />
 									Retry
 								</Button>
 							)}
@@ -86,9 +84,9 @@ export function StatCard({
 									)}
 								>
 									{trend.value > 0 ? (
-										<TrendingUp className="h-2.5 w-2.5" />
+										<TrendingUp className="size-2.5" />
 									) : trend.value < 0 ? (
-										<TrendingDown className="h-2.5 w-2.5" />
+										<TrendingDown className="size-2.5" />
 									) : null}
 									{trend.value > 0 ? "+" : ""}
 									{trend.value}%
@@ -101,13 +99,16 @@ export function StatCard({
 					)}
 				</div>
 				{href && !isError && (
-					<Link
-						href={href as never}
-						className="relative ml-auto flex h-11 w-11 items-center justify-center rounded-md transition-colors hover:bg-muted md:h-auto md:w-auto md:p-1"
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						className="relative ml-auto"
 						aria-label={`Go to ${label}`}
+						nativeButton={false}
+						render={<Link href={href as never} />}
 					>
-						<ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-					</Link>
+						<ArrowUpRight className="size-3.5 text-muted-foreground transition-colors group-hover:text-foreground" />
+					</Button>
 				)}
 			</CardContent>
 		</Card>

@@ -5,6 +5,14 @@ import type { Route } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+	Empty,
+	EmptyContent,
+	EmptyDescription,
+	EmptyHeader,
+	EmptyMedia,
+	EmptyTitle,
+} from "@/components/ui/empty";
 
 interface EmptyStateProps {
 	icon: LucideIcon;
@@ -14,33 +22,44 @@ interface EmptyStateProps {
 	action?: { label: string; onClick: () => void } | { label: string; href: Route };
 }
 
+/**
+ * Admin empty state. The layout, spacing and typography come from the shared
+ * `Empty` primitives; the `Card` wrapper is kept so the block sits on the same
+ * matte surface as everything else on an admin page (the primitive's own
+ * dashed-border treatment would read as a drop target here).
+ */
 export function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps) {
 	return (
 		<Card>
-			<CardContent className="py-16 text-center">
-				<div className="relative mx-auto mb-4 flex h-14 w-14 items-center justify-center">
-					<div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/10 to-primary/5" />
-					<Icon className="relative h-7 w-7 text-muted-foreground/50" aria-hidden="true" />
-				</div>
-				<p className="text-sm font-semibold">{title}</p>
-				<p className="mx-auto mt-1.5 max-w-xs text-xs text-muted-foreground leading-relaxed">
-					{description}
-				</p>
-				{action &&
-					("href" in action ? (
-						<Button
-							variant="outline"
-							size="sm"
-							className="mt-5"
-							render={<Link href={action.href} />}
-						>
-							{action.label}
-						</Button>
-					) : (
-						<Button variant="outline" size="sm" className="mt-5" onClick={action.onClick}>
-							{action.label}
-						</Button>
-					))}
+			<CardContent>
+				<Empty className="py-12">
+					<EmptyHeader>
+						<EmptyMedia className="relative mb-0 size-14">
+							<div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/10 to-primary/5" />
+							<Icon className="relative size-7 text-muted-foreground/50" aria-hidden="true" />
+						</EmptyMedia>
+						<EmptyTitle className="font-semibold">{title}</EmptyTitle>
+						<EmptyDescription className="max-w-xs">{description}</EmptyDescription>
+					</EmptyHeader>
+					{action && (
+						<EmptyContent>
+							{"href" in action ? (
+								<Button
+									variant="outline"
+									size="sm"
+									nativeButton={false}
+									render={<Link href={action.href} />}
+								>
+									{action.label}
+								</Button>
+							) : (
+								<Button variant="outline" size="sm" onClick={action.onClick}>
+									{action.label}
+								</Button>
+							)}
+						</EmptyContent>
+					)}
+				</Empty>
 			</CardContent>
 		</Card>
 	);

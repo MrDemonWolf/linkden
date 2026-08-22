@@ -48,8 +48,17 @@
   /* Light-mode counterparts of the dark-only admin tokens (were undefined) */
   --glass-tint-1: #00aced;
   --glass-tint-2: #6b8bf5;
-  /* Shell chrome (sidebar, top bar, tab bar) sits on the card plane */
+  /* Shell chrome (sidebar, top bar, tab bar) sits on the card plane. The
+     rest of the shadcn sidebar set is derived, never invented: accent is the
+     inset plane, primary/border/ring are the app's own. */
   --sidebar: var(--card);
+  --sidebar-foreground: var(--card-foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--surface-2);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
   --data-up: oklch(0.52 0.13 160);
   --data-down: oklch(0.51 0.2 27);
   --dim: oklch(0.55 0 0);
@@ -66,6 +75,11 @@
   --signal: linear-gradient(90deg, var(--primary), var(--glass-tint-2));
   /* Preview-column desk ground: 12px dot grid, foreground at ~14% */
   --canvas-dot: oklch(0 0 0 / 0.14);
+  /* CodeMirror's One Dark surface. The custom-CSS editor is dark in both colour
+     modes (the syntax theme is), so this is one value, not a light/dark pair —
+     but it lives here as a token so no component carries a hex literal. */
+  --code-surface: oklch(0.2925 0.0157 264.3);
+  --code-foreground: oklch(0.7621 0.0202 262.99);
 }
 
 .dark {
@@ -104,8 +118,17 @@
   --chart-5: #4e6287;
   --glass-tint-1: #00ACED;
   --glass-tint-2: #6B8BF5;
-  /* Shell chrome (sidebar, top bar, tab bar) sits on the card plane */
+  /* Shell chrome (sidebar, top bar, tab bar) sits on the card plane. The
+     rest of the shadcn sidebar set is derived, never invented: accent is the
+     inset plane, primary/border/ring are the app's own. */
   --sidebar: var(--card);
+  --sidebar-foreground: var(--card-foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--surface-2);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
   --data-up: #6be0a8;
   --data-down: #ff9aa8;
   --dim: #4e6287;
@@ -168,8 +191,17 @@
   --color-background: var(--background);
   --color-surface-2: var(--surface-2);
   --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
   --color-rule: var(--rule);
   --color-canvas-dot: var(--canvas-dot);
+  --color-code-surface: var(--code-surface);
+  --color-code-foreground: var(--code-foreground);
   --color-glass: var(--glass-bg);
   --color-glass-border: var(--glass-border);
   --shadow-card: var(--shadow-card);
@@ -184,6 +216,14 @@
     40% { transform: scale(1.9); opacity: 0.45; }
     100% { transform: scale(1); opacity: 1; }
   }
+}
+
+/* Radius scale lives in a NON-inline `@theme` on purpose. `@theme inline`
+   substitutes the literal value into every utility (`.rounded-lg{border-radius:1.125rem}`)
+   and never emits the custom property, which makes a runtime override impossible.
+   Plain `@theme` emits `--radius-*` on `:root` and compiles utilities to
+   `var(--radius-*)`, so `.admin-scope` below can retune the whole scale. */
+@theme {
   /* Explicit radius scale (was a calc() chain off --radius) */
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
@@ -193,6 +233,36 @@
   --radius-3xl: 2rem;
   --radius-4xl: 2.5rem;
   --radius-pill: 9999px;
+}
+
+/* Admin-only radius scale. The public link-in-bio page is a soft, pill-heavy
+   surface and keeps the generous global radii; the admin panel is a dense tool
+   where 18px corners on a 32px control read as a bubble. Scoping the tokens
+   (rather than the global values) lets both live in one stylesheet — the admin
+   shell root carries `.admin-scope`, everything under it inherits the tighter
+   scale, and no component has to branch on where it is rendered. Unlayered so
+   it outranks Tailwind's `@layer theme` `:root`. */
+.admin-scope {
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+}
+
+/* Restores the global scale inside an `.admin-scope` subtree. Two consumers,
+   both of which must NOT inherit the console's radii:
+   - the live preview (`PhoneFrame`), which renders the real `PublicPage`
+     inline — under the admin scale it would lie about the live page;
+   - nothing else today, but any future embed of public surfaces in the admin.
+   Unlayered, like `.admin-scope`, and declared after it so it wins on order at
+   equal specificity when the two are nested. */
+.public-scope {
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.125rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 1.75rem;
 }
 
 @layer base {

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
 import { AlertTriangle } from "lucide-react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { WolfLogo } from "@/components/wolf-logo";
 
@@ -40,7 +40,7 @@ export default function RootError({
 					<p className="mt-3 font-mono text-micro text-muted-foreground/60">ref: {error.digest}</p>
 				) : null}
 				<div className="mt-8 flex items-center justify-center gap-3">
-					<Button onClick={reset} className="h-10 px-5 text-sm">
+					<Button onClick={reset} size="lg" className="px-5 text-sm">
 						Try again
 					</Button>
 					<a

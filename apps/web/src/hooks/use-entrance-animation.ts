@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 /**
  * Hook that provides staggered entrance animation props for lists of elements.
@@ -11,8 +11,15 @@ export function useEntranceAnimation(options?: { baseDelay?: number; stagger?: n
 	const [isReady, setIsReady] = useState(false);
 
 	useEffect(() => {
-		const id = requestAnimationFrame(() => setIsReady(true));
-		return () => cancelAnimationFrame(id);
+		// rAF lets the opacity:0 state paint once so the transition actually runs.
+		// It never fires in a background tab though, which would leave the page
+		// stuck invisible until the tab is focused, so a timer backstops it.
+		const frame = requestAnimationFrame(() => setIsReady(true));
+		const timer = setTimeout(() => setIsReady(true), 200);
+		return () => {
+			cancelAnimationFrame(frame);
+			clearTimeout(timer);
+		};
 	}, []);
 
 	const getAnimationProps = useCallback(

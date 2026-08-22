@@ -27,7 +27,7 @@ export function CollapsibleSection({
 			<button
 				type="button"
 				onClick={() => setOpen(!open)}
-				className="flex w-full items-center justify-between px-4 py-2.5 text-micro font-medium uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
+				className="flex min-h-11 w-full items-center justify-between px-4 py-2.5 text-micro font-medium uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground md:min-h-9"
 				aria-expanded={open}
 			>
 				{label}

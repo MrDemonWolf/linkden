@@ -18,13 +18,13 @@ export function SectionHeader({ icon: Icon, title, count, variant = "muted" }: S
 				<CardTitle className="flex items-center gap-2 text-sm text-foreground">
 					<span
 						className={cn(
-							"flex h-7 w-7 items-center justify-center rounded-lg",
+							"flex size-7 items-center justify-center rounded-md",
 							variant === "primary" ? "bg-primary/10 ring-1 ring-primary/20" : "bg-muted/80",
 						)}
 					>
 						<Icon
 							className={cn(
-								"h-4 w-4",
+								"size-4",
 								variant === "primary" ? "text-primary" : "text-muted-foreground",
 							)}
 							aria-hidden="true"
@@ -68,21 +68,22 @@ export function SectionCard({
 	className,
 }: SectionCardProps) {
 	return (
-		<Card className={cn("overflow-hidden", className)}>
-			<CardContent className="pt-0">
-				<div className="-mx-6 mb-4 flex items-start gap-3 border-b border-border/50 px-6 py-4">
-					<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/20">
-						<Icon className="h-4 w-4" aria-hidden="true" />
-					</div>
-					<div className="min-w-0">
-						<h2 className="text-sm font-semibold">{title}</h2>
-						{description && (
-							<p className="mt-0.5 text-micro text-muted-foreground">{description}</p>
-						)}
-					</div>
+		<Card className={className}>
+			{/* CardHeader owns the header band, so its padding tracks the Card's own
+			    (the old `-mx-6 px-6` row was hand-tuned to a gutter Card no longer
+			    uses, which pushed the title 8px out of line with the body). */}
+			<CardHeader className="flex flex-row items-start gap-3 border-b border-border/50">
+				<div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary ring-1 ring-primary/20">
+					<Icon className="size-4" aria-hidden="true" />
 				</div>
-				{children}
-			</CardContent>
+				<div className="min-w-0">
+					<h2>
+						<CardTitle className="font-semibold">{title}</CardTitle>
+					</h2>
+					{description && <p className="mt-0.5 text-micro text-muted-foreground">{description}</p>}
+				</div>
+			</CardHeader>
+			<CardContent>{children}</CardContent>
 		</Card>
 	);
 }
