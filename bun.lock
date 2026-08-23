@@ -196,6 +196,7 @@
       "dependencies": {
         "@libsql/client": "0.17.0",
         "@linkden/env": "workspace:*",
+        "@linkden/validators": "workspace:*",
         "dotenv": "catalog:",
         "drizzle-orm": "catalog:",
         "libsql": "0.5.22",
