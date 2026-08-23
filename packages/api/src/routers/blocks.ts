@@ -18,8 +18,11 @@ import { runBatch } from "../utils/settings";
 // Blocks are the core content units on the public page. Each block has a type
 // that determines its rendering and config schema — both come from
 // @linkden/validators/blocks, shared with the admin builder so client and
-// server validate identically. Blocks follow a draft/published flow: every
-// mutation sets status="draft", and publishAll promotes all drafts at once.
+// server validate identically. Blocks follow a draft/published flow: a new
+// block starts as "draft" and publishAll promotes all drafts at once. Editing
+// an ALREADY-PUBLISHED block must NOT demote it back to draft — that would
+// silently pull a live block off the public page (public.getPage filters on
+// status="published") until the next Publish.
 //
 // URLs are rejected by the shared httpUrlSchema (no silent blanking); titles
 // still go through stripHtml as a last line of defence against stored XSS.
@@ -67,7 +70,6 @@ export const blocksRouter = router({
 			.set({
 				...data,
 				title: data.title === undefined ? undefined : stripHtml(data.title),
-				status: "draft",
 				updatedAt: new Date(),
 			})
 			.where(eq(block.id, id))
@@ -90,7 +92,7 @@ export const blocksRouter = router({
 			input.map((item) =>
 				db
 					.update(block)
-					.set({ position: item.position, status: "draft", updatedAt: new Date() })
+					.set({ position: item.position, updatedAt: new Date() })
 					.where(eq(block.id, item.id)),
 			),
 		);
@@ -107,7 +109,7 @@ export const blocksRouter = router({
 		.mutation(async ({ input }) => {
 			const [result] = await db
 				.update(block)
-				.set({ isEnabled: input.isEnabled, status: "draft", updatedAt: new Date() })
+				.set({ isEnabled: input.isEnabled, updatedAt: new Date() })
 				.where(eq(block.id, input.id))
 				.returning();
 			return result;

@@ -8,8 +8,9 @@ import { trpc } from "@/utils/trpc";
 
 /**
  * Honest page state in the top bar: `● Unsaved` (any dirty form, amber) >
- * `n drafts` (unpublished blocks, links to Links) > `● Live`. No fake Publish
- * button — block drafts are published from Links.
+ * `n unpublished` (never-published blocks, links to Links) > `● Live`. No fake
+ * Publish button — new blocks are published from Links. Edits to an already
+ * published block are live the moment they save, so they never count here.
  */
 export function StatePill({ className }: { className?: string }) {
 	const unsaved = useAnyUnsaved();
@@ -44,7 +45,7 @@ export function StatePill({ className }: { className?: string }) {
 					"relative after:absolute after:inset-x-0 after:-inset-y-2 after:content-[''] md:after:hidden",
 				)}
 			>
-				{draftCount} draft{draftCount === 1 ? "" : "s"}
+				{draftCount} unpublished
 			</Link>
 		);
 	}
