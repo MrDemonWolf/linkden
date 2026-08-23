@@ -1,3 +1,4 @@
+import { DEFAULT_RETENTION, type RetentionPolicy } from "@linkden/validators/retention";
 import { lt } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
@@ -5,20 +6,9 @@ import { auditLog, contactSubmission, linkClick, pageView, session } from "./sch
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export interface RetentionPolicy {
-	/** Days to keep page views and link clicks. */
-	analyticsDays: number;
-	/** Days to keep contact-form submissions. */
-	contactsDays: number;
-	/** Days to keep audit-log entries. */
-	auditDays: number;
-}
-
-export const DEFAULT_RETENTION: RetentionPolicy = {
-	analyticsDays: 365,
-	contactsDays: 365,
-	auditDays: 180,
-};
+// Defined in @linkden/validators so the admin UI can quote the same numbers
+// without importing the database package.
+export { DEFAULT_RETENTION, type RetentionPolicy };
 
 // Structural type covering both the D1 (production) and libsql (test) drivers,
 // regardless of the schema generic they were created with.
