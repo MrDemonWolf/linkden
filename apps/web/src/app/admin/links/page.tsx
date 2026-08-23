@@ -51,7 +51,7 @@ import { trpc } from "@/utils/trpc";
 
 const FILTERS = [
 	{ id: "all", label: "All" },
-	{ id: "drafts", label: "Drafts" },
+	{ id: "drafts", label: "Unpublished" },
 	{ id: "hidden", label: "Hidden" },
 ] as const;
 type Filter = (typeof FILTERS)[number]["id"];
@@ -322,6 +322,8 @@ export default function LinksBlocksPage() {
 		<div className="space-y-4">
 			{/* One toolbar line, edge-to-edge with the block list panel below it:
 			    the single-select filter group on the left, Publish on the right.
+			    Publish only ever promotes never-published blocks — edits to a live
+			    block go out immediately (blocks.update keeps status="published").
 			    No wrapping — the two always share a row. */}
 			<div className="flex items-center gap-2">
 				<ToggleGroup
@@ -363,7 +365,7 @@ export default function LinksBlocksPage() {
 					) : (
 						<>
 							<Rocket className="h-3.5 w-3.5" />
-							Publish{draftCount > 0 ? ` ${draftCount}` : ""}
+							{draftCount > 0 ? `Publish ${draftCount} new` : "All published"}
 						</>
 					)}
 				</Button>
