@@ -243,7 +243,15 @@ function refineBlock(val: BlockRefineInput, ctx: z.RefinementCtx) {
 	}
 }
 
-export const createBlockSchema = blockFieldsSchema.superRefine(refineBlock);
+export const blockStatusSchema = z.enum(["published", "draft"]);
+
+// `status` is create-only: it exists so an Undo after delete can put the row
+// back exactly as it was (a deleted live block must not return unpublished).
+// It is deliberately absent from updateBlockSchema — editing never changes
+// publication state.
+export const createBlockSchema = blockFieldsSchema
+	.extend({ status: blockStatusSchema.optional() })
+	.superRefine(refineBlock);
 
 export const updateBlockSchema = blockFieldsSchema
 	.partial()

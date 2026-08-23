@@ -5,17 +5,14 @@ import { maskSecret, WALLET_SETTING_KEYS } from "@linkden/validators/settings-re
 import {
 	PASS_FIELD_LIMITS,
 	PASS_LOCATION_LIMIT,
-	PASS_TEMPLATE_PRESETS,
 	type PassField,
 	type PassTemplatePreset,
 	parsePassFieldsJson,
 	parsePassLocationsJson,
-	seedFromPreset,
 	walletConfigSchema,
 	walletSigningKeysSchema,
 } from "@linkden/validators/wallet";
 import { asc, eq } from "drizzle-orm";
-import { z } from "zod";
 import { protectedProcedure, router } from "../index";
 import { logAudit } from "../utils/audit";
 import { stripHtml } from "../utils/sanitize";
@@ -105,22 +102,6 @@ export const walletRouter = router({
 		await logAudit("wallet.updateConfig", "wallet");
 		return { success: true };
 	}),
-
-	applyPreset: protectedProcedure
-		.input(z.object({ preset: z.enum(PASS_TEMPLATE_PRESETS) }))
-		.mutation(async ({ input }) => {
-			const seed = seedFromPreset(input.preset as PassTemplatePreset);
-			await runBatch([
-				settingUpsertStmt("wallet_template_preset", seed.templatePreset),
-				settingUpsertStmt("wallet_header_fields", JSON.stringify(seed.headerFields)),
-				settingUpsertStmt("wallet_primary_fields", JSON.stringify(seed.primaryFields)),
-				settingUpsertStmt("wallet_secondary_fields", JSON.stringify(seed.secondaryFields)),
-				settingUpsertStmt("wallet_auxiliary_fields", JSON.stringify(seed.auxiliaryFields)),
-				settingUpsertStmt("wallet_back_fields", JSON.stringify(seed.backFields)),
-			]);
-			await logAudit("wallet.applyPreset", "wallet", input.preset);
-			return { success: true, seed };
-		}),
 
 	getSigningStatus: protectedProcedure.query(async () => {
 		const settingsMap = await buildSettingsMap();

@@ -67,6 +67,19 @@ describe("editing a published block keeps it live", () => {
 		expect(await statusOf("b1")).toBe("published");
 	});
 
+	it("undo-after-delete restores the block with its original status", async () => {
+		// The page re-creates the deleted row, passing the captured status back.
+		const created = await caller.blocks.create({
+			id: "b-restored",
+			type: "link",
+			title: "Restored",
+			url: "https://example.com",
+			position: 0,
+			status: "published",
+		});
+		expect(created?.status).toBe("published");
+	});
+
 	it("a new block still starts as draft", async () => {
 		const created = await caller.blocks.create({
 			id: "b-new",

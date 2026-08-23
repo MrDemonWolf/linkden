@@ -38,6 +38,7 @@ import {
 	generateId,
 	TYPE_CHIP,
 } from "@/components/admin/builder/builder-constants";
+import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { EmptyState } from "@/components/admin/empty-state";
 import type { PreviewBlock } from "@/components/admin/page-preview";
 import { usePreviewSlot } from "@/components/admin/preview-slot";
@@ -168,11 +169,22 @@ export default function LinksBlocksPage() {
 		}
 	};
 
-	const handleDelete = async (block: Block) => {
+	// Deleting a block is a hard delete that also cascades its click history
+	// away, so it goes through ConfirmDialog like Inbox does. The Undo toast is
+	// the second net, not the only one.
+	const [pendingDelete, setPendingDelete] = useState<Block | null>(null);
+
+	const performDelete = async (block: Block) => {
+		setPendingDelete(null);
 		try {
 			await deleteBlock.mutateAsync({ id: block.id });
 			invalidate();
+			// Undo re-creates the row, so it must carry the status back or a live
+			// block would silently return as unpublished. Clicks are gone either
+			// way — the copy says so rather than claiming a full restore.
 			toast.success("Block deleted", {
+				description: "Click history for this block was deleted with it.",
+				duration: 12_000,
 				action: {
 					label: "Undo",
 					onClick: async () => {
@@ -187,12 +199,15 @@ export default function LinksBlocksPage() {
 								embedUrl: block.embedUrl ?? undefined,
 								isEnabled: block.isEnabled,
 								position: block.position,
+								status: block.status,
 								scheduledStart: block.scheduledStart ?? undefined,
 								scheduledEnd: block.scheduledEnd ?? undefined,
 								config: block.config ?? undefined,
 							});
 							invalidate();
-							toast.success("Block restored");
+							toast.success("Block restored", {
+								description: "Its click history was not — that data is gone.",
+							});
 						} catch {
 							toast.error("Failed to restore block");
 						}
@@ -293,7 +308,7 @@ export default function LinksBlocksPage() {
 			onDelete={() => {
 				const b = editingBlock;
 				closeEdit();
-				handleDelete(b);
+				setPendingDelete(b);
 			}}
 			isSaving={updateBlock.isPending}
 		/>
@@ -421,7 +436,7 @@ export default function LinksBlocksPage() {
 											block={block}
 											onToggle={() => handleToggle(block.id, block.isEnabled)}
 											onEdit={() => setEditingBlock(block)}
-											onDelete={() => handleDelete(block)}
+											onDelete={() => setPendingDelete(block)}
 											accent={editingBlock?.id === block.id}
 											featureHidden={isFeatureHidden(block.type)}
 										/>
@@ -516,6 +531,24 @@ export default function LinksBlocksPage() {
 					{editPanel}
 				</BottomSheet>
 			)}
+
+			<ConfirmDialog
+				open={pendingDelete !== null}
+				onOpenChange={(open) => {
+					if (!open) setPendingDelete(null);
+				}}
+				title="Delete block"
+				description={
+					pendingDelete
+						? `"${pendingDelete.title || BLOCK_TYPES.find((t) => t.type === pendingDelete.type)?.label || "This block"}" and its click history will be deleted. Undo restores the block, but not the history.`
+						: ""
+				}
+				confirmLabel="Delete"
+				isPending={deleteBlock.isPending}
+				onConfirm={() => {
+					if (pendingDelete) void performDelete(pendingDelete);
+				}}
+			/>
 		</div>
 	);
 }
