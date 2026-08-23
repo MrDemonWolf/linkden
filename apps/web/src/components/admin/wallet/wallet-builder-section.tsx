@@ -9,7 +9,7 @@ import {
 } from "@linkden/validators/wallet";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Layers, Type } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ColorField } from "@/components/admin/color-field";
 import { FieldGroup } from "@/components/admin/settings/field-group";
@@ -106,6 +106,11 @@ export function WalletBuilderSection({
 
 	const [state, setState] = useState<WalletLiveState>(DEFAULTS);
 	const [saved, setSaved] = useState<WalletLiveState>(DEFAULTS);
+	// getConfig is invalidated by unrelated things on this page (the header
+	// "show on page" switch, for one). Re-seeding the editor from that refetch
+	// would throw away in-progress edits — including a just-picked template —
+	// so a dirty editor keeps its state and only the saved baseline moves.
+	const dirtyRef = useRef(false);
 
 	useEffect(() => {
 		if (!configQuery.data) return;
@@ -130,8 +135,8 @@ export function WalletBuilderSection({
 			relevantDate: isoToLocal(d.wallet_relevant_date),
 			locations: safeParse<PassLocation[]>(d.wallet_locations, []),
 		};
-		setState(next);
 		setSaved(next);
+		if (!dirtyRef.current) setState(next);
 	}, [configQuery.data]);
 
 	const dirty = useMemo(() => {
@@ -158,6 +163,7 @@ export function WalletBuilderSection({
 	}, [state, saved]);
 
 	useEffect(() => {
+		dirtyRef.current = dirty;
 		onDirtyChange?.(dirty);
 	}, [dirty, onDirtyChange]);
 

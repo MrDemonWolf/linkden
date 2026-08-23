@@ -104,7 +104,9 @@ export default function DataSettingsPage() {
 		setPendingImport(null);
 		try {
 			const result = await importData.mutateAsync({ mode: "merge", data });
-			invalidateSettings();
+			// A restore can rewrite blocks, social links and messages too, not just
+			// settings — drop every cached query rather than list them.
+			qc.invalidateQueries();
 			// Settings are skipped for the same reasons rows are (unknown key, value
 			// the sanitizer rejects), so they belong in the same count.
 			const skipped =
