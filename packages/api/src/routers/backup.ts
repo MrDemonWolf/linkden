@@ -170,7 +170,14 @@ export const backupRouter = router({
 				});
 			}
 			await logAudit("backup.import", undefined, undefined, { mode });
-			return { success: true, skipped: { blocks: skippedBlocks, socialNetworks: skippedSocials } };
+			return {
+				success: true,
+				skipped: {
+					blocks: skippedBlocks,
+					socialNetworks: skippedSocials,
+					settings: skippedSettings,
+				},
+			};
 		}),
 
 	importLinkStack: protectedProcedure

@@ -35,6 +35,7 @@ export default function WalletSettingsPage() {
 	const [isDirty, setIsDirty] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 	const saveRef = useRef<(() => Promise<void>) | null>(null);
+	const resetRef = useRef<(() => void) | null>(null);
 
 	useUnsavedChanges(isDirty);
 
@@ -60,7 +61,11 @@ export default function WalletSettingsPage() {
 		}
 	};
 
+	// A real revert: the builder puts its own state back to the last saved row.
+	// Invalidating alone left the editor showing the discarded edits, because
+	// the section only seeds from the query on first load.
 	const handleDiscard = () => {
+		resetRef.current?.();
 		qc.invalidateQueries({ queryKey: trpc.wallet.getConfig.queryOptions().queryKey });
 	};
 
@@ -169,6 +174,7 @@ export default function WalletSettingsPage() {
 						onZoneFocus={setHighlightedZone}
 						onDirtyChange={setIsDirty}
 						saveRef={saveRef}
+						resetRef={resetRef}
 					/>
 					<p className="mt-4 pb-1 text-center text-micro text-muted-foreground">
 						QR code links to your public profile page

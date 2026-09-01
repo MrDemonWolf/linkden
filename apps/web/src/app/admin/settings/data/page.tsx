@@ -5,6 +5,7 @@ import { AlertTriangle, ArrowDownUp, Clock, Database } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { SectionCard, SectionHeader } from "@/components/admin/section-header";
 import { DangerConfirmDialog } from "@/components/admin/settings/danger-confirm-dialog";
 import { DataSection } from "@/components/admin/settings/data-section";
@@ -13,6 +14,26 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
+
+/** "12 blocks, 34 settings, 5 social links" — only the parts the file carries. */
+function describeImport(data: {
+	blocks?: unknown[];
+	settings?: Record<string, string>;
+	socialNetworks?: unknown[];
+	contactSubmissions?: unknown[];
+}): string {
+	const parts: string[] = [];
+	const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+	if (data.blocks?.length) parts.push(plural(data.blocks.length, "block", "blocks"));
+	const settingCount = Object.keys(data.settings ?? {}).length;
+	if (settingCount) parts.push(plural(settingCount, "setting", "settings"));
+	if (data.socialNetworks?.length)
+		parts.push(plural(data.socialNetworks.length, "social link", "social links"));
+	if (data.contactSubmissions?.length)
+		parts.push(plural(data.contactSubmissions.length, "message", "messages"));
+	if (parts.length === 0) return "This file carries no data — nothing";
+	return parts.join(", ");
+}
 
 // Mirrors DEFAULT_RETENTION in packages/db/src/retention.ts (daily cron).
 const RETENTION = [
@@ -27,6 +48,7 @@ export default function DataSettingsPage() {
 	const versionCheck = useQuery(trpc.version.checkUpdate.queryOptions());
 	const exportData = useQuery({ ...trpc.backup.export.queryOptions(), enabled: false });
 	const importData = useMutation(trpc.backup.import.mutationOptions());
+	type ImportPayload = Parameters<typeof importData.mutateAsync>[0]["data"];
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const invalidateSettings = () =>
@@ -52,6 +74,14 @@ export default function DataSettingsPage() {
 		}
 	};
 
+	// Import overwrites blocks, settings and social links by id/key. Picking the
+	// file used to be the point of no return; it now only parses and asks.
+	const [pendingImport, setPendingImport] = useState<ImportPayload | null>(null);
+
+	const clearFileInput = () => {
+		if (fileInputRef.current) fileInputRef.current.value = "";
+	};
+
 	const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
@@ -60,21 +90,36 @@ export default function DataSettingsPage() {
 			const parsed = JSON.parse(text);
 			if (!parsed.data) {
 				toast.error("Invalid LinkDen export file.");
-				if (fileInputRef.current) fileInputRef.current.value = "";
+				clearFileInput();
 				return;
 			}
-			const result = await importData.mutateAsync({ mode: "merge", data: parsed.data });
-			invalidateSettings();
-			const skipped = result.skipped.blocks + result.skipped.socialNetworks;
+			setPendingImport(parsed.data as ImportPayload);
+		} catch {
+			toast.error("Failed to read the file. Make sure it is valid JSON.");
+			clearFileInput();
+		}
+	};
+
+	const runImport = async (data: ImportPayload) => {
+		setPendingImport(null);
+		try {
+			const result = await importData.mutateAsync({ mode: "merge", data });
+			// A restore can rewrite blocks, social links and messages too, not just
+			// settings — drop every cached query rather than list them.
+			qc.invalidateQueries();
+			// Settings are skipped for the same reasons rows are (unknown key, value
+			// the sanitizer rejects), so they belong in the same count.
+			const skipped =
+				result.skipped.blocks + result.skipped.socialNetworks + result.skipped.settings;
 			if (skipped > 0) {
-				toast.warning(`Imported with ${skipped} invalid row${skipped === 1 ? "" : "s"} skipped`);
+				toast.warning(`Imported with ${skipped} invalid item${skipped === 1 ? "" : "s"} skipped`);
 			} else {
 				toast.success("Import successful");
 			}
 		} catch {
-			toast.error("Failed to import. Make sure the file is valid JSON.");
+			toast.error("Failed to import. Make sure the file is a LinkDen export.");
 		}
-		if (fileInputRef.current) fileInputRef.current.value = "";
+		clearFileInput();
 	};
 
 	// ─── Danger zone ─────────────────────────────────────────────────────
@@ -196,6 +241,27 @@ export default function DataSettingsPage() {
 				confirmLabel="Reset everything"
 				isPending={resetEverything.isPending}
 				onConfirm={handleResetEverything}
+			/>
+
+			<ConfirmDialog
+				open={pendingImport !== null}
+				onOpenChange={(open) => {
+					if (!open) {
+						setPendingImport(null);
+						clearFileInput();
+					}
+				}}
+				title="Restore this backup?"
+				description={
+					pendingImport
+						? `${describeImport(pendingImport)} will be written over your current values. Blocks, settings and social links with matching ids are replaced; nothing else is deleted.`
+						: ""
+				}
+				confirmLabel="Restore"
+				isPending={importData.isPending}
+				onConfirm={() => {
+					if (pendingImport) void runImport(pendingImport);
+				}}
 			/>
 		</div>
 	);

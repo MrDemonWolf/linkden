@@ -44,7 +44,8 @@ export const blocksRouter = router({
 				...input,
 				title: input.title === undefined ? undefined : stripHtml(input.title),
 				isEnabled: input.isEnabled ?? true,
-				status: "draft",
+				// Defaults to draft; an explicit status only comes from Undo-after-delete.
+				status: input.status ?? "draft",
 				scheduledStart: input.scheduledStart ?? null,
 				scheduledEnd: input.scheduledEnd ?? null,
 				config: input.config ?? null,
