@@ -1,10 +1,15 @@
 "use client";
 
 import { hexColorSchema } from "@linkden/validators/blocks";
-import type { PassField, PassLocation, PassTemplatePreset } from "@linkden/validators/wallet";
+import {
+	type PassField,
+	type PassLocation,
+	type PassTemplatePreset,
+	seedFromPreset,
+} from "@linkden/validators/wallet";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Layers, Type } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ColorField } from "@/components/admin/color-field";
 import { FieldGroup } from "@/components/admin/settings/field-group";
@@ -49,6 +54,8 @@ interface Props {
 	onZoneFocus?: (zone: PassZone | null) => void;
 	onDirtyChange?: (dirty: boolean) => void;
 	saveRef?: React.MutableRefObject<(() => Promise<void>) | null>;
+	/** Discard on the save bar calls this to put the editor back to the saved row. */
+	resetRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 const DEFAULTS = {
@@ -91,14 +98,19 @@ export function WalletBuilderSection({
 	onZoneFocus,
 	onDirtyChange,
 	saveRef,
+	resetRef,
 }: Props) {
 	const qc = useQueryClient();
 	const configQuery = useQuery(trpc.wallet.getConfig.queryOptions());
 	const updateConfig = useMutation(trpc.wallet.updateConfig.mutationOptions());
-	const applyPreset = useMutation(trpc.wallet.applyPreset.mutationOptions());
 
 	const [state, setState] = useState<WalletLiveState>(DEFAULTS);
 	const [saved, setSaved] = useState<WalletLiveState>(DEFAULTS);
+	// getConfig is invalidated by unrelated things on this page (the header
+	// "show on page" switch, for one). Re-seeding the editor from that refetch
+	// would throw away in-progress edits — including a just-picked template —
+	// so a dirty editor keeps its state and only the saved baseline moves.
+	const dirtyRef = useRef(false);
 
 	useEffect(() => {
 		if (!configQuery.data) return;
@@ -123,8 +135,8 @@ export function WalletBuilderSection({
 			relevantDate: isoToLocal(d.wallet_relevant_date),
 			locations: safeParse<PassLocation[]>(d.wallet_locations, []),
 		};
-		setState(next);
 		setSaved(next);
+		if (!dirtyRef.current) setState(next);
 	}, [configQuery.data]);
 
 	const dirty = useMemo(() => {
@@ -151,6 +163,7 @@ export function WalletBuilderSection({
 	}, [state, saved]);
 
 	useEffect(() => {
+		dirtyRef.current = dirty;
 		onDirtyChange?.(dirty);
 	}, [dirty, onDirtyChange]);
 
@@ -202,28 +215,28 @@ export function WalletBuilderSection({
 	}, [state, updateConfig, qc, colorError]);
 
 	useEffect(() => {
+		if (resetRef) resetRef.current = () => setState(saved);
+	}, [resetRef, saved]);
+
+	useEffect(() => {
 		if (saveRef) saveRef.current = handleSave;
 	}, [saveRef, handleSave]);
 
-	const handlePresetChange = async (preset: PassTemplatePreset) => {
-		try {
-			const res = await applyPreset.mutateAsync({ preset });
-			const seed = res.seed;
-			setState((s) => ({
-				...s,
-				templatePreset: preset,
-				headerFields: seed.headerFields,
-				primaryFields: seed.primaryFields,
-				secondaryFields: seed.secondaryFields,
-				auxiliaryFields: seed.auxiliaryFields,
-				backFields: seed.backFields,
-			}));
-			qc.invalidateQueries({ queryKey: trpc.wallet.getConfig.queryOptions().queryKey });
-			qc.invalidateQueries({ queryKey: trpc.wallet.generatePreview.queryOptions().queryKey });
-			toast.success(`Applied "${preset}" template`);
-		} catch {
-			toast.error("Failed to apply preset");
-		}
+	// Picking a template only seeds local state — it used to commit six settings
+	// to the database on click, wiping every custom field with no confirm and no
+	// undo. It is now an ordinary edit: visible in the preview, revertible with
+	// Discard, and written only by Save.
+	const handlePresetChange = (preset: PassTemplatePreset) => {
+		const seed = seedFromPreset(preset);
+		setState((s) => ({
+			...s,
+			templatePreset: preset,
+			headerFields: seed.headerFields,
+			primaryFields: seed.primaryFields,
+			secondaryFields: seed.secondaryFields,
+			auxiliaryFields: seed.auxiliaryFields,
+			backFields: seed.backFields,
+		}));
 	};
 
 	const updateImage = (key: "logoUrl" | "iconUrl" | "thumbnailUrl" | "stripUrl", url: string) =>
@@ -235,11 +248,7 @@ export function WalletBuilderSection({
 			{/* Business — identity, template, QR, card fields */}
 			<TabsContent value="business" keepMounted className="mt-0 space-y-6">
 				<Section icon={Layers} title="Template" hint="Pick a starting layout">
-					<TemplatePresetPicker
-						value={state.templatePreset}
-						onChange={handlePresetChange}
-						disabled={applyPreset.isPending}
-					/>
+					<TemplatePresetPicker value={state.templatePreset} onChange={handlePresetChange} />
 				</Section>
 
 				<Section icon={Type} title="Identity" hint="Org + description">
