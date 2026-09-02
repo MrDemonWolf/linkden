@@ -1,5 +1,6 @@
 "use client";
 
+import { DEFAULT_RETENTION } from "@linkden/validators/retention";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ArrowDownUp, Clock, Database } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -35,11 +36,11 @@ function describeImport(data: {
 	return parts.join(", ");
 }
 
-// Mirrors DEFAULT_RETENTION in packages/db/src/retention.ts (daily cron).
+// Derived from the policy the daily cron actually enforces — never retyped.
 const RETENTION = [
-	["Page views & link clicks", "365 days"],
-	["Contact-form messages", "365 days"],
-	["Audit log", "180 days"],
+	["Page views & link clicks", `${DEFAULT_RETENTION.analyticsDays} days`],
+	["Contact-form messages", `${DEFAULT_RETENTION.contactsDays} days`],
+	["Audit log", `${DEFAULT_RETENTION.auditDays} days`],
 ] as const;
 
 export default function DataSettingsPage() {

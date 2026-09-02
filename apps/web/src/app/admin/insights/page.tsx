@@ -1,5 +1,6 @@
 "use client";
 
+import { DEFAULT_RETENTION } from "@linkden/validators/retention";
 import { useQuery } from "@tanstack/react-query";
 import {
 	Blocks,
@@ -84,16 +85,14 @@ export default function InsightsPage() {
 	const blocksQuery = useQuery(trpc.blocks.list.queryOptions());
 	const emailKeyQuery = useQuery(trpc.settings.get.queryOptions({ key: "email_api_key" }));
 	const emailFromQuery = useQuery(trpc.settings.get.queryOptions({ key: "email_from" }));
-	const deliveryQuery = useQuery(trpc.settings.get.queryOptions({ key: "contact_delivery" }));
 
 	// Secrets come back masked, so any non-empty value means a key is stored.
-	// Auth mail (reset, magic link) only needs the API key; contact-form delivery
-	// by email also needs a verified sender address.
-	const deliveryNeedsSender =
-		deliveryQuery.data?.value === "email" || deliveryQuery.data?.value === "both";
+	// Every send needs both halves: without a sender address the auth mailer
+	// falls back to noreply@example.com and the provider rejects it, so a stored
+	// key with a blank From is just as broken as no key at all.
 	const emailMissing =
 		(emailKeyQuery.isSuccess && !emailKeyQuery.data?.value) ||
-		(deliveryNeedsSender && emailFromQuery.isSuccess && !emailFromQuery.data?.value);
+		(emailFromQuery.isSuccess && !emailFromQuery.data?.value);
 
 	const totalViews = overview.data?.totalViews ?? 0;
 	const totalClicks = overview.data?.totalClicks ?? 0;
@@ -144,7 +143,7 @@ export default function InsightsPage() {
 			tone: "destructive",
 			title: "Email isn't set up",
 			description:
-				"Password reset, magic links and contact notifications are off until you add a provider key.",
+				"Password reset, magic links and contact notifications are off until you add a provider key and a sender address.",
 			action: { label: "Set up email", href: "/admin/settings/email" },
 		});
 	}
@@ -328,7 +327,8 @@ export default function InsightsPage() {
 			</div>
 
 			<p {...enter()} className="pt-2 text-center font-mono text-micro text-muted-foreground">
-				ⓘ analytics retained 90 days · stored locally · no third parties
+				ⓘ analytics retained {DEFAULT_RETENTION.analyticsDays} days · stored locally · no third
+				parties
 			</p>
 		</PageShell>
 	);

@@ -21,6 +21,12 @@ export function emailErrors(v: { emailApiKey: string; emailFrom: string }): Reco
 	const address = v.emailFrom.match(/<([^>]*)>\s*$/)?.[1] ?? v.emailFrom;
 	const from = v.emailFrom ? fieldError(z.email(), address.trim()) : null;
 	if (from) errors.emailFrom = from;
+	// A key with no sender saves cleanly and then sends from
+	// noreply@example.com (packages/auth), which no provider will accept — so
+	// "Email settings saved" would be reported for a setup that cannot send.
+	if (v.emailApiKey && !v.emailFrom.trim()) {
+		errors.emailFrom = "Required — mail cannot send without a verified sender address";
+	}
 	return errors;
 }
 
