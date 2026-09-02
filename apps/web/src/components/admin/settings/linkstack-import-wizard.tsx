@@ -13,7 +13,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
+import { Spinner } from "@/components/ui/spinner";
 import { trpc } from "@/utils/trpc";
 
 type WizardStep = "upload" | "options" | "importing" | "done";
@@ -59,7 +59,6 @@ export function LinkStackImportWizard({
 	const [importLinks, setImportLinks] = useState(true);
 	const [importProfile, setImportProfile] = useState(true);
 	const [importTheme, setImportTheme] = useState(true);
-	const [progress, setProgress] = useState(0);
 	const [stats, setStats] = useState<ImportStats | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -71,7 +70,6 @@ export function LinkStackImportWizard({
 		setImportLinks(true);
 		setImportProfile(true);
 		setImportTheme(true);
-		setProgress(0);
 		setStats(null);
 		if (fileInputRef.current) fileInputRef.current.value = "";
 	}, []);
@@ -112,23 +110,18 @@ export function LinkStackImportWizard({
 		if (!parsedData) return;
 
 		setStep("importing");
-		setProgress(20);
 
 		try {
-			setProgress(50);
 			const result = await importMutation.mutateAsync({
 				data: parsedData,
 				options: { importLinks, importProfile, importTheme },
 			});
-			setProgress(100);
 			setStats(result.stats);
-			// Brief pause so user sees 100%
-			setTimeout(() => setStep("done"), 400);
+			setStep("done");
 			onImportComplete();
 		} catch {
 			toast.error("Import failed. Please try again.");
 			setStep("options");
-			setProgress(0);
 		}
 	};
 
@@ -219,7 +212,8 @@ export function LinkStackImportWizard({
 								<div>
 									<p className="text-sm font-medium">Import Links</p>
 									<p className="text-xs text-muted-foreground">
-										{linkCount} link{linkCount !== 1 ? "s" : ""} found
+										{linkCount} link{linkCount !== 1 ? "s" : ""} found — added to your page, nothing
+										existing is removed
 									</p>
 								</div>
 							</label>
@@ -237,7 +231,7 @@ export function LinkStackImportWizard({
 								<div>
 									<p className="text-sm font-medium">Import Profile</p>
 									<p className="text-xs text-muted-foreground">
-										{hasProfile ? "Name and bio" : "No profile data found"}
+										{hasProfile ? "Replaces your current name and bio" : "No profile data found"}
 									</p>
 								</div>
 							</label>
@@ -255,7 +249,9 @@ export function LinkStackImportWizard({
 								<div>
 									<p className="text-sm font-medium">Import Theme</p>
 									<p className="text-xs text-muted-foreground">
-										{hasTheme ? `Theme: ${parsedData?.theme}` : "No theme data found"}
+										{hasTheme
+											? `Replaces your current theme with "${parsedData?.theme}"`
+											: "No theme data found"}
 									</p>
 								</div>
 							</label>
@@ -285,14 +281,12 @@ export function LinkStackImportWizard({
 							<DialogDescription>Please wait while your data is being imported.</DialogDescription>
 						</DialogHeader>
 
-						<div className="py-6 space-y-3">
-							<Progress value={progress} />
+						{/* One round trip — an indeterminate spinner is the honest shape.
+						    The old bar animated through three fabricated stages. */}
+						<div className="flex flex-col items-center gap-3 py-8">
+							<Spinner className="h-5 w-5 text-muted-foreground" />
 							<p className="text-center text-xs text-muted-foreground">
-								{progress < 50
-									? "Preparing data..."
-									: progress < 100
-										? "Importing..."
-										: "Finishing up..."}
+								Writing your LinkStack data…
 							</p>
 						</div>
 					</>
