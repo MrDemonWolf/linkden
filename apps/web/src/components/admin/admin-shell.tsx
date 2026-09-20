@@ -115,12 +115,12 @@ function AccountMenu({
 	return (
 		<DropdownMenu>
 			{children}
-			<DropdownMenuContent align="end" side={side} sideOffset={8} className="w-56 p-1">
+			<DropdownMenuContent align="end" side={side} sideOffset={8} className="w-64">
 				{/* Base UI's GroupLabel throws ("MenuGroupRootContext is missing") unless
 				    it sits inside a Group, so the identity header and the two account
 				    destinations it names are one group. Sign out stays outside it. */}
 				<DropdownMenuGroup>
-					<DropdownMenuLabel className="px-2 py-1.5">
+					<DropdownMenuLabel>
 						<span className="block truncate text-xs font-semibold text-foreground">
 							{user.name || "Admin"}
 						</span>
@@ -149,7 +149,7 @@ function AccountMenu({
 					<LogOut />
 					Sign out
 				</DropdownMenuItem>
-				<p className="px-2 pt-2 pb-1 text-micro text-muted-foreground">
+				<p className="px-3 pt-2.5 pb-1 text-micro text-muted-foreground">
 					{adminBrandingEnabled && (
 						<>
 							Powered by{" "}
@@ -329,12 +329,14 @@ function MobilePreview() {
 				<Smartphone className="h-5 w-5" />
 			</Button>
 			<MobilePreviewSheet open={open} onOpenChange={setOpen}>
-				<PagePreview
-					overrides={reg.overrides}
-					mode={reg.mode}
-					onModeChange={reg.onModeChange}
-					showHeader={false}
-				/>
+				{reg.preview ?? (
+					<PagePreview
+						overrides={reg.overrides}
+						mode={reg.mode}
+						onModeChange={reg.onModeChange}
+						showHeader={false}
+					/>
+				)}
 			</MobilePreviewSheet>
 		</>
 	);

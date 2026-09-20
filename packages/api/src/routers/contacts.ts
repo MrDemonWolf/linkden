@@ -1,8 +1,8 @@
-import { router, protectedProcedure } from "../index";
 import { db } from "@linkden/db";
 import { contactSubmission } from "@linkden/db/schema/index";
-import { eq, desc, and, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
+import { protectedProcedure, router } from "../index";
 import { logAudit } from "../utils/audit";
 
 export const formsRouter = router({
@@ -69,7 +69,7 @@ export const formsRouter = router({
 		.input(z.object({ id: z.string().max(100) }))
 		.mutation(async ({ input }) => {
 			await db.delete(contactSubmission).where(eq(contactSubmission.id, input.id));
-			void logAudit("contact.delete", "contact", input.id);
+			await logAudit("contact.delete", "contact", input.id);
 			return { success: true };
 		}),
 

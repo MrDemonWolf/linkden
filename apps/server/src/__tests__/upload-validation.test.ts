@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
 	buildR2Key,
 	MAX_FILE_SIZE,
+	MAX_UPLOAD_BODY_SIZE,
+	replacementKeyForPurpose,
 	signatureMatchesExt,
 	sniffImageSignature,
-	validateUpload,
 	VALID_UPLOAD_PURPOSES,
+	validateUpload,
+	validateUploadContentLength,
 } from "../lib/upload-validation";
 
 const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
@@ -141,5 +144,33 @@ describe("buildR2Key", () => {
 
 	it("preserves the extension verbatim", () => {
 		expect(buildR2Key("banner", "webp", "u")).toBe("banner/u.webp");
+	});
+});
+
+describe("upload request boundaries", () => {
+	it("rejects missing, malformed, and oversized body lengths before parsing", () => {
+		for (const value of [undefined, null, "", "0", "-1", "1.5", "nope", "9007199254740992"]) {
+			expect(validateUploadContentLength(value).ok).toBe(false);
+		}
+		expect(validateUploadContentLength(String(MAX_UPLOAD_BODY_SIZE))).toMatchObject({ ok: true });
+		expect(validateUploadContentLength(String(MAX_UPLOAD_BODY_SIZE + 1))).toMatchObject({
+			ok: false,
+			status: 413,
+		});
+	});
+
+	it("deletes only generated image keys for the current purpose", () => {
+		const key = "avatar/123e4567-e89b-42d3-a456-426614174000.png";
+		expect(replacementKeyForPurpose(`/api/images/${key}`, "avatar")).toBe(key);
+		expect(replacementKeyForPurpose(`https://linkden.test/api/images/${key}`, "avatar")).toBe(key);
+		for (const value of [
+			"/api/images/banner/123e4567-e89b-42d3-a456-426614174000.png",
+			"/api/images/avatar/not-a-uuid.png",
+			"/api/images/avatar/123e4567-e89b-42d3-a456-426614174000.svg",
+			`/api/images/${key}?variant=old`,
+			"/api/images/avatar/../secret.png",
+		]) {
+			expect(replacementKeyForPurpose(value, "avatar")).toBeNull();
+		}
 	});
 });

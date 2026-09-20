@@ -29,6 +29,7 @@ import { Blocks, Plus, Rocket, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BlockEditPanel } from "@/components/admin/builder/block-edit-panel";
+import { hasBlockEditChanges } from "@/components/admin/builder/block-edit-state";
 import { BlockRow } from "@/components/admin/builder/block-row";
 import {
 	BLOCK_TYPES,
@@ -47,6 +48,7 @@ import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 
@@ -219,10 +221,29 @@ export default function LinksBlocksPage() {
 		}
 	};
 
-	const closeEdit = useCallback(() => {
+	const hasUnsavedEdit = useMemo(
+		() => hasBlockEditChanges(editingBlock, editingOverrides),
+		[editingBlock, editingOverrides],
+	);
+	useUnsavedChanges(hasUnsavedEdit);
+
+	const clearEdit = useCallback(() => {
 		setEditingBlock(null);
 		setEditingOverrides(null);
 	}, []);
+	const closeEdit = useCallback(() => {
+		if (hasUnsavedEdit && !window.confirm("Discard unsaved changes?")) return;
+		clearEdit();
+	}, [clearEdit, hasUnsavedEdit]);
+	const editBlock = useCallback(
+		(block: Block) => {
+			if (block.id === editingBlock?.id) return;
+			if (hasUnsavedEdit && !window.confirm("Discard unsaved changes?")) return;
+			setEditingOverrides(null);
+			setEditingBlock(block);
+		},
+		[editingBlock?.id, hasUnsavedEdit],
+	);
 
 	const handleSaveEdit = async (data: Partial<Block>) => {
 		try {
@@ -240,7 +261,7 @@ export default function LinksBlocksPage() {
 				scheduledEnd: data.scheduledEnd,
 			});
 			invalidate();
-			closeEdit();
+			clearEdit();
 			toast.success("Block updated");
 		} catch {
 			toast.error("Failed to update block");
@@ -307,7 +328,7 @@ export default function LinksBlocksPage() {
 			onSave={handleSaveEdit}
 			onDelete={() => {
 				const b = editingBlock;
-				closeEdit();
+				clearEdit();
 				setPendingDelete(b);
 			}}
 			isSaving={updateBlock.isPending}
@@ -435,7 +456,7 @@ export default function LinksBlocksPage() {
 										<BlockRow
 											block={block}
 											onToggle={() => handleToggle(block.id, block.isEnabled)}
-											onEdit={() => setEditingBlock(block)}
+											onEdit={() => editBlock(block)}
 											onDelete={() => setPendingDelete(block)}
 											accent={editingBlock?.id === block.id}
 											featureHidden={isFeatureHidden(block.type)}

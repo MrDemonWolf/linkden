@@ -53,8 +53,8 @@ const nextConfig: NextConfig = {
 				},
 				{ source: "/api/upload", destination: `${devApiOrigin}/api/upload` },
 				{
-					source: "/api/wallet-pass",
-					destination: `${devApiOrigin}/api/wallet-pass`,
+					source: "/api/admin/wallet-pass",
+					destination: `${devApiOrigin}/api/admin/wallet-pass`,
 				},
 				{ source: "/api/vcard", destination: `${devApiOrigin}/api/vcard` },
 				{ source: "/api/health", destination: `${devApiOrigin}/api/health` },

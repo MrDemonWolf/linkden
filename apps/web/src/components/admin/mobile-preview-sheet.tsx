@@ -22,6 +22,7 @@ export function MobilePreviewSheet({ open, onOpenChange, children }: MobilePrevi
 			ariaLabel="Preview"
 			breakpoint="lg"
 			scrollBody={false}
+			className="h-dvh max-h-dvh rounded-none border-t-0"
 		>
 			<div className="flex shrink-0 items-center justify-between border-b border-border py-1 pl-4 pr-2">
 				<span className="text-xs font-semibold">Preview</span>
@@ -37,7 +38,7 @@ export function MobilePreviewSheet({ open, onOpenChange, children }: MobilePrevi
 					</button>
 				</div>
 			</div>
-			<div className="flex min-h-0 flex-1 justify-center overflow-y-auto overflow-x-hidden p-4 pb-8">
+			<div className="flex min-h-0 flex-1 justify-center overflow-y-auto overflow-x-hidden p-0 pb-8 sm:p-4 sm:pb-8">
 				{children}
 			</div>
 		</BottomSheet>

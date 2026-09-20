@@ -1,6 +1,6 @@
 "use client";
 
-import { Checkbox, Separator } from "@linkden/ui";
+import { Checkbox } from "@linkden/ui";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { WolfLogo } from "@/components/wolf-logo";
 import { authClient } from "@/lib/auth-client";
 import { getLoginBgStyle, getLoginShaderPreset, isCustomLoginBg } from "@/lib/login-bg";

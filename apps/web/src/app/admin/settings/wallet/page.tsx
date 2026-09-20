@@ -1,10 +1,11 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { KeyRound, Settings2 } from "lucide-react";
+import { Download, KeyRound, Settings2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { DeviceFrame } from "@/components/admin/device-frame";
+import { usePreviewSlot } from "@/components/admin/preview-slot";
 import { SectionCard } from "@/components/admin/section-header";
 import { StickySaveBar } from "@/components/admin/sticky-save-bar";
 import { SigningKeysSection } from "@/components/admin/wallet/signing-keys-section";
@@ -14,12 +15,13 @@ import {
 } from "@/components/admin/wallet/wallet-builder-section";
 import { type PassZone, WalletPassPreview } from "@/components/admin/wallet-pass-preview";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { trpc } from "@/utils/trpc";
 
-// Server-side .pkpass signing/issuance is live: GET /api/wallet-pass signs and
+// Server-side .pkpass signing/issuance is live: GET /api/admin/wallet-pass signs and
 // serves the pass from the saved design + certs (503 if certs are missing), so
 // the cert-upload flow is always shown and there is no "coming soon" state.
 
@@ -45,7 +47,7 @@ export default function WalletSettingsPage() {
 		try {
 			await updateConfig.mutateAsync({ enabled: next });
 			qc.invalidateQueries({ queryKey: trpc.wallet.getConfig.queryOptions().queryKey });
-			toast.success(`Wallet pass button ${next ? "shown" : "hidden"} on your page`);
+			toast.success(`Wallet pass downloads ${next ? "enabled" : "disabled"}`);
 		} catch {
 			toast.error("Failed to update setting");
 		}
@@ -97,10 +99,36 @@ export default function WalletSettingsPage() {
 		backFields: previewQuery.data?.backFields ?? [],
 		showQrCode: previewQuery.data?.showQrCode ?? true,
 	};
+	const walletPreview = (
+		<DeviceFrame width={393} height="auto" previewDark>
+			<div className="p-4">
+				<WalletPassPreview
+					backgroundColor={view.backgroundColor || undefined}
+					foregroundColor={view.foregroundColor || undefined}
+					labelColor={view.labelColor || undefined}
+					logoUrl={view.logoUrl || undefined}
+					iconUrl={view.iconUrl || undefined}
+					thumbnailUrl={view.thumbnailUrl || undefined}
+					stripUrl={view.stripUrl || undefined}
+					organizationName={view.organizationName}
+					profileImage={previewQuery.data?.profile?.image ?? undefined}
+					headerFields={view.headerFields}
+					primaryFields={view.primaryFields}
+					secondaryFields={view.secondaryFields}
+					auxiliaryFields={view.auxiliaryFields}
+					backFields={view.backFields}
+					qrUrl={publicProfileUrl}
+					showQrCode={view.showQrCode}
+					highlightedZone={highlightedZone}
+				/>
+			</div>
+		</DeviceFrame>
+	);
+	usePreviewSlot({ preview: walletPreview, size: "wide" });
 
 	return (
 		<div className="space-y-6">
-			{/* Sub-header: status + the one switch that puts the button on the public page */}
+			{/* Sub-header: status, admin download, and availability switch. */}
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<div className="flex items-center gap-2">
 					<h2 className="text-sm font-semibold">Apple Wallet pass</h2>
@@ -117,70 +145,37 @@ export default function WalletSettingsPage() {
 					</Badge>
 				</div>
 				<div className="flex items-center gap-3">
+					{enabled && isConfigured && (
+						<a href="/api/admin/wallet-pass" download className={buttonVariants({ size: "sm" })}>
+							<Download className="h-4 w-4" aria-hidden="true" />
+							Download pass
+						</a>
+					)}
 					<Label htmlFor="wallet-enabled" className="text-xs text-muted-foreground">
-						Show on page
+						Downloads enabled
 					</Label>
 					<Switch
 						id="wallet-enabled"
 						checked={enabled}
 						onCheckedChange={handleToggle}
 						disabled={configQuery.isLoading || updateConfig.isPending}
-						aria-label="Show the Add to Apple Wallet button on the public page"
+						aria-label="Enable authenticated Wallet pass downloads"
 					/>
 				</div>
 			</div>
 
-			{/* Below lg: centered stack, the editor sheet overlaps the frame bottom.
-			    lg+: two columns — sticky preview left, editor right. */}
-			<div className="mx-auto w-full max-w-[420px] lg:flex lg:max-w-none lg:items-start lg:gap-6">
-				<div className="flex justify-center lg:sticky lg:top-[calc(52px+1.5rem)] lg:shrink-0">
-					<DeviceFrame width={300} height="auto" previewDark>
-						{/* pb-14 leaves room for the overlapping sheet; no overlap at lg+ */}
-						<div className="px-3 pb-14 pt-1 lg:pb-4">
-							<WalletPassPreview
-								backgroundColor={view.backgroundColor || undefined}
-								foregroundColor={view.foregroundColor || undefined}
-								labelColor={view.labelColor || undefined}
-								logoUrl={view.logoUrl || undefined}
-								iconUrl={view.iconUrl || undefined}
-								thumbnailUrl={view.thumbnailUrl || undefined}
-								stripUrl={view.stripUrl || undefined}
-								organizationName={view.organizationName}
-								profileImage={previewQuery.data?.profile?.image ?? undefined}
-								headerFields={view.headerFields}
-								primaryFields={view.primaryFields}
-								secondaryFields={view.secondaryFields}
-								auxiliaryFields={view.auxiliaryFields}
-								backFields={view.backFields}
-								qrUrl={publicProfileUrl}
-								showQrCode={view.showQrCode}
-								highlightedZone={highlightedZone}
-							/>
-						</div>
-					</DeviceFrame>
-				</div>
-
-				<section
-					aria-label="Pass editor"
-					className="relative z-10 -mt-10 rounded-t-3xl border border-b-0 border-border bg-card px-4 pb-2 pt-2 lg:mt-0 lg:min-w-0 lg:flex-1 lg:rounded-2xl lg:border-b lg:pb-4 lg:pt-4"
-				>
-					{/* Grabber */}
-					<span
-						aria-hidden="true"
-						className="mx-auto mb-3 block h-1 w-9 rounded-full bg-border lg:hidden"
-					/>
-					<WalletBuilderSection
-						onPreviewChange={setLive}
-						onZoneFocus={setHighlightedZone}
-						onDirtyChange={setIsDirty}
-						saveRef={saveRef}
-						resetRef={resetRef}
-					/>
-					<p className="mt-4 pb-1 text-center text-micro text-muted-foreground">
-						QR code links to your public profile page
-					</p>
-				</section>
-			</div>
+			<section aria-label="Pass editor" className="rounded-2xl border border-border bg-card p-4">
+				<WalletBuilderSection
+					onPreviewChange={setLive}
+					onZoneFocus={setHighlightedZone}
+					onDirtyChange={setIsDirty}
+					saveRef={saveRef}
+					resetRef={resetRef}
+				/>
+				<p className="mt-4 text-center text-micro text-muted-foreground">
+					QR code links to your public profile page
+				</p>
+			</section>
 
 			<SectionCard
 				icon={KeyRound}

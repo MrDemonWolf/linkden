@@ -40,7 +40,7 @@ export function ogTemplatePreviewUrl(v: {
 	primaryColor: string;
 	avatarUrl: string;
 }): string {
-	return `/og?template=${encodeURIComponent(v.template || "minimal")}&name=${encodeURIComponent(v.profileName || "My Links")}&bio=${encodeURIComponent(v.bio || "")}&theme=${encodeURIComponent(v.primaryColor || "#6366f1")}${v.avatarUrl ? `&avatar=${encodeURIComponent(v.avatarUrl)}` : ""}&_preview=1`;
+	return `/og?template=${encodeURIComponent(v.template || "minimal")}&name=${encodeURIComponent(v.profileName || "My Links")}&bio=${encodeURIComponent(v.bio || "")}&theme=${encodeURIComponent(v.primaryColor || "#6366f1")}${v.avatarUrl ? `&avatar=${encodeURIComponent(v.avatarUrl)}` : ""}`;
 }
 
 interface SeoSectionProps {
