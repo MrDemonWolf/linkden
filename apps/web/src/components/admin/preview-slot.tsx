@@ -10,6 +10,10 @@ import type { ColorMode } from "@/components/public/public-page";
  * `usePreviewSlot`; pages keep owning their form state.
  */
 export interface PreviewRegistration {
+	/** Custom phone content, such as the Wallet pass preview. */
+	preview?: ReactNode;
+	/** Use the full 393px phone rail instead of the compact page-preview rail. */
+	size?: "default" | "wide";
 	/** profile | settings | blocks | socialNetworks — layered over `public.getPage`. */
 	overrides?: PreviewOverrides;
 	mode?: ColorMode;

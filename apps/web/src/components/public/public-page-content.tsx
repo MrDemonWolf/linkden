@@ -51,7 +51,6 @@ interface PageContentProps {
 	settings: {
 		brandingEnabled: boolean;
 		brandingText: string;
-		walletPassEnabled?: boolean;
 		vcardEnabled?: boolean;
 		contactFormEnabled?: boolean;
 		captchaProvider?: string;
@@ -493,7 +492,6 @@ export function PageContent({
 
 					{!isPreview && (
 						<FooterActions
-							walletEnabled={!!settings.walletPassEnabled}
 							vcardEnabled={!!settings.vcardEnabled && !hasVcardBlock}
 							themeColors={themeColors}
 						/>

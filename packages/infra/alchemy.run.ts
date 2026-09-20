@@ -96,6 +96,7 @@ const rlAuth = RateLimit({ namespace_id: rlBase + 1, simple: { limit: 10, period
 const rlStrict = RateLimit({ namespace_id: rlBase + 2, simple: { limit: 5, period: 60 } });
 const rlUpload = RateLimit({ namespace_id: rlBase + 3, simple: { limit: 20, period: 60 } });
 const rlPublic = RateLimit({ namespace_id: rlBase + 4, simple: { limit: 60, period: 60 } });
+const rlOg = RateLimit({ namespace_id: rlBase + 5, simple: { limit: 10, period: 60 } });
 
 // Wallet signing material is optional and only the API worker signs passes, so
 // it is bound to the server alone. Bind each key only when it is set so
@@ -168,11 +169,7 @@ export const web = await Nextjs("linkden", {
 		API: server,
 		NEXT_PUBLIC_SERVER_URL: alchemy.env.NEXT_PUBLIC_SERVER_URL!,
 		NEXT_PUBLIC_SITE_URL: siteUrl,
-		DB: db,
-		IMAGES_BUCKET: imagesBucket,
-		CORS_ORIGIN: alchemy.env.CORS_ORIGIN!,
-		BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
-		BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
+		RL_OG: rlOg,
 	},
 	dev: {
 		env: {

@@ -157,7 +157,7 @@ export function DeviceFrame({
 	}, [onScroll]);
 
 	return (
-		<div className={cn("relative mx-auto", className)} style={{ width }}>
+		<div className={cn("relative mx-auto w-full", className)} style={{ maxWidth: width }}>
 			<div
 				className="overflow-hidden rounded-[2rem] border-[6px]"
 				style={{

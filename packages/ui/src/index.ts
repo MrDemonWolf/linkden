@@ -4,15 +4,6 @@ export { bannerPresets, getBannerPresetsForTheme, getPresetById } from "./banner
 export { Avatar, AvatarFallback, AvatarImage } from "./components/avatar";
 export type { CheckboxProps } from "./components/checkbox";
 export { Checkbox } from "./components/checkbox";
-export {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "./components/dialog";
-export { Separator } from "./components/separator";
 // Components
 export { Switch } from "./components/switch";
 export { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/tabs";

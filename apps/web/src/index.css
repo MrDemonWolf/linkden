@@ -83,41 +83,38 @@
 }
 
 .dark {
-  /* V1 Midnight Studio — Black Pearl bg, Cerulean accent.
-     Surface layering: Black Pearl ground, one step lighter for cards, one
-     more for inset lists — solid fills so the planes have real edges. */
-  --background: #091533;
-  --foreground: #e7ecf7;
-  --card: #0f1c3d;
-  --card-foreground: #e7ecf7;
-  --surface-2: #152549;
-  --popover: #0e1b40;
-  --popover-foreground: #e7ecf7;
-  --primary: #00ACED;
-  --primary-foreground: #091533;
-  --secondary: #142352;
-  --secondary-foreground: #e7ecf7;
+  /* Neutral dark workspace with cool-blue interactive accents. */
+  --background: #111318;
+  --foreground: #f1f5f9;
+  --card: #181b21;
+  --card-foreground: #f1f5f9;
+  --surface-2: #20242c;
+  --popover: #1b1f26;
+  --popover-foreground: #f1f5f9;
+  --primary: #7dd3fc;
+  --primary-foreground: #082f49;
+  --secondary: #242933;
+  --secondary-foreground: #e2e8f0;
   --muted: rgba(255, 255, 255, 0.07);
-  --muted-foreground: #8293b1;
-  --accent: #6B8BF5;
-  --accent-foreground: #091533;
+  --muted-foreground: #a8b1c0;
+  --accent: #1e3a4a;
+  --accent-foreground: #bae6fd;
   --destructive: #ff9aa8;
-  /* Navy ink on salmon = 8.95:1 (was implicit white = 2.01:1) */
-  --destructive-foreground: #091533;
+  --destructive-foreground: #111318;
   --success: #6be0a8;
-  --success-foreground: #091533;
+  --success-foreground: #111318;
   --warning: #fbbf24;
-  --warning-foreground: #091533;
-  --border: rgba(231, 236, 247, 0.12);
+  --warning-foreground: #111318;
+  --border: rgba(226, 232, 240, 0.13);
   --input: rgba(255, 255, 255, 0.06);
-  --ring: #00ACED;
-  --chart-1: #00ACED;
-  --chart-2: #6B8BF5;
+  --ring: #7dd3fc;
+  --chart-1: #7dd3fc;
+  --chart-2: #38bdf8;
   --chart-3: #6be0a8;
   --chart-4: #ff9aa8;
   --chart-5: #4e6287;
-  --glass-tint-1: #00ACED;
-  --glass-tint-2: #6B8BF5;
+  --glass-tint-1: #7dd3fc;
+  --glass-tint-2: #38bdf8;
   /* Shell chrome (sidebar, top bar, tab bar) sits on the card plane. The
      rest of the shadcn sidebar set is derived, never invented: accent is the
      inset plane, primary/border/ring are the app's own. */
@@ -132,13 +129,13 @@
   --data-up: #6be0a8;
   --data-down: #ff9aa8;
   --dim: #4e6287;
-  --rule: rgba(231, 236, 247, 0.16);
+  --rule: rgba(226, 232, 240, 0.16);
   --glass-bg: oklch(1 0 0 / 0.06);
   --glass-border: oklch(1 0 0 / 0.1);
   --shadow-card: 0 1px 2px oklch(0 0 0 / 0.05), 0 10px 28px -14px oklch(0 0 0 / 0.28);
   --shadow-surface: none;
   --shadow-glow: 0 0 0 1px oklch(from var(--primary) l c h / 0.3), 0 14px 40px -16px oklch(from var(--primary) l c h / 0.4);
-  --signal: linear-gradient(90deg, #00ACED, #6B8BF5);
+  --signal: linear-gradient(90deg, #7dd3fc, #38bdf8);
   --canvas-dot: oklch(1 0 0 / 0.14);
 }
 

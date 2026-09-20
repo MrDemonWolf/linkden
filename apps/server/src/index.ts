@@ -3,7 +3,7 @@
 //   1. Auth routes (Better Auth)
 //   2. tRPC API (all admin + public endpoints)
 //   3. Image upload/serving (R2)
-//   4. Public downloads: /api/vcard, /api/wallet-pass (.pkpass)
+//   4. Downloads: public /api/vcard, private /api/admin/wallet-pass (.pkpass)
 //   5. /api/health + the daily retention cron (`scheduled`)
 //
 // Rate limiting uses Cloudflare's native rate limiter with four limiters
@@ -43,9 +43,10 @@ import { generatePkpass } from "./lib/pkpass";
 import { runScheduledMaintenance } from "./lib/retention-sweep";
 import {
 	buildR2Key,
-	MAX_UPLOAD_BODY_SIZE,
+	replacementKeyForPurpose,
 	signatureMatchesExt,
 	validateUpload,
+	validateUploadContentLength,
 } from "./lib/upload-validation";
 
 type Bindings = {
@@ -183,6 +184,10 @@ app.use(
 	"/api/vcard",
 	rateLimit((env) => env.RL_PUBLIC),
 );
+app.use(
+	"/api/admin/wallet-pass",
+	rateLimit((env) => env.RL_STRICT),
+);
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
@@ -219,9 +224,9 @@ app.post("/api/upload", async (c) => {
 	}
 
 	// Reject oversized uploads before buffering the whole multipart body.
-	const contentLength = Number(c.req.header("content-length") ?? "0");
-	if (contentLength > MAX_UPLOAD_BODY_SIZE) {
-		return c.json({ error: "File too large. Maximum size is 5MB." }, 413);
+	const contentLength = validateUploadContentLength(c.req.header("content-length"));
+	if (!contentLength.ok) {
+		return c.json({ error: contentLength.error }, contentLength.status);
 	}
 
 	const formData = await c.req.formData();
@@ -259,14 +264,9 @@ app.post("/api/upload", async (c) => {
 
 	// Delete the object this upload replaces, so old avatars/banners don't
 	// accumulate as orphans in R2.
-	const replaces = formData.get("replaces");
-	if (typeof replaces === "string") {
-		const marker = "/api/images/";
-		const idx = replaces.indexOf(marker);
-		const oldKey = idx >= 0 ? replaces.slice(idx + marker.length) : "";
-		if (oldKey && oldKey !== key && !oldKey.includes("..")) {
-			await bucket.delete(oldKey).catch(() => {});
-		}
+	const oldKey = replacementKeyForPurpose(formData.get("replaces"), result.purpose);
+	if (oldKey && oldKey !== key) {
+		await bucket.delete(oldKey).catch(() => {});
 	}
 
 	const publicUrl = `/api/images/${key}`;
@@ -299,7 +299,7 @@ app.get("/api/images/*", async (c) => {
 });
 
 // ─── Apple Wallet pass (.pkpass) ─────────────────────────────────────────────
-// Public download. Assembles a signed pass from the wallet_* settings + profile.
+// Admin-only download. Assembles a signed pass from the wallet_* settings + profile.
 // Field/location parsing is shared with the wallet router via @linkden/validators.
 const parsePassFields = parsePassFieldsJson;
 const parsePassLocations = parsePassLocationsJson;
@@ -319,7 +319,14 @@ async function fetchPassImage(
 	return new Uint8Array(await object.arrayBuffer());
 }
 
-app.get("/api/wallet-pass", async (c) => {
+app.get("/api/admin/wallet-pass", async (c) => {
+	c.header("Cache-Control", "private, no-store");
+	const session = await auth.api.getSession({
+		headers: c.req.raw.headers,
+		query: getSessionQuery(c.req.method),
+	});
+	if (!session) return c.json({ error: "Unauthorized" }, 401);
+
 	const settingsRows = await db.select().from(siteSettings);
 	const s: Record<string, string> = {};
 	for (const row of settingsRows) s[row.key] = row.value;
@@ -402,7 +409,7 @@ app.get("/api/wallet-pass", async (c) => {
 			headers: {
 				"Content-Type": "application/vnd.apple.pkpass",
 				"Content-Disposition": `attachment; filename="${slug || "linkden"}.pkpass"`,
-				"Cache-Control": "no-store",
+				"Cache-Control": "private, no-store",
 			},
 		});
 	} catch (err) {

@@ -1,9 +1,10 @@
 // LinkDen service worker — root scope. Bump CACHE_NAME whenever this file changes.
 //
-//   navigations        → network-first, cached copy on failure, then /offline
+//   public /           → network-first, cached copy on failure, then /offline
+//   other navigations  → network-only, then /offline (never cache admin HTML)
 //   /_next/static/*    → cache-first (content-hashed, immutable)
 //   /api, /trpc, POST… → never touched (auth + data must always hit the network)
-const CACHE_NAME = "linkden-v2";
+const CACHE_NAME = "linkden-v3";
 const OFFLINE_URL = "/offline";
 
 self.addEventListener("install", (event) => {
@@ -38,6 +39,10 @@ self.addEventListener("fetch", (event) => {
 	if (url.pathname.startsWith("/api") || url.pathname.startsWith("/trpc")) return;
 
 	if (request.mode === "navigate") {
+		if (url.pathname !== "/") {
+			event.respondWith(fetch(request).catch(() => caches.match(OFFLINE_URL)));
+			return;
+		}
 		event.respondWith(
 			fetch(request)
 				.then((response) => {

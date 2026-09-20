@@ -49,7 +49,7 @@ export function PreviewColumn() {
 	// is the header (label + mode/copy/open + these controls). Otherwise the
 	// column draws the header itself (unscaled at lg) and the phone toolbar
 	// drops its label.
-	const phoneIsHeader = isXl && showPhone && !showAlt && !showPanel;
+	const phoneIsHeader = isXl && showPhone && !showAlt && !showPanel && !reg.preview;
 
 	const controls = (
 		<>
@@ -85,7 +85,7 @@ export function PreviewColumn() {
 			aria-label="Preview"
 			className={cn(
 				"sticky top-[calc(52px+1.5rem)] max-h-[calc(100dvh-52px-3rem)] shrink-0 overflow-x-hidden overflow-y-auto transition-[width] duration-220 ease-out",
-				collapsed ? "w-10" : "w-[300px] xl:w-[372px]",
+				collapsed ? "w-10" : reg.size === "wide" ? "w-[425px]" : "w-[300px] xl:w-[372px]",
 			)}
 		>
 			{collapsed ? (
@@ -118,16 +118,18 @@ export function PreviewColumn() {
 						<div
 							className={cn(
 								!phoneIsHeader && "mt-4",
-								"lg:max-xl:origin-top-left lg:max-xl:scale-[0.78]",
+								reg.size !== "wide" && "lg:max-xl:origin-top-left lg:max-xl:scale-[0.78]",
 							)}
 						>
-							<PagePreview
-								overrides={reg.overrides}
-								mode={reg.mode}
-								onModeChange={reg.onModeChange}
-								headerLabel={phoneIsHeader ? undefined : null}
-								headerEnd={phoneIsHeader ? controls : undefined}
-							/>
+							{reg.preview ?? (
+								<PagePreview
+									overrides={reg.overrides}
+									mode={reg.mode}
+									onModeChange={reg.onModeChange}
+									headerLabel={phoneIsHeader ? undefined : null}
+									headerEnd={phoneIsHeader ? controls : undefined}
+								/>
+							)}
 						</div>
 					)}
 				</div>

@@ -1,8 +1,32 @@
 import { hexToRgb } from "@linkden/ui/color-contrast";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
+import {
+	canonicalOgSearch,
+	normalizeOgAvatar,
+	normalizeOgParams,
+	ogRateLimitKey,
+} from "@/lib/og-params";
 
 export const runtime = "edge";
+
+type RateLimitBinding = {
+	limit(options: { key: string }): Promise<{ success: boolean }>;
+};
+
+async function allowOgRender(req: NextRequest): Promise<boolean> {
+	let limiter: RateLimitBinding | undefined;
+	try {
+		limiter = (getCloudflareContext().env as { RL_OG?: RateLimitBinding }).RL_OG;
+	} catch {
+		// `next dev` has no Cloudflare bindings; production always supplies RL_OG.
+		return process.env.NODE_ENV !== "production";
+	}
+	if (!limiter) return process.env.NODE_ENV !== "production";
+
+	return (await limiter.limit({ key: ogRateLimitKey(req.headers) })).success;
+}
 
 function darken(hex: string, amount: number): string {
 	const rgb = hexToRgb(hex) ?? { r: 99, g: 102, b: 241 };
@@ -15,29 +39,35 @@ function darken(hex: string, amount: number): string {
 // images served by this deployment are allowed: same-origin, the API origin,
 // or the site origin; everything else renders the initials fallback.
 function safeAvatarUrl(raw: string | null, origin: string): string {
-	if (!raw) return "";
-	let url: URL;
-	try {
-		url = new URL(raw, origin);
-	} catch {
-		return "";
-	}
-	if (url.protocol !== "https:" && url.protocol !== "http:") return "";
 	const allowed = new Set(
 		[origin, process.env.NEXT_PUBLIC_SERVER_URL, process.env.NEXT_PUBLIC_SITE_URL]
 			.filter((o): o is string => !!o)
 			.map((o) => new URL(o).origin),
 	);
-	return allowed.has(url.origin) ? url.toString() : "";
+	return normalizeOgAvatar(raw, origin, allowed);
 }
 
 export async function GET(req: NextRequest) {
 	const { searchParams } = req.nextUrl;
-	const template = searchParams.get("template") ?? "minimal";
-	const name = searchParams.get("name") ?? "My Links";
-	const bio = searchParams.get("bio") ?? "";
-	const theme = searchParams.get("theme") ?? "#6366f1";
+	const params = normalizeOgParams(searchParams);
 	const avatar = safeAvatarUrl(searchParams.get("avatar"), req.nextUrl.origin);
+	const canonicalSearch = canonicalOgSearch(params, avatar);
+	if (searchParams.toString() !== canonicalSearch) {
+		const canonicalUrl = new URL(req.nextUrl);
+		canonicalUrl.search = canonicalSearch;
+		return new Response(null, {
+			status: 307,
+			headers: { "Cache-Control": "private, no-store", Location: canonicalUrl.toString() },
+		});
+	}
+	if (!(await allowOgRender(req))) {
+		return new Response("Too many image requests", {
+			status: 429,
+			headers: { "Cache-Control": "private, no-store", "Retry-After": "60" },
+		});
+	}
+
+	const { template, name, bio, theme } = params;
 
 	const width = 1200;
 	const height = 630;

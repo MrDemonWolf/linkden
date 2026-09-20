@@ -217,13 +217,13 @@ export default function DesignBrandingPage() {
 						<div className="min-w-0">
 							<p className="text-xs font-medium">Apple Wallet pass</p>
 							<p className="text-micro text-muted-foreground">
-								Pass contents and signing live under Settings → Wallet.
+								Pass contents, signing, and private downloads live under Settings → Wallet.
 							</p>
 						</div>
 					</div>
 					<div className="flex shrink-0 items-center gap-2">
 						<Badge variant="outline" className={walletEnabled ? "text-success" : undefined}>
-							{walletEnabled ? "On" : "Off"}
+							{walletEnabled ? "Enabled" : "Disabled"}
 						</Badge>
 						<Link
 							href="/admin/settings/wallet"

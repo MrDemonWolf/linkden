@@ -76,7 +76,7 @@ export async function generateMetadata(): Promise<Metadata> {
 				}
 			: {
 					icon: [
-						{ url: "/favicon/favicon.svg", type: "image/svg+xml" },
+						{ url: "/logo.svg", type: "image/svg+xml" },
 						{ url: "/favicon/favicon-96x96.png", sizes: "96x96", type: "image/png" },
 					],
 					apple: "/favicon/apple-touch-icon.png",

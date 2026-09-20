@@ -1,7 +1,7 @@
-import { UPLOAD_PURPOSES, uploadPurposeEnum, type UploadPurpose } from "@linkden/validators";
+import { UPLOAD_PURPOSES, type UploadPurpose, uploadPurposeEnum } from "@linkden/validators";
 
 export type { UploadPurpose };
-export { uploadPurposeEnum, UPLOAD_PURPOSES };
+export { UPLOAD_PURPOSES, uploadPurposeEnum };
 
 export const VALID_UPLOAD_PURPOSES = UPLOAD_PURPOSES;
 
@@ -20,6 +20,27 @@ export const ALLOWED_MIME_TYPES = new Set([
 	"image/x-icon",
 	"image/vnd.microsoft.icon",
 ]);
+
+export function validateUploadContentLength(raw: string | null | undefined) {
+	if (!raw) {
+		return { ok: false as const, status: 411 as const, error: "Content-Length is required." };
+	}
+	if (!/^[1-9]\d*$/.test(raw)) {
+		return { ok: false as const, status: 400 as const, error: "Invalid Content-Length." };
+	}
+	const length = Number(raw);
+	if (!Number.isSafeInteger(length)) {
+		return { ok: false as const, status: 400 as const, error: "Invalid Content-Length." };
+	}
+	if (length > MAX_UPLOAD_BODY_SIZE) {
+		return {
+			ok: false as const,
+			status: 413 as const,
+			error: "File too large. Maximum size is 5MB.",
+		};
+	}
+	return { ok: true as const, length };
+}
 
 export type UploadValidationError =
 	| { ok: false; status: 400; error: string }
@@ -70,6 +91,28 @@ export function validateUpload(args: {
 
 export function buildR2Key(purpose: UploadPurpose, ext: string, uuid: string): string {
 	return `${purpose}/${uuid}.${ext}`;
+}
+
+const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function replacementKeyForPurpose(replaces: unknown, purpose: UploadPurpose): string | null {
+	if (typeof replaces !== "string") return null;
+	let url: URL;
+	try {
+		url = new URL(replaces, "https://linkden.invalid");
+	} catch {
+		return null;
+	}
+	if (url.search || url.hash) return null;
+
+	const prefix = `/api/images/${purpose}/`;
+	if (!url.pathname.startsWith(prefix)) return null;
+	const filename = url.pathname.slice(prefix.length);
+	const dot = filename.lastIndexOf(".");
+	if (dot < 1 || filename.includes("/")) return null;
+	const uuid = filename.slice(0, dot);
+	const ext = filename.slice(dot + 1).toLowerCase();
+	return UUID_V4.test(uuid) && ALLOWED_EXTENSIONS.has(ext) ? `${purpose}/${filename}` : null;
 }
 
 // Maps each allowed extension to the canonical signature its bytes must match.

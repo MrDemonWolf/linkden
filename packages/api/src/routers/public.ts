@@ -126,7 +126,6 @@ export const publicRouter = router({
 				brandingEnabled: settings.branding_enabled !== "false",
 				brandingText: settings.branding_text || "Powered by LinkDen · by MrDemonWolf, Inc.",
 				defaultColorMode: settings.default_color_mode || "system",
-				walletPassEnabled: settings.wallet_pass_enabled === "true",
 				vcardEnabled: settings.vcard_enabled === "true",
 				contactFormEnabled: settings.contact_form_enabled === "true",
 				captchaProvider: settings.captcha_provider || "none",

@@ -51,7 +51,6 @@ interface PageData {
 		brandingEnabled: boolean;
 		brandingText: string;
 		defaultColorMode: string;
-		walletPassEnabled: boolean;
 		vcardEnabled: boolean;
 		contactFormEnabled: boolean;
 		captchaProvider: string;
@@ -187,7 +186,6 @@ export function PublicPage({ data, initialColorMode, previewMode }: PublicPagePr
 			settings={{
 				brandingEnabled: data.settings.brandingEnabled,
 				brandingText: data.settings.brandingText,
-				walletPassEnabled: data.settings.walletPassEnabled,
 				vcardEnabled: data.settings.vcardEnabled,
 				contactFormEnabled: data.settings.contactFormEnabled,
 				captchaProvider: data.settings.captchaProvider,
