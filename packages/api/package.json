@@ -19,9 +19,7 @@
 		"@linkden/env": "workspace:*",
 		"@linkden/ui": "workspace:*",
 		"@linkden/validators": "workspace:*",
-		"@trpc/client": "catalog:",
 		"@trpc/server": "catalog:",
-		"dotenv": "catalog:",
 		"drizzle-orm": "catalog:",
 		"zod": "catalog:"
 	},

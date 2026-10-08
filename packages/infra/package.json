@@ -8,11 +8,9 @@
 		"destroy": "npx -y tsx alchemy.run.ts --destroy"
 	},
 	"dependencies": {
-		"dotenv": "catalog:",
-		"zod": "catalog:"
+		"dotenv": "catalog:"
 	},
 	"devDependencies": {
-		"@linkden/config": "workspace:*",
 		"alchemy": "catalog:",
 		"typescript": "catalog:"
 	}

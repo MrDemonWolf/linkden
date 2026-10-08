@@ -10,22 +10,22 @@
 		"catalog": {
 			"@cloudflare/workers-types": "^4.20260702.1",
 			"@tailwindcss/postcss": "^4.3.3",
-			"@trpc/client": "^11.18.0",
-			"@trpc/server": "^11.18.0",
-			"@types/react": "^19.2.17",
-			"@types/react-dom": "^19.2.3",
+			"@trpc/client": "^11.19.0",
+			"@trpc/server": "^11.19.0",
+			"@types/react": "^19.3.0",
+			"@types/react-dom": "^19.3.0",
 			"alchemy": "^0.93.12",
-			"better-auth": "^1.6.23",
+			"better-auth": "~1.6.33",
 			"dotenv": "^17.4.2",
 			"drizzle-orm": "^0.45.2",
-			"hono": "^4.13.3",
-			"lucide-react": "^1.23.0",
-			"react": "^19.2.7",
-			"react-dom": "^19.2.7",
+			"hono": "^4.13.13",
+			"lucide-react": "^1.52.0",
+			"react": "^19.3.0",
+			"react-dom": "^19.3.0",
 			"tailwindcss": "^4.3.3",
-			"typescript": "^6",
-			"wrangler": "^4.107.0",
-			"zod": "^4.4.3"
+			"typescript": "^6.0.3",
+			"wrangler": "^4.148.0",
+			"zod": "^4.6.5"
 		}
 	},
 	"type": "module",
@@ -62,20 +62,20 @@
 		"zod": "catalog:"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.10",
+		"@biomejs/biome": "^2.5.15",
 		"@cloudflare/workers-types": "catalog:",
 		"@linkden/config": "workspace:*",
-		"@playwright/test": "^1.62.1",
+		"@playwright/test": "^1.63.0",
 		"@tailwindcss/postcss": "catalog:",
 		"@testing-library/jest-dom": "^6.10.0",
-		"@testing-library/react": "^16.3.2",
-		"@types/node": "^25.9.5",
+		"@testing-library/react": "^16.3.3",
+		"@types/node": "^25.9.9",
 		"@vitejs/plugin-react": "^5.2.0",
-		"@vitest/coverage-v8": "4.1.6",
+		"@vitest/coverage-v8": "^4.1.11",
 		"bcryptjs": "^3.0.3",
 		"jsdom": "^28.1.0",
 		"tailwindcss": "catalog:",
-		"turbo": "^2.10.11",
+		"turbo": "^2.11.7",
 		"typescript": "catalog:",
 		"vitest": "^4.1.11"
 	},
@@ -86,6 +86,11 @@
 		"workerd"
 	],
 	"overrides": {
-		"drizzle-orm": "0.45.2"
+		"compression": "^1.8.2",
+		"drizzle-orm": "0.45.2",
+		"mdast-util-to-markdown": "2.1.2",
+		"undici": "^7.29.1",
+		"vite": "^7.3.5",
+		"ws": "^8.21.0"
 	}
 }
