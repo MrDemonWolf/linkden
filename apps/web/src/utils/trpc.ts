@@ -13,7 +13,12 @@ export const queryClient = new QueryClient({
 			toast.error(error.message, {
 				action: {
 					label: "retry",
-					onClick: query.invalidate,
+					// Sonner calls onClick with `this` = the action object, so an
+					// unbound `query.invalidate` threw — and invalidate alone only
+					// flags the query. Refetch exactly this query instead.
+					onClick: () => {
+						void queryClient.refetchQueries({ queryKey: query.queryKey, exact: true });
+					},
 				},
 			});
 		},
@@ -24,6 +29,10 @@ const trpcClient = createTRPCClient<AppRouter>({
 	links: [
 		httpBatchLink({
 			url: `${env.NEXT_PUBLIC_SERVER_URL}/trpc`,
+			// The API rejects batches above TRPC_MAX_BATCH_SIZE (20) in
+			// apps/server/src/index.ts; stay under it so a busy admin page
+			// splits into several requests instead of failing.
+			maxItems: 10,
 			fetch(url, options) {
 				return fetch(url, {
 					...options,

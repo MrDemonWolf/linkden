@@ -7,7 +7,12 @@ type Handler = (event: Record<string, unknown>) => void;
 
 describe("service worker navigation policy", () => {
 	const handlers = new Map<string, Handler>();
-	const cache = { add: vi.fn(), put: vi.fn() };
+	const cache = {
+		add: vi.fn(),
+		put: vi.fn(async () => {}),
+		keys: vi.fn(async () => []),
+		delete: vi.fn(),
+	};
 	const caches = {
 		open: vi.fn(async () => cache),
 		match: vi.fn(async () => new Response("offline")),
@@ -27,7 +32,7 @@ describe("service worker navigation policy", () => {
 			caches,
 			fetch,
 			self: {
-				location: { origin: "https://linkden.test" },
+				location: { origin: "https://linkden.test", href: "https://linkden.test/sw.js?v=1.2.3" },
 				clients: { claim: vi.fn() },
 				skipWaiting: vi.fn(),
 				addEventListener: (type: string, handler: Handler) => handlers.set(type, handler),
@@ -75,5 +80,55 @@ describe("service worker navigation policy", () => {
 
 		expect(caches.delete).toHaveBeenCalledWith("linkden-v2");
 		expect(caches.delete).not.toHaveBeenCalledWith("unrelated-cache");
+	});
+
+	async function navigate(url: string, extra: Record<string, unknown> = {}) {
+		const waitUntil = vi.fn();
+		const respondWith = vi.fn();
+		handlers.get("fetch")?.({
+			request: { method: "GET", mode: "navigate", url },
+			respondWith,
+			waitUntil,
+			...extra,
+		});
+		const response = await respondWith.mock.calls[0]?.[0];
+		await Promise.all(waitUntil.mock.calls.map((c) => c[0]));
+		return response as Response;
+	}
+
+	it("stores the home page under one key whatever the query string", async () => {
+		await navigate("https://linkden.test/?fbclid=abc&utm_source=ig");
+		expect(cache.put).toHaveBeenCalledWith("/", expect.any(Response));
+	});
+
+	it("never lets an outage render (5xx) replace the last good copy", async () => {
+		fetch.mockResolvedValueOnce(new Response("Couldn't load this page", { status: 500 }));
+		const response = await navigate("https://linkden.test/");
+		expect(response.status).toBe(500);
+		expect(cache.put).not.toHaveBeenCalled();
+	});
+
+	it("serves the cached home page offline, ignoring the query", async () => {
+		fetch.mockRejectedValueOnce(new Error("offline"));
+		await navigate("https://linkden.test/?utm_campaign=x");
+		expect(caches.match).toHaveBeenCalledWith("/");
+	});
+
+	it("uses the navigation preload response instead of a second fetch", async () => {
+		const preloaded = new Response("preloaded");
+		await navigate("https://linkden.test/", { preloadResponse: Promise.resolve(preloaded) });
+		expect(fetch).not.toHaveBeenCalled();
+		expect(cache.put).toHaveBeenCalledOnce();
+	});
+
+	it("names its cache after the release so each deploy starts clean", async () => {
+		let activation: Promise<unknown> | undefined;
+		caches.keys.mockResolvedValueOnce(["linkden-v4-1.2.2", "linkden-v4-1.2.3"]);
+		handlers.get("activate")?.({
+			waitUntil: (promise: Promise<unknown>) => (activation = promise),
+		});
+		await activation;
+		expect(caches.delete).toHaveBeenCalledWith("linkden-v4-1.2.2");
+		expect(caches.delete).not.toHaveBeenCalledWith("linkden-v4-1.2.3");
 	});
 });

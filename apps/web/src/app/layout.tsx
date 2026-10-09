@@ -4,18 +4,17 @@ import { DM_Sans, Geist_Mono, Sora } from "next/font/google";
 import "../index.css";
 import Providers from "@/components/providers";
 import { SwRegister } from "@/components/sw-register";
-import { getPublicPage } from "@/lib/public-page";
 
-export async function generateViewport(): Promise<Viewport> {
-	const data = await getPublicPage();
-	return {
-		width: "device-width",
-		initialScale: 1,
-		maximumScale: 5,
-		// Browser chrome matches the page's primary colour (same as the manifest).
-		themeColor: data?.settings.customPrimary || "#00ACED",
-	};
-}
+// Static on purpose: the profile-driven title, SEO, OG card, favicon and theme
+// colour are app/page.tsx's (only "/" needs them). Fetching the public page here
+// made every admin render, 404 and /offline wait on — and pay for — that API
+// call, and forced all of them dynamic.
+export const viewport: Viewport = {
+	width: "device-width",
+	initialScale: 1,
+	maximumScale: 5,
+	themeColor: "#00ACED",
+};
 
 const sora = Sora({
 	subsets: ["latin"],
@@ -44,78 +43,19 @@ const geistMono = Geist_Mono({
 	preload: false,
 });
 
-export async function generateMetadata(): Promise<Metadata> {
-	const data = await getPublicPage();
-	const profile = data?.profile;
-	const settings = data?.settings;
-
-	const title = settings?.seoTitle || "LinkDen";
-	const description = settings?.seoDescription || "Your personal link-in-bio page";
-
-	let ogImageUrl: string | undefined;
-	if (settings?.seoOgMode === "template") {
-		const template = settings.seoOgTemplate || "minimal";
-		const name = encodeURIComponent(profile?.name || "My Links");
-		const bio = encodeURIComponent(profile?.bio || "");
-		const theme = encodeURIComponent(settings.customPrimary || "#6366f1");
-		const avatar = profile?.image ? `&avatar=${encodeURIComponent(profile.image)}` : "";
-		ogImageUrl = `/og?template=${template}&name=${name}&bio=${bio}&theme=${theme}${avatar}`;
-	} else if (settings?.seoOgImage) {
-		ogImageUrl = settings.seoOgImage;
-	}
-
-	return {
-		// Makes relative icon/OG URLs absolute — crawlers need absolute OG images.
-		metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
-		title,
-		description,
-		icons: settings?.brandingFaviconUrl
-			? {
-					icon: settings.brandingFaviconUrl,
-					apple: settings.brandingFaviconUrl,
-				}
-			: {
-					icon: [
-						{ url: "/logo.svg", type: "image/svg+xml" },
-						{ url: "/favicon/favicon-96x96.png", sizes: "96x96", type: "image/png" },
-					],
-					apple: "/favicon/apple-touch-icon.png",
-				},
-		openGraph: {
-			title,
-			description,
-			...(ogImageUrl
-				? {
-						images: [
-							{
-								url: ogImageUrl,
-								width: 1200,
-								height: 630,
-								alt: title,
-							},
-						],
-					}
-				: {}),
-		},
-		twitter: {
-			card: "summary_large_image",
-			title,
-			description,
-			...(ogImageUrl
-				? {
-						images: [
-							{
-								url: ogImageUrl,
-								width: 1200,
-								height: 630,
-								alt: title,
-							},
-						],
-					}
-				: {}),
-		},
-	};
-}
+export const metadata: Metadata = {
+	// Makes relative icon/OG URLs absolute — crawlers need absolute OG images.
+	metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
+	title: "LinkDen",
+	description: "Your personal link-in-bio page",
+	icons: {
+		icon: [
+			{ url: "/logo.svg", type: "image/svg+xml" },
+			{ url: "/favicon/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+		],
+		apple: "/favicon/apple-touch-icon.png",
+	},
+};
 
 export default function RootLayout({
 	children,

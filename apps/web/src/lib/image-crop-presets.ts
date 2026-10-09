@@ -1,27 +1,27 @@
-export type ImagePurpose =
-	| "avatar"
-	| "banner"
-	| "og_image"
-	| "wallet_logo"
-	| "wallet_icon"
-	| "wallet_thumbnail"
-	| "wallet_strip"
-	| "logo"
-	| "favicon"
-	| "login_logo"
-	| "login_background"
-	| "block_thumbnail"
-	| "block_image";
+import type { UploadPurpose } from "@linkden/validators/uploads";
+
+/**
+ * The server's upload purposes (`uploadPurposeEnum`), so `CROP_PRESETS` below
+ * must stay exhaustive: a purpose added on one side only fails the build
+ * instead of a runtime 400.
+ */
+export type ImagePurpose = UploadPurpose;
 
 export interface CropPreset {
 	aspect: number | undefined;
 	maxSize: number;
-	format: "png" | "webp";
+	/**
+	 * Encoded output. `jpeg` for photos (no alpha, a fraction of a PNG's
+	 * weight, decodable by the OG renderer, unlike WebP); `png` where alpha or
+	 * Apple's Wallet PNG requirement matters; `webp` for large backgrounds.
+	 */
+	format: "png" | "webp" | "jpeg";
 	dimensions: string;
 }
 
 export const CROP_PRESETS: Record<ImagePurpose, CropPreset> = {
-	avatar: { aspect: 1, maxSize: 512, format: "png", dimensions: "512 × 512" },
+	// Shown at 96 px above the fold on every visit — a photo, so JPEG.
+	avatar: { aspect: 1, maxSize: 512, format: "jpeg", dimensions: "512 × 512" },
 	favicon: { aspect: 1, maxSize: 256, format: "png", dimensions: "256 × 256" },
 	wallet_logo: { aspect: 160 / 50, maxSize: 480, format: "png", dimensions: "480 × 150" },
 	wallet_icon: { aspect: 1, maxSize: 87, format: "png", dimensions: "87 × 87" },

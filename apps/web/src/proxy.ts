@@ -1,15 +1,16 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { legacyAdminRedirect } from "@/lib/admin-redirects";
+import { hasSessionCookie, isPublicAdminRoute } from "@/lib/admin-routes";
 
 // Lightweight edge proxy (Next.js 16 renamed middleware → proxy): checks for a
 // session cookie on /admin/* routes. Full session validation is still enforced
 // server-side by tRPC protectedProcedure. This prevents unauthenticated users
 // from loading admin page bundles at the edge.
 
-// The admin manifest is fetched by the browser without credentials (PWA
-// install); it is static and secret-free, so it must bypass the cookie gate.
-const PUBLIC_ADMIN_ROUTES = ["/admin/login", "/admin/setup", "/admin/manifest.webmanifest"];
+// Pages that must bypass the cookie gate (login, setup, the emailed
+// reset-password link, the credential-less PWA manifest) live in one list,
+// `PUBLIC_ADMIN_ROUTES` in lib/admin-routes.ts, shared with the admin shell.
 
 /**
  * Edge proxy that protects all /admin/* routes.
@@ -25,7 +26,7 @@ export function proxy(request: NextRequest) {
 	const { pathname, searchParams } = request.nextUrl;
 
 	// Allow public admin routes through without auth check
-	if (PUBLIC_ADMIN_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {
+	if (isPublicAdminRoute(pathname)) {
 		return NextResponse.next();
 	}
 
@@ -35,12 +36,11 @@ export function proxy(request: NextRequest) {
 	}
 
 	// Check for Better Auth session cookie
-	const sessionCookie =
-		request.cookies.get("better-auth.session_token") ??
-		request.cookies.get("__Secure-better-auth.session_token");
-
-	if (!sessionCookie) {
+	if (!hasSessionCookie(request.cookies)) {
 		const loginUrl = new URL("/admin/login", request.url);
+		// Pathname only (admin sub-pages are path segments): the login page
+		// validates it with `safeAdminRedirect` (app/admin/login/redirect.ts) and
+		// lands there after sign-in.
 		loginUrl.searchParams.set("from", pathname);
 		return NextResponse.redirect(loginUrl);
 	}

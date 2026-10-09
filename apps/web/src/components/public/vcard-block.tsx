@@ -78,7 +78,9 @@ export function VCardBlock({ block, config, colorMode, themeColors }: VCardBlock
 
 	return (
 		<a
-			href={isPreview ? undefined : `${apiBase}/api/vcard`}
+			// `?block=` asks for THIS block's card; a server without per-block
+			// lookup ignores it and serves the first live vCard block.
+			href={isPreview ? undefined : `${apiBase}/api/vcard?block=${encodeURIComponent(block.id)}`}
 			download={isPreview ? undefined : "contact.vcf"}
 			onClick={(e: React.MouseEvent) => {
 				if (isPreview) e.preventDefault();

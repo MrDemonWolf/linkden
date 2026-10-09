@@ -1,12 +1,16 @@
 "use client";
 
 import { AlertTriangle } from "lucide-react";
-import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { startTransition, useEffect } from "react";
+import { PageLoadError } from "@/components/page-load-error";
 import { Button } from "@/components/ui/button";
 import { WolfLogo } from "@/components/wolf-logo";
 
 // Root error boundary — catches uncaught errors in any public route under `/`.
-// Must be a client component per Next.js App Router convention.
+// Must be a client component per Next.js App Router convention. The home page
+// throws here when the API is unreachable, so the outage renders with a 500
+// (not indexed, not cached by the service worker) as the retry card.
 export default function RootError({
 	error,
 	reset,
@@ -19,6 +23,17 @@ export default function RootError({
 		// eslint-disable-next-line no-console
 		console.error("[root error boundary]", error);
 	}, [error]);
+	const router = useRouter();
+	const pathname = usePathname();
+
+	if (pathname === "/") return <PageLoadError />;
+
+	// A server-component error only clears once the server is asked again.
+	const retry = () =>
+		startTransition(() => {
+			router.refresh();
+			reset();
+		});
 
 	return (
 		<div className="flex min-h-screen items-center justify-center px-6">
@@ -37,10 +52,10 @@ export default function RootError({
 					later.
 				</p>
 				{error.digest ? (
-					<p className="mt-3 font-mono text-micro text-muted-foreground/60">ref: {error.digest}</p>
+					<p className="mt-3 font-mono text-micro text-muted-foreground">ref: {error.digest}</p>
 				) : null}
 				<div className="mt-8 flex items-center justify-center gap-3">
-					<Button onClick={reset} size="lg" className="px-5 text-sm">
+					<Button onClick={retry} size="lg" className="px-5 text-sm">
 						Try again
 					</Button>
 					<a

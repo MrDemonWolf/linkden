@@ -1,5 +1,6 @@
 import type { AppRouter } from "@linkden/api/routers/index";
 import type { inferRouterOutputs } from "@trpc/server";
+import { unstable_rethrow } from "next/navigation";
 import { cache } from "react";
 import { apiFetch } from "./server-api";
 
@@ -12,9 +13,10 @@ export type PublicPageResult = { ok: true; data: PublicPageData } | { ok: false;
 
 /**
  * Server-side public page payload, deduped per request with React `cache` so
- * `generateMetadata` and the page RSC share one API call. Never throws —
- * `ok: false` means the API was unreachable or errored (the page shows a
- * retryable error card); `ok: true` with no profile means "not set up yet".
+ * `generateMetadata` and the page RSC share one API call. Never throws for an
+ * API failure (only Next's own control-flow signals pass through) —
+ * `ok: false` means the API was unreachable or errored (the page throws to
+ * app/error.tsx's retry card); `ok: true` with no profile means "not set up yet".
  */
 export const getPublicPageResult = cache(async (): Promise<PublicPageResult> => {
 	try {
@@ -22,7 +24,12 @@ export const getPublicPageResult = cache(async (): Promise<PublicPageResult> => 
 		if (!res.ok) return { ok: false, data: null };
 		const json = (await res.json()) as { result?: { data?: PublicPageData } };
 		return json.result?.data ? { ok: true, data: json.result.data } : { ok: false, data: null };
-	} catch {
+	} catch (err) {
+		// The `no-store` fetch makes Next bail out of build-time prerendering by
+		// throwing its own signal; let it through so "/" and the manifest render
+		// per request. Swallowed, the build would prerender them with no data (the
+		// page now throws on that, failing `next build`).
+		unstable_rethrow(err);
 		return { ok: false, data: null };
 	}
 });

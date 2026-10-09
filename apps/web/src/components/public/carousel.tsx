@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { prefersReducedMotion } from "@/hooks/use-reduced-motion";
 import type { ThemeColors } from "./public-page";
 import { glassStyle } from "./theme-toggle";
 
@@ -53,7 +54,7 @@ export function Carousel({
 		const first = el.firstElementChild as HTMLElement | null;
 		const gap = Number.parseFloat(getComputedStyle(el).columnGap || "0") || 0;
 		const by = (first?.offsetWidth ?? el.clientWidth * 0.72) + gap;
-		el.scrollBy({ left: dir * by, behavior: "smooth" });
+		el.scrollBy({ left: dir * by, behavior: prefersReducedMotion() ? "auto" : "smooth" });
 	};
 
 	const btn =

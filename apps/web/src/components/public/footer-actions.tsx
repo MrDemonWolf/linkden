@@ -42,7 +42,6 @@ export function FooterActions({ vcardEnabled, themeColors }: FooterActionsProps)
 				download="contact.vcf"
 				className={pillClass}
 				style={pillStyle}
-				aria-label="Download vCard"
 			>
 				<Download className="h-4 w-4" aria-hidden="true" />
 				<span>Save vCard</span>

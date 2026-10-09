@@ -8,14 +8,16 @@ import { hasAnalyticsConsent } from "@/components/public/consent-banner";
  * unloading behind an outbound link (`keepalive`), and it must never surface
  * an error toast to a visitor. Wire format matches `httpBatchLink` with no
  * transformer (utils/trpc.ts): POST /trpc/<path> with the raw input as JSON.
- * Referrer / UA / country are derived server-side from request headers.
+ * Country is derived server-side from request headers; the referrer is the
+ * page's own `document.referrer` (the request's Referer header is the link page
+ * itself) and the server keeps only its hostname.
  */
 export function trackClick(blockId: string, opts?: { preview?: boolean }): void {
 	if (opts?.preview || typeof window === "undefined" || !hasAnalyticsConsent()) return;
 	fetch(`${env.NEXT_PUBLIC_SERVER_URL}/trpc/public.trackClick`, {
 		method: "POST",
 		headers: { "content-type": "application/json" },
-		body: JSON.stringify({ blockId }),
+		body: JSON.stringify({ blockId, referrer: document.referrer || undefined }),
 		credentials: "include",
 		keepalive: true,
 	}).catch(() => {});

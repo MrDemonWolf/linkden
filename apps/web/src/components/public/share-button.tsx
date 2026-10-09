@@ -2,7 +2,6 @@
 
 import { Menu } from "@base-ui/react/menu";
 import { Link2, QrCode, Share2 } from "lucide-react";
-import QRCode from "qrcode";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -37,8 +36,15 @@ export function ShareButton({ title, themeColors }: { title: string; themeColors
 		}
 	};
 
+	// The encoder loads on demand: almost no visitor opens the QR code, so it
+	// stays out of the public page's first-load JS.
 	const openQr = async () => {
-		setQr(await QRCode.toDataURL(window.location.origin, { margin: 1, width: 240 }));
+		try {
+			const { toDataURL } = await import("qrcode");
+			setQr(await toDataURL(window.location.origin, { margin: 1, width: 240 }));
+		} catch {
+			toast.error("Couldn't create the QR code");
+		}
 	};
 
 	// Only used inside the popup, which mounts on open (client), so the SSR value never reaches the DOM.
