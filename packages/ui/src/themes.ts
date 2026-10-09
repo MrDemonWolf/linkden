@@ -213,9 +213,11 @@ export const themePresets: ThemePreset[] = [
 				"--ld-muted-foreground": "#586882",
 			},
 			dark: {
-				"--ld-primary": "#3B82F6",
+				// #3B82F6 was 3.98:1 on the card (the consent banner's links); this is
+				// 5.75:1 on the card and 7.02:1 on the background.
+				"--ld-primary": "#60A5FA",
 				"--ld-secondary": "#1E293B",
-				"--ld-accent": "#60A5FA",
+				"--ld-accent": "#93C5FD",
 				"--ld-background": "#0F172A",
 				"--ld-foreground": "#F1F5F9",
 				"--ld-card": "#1E293B",

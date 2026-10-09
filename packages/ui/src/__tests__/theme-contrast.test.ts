@@ -21,6 +21,8 @@ const TEXT_PAIRS = [
 	{ label: "muted-foreground on card", fg: "--ld-muted-foreground", bg: "--ld-card", min: 4.5 },
 	{ label: "muted-foreground on muted", fg: "--ld-muted-foreground", bg: "--ld-muted", min: 4.5 },
 	{ label: "primary as text on background", fg: "--ld-primary", bg: "--ld-background", min: 4.5 },
+	// The consent banner is a card surface with primary-coloured links on it.
+	{ label: "primary as text on card", fg: "--ld-primary", bg: "--ld-card", min: 4.5 },
 	{ label: "primary as fill on background", fg: "--ld-primary", bg: "--ld-background", min: 3 },
 ] as const;
 

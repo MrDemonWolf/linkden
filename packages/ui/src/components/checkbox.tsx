@@ -1,5 +1,5 @@
-import * as React from "react";
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
+import * as React from "react";
 import { cn } from "../utils";
 
 export interface CheckboxProps
@@ -18,9 +18,12 @@ const Checkbox = React.forwardRef<React.ComponentRef<typeof CheckboxPrimitive.Ro
 				id={checkboxId}
 				data-slot="checkbox"
 				className={cn(
-					"peer h-4 w-4 shrink-0 rounded-sm border border-border shadow-sm transition-colors",
+					// The border is the whole unchecked control, so it takes the 3:1
+					// control boundary token (WCAG 1.4.11), not the ~1.4:1 hairline.
+					"peer h-4 w-4 shrink-0 rounded-sm border border-input-border shadow-sm transition-colors",
 					"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-					"disabled:cursor-not-allowed disabled:opacity-50",
+					// Base UI renders a <span>: `:disabled` never matches, `data-disabled` does.
+					"data-disabled:cursor-not-allowed data-disabled:opacity-50",
 					"data-[checked]:bg-primary data-[checked]:border-primary data-[checked]:text-primary-foreground",
 					className,
 				)}
@@ -51,7 +54,7 @@ const Checkbox = React.forwardRef<React.ComponentRef<typeof CheckboxPrimitive.Ro
 					{checkbox}
 					<label
 						htmlFor={checkboxId}
-						className="text-sm font-medium leading-none text-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+						className="text-sm font-medium leading-none text-foreground peer-data-disabled:cursor-not-allowed peer-data-disabled:opacity-70"
 					>
 						{label}
 					</label>

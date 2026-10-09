@@ -14,8 +14,12 @@ const Switch = React.forwardRef<
 			// 44px touch target (WCAG 2.5.8) without growing the visual 36x20 pill
 			"after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']",
 			"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-			"disabled:cursor-not-allowed disabled:opacity-50",
-			"data-[checked]:bg-primary data-[unchecked]:bg-muted",
+			// Base UI renders a <span>, which `:disabled` never matches — disabled
+			// state is only `data-disabled` / `aria-disabled`.
+			"data-disabled:cursor-not-allowed data-disabled:opacity-50",
+			// The off track gets a 3:1 boundary (WCAG 1.4.11): bg-muted alone is
+			// ~1.1:1 against the card, leaving a lone floating dot.
+			"data-[checked]:bg-primary data-[unchecked]:border-input-border data-[unchecked]:bg-muted",
 			className,
 		)}
 		{...props}

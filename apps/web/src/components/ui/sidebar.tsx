@@ -25,6 +25,36 @@ const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
+/** The open state `setOpen` persisted, or undefined when none (valid) is saved. */
+function readSidebarCookie(): boolean | undefined {
+	const match = new RegExp(`(?:^|;\\s*)${SIDEBAR_COOKIE_NAME}=(true|false)(?:;|$)`).exec(
+		document.cookie,
+	);
+	return match ? match[1] === "true" : undefined;
+}
+
+/**
+ * Targets where Ctrl/Cmd+B is a text-editing key, not ours: macOS binds Ctrl+B
+ * to "cursor back one character" in every text field (CodeMirror's standard
+ * keymap included), and rich editors use Cmd/Ctrl+B for bold.
+ */
+function isEditableTarget(target: EventTarget | null): boolean {
+	if (!(target instanceof HTMLElement)) return false;
+	return (
+		target instanceof HTMLInputElement ||
+		target instanceof HTMLTextAreaElement ||
+		target instanceof HTMLSelectElement ||
+		target.isContentEditable ||
+		target.closest(".cm-editor") !== null
+	);
+}
+
+/** Apple platforms use Cmd for app shortcuts; everywhere else uses Ctrl. */
+function isApplePlatform(): boolean {
+	const nav = navigator as Navigator & { userAgentData?: { platform?: string } };
+	return /mac|iphone|ipad|ipod/i.test(nav.userAgentData?.platform || nav.platform || "");
+}
+
 type SidebarContextProps = {
 	state: "expanded" | "collapsed";
 	open: boolean;
@@ -66,6 +96,16 @@ function SidebarProvider({
 	// We use openProp and setOpenProp for control from outside the component.
 	const [_open, _setOpen] = React.useState(defaultOpen);
 	const open = openProp ?? _open;
+
+	// Restore the state `setOpen` persists below. Read after mount rather than in
+	// the useState initializer: the server render can't see document.cookie, so
+	// reading it there would make hydration disagree with the server HTML. A
+	// layout effect applies it before the first paint of a client-side mount
+	// (the admin shell mounts the provider only once the session resolves).
+	React.useLayoutEffect(() => {
+		const saved = readSidebarCookie();
+		if (saved !== undefined) _setOpen(saved);
+	}, []);
 	const setOpen = React.useCallback(
 		(value: boolean | ((value: boolean) => boolean)) => {
 			const openState = typeof value === "function" ? value(open) : value;
@@ -86,18 +126,24 @@ function SidebarProvider({
 		return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open);
 	}, [isMobile, setOpen, setOpenMobile]);
 
-	// Adds a keyboard shortcut to toggle the sidebar.
+	// Adds a keyboard shortcut to toggle the sidebar: Cmd+B on Apple platforms,
+	// Ctrl+B elsewhere. Never inside an editable target (see isEditableTarget),
+	// and never below the mobile breakpoint — the admin shell does not render the
+	// sidebar there, so toggling would open a drawer the layout says cannot exist.
 	React.useEffect(() => {
+		const apple = isApplePlatform();
 		const handleKeyDown = (event: KeyboardEvent) => {
-			if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
-				event.preventDefault();
-				toggleSidebar();
-			}
+			if (event.key !== SIDEBAR_KEYBOARD_SHORTCUT) return;
+			const modifier = apple ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey;
+			if (!modifier || event.altKey || event.shiftKey) return;
+			if (isMobile || isEditableTarget(event.target)) return;
+			event.preventDefault();
+			toggleSidebar();
 		};
 
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
-	}, [toggleSidebar]);
+	}, [isMobile, toggleSidebar]);
 
 	// We add a state so that we can do data-state="expanded" or "collapsed".
 	// This makes it easier to style the sidebar with Tailwind classes.
@@ -492,6 +538,9 @@ function SidebarMenuButton({
 		props: mergeProps<"button">(
 			{
 				className: cn(sidebarMenuButtonVariants({ variant, size }), className),
+				// `data-active` is styling only; this is what tells assistive tech
+				// which destination is current. Callers can still override it.
+				"aria-current": isActive ? "page" : undefined,
 			},
 			props,
 		),

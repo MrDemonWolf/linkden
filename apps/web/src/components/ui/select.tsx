@@ -37,7 +37,7 @@ export function Select({
 	return (
 		<SelectPrimitive.Root
 			value={value}
-			// ponytail: null only arrives from a cleared multi-select, which we never render.
+			// Null only arrives from a cleared multi-select, which we never render.
 			onValueChange={(v) => v !== null && onValueChange(v)}
 			items={items}
 			disabled={disabled}
@@ -46,7 +46,7 @@ export function Select({
 				id={id}
 				aria-label={ariaLabel}
 				className={cn(
-					"dark:bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring focus-visible:ring-offset-background disabled:bg-input/50 dark:disabled:bg-input/80 flex h-11 w-full min-w-0 cursor-default items-center gap-2 rounded-lg border bg-transparent px-2.5 py-1 text-left text-base backdrop-blur-sm transition-colors outline-none select-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:h-8 md:text-sm",
+					"dark:bg-input/30 border-input-border focus-visible:border-ring focus-visible:ring-ring focus-visible:ring-offset-background disabled:bg-input/50 dark:disabled:bg-input/80 flex h-11 w-full min-w-0 cursor-default items-center gap-2 rounded-lg border bg-transparent px-2.5 py-1 text-left text-base backdrop-blur-sm transition-colors outline-none select-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:h-8 md:text-sm",
 					className,
 				)}
 			>
