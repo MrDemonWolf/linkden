@@ -13,32 +13,79 @@ permissions:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+# Never cancel a deploy mid-flight: Alchemy applies migrations, then the API
+# worker, then the web worker, and an interrupted run would leave production on
+# a mixed release. With cancel-in-progress off, GitHub lets the running deploy
+# finish and keeps only the newest pending run (older pending ones are
+# replaced), so the latest main commit still wins.
 concurrency:
   group: deploy
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
     name: Deploy to Cloudflare
     environment: production
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    # CI runs on every pull_request, including fork PRs, and for those
+    # `head_branch` is the fork's branch name — which an attacker can call
+    # `main`. Only deploy a CI run that came from a push to THIS repository's
+    # main branch; never a pull_request run, never another repository's commit.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
+      # Fail fast, before any install, with the list of what the `production`
+      # environment is missing — instead of an opaque error deep in Alchemy.
+      # An unset secret/variable arrives as "", so test for emptiness.
+      - name: Preflight — required secrets and variables
+        run: |
+          missing=""
+          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID ALCHEMY_PASSWORD \
+            ALCHEMY_STATE_TOKEN BETTER_AUTH_SECRET BETTER_AUTH_URL \
+            NEXT_PUBLIC_SERVER_URL CORS_ORIGIN NEXT_PUBLIC_SITE_URL; do
+            if [ -z "${!name// /}" ]; then missing="$missing $name"; fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error title=Deploy not configured::Missing in the production environment:${missing}"
+            {
+              echo "### Deploy not configured"
+              echo "Set these on the \`production\` environment (secrets, except NEXT_PUBLIC_SITE_URL which is a variable):"
+              for name in $missing; do echo "- \`$name\`"; done
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "All required deploy secrets and variables are set."
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ALCHEMY_PASSWORD: ${{ secrets.ALCHEMY_PASSWORD }}
+          ALCHEMY_STATE_TOKEN: ${{ secrets.ALCHEMY_STATE_TOKEN }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
+          NEXT_PUBLIC_SERVER_URL: ${{ secrets.NEXT_PUBLIC_SERVER_URL }}
+          CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
+          NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           # Deploy the exact commit that passed CI, not whatever main points at
           # now — main may have advanced between the CI run and this deploy.
+          # The job `if` above guarantees this SHA was pushed to this repo's main.
           ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@ecf28ddc73e819eb6fa29df6b34ef8921c743461 # v2.1.3
         with:
           bun-version-file: package.json
 
-      # Alchemy runs under Node via tsx — Bun segfaults on the Alchemy program
-      # (exit 132/SIGILL), same as wolfathon and dirework. Bun is still used for
-      # installs and the turbo run.
+      # Alchemy runs under Node rather than Bun — Bun segfaults on the Alchemy
+      # program (exit 132/SIGILL), same as wolfathon and dirework. Bun is still
+      # used for installs and the turbo run.
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -54,6 +101,33 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      # Restore point for this release: D1 Time Travel can restore the database
+      # to this bookmark if a migration in this deploy has to be undone
+      # (`wrangler d1 time-travel restore <db> --bookmark=<id>`). Run from the
+      # repo root, not apps/server — that wrangler.jsonc pins database_id
+      # "local". Non-fatal: the first deploy has no database yet.
+      - name: Record D1 restore point
+        continue-on-error: true
+        run: |
+          WRANGLER=./apps/server/node_modules/.bin/wrangler
+          if INFO=$("$WRANGLER" d1 time-travel info "$DB_NAME" --json); then
+            echo "$INFO"
+            {
+              echo "### D1 restore point (before deploy)"
+              echo "Database: \`$DB_NAME\`"
+              echo '```json'
+              echo "$INFO"
+              echo '```'
+              echo "Undo a migration: \`wrangler d1 time-travel restore $DB_NAME --bookmark=<bookmark above>\`"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::Could not read a D1 Time Travel bookmark for $DB_NAME (first deploy?)"
+          fi
+        env:
+          DB_NAME: ${{ vars.LINKDEN_DB_NAME || 'linkden-db' }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Deploy with Alchemy
         run: bun run deploy
@@ -78,7 +152,8 @@ jobs:
           # names: the D1 database / R2 bucket Alchemy generated back then
           # (typically linkden-database-runner / linkden-images-runner), so
           # the prod stage adopts the existing data instead of creating empty
-          # resources. Leave unset for a fresh install.
+          # resources. Leave unset for a fresh install. Honoured on the prod
+          # stage only (alchemy.run.ts ignores them for any other stage).
           LINKDEN_DB_NAME: ${{ vars.LINKDEN_DB_NAME }}
           LINKDEN_IMAGES_BUCKET: ${{ vars.LINKDEN_IMAGES_BUCKET }}
           WALLET_SIGNER_CERT: ${{ secrets.WALLET_SIGNER_CERT }}
@@ -87,10 +162,19 @@ jobs:
           WALLET_TEAM_ID: ${{ secrets.WALLET_TEAM_ID }}
           WALLET_PASS_TYPE_ID: ${{ secrets.WALLET_PASS_TYPE_ID }}
           WALLET_SIGNER_KEY_PASSPHRASE: ${{ secrets.WALLET_SIGNER_KEY_PASSPHRASE }}
+          # Optional: required by the first sign-up (x-setup-token) while no
+          # admin exists, so a fresh public deploy cannot be claimed by a stranger.
+          SETUP_TOKEN: ${{ secrets.SETUP_TOKEN }}
 
+      # Three probes: the API worker (/api/health — DB reachable, auth
+      # configured, version reported), the web worker (the public page renders
+      # server-side instead of the "Couldn't load this page" card) and its /og
+      # social-card route (a PNG, not a 500). Retries absorb
+      # propagation lag right after the upload. There is no automatic rollback
+      # (a blind `wrangler rollback` could revert a release this run never
+      # replaced); follow the rollback runbook in docs/self-hosting/cloudflare.
       - name: Smoke test production
         run: |
-          sleep 5
           # With a custom domain the API is routed under the site origin
           # (/api/* route on the web worker's domain); otherwise probe the
           # server's workers.dev URL directly.
@@ -100,7 +184,7 @@ jobs:
             HEALTH_URL="${SERVER_URL%/}/api/health"
           fi
           echo "Probing $HEALTH_URL"
-          RESPONSE=$(curl -fsS --max-time 15 "$HEALTH_URL" || echo "FAILED")
+          RESPONSE=$(curl -fsS --retry 5 --retry-delay 5 --retry-all-errors --max-time 15 "$HEALTH_URL" || echo "FAILED")
           echo "Response: $RESPONSE"
           # Readiness means more than a 200: the DB must be reachable and the
           # deployed version must be reported.
@@ -116,6 +200,34 @@ jobs:
           if ! echo "$RESPONSE" | grep -q '"email":"'; then
             echo "ERROR: email status missing from health response"; exit 1
           fi
+
+          HOME_URL="${SITE_URL%/}/"
+          echo "Probing $HOME_URL"
+          if ! curl -fsS --retry 5 --retry-delay 5 --retry-all-errors --max-time 15 \
+            -o home.html "$HOME_URL"; then
+            echo "ERROR: public page did not return 2xx"; exit 1
+          fi
+          if ! grep -qi '<html' home.html; then
+            echo "ERROR: public page response is not HTML"; exit 1
+          fi
+          # PageLoadError: the web worker rendered but could not reach the API.
+          if grep -q 'load this page' home.html; then
+            echo "ERROR: public page rendered the load-error card (web -> API binding broken)"; exit 1
+          fi
+
+          # Social cards: /og renders a PNG in the web worker (next/og). A
+          # bundling regression ships a 500 here while the page itself works.
+          OG_URL="${SITE_URL%/}/og?template=minimal&name=My%20Links&bio=&theme=%236366f1"
+          echo "Probing $OG_URL"
+          OG=$(curl -fsS --retry 5 --retry-delay 5 --retry-all-errors --max-time 20 \
+            -o /dev/null -w '%{http_code} %{content_type}' "$OG_URL" || echo "FAILED")
+          echo "Response: $OG"
+          case "$OG" in
+            "200 image/png"*) ;;
+            *) echo "ERROR: /og did not return a PNG"; exit 1 ;;
+          esac
+          echo "Smoke test passed."
         env:
           SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
+          SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
           SERVER_URL: ${{ secrets.NEXT_PUBLIC_SERVER_URL }}

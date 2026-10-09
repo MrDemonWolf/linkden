@@ -7,14 +7,28 @@ import { expect, test } from "@playwright/test";
 // design review), so these assertions key on network + content signals instead.
 
 test("public page renders with live data", async ({ page }) => {
-	const pageData = page.waitForResponse(
-		(res) => res.url().includes("/trpc/public.getPage") && res.ok(),
-	);
-	await page.goto("/");
-	// The public page is client-fetched; a successful getPage round-trip proves
-	// web -> (rewrite) -> API -> D1 end to end.
-	await pageData;
+	// The public page is server-rendered (app/page.tsx -> getPublicPageResult),
+	// so the browser never calls public.getPage itself: the proof that
+	// web -> API -> D1 works is in the HTML. When the API is unreachable the
+	// server renders the PageLoadError card instead of the page.
+	const res = await page.goto("/");
+	expect(res?.status()).toBe(200);
 	await expect(page.locator("body")).toBeVisible();
+	await expect(page.getByText(/load this page/i)).toHaveCount(0);
+	// Fresh DB: the WelcomePage. Configured: the profile page. Either renders
+	// real content, never a blank body.
+	await expect(page.locator("body")).not.toBeEmpty();
+});
+
+test("public.getPage answers through the API", async ({ request }) => {
+	// Hits the API directly (the web origin only proxies /trpc when the dev
+	// rewrite is active), so it covers the tRPC route + D1 read on its own.
+	// biome-ignore lint/suspicious/noUndeclaredEnvVars: Playwright-only override, not a turbo task input
+	const apiOrigin = process.env.PW_API_URL ?? "http://127.0.0.1:3000";
+	const res = await request.get(`${apiOrigin}/trpc/public.getPage`);
+	expect(res.status()).toBe(200);
+	const body = (await res.json()) as { result?: { data?: unknown } };
+	expect(body.result?.data).toBeDefined();
 });
 
 test("health endpoint responds through the web origin", async ({ request }) => {
@@ -87,4 +101,15 @@ test("setup wizard or login is reachable", async ({ page }) => {
 	expect(res?.status()).toBeLessThan(400);
 	await expect(page).toHaveURL(/\/admin\/(setup|login)/);
 	await expect(page.locator("body")).toContainText(/LinkDen|Sign in|Welcome/i);
+});
+
+test("the emailed reset-password link is not bounced to login", async ({ page }) => {
+	// Opened by someone who is signed out by definition: the proxy and the admin
+	// shell must both let it through with its ?token= intact.
+	await page.context().clearCookies();
+	await page.goto("/admin/reset-password?token=x");
+	await page.waitForLoadState("networkidle");
+	const url = new URL(page.url());
+	expect(url.pathname).toBe("/admin/reset-password");
+	expect(url.searchParams.get("token")).toBe("x");
 });
