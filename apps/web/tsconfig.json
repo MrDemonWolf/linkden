@@ -12,6 +12,7 @@
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"verbatimModuleSyntax": true,
+		"rewriteRelativeImportExtensions": true,
 		"jsx": "react-jsx",
 		"incremental": true,
 		"plugins": [
