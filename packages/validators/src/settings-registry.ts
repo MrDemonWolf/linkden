@@ -6,6 +6,18 @@
 // backup policy, and the key whitelist from here instead of maintaining their
 // own drifting copies.
 
+import type { z } from "zod";
+import { consentCategoriesSchema } from "./consent-schema";
+import { vcardDataSchema } from "./vcard";
+import {
+	isCertificateMaterial,
+	isPrivateKeyMaterial,
+	PASS_TEMPLATE_PRESETS,
+	passFieldsSchemaFor,
+	passLocationsSchema,
+	relevantDateSchema,
+} from "./wallet";
+
 export type SettingKind =
 	| "text" // HTML-stripped, length-clamped
 	| "url" // must be http(s) if non-empty
@@ -16,7 +28,7 @@ export type SettingKind =
 	| "apiKey" // control chars stripped, capped
 	| "boolean" // exactly "true" or "false"
 	| "enum" // one of `values` (empty string = unset)
-	| "opaque"; // stored verbatim, length-capped (JSON/PEM validated by its owner)
+	| "opaque"; // stored verbatim, length-capped, structurally checked by `validate`
 
 interface BaseMeta {
 	/** Max character length; every non-enum/boolean/color/url key declares one. */
@@ -25,6 +37,12 @@ interface BaseMeta {
 	secret?: boolean;
 	/** Part of the wallet config surface (managed by the wallet router). */
 	wallet?: boolean;
+	/**
+	 * Structural check for an `opaque` value (JSON shape, ISO date, PEM). Run by
+	 * sanitizeSetting, so settings.update, the wallet/vcard routers and
+	 * backup.import share one gate instead of trusting the value's "owner".
+	 */
+	validate?: (value: string) => boolean;
 }
 
 export type SettingMeta = BaseMeta &
@@ -59,6 +77,20 @@ export const THEME_PRESET_NAMES = [
 	"hellfire",
 	"abyssal",
 ] as const;
+
+/**
+ * A free-form theme name (e.g. a LinkStack theme) as a LinkDen preset name:
+ * trimmed, lower-cased, spaces/underscores → hyphens. Null when it matches no
+ * preset, so callers never write a value nothing reads.
+ */
+export function themePresetFromName(name: string | null | undefined): string | null {
+	if (!name) return null;
+	const normalized = name
+		.trim()
+		.toLowerCase()
+		.replace(/[\s_]+/g, "-");
+	return (THEME_PRESET_NAMES as readonly string[]).includes(normalized) ? normalized : null;
+}
 
 /**
  * Mirrors `bannerPresets[].id` in packages/ui/src/banner-presets.ts, plus the
@@ -105,8 +137,27 @@ export const EMAIL_PROVIDERS = [
 	"none",
 ] as const;
 export const CONTACT_DELIVERY_MODES = ["email", "database", "both"] as const;
-/** Mirrors `PASS_TEMPLATE_PRESETS` in ./wallet.ts (listed here to keep this module dependency-free). */
-const WALLET_TEMPLATE_PRESETS = ["contact-card", "member-card", "access-pass", "custom"] as const;
+
+/**
+ * BCP-47 language tag shape for `site_language` (e.g. "en", "pt-BR",
+ * "zh-Hant-TW"). Mirrored by LANG_TAG in apps/web public-page.tsx, which can't
+ * import this zod-bearing module into the public bundle.
+ */
+export const SITE_LANGUAGE_PATTERN = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8}){0,3}$/;
+/** True when `value` is JSON that `schema` accepts. */
+const jsonMatching =
+	(schema: z.ZodType) =>
+	(value: string): boolean => {
+		try {
+			return schema.safeParse(JSON.parse(value)).success;
+		} catch {
+			return false;
+		}
+	};
+
+/** Signing material: "" clears it; anything else must be loadable by the signer. */
+const certificateOrBlank = (v: string) => v === "" || isCertificateMaterial(v);
+const privateKeyOrBlank = (v: string) => v === "" || isPrivateKeyMaterial(v);
 
 const enumOf = (values: readonly string[], extra: BaseMeta = {}): SettingMeta => ({
 	kind: "enum",
@@ -142,6 +193,12 @@ export const SETTING_REGISTRY: Record<string, SettingMeta> = {
 	seo_og_image: { kind: "url" },
 	seo_og_mode: enumOf(OG_MODES),
 	seo_og_template: enumOf(OG_TEMPLATE_IDS),
+	/** Public page `lang` (BCP-47); empty = English. */
+	site_language: {
+		kind: "opaque",
+		maxLength: 35,
+		validate: (v) => v === "" || SITE_LANGUAGE_PATTERN.test(v),
+	},
 	// Branding
 	branding_enabled: { kind: "boolean" },
 	branding_text: { kind: "text", maxLength: 100 },
@@ -162,8 +219,16 @@ export const SETTING_REGISTRY: Record<string, SettingMeta> = {
 	// Features
 	wallet_pass_enabled: { kind: "boolean", wallet: true },
 	vcard_enabled: { kind: "boolean" },
-	/** JSON blob owned by the vcard router (validated by vcardDataSchema on write). */
-	vcard_data: { kind: "opaque", maxLength: 10_000 },
+	/**
+	 * JSON blob written by the vcard router. vcardDataSchema bounds the content;
+	 * the cap is the global one because JSON escaping of a schema-valid record
+	 * (20 URLs of 2048 chars) can exceed any tighter fixed limit.
+	 */
+	vcard_data: {
+		kind: "opaque",
+		maxLength: MAX_SETTING_VALUE_LENGTH,
+		validate: jsonMatching(vcardDataSchema),
+	},
 	contact_form_enabled: { kind: "boolean" },
 	// Auth / CAPTCHA
 	captcha_provider: enumOf(CAPTCHA_PROVIDERS),
@@ -185,12 +250,16 @@ export const SETTING_REGISTRY: Record<string, SettingMeta> = {
 	consent_banner_text: { kind: "text", maxLength: 500 },
 	consent_privacy_url: { kind: "url" },
 	/** JSON `{ analytics, marketing, functional }` flags. */
-	consent_categories: { kind: "opaque", maxLength: 500 },
-	// Wallet (managed by the wallet router; JSON shapes validated structurally there)
+	consent_categories: {
+		kind: "opaque",
+		maxLength: 500,
+		validate: jsonMatching(consentCategoriesSchema),
+	},
+	// Wallet (written by the wallet router through sanitizeSetting)
 	wallet_show_email: { kind: "boolean", wallet: true },
 	wallet_show_name: { kind: "boolean", wallet: true },
 	wallet_show_qr_code: { kind: "boolean", wallet: true },
-	wallet_template_preset: enumOf(WALLET_TEMPLATE_PRESETS, { wallet: true }),
+	wallet_template_preset: enumOf(PASS_TEMPLATE_PRESETS, { wallet: true }),
 	wallet_organization_name: { kind: "text", maxLength: 100, wallet: true },
 	wallet_pass_description: { kind: "text", maxLength: 200, wallet: true },
 	wallet_background_color: { kind: "color", wallet: true },
@@ -200,16 +269,71 @@ export const SETTING_REGISTRY: Record<string, SettingMeta> = {
 	wallet_icon_url: { kind: "url", wallet: true },
 	wallet_thumbnail_url: { kind: "url", wallet: true },
 	wallet_strip_url: { kind: "url", wallet: true },
-	wallet_header_fields: { kind: "opaque", maxLength: 10_000, wallet: true },
-	wallet_primary_fields: { kind: "opaque", maxLength: 10_000, wallet: true },
-	wallet_secondary_fields: { kind: "opaque", maxLength: 10_000, wallet: true },
-	wallet_auxiliary_fields: { kind: "opaque", maxLength: 10_000, wallet: true },
-	wallet_back_fields: { kind: "opaque", maxLength: 10_000, wallet: true },
-	wallet_relevant_date: { kind: "opaque", maxLength: SHORT, wallet: true },
-	wallet_locations: { kind: "opaque", maxLength: 10_000, wallet: true },
-	wallet_signer_cert: { kind: "opaque", maxLength: LONG_TEXT, wallet: true, secret: true },
-	wallet_signer_key: { kind: "opaque", maxLength: LONG_TEXT, wallet: true, secret: true },
-	wallet_wwdr_cert: { kind: "opaque", maxLength: LONG_TEXT, wallet: true, secret: true },
+	// Field caps leave room for JSON escaping of schema-valid fields (≈1.9k per
+	// worst-case field; 20 back fields).
+	wallet_header_fields: {
+		kind: "opaque",
+		maxLength: 10_000,
+		wallet: true,
+		validate: jsonMatching(passFieldsSchemaFor("header")),
+	},
+	wallet_primary_fields: {
+		kind: "opaque",
+		maxLength: 10_000,
+		wallet: true,
+		validate: jsonMatching(passFieldsSchemaFor("primary")),
+	},
+	wallet_secondary_fields: {
+		kind: "opaque",
+		maxLength: 10_000,
+		wallet: true,
+		validate: jsonMatching(passFieldsSchemaFor("secondary")),
+	},
+	wallet_auxiliary_fields: {
+		kind: "opaque",
+		maxLength: 10_000,
+		wallet: true,
+		validate: jsonMatching(passFieldsSchemaFor("auxiliary")),
+	},
+	wallet_back_fields: {
+		kind: "opaque",
+		maxLength: 40_000,
+		wallet: true,
+		validate: jsonMatching(passFieldsSchemaFor("back")),
+	},
+	wallet_relevant_date: {
+		kind: "opaque",
+		maxLength: SHORT,
+		wallet: true,
+		validate: (v) => relevantDateSchema.safeParse(v).success,
+	},
+	wallet_locations: {
+		kind: "opaque",
+		maxLength: 10_000,
+		wallet: true,
+		validate: jsonMatching(passLocationsSchema),
+	},
+	wallet_signer_cert: {
+		kind: "opaque",
+		maxLength: LONG_TEXT,
+		wallet: true,
+		secret: true,
+		validate: certificateOrBlank,
+	},
+	wallet_signer_key: {
+		kind: "opaque",
+		maxLength: LONG_TEXT,
+		wallet: true,
+		secret: true,
+		validate: privateKeyOrBlank,
+	},
+	wallet_wwdr_cert: {
+		kind: "opaque",
+		maxLength: LONG_TEXT,
+		wallet: true,
+		secret: true,
+		validate: certificateOrBlank,
+	},
 	wallet_team_id: { kind: "opaque", maxLength: 20, wallet: true },
 	wallet_pass_type_id: { kind: "opaque", maxLength: 100, wallet: true },
 } as const satisfies Record<string, SettingMeta>;
@@ -225,7 +349,8 @@ export const SECRET_SETTING_KEYS = new Set<string>(
 );
 
 export function getSettingMeta(key: string): SettingMeta | undefined {
-	return SETTING_REGISTRY[key];
+	// Own keys only: "constructor" / "__proto__" / "toString" are not settings.
+	return Object.hasOwn(SETTING_REGISTRY, key) ? SETTING_REGISTRY[key] : undefined;
 }
 
 export function isSecretKey(key: string): boolean {

@@ -22,6 +22,7 @@ export const VALID_SETTING_KEYS = [
 	"seo_og_image",
 	"seo_og_mode",
 	"seo_og_template",
+	"site_language",
 	"branding_enabled",
 	"branding_text",
 	"branding_link",

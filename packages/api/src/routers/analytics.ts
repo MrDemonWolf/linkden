@@ -1,30 +1,29 @@
-import { router, protectedProcedure } from "../index";
 import { db } from "@linkden/db";
-import { pageView, linkClick, block, contactSubmission } from "@linkden/db/schema/index";
-import { eq, gte, lte, and, desc, sql, count } from "drizzle-orm";
+import { block, contactSubmission, linkClick, pageView } from "@linkden/db/schema/index";
 import type { SQLWrapper } from "drizzle-orm";
+import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { z } from "zod";
+import { protectedProcedure, router } from "../index";
+import { buildSettingsMap } from "../utils/settings";
+import { localDaySql, utcOffsetMinutes } from "../utils/timezone";
 
-function getDateRange(period: string): { start: Date | null; end: Date } {
-	const end = new Date();
-	if (period === "all") {
-		return { start: null, end };
-	}
-	const start = new Date();
-	switch (period) {
-		case "7d":
-			start.setDate(start.getDate() - 7);
-			break;
-		case "30d":
-			start.setDate(start.getDate() - 30);
-			break;
-		case "90d":
-			start.setDate(start.getDate() - 90);
-			break;
-		default:
-			start.setDate(start.getDate() - 7);
-	}
-	return { start, end };
+export const ANALYTICS_PERIODS = ["7d", "30d", "90d", "all"] as const;
+type Period = (typeof ANALYTICS_PERIODS)[number];
+
+const PERIOD_DAYS: Record<Exclude<Period, "all">, number> = { "7d": 7, "30d": 30, "90d": 90 };
+
+/** The window a period covers, ending now. `start` is null for all time. */
+export function getDateRange(
+	period: Period,
+	now: Date = new Date(),
+): {
+	start: Date | null;
+	end: Date;
+} {
+	if (period === "all") return { start: null, end: now };
+	const start = new Date(now);
+	start.setDate(start.getDate() - PERIOD_DAYS[period]);
+	return { start, end: now };
 }
 
 /** Build a where clause array for a date column, handling null start (all time). */
@@ -37,18 +36,24 @@ function dateWhere(col: SQLWrapper, start: Date | null, end: Date): (SQLWrapper 
 
 const rangeInput = z
 	.object({
-		period: z.enum(["7d", "30d", "90d", "all"]).default("7d"),
-		startDate: z.date().optional(),
-		endDate: z.date().optional(),
+		period: z.enum(ANALYTICS_PERIODS).default("7d"),
 	})
 	.optional();
 
+/**
+ * Current UTC offset of the admin's `timezone` setting (UTC when unset/invalid),
+ * so daily buckets follow the admin's calendar day rather than UTC's. The
+ * current offset is applied across the range; a DST change inside it shifts at
+ * most the hour around the switch.
+ */
+async function adminUtcOffset(now: Date): Promise<number> {
+	const { timezone } = await buildSettingsMap(["timezone"]);
+	return utcOffsetMinutes(timezone, now);
+}
+
 export const analyticsRouter = router({
 	overview: protectedProcedure.input(rangeInput).query(async ({ input }) => {
-		const { start, end } =
-			input?.startDate && input?.endDate
-				? { start: input.startDate as Date | null, end: input.endDate }
-				: getDateRange(input?.period ?? "7d");
+		const { start, end } = getDateRange(input?.period ?? "7d");
 
 		// Compute previous period window for comparison (skip for "all time")
 		const hasPrevious = start !== null;
@@ -98,49 +103,37 @@ export const analyticsRouter = router({
 		};
 	}),
 
+	// Buckets are calendar days (YYYY-MM-DD) in the admin's `timezone` setting.
+	// Label them from their Y-M-D parts, never via `new Date("YYYY-MM-DD")`
+	// (that parses as UTC midnight and shifts a day west of UTC).
 	viewsOverTime: protectedProcedure.input(rangeInput).query(async ({ input }) => {
-		const { start, end } =
-			input?.startDate && input?.endDate
-				? { start: input.startDate as Date | null, end: input.endDate }
-				: getDateRange(input?.period ?? "7d");
+		const now = new Date();
+		const { start, end } = getDateRange(input?.period ?? "7d", now);
+		const day = localDaySql(pageView.createdAt, await adminUtcOffset(now));
 
-		const results = await db
-			.select({
-				date: sql<string>`date(${pageView.createdAt} / 1000, 'unixepoch')`,
-				count: count(),
-			})
+		return db
+			.select({ date: day, count: count() })
 			.from(pageView)
 			.where(and(...dateWhere(pageView.createdAt, start, end)))
-			.groupBy(sql`date(${pageView.createdAt} / 1000, 'unixepoch')`)
-			.orderBy(sql`date(${pageView.createdAt} / 1000, 'unixepoch')`);
-
-		return results;
+			.groupBy(day)
+			.orderBy(day);
 	}),
 
 	clicksOverTime: protectedProcedure.input(rangeInput).query(async ({ input }) => {
-		const { start, end } =
-			input?.startDate && input?.endDate
-				? { start: input.startDate as Date | null, end: input.endDate }
-				: getDateRange(input?.period ?? "7d");
+		const now = new Date();
+		const { start, end } = getDateRange(input?.period ?? "7d", now);
+		const day = localDaySql(linkClick.createdAt, await adminUtcOffset(now));
 
-		const results = await db
-			.select({
-				date: sql<string>`date(${linkClick.createdAt} / 1000, 'unixepoch')`,
-				count: count(),
-			})
+		return db
+			.select({ date: day, count: count() })
 			.from(linkClick)
 			.where(and(...dateWhere(linkClick.createdAt, start, end)))
-			.groupBy(sql`date(${linkClick.createdAt} / 1000, 'unixepoch')`)
-			.orderBy(sql`date(${linkClick.createdAt} / 1000, 'unixepoch')`);
-
-		return results;
+			.groupBy(day)
+			.orderBy(day);
 	}),
 
 	topLinks: protectedProcedure.input(rangeInput).query(async ({ input }) => {
-		const { start, end } =
-			input?.startDate && input?.endDate
-				? { start: input.startDate as Date | null, end: input.endDate }
-				: getDateRange(input?.period ?? "7d");
+		const { start, end } = getDateRange(input?.period ?? "7d");
 
 		const results = await db
 			.select({
@@ -159,27 +152,8 @@ export const analyticsRouter = router({
 		return results;
 	}),
 
-	recentClicks: protectedProcedure.query(async () => {
-		const results = await db
-			.select({
-				id: linkClick.id,
-				createdAt: linkClick.createdAt,
-				country: linkClick.country,
-				title: block.title,
-				url: block.url,
-			})
-			.from(linkClick)
-			.leftJoin(block, eq(linkClick.blockId, block.id))
-			.orderBy(desc(linkClick.createdAt))
-			.limit(6);
-		return results;
-	}),
-
 	referrers: protectedProcedure.input(rangeInput).query(async ({ input }) => {
-		const { start, end } =
-			input?.startDate && input?.endDate
-				? { start: input.startDate as Date | null, end: input.endDate }
-				: getDateRange(input?.period ?? "7d");
+		const { start, end } = getDateRange(input?.period ?? "7d");
 
 		const dateConditions = dateWhere(pageView.createdAt, start, end);
 
@@ -203,10 +177,7 @@ export const analyticsRouter = router({
 	}),
 
 	countries: protectedProcedure.input(rangeInput).query(async ({ input }) => {
-		const { start, end } =
-			input?.startDate && input?.endDate
-				? { start: input.startDate as Date | null, end: input.endDate }
-				: getDateRange(input?.period ?? "7d");
+		const { start, end } = getDateRange(input?.period ?? "7d");
 
 		const dateConditions = dateWhere(pageView.createdAt, start, end);
 
@@ -224,23 +195,5 @@ export const analyticsRouter = router({
 			.limit(20);
 
 		return results;
-	}),
-
-	purgeExpiredData: protectedProcedure.mutation(async () => {
-		const ninetyDaysAgo = new Date();
-		ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-
-		const [deletedViews, deletedClicks] = await Promise.all([
-			db.delete(pageView).where(lte(pageView.createdAt, ninetyDaysAgo)),
-			db.delete(linkClick).where(lte(linkClick.createdAt, ninetyDaysAgo)),
-		]);
-
-		return {
-			success: true,
-			deleted: {
-				pageViews: (deletedViews as { rowsAffected?: number }).rowsAffected ?? 0,
-				linkClicks: (deletedClicks as { rowsAffected?: number }).rowsAffected ?? 0,
-			},
-		};
 	}),
 });

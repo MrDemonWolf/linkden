@@ -1,15 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
 	blockTypeSchema,
+	contactSubmissionImportSchema,
+	contactSubmissionSchema,
 	createBlockSchema,
 	dividerConfigSchema,
 	embedTypeSchema,
 	headerConfigSchema,
 	httpUrlSchema,
 	imageConfigSchema,
+	importDateSchema,
 	linkConfigSchema,
 	locationConfigSchema,
 	MAX_BLOCK_CONFIG_LENGTH,
+	MAX_BLOCKS,
+	normalizeBlockType,
 	parseBlockConfig,
 	reorderBlocksSchema,
 	textConfigSchema,
@@ -202,6 +207,15 @@ describe("parseBlockConfig", () => {
 			issues: ["config: invalid JSON"],
 		});
 	});
+
+	it("reports a retired/unknown type as an issue instead of throwing", () => {
+		for (const type of ["form", "social_icons", "constructor"]) {
+			expect(parseBlockConfig(type as never, "{}")).toEqual({
+				ok: false,
+				issues: ["type: unsupported block type"],
+			});
+		}
+	});
 });
 
 describe("createBlockSchema", () => {
@@ -341,15 +355,17 @@ describe("updateBlockSchema", () => {
 });
 
 describe("reorderBlocksSchema", () => {
-	it("accepts an ordered list and caps at 200", () => {
+	it("accepts a full page of blocks and caps at MAX_BLOCKS", () => {
 		expect(reorderBlocksSchema.parse([{ id: "a", position: 0 }])).toHaveLength(1);
-		const tooMany = Array.from({ length: 201 }, (_, i) => ({ id: `b${i}`, position: i }));
+		const full = Array.from({ length: MAX_BLOCKS }, (_, i) => ({ id: `b${i}`, position: i }));
+		expect(reorderBlocksSchema.safeParse(full).success).toBe(true);
+		const tooMany = [...full, { id: "extra", position: MAX_BLOCKS }];
 		expect(reorderBlocksSchema.safeParse(tooMany).success).toBe(false);
 	});
 });
 
 describe("vcardConfigSchema", () => {
-	// The download routes (/api/vcard, public.getVCard) parse the stored block
+	// The download route (GET /api/vcard) parses the stored block
 	// config with vcardDataSchema; anything the block schema accepts must pass it.
 	const fixtures: Record<string, unknown>[] = [
 		{},
@@ -409,5 +425,137 @@ describe("validateBlockImport", () => {
 		]) {
 			expect(validateBlockImport(bad), JSON.stringify(bad)).toBeNull();
 		}
+	});
+});
+
+describe("importDateSchema", () => {
+	const iso = "2026-03-01T12:30:00.000Z";
+
+	it("accepts what export emits (ISO), epoch ms and Date — always a Date", () => {
+		for (const v of [iso, Date.parse(iso), new Date(iso)]) {
+			const d = importDateSchema.parse(v);
+			expect(d).toBeInstanceOf(Date);
+			expect(d.toISOString()).toBe(iso);
+		}
+	});
+
+	it("rejects junk rather than coercing it", () => {
+		for (const v of ["next friday", "", -1, 1.5, 8.64e15 + 1, true]) {
+			expect(importDateSchema.safeParse(v).success, String(v)).toBe(false);
+		}
+	});
+});
+
+describe("normalizeBlockType", () => {
+	it("passes current types, maps retired ones and rejects the rest", () => {
+		expect(normalizeBlockType("link")).toBe("link");
+		expect(normalizeBlockType("form")).toBe("connect");
+		expect(normalizeBlockType("contact_form")).toBe("connect");
+		expect(normalizeBlockType("social_icons")).toBeNull();
+		expect(normalizeBlockType("constructor")).toBeNull();
+		expect(normalizeBlockType("nope")).toBeNull();
+	});
+});
+
+describe("validateBlockImport (normalized output)", () => {
+	const row = {
+		id: "blk_1",
+		type: "link",
+		position: 0,
+		isEnabled: true,
+		status: "published" as const,
+	};
+
+	it("returns only parsed fields: dates as Dates, blanks as null, no socialIcons", () => {
+		const start = new Date("2026-01-01T00:00:00.000Z");
+		const out = validateBlockImport({
+			...row,
+			title: "Hi",
+			url: "",
+			scheduledStart: start,
+			scheduledEnd: null,
+			createdAt: null,
+			...({ socialIcons: "x".repeat(10_000) } as object),
+		});
+		expect(out).toMatchObject({ id: "blk_1", type: "link", url: null, scheduledStart: start });
+		expect(out).not.toHaveProperty("socialIcons");
+		// Null NOT NULL timestamps are omitted so the column default applies.
+		expect(out).not.toHaveProperty("createdAt");
+	});
+
+	it("maps a legacy form block to connect and drops social_icons rows", () => {
+		expect(
+			validateBlockImport({ ...row, type: "form", config: '{"preset":"contact"}' }),
+		).toMatchObject({ type: "connect" });
+		expect(validateBlockImport({ ...row, type: "social_icons" })).toBeNull();
+	});
+
+	it("rejects a schedule that ends before it starts", () => {
+		expect(
+			validateBlockImport({
+				...row,
+				scheduledStart: new Date("2026-02-01"),
+				scheduledEnd: new Date("2026-01-01"),
+			}),
+		).toBeNull();
+	});
+});
+
+describe("embed URL must match its provider (create/update)", () => {
+	const embed = { ...baseBlock, type: "embed" as const };
+
+	it("rejects a URL from another provider, naming the expected one", () => {
+		const res = createBlockSchema.safeParse({
+			...embed,
+			embedType: "youtube",
+			embedUrl: "https://open.spotify.com/track/abc",
+		});
+		expect(res.success).toBe(false);
+		expect(res.error?.issues[0]).toMatchObject({
+			path: ["embedUrl"],
+			message: "This doesn't look like a YouTube URL",
+		});
+	});
+
+	it("accepts a matching URL, and a partial update that sends only one of the two", () => {
+		expect(
+			createBlockSchema.safeParse({
+				...embed,
+				embedType: "spotify",
+				embedUrl: "https://open.spotify.com/track/abc",
+			}).success,
+		).toBe(true);
+		expect(
+			updateBlockSchema.safeParse({ id: "blk_1", embedUrl: "https://example.com/x" }).success,
+		).toBe(true);
+	});
+});
+
+describe("contact submission schemas", () => {
+	const row = { id: "c1", name: "Ada Lovelace", email: "ada@example.com", message: "Hi" };
+
+	it("backup import rejects an address that would smuggle mailto headers", () => {
+		expect(contactSubmissionImportSchema.safeParse(row).success).toBe(true);
+		expect(
+			contactSubmissionImportSchema.safeParse({
+				...row,
+				email: "victim@x.com?bcc=attacker@evil.com",
+			}).success,
+		).toBe(false);
+	});
+
+	it("backup import bounds every text field like the live form", () => {
+		expect(
+			contactSubmissionImportSchema.safeParse({ ...row, message: "x".repeat(5001) }).success,
+		).toBe(false);
+		expect(
+			contactSubmissionImportSchema.safeParse({ ...row, company: "x".repeat(201) }).success,
+		).toBe(false);
+	});
+
+	it("the live form requires consent", () => {
+		const input = { firstName: "Ada", lastName: "L", email: "ada@example.com" };
+		expect(contactSubmissionSchema.safeParse({ ...input, consent: true }).success).toBe(true);
+		expect(contactSubmissionSchema.safeParse({ ...input, consent: false }).success).toBe(false);
 	});
 });

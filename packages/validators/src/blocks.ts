@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { EMBED_PROVIDER_MAP, validateEmbedUrl } from "./embed";
 import { blankable, httpUrlSchema } from "./primitives";
 import { vcardDataSchema } from "./vcard";
 
@@ -104,7 +105,7 @@ export const connectConfigSchema = styleSchema.extend({
 });
 
 // Derived from vcardDataSchema so the block editor / blocks router (write) and
-// /api/vcard + public.getVCard (read, which parse the stored block config with
+// GET /api/vcard (read, which parses the stored block config with
 // vcardDataSchema) enforce identical bounds. A block that saves must download.
 export const vcardConfigSchema = styleSchema.extend(vcardDataSchema.shape).extend({
 	buttonText: z.string().max(80).optional(),
@@ -166,6 +167,11 @@ export function blockConfigSchemaFor<T extends BlockType>(type: T): (typeof CONF
 	return CONFIG_SCHEMAS[type];
 }
 
+/** Own-key lookup so a stored type like "constructor" can't hit Object.prototype. */
+function configSchemaOrNull(type: string) {
+	return Object.hasOwn(CONFIG_SCHEMAS, type) ? CONFIG_SCHEMAS[type as BlockType] : null;
+}
+
 export type ParseBlockConfigResult<T extends BlockType = BlockType> =
 	| { ok: true; data: z.infer<(typeof CONFIG_SCHEMAS)[T]> }
 	| { ok: false; issues: string[] };
@@ -183,7 +189,11 @@ export function parseBlockConfig<T extends BlockType>(
 			return { ok: false, issues: ["config: invalid JSON"] };
 		}
 	}
-	const result = blockConfigSchemaFor(type).safeParse(raw);
+	// A row can still carry a retired type (e.g. `form`) that no schema covers:
+	// report it as an issue (→ 400) instead of dereferencing undefined (→ 500).
+	const schema = configSchemaOrNull(type);
+	if (!schema) return { ok: false, issues: ["type: unsupported block type"] };
+	const result = schema.safeParse(raw);
 	if (result.success) return { ok: true, data: result.data as z.infer<(typeof CONFIG_SCHEMAS)[T]> };
 	return {
 		ok: false,
@@ -221,11 +231,23 @@ const blockFieldsSchema = z.object({
 type BlockRefineInput = {
 	type?: BlockType;
 	config?: string;
+	embedType?: string | null;
+	embedUrl?: string | null;
 	scheduledStart?: Date | null;
 	scheduledEnd?: Date | null;
 };
 
 function refineBlock(val: BlockRefineInput, ctx: z.RefinementCtx) {
+	// Only when both are in the payload (updates are partial; the editor always
+	// sends both). Backup import stays permissive and doesn't use this.
+	if (val.embedType && val.embedUrl && !validateEmbedUrl(val.embedType, val.embedUrl)) {
+		const label = EMBED_PROVIDER_MAP[val.embedType]?.label ?? val.embedType;
+		ctx.addIssue({
+			code: "custom",
+			path: ["embedUrl"],
+			message: `This doesn't look like a ${label} URL`,
+		});
+	}
 	if (val.type && val.config !== undefined) {
 		const parsed = parseBlockConfig(val.type, val.config);
 		if (!parsed.ok) {
@@ -258,123 +280,159 @@ export const updateBlockSchema = blockFieldsSchema
 	.required({ id: true })
 	.superRefine(refineBlock);
 
+/**
+ * Hard cap on blocks per page. One number for every path that can add or
+ * reorder blocks (blocks.create, reorder, backup and LinkStack import) so an
+ * import can never create a page the builder can no longer reorder.
+ */
+export const MAX_BLOCKS = 500;
+
 export const reorderBlocksSchema = z
 	.array(z.object({ id: z.string().min(1).max(64), position: z.number().int().min(0) }))
-	.max(200);
+	.max(MAX_BLOCKS);
 
 export type CreateBlockInput = z.input<typeof createBlockSchema>;
 export type UpdateBlockInput = z.input<typeof updateBlockSchema>;
 
 // ─── Embed providers ────────────────────────────────────────────────────────
-// One registry for every supported embed provider: the URL it accepts, its
-// editor placeholder/label, and how to rewrite a user URL into a safe embed
-// src. Shared by the public renderer, the admin editor, and server validation
-// so the three can never drift.
-export interface EmbedProvider {
-	id: string;
-	label: string;
-	placeholder: string;
-	/** A user URL is valid for this provider when it matches. */
-	match: RegExp;
-	/** Rewrite a valid URL to an embeddable src (null if not extractable). */
-	toEmbedSrc: (url: string) => string | null;
-}
+// Live in ./embed (zod-free, so the public embed block can import them without
+// pulling zod into the page bundle); re-exported for the router and builder.
+export {
+	EMBED_PROVIDER_MAP,
+	EMBED_PROVIDERS,
+	type EmbedProvider,
+	getEmbedSrc,
+	validateEmbedUrl,
+} from "./embed";
 
-export const EMBED_PROVIDERS: EmbedProvider[] = [
-	{
-		id: "youtube",
-		label: "YouTube",
-		placeholder: "https://youtube.com/watch?v=dQw4w9WgXcQ",
-		match: /(?:youtube\.com\/(?:watch|embed)|youtu\.be\/)/i,
-		toEmbedSrc(url) {
-			const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
-			return m ? `https://www.youtube-nocookie.com/embed/${m[1]}` : null;
-		},
-	},
-	{
-		id: "spotify",
-		label: "Spotify",
-		placeholder: "https://open.spotify.com/track/...",
-		match: /open\.spotify\.com\//i,
-		toEmbedSrc(url) {
-			const m = url.match(/spotify\.com\/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/);
-			return m ? `https://open.spotify.com/embed/${m[1]}/${m[2]}` : null;
-		},
-	},
-	{
-		id: "soundcloud",
-		label: "SoundCloud",
-		placeholder: "https://soundcloud.com/artist/track",
-		match: /soundcloud\.com\//i,
-		toEmbedSrc(url) {
-			return `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&auto_play=false&visual=true`;
-		},
-	},
-];
+// ─── Contact form ───────────────────────────────────────────────────────────
+// public.submitContact's input. The public form (apps/web lib/contact-form.ts,
+// zod-free) mirrors these limits; a test pins them together.
+export const CONTACT_FIELD_LIMITS = {
+	firstName: 50,
+	lastName: 50,
+	email: 254,
+	whereMet: 200,
+	message: 5000,
+	captchaToken: 4096,
+	website: 200,
+	blockId: 100,
+	blockTitle: 200,
+} as const;
 
-export const EMBED_PROVIDER_MAP: Record<string, EmbedProvider> = Object.fromEntries(
-	EMBED_PROVIDERS.map((p) => [p.id, p]),
-);
+export const contactSubmissionSchema = z.object({
+	firstName: z.string().min(1).max(CONTACT_FIELD_LIMITS.firstName),
+	lastName: z.string().min(1).max(CONTACT_FIELD_LIMITS.lastName),
+	email: z.string().email().max(CONTACT_FIELD_LIMITS.email),
+	whereMet: z.string().max(CONTACT_FIELD_LIMITS.whereMet).optional(),
+	message: z.string().max(CONTACT_FIELD_LIMITS.message).optional(),
+	captchaToken: z.string().max(CONTACT_FIELD_LIMITS.captchaToken).optional(),
+	/** Honeypot: rendered hidden, so only bots fill it in. */
+	website: z.string().max(CONTACT_FIELD_LIMITS.website).optional(),
+	blockId: z.string().max(CONTACT_FIELD_LIMITS.blockId).optional(),
+	blockTitle: z.string().max(CONTACT_FIELD_LIMITS.blockTitle).optional(),
+	consent: z.literal(true, { error: "Consent is required" }),
+});
 
-/** True when the URL is acceptable for the given embed type (custom = any https/http). */
-export function validateEmbedUrl(embedType: string, url: string): boolean {
-	if (embedType === "custom") return /^https?:\/\//i.test(url);
-	const provider = EMBED_PROVIDER_MAP[embedType];
-	return provider ? provider.match.test(url) : true;
-}
-
-/**
- * Convert a stored embed URL into a safe iframe src. Known providers are
- * rewritten to their official embed endpoints (safe origin from a regex match);
- * custom/unknown types must be https:, blocking javascript:/data:/http:.
- */
-export function getEmbedSrc(embedType: string | null, embedUrl: string | null): string | null {
-	if (!embedUrl) return null;
-	const provider = embedType ? EMBED_PROVIDER_MAP[embedType] : undefined;
-	if (provider) return provider.toEmbedSrc(embedUrl);
-	try {
-		if (new URL(embedUrl).protocol !== "https:") return null;
-	} catch {
-		return null;
-	}
-	return embedUrl;
-}
+export type ContactSubmissionInput = z.infer<typeof contactSubmissionSchema>;
 
 // ─── Backup/Import schemas ─────────────────────────────────────────────────
 // These mirror DB columns so backup imports are validated against the actual schema
 // rather than using z.any(). Shared here to prevent drift between backup.ts and blocks.ts.
 
+/**
+ * A timestamp as backup.export actually emits it. There is no tRPC
+ * transformer, so a Drizzle `timestamp_ms` column (a Date) reaches the file as
+ * an ISO string; epoch ms (hand-edited / older backups) and a Date (in-process
+ * callers) are accepted too. Always yields a valid Date — never a bare number,
+ * which Drizzle's timestamp column can't write.
+ */
+export const importDateSchema = z
+	.union([z.iso.datetime({ offset: true }), z.number().int().nonnegative(), z.date()])
+	.transform((v) => new Date(v))
+	.refine((d) => !Number.isNaN(d.getTime()), "Invalid date");
+
+/** Max contact messages one restore writes (newest first; the rest are counted as skipped). */
+export const MAX_IMPORT_CONTACTS = 500;
+/** Wire cap for contact messages in a backup file — export is unbounded, so accept more than we write. */
+export const MAX_BACKUP_CONTACTS = 5_000;
+
+/**
+ * Block types retired without a data migration. Old rows / backups map onto
+ * their replacement; `null` means the type has no successor (social icons now
+ * live in social_network) and the row is dropped.
+ */
+const LEGACY_BLOCK_TYPES = new Map<string, BlockType | null>([
+	["form", "connect"],
+	["contact_form", "connect"],
+	["social_icons", null],
+]);
+
+/** Resolve a stored/imported type string to a current BlockType, or null when unsupported. */
+export function normalizeBlockType(type: string): BlockType | null {
+	if (LEGACY_BLOCK_TYPES.has(type)) return LEGACY_BLOCK_TYPES.get(type) ?? null;
+	const parsed = blockTypeSchema.safeParse(type);
+	return parsed.success ? parsed.data : null;
+}
+
 export const blockImportSchema = z.object({
 	id: z.string(),
-	type: blockTypeSchema,
+	// Loose on purpose: a retired or unknown type skips one row in
+	// validateBlockImport instead of failing the whole restore.
+	type: z.string().max(40),
 	title: z.string().nullable().optional(),
 	url: z.string().nullable().optional(),
 	icon: z.string().nullable().optional(),
 	embedType: z.string().nullable().optional(),
 	embedUrl: z.string().nullable().optional(),
-	socialIcons: z.string().nullable().optional(),
+	// `socialIcons` (a dead column) is deliberately absent: zod strips it, so a
+	// backup can't plant an unbounded blob that every public page load returns.
 	isEnabled: z.boolean().optional().default(true),
 	position: z.number(),
-	scheduledStart: z.number().nullable().optional(),
-	scheduledEnd: z.number().nullable().optional(),
-	status: z.enum(["published", "draft"]).optional().default("published"),
+	scheduledStart: importDateSchema.nullable().optional(),
+	scheduledEnd: importDateSchema.nullable().optional(),
+	status: blockStatusSchema.optional().default("published"),
 	config: z.string().nullable().optional(),
-	createdAt: z.number().nullable().optional(),
-	updatedAt: z.number().nullable().optional(),
+	createdAt: importDateSchema.nullable().optional(),
+	updatedAt: importDateSchema.nullable().optional(),
 });
 
 export type BlockImport = z.infer<typeof blockImportSchema>;
 
+/** A backup row that passed validateBlockImport, normalized for insertion. */
+export interface ValidBlockImport {
+	id: string;
+	type: BlockType;
+	title: string | null;
+	url: string | null;
+	icon: string | null;
+	embedType: EmbedType | null;
+	embedUrl: string | null;
+	isEnabled: boolean;
+	position: number;
+	status: z.infer<typeof blockStatusSchema>;
+	config: string | null;
+	scheduledStart: Date | null;
+	scheduledEnd: Date | null;
+	/** Omitted (not null) when the backup has none, so the column default applies. */
+	createdAt?: Date;
+	updatedAt?: Date;
+}
+
 /**
  * Re-check one backup row against the rules blocks.create enforces (http(s)
- * URLs, icon format, bounded title, per-type config). The wire schema above
- * stays loose so one bad row can't fail the whole restore; the importer skips
- * (and counts) rows this rejects, the same way settings are handled.
+ * URLs, icon format, bounded title, per-type config, schedule order). The wire
+ * schema above stays loose so one bad row can't fail the whole restore; the
+ * importer skips (and counts) rows this rejects, the same way settings are
+ * handled. Returns a value built only from the parsed fields — never the raw
+ * row — so no unvalidated field reaches the database.
  */
-export function validateBlockImport(row: BlockImport): BlockImport | null {
+export function validateBlockImport(row: BlockImport): ValidBlockImport | null {
+	const type = normalizeBlockType(row.type);
+	if (!type) return null;
 	const result = createBlockSchema.safeParse({
 		id: row.id,
-		type: row.type,
+		type,
 		title: row.title ?? undefined,
 		url: row.url ?? undefined,
 		icon: row.icon ?? undefined,
@@ -382,32 +440,60 @@ export function validateBlockImport(row: BlockImport): BlockImport | null {
 		embedUrl: row.embedUrl ?? undefined,
 		position: row.position,
 		config: row.config ?? undefined,
+		scheduledStart: row.scheduledStart ?? null,
+		scheduledEnd: row.scheduledEnd ?? null,
 	});
-	return result.success ? row : null;
+	if (!result.success) return null;
+	const d = result.data;
+	return {
+		id: d.id,
+		type: d.type,
+		title: d.title ?? null,
+		url: d.url ?? null,
+		icon: d.icon ?? null,
+		embedType: d.embedType ?? null,
+		embedUrl: d.embedUrl ?? null,
+		isEnabled: row.isEnabled,
+		position: d.position,
+		status: row.status,
+		config: d.config ?? null,
+		scheduledStart: d.scheduledStart ?? null,
+		scheduledEnd: d.scheduledEnd ?? null,
+		...(row.createdAt ? { createdAt: row.createdAt } : {}),
+		...(row.updatedAt ? { updatedAt: row.updatedAt } : {}),
+	};
 }
 
+// Bounded like the live form (contactSubmissionSchema), and the address must be
+// a real one: the Inbox builds a mailto: from it, so `a@x.com?bcc=…` must never
+// get in through a crafted backup. Legacy columns (phone/subject/company/…)
+// get the short-text bound.
+const importText = z.string().max(200).nullable().optional();
 export const contactSubmissionImportSchema = z.object({
-	id: z.string(),
-	name: z.string(),
-	email: z.string(),
-	message: z.string(),
-	phone: z.string().nullable().optional(),
-	subject: z.string().nullable().optional(),
-	company: z.string().nullable().optional(),
-	whereMet: z.string().nullable().optional(),
+	id: z.string().max(100),
+	/** "First Last" as submitContact stores it. */
+	name: z.string().max(200),
+	email: z.string().trim().email().max(CONTACT_FIELD_LIMITS.email),
+	message: z.string().max(CONTACT_FIELD_LIMITS.message),
+	phone: importText,
+	subject: importText,
+	company: importText,
+	whereMet: importText,
 	rating: z.number().nullable().optional(),
-	attending: z.string().nullable().optional(),
+	attending: importText,
 	guests: z.number().nullable().optional(),
-	blockId: z.string().nullable().optional(),
-	blockTitle: z.string().nullable().optional(),
+	blockId: z.string().max(CONTACT_FIELD_LIMITS.blockId).nullable().optional(),
+	blockTitle: importText,
 	isRead: z.boolean().optional(),
-	createdAt: z.number().nullable().optional(),
-	updatedAt: z.number().nullable().optional(),
+	createdAt: importDateSchema.nullable().optional(),
+	updatedAt: importDateSchema.nullable().optional(),
 });
+
+export type ContactSubmissionImport = z.infer<typeof contactSubmissionImportSchema>;
 
 export const socialNetworkImportSchema = z.object({
 	slug: z.string(),
 	url: z.string(),
 	isActive: z.boolean().optional().default(true),
-	addedAt: z.number().nullable().optional(),
+	addedAt: importDateSchema.nullable().optional(),
 });

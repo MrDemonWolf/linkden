@@ -1,48 +1,56 @@
 import { db } from "@linkden/db";
 import { contactSubmission } from "@linkden/db/schema/index";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { protectedProcedure, router } from "../index";
 import { logAudit } from "../utils/audit";
 
+const filterSchema = z.object({
+	isRead: z.boolean().optional(),
+	blockId: z.string().max(100).optional(),
+});
+
+/** Where clause shared by `list` and `count`, so "n of total" always agrees. */
+function filterWhere(filter: z.infer<typeof filterSchema> | undefined) {
+	const conditions = [];
+	if (filter?.isRead !== undefined) {
+		conditions.push(eq(contactSubmission.isRead, filter.isRead));
+	}
+	if (filter?.blockId !== undefined) {
+		conditions.push(eq(contactSubmission.blockId, filter.blockId));
+	}
+	return conditions.length > 0 ? and(...conditions) : undefined;
+}
+
 export const formsRouter = router({
+	// Newest first, paged with limit/offset; pair with `count` (same filters)
+	// to know how many remain past the loaded pages.
 	list: protectedProcedure
 		.input(
-			z
-				.object({
-					isRead: z.boolean().optional(),
-					blockId: z.string().max(100).optional(),
-					limit: z.number().min(1).max(100).default(50),
-					offset: z.number().min(0).default(0),
+			filterSchema
+				.extend({
+					limit: z.number().int().min(1).max(100).default(50),
+					offset: z.number().int().min(0).default(0),
 				})
 				.optional(),
 		)
 		.query(async ({ input }) => {
-			const conditions = [];
-			if (input?.isRead !== undefined) {
-				conditions.push(eq(contactSubmission.isRead, input.isRead));
-			}
-			if (input?.blockId !== undefined) {
-				conditions.push(eq(contactSubmission.blockId, input.blockId));
-			}
-
-			const results = await db
+			return db
 				.select()
 				.from(contactSubmission)
-				.where(conditions.length > 0 ? and(...conditions) : undefined)
-				.orderBy(desc(contactSubmission.createdAt))
+				.where(filterWhere(input))
+				.orderBy(desc(contactSubmission.createdAt), desc(contactSubmission.id))
 				.limit(input?.limit ?? 50)
 				.offset(input?.offset ?? 0);
-
-			return results;
 		}),
 
-	get: protectedProcedure.input(z.object({ id: z.string().max(100) })).query(async ({ input }) => {
+	/** Total submissions matching the same filters `list` takes. */
+	count: protectedProcedure.input(filterSchema.optional()).query(async ({ input }) => {
 		const [result] = await db
-			.select()
+			.select({ total: count() })
 			.from(contactSubmission)
-			.where(eq(contactSubmission.id, input.id));
-		return result ?? null;
+			.where(filterWhere(input));
+		return { total: result?.total ?? 0 };
 	}),
 
 	markRead: protectedProcedure
@@ -89,11 +97,13 @@ export const formsRouter = router({
 			return { success: true };
 		}),
 
+	// Polled by the admin shell: an aggregate served by the isRead index, never
+	// the rows themselves.
 	unreadCount: protectedProcedure.query(async () => {
-		const results = await db
-			.select()
+		const [result] = await db
+			.select({ count: count() })
 			.from(contactSubmission)
 			.where(eq(contactSubmission.isRead, false));
-		return { count: results.length };
+		return { count: result?.count ?? 0 };
 	}),
 });

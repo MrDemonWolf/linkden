@@ -16,39 +16,24 @@ export function sanitizeUrl(url: string): string {
 	}
 }
 
-/**
- * Strip all HTML tags from a string to prevent stored XSS.
- * Uses a multi-pass approach: decode common HTML entities first, then strip tags,
- * to catch obfuscated payloads like &lt;script&gt;.
- */
-export function stripHtml(str: string): string {
-	// Decode common HTML entities that could be used to smuggle tags
-	const decoded = str
-		.replace(/&lt;/gi, "<")
-		.replace(/&gt;/gi, ">")
-		.replace(/&#x3C;/gi, "<")
-		.replace(/&#60;/gi, "<")
-		.replace(/&#x3E;/gi, ">")
-		.replace(/&#62;/gi, ">");
-	// Strip all remaining HTML tags
-	return decoded.replace(/<[^>]*>/g, "");
-}
+// Real tag syntax only: `<` + optional `/` + a letter-led tag name, then either
+// `>` or whitespace / `/` before the attributes. Plain-text uses of angle
+// brackets (`<jane@corp.com>`, `x < 5 and y > 3`, `<3`) do not match.
+const TAG_RE = /<\/?[a-z][a-z0-9-]*(?:[\s/][^>]*)?>/gi;
 
 /**
- * Extract a short browser identifier from a User-Agent string.
- * Stores only the browser family and major version instead of the full UA
- * to reduce fingerprinting potential (GDPR data minimisation, Art. 5(1)(c)).
- * Returns null if the input is falsy.
+ * Remove HTML tags from plain-text input as a defence-in-depth layer. Every sink
+ * (React, React Email) already escapes output, so this only strips real markup
+ * and never rewrites text: entities are NOT decoded first (`&lt;3` stays as
+ * typed) and angle brackets that are not tag syntax survive untouched.
+ * Repeats until stable so a split tag (`<scr<b>ipt>`) cannot reassemble.
  */
-export function truncateUserAgent(ua?: string): string | null {
-	if (!ua) return null;
-	const match = ua.match(
-		/(Edg\/|EdgA\/|EdgiOS\/|Chrome|Firefox|Safari|Edge|Opera|OPR|MSIE|Trident)[/\s]?(\d+)/i,
-	);
-	if (match?.[1] && match[2]) {
-		const token = match[1].replace("/", "");
-		const browser = token === "OPR" ? "Opera" : token.startsWith("Edg") ? "Edge" : token;
-		return `${browser}/${match[2]}`;
-	}
-	return "Other";
+export function stripHtml(str: string): string {
+	let out = str;
+	let prev: string;
+	do {
+		prev = out;
+		out = out.replace(TAG_RE, "");
+	} while (out !== prev);
+	return out;
 }
