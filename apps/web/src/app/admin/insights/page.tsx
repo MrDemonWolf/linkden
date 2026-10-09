@@ -103,9 +103,12 @@ export default function InsightsPage() {
 	const ctr = totalViews > 0 ? (totalClicks / totalViews) * 100 : 0;
 	const prevCtr = previousViews > 0 ? (previousClicks / previousViews) * 100 : 0;
 
-	const viewsTrend = overview.data ? computeTrend(totalViews, previousViews) : null;
-	const clicksTrend = overview.data ? computeTrend(totalClicks, previousClicks) : null;
-	const ctrTrend = overview.data
+	// "All time" has no previous period (overview reports it as 0), so a trend
+	// there would always read +100%.
+	const hasComparison = !!overview.data && period !== "all";
+	const viewsTrend = hasComparison ? computeTrend(totalViews, previousViews) : null;
+	const clicksTrend = hasComparison ? computeTrend(totalClicks, previousClicks) : null;
+	const ctrTrend = hasComparison
 		? computeTrend(Math.round(ctr * 10), Math.round(prevCtr * 10))
 		: null;
 
@@ -116,14 +119,18 @@ export default function InsightsPage() {
 	const pageIsEmpty = blocksQuery.isSuccess && blocksQuery.data.length === 0;
 	const noVisitors = !pageIsEmpty && overview.isSuccess && totalViews === 0;
 
-	// ponytail: plain useState + effect instead of a storage hook; read once after mount
+	// Plain useState + effect instead of a storage hook; read once after mount
 	// so the server render (no localStorage) matches the first client render.
 	const [dismissed, setDismissed] = useState<NudgeId[]>([]);
 	useEffect(() => setDismissed(readDismissed()), []);
 	const dismiss = (id: NudgeId) => {
 		const next = [...dismissed, id];
 		setDismissed(next);
-		localStorage.setItem(DISMISS_KEY, JSON.stringify(next));
+		try {
+			localStorage.setItem(DISMISS_KEY, JSON.stringify(next));
+		} catch {
+			// Blocked storage: the nudge stays dismissed for this visit only.
+		}
 	};
 
 	async function handleShare() {
@@ -288,6 +295,7 @@ export default function InsightsPage() {
 				<ViewsClicksChart
 					views={viewsOverTime.data}
 					clicks={clicksOverTime.data}
+					period={period}
 					isLoading={viewsOverTime.isLoading || clicksOverTime.isLoading}
 					isError={viewsOverTime.isError || clicksOverTime.isError}
 					onRetry={() => {

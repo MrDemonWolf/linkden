@@ -3,7 +3,7 @@
 import { SETTING_REGISTRY } from "@linkden/validators/settings-registry";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Save, User } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { CharCount, FieldError } from "@/components/admin/field-feedback";
@@ -48,19 +48,34 @@ export function ProfileTab({ onDirtyChange, onLiveChange }: ProfileTabProps) {
 	const [savedBio, setSavedBio] = useState("");
 	const [savedAvatarUrl, setSavedAvatarUrl] = useState("");
 
+	// Latest committed values for the hydration effect (synced before it runs).
+	const latest = useRef({
+		profileName,
+		bio,
+		avatarUrl,
+		savedProfileName,
+		savedBio,
+		savedAvatarUrl,
+	});
 	useEffect(() => {
-		if (settingsQuery.data) {
-			const s = settingsQuery.data;
-			const name = s.profile_name ?? "";
-			const b = s.bio ?? "";
-			const avatar = s.avatar_url ?? "";
-			setProfileName(name);
-			setBio(b);
-			setAvatarUrl(avatar);
-			setSavedProfileName(name);
-			setSavedBio(b);
-			setSavedAvatarUrl(avatar);
-		}
+		latest.current = { profileName, bio, avatarUrl, savedProfileName, savedBio, savedAvatarUrl };
+	});
+
+	// Fresh data (the refetch after a save, a focus refetch) moves the saved
+	// baseline, and each field the admin hasn't edited; an unsaved edit stays.
+	useEffect(() => {
+		const s = settingsQuery.data;
+		if (!s) return;
+		const name = s.profile_name ?? "";
+		const b = s.bio ?? "";
+		const avatar = s.avatar_url ?? "";
+		const cur = latest.current;
+		if (cur.profileName === cur.savedProfileName) setProfileName(name);
+		if (cur.bio === cur.savedBio) setBio(b);
+		if (cur.avatarUrl === cur.savedAvatarUrl) setAvatarUrl(avatar);
+		setSavedProfileName(name);
+		setSavedBio(b);
+		setSavedAvatarUrl(avatar);
 	}, [settingsQuery.data]);
 
 	const profileDirty =

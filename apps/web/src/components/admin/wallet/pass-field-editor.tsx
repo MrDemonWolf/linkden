@@ -1,11 +1,13 @@
 "use client";
 
 import {
+	type Announcements,
 	closestCenter,
 	DndContext,
 	type DragEndEvent,
 	KeyboardSensor,
 	PointerSensor,
+	type UniqueIdentifier,
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
@@ -24,6 +26,7 @@ import type { PassZone } from "@/components/admin/wallet-pass-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { PASS_FIELD_LABEL_MAX, PASS_FIELD_VALUE_MAX } from "./wallet-validation";
 
 const ZONE_LABELS: Record<PassZone, { name: string; key: keyof typeof PASS_FIELD_LIMITS }> = {
 	header: { name: "Header", key: "header" },
@@ -31,6 +34,11 @@ const ZONE_LABELS: Record<PassZone, { name: string; key: keyof typeof PASS_FIELD
 	secondary: { name: "Secondary", key: "secondary" },
 	auxiliary: { name: "Auxiliary", key: "auxiliary" },
 	back: { name: "Back of pass", key: "back" },
+};
+
+const SCREEN_READER_INSTRUCTIONS = {
+	draggable:
+		"To reorder a field, press Space or Enter to pick it up. Use the up and down arrow keys to move it, then press Space or Enter to drop it, or Escape to cancel.",
 };
 
 interface FieldEditorProps {
@@ -51,6 +59,28 @@ export function PassFieldEditor({ zone, fields, onChange, onZoneFocus }: FieldEd
 	);
 
 	const ids = useMemo(() => fields.map((f, i) => `${zone}-${i}-${f.key}`), [fields, zone]);
+
+	// Speak field labels and 1-based positions, not the synthetic sortable ids.
+	const positionOf = (id: UniqueIdentifier) => ids.indexOf(String(id)) + 1;
+	const fieldLabel = (id: UniqueIdentifier) => {
+		const field = fields[ids.indexOf(String(id))];
+		return field?.label.trim() || `${meta.name} field ${positionOf(id)}`;
+	};
+	const total = fields.length;
+	const announcements: Announcements = {
+		onDragStart: ({ active }) =>
+			`Picked up ${fieldLabel(active.id)}, position ${positionOf(active.id)} of ${total}.`,
+		onDragOver: ({ active, over }) =>
+			over
+				? `${fieldLabel(active.id)} moved to position ${positionOf(over.id)} of ${total}.`
+				: `${fieldLabel(active.id)} is no longer over the list.`,
+		onDragEnd: ({ active, over }) =>
+			over
+				? `${fieldLabel(active.id)} dropped at position ${positionOf(over.id)} of ${total}.`
+				: `${fieldLabel(active.id)} dropped. The order is unchanged.`,
+		onDragCancel: ({ active }) =>
+			`Reordering cancelled. ${fieldLabel(active.id)} stays at position ${positionOf(active.id)}.`,
+	};
 
 	const handleDragEnd = (e: DragEndEvent) => {
 		if (!e.over || e.active.id === e.over.id) return;
@@ -92,7 +122,7 @@ export function PassFieldEditor({ zone, fields, onChange, onZoneFocus }: FieldEd
 					<h3 className="text-micro font-semibold uppercase tracking-wider text-foreground/80">
 						{meta.name}
 					</h3>
-					<span className="font-mono text-micro text-muted-foreground/70 tabular-nums">
+					<span className="font-mono text-micro text-muted-foreground tabular-nums">
 						{fields.length}/{max}
 					</span>
 				</div>
@@ -110,11 +140,16 @@ export function PassFieldEditor({ zone, fields, onChange, onZoneFocus }: FieldEd
 			</div>
 
 			{fields.length === 0 ? (
-				<p className="px-3 py-3 text-micro italic text-muted-foreground/60">
+				<p className="px-3 py-3 text-micro italic text-muted-foreground">
 					No fields yet. Click <span className="font-semibold">Add</span> to insert one.
 				</p>
 			) : (
-				<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+				<DndContext
+					sensors={sensors}
+					collisionDetection={closestCenter}
+					onDragEnd={handleDragEnd}
+					accessibility={{ announcements, screenReaderInstructions: SCREEN_READER_INSTRUCTIONS }}
+				>
 					<SortableContext items={ids} strategy={verticalListSortingStrategy}>
 						<ul className="divide-y divide-border/40">
 							{fields.map((field, idx) => (
@@ -163,6 +198,8 @@ function SortableFieldRow({
 	};
 
 	const jsonPath = `${zone}Fields[${idx}]`;
+	// The counter only appears once a value is getting long (back-of-pass text).
+	const showValueCount = field.value.length >= PASS_FIELD_VALUE_MAX * 0.75;
 
 	return (
 		<li
@@ -175,8 +212,8 @@ function SortableFieldRow({
 		>
 			<button
 				type="button"
-				className="flex h-11 w-8 cursor-grab touch-none items-center justify-center text-muted-foreground/30 hover:text-muted-foreground/70 active:cursor-grabbing md:mt-2 md:h-auto md:w-auto"
-				aria-label="Drag to reorder"
+				className="flex h-11 w-8 cursor-grab touch-none items-center justify-center rounded text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing md:mt-0.5 md:size-6"
+				aria-label={`Drag ${zone} field ${idx + 1} to reorder`}
 				{...attributes}
 				{...listeners}
 			>
@@ -188,6 +225,7 @@ function SortableFieldRow({
 					id={labelId}
 					placeholder="Label"
 					value={field.label}
+					maxLength={PASS_FIELD_LABEL_MAX}
 					onChange={(e) => onUpdate({ label: e.target.value })}
 					className="h-11 text-micro md:h-7"
 					aria-label={`${zone} field ${idx + 1} label`}
@@ -196,20 +234,26 @@ function SortableFieldRow({
 					id={valueId}
 					placeholder="Value"
 					value={field.value}
+					maxLength={PASS_FIELD_VALUE_MAX}
 					onChange={(e) => onUpdate({ value: e.target.value })}
 					className="h-11 text-micro md:h-7"
 					aria-label={`${zone} field ${idx + 1} value`}
 				/>
-				<p className="col-span-2 -mt-0.5 font-mono text-micro text-muted-foreground/40">
-					{jsonPath}
+				<p className="col-span-2 -mt-0.5 flex justify-between gap-2 font-mono text-micro text-muted-foreground">
+					<span>{jsonPath}</span>
+					{showValueCount && (
+						<span className="tabular-nums">
+							{field.value.length}/{PASS_FIELD_VALUE_MAX}
+						</span>
+					)}
 				</p>
 			</div>
 
 			<button
 				type="button"
 				onClick={onRemove}
-				className="flex h-11 w-11 items-center justify-center rounded text-muted-foreground/40 transition-all md:mt-1.5 md:h-auto md:w-auto md:p-1 md:opacity-0 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-				aria-label="Delete field"
+				className="flex h-11 w-11 items-center justify-center rounded text-muted-foreground transition-all md:mt-0.5 md:size-6 md:opacity-0 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+				aria-label={`Delete ${zone} field ${idx + 1}`}
 			>
 				<Trash2 className="h-3 w-3" />
 			</button>

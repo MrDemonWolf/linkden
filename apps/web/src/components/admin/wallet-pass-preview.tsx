@@ -1,5 +1,6 @@
 "use client";
 
+import { WALLET_DEFAULTS } from "@linkden/validators/wallet";
 import QRCode from "qrcode";
 import { type CSSProperties, useEffect, useState } from "react";
 
@@ -31,9 +32,9 @@ interface WalletPassPreviewProps {
 	highlightedZone?: PassZone | null;
 }
 
-const DEFAULT_BG = "#091533";
-const DEFAULT_FG = "#FFFFFF";
-const DEFAULT_LABEL = "#0FACED";
+const DEFAULT_BG = WALLET_DEFAULTS.backgroundColor;
+const DEFAULT_FG = WALLET_DEFAULTS.foregroundColor;
+const DEFAULT_LABEL = WALLET_DEFAULTS.labelColor;
 
 // Authentic Wallet passes render in the system font — matching it is the design.
 const PASS_FONT =

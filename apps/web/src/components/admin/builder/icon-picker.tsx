@@ -100,9 +100,11 @@ export function IconPicker({
 
 	const lucideMatches = useMemo(() => {
 		if (!q) return LUCIDE_NAMES.slice(0, MAX_RESULTS);
+		// Cells read "arrow right" (humanized); the names are kebab-case.
+		const lucideQ = q.replace(/\s+/g, "-");
 		const out: IconName[] = [];
 		for (const name of LUCIDE_NAMES) {
-			if (name.includes(q)) {
+			if (name.includes(lucideQ)) {
 				out.push(name);
 				if (out.length >= MAX_RESULTS) break;
 			}
@@ -141,7 +143,7 @@ export function IconPicker({
 			<Popover.Trigger
 				id={id}
 				className={cn(
-					"dark:bg-input/30 border-input focus-visible:border-ring focus-visible:ring-ring focus-visible:ring-offset-background",
+					"dark:bg-input/30 border-input-border focus-visible:border-ring focus-visible:ring-ring focus-visible:ring-offset-background",
 					"flex h-11 w-full min-w-0 items-center gap-2 rounded-lg border bg-transparent px-2.5 text-left text-base backdrop-blur-sm transition-colors outline-none",
 					"focus-visible:ring-2 focus-visible:ring-offset-2 md:h-8 md:text-sm",
 				)}

@@ -2,15 +2,17 @@
 
 import { getAccessibleIconFill, isLowLuminance } from "@linkden/ui/color-contrast";
 import { socialBrands } from "@linkden/ui/social-brands";
-import type { SocialNetworkUpdate } from "@linkden/validators/social";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Globe, Plus, Save, Search, Trash2, Undo2 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { QueryError } from "@/components/admin/dashboard/query-error";
 import { SectionHeader } from "@/components/admin/section-header";
+import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { NetworkRow } from "@/components/admin/social/network-row";
 import { CATEGORY_LABELS, type NetworkDraft } from "@/components/admin/social/social-constants";
+import { buildSocialUrl } from "@/components/admin/social/social-url";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -23,8 +25,19 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { prefersReducedMotion } from "@/hooks/use-reduced-motion";
 import { cn, getAdminThemeColors } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
+import {
+	effectiveDraft,
+	memberSlugs,
+	missingUrlSlugs,
+	NO_SOCIAL_EDITS,
+	type SocialEdits,
+	socialChanges,
+} from "./social-drafts";
+
+const KNOWN_SLUGS = socialBrands.map((b) => b.slug);
 
 const URL_PLACEHOLDERS: Record<string, string> = {
 	twitter: "https://twitter.com/yourhandle",
@@ -83,8 +96,10 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 	const socialsQuery = useQuery(trpc.social.list.queryOptions());
 	const updateBulk = useMutation(trpc.social.updateBulk.mutationOptions());
 
-	const [drafts, setDrafts] = useState<Record<string, NetworkDraft>>({});
-	const [socialInitialized, setSocialInitialized] = useState(false);
+	// Unsaved work only, layered over the saved rows (see social-drafts.ts):
+	// nothing is seeded from `social.list`, so a failed or late load can't be
+	// mistaken for "the admin cleared everything".
+	const [edits, setEdits] = useState<SocialEdits>(NO_SOCIAL_EDITS);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [pendingSlug, setPendingSlug] = useState<string | null>(null);
 	const [pendingUrl, setPendingUrl] = useState("");
@@ -105,44 +120,29 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 		}
 	}, [pendingUrl]);
 
-	const dbRows = socialsQuery.data ?? [];
+	const loaded = socialsQuery.isSuccess;
+	const dbRows = useMemo(() => socialsQuery.data ?? [], [socialsQuery.data]);
 
-	useEffect(() => {
-		if (!socialInitialized && !socialsQuery.isLoading) {
-			const initial: Record<string, NetworkDraft> = {};
-			for (const brand of socialBrands) {
-				initial[brand.slug] = { url: "", isActive: false };
-			}
-			for (const row of dbRows) {
-				if (initial[row.slug] !== undefined) {
-					initial[row.slug] = { url: row.url, isActive: row.isActive };
-				}
-			}
-			setDrafts(initial);
-			setSocialInitialized(true);
-		}
-	}, [dbRows, socialsQuery.isLoading, socialInitialized]);
+	const draftFor = (slug: string): NetworkDraft => effectiveDraft(slug, dbRows, edits);
 
-	const allItems = useMemo(() => {
-		return socialBrands.map((brand) => {
-			const draft = drafts[brand.slug] ?? { url: "", isActive: false };
-			return { ...brand, ...draft };
-		});
-	}, [drafts]);
-
-	const activeNetworks = useMemo(() => {
-		const list = allItems.filter((s) => s.isActive && s.url);
+	// Listed by membership (saved or added, not removed), never by state:
+	// switching a network off or clearing its URL keeps its row in place.
+	const listedNetworks = useMemo(() => {
+		const members = new Set(memberSlugs(KNOWN_SLUGS, dbRows, edits));
+		const list = socialBrands
+			.filter((brand) => members.has(brand.slug))
+			.map((brand) => ({ ...brand, ...effectiveDraft(brand.slug, dbRows, edits) }));
 		list.sort((a, b) => a.name.localeCompare(b.name));
 		return list;
-	}, [allItems]);
+	}, [dbRows, edits]);
 
 	const availableNetworks = useMemo(() => {
-		const activeSlugs = new Set(activeNetworks.map((s) => s.slug));
-		let inactive = allItems.filter((s) => !activeSlugs.has(s.slug));
+		const listedSlugs = new Set(listedNetworks.map((s) => s.slug));
+		let available = socialBrands.filter((s) => !listedSlugs.has(s.slug));
 
 		if (searchQuery) {
 			const q = searchQuery.toLowerCase();
-			inactive = inactive.filter(
+			available = available.filter(
 				(s) =>
 					s.name.toLowerCase().includes(q) ||
 					s.slug.toLowerCase().includes(q) ||
@@ -150,71 +150,61 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 			);
 		}
 
-		inactive.sort((a, b) => a.name.localeCompare(b.name));
-		return inactive;
-	}, [allItems, activeNetworks, searchQuery]);
+		return [...available].sort((a, b) => a.name.localeCompare(b.name));
+	}, [listedNetworks, searchQuery]);
 
-	const socialDirty = useMemo(() => {
-		const dbMap = new Map(dbRows.map((r) => [r.slug, r]));
-
-		for (const brand of socialBrands) {
-			const draft = drafts[brand.slug];
-			if (!draft) continue;
-			const db = dbMap.get(brand.slug);
-
-			if (draft.url) {
-				if (!db || db.url !== draft.url || db.isActive !== draft.isActive) {
-					return true;
-				}
-			} else {
-				if (db) return true;
-			}
-		}
-		return false;
-	}, [dbRows, drafts]);
+	const changes = useMemo(
+		() => (loaded ? socialChanges(KNOWN_SLUGS, dbRows, edits) : []),
+		[loaded, dbRows, edits],
+	);
+	const missingUrls = useMemo(
+		() => (loaded ? missingUrlSlugs(KNOWN_SLUGS, dbRows, edits) : []),
+		[loaded, dbRows, edits],
+	);
+	const socialDirty = changes.length > 0 || missingUrls.length > 0;
 
 	useEffect(() => {
 		onDirtyChange(socialDirty);
 	}, [socialDirty, onDirtyChange]);
 
-	// ponytail: only while dirty, so the saved page keeps its live (addedAt) order;
+	// Only while dirty, so the saved page keeps its live (addedAt) order;
 	// unsaved edits preview alphabetically, the same order as the list below.
 	useEffect(() => {
 		onLiveChange?.(
 			socialDirty
-				? activeNetworks.map(({ slug, name, url, hex, svgPath }) => ({
-						slug,
-						name,
-						url,
-						hex,
-						svgPath,
-					}))
+				? listedNetworks
+						.filter((s) => s.isActive && s.url)
+						.map(({ slug, name, url, hex, svgPath }) => ({
+							slug,
+							name,
+							url,
+							hex,
+							svgPath,
+						}))
 				: null,
 		);
 		return () => onLiveChange?.(null);
-	}, [socialDirty, activeNetworks, onLiveChange]);
+	}, [socialDirty, listedNetworks, onLiveChange]);
 
-	const handleUrlChange = (slug: string, url: string) => {
-		setDrafts((prev) => ({
+	const setDraft = (slug: string, update: (current: NetworkDraft) => NetworkDraft) => {
+		setEdits((prev) => ({
 			...prev,
-			[slug]: { ...prev[slug], url },
+			drafts: { ...prev.drafts, [slug]: update(effectiveDraft(slug, dbRows, prev)) },
 		}));
 	};
 
+	const handleUrlChange = (slug: string, url: string) => {
+		setDraft(slug, (current) => ({ ...current, url }));
+	};
+
 	const handleToggle = (slug: string) => {
-		setDrafts((prev) => {
-			const current = prev[slug];
-			if (!current) return prev;
-			return {
-				...prev,
-				[slug]: { ...current, isActive: !current.isActive },
-			};
-		});
+		setDraft(slug, (current) => ({ ...current, isActive: !current.isActive }));
 	};
 
 	const openAddDialog = (slug: string) => {
 		setPendingSlug(slug);
-		setPendingUrl("");
+		// Re-adding a network removed this session brings its URL back.
+		setPendingUrl(draftFor(slug).url);
 	};
 
 	const closeAddDialog = () => {
@@ -225,72 +215,86 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 	const handleConfirmAddNetwork = () => {
 		if (!pendingSlug || !pendingUrlValid) return;
 		const slug = pendingSlug;
-		const url = pendingUrl.trim();
-		setDrafts((prev) => ({
-			...prev,
-			[slug]: { ...prev[slug], url, isActive: true },
-		}));
+		// Canonical form, e.g. https://www.instagram.com/ada/ → https://instagram.com/ada.
+		const template = socialBrands.find((b) => b.slug === slug)?.urlTemplate;
+		const url = template ? buildSocialUrl(pendingUrl, template) : pendingUrl.trim();
+		const saved = dbRows.some((r) => r.slug === slug);
+		setEdits((prev) => {
+			const added = new Set(prev.added);
+			const removed = new Set(prev.removed);
+			removed.delete(slug);
+			if (!saved) added.add(slug);
+			return {
+				drafts: { ...prev.drafts, [slug]: { url, isActive: true } },
+				added,
+				removed,
+			};
+		});
 		setSearchQuery("");
 		closeAddDialog();
 		// Flush state, then scroll to new row
 		setTimeout(() => {
-			document
-				.getElementById(`network-${slug}`)
-				?.scrollIntoView({ behavior: "smooth", block: "center" });
+			document.getElementById(`network-${slug}`)?.scrollIntoView({
+				behavior: prefersReducedMotion() ? "auto" : "smooth",
+				block: "center",
+			});
 		}, 50);
 	};
 
 	const handleRemoveNetwork = (slug: string) => {
-		setDrafts((prev) => ({
-			...prev,
-			[slug]: { url: "", isActive: false },
-		}));
+		setEdits((prev) => {
+			const added = new Set(prev.added);
+			const removed = new Set(prev.removed);
+			// An unsaved addition just goes away; a saved row is staged for deletion.
+			if (!added.delete(slug)) removed.add(slug);
+			return { ...prev, added, removed };
+		});
 	};
 
 	const handleDiscardSocial = () => {
-		const initial: Record<string, NetworkDraft> = {};
-		for (const brand of socialBrands) {
-			initial[brand.slug] = { url: "", isActive: false };
-		}
-		for (const row of dbRows) {
-			if (initial[row.slug] !== undefined) {
-				initial[row.slug] = { url: row.url, isActive: row.isActive };
-			}
-		}
-		setDrafts(initial);
+		setEdits(NO_SOCIAL_EDITS);
 	};
 
 	const handleSaveSocial = async () => {
-		const dbMap = new Map(dbRows.map((r) => [r.slug, r]));
-		const changes: SocialNetworkUpdate[] = [];
-
-		for (const brand of socialBrands) {
-			const draft = drafts[brand.slug];
-			if (!draft) continue;
-			const db = dbMap.get(brand.slug);
-
-			if (draft.url) {
-				if (!db || db.url !== draft.url || db.isActive !== draft.isActive) {
-					changes.push({ slug: brand.slug, url: draft.url, isActive: draft.isActive });
-				}
-			} else if (db) {
-				changes.push({ slug: brand.slug, url: "", isActive: false });
-			}
+		if (!loaded) return;
+		if (missingUrls.length > 0) {
+			const name = socialBrands.find((b) => b.slug === missingUrls[0])?.name ?? missingUrls[0];
+			toast.error(`Enter a URL for ${name}, or remove it`);
+			return;
 		}
-
 		if (changes.length === 0) return;
 
 		try {
 			await updateBulk.mutateAsync(changes);
 			await qc.invalidateQueries({ queryKey: trpc.social.list.queryOptions().queryKey });
-			setSocialInitialized(false);
+			setEdits(NO_SOCIAL_EDITS);
 			toast.success(`${changes.length} network${changes.length > 1 ? "s" : ""} updated`);
 		} catch {
 			toast.error("Failed to save social links");
 		}
 	};
 
-	const activeCount = activeNetworks.length;
+	const listedCount = listedNetworks.length;
+
+	// Never show an editor (or a Save) over data that didn't load: an empty
+	// list here would look like "no links yet".
+	if (!loaded) {
+		return (
+			<Card>
+				<SectionHeader icon={Globe} title="Active Social Links" variant="primary" />
+				<CardContent>
+					{socialsQuery.isError ? (
+						<QueryError
+							message="Couldn't load your social links"
+							onRetry={() => socialsQuery.refetch()}
+						/>
+					) : (
+						<SkeletonRows count={3} />
+					)}
+				</CardContent>
+			</Card>
+		);
+	}
 
 	return (
 		<div className="space-y-4">
@@ -299,11 +303,11 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 				<SectionHeader
 					icon={Globe}
 					title="Active Social Links"
-					count={activeCount}
+					count={listedCount}
 					variant="primary"
 				/>
 				<CardContent className="space-y-3">
-					{activeNetworks.length === 0 ? (
+					{listedNetworks.length === 0 ? (
 						<div className="py-8 text-center">
 							<Globe className="mx-auto h-8 w-8 text-muted-foreground/40" />
 							<p className="mt-2 text-xs text-muted-foreground">No social links yet</p>
@@ -313,8 +317,8 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 						</div>
 					) : (
 						<ul className="space-y-2.5" aria-label="Active social networks">
-							{activeNetworks.map((social) => {
-								const draft = drafts[social.slug] ?? { url: "", isActive: false };
+							{listedNetworks.map((social) => {
+								const draft = draftFor(social.slug);
 								const brand = socialBrands.find((b) => b.slug === social.slug)!;
 								return (
 									<li
@@ -328,10 +332,15 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 											onUrlChange={handleUrlChange}
 											onToggle={handleToggle}
 										/>
+										{!draft.url && (
+											<p className="px-2 pt-1 text-micro text-destructive sm:px-4">
+												Enter a URL, or remove {social.name}.
+											</p>
+										)}
 										<button
 											type="button"
 											onClick={() => handleRemoveNetwork(social.slug)}
-											className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm opacity-60 transition-opacity after:absolute after:-inset-3 after:content-[''] hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100 md:after:hidden"
+											className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-sm opacity-60 transition-opacity after:absolute after:-inset-3 after:content-[''] hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100 md:after:-inset-1"
 											aria-label={`Remove ${social.name}`}
 										>
 											<Trash2 className="h-3 w-3" />
@@ -351,7 +360,7 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 							<Button
 								size="sm"
 								onClick={handleSaveSocial}
-								disabled={updateBulk.isPending}
+								disabled={updateBulk.isPending || missingUrls.length > 0}
 								className="flex-1 shadow-lg shadow-primary/25"
 							>
 								<Save className="mr-1.5 h-3.5 w-3.5" />
@@ -392,7 +401,7 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 										key={network.slug}
 										type="button"
 										onClick={() => openAddDialog(network.slug)}
-										className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent/50 focus-visible:bg-accent/50 focus-visible:outline-none group/item"
+										className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-accent/50 focus-visible:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group/item"
 									>
 										<div
 											className={cn(
@@ -474,9 +483,12 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 							onChange={(e) => setPendingUrl(e.target.value)}
 							placeholder={pendingSlug ? (URL_PLACEHOLDERS[pendingSlug] ?? "https://") : "https://"}
 							aria-invalid={pendingUrl.length > 0 && !pendingUrlValid}
+							aria-describedby={
+								pendingUrl.length > 0 && !pendingUrlValid ? "add-network-url-error" : undefined
+							}
 						/>
 						{pendingUrl.length > 0 && !pendingUrlValid && (
-							<p className="text-xs text-destructive">
+							<p id="add-network-url-error" role="status" className="text-xs text-destructive">
 								Enter a valid URL starting with http:// or https://
 							</p>
 						)}

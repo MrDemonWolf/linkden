@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { themePresets } from "@linkden/ui/themes";
+import { SETTING_REGISTRY } from "@linkden/validators/settings-registry";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
 	AlertTriangle,
@@ -19,7 +20,7 @@ import {
 	User,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ShaderBanner } from "@/components/public/shader-banner";
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,11 @@ function saveProgress(data: Partial<SetupProgress>) {
 
 function clearProgress() {
 	if (typeof window === "undefined") return;
-	localStorage.removeItem(PROGRESS_KEY);
+	try {
+		localStorage.removeItem(PROGRESS_KEY);
+	} catch {
+		// Blocked site data: nothing was saved, so there is nothing to clear.
+	}
 }
 
 // ─── Step Indicator ──────────────────────────────────────────────────────────
@@ -235,9 +240,19 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 
 // ─── Shared ───────────────────────────────────────────────────────────────────
 
-function FieldError({ message }: { message?: string }) {
+/** Referenced by its input's aria-describedby; role=status so it is announced. */
+function FieldError({ id, message }: { id: string; message?: string }) {
 	if (!message) return null;
-	return <p className="mt-1 text-micro text-destructive">{message}</p>;
+	return (
+		<p id={id} role="status" className="mt-1 text-micro text-destructive">
+			{message}
+		</p>
+	);
+}
+
+/** aria-describedby value for a step-1 field: its error when shown, else its hint. */
+function describedBy(error: string | undefined, errorId: string, hintId?: string) {
+	return error ? errorId : hintId;
 }
 
 function FormError({ message }: { message?: string }) {
@@ -269,7 +284,15 @@ function StepHeader({
 					<Icon className="h-5 w-5 text-primary" />
 				</div>
 			)}
-			<h1 className="text-xl font-bold tracking-tight text-foreground">{title}</h1>
+			{/* data-step-heading: SetupPage moves focus here on every step change,
+			    so the new step is announced instead of focus dropping to <body>. */}
+			<h1
+				data-step-heading
+				tabIndex={-1}
+				className="text-xl font-bold tracking-tight text-foreground outline-none"
+			>
+				{title}
+			</h1>
 			<p className="mt-1.5 text-sm text-muted-foreground">{description}</p>
 		</div>
 	);
@@ -299,6 +322,8 @@ function Step1Account({
 	setShowPassword,
 	showConfirmPassword,
 	setShowConfirmPassword,
+	setupToken,
+	setSetupToken,
 	formErrors,
 	setFormErrors,
 	isSubmitting,
@@ -316,6 +341,8 @@ function Step1Account({
 	setShowPassword: (v: boolean) => void;
 	showConfirmPassword: boolean;
 	setShowConfirmPassword: (v: boolean) => void;
+	setupToken: string;
+	setSetupToken: (v: string) => void;
 	formErrors: Record<string, string>;
 	setFormErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>;
 	isSubmitting: boolean;
@@ -360,9 +387,10 @@ function Step1Account({
 						autoComplete="name"
 						className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
 						aria-invalid={!!formErrors.name}
+						aria-describedby={describedBy(formErrors.name, "setup-name-error")}
 						autoFocus
 					/>
-					<FieldError message={formErrors.name} />
+					<FieldError id="setup-name-error" message={formErrors.name} />
 				</div>
 
 				<div className="space-y-1.5">
@@ -381,8 +409,9 @@ function Step1Account({
 						autoComplete="email"
 						className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
 						aria-invalid={!!formErrors.email}
+						aria-describedby={describedBy(formErrors.email, "setup-email-error")}
 					/>
-					<FieldError message={formErrors.email} />
+					<FieldError id="setup-email-error" message={formErrors.email} />
 				</div>
 
 				<div className="space-y-1.5">
@@ -402,6 +431,11 @@ function Step1Account({
 							autoComplete="new-password"
 							className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary pr-11"
 							aria-invalid={!!formErrors.password}
+							aria-describedby={describedBy(
+								formErrors.password,
+								"setup-password-error",
+								"setup-password-hint",
+							)}
 						/>
 						<button
 							type="button"
@@ -414,9 +448,9 @@ function Step1Account({
 						</button>
 					</div>
 					{formErrors.password ? (
-						<FieldError message={formErrors.password} />
+						<FieldError id="setup-password-error" message={formErrors.password} />
 					) : (
-						<p className="mt-1 text-micro text-muted-foreground">
+						<p id="setup-password-hint" className="mt-1 text-micro text-muted-foreground">
 							Use at least 8 characters. This secures your admin account.
 						</p>
 					)}
@@ -439,6 +473,10 @@ function Step1Account({
 							autoComplete="new-password"
 							className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary pr-11"
 							aria-invalid={!!formErrors.confirmPassword}
+							aria-describedby={describedBy(
+								formErrors.confirmPassword,
+								"setup-confirm-password-error",
+							)}
 						/>
 						<button
 							type="button"
@@ -454,7 +492,38 @@ function Step1Account({
 							)}
 						</button>
 					</div>
-					<FieldError message={formErrors.confirmPassword} />
+					<FieldError id="setup-confirm-password-error" message={formErrors.confirmPassword} />
+				</div>
+
+				{/* Only enforced when the server has a SETUP_TOKEN secret bound. */}
+				<div className="space-y-1.5">
+					<Label htmlFor="setup-token" className="text-sm font-medium text-foreground">
+						Setup token <span className="font-normal text-muted-foreground">(optional)</span>
+					</Label>
+					<Input
+						id="setup-token"
+						value={setupToken}
+						onChange={(e) => {
+							setSetupToken(e.target.value);
+							clear("setupToken");
+						}}
+						autoComplete="off"
+						spellCheck={false}
+						aria-invalid={!!formErrors.setupToken}
+						aria-describedby={describedBy(
+							formErrors.setupToken,
+							"setup-token-error",
+							"setup-token-hint",
+						)}
+					/>
+					{formErrors.setupToken ? (
+						<FieldError id="setup-token-error" message={formErrors.setupToken} />
+					) : (
+						<p id="setup-token-hint" className="mt-1 text-micro text-muted-foreground">
+							Only needed if this server was deployed with a SETUP_TOKEN. Your setup link fills it
+							in.
+						</p>
+					)}
 				</div>
 			</div>
 
@@ -485,7 +554,7 @@ function Step1Account({
 
 // ─── Step 2: Profile ──────────────────────────────────────────────────────────
 
-const BIO_MAX = 160;
+const BIO_MAX = SETTING_REGISTRY.bio?.maxLength ?? 300;
 
 function Step2Profile({
 	displayName,
@@ -502,7 +571,8 @@ function Step2Profile({
 	bio: string;
 	setBio: (v: string) => void;
 	isSubmitting: boolean;
-	onBack: () => void;
+	/** Omitted once the account exists: step 1 can't succeed a second time. */
+	onBack?: () => void;
 	onSkip: () => void;
 	onSubmit: () => void;
 }) {
@@ -575,14 +645,16 @@ function Step2Profile({
 			<StepFooter
 				left={
 					<div className="flex items-center gap-3">
-						<button
-							type="button"
-							onClick={onBack}
-							className="flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-						>
-							<ArrowLeft className="h-3 w-3" />
-							Back
-						</button>
+						{onBack && (
+							<button
+								type="button"
+								onClick={onBack}
+								className="flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+							>
+								<ArrowLeft className="h-3 w-3" />
+								Back
+							</button>
+						)}
 						<button
 							type="button"
 							onClick={onSkip}
@@ -773,7 +845,11 @@ function Step4Done({ displayName, onContinue }: { displayName: string; onContinu
 				</div>
 			</div>
 
-			<h1 className="text-2xl font-bold tracking-tight text-foreground">
+			<h1
+				data-step-heading
+				tabIndex={-1}
+				className="text-2xl font-bold tracking-tight text-foreground outline-none"
+			>
 				You&apos;re all set, {firstName}!
 			</h1>
 			<p className="mx-auto mt-2 mb-8 max-w-xs text-sm text-muted-foreground">
@@ -810,10 +886,15 @@ export default function SetupPage() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
+	// First-run guard (server SETUP_TOKEN). Never persisted with the progress.
+	const [setupToken, setSetupToken] = useState("");
 	const [displayName, setDisplayName] = useState("");
 	const [bio, setBio] = useState("");
 	const [themePreset, setThemePreset] = useState("default");
 	const [hydrated, setHydrated] = useState(false);
+	// Set once step 1 creates the admin in this tab. From then on hasUsers is
+	// true by design, so it must stop meaning "someone else already set up".
+	const [accountCreated, setAccountCreated] = useState(false);
 
 	const {
 		data: hasUsersData,
@@ -825,6 +906,11 @@ export default function SetupPage() {
 		...trpc.public.hasUsers.queryOptions(),
 		// Failures render the inline error card below — the global toast would be redundant
 		meta: { skipErrorToast: true },
+		// An entry gate, read once: a focus/reconnect refetch after step 1 would
+		// see the new account and bounce the wizard to /admin/login mid-way.
+		staleTime: Number.POSITIVE_INFINITY,
+		refetchOnWindowFocus: false,
+		refetchOnReconnect: false,
 	});
 	const setupStatus = useQuery({
 		...trpc.public.getSetupStatus.queryOptions(),
@@ -838,11 +924,26 @@ export default function SetupPage() {
 	const loginLogoUrl = branding?.loginLogoUrl || branding?.logoUrl || null;
 	const updateBulk = useMutation(trpc.settings.updateBulk.mutationOptions());
 
+	// Dev-only prefill (?test=true). The env check is inlined at build time, so
+	// production bundles drop it — a shared dev link must never create the sole
+	// admin with a known password on a real instance.
 	const [testMode] = useState(
 		() =>
+			(process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_DEV_LOGIN === "true") &&
 			typeof window !== "undefined" &&
 			new URLSearchParams(window.location.search).get("test") === "true",
 	);
+
+	// `?token=` (the setup link from the deploy output) prefills the setup token,
+	// then leaves the address bar so it doesn't sit in history or a screenshot.
+	useEffect(() => {
+		const url = new URL(window.location.href);
+		const token = url.searchParams.get("token");
+		if (!token) return;
+		setSetupToken(token);
+		url.searchParams.delete("token");
+		window.history.replaceState(window.history.state, "", url);
+	}, []);
 
 	// Restore from localStorage after mount to avoid SSR hydration mismatch
 	useEffect(() => {
@@ -872,11 +973,21 @@ export default function SetupPage() {
 		saveProgress({ step, name, displayName, bio, themePreset });
 	}, [step, name, displayName, bio, themePreset, hydrated, testMode]);
 
+	const setupTaken = !!hasUsersData?.hasUsers && !accountCreated;
 	useEffect(() => {
-		if (hasUsersData?.hasUsers) {
+		if (setupTaken) {
 			router.replace(testMode ? "/admin" : "/admin/login");
 		}
-	}, [hasUsersData, router, testMode]);
+	}, [setupTaken, router, testMode]);
+
+	// Focus the new step's heading on every step change (not on first mount,
+	// where step 1's first field already has autoFocus).
+	const lastFocusedStep = useRef(step);
+	useEffect(() => {
+		if (lastFocusedStep.current === step) return;
+		lastFocusedStep.current = step;
+		document.querySelector<HTMLElement>("[data-step-heading]")?.focus();
+	}, [step]);
 
 	// API unreachable — surface an error card with a retry path instead of spinning forever
 	if (hasUsersError && !hasUsersData) {
@@ -918,7 +1029,7 @@ export default function SetupPage() {
 		);
 	}
 
-	if (isLoading || hasUsersData?.hasUsers) {
+	if (isLoading || setupTaken) {
 		return (
 			<main className="login-bg flex min-h-screen items-center justify-center">
 				<div role="status" aria-label="Loading" className="flex items-center justify-center">
@@ -943,22 +1054,50 @@ export default function SetupPage() {
 			errors.confirmPassword = "Passwords don't match";
 
 		setFormErrors(errors);
-		if (Object.keys(errors).length > 0) return;
+		const firstInvalid = (["name", "email", "password", "confirmPassword"] as const).find(
+			(k) => errors[k],
+		);
+		if (firstInvalid) {
+			// Focus lands on the field, whose aria-describedby reads its error.
+			const ids = {
+				name: "setup-name",
+				email: "setup-email",
+				password: "setup-password",
+				confirmPassword: "setup-confirm-password",
+			} as const;
+			document.getElementById(ids[firstInvalid])?.focus();
+			return;
+		}
 
 		setIsSubmitting(true);
 		try {
+			const token = setupToken.trim();
 			await authClient.signUp.email(
 				{ name: name.trim(), email: email.trim(), password },
 				{
+					headers: token ? { "x-setup-token": token } : undefined,
 					onSuccess: () => {
 						const dn = name.trim();
+						setAccountCreated(true);
 						setDisplayName(dn);
 						saveProgress({ step: 2, displayName: dn });
 						goStep(2);
 					},
 					onError: (error) => {
+						// The server's first-run gate answers 403 { error: "Invalid setup token" }.
+						const body = error.error as { status?: number; error?: unknown; message?: string };
+						if (body.status === 403 && body.error === "Invalid setup token") {
+							setFormErrors({
+								setupToken: token
+									? "That setup token doesn't match. Copy it again from your deploy output."
+									: "This server requires a setup token. Paste the one from your deploy output.",
+							});
+							document.getElementById("setup-token")?.focus();
+							return;
+						}
 						const msg =
-							error.error.message ||
+							body.message ||
+							(typeof body.error === "string" ? body.error : "") ||
 							"Something went wrong — please try again. If this keeps happening, check the server logs.";
 						setFormErrors({ form: msg });
 					},
@@ -1018,7 +1157,12 @@ export default function SetupPage() {
 	};
 
 	return (
-		<div className="login-bg relative min-h-screen overflow-hidden" style={loginBgStyle}>
+		// Same forced-dark text scope as the login page: preset/custom backgrounds
+		// sit under a black overlay, where light-mode tokens are unreadable.
+		<div
+			className={cn("login-bg relative min-h-screen overflow-hidden", hasCustomBg && "dark")}
+			style={loginBgStyle}
+		>
 			{loginShaderPreset && (
 				<div className="absolute inset-0">
 					<ShaderBanner preset={loginShaderPreset} />
@@ -1072,6 +1216,8 @@ export default function SetupPage() {
 									setShowPassword={setShowPassword}
 									showConfirmPassword={showConfirmPassword}
 									setShowConfirmPassword={setShowConfirmPassword}
+									setupToken={setupToken}
+									setSetupToken={setSetupToken}
 									formErrors={formErrors}
 									setFormErrors={setFormErrors}
 									isSubmitting={isSubmitting}
@@ -1085,7 +1231,7 @@ export default function SetupPage() {
 									bio={bio}
 									setBio={setBio}
 									isSubmitting={isSubmitting}
-									onBack={() => goStep(1)}
+									onBack={accountCreated ? undefined : () => goStep(1)}
 									onSkip={() => goStep(3)}
 									onSubmit={handleProfileSubmit}
 								/>
@@ -1112,7 +1258,9 @@ export default function SetupPage() {
 						</div>
 
 						{/* Resume notice — shown when progress was restored mid-wizard */}
-						{step > 1 && step < 4 && hydrated && (
+						{/* Not once this tab created the account: step 1 can't run twice
+						    (sign-up is closed), so "start over" would strand the admin. */}
+						{step > 1 && step < 4 && hydrated && !accountCreated && (
 							<p className="mt-3 text-center text-micro text-muted-foreground">
 								Progress saved —{" "}
 								<button

@@ -2,13 +2,15 @@
 
 import { Switch } from "@linkden/ui";
 import { httpUrlSchema } from "@linkden/validators/blocks";
+import { SETTING_REGISTRY } from "@linkden/validators/settings-registry";
 import { z } from "zod";
 import { CharCount, FieldError } from "@/components/admin/field-feedback";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fieldError } from "@/lib/validate";
 
-const CONSENT_TEXT_MAX = 500;
+// The server's cap (settings registry), not a copy of it.
+const CONSENT_TEXT_MAX = SETTING_REGISTRY.consent_banner_text?.maxLength ?? 500;
 
 /** Field → message for invalid consent values. Only checked while the banner is enabled (the fields are hidden otherwise). */
 export function consentErrors(v: {
@@ -83,7 +85,7 @@ export function ConsentSection({
 							placeholder="This site uses cookies for authentication and optional analytics..."
 							aria-invalid={!!errors.bannerText}
 							aria-describedby={errors.bannerText ? "consent-text-error" : "consent-text-hint"}
-							className="dark:bg-input/30 border-input aria-invalid:border-destructive w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
+							className="dark:bg-input/30 border-input-border aria-invalid:border-destructive w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
 						/>
 						<div className="flex items-start justify-between gap-2">
 							<p id="consent-text-hint" className="text-micro text-muted-foreground">
@@ -152,35 +154,20 @@ export function ConsentSection({
 
 							<div className="border-t border-border/30" />
 
-							{/* Marketing */}
+							{/* Embedded media (stored as "functional"). Marketing is no longer
+							    offered: nothing on the page used it. Stored values keep the key. */}
 							<div className="flex items-center justify-between">
 								<div>
-									<p className="text-xs font-medium">Marketing</p>
+									<p className="text-xs font-medium">Embedded media</p>
 									<p className="text-micro text-muted-foreground">
-										Personalized content and recommendations
-									</p>
-								</div>
-								<Switch
-									checked={categories.marketing}
-									onCheckedChange={(v) => onCategoriesChange({ ...categories, marketing: v })}
-									aria-label="Marketing cookies"
-								/>
-							</div>
-
-							<div className="border-t border-border/30" />
-
-							{/* Functional */}
-							<div className="flex items-center justify-between">
-								<div>
-									<p className="text-xs font-medium">Functional</p>
-									<p className="text-micro text-muted-foreground">
-										Enhanced features like themes and preferences
+										Loads YouTube, Spotify and other embeds; until allowed, embeds show a
+										click-to-load placeholder
 									</p>
 								</div>
 								<Switch
 									checked={categories.functional}
 									onCheckedChange={(v) => onCategoriesChange({ ...categories, functional: v })}
-									aria-label="Functional cookies"
+									aria-label="Embedded media"
 								/>
 							</div>
 						</div>

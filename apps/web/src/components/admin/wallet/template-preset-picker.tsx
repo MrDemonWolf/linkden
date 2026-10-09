@@ -47,7 +47,7 @@ export function TemplatePresetPicker({ value, onChange, disabled }: Props) {
 							<Icon
 								className={cn("h-3.5 w-3.5", active ? "text-primary" : "text-muted-foreground")}
 							/>
-							<span className="font-mono text-micro uppercase tracking-wider text-muted-foreground/70">
+							<span className="font-mono text-micro uppercase tracking-wider text-muted-foreground">
 								{p.tag}
 							</span>
 						</div>

@@ -210,30 +210,35 @@ export function BrandingSection({
 				<FieldError id="branding-site-name-error" error={errors.siteName} />
 			</div>
 
-			{/* Logo + Favicon side by side */}
+			{/* Logo + Favicon side by side. Each is a fieldset so its legend names the
+			    upload's generic Replace / Re-crop / Remove buttons for screen readers. */}
 			<div className="grid gap-6 sm:grid-cols-2">
-				<div className="space-y-1.5">
-					<p className="text-xs font-medium">Logo</p>
-					<p className="text-micro text-muted-foreground">Shown on login page and admin sidebar</p>
+				<fieldset className="min-w-0 space-y-1.5" aria-describedby="branding-logo-hint">
+					<legend className="text-xs font-medium">Logo</legend>
+					<p id="branding-logo-hint" className="text-micro text-muted-foreground">
+						Shown on login page and admin sidebar
+					</p>
 					<ImageUploadField
+						ariaLabel="logo"
 						value={logoUrl}
 						purpose="logo"
 						onUploadComplete={onLogoUrlChange}
 						aspectRatio="logo"
 					/>
-				</div>
-				<div className="space-y-1.5">
-					<p className="text-xs font-medium">Favicon</p>
-					<p className="text-micro text-muted-foreground">
+				</fieldset>
+				<fieldset className="min-w-0 space-y-1.5" aria-describedby="branding-favicon-hint">
+					<legend className="text-xs font-medium">Favicon</legend>
+					<p id="branding-favicon-hint" className="text-micro text-muted-foreground">
 						Browser tab icon (auto-cropped to square)
 					</p>
 					<ImageUploadField
+						ariaLabel="favicon"
 						value={faviconUrl}
 						purpose="favicon"
 						onUploadComplete={onFaviconUrlChange}
 						aspectRatio="square"
 					/>
-				</div>
+				</fieldset>
 			</div>
 
 			{/* Footer Branding */}
@@ -298,7 +303,10 @@ export function BrandingSection({
 			{/* Legal Links */}
 			<div className="space-y-3">
 				<p className="text-xs font-medium">Legal Links</p>
-				<p className="text-micro text-muted-foreground -mt-2">Shown in the login page footer</p>
+				<p className="text-micro text-muted-foreground -mt-2">
+					Both appear on the login page. The privacy policy also appears on your public page: in the
+					footer and next to the contact form's consent checkbox.
+				</p>
 				<div className="grid gap-3 sm:grid-cols-2">
 					<div className="space-y-1.5">
 						<div className="flex items-center gap-2">

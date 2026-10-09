@@ -1,6 +1,7 @@
 "use client";
 
 import { MapPin, Shield } from "lucide-react";
+import { QueryError } from "@/components/admin/dashboard/query-error";
 import { SectionCard } from "@/components/admin/section-header";
 import { CaptchaSection, captchaErrors } from "@/components/admin/settings/captcha-section";
 import { MapKitSection, mapkitErrors } from "@/components/admin/settings/mapkit-section";
@@ -41,17 +42,16 @@ export default function IntegrationsSettingsPage() {
 		validate,
 		successMessage: "Integrations saved",
 	});
-
+	// A failed load would otherwise leave the skeleton up forever.
+	if (form.isError) {
+		return <QueryError message="Couldn't load settings" onRetry={() => form.refetch()} />;
+	}
 	if (form.isLoading || !form.state) return <Skeleton className="h-64" />;
 	const { state, setState } = form;
 
 	return (
 		<div className="space-y-6">
-			<SectionCard
-				icon={Shield}
-				title="CAPTCHA"
-				description="Bot protection for the contact form and sign-in"
-			>
+			<SectionCard icon={Shield} title="CAPTCHA" description="Bot protection for the contact form">
 				<CaptchaSection
 					captchaProvider={state.captchaProvider}
 					captchaSiteKey={state.captchaSiteKey}

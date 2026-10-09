@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { fieldError } from "@/lib/validate";
 import { FieldGroup } from "./field-group";
+import { SecretInput } from "./secret-input";
 
 const API_KEY_MAX = SETTING_REGISTRY.email_api_key?.maxLength ?? 512;
 
@@ -136,11 +137,13 @@ export function EmailSection({
 							API Key
 						</span>
 					</Label>
-					<Input
+					<SecretInput
 						id="s-email-key"
 						type="password"
 						value={emailApiKey}
-						onChange={(e) => onEmailApiKeyChange(e.target.value)}
+						onValueChange={onEmailApiKeyChange}
+						hintId="s-email-key-hint"
+						maxLength={API_KEY_MAX}
 						placeholder={emailProvider === "resend" ? "re_..." : "API key"}
 						aria-invalid={!!errors.emailApiKey}
 						aria-describedby={errors.emailApiKey ? "s-email-key-error" : undefined}

@@ -5,6 +5,7 @@ import { Eye, EyeOff, Key, Loader2, Lock, Mail, QrCode, Settings2, Shield, X } f
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { QueryError } from "@/components/admin/dashboard/query-error";
 import { SectionCard, SectionHeader } from "@/components/admin/section-header";
 import {
 	PreferencesSection,
@@ -28,6 +29,15 @@ import { trpc } from "@/utils/trpc";
 // Login & Security (email, password, 2FA, magic link) → Preferences (timezone,
 // admin branding, login page). The public profile is edited on Links → Profile
 // and the danger zone lives on Settings → Data.
+
+/** The base32 secret from an otpauth:// URI — what an app's "enter a key" screen asks for. */
+function totpSecret(uri: string): string {
+	try {
+		return new URL(uri).searchParams.get("secret") || uri;
+	} catch {
+		return uri;
+	}
+}
 
 function relativeDays(date: Date | null | undefined): string {
 	if (!date) return "never changed";
@@ -75,24 +85,25 @@ export function AccountTab() {
 		setEmailError(null);
 		setIsChangingEmail(true);
 		try {
-			await (
-				authClient as unknown as {
-					changeEmail: (args: {
-						newEmail: string;
-						callbackURL: string;
-					}) => Promise<{ error?: { message?: string } }>;
-				}
-			).changeEmail({
-				newEmail,
+			// The auth client resolves `{ data, error }` instead of throwing, so a
+			// refused request (no email provider, same address, rate limit) has to
+			// be read from `error` or it would report success.
+			const { error } = await authClient.changeEmail({
+				newEmail: newEmail.trim(),
 				callbackURL: "/admin/settings",
 			});
-			toast.success("Verification email sent to your current address");
+			if (error) {
+				toast.error(error.message || "Failed to change email");
+				return;
+			}
+			toast.success(
+				"Confirm the link we sent to your current address, then the one we send to the new address.",
+			);
 			setEmailEditing(false);
 			setNewEmail("");
 			setEmailError(null);
-		} catch (err) {
-			const msg = err instanceof Error ? err.message : "Failed to change email";
-			toast.error(msg);
+		} catch {
+			toast.error("Failed to change email");
 		} finally {
 			setIsChangingEmail(false);
 		}
@@ -184,14 +195,16 @@ export function AccountTab() {
 		}
 		setIs2faLoading(true);
 		try {
-			const result = await authClient.twoFactor.enable({ password: twoFaPassword });
-			if (result.data) {
-				const data = result.data as Record<string, unknown>;
-				setTotpUri((data.totpURI as string | null) ?? null);
-				setBackupCodes((data.backupCodes as string[]) ?? []);
-				setTwoFaMode("verify");
-				toast.success("Scan the QR code with your authenticator app");
+			// Errors (wrong password, rate limit) come back in `error`, not as a throw.
+			const { data, error } = await authClient.twoFactor.enable({ password: twoFaPassword });
+			if (error || !data) {
+				toast.error(error?.message || "Failed to enable 2FA");
+				return;
 			}
+			setTotpUri(data.totpURI ?? null);
+			setBackupCodes(data.backupCodes ?? []);
+			setTwoFaMode("verify");
+			toast.success("Scan the QR code with your authenticator app");
 		} catch {
 			toast.error("Failed to enable 2FA");
 		} finally {
@@ -268,7 +281,22 @@ export function AccountTab() {
 		}
 	}, [magicLinkQuery.data]);
 
+	// A magic link only goes out by email, and never while 2FA is on (it would
+	// skip the second factor — see packages/auth). Turning it on in either state
+	// would "succeed" while every link request silently sends nothing.
+	const magicLinkBlocker = !settingsQuery.data
+		? "loading"
+		: !emailConfigured
+			? "Set up an email provider first: magic links are sent by email"
+			: is2faEnabled
+				? "Magic links can't be used while two-factor authentication is on"
+				: null;
+
 	const handleMagicLinkToggle = async (enabled: boolean) => {
+		if (enabled && magicLinkBlocker) {
+			if (magicLinkBlocker !== "loading") toast.error(magicLinkBlocker);
+			return;
+		}
 		setMagicLinkEnabled(enabled);
 		try {
 			await updateSettingsMl.mutateAsync([{ key: "magic_link_enabled", value: String(enabled) }]);
@@ -285,6 +313,9 @@ export function AccountTab() {
 	// updatedAt as a proxy for "last password change" — auth doesn't track this separately.
 	const userUpdatedAt = user?.updatedAt ? new Date(user.updatedAt) : null;
 
+	if (prefs.isError) {
+		return <QueryError message="Couldn't load settings" onRetry={() => prefs.refetch()} />;
+	}
 	if (prefs.isLoading || !prefs.state) {
 		return (
 			<div className="space-y-6" aria-busy="true" role="status" aria-label="Loading account">
@@ -363,7 +394,8 @@ export function AccountTab() {
 								</p>
 							) : (
 								<p className="text-micro text-muted-foreground">
-									A verification link will be sent to your current email.
+									We&apos;ll email a confirmation link to your current address, then a final link to
+									the new one. The change applies once both are clicked.
 								</p>
 							)}
 						</div>
@@ -520,24 +552,28 @@ export function AccountTab() {
 					<div className="grid grid-cols-[1fr_auto] items-center gap-3 py-3">
 						<div className="min-w-0">
 							<div className="text-xs font-medium">Magic link sign-in</div>
-							<div className="text-micro text-muted-foreground">
-								{emailConfigured ? (
+							<div id="magic-link-status" className="text-micro text-muted-foreground">
+								{!settingsQuery.data || (emailConfigured && !is2faEnabled) ? (
 									"passwordless · email-only"
-								) : (
+								) : !emailConfigured ? (
 									<>
-										Needs an email provider —{" "}
+										{magicLinkEnabled ? "No links can be sent: needs" : "Needs"} an email provider —{" "}
 										<Link href="/admin/settings/email" className="text-primary hover:underline">
 											configure Email
 										</Link>
 									</>
+								) : (
+									"Unavailable while two-factor authentication is on"
 								)}
 							</div>
 						</div>
 						<Switch
 							checked={magicLinkEnabled}
 							onCheckedChange={handleMagicLinkToggle}
-							disabled={updateSettingsMl.isPending}
+							// Can always be turned off; turned on only when links can be delivered.
+							disabled={updateSettingsMl.isPending || (!magicLinkEnabled && !!magicLinkBlocker)}
 							aria-label="Magic link sign-in"
+							aria-describedby="magic-link-status"
 						/>
 					</div>
 				</CardContent>
@@ -581,7 +617,7 @@ export function AccountTab() {
 							<p className="text-xs text-muted-foreground">
 								{twoFaMode === "disable"
 									? "Confirm your password to disable two-factor authentication."
-									: "Add an extra layer of security by requiring a code from your authenticator app when signing in."}
+									: "Require a code from your authenticator app (or a backup code) after your password when signing in. Magic-link sign-in is unavailable while two-factor is on."}
 							</p>
 							<div className="space-y-1.5">
 								<Label htmlFor="twoFaPw" className="text-xs text-muted-foreground">
@@ -652,7 +688,7 @@ export function AccountTab() {
 											Manual entry key
 										</summary>
 										<code className="mt-1 block break-all rounded bg-muted px-2 py-1 text-micro">
-											{totpUri}
+											{totpSecret(totpUri)}
 										</code>
 									</details>
 								)}
@@ -663,12 +699,52 @@ export function AccountTab() {
 										<Key className="h-3.5 w-3.5" />
 										Save your backup codes
 									</p>
+									<p className="text-micro text-muted-foreground">
+										Each code signs you in once if you lose your authenticator. Keep them somewhere
+										safe: they won't be shown again.
+									</p>
 									<div className="grid grid-cols-2 gap-1">
 										{backupCodes.map((code) => (
 											<code key={code} className="font-mono text-micro text-muted-foreground">
 												{code}
 											</code>
 										))}
+									</div>
+									<div className="flex flex-wrap gap-2">
+										<Button
+											type="button"
+											variant="outline"
+											size="xs"
+											onClick={async () => {
+												try {
+													await navigator.clipboard.writeText(backupCodes.join("\n"));
+													toast.success("Backup codes copied");
+												} catch {
+													toast.error("Couldn't copy. Select the codes and copy them instead.");
+												}
+											}}
+										>
+											Copy codes
+										</Button>
+										<Button
+											type="button"
+											variant="outline"
+											size="xs"
+											onClick={() => {
+												const blob = new Blob(
+													[`LinkDen backup codes\n\n${backupCodes.join("\n")}\n`],
+													{ type: "text/plain" },
+												);
+												const url = URL.createObjectURL(blob);
+												const a = document.createElement("a");
+												a.href = url;
+												a.download = "linkden-backup-codes.txt";
+												a.click();
+												URL.revokeObjectURL(url);
+											}}
+										>
+											Download .txt
+										</Button>
 									</div>
 								</div>
 							)}

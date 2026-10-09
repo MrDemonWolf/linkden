@@ -56,6 +56,7 @@ import {
 } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { WolfLogo } from "@/components/wolf-logo";
+import { isPublicAdminRoute } from "@/lib/admin-routes";
 import { authClient } from "@/lib/auth-client";
 import { initials } from "@/lib/format";
 import { getGravatarUrl } from "@/lib/gravatar";
@@ -211,36 +212,42 @@ function AdminSidebar({
 			</SidebarHeader>
 
 			<SidebarContent>
-				<SidebarGroup>
-					<SidebarGroupContent>
-						<SidebarMenu>
-							{NAV_ITEMS.map((item) => {
-								const isActive = isNavActive(item.href, pathname);
-								const showBadge = item.label === "Inbox" && unreadCount > 0;
-								const Icon = item.icon;
-								return (
-									<SidebarMenuItem key={item.href}>
-										<SidebarMenuButton
-											isActive={isActive}
-											tooltip={item.label}
-											aria-label={showBadge ? `${item.label}, ${unreadCount} unread` : undefined}
-											className="min-h-11 md:min-h-8 data-active:[&_svg]:text-sidebar-primary"
-											render={<Link href={item.href} />}
-										>
-											<Icon />
-											<span>{item.label}</span>
-										</SidebarMenuButton>
-										{showBadge && (
-											<SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground peer-hover/menu-button:text-sidebar-primary-foreground peer-data-active/menu-button:text-sidebar-primary-foreground">
-												{unreadCount > 99 ? "99+" : unreadCount}
-											</SidebarMenuBadge>
-										)}
-									</SidebarMenuItem>
-								);
-							})}
-						</SidebarMenu>
-					</SidebarGroupContent>
-				</SidebarGroup>
+				{/* The sidebar renders plain divs; the landmark (and its label) match the
+				    bottom tab bar's — only one of the two is ever displayed. */}
+				<nav aria-label="Main navigation">
+					<SidebarGroup>
+						<SidebarGroupContent>
+							<SidebarMenu>
+								{NAV_ITEMS.map((item) => {
+									const isActive = isNavActive(item.href, pathname);
+									const showBadge = item.label === "Inbox" && unreadCount > 0;
+									const Icon = item.icon;
+									return (
+										<SidebarMenuItem key={item.href}>
+											<SidebarMenuButton
+												isActive={isActive}
+												tooltip={item.label}
+												aria-label={showBadge ? `${item.label}, ${unreadCount} unread` : undefined}
+												className="min-h-11 md:min-h-8 data-active:[&_svg]:text-sidebar-primary"
+												render={
+													<Link href={item.href} aria-current={isActive ? "page" : undefined} />
+												}
+											>
+												<Icon />
+												<span>{item.label}</span>
+											</SidebarMenuButton>
+											{showBadge && (
+												<SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground peer-hover/menu-button:text-sidebar-primary-foreground peer-data-active/menu-button:text-sidebar-primary-foreground">
+													{unreadCount > 99 ? "99+" : unreadCount}
+												</SidebarMenuBadge>
+											)}
+										</SidebarMenuItem>
+									);
+								})}
+							</SidebarMenu>
+						</SidebarGroupContent>
+					</SidebarGroup>
+				</nav>
 			</SidebarContent>
 
 			<SidebarFooter className="border-t border-sidebar-border">
@@ -384,8 +391,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 		enabled: !!session?.user,
 		refetchInterval: 30000,
 	});
+	// `admin_branding_enabled` (Settings → Account → Preferences), not the public
+	// footer's `branding_enabled`.
 	const brandingQuery = useQuery({
-		...trpc.settings.get.queryOptions({ key: "branding_enabled" }),
+		...trpc.settings.get.queryOptions({ key: "admin_branding_enabled" }),
 		enabled: !!session?.user,
 	});
 	const logoQuery = useQuery({
@@ -402,10 +411,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 	const logoUrl = logoQuery.data?.value || "";
 	const siteName = siteNameQuery.data?.value || "LinkDen";
 
-	const isPublicRoute =
-		pathname === "/admin/login" ||
-		pathname === "/admin/setup" ||
-		pathname.startsWith("/admin/reset-password");
+	// The same list proxy.ts lets through (exact path or a sub-path only).
+	const isPublicRoute = isPublicAdminRoute(pathname);
 
 	// Portalled surfaces — dropdown menus, popovers, tooltips, dialogs, sheets —
 	// mount on `document.body`, outside the shell root, so the `.admin-scope`
@@ -417,6 +424,21 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 		if (isPublicRoute) return;
 		document.body.classList.add("admin-scope");
 		return () => document.body.classList.remove("admin-scope");
+	}, [isPublicRoute]);
+
+	// The 52px sticky top bar, and below lg the fixed 56px tab bar with the
+	// StickySaveBar stacked on it, would otherwise cover a field that focus or
+	// an anchor scrolls to (WCAG 2.4.11). The document is the scroller, so the
+	// padding goes on <html>, only while the console is mounted.
+	useEffect(() => {
+		if (isPublicRoute) return;
+		const root = document.documentElement.style;
+		root.scrollPaddingTop = "calc(52px + 0.75rem)";
+		root.scrollPaddingBottom = "calc(56px + env(safe-area-inset-bottom) + 4.5rem)";
+		return () => {
+			root.scrollPaddingTop = "";
+			root.scrollPaddingBottom = "";
+		};
 	}, [isPublicRoute]);
 
 	useEffect(() => {

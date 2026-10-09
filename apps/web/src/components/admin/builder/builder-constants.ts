@@ -1,4 +1,10 @@
-import { type BlockType, blockTypeSchema, EMBED_PROVIDERS } from "@linkden/validators/blocks";
+import {
+	type BlockType,
+	blockTypeSchema,
+	EMBED_PROVIDER_MAP,
+	EMBED_PROVIDERS,
+	validateEmbedUrl as isValidEmbedUrl,
+} from "@linkden/validators/blocks";
 import type { LucideIcon } from "lucide-react";
 import {
 	AlignLeft,
@@ -116,15 +122,17 @@ export const EMBED_URL_PATTERNS: Record<
 	},
 };
 
+/**
+ * Editor message for the shared provider check (`validateEmbedUrl` in
+ * @linkden/validators), so the editor and the block schema can't drift into
+ * two rules. `custom` is left to the http(s) URL check, which has the clearer
+ * message.
+ */
 export function validateEmbedUrl(type: string, url: string): string | null {
-	if (!url || !type) return null;
-	const config = EMBED_URL_PATTERNS[type];
-	if (!config) return null;
-	if (type === "custom") return null;
-	if (!config.pattern.test(url)) {
-		return `This doesn't look like a ${config.label} URL`;
-	}
-	return null;
+	if (!url || !type || type === "custom") return null;
+	const provider = EMBED_PROVIDER_MAP[type];
+	if (!provider || isValidEmbedUrl(type, url)) return null;
+	return `This doesn't look like a ${provider.label} URL`;
 }
 
 export function blockTypeIcon(type: string) {

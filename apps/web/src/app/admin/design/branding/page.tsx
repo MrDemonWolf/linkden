@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Contact, Cookie, Palette, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { QueryError } from "@/components/admin/dashboard/query-error";
 import { usePreviewSlot } from "@/components/admin/preview-slot";
 import { SectionCard } from "@/components/admin/section-header";
@@ -17,8 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSettingsForm } from "@/hooks/use-settings-form";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { trpc } from "@/utils/trpc";
-
-const DEFAULT_CATEGORIES = JSON.stringify({ analytics: true, marketing: false, functional: false });
+import { parseConsentCategories, serializeConsentCategories } from "./consent-categories";
 
 interface BrandingForm {
 	siteName: string;
@@ -36,6 +36,7 @@ interface BrandingForm {
 	consentBannerEnabled: boolean;
 	consentBannerText: string;
 	consentPrivacyUrl: string;
+	/** Canonical JSON from serializeConsentCategories — always parseable. */
 	consentCategories: string;
 }
 
@@ -56,7 +57,8 @@ function parse(s: Record<string, string>): BrandingForm {
 		consentBannerEnabled: s.consent_banner_enabled !== "false",
 		consentBannerText: s.consent_banner_text ?? "",
 		consentPrivacyUrl: s.consent_privacy_url ?? "",
-		consentCategories: s.consent_categories ?? DEFAULT_CATEGORIES,
+		// Normalized on load: a malformed restored value can't crash the render.
+		consentCategories: serializeConsentCategories(parseConsentCategories(s.consent_categories)),
 	};
 }
 
@@ -110,6 +112,9 @@ export default function DesignBrandingPage() {
 	const vcardRef = useRef<VCardSectionHandle>(null);
 	const [vcardDirty, setVcardDirty] = useState(false);
 	const [vcardHasErrors, setVcardHasErrors] = useState(false);
+	const [vcardSaving, setVcardSaving] = useState(false);
+	// Discard remounts the vCard section, which re-seeds it from the saved config.
+	const [vcardKey, setVcardKey] = useState(0);
 	useUnsavedChanges(vcardDirty);
 
 	usePreviewSlot({
@@ -119,6 +124,8 @@ export default function DesignBrandingPage() {
 						brandingEnabled: f.footerBrandingEnabled,
 						brandingText: f.footerBrandingText || "Powered by LinkDen · by MrDemonWolf, Inc.",
 						brandingPpUrl: f.ppMode === "url" ? f.ppUrl || null : null,
+						brandingPpText: f.ppMode === "text" ? f.ppText || null : null,
+						brandingLink: f.footerBrandingLink || null,
 						consentBannerEnabled: f.consentBannerEnabled,
 						consentBannerText: f.consentBannerText || null,
 						consentPrivacyUrl: f.consentPrivacyUrl || null,
@@ -128,8 +135,9 @@ export default function DesignBrandingPage() {
 			: undefined,
 	});
 
-	if (settingsQuery.isError) {
-		return <QueryError message="Couldn't load settings" onRetry={() => settingsQuery.refetch()} />;
+	// Only a load with nothing to show: a failed background refetch keeps the form.
+	if (form.isError) {
+		return <QueryError message="Couldn't load settings" onRetry={() => form.refetch()} />;
 	}
 	if (!f) {
 		return (
@@ -141,14 +149,27 @@ export default function DesignBrandingPage() {
 	}
 
 	const handleSave = async () => {
+		// Awaited so a vCard failure stops the settings save from reporting
+		// success. saveIfDirty saves silently, so the failure is toasted here.
+		setVcardSaving(true);
 		try {
-			// Awaited so a vCard failure is surfaced (it toasts itself) before the
-			// settings save reports success.
 			await vcardRef.current?.saveIfDirty();
 		} catch {
+			toast.error("Failed to save vCard settings");
 			return;
+		} finally {
+			setVcardSaving(false);
 		}
 		await form.save();
+	};
+
+	const handleDiscard = () => {
+		form.reset();
+		if (vcardDirty) {
+			setVcardKey((k) => k + 1);
+			setVcardDirty(false);
+			setVcardHasErrors(false);
+		}
 	};
 
 	const walletEnabled = settingsQuery.data?.wallet_pass_enabled === "true";
@@ -198,11 +219,11 @@ export default function DesignBrandingPage() {
 					enabled={f.consentBannerEnabled}
 					bannerText={f.consentBannerText}
 					privacyUrl={f.consentPrivacyUrl}
-					categories={JSON.parse(f.consentCategories)}
+					categories={parseConsentCategories(f.consentCategories)}
 					onEnabledChange={(v) => set("consentBannerEnabled", v)}
 					onBannerTextChange={(v) => set("consentBannerText", v)}
 					onPrivacyUrlChange={(v) => set("consentPrivacyUrl", v)}
-					onCategoriesChange={(v) => set("consentCategories", JSON.stringify(v))}
+					onCategoriesChange={(v) => set("consentCategories", serializeConsentCategories(v))}
 				/>
 			</SectionCard>
 
@@ -234,6 +255,7 @@ export default function DesignBrandingPage() {
 					</div>
 				</div>
 				<VCardSection
+					key={vcardKey}
 					ref={vcardRef}
 					onDirtyChange={setVcardDirty}
 					onErrorsChange={setVcardHasErrors}
@@ -242,10 +264,10 @@ export default function DesignBrandingPage() {
 
 			<StickySaveBar
 				isDirty={form.isDirty || vcardDirty}
-				isSaving={form.isSaving}
+				isSaving={form.isSaving || vcardSaving}
 				hasErrors={form.hasErrors || vcardHasErrors}
 				onSave={handleSave}
-				onDiscard={form.reset}
+				onDiscard={handleDiscard}
 			/>
 		</div>
 	);

@@ -74,6 +74,31 @@ export function serializePreferences(s: PreferencesState) {
 	];
 }
 
+/**
+ * Zone options: the common list, plus this browser's zone and the stored value
+ * when either is missing from it (a restored backup can hold any valid zone,
+ * and a Select can't show a value it has no option for).
+ */
+export function timezoneItems(stored: string, browserZone: string | undefined) {
+	const known = new Set(COMMON_TIMEZONES.map((z) => z.value));
+	const extra: { label: string; value: string }[] = [];
+	if (browserZone && !known.has(browserZone)) {
+		extra.push({ label: `${browserZone} (this browser)`, value: browserZone });
+		known.add(browserZone);
+	}
+	if (stored && !known.has(stored)) extra.push({ label: stored, value: stored });
+	// Unset means UTC: Insights buckets days on the server, which can't see the browser's zone.
+	return [{ value: "", label: "Not set (UTC)" }, ...extra, ...COMMON_TIMEZONES];
+}
+
+function browserTimeZone(): string | undefined {
+	try {
+		return Intl.DateTimeFormat().resolvedOptions().timeZone;
+	} catch {
+		return undefined;
+	}
+}
+
 const BG_MODES = [
 	{ id: "default", label: "Default", icon: Sparkles },
 	{ id: "preset", label: "Preset", icon: ImageIcon },
@@ -99,16 +124,10 @@ export function PreferencesSection({
 					id="pref-timezone"
 					value={state.timezone}
 					onValueChange={(v) => set("timezone", v)}
-					items={[
-						{
-							value: "",
-							label: `Browser default (${Intl.DateTimeFormat().resolvedOptions().timeZone})`,
-						},
-						...COMMON_TIMEZONES,
-					]}
+					items={timezoneItems(state.timezone, browserTimeZone())}
 				/>
 				<p className="text-micro text-muted-foreground">
-					Used for timestamps in Insights and Inbox.
+					Insights counts views and clicks per calendar day in this timezone.
 				</p>
 			</div>
 
@@ -136,21 +155,24 @@ export function PreferencesSection({
 					</p>
 				</div>
 
-				<div className="space-y-1.5">
-					<p className="text-micro font-medium text-muted-foreground">Login logo</p>
-					<p className="text-micro text-muted-foreground">
+				{/* Fieldset + legend: the upload's Replace / Re-crop / Remove buttons are
+				    generic, so the group name tells a screen reader which image they act on. */}
+				<fieldset className="min-w-0 space-y-1.5" aria-describedby="pref-login-logo-hint">
+					<legend className="text-micro font-medium text-muted-foreground">Login logo</legend>
+					<p id="pref-login-logo-hint" className="text-micro text-muted-foreground">
 						Optional — falls back to the site logo (Design → Branding) when empty
 					</p>
 					<ImageUploadField
+						ariaLabel="login logo"
 						value={state.loginLogoUrl}
 						purpose="login_logo"
 						onUploadComplete={(v) => set("loginLogoUrl", v)}
 						aspectRatio="logo"
 					/>
-				</div>
+				</fieldset>
 
-				<div className="space-y-2">
-					<p className="text-micro font-medium text-muted-foreground">Login background</p>
+				<fieldset className="min-w-0 space-y-2">
+					<legend className="text-micro font-medium text-muted-foreground">Login background</legend>
 					{/* Single-select ToggleGroup (Base UI `multiple` defaults to false).
 					    An empty `next` is a re-press of the active mode — ignoring it keeps
 					    one mode selected. This was a `role="tablist"` before, but the three
@@ -224,13 +246,14 @@ export function PreferencesSection({
 
 					{bgMode === "custom" && (
 						<ImageUploadField
+							ariaLabel="login background"
 							value={state.loginBgCustomUrl}
 							purpose="login_background"
 							onUploadComplete={(v) => set("loginBgCustomUrl", v)}
 							aspectRatio="banner"
 						/>
 					)}
-				</div>
+				</fieldset>
 			</div>
 		</div>
 	);

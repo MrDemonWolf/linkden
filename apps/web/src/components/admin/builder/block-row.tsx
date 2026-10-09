@@ -26,6 +26,7 @@ export function BlockRow({
 	featureHidden?: boolean;
 }) {
 	const Icon = blockTypeIcon(block.type);
+	const title = block.title || "Untitled";
 	const typeLabel = block.type === "connect" ? "Connect" : block.type.replace(/_/g, " ");
 	// Where the feature toggle lives: messages in Inbox, vCard under Design → Branding.
 	const featureHref = block.type === "connect" ? "/admin/inbox" : "/admin/design/branding";
@@ -49,6 +50,7 @@ export function BlockRow({
 			style={style}
 			role="group"
 			aria-roledescription="sortable"
+			aria-label={title}
 			// One flat 56px row of the list panel (the panel owns the border, radius
 			// and dividers): hover lifts to --surface-2, the selected row tints
 			// primary. No edge bar — the tint alone marks selection.
@@ -66,8 +68,8 @@ export function BlockRow({
 			{/* Drag handle — fills its track (44px on touch, 28px from sm) */}
 			<button
 				type="button"
-				className="flex w-full cursor-grab touch-none select-none items-center justify-center self-stretch rounded-md text-muted-foreground/50 transition-colors hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
-				aria-label="Drag to reorder"
+				className="flex w-full cursor-grab touch-none select-none items-center justify-center self-stretch rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
+				aria-label={`Reorder ${title}`}
 				{...attributes}
 				{...listeners}
 			>
@@ -92,12 +94,10 @@ export function BlockRow({
 					type="button"
 					onClick={onEdit}
 					className="flex h-full min-w-0 flex-1 flex-col justify-center px-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
-					aria-label={`Edit ${block.title || "Untitled"}`}
+					aria-label={`Edit ${title}`}
 				>
 					<span className="flex min-w-0 items-center gap-1.5">
-						<span className="truncate text-sm font-medium leading-snug">
-							{block.title || "Untitled"}
-						</span>
+						<span className="truncate text-sm font-medium leading-snug">{title}</span>
 						{block.status === "draft" && (
 							<span
 								className="inline-block h-2 w-2 shrink-0 rounded-full bg-warning"
@@ -137,7 +137,8 @@ export function BlockRow({
 				<Switch
 					checked={block.isEnabled}
 					onCheckedChange={onToggle}
-					aria-label={block.isEnabled ? "Hide block" : "Show block"}
+					// Stable name; aria-checked carries the on/off state.
+					aria-label={`Show ${title} on page`}
 				/>
 				<button
 					type="button"
@@ -146,13 +147,13 @@ export function BlockRow({
 						onDelete();
 					}}
 					className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground opacity-70 transition-colors hover:bg-destructive/10 hover:text-destructive hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100 lg:h-8 lg:w-8"
-					aria-label="Delete block"
+					aria-label={`Delete ${title}`}
 				>
 					<Trash2 className="h-3.5 w-3.5" />
 				</button>
 				<span
 					aria-hidden
-					className="hidden h-8 w-6 items-center justify-center text-muted-foreground/60 sm:flex"
+					className="hidden h-8 w-6 items-center justify-center text-muted-foreground sm:flex"
 				>
 					<ChevronRight className="h-4 w-4" />
 				</span>

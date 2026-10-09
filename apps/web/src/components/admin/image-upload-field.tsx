@@ -1,15 +1,19 @@
 "use client";
 
+import { MAX_UPLOAD_BYTES } from "@linkden/validators/uploads";
 import { Crop, Image as ImageIcon, Upload, X } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { unsavedEditSnapshot } from "@/hooks/use-unsaved-changes";
 import { CROP_PRESETS, type ImagePurpose } from "@/lib/image-crop-presets";
 import { cn } from "@/lib/utils";
 import { ImageCropDialog } from "./image-crop-dialog";
 
 interface ImageUploadFieldProps {
 	label?: string;
+	/** Accessible name for the field when there is no visible `label`. */
+	ariaLabel?: string;
 	value: string;
 	purpose: ImagePurpose;
 	onUploadComplete: (url: string) => void;
@@ -19,6 +23,7 @@ interface ImageUploadFieldProps {
 
 export function ImageUploadField({
 	label,
+	ariaLabel,
 	value,
 	purpose,
 	onUploadComplete,
@@ -33,27 +38,57 @@ export function ImageUploadField({
 	const [cropFileName, setCropFileName] = useState<string | undefined>(undefined);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const objectUrlRef = useRef<string | null>(null);
+	// The blob: URL behind `preview`, revoked whenever it's replaced or dropped.
+	const previewUrlRef = useRef<string | null>(null);
+	// Server URL of this field's latest upload — the value the preview stands in for.
+	const lastUploadedRef = useRef<string | null>(null);
+	// This field's uploads → the unsaved-edit epoch each arrived in. Only an
+	// upload from the current, still-unsaved edit may be deleted on replace.
+	// Once any form saves, discards or closes the epoch moves on, and the upload
+	// may now be the saved value the live page serves. Saved objects that a
+	// later save supersedes are reclaimed by the daily orphan sweep instead.
+	const unsavedUploadsRef = useRef(new Map<string, number>());
 	const inputId = useId();
 
 	const preset = CROP_PRESETS[purpose];
+	// Names the dropzone, the image and the three actions.
+	const name = label || ariaLabel;
+
+	const setLocalPreview = useCallback((url: string | null) => {
+		if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+		previewUrlRef.current = url;
+		setPreview(url);
+	}, []);
 
 	useEffect(() => {
 		return () => {
 			if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+			if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
 		};
 	}, []);
 
+	// The local preview only bridges an upload until its URL arrives as `value`.
+	// If the parent moves `value` elsewhere (Discard, Remove, a reset), show that.
+	useEffect(() => {
+		if (preview && !uploading && value !== lastUploadedRef.current) setLocalPreview(null);
+	}, [value, preview, uploading, setLocalPreview]);
+
 	const upload = useCallback(
 		async (file: File) => {
-			const localUrl = URL.createObjectURL(file);
-			setPreview(localUrl);
+			setLocalPreview(URL.createObjectURL(file));
 			setUploading(true);
+			// The endpoint's own reason (size, type, signature) beats a generic toast.
+			let serverError: string | null = null;
 			try {
 				const formData = new FormData();
 				formData.append("file", file);
 				formData.append("purpose", purpose);
-				// Let the server delete the object this upload replaces.
-				if (value) formData.append("replaces", value);
+				// Delete what this upload replaces only when it's an earlier upload
+				// from this field in the same unsaved edit — never the saved value.
+				const edit = unsavedEditSnapshot();
+				if (value && edit.dirty && unsavedUploadsRef.current.get(value) === edit.epoch) {
+					formData.append("replaces", value);
+				}
 
 				const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || "";
 				const res = await fetch(`${serverUrl}/api/upload`, {
@@ -62,22 +97,31 @@ export function ImageUploadField({
 					credentials: "include",
 				});
 
-				if (!res.ok) throw new Error("Upload failed");
+				if (!res.ok) {
+					const body = (await res.json().catch(() => null)) as { error?: unknown } | null;
+					if (typeof body?.error === "string") serverError = body.error;
+					throw new Error("Upload failed");
+				}
 
 				const data = (await res.json()) as { publicUrl: string };
 				const fullUrl = data.publicUrl.startsWith("http")
 					? data.publicUrl
 					: `${serverUrl}${data.publicUrl}`;
+				unsavedUploadsRef.current.delete(value);
+				unsavedUploadsRef.current.set(fullUrl, unsavedEditSnapshot().epoch);
+				lastUploadedRef.current = fullUrl;
 				onUploadComplete(fullUrl);
 				toast.success("Image uploaded");
 			} catch {
-				toast.error("Failed to upload image");
-				setPreview(null);
+				toast.error(
+					serverError ? `Failed to upload image: ${serverError}` : "Failed to upload image",
+				);
+				setLocalPreview(null);
 			} finally {
 				setUploading(false);
 			}
 		},
-		[purpose, value, onUploadComplete],
+		[purpose, value, onUploadComplete, setLocalPreview],
 	);
 
 	const openCropper = useCallback((source: string, name?: string) => {
@@ -94,8 +138,8 @@ export function ImageUploadField({
 				toast.error("Please select an image file");
 				return;
 			}
-			if (file.size > 5 * 1024 * 1024) {
-				toast.error("File must be under 5MB");
+			if (file.size > MAX_UPLOAD_BYTES) {
+				toast.error(`File must be under ${MAX_UPLOAD_BYTES / (1024 * 1024)}MB`);
 				return;
 			}
 			const url = URL.createObjectURL(file);
@@ -152,7 +196,7 @@ export function ImageUploadField({
 					<label htmlFor={inputId} className="flex items-center gap-2 text-sm font-medium">
 						{label}
 						{hint && (
-							<span className="font-mono text-micro uppercase tracking-wider text-muted-foreground/70">
+							<span className="font-mono text-micro uppercase tracking-wider text-muted-foreground">
 								{hint}
 							</span>
 						)}
@@ -174,14 +218,11 @@ export function ImageUploadField({
 							: "border-muted-foreground/25 hover:border-muted-foreground/50",
 					)}
 					onClick={() => inputRef.current?.click()}
+					aria-label={name ? `Change ${name}` : undefined}
 				>
 					{displayUrl ? (
 						<>
-							<img
-								src={displayUrl}
-								alt={label || "Upload"}
-								className={cn("object-cover", imgClass)}
-							/>
+							<img src={displayUrl} alt={name ?? ""} className={cn("object-cover", imgClass)} />
 							{uploading && (
 								<div className="absolute inset-0 flex items-center justify-center rounded-inherit bg-black/40">
 									<div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -223,6 +264,7 @@ export function ImageUploadField({
 								e.stopPropagation();
 								inputRef.current?.click();
 							}}
+							aria-label={name ? `Replace ${name}` : undefined}
 						>
 							<Upload className="mr-1 h-3 w-3" />
 							Replace
@@ -235,6 +277,7 @@ export function ImageUploadField({
 								e.stopPropagation();
 								handleRecrop();
 							}}
+							aria-label={name ? `Re-crop ${name}` : undefined}
 						>
 							<Crop className="mr-1 h-3 w-3" />
 							Re-crop
@@ -245,9 +288,10 @@ export function ImageUploadField({
 							size="xs"
 							onClick={(e) => {
 								e.stopPropagation();
-								setPreview(null);
+								setLocalPreview(null);
 								onUploadComplete("");
 							}}
+							aria-label={name ? `Remove ${name}` : undefined}
 						>
 							<X className="mr-1 h-3 w-3" />
 							Remove

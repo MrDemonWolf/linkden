@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Save, Trash2 } from "lucide-react";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { toast } from "sonner";
+import { QueryError } from "@/components/admin/dashboard/query-error";
 import { FieldError } from "@/components/admin/field-feedback";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,6 +93,13 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 	const [savedEnabled, setSavedEnabled] = useState(false);
 	const [savedData, setSavedData] = useState<VCardData>(emptyData);
 
+	// Latest form + saved values, read by the hydration effect below without
+	// re-running it on every keystroke.
+	const latest = useRef({ enabled, data, savedEnabled, savedData });
+	useEffect(() => {
+		latest.current = { enabled, data, savedEnabled, savedData };
+	});
+
 	useEffect(() => {
 		if (configQuery.data) {
 			const e = configQuery.data.enabled;
@@ -111,14 +119,21 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 				address: raw.address ?? "",
 				urls: (raw.urls ?? []).map((u) => ({ label: u.label ?? "", url: u.url ?? "" })),
 			};
-			setEnabled(e);
-			setData(d);
+			// A refetch (window focus, another tab's save) moves the saved baseline,
+			// but only replaces a field the admin hasn't edited, so unsaved vCard
+			// edits survive. Same rule as useSettingsForm.
+			const cur = latest.current;
+			if (cur.enabled === cur.savedEnabled) setEnabled(e);
+			if (JSON.stringify(cur.data) === JSON.stringify(cur.savedData)) setData(d);
 			setSavedEnabled(e);
 			setSavedData(d);
 		}
 	}, [configQuery.data]);
 
-	const isDirty = enabled !== savedEnabled || JSON.stringify(data) !== JSON.stringify(savedData);
+	// While vCard is off the fields are hidden and a save sends only the flag,
+	// so hidden edits neither count as unsaved nor block the save.
+	const isDirty =
+		enabled !== savedEnabled || (enabled && JSON.stringify(data) !== JSON.stringify(savedData));
 	const errors = enabled ? vcardErrors(data) : {};
 	const hasErrors = Object.keys(errors).length > 0;
 
@@ -159,11 +174,26 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 	};
 
 	const handleSave = async (opts?: { silent?: boolean }) => {
+		// Never save over contact details that didn't load: the form would hold
+		// the empty defaults.
+		if (!configQuery.data) {
+			if (!opts?.silent) toast.error("vCard settings haven't loaded yet");
+			throw new Error("vCard config not loaded");
+		}
 		if (hasErrors) {
 			if (!opts?.silent) toast.error("Fix the highlighted vCard fields first");
 			throw new Error("vCard has invalid fields");
 		}
 		try {
+			// Disabled: only the flag. Sending hidden (possibly invalid) fields
+			// could fail the save on values the admin can't see.
+			if (!enabled) {
+				await updateConfig.mutateAsync({ enabled });
+				setSavedEnabled(enabled);
+				qc.invalidateQueries({ queryKey: trpc.vcard.getConfig.queryOptions().queryKey });
+				if (!opts?.silent) toast.success("vCard settings saved");
+				return;
+			}
 			await updateConfig.mutateAsync({
 				enabled,
 				data: {
@@ -222,16 +252,32 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 		);
 	}
 
+	// No editor over data that didn't load: the empty defaults would overwrite
+	// the saved contact details on the next save.
+	if (!configQuery.data) {
+		return (
+			<QueryError
+				message="Couldn't load your vCard settings"
+				onRetry={() => configQuery.refetch()}
+			/>
+		);
+	}
+
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between">
 				<div className="space-y-0.5">
 					<Label>Enable vCard</Label>
-					<p className="text-micro text-muted-foreground">
+					<p id="s-vc-enable-hint" className="text-micro text-muted-foreground">
 						Allow visitors to download your contact information as a vCard
 					</p>
 				</div>
-				<Switch checked={enabled} onCheckedChange={setEnabled} aria-label="Enable vCard" />
+				<Switch
+					checked={enabled}
+					onCheckedChange={setEnabled}
+					aria-label="Enable vCard"
+					aria-describedby="s-vc-enable-hint"
+				/>
 			</div>
 
 			{enabled && (
@@ -273,7 +319,10 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 									type="date"
 									value={data.birthday}
 									onChange={(e) => updateField("birthday", e.target.value)}
+									aria-invalid={!!errors.birthday}
+									aria-describedby={errors.birthday ? "s-vc-bday-error" : undefined}
 								/>
+								<FieldError id="s-vc-bday-error" error={errors.birthday} />
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="s-vc-photo">Photo URL</Label>
@@ -371,7 +420,11 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 									type="tel"
 									value={data.phone}
 									onChange={(e) => updateField("phone", e.target.value)}
+									maxLength={40}
+									aria-invalid={!!errors.phone}
+									aria-describedby={errors.phone ? "s-vc-phone-error" : undefined}
 								/>
+								<FieldError id="s-vc-phone-error" error={errors.phone} />
 							</div>
 							<div className="space-y-1.5">
 								<Label htmlFor="s-vc-wphone">Work Phone</Label>
@@ -380,7 +433,11 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 									type="tel"
 									value={data.workPhone}
 									onChange={(e) => updateField("workPhone", e.target.value)}
+									maxLength={40}
+									aria-invalid={!!errors.workPhone}
+									aria-describedby={errors.workPhone ? "s-vc-wphone-error" : undefined}
 								/>
+								<FieldError id="s-vc-wphone-error" error={errors.workPhone} />
 							</div>
 						</FieldGroup>
 						<div className="space-y-1.5">

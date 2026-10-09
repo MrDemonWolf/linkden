@@ -5,15 +5,10 @@ import type { socialBrands } from "@linkden/ui/social-brands";
 import { useTheme } from "next-themes";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import {
-	buildUrl,
-	extractUsername,
-	getPrefix,
-	getSuffix,
-	isFullUrlTemplate,
-} from "@/lib/social-url-utils";
+import { getPrefix, getSuffix, isFullUrlTemplate } from "@/lib/social-url-utils";
 import { cn, getAdminThemeColors } from "@/lib/utils";
 import type { NetworkDraft } from "./social-constants";
+import { buildSocialUrl, extractSocialHandle, handleFromUrl } from "./social-url";
 
 type SocialBrand = (typeof socialBrands)[number];
 
@@ -31,9 +26,12 @@ export function NetworkRow({
 	const { resolvedTheme } = useTheme();
 	const template = social.urlTemplate;
 	const fullUrlMode = isFullUrlTemplate(template);
-	const prefix = fullUrlMode ? "" : getPrefix(template);
-	const suffix = fullUrlMode ? "" : getSuffix(template);
-	const displayValue = fullUrlMode ? draft.url : extractUsername(draft.url, template);
+	// A stored URL that isn't this network's profile URL shows whole, without the
+	// prefix/suffix around it (they would read as part of the link).
+	const showAffixes = !fullUrlMode && (!draft.url || handleFromUrl(draft.url, template) !== null);
+	const prefix = showAffixes ? getPrefix(template) : "";
+	const suffix = showAffixes ? getSuffix(template) : "";
+	const displayValue = fullUrlMode ? draft.url : extractSocialHandle(draft.url, template);
 
 	const { bg: adminBg, fg: adminFg } = getAdminThemeColors(resolvedTheme);
 	const fillColor = draft.isActive
@@ -90,7 +88,7 @@ export function NetworkRow({
 								aria-label={`URL for ${social.name}`}
 							/>
 						) : (
-							<div className="flex h-11 items-center overflow-hidden rounded-lg border border-input bg-transparent focus-within:ring-1 focus-within:ring-ring md:h-8">
+							<div className="flex h-11 items-center overflow-hidden rounded-lg border border-input-border bg-transparent focus-within:ring-1 focus-within:ring-ring md:h-8">
 								{prefix && (
 									<span className="shrink-0 select-none pl-2.5 text-base text-muted-foreground md:text-xs">
 										{prefix}
@@ -99,9 +97,11 @@ export function NetworkRow({
 								<input
 									id={`input-${social.slug}`}
 									value={displayValue}
-									onChange={(e) => onUrlChange(social.slug, buildUrl(e.target.value, template))}
+									onChange={(e) =>
+										onUrlChange(social.slug, buildSocialUrl(e.target.value, template))
+									}
 									placeholder="username"
-									className="min-w-0 flex-1 bg-transparent px-1.5 text-base outline-none placeholder:text-muted-foreground/50 md:text-xs"
+									className="min-w-0 flex-1 bg-transparent px-1.5 text-base outline-none placeholder:text-muted-foreground md:text-xs"
 									aria-label={`URL for ${social.name}`}
 								/>
 								{suffix && (

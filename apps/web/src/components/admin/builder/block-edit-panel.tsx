@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Select, type SelectItem } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { shouldAskWhereMet } from "@/lib/contact-form";
 import { isoToLocal } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { configErrors, fieldError } from "@/lib/validate";
@@ -99,7 +100,7 @@ function TextField({
 				maxLength={maxLength}
 				aria-invalid={!!visibleError}
 				aria-describedby={visibleError ? errorId : undefined}
-				className="dark:bg-input/30 border-input"
+				className="dark:bg-input/30"
 			/>
 			{hint && !visibleError && <FieldDescription>{hint}</FieldDescription>}
 			<FieldError id={errorId} role="status" className="text-micro">
@@ -216,45 +217,42 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 	);
 }
 
+// Presets set the button copy and whether to ask "where we met" — the only
+// optional field the public form (and `public.submitContact`) supports. The
+// old phone/subject/company/rating/attending/guests flags were never rendered;
+// the schema still accepts them so existing configs keep parsing.
 const CONNECT_PRESET_DEFAULTS: Record<
 	string,
 	{
 		buttonText: string;
 		buttonEmoji?: string;
 		successMessage?: string;
-		showPhone?: boolean;
-		showCompany?: boolean;
-		showWhereMet?: boolean;
-		showRating?: boolean;
-		showAttending?: boolean;
-		showGuests?: boolean;
+		showWhereMet: boolean;
 	}
 > = {
 	contact: {
 		buttonText: "Contact Me",
 		buttonEmoji: "",
 		successMessage: "Thanks for reaching out!",
+		showWhereMet: false,
 	},
 	connect: {
 		buttonText: "Connect with Me",
 		buttonEmoji: "",
 		successMessage: "Thanks for connecting!",
-		showPhone: true,
-		showCompany: true,
 		showWhereMet: true,
 	},
 	feedback: {
 		buttonText: "Leave Feedback",
 		buttonEmoji: "",
 		successMessage: "Thanks for your feedback!",
-		showRating: true,
+		showWhereMet: false,
 	},
 	rsvp: {
 		buttonText: "RSVP",
 		buttonEmoji: "",
 		successMessage: "Your RSVP has been received!",
-		showAttending: true,
-		showGuests: true,
+		showWhereMet: false,
 	},
 };
 
@@ -350,14 +348,19 @@ export function BlockEditPanel({
 	// Validate the raw config JSON. When invalid we surface an inline error and
 	// block saving so a typo in the Advanced editor can't silently wipe the
 	// structured fields (which fall back to {} on parse failure).
+	// Only a plain object is a config: `null`, arrays and primitives parse as
+	// JSON but every renderer reads properties off it (and the server rejects them).
 	const configError = (() => {
 		if (!config.trim()) return null;
+		let parsed: unknown;
 		try {
-			JSON.parse(config);
-			return null;
+			parsed = JSON.parse(config);
 		} catch {
 			return "Invalid JSON — fix or clear this to save.";
 		}
+		return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+			? null
+			: "Config must be a JSON object — fix or clear this to save.";
 	})();
 
 	const parsedConfig: Record<string, unknown> = (() => {
@@ -961,7 +964,7 @@ export function BlockEditPanel({
 													}}
 													placeholder="Website"
 													maxLength={40}
-													className="dark:bg-input/30 border-input"
+													className="dark:bg-input/30"
 												/>
 											</Field>
 											<Field className="flex-[2]">
@@ -980,7 +983,7 @@ export function BlockEditPanel({
 													placeholder="https://example.com"
 													aria-invalid={!!rowError}
 													aria-describedby={rowError ? rowErrorId : undefined}
-													className="dark:bg-input/30 border-input"
+													className="dark:bg-input/30"
 												/>
 											</Field>
 											<button
@@ -1184,57 +1187,25 @@ export function BlockEditPanel({
 				{block.type === "connect" && (
 					<CollapsibleSection label="Form Fields" defaultOpen>
 						<div className="mt-2 space-y-3">
-							<p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-								Optional fields
-							</p>
+							<FieldDescription>
+								Visitors always give their name and email, plus an optional message.
+							</FieldDescription>
 							<ToggleSwitch
-								checked={!!parsedConfig.showPhone}
-								onToggle={() => updateConfigField("showPhone", !parsedConfig.showPhone)}
-								label="Phone field"
-								description="Show phone number input"
-							/>
-							<ToggleSwitch
-								checked={!!parsedConfig.showSubject}
-								onToggle={() => updateConfigField("showSubject", !parsedConfig.showSubject)}
-								label="Subject field"
-								description="Show subject line input"
-							/>
-							<ToggleSwitch
-								checked={!!parsedConfig.showCompany}
-								onToggle={() => updateConfigField("showCompany", !parsedConfig.showCompany)}
-								label="Company field"
-								description="Show company name input"
-							/>
-							<ToggleSwitch
-								checked={!!parsedConfig.showWhereMet}
-								onToggle={() => updateConfigField("showWhereMet", !parsedConfig.showWhereMet)}
-								label="Where met field"
-								description="Ask where you met (Connect preset)"
-							/>
-							<ToggleSwitch
-								checked={!!parsedConfig.showRating}
-								onToggle={() => updateConfigField("showRating", !parsedConfig.showRating)}
-								label="Rating field"
-								description="Show 1-5 star rating (Feedback preset)"
-							/>
-							<ToggleSwitch
-								checked={!!parsedConfig.showAttending}
-								onToggle={() => updateConfigField("showAttending", !parsedConfig.showAttending)}
-								label="Attending field"
-								description="Yes/No/Maybe selector (RSVP preset)"
-							/>
-							<ToggleSwitch
-								checked={!!parsedConfig.showGuests}
-								onToggle={() => updateConfigField("showGuests", !parsedConfig.showGuests)}
-								label="Guests field"
-								description="Number of guests input (RSVP preset)"
+								checked={shouldAskWhereMet(parsedConfig)}
+								onToggle={() => updateConfigField("showWhereMet", !shouldAskWhereMet(parsedConfig))}
+								label="Ask where we met"
+								description="Adds a required “where we met” choice"
 							/>
 						</div>
 					</CollapsibleSection>
 				)}
 
 				{/* SCHEDULE (collapsible) */}
-				<CollapsibleSection label="Schedule" defaultOpen={hasSchedule}>
+				<CollapsibleSection
+					label="Schedule"
+					defaultOpen={hasSchedule}
+					forceOpen={showAllErrors && !!scheduleError}
+				>
 					<FieldDescription>
 						Optionally show this block only during a specific time window.
 					</FieldDescription>
@@ -1269,7 +1240,7 @@ export function BlockEditPanel({
 				</CollapsibleSection>
 
 				{/* ADVANCED (collapsible) */}
-				<CollapsibleSection label="Advanced">
+				<CollapsibleSection label="Advanced" forceOpen={showAllErrors && !!configError}>
 					<Field>
 						<FieldLabel htmlFor="edit-config" className="text-small">
 							Config JSON

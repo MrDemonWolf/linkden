@@ -1,5 +1,6 @@
 "use client";
 
+import { MAX_BACKUP_CONTACTS, MAX_BLOCKS, MAX_IMPORT_CONTACTS } from "@linkden/validators/blocks";
 import { DEFAULT_RETENTION } from "@linkden/validators/retention";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ArrowDownUp, Clock, Database } from "lucide-react";
@@ -36,6 +37,16 @@ function describeImport(data: {
 	return parts.join(", ");
 }
 
+// A real export is a few hundred KB; refuse anything far larger before the
+// tab reads and parses it into memory.
+const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
+// The backup router's caps: over the first two the import is refused outright,
+// so say so before asking for confirmation. Only the newest
+// MAX_IMPORT_CONTACTS messages are written per restore.
+const MAX_IMPORT_BLOCKS = MAX_BLOCKS;
+const MAX_IMPORT_MESSAGES = MAX_BACKUP_CONTACTS;
+const RESTORED_MESSAGES = MAX_IMPORT_CONTACTS;
+
 // Derived from the policy the daily cron actually enforces — never retyped.
 const RETENTION = [
 	["Page views & link clicks", `${DEFAULT_RETENTION.analyticsDays} days`],
@@ -47,6 +58,23 @@ export default function DataSettingsPage() {
 	const qc = useQueryClient();
 	const router = useRouter();
 	const versionCheck = useQuery(trpc.version.checkUpdate.queryOptions());
+	// "Check for updates" bypasses the server's hours-long cache (it keeps a
+	// 60-second floor, so repeated clicks still make one GitHub call).
+	const [checkingUpdates, setCheckingUpdates] = useState(false);
+	const onCheckUpdates = async () => {
+		setCheckingUpdates(true);
+		try {
+			const fresh = await qc.fetchQuery({
+				...trpc.version.checkUpdate.queryOptions({ force: true }),
+				staleTime: 0,
+			});
+			qc.setQueryData(trpc.version.checkUpdate.queryOptions().queryKey, fresh);
+		} catch {
+			toast.error("Couldn't check for updates");
+		} finally {
+			setCheckingUpdates(false);
+		}
+	};
 	const exportData = useQuery({ ...trpc.backup.export.queryOptions(), enabled: false });
 	const importData = useMutation(trpc.backup.import.mutationOptions());
 	type ImportPayload = Parameters<typeof importData.mutateAsync>[0]["data"];
@@ -86,11 +114,34 @@ export default function DataSettingsPage() {
 	const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
+		if (file.size > MAX_IMPORT_BYTES) {
+			toast.error("That file is too large to be a LinkDen export (max 10 MB).");
+			clearFileInput();
+			return;
+		}
 		try {
 			const text = await file.text();
 			const parsed = JSON.parse(text);
 			if (!parsed.data) {
 				toast.error("Invalid LinkDen export file.");
+				clearFileInput();
+				return;
+			}
+			const { blocks, contactSubmissions } = parsed.data as {
+				blocks?: unknown[];
+				contactSubmissions?: unknown[];
+			};
+			if ((blocks?.length ?? 0) > MAX_IMPORT_BLOCKS) {
+				toast.error(
+					`This backup has more than ${MAX_IMPORT_BLOCKS} blocks, the most a page can hold.`,
+				);
+				clearFileInput();
+				return;
+			}
+			if ((contactSubmissions?.length ?? 0) > MAX_IMPORT_MESSAGES) {
+				toast.error(
+					`This backup has more than ${MAX_IMPORT_MESSAGES} messages. Remove older ones from the file and try again.`,
+				);
 				clearFileInput();
 				return;
 			}
@@ -110,10 +161,17 @@ export default function DataSettingsPage() {
 			qc.invalidateQueries();
 			// Settings are skipped for the same reasons rows are (unknown key, value
 			// the sanitizer rejects), so they belong in the same count.
-			const skipped =
+			const invalid =
 				result.skipped.blocks + result.skipped.socialNetworks + result.skipped.settings;
-			if (skipped > 0) {
-				toast.warning(`Imported with ${skipped} invalid item${skipped === 1 ? "" : "s"} skipped`);
+			// Valid messages past the per-restore cap that aren't already stored.
+			const olderMessages = result.skipped.contactSubmissions ?? 0;
+			const notes = [
+				invalid > 0 && `${invalid} invalid item${invalid === 1 ? " was" : "s were"} skipped`,
+				olderMessages > 0 &&
+					`${olderMessages} older message${olderMessages === 1 ? "" : "s"} over the ${RESTORED_MESSAGES}-per-restore limit ${olderMessages === 1 ? "was" : "were"} not imported`,
+			].filter(Boolean);
+			if (notes.length > 0) {
+				toast.warning("Imported with notes", { description: `${notes.join(". ")}.` });
 			} else {
 				toast.success("Import successful");
 			}
@@ -165,9 +223,8 @@ export default function DataSettingsPage() {
 					isImporting={importData.isPending}
 					fileInputRef={fileInputRef}
 					versionCheck={versionCheck.data ?? null}
-					onCheckUpdates={() =>
-						qc.invalidateQueries({ queryKey: trpc.version.checkUpdate.queryOptions().queryKey })
-					}
+					isCheckingUpdates={checkingUpdates}
+					onCheckUpdates={onCheckUpdates}
 				/>
 			</SectionCard>
 
@@ -213,7 +270,8 @@ export default function DataSettingsPage() {
 						<div className="min-w-0">
 							<div className="text-xs font-medium">Reset everything</div>
 							<div className="text-micro text-muted-foreground">
-								full wipe · returns to setup wizard
+								full wipe · returns to setup wizard · images no longer used are deleted at the next
+								daily cleanup
 							</div>
 						</div>
 						<Button size="sm" variant="destructive" onClick={() => setResetDialogOpen(true)}>
@@ -237,7 +295,7 @@ export default function DataSettingsPage() {
 				open={resetDialogOpen}
 				onOpenChange={setResetDialogOpen}
 				title="Reset LinkDen completely?"
-				description="This wipes all content, analytics, settings, social links, AND your user account. You will be signed out and the setup wizard will start fresh. This cannot be undone."
+				description="This wipes all content, analytics, settings, social links, AND your user account. You will be signed out and the setup wizard will start fresh. Uploaded images that nothing uses any more are deleted at the next daily cleanup (backups don't contain images). This cannot be undone."
 				confirmWord="RESET"
 				confirmLabel="Reset everything"
 				isPending={resetEverything.isPending}

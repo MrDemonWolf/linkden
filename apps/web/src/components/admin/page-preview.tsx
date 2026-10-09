@@ -85,6 +85,23 @@ const SAMPLE_BLOCKS: PreviewBlock[] = [
 	},
 ];
 
+/**
+ * An in-progress Advanced edit can be any JSON (`null`, `[]`, `1`), but every
+ * block renderer reads properties off its config: hand the preview an object
+ * or nothing. (Unparseable text is fine — the renderer already treats it as {}.)
+ */
+function previewSafe(block: PreviewBlock): PreviewBlock {
+	if (!block.config) return block;
+	try {
+		const parsed: unknown = JSON.parse(block.config);
+		return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+			? block
+			: { ...block, config: null };
+	} catch {
+		return block;
+	}
+}
+
 function defaultMode(pref: string | undefined): ColorMode {
 	if (pref === "dark") return "dark";
 	if (pref === "system" && typeof window !== "undefined") {
@@ -135,13 +152,14 @@ export function PagePreview({
 	const page = pageQuery.data;
 	const settings = page ? { ...page.settings, ...overrides?.settings } : null;
 	// Same feature gating as `public.getPage`, minus the published-only filter.
-	const liveBlocks = (blocksQuery.data ?? []).filter(
-		(b) =>
-			b.isEnabled &&
-			!(b.type === "connect" && !settings?.contactFormEnabled) &&
-			!(b.type === "vcard" && !settings?.vcardEnabled),
-	);
-	const blocks = overrides?.blocks ?? liveBlocks;
+	// Applied to `overrides.blocks` too, so a caller's list can't bypass it.
+	const featureVisible = (b: { type: string }) =>
+		!(b.type === "connect" && !settings?.contactFormEnabled) &&
+		!(b.type === "vcard" && !settings?.vcardEnabled);
+	const liveBlocks = (blocksQuery.data ?? []).filter((b) => b.isEnabled);
+	const blocks = overrides?.blocks
+		? overrides.blocks.filter(featureVisible).map(previewSafe)
+		: liveBlocks.filter(featureVisible);
 	const isSample = blocks.length === 0;
 
 	const data: PageData | null =

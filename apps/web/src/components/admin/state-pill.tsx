@@ -11,6 +11,8 @@ import { trpc } from "@/utils/trpc";
  * `n unpublished` (never-published blocks, links to Links) > `● Live`. No fake
  * Publish button — new blocks are published from Links. Edits to an already
  * published block are live the moment they save, so they never count here.
+ * `Live` is only claimed once `blocks.list` has loaded: a neutral placeholder
+ * holds the slot while it loads, and nothing is shown if it failed.
  */
 export function StatePill({ className }: { className?: string }) {
 	const unsaved = useAnyUnsaved();
@@ -31,6 +33,20 @@ export function StatePill({ className }: { className?: string }) {
 				<span aria-hidden className="h-1.5 w-1.5 animate-pulse-once rounded-full bg-warning" />
 				Unsaved
 			</span>
+		);
+	}
+	if (!blocksQuery.data) {
+		// Loading: hold the pill's footprint without announcing a state. Errored
+		// (no cached data): say nothing rather than a "Live" we can't vouch for.
+		if (blocksQuery.isError) return null;
+		return (
+			<span
+				aria-hidden
+				className={cn(
+					base,
+					"w-14 animate-pulse border-border bg-muted/40 motion-reduce:animate-none",
+				)}
+			/>
 		);
 	}
 	if (draftCount > 0) {
