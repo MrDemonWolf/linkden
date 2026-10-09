@@ -1,33 +1,13 @@
-import * as authSchema from "@linkden/db/schema/auth";
-import { createTestDb } from "@linkden/db/testing";
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
+import { EMAIL, linkFrom, PASSWORD, setupAdmin, signInCookie } from "./auth-test-utils";
 
 // Integration test for the password-reset flow the login page drives via
-// authClient.requestPasswordReset. Uses a real in-memory DB + a betterAuth
-// instance configured like packages/auth, capturing the reset URL that
-// sendResetPassword would email so we can complete the reset with the token.
+// authClient.requestPasswordReset. Uses a real in-memory DB + the production
+// auth options (createAuthOptions), capturing the email sendResetPassword
+// would send so we can complete the reset with its token.
 
-const EMAIL = "admin@example.com";
-const OLD_PASSWORD = "old-password-123";
 const NEW_PASSWORD = "new-password-456";
-
-function makeAuth(db: Awaited<ReturnType<typeof createTestDb>>["db"]) {
-	let capturedUrl = "";
-	const auth = betterAuth({
-		database: drizzleAdapter(db, { provider: "sqlite", schema: authSchema }),
-		emailAndPassword: {
-			enabled: true,
-			sendResetPassword: async ({ url }) => {
-				capturedUrl = url;
-			},
-		},
-		secret: "test-secret-0123456789-0123456789-0123456789",
-		baseURL: "http://localhost:3000",
-	});
-	return { auth, getUrl: () => capturedUrl };
-}
+const REDIRECT = "http://localhost:3000/admin/reset-password";
 
 function tokenFrom(url: string): string {
 	const fromQuery = new URL(url).searchParams.get("token");
@@ -38,25 +18,13 @@ function tokenFrom(url: string): string {
 }
 
 describe("password reset flow", () => {
-	let db: Awaited<ReturnType<typeof createTestDb>>["db"];
-	let auth: ReturnType<typeof makeAuth>["auth"];
-	let getUrl: ReturnType<typeof makeAuth>["getUrl"];
-
-	beforeEach(async () => {
-		({ db } = await createTestDb());
-		({ auth, getUrl } = makeAuth(db));
-		await auth.api.signUpEmail({
-			body: { email: EMAIL, password: OLD_PASSWORD, name: "Admin" },
-		});
-	});
-
 	it("requests a reset email and completes the reset with the token", async () => {
-		await auth.api.requestPasswordReset({
-			body: { email: EMAIL, redirectTo: "http://localhost:3000/admin/reset-password" },
-		});
+		const { auth, sent } = await setupAdmin();
+		await auth.api.requestPasswordReset({ body: { email: EMAIL, redirectTo: REDIRECT } });
 
-		const url = getUrl();
-		const token = tokenFrom(url);
+		expect(sent).toHaveLength(1);
+		expect(sent[0]?.to).toBe(EMAIL);
+		const token = tokenFrom(linkFrom(sent[0]));
 		expect(token).toBeTruthy();
 
 		await auth.api.resetPassword({ body: { newPassword: NEW_PASSWORD, token } });
@@ -67,17 +35,38 @@ describe("password reset flow", () => {
 
 		// Old password is rejected.
 		await expect(
-			auth.api.signInEmail({ body: { email: EMAIL, password: OLD_PASSWORD } }),
+			auth.api.signInEmail({ body: { email: EMAIL, password: PASSWORD } }),
 		).rejects.toThrow();
 	});
 
-	it("does not leak whether an email exists (no send for unknown email)", async () => {
-		await auth.api.requestPasswordReset({
-			body: {
-				email: "nobody@example.com",
-				redirectTo: "http://localhost:3000/admin/reset-password",
-			},
+	it("revokes every existing session (a stolen cookie dies with the reset)", async () => {
+		const { auth, sent } = await setupAdmin();
+		const stolen = await signInCookie(auth);
+
+		await auth.api.requestPasswordReset({ body: { email: EMAIL, redirectTo: REDIRECT } });
+		await auth.api.resetPassword({
+			body: { newPassword: NEW_PASSWORD, token: tokenFrom(linkFrom(sent[0])) },
 		});
-		expect(getUrl()).toBe("");
+
+		const session = await auth.api.getSession({
+			headers: new Headers({ cookie: stolen }),
+			query: { disableCookieCache: true },
+		});
+		expect(session).toBeNull();
+	});
+
+	it("does not leak whether an email exists (no send for unknown email)", async () => {
+		const { auth, sent } = await setupAdmin();
+		await auth.api.requestPasswordReset({
+			body: { email: "nobody@example.com", redirectTo: REDIRECT },
+		});
+		expect(sent).toHaveLength(0);
+	});
+
+	it("answers the same when email delivery is not configured", async () => {
+		const { auth } = await setupAdmin({ emailConfigured: false });
+		await expect(
+			auth.api.requestPasswordReset({ body: { email: EMAIL, redirectTo: REDIRECT } }),
+		).resolves.toMatchObject({ status: true });
 	});
 });

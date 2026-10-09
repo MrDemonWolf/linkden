@@ -1,113 +1,84 @@
 import { db } from "@linkden/db";
-import * as schema from "@linkden/db/schema/auth";
-import { siteSettings } from "@linkden/db/schema/index";
-import { createResendEmailService } from "@linkden/email";
+import { readSettings } from "@linkden/db/settings-read";
+import {
+	createResendEmailService,
+	EMAIL_TRANSPORT_SETTING_KEYS,
+	resolveEmailTransport,
+} from "@linkden/email";
 import { env } from "@linkden/env/server";
 import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { magicLink, twoFactor } from "better-auth/plugins";
 
-import { cookieAttributes, sessionOptions } from "./auth-options";
-import { devLoginPlugin, isDevLoginEnabled } from "./dev-login";
+import { type AuthEmail, authSecretProblem, createAuthOptions } from "./auth-options";
 
-export { getSessionQuery } from "./auth-options";
+export { authSecretProblem, getSessionQuery } from "./auth-options";
 
-async function getEmailSettings() {
-	const allRows = await db.select().from(siteSettings);
-	const s: Record<string, string> = {};
-	for (const row of allRows) {
-		s[row.key] = row.value;
-	}
-	return {
-		apiKey: s.email_api_key ?? "",
-		from: s.email_from ?? "noreply@example.com",
-	};
+/**
+ * The same rule as the contact notification (resolveEmailTransport): Resend
+ * only, with a key and a sender. Another provider's key is never sent to
+ * Resend's API.
+ */
+async function getEmailTransport() {
+	return resolveEmailTransport(await readSettings(db, EMAIL_TRANSPORT_SETTING_KEYS));
 }
 
-// Single Resend path (via packages/email) for every auth email.
-async function sendAuthEmail(to: string, subject: string, html: string): Promise<void> {
-	const { apiKey, from } = await getEmailSettings();
-	if (!apiKey) {
-		console.warn(`No email API key configured; skipping "${subject}" email`);
+// Single Resend path (via packages/email) for every auth email. With no usable
+// transport it only logs: reset and magic link must answer the same either way
+// (the change-email flow checks isEmailConfigured up front instead).
+async function sendAuthEmail({ to, subject, html }: AuthEmail): Promise<void> {
+	const transport = await getEmailTransport();
+	if (!transport) {
+		console.error(
+			`Auth email "${subject}" not sent: email delivery is not configured (Settings › Email: Resend API key and sender). Use \`bun reset:password\` to recover access without email.`,
+		);
 		return;
 	}
-	await createResendEmailService(apiKey, from).send({ to, subject, html });
+	await createResendEmailService(transport.apiKey, transport.from).send({ to, subject, html });
 }
 
-export const auth = betterAuth({
-	database: drizzleAdapter(db, {
-		provider: "sqlite",
+async function isEmailConfigured(): Promise<boolean> {
+	return (await getEmailTransport()) !== null;
+}
 
-		schema: schema,
-	}),
-	trustedOrigins: [env.CORS_ORIGIN],
-	emailAndPassword: {
-		enabled: true,
-		sendResetPassword: async ({ user, url }) => {
-			await sendAuthEmail(
-				user.email,
-				"Reset your LinkDen password",
-				`<p>Click the link below to reset your password:</p><p><a href="${url}">${url}</a></p><p>This link expires in 1 hour. If you didn't request this, ignore this email.</p>`,
-			);
-		},
-	},
-	user: {
-		changeEmail: {
-			enabled: true,
-			sendChangeEmailVerification: async ({
-				user,
-				newEmail,
-				url,
-			}: {
-				user: { email: string };
-				newEmail: string;
-				url: string;
-			}) => {
-				await sendAuthEmail(
-					user.email,
-					"Confirm your new LinkDen email",
-					`<p>You requested to change your LinkDen email to <strong>${newEmail}</strong>.</p><p>Click the link below to confirm:</p><p><a href="${url}">${url}</a></p><p>If you didn't request this, ignore this email.</p>`,
-				);
-			},
-		},
-	},
-	// Signed-cookie session cache for reads; see auth-options.ts for the
-	// revocation trade-off and why mutations bypass it.
-	session: sessionOptions,
-	secret: env.BETTER_AUTH_SECRET,
-	baseURL: env.BETTER_AUTH_URL,
-	advanced: {
-		// On Cloudflare Workers the real client IP is in cf-connecting-ip; the
-		// default x-forwarded-for is client-spoofable. Point Better Auth's IP
-		// resolution (used for rate-limit / security features) at the trusted header.
-		ipAddress: {
-			ipAddressHeaders: ["cf-connecting-ip"],
-		},
-		defaultCookieAttributes: cookieAttributes(env.BETTER_AUTH_URL),
-	},
-	plugins: [
-		// DEV ONLY: the bypass-login endpoint (POST /api/auth/dev-login) exists only
-		// when DEV_LOGIN === "true". Unset in prod → plugin unregistered → route 404s.
-		...(isDevLoginEnabled((env as { DEV_LOGIN?: string }).DEV_LOGIN) ? [devLoginPlugin()] : []),
-		twoFactor(),
-		magicLink({
-			sendMagicLink: async ({ email, url }) => {
-				// Check if magic link sign-in is enabled
-				const allRows = await db.select().from(siteSettings);
-				const s: Record<string, string> = {};
-				for (const row of allRows) {
-					s[row.key] = row.value;
-				}
-				if (s.magic_link_enabled !== "true") {
-					throw new Error("Magic link sign-in is disabled");
-				}
+const baseURL = env.BETTER_AUTH_URL;
 
-				await sendAuthEmail(
-					email,
-					"Sign in to LinkDen",
-					`<p>Click the link below to sign in to your LinkDen admin panel:</p><p><a href="${url}">${url}</a></p><p>This link expires in 10 minutes.</p>`,
-				);
-			},
+/**
+ * Why auth can't run (an empty, short or placeholder BETTER_AUTH_SECRET), or
+ * null. The server answers 503 on every auth-dependent route while it is set
+ * and /api/health reports it, so a misconfigured Worker stays diagnosable.
+ */
+export const authConfigProblem: string | null = authSecretProblem(env.BETTER_AUTH_SECRET, baseURL);
+
+function buildAuth(secret: string) {
+	return betterAuth(
+		createAuthOptions({
+			db,
+			secret,
+			baseURL,
+			trustedOrigins: [env.CORS_ORIGIN],
+			devLogin: (env as { DEV_LOGIN?: string }).DEV_LOGIN,
+			sendEmail: sendAuthEmail,
+			isEmailConfigured,
 		}),
-	],
-});
+	);
+}
+
+type Auth = ReturnType<typeof buildAuth>;
+
+/**
+ * Stand-in while the secret is unusable: Better Auth is never constructed, so
+ * its public default secret can't sign anything, and any use that slips past
+ * the server's 503 guard throws (fails closed) instead of serving a session.
+ * Not a module-scope throw, which would take /api/health down too.
+ */
+function unavailableAuth(reason: string): Auth {
+	return new Proxy({} as Auth, {
+		get() {
+			throw new Error(`Authentication is unavailable: ${reason}`);
+		},
+	});
+}
+
+export const auth: Auth =
+	authConfigProblem === null
+		? buildAuth((env.BETTER_AUTH_SECRET ?? "").trim())
+		: unavailableAuth(authConfigProblem);

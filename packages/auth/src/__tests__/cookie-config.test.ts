@@ -1,33 +1,29 @@
 import * as authSchema from "@linkden/db/schema/auth";
 import { createTestDb } from "@linkden/db/testing";
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+	authSecretProblem,
+	BETTER_AUTH_DEFAULT_SECRET,
 	cookieAttributes,
 	getSessionQuery,
+	MIN_AUTH_SECRET_LENGTH,
+	resolveAuthSecret,
 	SESSION_COOKIE_CACHE_MAX_AGE,
 	sessionOptions,
 } from "../auth-options";
 
+import { EMAIL, makeAuth as makeTestAuth, PASSWORD } from "./auth-test-utils";
+
 // Locks the production cookie contract: web and API share one origin, so the
 // session cookie must be Secure + HttpOnly + SameSite=Lax and host-only (no
-// Domain= attribute). Built from the same `auth-options` export that
-// ../index.ts spreads into betterAuth(), so a drift there fails here.
+// Domain= attribute). Built from the same `createAuthOptions` factory that
+// ../index.ts passes to betterAuth() (plugins included), so a drift there
+// fails here.
 
 const BASE_URL = "https://l.example.test";
-const EMAIL = "admin@example.com";
-const PASSWORD = "correct-horse-battery-staple";
 
 function makeAuth(db: Awaited<ReturnType<typeof createTestDb>>["db"]) {
-	return betterAuth({
-		database: drizzleAdapter(db, { provider: "sqlite", schema: authSchema }),
-		emailAndPassword: { enabled: true },
-		session: sessionOptions,
-		secret: "test-secret-0123456789-0123456789-0123456789",
-		baseURL: BASE_URL,
-		advanced: { defaultCookieAttributes: cookieAttributes(BASE_URL) },
-	});
+	return makeTestAuth(db, { baseURL: BASE_URL }).auth;
 }
 
 function cookieHeader(setCookies: string[]): string {
@@ -84,6 +80,7 @@ describe("session cookie attributes", () => {
 describe("session cookie cache", () => {
 	it("is bounded to one minute and off for non-GET requests", () => {
 		expect(SESSION_COOKIE_CACHE_MAX_AGE).toBeLessThanOrEqual(60);
+		expect(sessionOptions.cookieCache.maxAge).toBe(SESSION_COOKIE_CACHE_MAX_AGE);
 		expect(cookieAttributes("http://localhost:3000").secure).toBe(false);
 		expect(getSessionQuery("GET")).toEqual({ disableCookieCache: false });
 		expect(getSessionQuery("POST")).toEqual({ disableCookieCache: true });
@@ -117,5 +114,55 @@ describe("session cookie cache", () => {
 		// POST path must not.
 		expect(cached === null || cached.user.email === EMAIL).toBe(true);
 		expect(authoritative).toBeNull();
+	});
+});
+
+describe("resolveAuthSecret", () => {
+	const PROD = "https://l.example.test";
+	const STRONG = "k3Q9vZ1xR7mP2wL8tY4nB6cH0sD5fG3jA1eU9iO7";
+
+	it("returns a strong secret unchanged", () => {
+		expect(STRONG.length).toBeGreaterThanOrEqual(MIN_AUTH_SECRET_LENGTH);
+		expect(resolveAuthSecret(STRONG, PROD)).toBe(STRONG);
+	});
+
+	// Better Auth would otherwise fall back to its public default secret, and
+	// its own production guard keys off NODE_ENV, which Workers never set.
+	it.each([undefined, "", "   "])(
+		"throws when the secret is missing (%j), even locally",
+		(secret) => {
+			expect(() => resolveAuthSecret(secret, PROD)).toThrow(/BETTER_AUTH_SECRET/);
+			expect(() => resolveAuthSecret(secret, "http://localhost:3000")).toThrow(
+				/BETTER_AUTH_SECRET/,
+			);
+		},
+	);
+
+	it.each([
+		"short-secret",
+		"ci-placeholder-secret-for-build",
+		"better-auth-secret-12345678901234567890",
+	])("rejects a weak or placeholder secret (%s) on a deployed base URL", (secret) => {
+		expect(() => resolveAuthSecret(secret, PROD)).toThrow(/at least/);
+		// An empty or malformed BETTER_AUTH_URL is treated as deployed, not local.
+		expect(() => resolveAuthSecret(secret, "")).toThrow(/at least/);
+	});
+
+	it("allows the .env.example placeholder for local http dev", () => {
+		expect(resolveAuthSecret("your-secret-key-here", "http://localhost:3000")).toBe(
+			"your-secret-key-here",
+		);
+	});
+});
+
+describe("authSecretProblem", () => {
+	const PROD = "https://l.example.test";
+
+	it("is pure: reports a reason instead of throwing, null when usable", () => {
+		expect(authSecretProblem(undefined, PROD)).toMatch(/not set/);
+		expect(authSecretProblem("short", PROD)).toMatch(/at least/);
+		expect(authSecretProblem(BETTER_AUTH_DEFAULT_SECRET, PROD)).toMatch(/placeholder/);
+		expect(authSecretProblem("k3Q9vZ1xR7mP2wL8tY4nB6cH0sD5fG3jA1eU9iO7", PROD)).toBeNull();
+		expect(authSecretProblem("dev", "http://localhost:3000")).toBeNull();
 	});
 });

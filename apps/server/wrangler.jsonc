@@ -1,8 +1,10 @@
 {
 	"name": "linkden-server",
 	"main": "src/index.ts",
-	"compatibility_date": "2025-01-01",
-	"compatibility_flags": ["nodejs_compat"],
+	// Must match production: COMPATIBILITY_DATE in packages/infra/alchemy.run.ts
+	// and Alchemy's `compatibility: "node"` preset. Bump both files together.
+	"compatibility_date": "2026-04-24",
+	"compatibility_flags": ["nodejs_compat", "nodejs_compat_populate_process_env"],
 	// DEV_LOGIN is intentionally NOT set here — top-level "vars" also applies to
 	// `wrangler deploy`, which would ship the auth bypass. Set it locally via
 	// `apps/server/.dev.vars` (gitignored, `wrangler dev`-only) instead.
@@ -23,7 +25,10 @@
 		{ "binding": "RL_AUTH", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
 		{ "binding": "RL_STRICT", "namespace_id": "1002", "simple": { "limit": 5, "period": 60 } },
 		{ "binding": "RL_UPLOAD", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } },
-		{ "binding": "RL_PUBLIC", "namespace_id": "1004", "simple": { "limit": 60, "period": 60 } }
+		{ "binding": "RL_PUBLIC", "namespace_id": "1004", "simple": { "limit": 60, "period": 60 } },
+		// Global (constant-key) cap on sign-in / 2FA / password-reset attempts.
+		// 1005 is RL_OG on the web worker (packages/infra/alchemy.run.ts).
+		{ "binding": "RL_SIGNIN", "namespace_id": "1006", "simple": { "limit": 30, "period": 60 } }
 	],
 	"triggers": {
 		// Daily retention sweep — see src/lib/retention-sweep.ts.

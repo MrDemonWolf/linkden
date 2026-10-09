@@ -1,11 +1,16 @@
-import { UPLOAD_PURPOSES, type UploadPurpose, uploadPurposeEnum } from "@linkden/validators";
+import {
+	MAX_UPLOAD_BYTES,
+	UPLOAD_PURPOSES,
+	type UploadPurpose,
+	uploadPurposeEnum,
+} from "@linkden/validators";
 
 export type { UploadPurpose };
 export { UPLOAD_PURPOSES, uploadPurposeEnum };
 
 export const VALID_UPLOAD_PURPOSES = UPLOAD_PURPOSES;
 
-export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+export const MAX_FILE_SIZE = MAX_UPLOAD_BYTES; // 5MB, shared with the admin upload field
 // Reject the request before buffering the body if Content-Length already exceeds
 // the file limit plus a small allowance for multipart framing.
 export const MAX_UPLOAD_BODY_SIZE = MAX_FILE_SIZE + 16 * 1024;
@@ -94,6 +99,18 @@ export function buildR2Key(purpose: UploadPurpose, ext: string, uuid: string): s
 }
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+// Every key this app has written is `<purpose>/<id>.<ext>`: a random UUID today,
+// a millisecond timestamp in early releases. Anything else cannot exist in the
+// bucket, so GET /api/images 404s it without spending an R2 read.
+const SERVABLE_KEY = new RegExp(
+	`^[a-z_]+/[a-z0-9-]+\\.(?:${[...ALLOWED_EXTENSIONS].join("|")})$`,
+	"i",
+);
+
+export function isServableImageKey(key: string): boolean {
+	return SERVABLE_KEY.test(key);
+}
 
 export function replacementKeyForPurpose(replaces: unknown, purpose: UploadPurpose): string | null {
 	if (typeof replaces !== "string") return null;

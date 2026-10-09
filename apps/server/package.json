@@ -6,8 +6,7 @@
 	"scripts": {
 		"dev:standalone": "wrangler dev --port 3000",
 		"build": "tsdown",
-		"check-types": "tsc -b",
-		"compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server"
+		"check-types": "tsc -b"
 	},
 	"dependencies": {
 		"@hono-rate-limiter/cloudflare": "^0.2.2",
@@ -17,12 +16,10 @@
 		"@linkden/db": "workspace:*",
 		"@linkden/validators": "workspace:*",
 		"@trpc/server": "catalog:",
-		"better-auth": "catalog:",
 		"drizzle-orm": "catalog:",
 		"fflate": "^0.8.3",
 		"hono": "catalog:",
-		"node-forge": "^1.4.0",
-		"zod": "catalog:"
+		"node-forge": "^1.4.0"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "catalog:",

@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { auditLog, block, contactSubmission, linkClick, pageView, session, user } from "../schema";
 import { retentionDeletes } from "../retention";
+import {
+	auditLog,
+	block,
+	contactSubmission,
+	linkClick,
+	pageView,
+	session,
+	user,
+	verification,
+} from "../schema";
 import { createTestDb } from "../testing";
 
 const NOW = new Date("2026-06-01T00:00:00Z");
@@ -33,6 +42,10 @@ describe("retentionDeletes", () => {
 			{ id: "a_old", action: "x", createdAt: daysAgo(200) },
 			{ id: "a_new", action: "y", createdAt: daysAgo(10) },
 		]);
+		await db.insert(verification).values([
+			{ id: "v_exp", identifier: "magic-1", value: "{}", expiresAt: daysAgo(1) },
+			{ id: "v_ok", identifier: "trust-device-1", value: "u1", expiresAt: daysAgo(-20) },
+		]);
 
 		await db.batch(retentionDeletes(db, NOW) as unknown as Parameters<typeof db.batch>[0]);
 
@@ -41,5 +54,6 @@ describe("retentionDeletes", () => {
 		expect((await db.select().from(contactSubmission)).map((r) => r.id)).toEqual(["c_new"]);
 		expect((await db.select().from(session)).map((r) => r.id)).toEqual(["s_ok"]);
 		expect((await db.select().from(auditLog)).map((r) => r.id)).toEqual(["a_new"]);
+		expect((await db.select().from(verification)).map((r) => r.id)).toEqual(["v_ok"]);
 	});
 });
