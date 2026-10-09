@@ -74,10 +74,16 @@ cd apps/server && for f in ../../packages/db/src/migrations/*.sql; do bunx wrang
 
 - The URL is unauthenticated — anyone who has it reaches the app. Obscurity
   of the random host is the only gate. Kill the tunnel when done.
-- Never enable credential-free dev logins (`DEV_LOGIN=true` in LinkDen) while
-  a tunnel is up.
+- Dev login can't be used through a tunnel, by design: LinkDen registers
+  `POST /api/auth/dev-login` only when `DEV_LOGIN="true"` AND `BETTER_AUTH_URL`
+  is plain `http://` on a loopback host, and the endpoint 404s for any
+  non-loopback `Host`. A tunnel needs an `https://` `BETTER_AUTH_URL`, so sign in
+  with a real account instead.
 - On a fresh LinkDen DB, complete `/admin/setup` immediately — first account
-  becomes the single admin.
+  becomes the single admin. Setting `SETUP_TOKEN` in `apps/server/.dev.vars`
+  closes that window (enter it in the wizard's Setup token field).
+- With an `https://` tunnel `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET` must be 32+
+  characters and not a placeholder, or auth answers 503.
 - Want a stable hostname + real auth? Use a **named** tunnel
   (`cloudflared tunnel login` + a domain on Cloudflare): stable host,
   path-based ingress (no rewrites needed), and Cloudflare Access (free email
@@ -99,6 +105,10 @@ origin (CORS allows exactly one):
 ```bash
 PW_BASE_URL=https://<host>.trycloudflare.com bun run test:e2e
 ```
+
+`PW_API_URL` (default `http://127.0.0.1:3000`) is the API origin the smoke test
+calls directly for `public.getPage`; override it when the API is not on local
+port 3000.
 
 Without a tunnel (plain localhost env), `bun run test:e2e` works as-is and
 will boot the dev servers itself if they're not already running.

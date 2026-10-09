@@ -1,11 +1,11 @@
 ---
 title: Apple Wallet
-description: Let visitors save your contact information as an Apple Wallet pass.
+description: Build a signed Apple Wallet business-card pass that you download from the admin and share.
 ---
 
 # Apple Wallet
 
-Let visitors save a pass with your contact info to their iPhone or Mac wallet. When enabled, a download button appears on your public page.
+Build an Apple Wallet pass with your contact info and a QR code back to your page. The pass is **private**: you download it from **Settings → Wallet** and share it yourself (AirDrop, Messages, email). There is no button for visitors on your public page, and no public download link. Visitors save your contact details with the **Save vCard** button instead.
 
 ## Prerequisites
 
@@ -42,41 +42,50 @@ Before you start, make sure you have:
 4. Select both, right-click, and choose **Export 2 items**.
 5. Save as `.p12` with a passphrase.
 
-### 4. Convert to Base64
+### 4. Extract PEM Files
 
-Run these commands to prepare your certificates for deployment:
+LinkDen does not read `.p12` bundles, so split it into a certificate and an unencrypted RSA key:
 
 ```bash
-# Download the Apple WWDR certificate
+# Download the Apple WWDR intermediate certificate
 curl -O https://www.apple.com/certificateauthority/AppleWWDRCAG4.cer
-
-# Convert WWDR cert to base64
-base64 -i AppleWWDRCAG4.cer | tr -d '\n' > wwdr_base64.txt
 
 # Extract the signer certificate
 openssl pkcs12 -in pass.p12 -clcerts -nokeys -out signer_cert.pem
-base64 -i signer_cert.pem | tr -d '\n' > signer_cert_base64.txt
 
-# Extract the signer private key
-openssl pkcs12 -in pass.p12 -nocerts -out signer_key.pem
-base64 -i signer_key.pem | tr -d '\n' > signer_key_base64.txt
+# Extract the signer private key, unencrypted (-nodes)
+openssl pkcs12 -in pass.p12 -nocerts -nodes -out signer_key.pem
 ```
 
-### 5. Set Environment Variables
+Keeping the key encrypted? Drop `-nodes`, and set `WALLET_SIGNER_KEY_PASSPHRASE` to the passphrase you choose. A wrong passphrase shows up as "Unable to load wallet signer key (wrong passphrase?)" in the API logs.
 
-Add these to your deployment platform (not in the database -- they're kept as environment variables for security):
+### 5. Add the Keys
 
-| Variable | Description |
-|----------|-------------|
-| `WALLET_SIGNER_CERT` | Contents of `signer_cert_base64.txt` |
-| `WALLET_SIGNER_KEY` | Contents of `signer_key_base64.txt` |
+Pick **one** of these (a key saved in the admin overrides the environment variable):
+
+**In the admin (easiest):** Settings → Wallet → **Signing keys**. Upload `signer_cert.pem`, `signer_key.pem` and `AppleWWDRCAG4.cer` (or paste PEM text). Each file is checked before it is saved, and an unusable one (an EC key, a `.p12`, the wrong file) is refused with a message. **Clear saved** removes a saved key so the environment value applies again.
+
+**As environment variables / GitHub secrets:** one line each, so base64-encode the files:
+
+```bash
+base64 -i signer_cert.pem | tr -d '\n' > signer_cert_base64.txt
+base64 -i signer_key.pem | tr -d '\n' > signer_key_base64.txt
+base64 -i AppleWWDRCAG4.cer | tr -d '\n' > wwdr_base64.txt
+```
+
+| Variable | Value |
+|----------|-------|
+| `WALLET_SIGNER_CERT` | Contents of `signer_cert_base64.txt` (raw PEM also works) |
+| `WALLET_SIGNER_KEY` | Contents of `signer_key_base64.txt` (raw PEM also works) |
 | `WALLET_WWDR_CERT` | Contents of `wwdr_base64.txt` |
+| `WALLET_SIGNER_KEY_PASSPHRASE` | Only for an encrypted key |
+| `WALLET_TEAM_ID`, `WALLET_PASS_TYPE_ID` | Or set them in the admin |
 
-> **Tip:** The **Signing Status** banner in the admin UI shows whether each certificate is detected.
+> **Tip:** The **Signing Status** panel shows each item as ready only when it is set **and** loadable, so "Ready" means the pass can really be signed.
 
 ### 6. Configure in Admin
 
-Go to `/admin/settings/wallet`, turn on **Show on page**, and fill in the settings:
+Go to `/admin/settings/wallet`, turn on **Downloads enabled** in the header, and fill in the settings:
 
 **Identity:**
 
@@ -93,6 +102,12 @@ Go to `/admin/settings/wallet`, turn on **Show on page**, and fill in the settin
 - **Logo URL** -- Logo image displayed on the pass.
 - **Custom QR URL** -- Optional custom URL for the QR code.
 
+**Context-aware (optional):** a relevant date and up to 10 locations make Wallet surface the pass on the Lock Screen at the right time and place.
+
 ## Pass Preview
 
-The admin page includes a live preview showing how your pass will look with your current colors, logo, and content.
+The admin page includes a live preview showing how your pass will look with your current colors, logo, and content. Field sections are capped the same way in the preview and the real pass.
+
+## Downloading and Sharing
+
+Click **Download pass** in the Settings → Wallet header. You must be signed in; the download is rate limited and never cached. If downloads are switched off the link returns 404, and if signing material is missing or unusable it returns 503 ("Wallet pass is not available yet."); the API logs say why. Open the `.pkpass` on an iPhone or Mac to add it to Wallet, or send it to someone.

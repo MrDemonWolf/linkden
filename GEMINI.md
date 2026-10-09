@@ -1,111 +1,24 @@
-# GEMINI.md - LinkDen Context & Instructions
+# GEMINI.md
 
-This file provides foundational mandates and architectural context for Gemini CLI when working on the LinkDen codebase.
+Instructions for Gemini CLI and other Gemini-based coding agents working in this repository.
 
-## Project Overview
-LinkDen is a **self-hosted, single-user link-in-bio platform** designed for Cloudflare deployment (Workers + D1 + R2). It features a drag-and-drop builder, real-time analytics, Apple Wallet integration, and a themes system.
+## Canonical repository guidance
 
-### Core Architecture (Monorepo)
-- **Runtime:** Bun (v1.3+)
-- **Build System:** Turborepo
-- **Security:**
-    - **Rate Limiting:** Cloudflare-native rate limiting with four tiers: `RL_AUTH` (10/60s), `RL_STRICT` (5/60s), `RL_UPLOAD` (20/60s), and `RL_PUBLIC` (60/60s).
-    - **Signup Lock:** Registration is disabled automatically after the first user is created (single-user model).
-- **Apps:**
-  - `apps/web`: Next.js 16 (React 19), Tailwind CSS v4, Radix UI. Handles the admin panel and public pages.
-  - `apps/server`: Hono API running on Cloudflare Workers. Serves as the tRPC server.
-  - `apps/docs`: Documentation site built with Fumadocs.
-- **Packages:**
-  - `packages/api`: tRPC router definitions and context.
-  - `packages/db`: Drizzle ORM schema and migrations for Cloudflare D1 (SQLite).
-  - `packages/ui`: Shared UI component library (Radix + CVA + Tailwind).
-  - `packages/auth`: Better Auth configuration.
-  - `packages/validators`: Shared Zod schemas for cross-boundary validation.
-  - `packages/env`: Cross-runtime environment variable validation (server/web).
-  - `packages/infra`: Alchemy IaC for Cloudflare deployment.
-  - `packages/email`: React Email templates for contact notifications.
+Read `CLAUDE.md` completely before changing code. It is the single source for the project
+structure, commands, production invariants (single-admin DB trigger, atomic `runBatch` writes,
+the settings registry, `version.json` as the only version source, admin-only wallet pass route,
+and the rest), design patterns and conventions. Do not copy that guidance into this file; it
+drifts.
 
-## Tech Stack
-- **Frontend:** Next.js 16.1.6, React 19.2.4, Tailwind CSS 4.2.1, Radix UI.
-- **Backend:** Hono, tRPC v11, Cloudflare Workers.
-- **Database:** Drizzle ORM, Cloudflare D1 (SQLite).
-- **Auth:** Better Auth (v1.5.5).
-- **Storage:** Cloudflare R2 (for avatars, banners, and OG images).
-- **Tooling:** Bun 1.3.10, Biome, Vitest 4.1.0, Alchemy (IaC).
+Then follow the workflow rules in `AGENTS.md` (git hygiene, scope, tooling, verification). If
+documentation conflicts with checked-in code, verify the actual behavior and update the stale
+documentation in the same change.
 
-## Key Development Commands
-- `bun dev` - Start all applications in development mode.
-- `bun run dev:web` - Start only the web frontend.
-- `bun run dev:server` - Start only the API server.
-- `bun run dev:docs` - Start only the documentation site.
-- `bun run build` - Build all apps and packages.
-- `bun run check-types` - Run TypeScript type checking across the workspace.
-- `bun run db:generate` - Generate Drizzle migrations from schema changes.
-- `bun run db:push` - Push schema changes directly to the database.
-- `bun run db:reset` - Wipe the local database and reset state.
-- `bun run deploy` - Deploy the stack to Cloudflare via Alchemy.
-- `bun run ship` - Alias for deploy.
-- `bun run destroy` - Tear down the Cloudflare infrastructure.
-- `bun run test` - Run the test suite using Vitest.
-- `bun run test:watch` - Run Vitest in watch mode.
-- `bun run reset:password` - CLI tool to reset the admin password.
-- `bun run reset:factory` - CLI tool to wipe the database and reset to factory defaults.
+A few facts that older copies of this file got wrong:
 
-## Engineering Standards & Conventions
-
-### 1. Code Style (Biome)
-The project uses **Biome** for linting and formatting. Always run `biome check --write` before finalizing changes.
-- **Indentation:** Tabs.
-- **Line Width:** 100 characters.
-- **Quotes:** Double quotes.
-- **Semicolons:** Always required.
-
-### 2. Documentation Style (ADHD-Friendly)
-All user-facing documentation and guides MUST be optimized for visual scanning and cognitive ease:
-- **⚡ TL;DR / Summary:** Every major page must start with a concise summary block.
-- **Visual Cues:** Use emojis (🚀, 🛡️, ⚙️, etc.) to anchor concepts and headers.
-- **Checklists:** Use markdown tasks (`- [ ]`) for multi-step instructions (Setup, Install, etc.).
-- **Bolding:** Bold key terms, commands, and absolute requirements.
-- **Chunking:** Keep paragraphs short. Break up long instructions into numbered steps.
-
-### 3. Validation (Zod)
-- All API inputs and environment variables MUST be validated using **Zod**.
-- Shared schemas should reside in `packages/validators/src`.
-
-### 4. Database & Schema
-- The system assumes a **single-user (Admin)** model. Authentication guards in `packages/api/src/index.ts` check for a valid session.
-- Schema changes must be made in `packages/db/src/schema/*.ts` and exported via `packages/db/src/schema/index.ts`.
-- Always run `bun run db:generate` after schema changes.
-
-### 5. UI/UX Patterns
-- **Fonts:** `Sora` for display/headers, `DM Sans` for sans/body, `Geist Mono` for mono (loaded via `next/font` in `apps/web/src/app/layout.tsx`).
-- **Components:** Prefer Radix UI primitives and the shared library in `packages/ui`.
-- **Images:** Use the `ImageUploadField` component for file uploads; it communicates with the R2-backed `/api/upload` endpoint.
-- **Animations:** Use the `useEntranceAnimation` hook for staggered entry effects.
-
-### 6. API Development (tRPC)
-- Define new procedures in `packages/api/src/routers`.
-- Use `publicProcedure` for unauthenticated endpoints (like the public profile) and `protectedProcedure` for admin-only operations.
-
-### 7. Storage (R2)
-- Avatars and banners are stored in Cloudflare R2.
-- Uploads are handled via `POST /api/upload` on the server Worker.
-- **File Validation:** `Content-Length` precheck (5MB max) + magic-byte signature must match the extension (`apps/server/src/lib/upload-validation.ts`) before writing to R2; replaced objects are deleted.
-- Images are served via `GET /api/images/*` with optimized cache headers.
-
-### 8. Audit & Backup
-- **Audit Logging:** Critical admin actions (settings, backups, block changes) are logged to the `audit_log` table via the `logAudit` utility. Failures are captured silently to prevent breaking operations.
-- **Export/Import:** A versioned JSON backup system allows for full migration or partial merging of data.
-- **LinkStack Migration:** Native support for importing LinkStack export files via the `importLinkStack` tRPC mutation.
-
-### 9. Versioning
-- **Update Checker:** The system checks against the GitHub repository's latest release to notify admins of updates. Current versioning is defined in `packages/api/src/routers/version.ts`.
-
-## Directory Navigation
-- **Logic changes:** Look in `packages/api` (routers) or `apps/server` (entry point).
-- **UI changes:** Look in `apps/web/src/components` or `packages/ui/src/components`.
-- **Schema changes:** Look in `packages/db/src/schema`.
-- **Validation changes:** Look in `packages/validators/src`.
-
----
-*Note: This GEMINI.md is a living document. Update it when significant architectural changes occur.*
+- The UI library is Base UI (`@base-ui/react`), not Radix.
+- `useEntranceAnimation` is used on Insights only; admin pages have no page fade.
+- The app version lives in `version.json` only (compared with `compareSemver` in
+  `packages/api/src/utils/version.ts`). Never hardcode a version.
+- There is no `db:push` script. Schema changes go through `bun run db:generate` migrations,
+  which Alchemy applies on `bun dev` / `bun ship`.

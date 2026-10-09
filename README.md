@@ -12,32 +12,37 @@ Own your presence. Host your own link page.
 
 ## Features
 
-- **Drag-and-drop builder** — Visually arrange 7 block types (links,
-  headers, embeds, social icons, forms, vCards, locations) with live preview.
-- **7 built-in themes** — Choose from curated presets with full
-  color customization and social icon shape control per-theme.
+- **Drag-and-drop builder** — Visually arrange 9 block types (links,
+  headers, embeds, contact forms, vCards, locations, images, text,
+  dividers) with a live phone preview.
+- **11 built-in themes** — Curated light/dark presets with colour
+  overrides, custom CSS and social icon shape control.
 - **Analytics dashboard** — Track page views and link clicks with
-  privacy-first data collection.
+  consent-first, privacy-first data collection (no IPs or user agents
+  stored).
 - **Inbox** — Receive visitor contact form messages directly in
-  the admin panel with read/unread management and optional CAPTCHA.
-- **Apple Wallet pass** — Generate and distribute a digital business
-  card as a `.pkpass` file.
+  the admin panel, with optional email notifications and CAPTCHA
+  (Turnstile, reCAPTCHA or hCaptcha).
+- **Apple Wallet pass** — Build a signed digital business card
+  (`.pkpass`) and download it from the admin to share.
 - **vCard export** — Let visitors download your contact details as
   a standard `.vcf` file.
-- **Location block** — Embed an Apple Maps or Google Maps tile showing
-  your physical address.
+- **Location block** — Show your address with a one-tap link to
+  Apple Maps, Google Maps or a custom map.
 - **Backup and restore** — Export all settings, blocks, and data to
   JSON and re-import at any time (replace or merge modes).
 - **LinkStack import** — Migrate your existing LinkStack profile
   directly into LinkDen with one click.
 - **Whitelabel ready** — Fully allowed. Replace all LinkDen branding
   with your own logo, colors, and name. Consent banner included.
-- **100+ social networks** — Built-in branded icons and links for
-  every major platform.
+- **50+ social networks** — Built-in branded icons and links for
+  the major platforms.
 - **Edge-cached** — Served from Cloudflare's global network for
   near-zero-latency response times.
-- **Secure** — Registration lock, XSS protection, CSRF safety,
-  Cloudflare rate limiting, and secret masking baked in.
+- **Secure** — Two-factor sign-in (authenticator app + backup
+  codes), a single-admin lock enforced in the database, optional
+  setup token, same-origin write checks, per-call Cloudflare rate
+  limiting, XSS protection, and secret masking baked in.
 
 ## Getting Started
 
@@ -53,21 +58,23 @@ Quick start:
    cd linkden
    bun install
    ```
-2. Copy the example environment file and fill in your values:
+2. Copy the example environment file and fill in your values
+   (`BETTER_AUTH_SECRET` from `openssl rand -base64 32`):
    ```bash
    cp .env.example .env
    ```
-3. Generate and push the database schema:
-   ```bash
-   bun db:generate
-   bun db:push
-   ```
-4. Start all apps:
+3. Start all apps. `bun dev` runs Alchemy in dev mode, applies the
+   database migrations for you, and needs `ALCHEMY_STATE_TOKEN` in
+   `.env` (see the Cloudflare self-hosting docs). Without a state
+   token, run the API and web app separately instead (see
+   [Setup](#setup) below).
    ```bash
    bun dev
    ```
-5. Open `http://localhost:3001/admin/setup` to create your admin
-   account.
+4. Open `http://localhost:3001/admin/setup` to create your admin
+   account, then turn on two-factor sign-in under Settings → Account.
+   With 2FA on, the login page asks for a code from your
+   authenticator app (or one of your backup codes) after the password.
 
 ## Usage
 
@@ -88,20 +95,21 @@ is managed from the admin panel.
 
 | Layer        | Technology                                           |
 |--------------|------------------------------------------------------|
-| Frontend     | Next.js 16, React 19, Tailwind CSS v4, Radix UI      |
+| Frontend     | Next.js 16, React 19, Tailwind CSS v4, Base UI       |
 | Backend      | Hono, tRPC v11, Cloudflare Workers                   |
 | Database     | Drizzle ORM, Cloudflare D1 (SQLite)                  |
-| Auth         | Better Auth (email/password, 2FA, magic link)        |
+| Auth         | Better Auth (email/password, TOTP 2FA, magic link)   |
 | Storage      | Cloudflare R2                                        |
 | Build system | Bun 1.3.10, Turborepo                                |
-| Testing      | Vitest, @testing-library/react                       |
-| Deployment   | Cloudflare Workers + Pages |
+| Testing      | Vitest, @testing-library/react, Playwright           |
+| Deployment   | Cloudflare Workers via Alchemy IaC                   |
 
 ## Development
 
 ### Prerequisites
 
 - [Bun](https://bun.sh) v1.3.10 or later
+- [Node.js](https://nodejs.org) 24 (Alchemy runs under Node)
 - [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/)
   for local Cloudflare Workers emulation
 - A Cloudflare account (free tier works for local development)
@@ -114,27 +122,38 @@ is managed from the admin panel.
    ```
 2. Configure environment variables:
    ```bash
-   # apps/server/.env
+   # apps/server/.dev.vars (read by wrangler dev; apps/server/.env by bun dev)
    BETTER_AUTH_SECRET=your-secret-here        # openssl rand -base64 32
    BETTER_AUTH_URL=http://localhost:3000
    CORS_ORIGIN=http://localhost:3001
 
    # apps/web/.env
    NEXT_PUBLIC_SERVER_URL=http://localhost:3000
+   NEXT_PUBLIC_SITE_URL=http://localhost:3001
    ```
-3. Generate and push the database schema:
-   ```bash
-   bun db:generate
-   bun db:push
-   ```
-4. Start all apps:
+   The API refuses to run auth with an empty `BETTER_AUTH_SECRET`
+   (sign-in answers 503 and `/api/health` reports
+   `"auth": "misconfigured"`); outside localhost it must also be 32+
+   characters.
+3. Start the apps. Either everything through Alchemy (applies
+   migrations automatically, needs `ALCHEMY_STATE_TOKEN`):
    ```bash
    bun dev
    ```
+   or the API and web app on their own (no Alchemy state needed;
+   apply the migrations to the local D1 once first):
+   ```bash
+   cd apps/server && for f in ../../packages/db/src/migrations/*.sql; do bunx wrangler d1 execute linkden-db --local --file="$f" --yes; done; cd ../..
+   bun dev:server
+   bun dev:web
+   ```
+   There is no `db:push`: schema changes go through
+   `bun db:generate` migrations, which Alchemy applies on `bun dev`
+   and `bun ship`.
 
 ### Development Scripts
 
-- `bun dev` — Start all apps (web :3001, server :3000, docs :3002)
+- `bun dev` — Start all apps via Alchemy (web :3001, server :3000, docs :3002; needs `ALCHEMY_STATE_TOKEN`)
 - `bun dev:web` — Start the Next.js frontend only
 - `bun dev:server` — Start the Cloudflare Workers API only
 - `bun dev:docs` — Start the documentation site only
@@ -143,13 +162,21 @@ is managed from the admin panel.
 - `bun run test` — Run the test suite with Vitest (use `bun run test`, not `bun test` — the latter invokes Bun's own runner)
 - `bun run test:watch` — Run tests in watch mode
 - `bun run test:coverage` — Run tests with coverage and thresholds
-- `bun db:generate` — Generate a Drizzle migration from schema changes
-- `bun db:push` — Push the current schema to the local D1 database
-- `bun db:reset` — Wipe the local database state (`.wrangler/state`)
-- `bun reset:password` — Reset the admin account password via CLI
-- `bun reset:factory` — Factory-reset all data and settings
+- `bun run test:e2e` — Run the Playwright suite (`PW_BASE_URL` / `PW_API_URL` override the origins)
+- `bun db:generate` — Generate a Drizzle migration from schema changes (contributors only)
+- `bun db:reset` — Wipe both local dev databases (`bun dev` and `bun dev:server` stores)
+- `bun reset:password -- --email <email> [--disable-2fa] [--remote] [--db <name>]` — Reset
+  the admin password. The password is read from a hidden prompt, stdin or
+  `LINKDEN_RESET_PASSWORD` (never argv), hashed with Better Auth's scrypt, and every
+  session is signed out. Locally it updates both dev stores; `--remote` targets the
+  production D1 (`--db`, else `LINKDEN_DB_NAME`, else `linkden-db`; run from the repo root)
+- `bun reset:factory -- --confirm [--remote] [--confirm-db <name>]` — Factory-reset all
+  data in one atomic step (schema and migration history kept); `--remote` asks you to
+  type the database name
 - `bun ship` — Build and deploy to Cloudflare via Alchemy IaC
-- `bun destroy` — Tear down all Cloudflare infrastructure
+- `bun run destroy` — Tear down the Cloudflare Workers. The `prod` stage needs
+  `LINKDEN_CONFIRM_DESTROY_PROD=yes`, and production D1/R2 are kept once a deploy has
+  recorded `delete: false`
 
 ### Code Quality
 
@@ -175,7 +202,7 @@ linkden/
 │   ├── email/        # React Email templates
 │   ├── env/          # Shared environment variable validation
 │   ├── infra/        # Alchemy IaC for Cloudflare deployment
-│   ├── ui/           # UI component library (Radix + CVA + Tailwind)
+│   ├── ui/           # UI component library (Base UI + CVA + Tailwind)
 │   └── validators/   # Shared Zod validation schemas
 ├── scripts/          # CLI utilities (reset-password, factory-reset)
 ├── docs/             # Compliance reports (GDPR, ISO 27001)

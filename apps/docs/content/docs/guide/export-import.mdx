@@ -10,51 +10,55 @@ Back up your configuration, move between instances, or migrate from LinkStack --
 ## Exporting Data
 
 1. Go to `/admin/settings/data`.
-2. Click **Export Data**.
+2. Click **Export**.
 3. A JSON file downloads to your device.
 
 ### What's Included
 
-- **Links and blocks** -- Order, visibility, and settings.
-- **Appearance** -- Theme, colors, fonts, button styles, custom CSS.
-- **Profile** -- Display name, bio, and profile image reference.
-- **vCard** -- All vCard fields.
-- **Wallet** -- Apple Wallet pass configuration (not certificates).
-- **Pages** -- Custom pages (privacy policy, terms, etc.).
-- **Settings** -- General settings including whitelabel toggle.
+- **Blocks** -- Order, visibility, schedule, and per-block settings.
+- **Settings** -- Profile, appearance, SEO, branding, vCard, consent, wallet design, and other non-secret settings.
+- **Social networks** -- Your social links.
+- **Contact messages** -- Inbox submissions.
+- **`images`** -- A list of the `/api/images/...` files your settings and blocks reference, plus a `notes` field.
 
 ### What's Not Included
 
 - Analytics data (page views, clicks)
-- Uploaded images
-- Environment variables or secrets
+- Uploaded image files (only their URLs; keep the originals — after a reset, unreferenced images are deleted by the next daily cleanup)
+- Secrets: email API key, CAPTCHA secret, MapKit token, wallet signing keys, and environment variables
+- Your admin account and password
 
 ## Importing LinkDen Data
 
 1. Go to `/admin/settings/data`.
-2. Click **Import Data**.
-3. Select your JSON export file.
-4. Review the import summary.
-5. Click **Confirm Import**.
+2. Click **Import**.
+3. Select your JSON export file (10 MB max).
+4. Review the summary (for example "12 blocks, 34 settings, 5 social links") and confirm.
 
-Importing overwrites matching records and creates new ones for anything that doesn't exist yet.
+The whole import runs as one atomic step: it either fully applies or changes nothing.
+
+The admin imports in **merge** mode: blocks, settings and social links with matching ids are written over your current values, new ones are added, and nothing else is deleted. Up to the newest 500 messages are added; existing messages are never overwritten.
+
+The API (`backup.import`) also has a **replace** mode that makes the page match the backup: non-secret settings are replaced (saved secrets are kept), blocks are updated in place and blocks missing from the backup are removed (restored blocks keep their click history), and messages that are not in the backup are deleted. The newest 500 messages from the backup are written; older ones already stored are left alone.
+
+Rows that fail validation (for example a `javascript:` link) are skipped and counted in the result instead of being imported. Limits per import: 500 blocks, 500 settings, 5,000 messages in the file (500 written). Older backups still import: retired block types are converted, and dates in either ISO or epoch format are accepted.
 
 ## Migrating from LinkStack
 
 LinkDen can import [LinkStack](https://linkstack.org/) exports directly:
 
 1. Export your data from LinkStack as JSON.
-2. In LinkDen, go to `/admin/settings/data` and click **Import Data**.
-3. Select the LinkStack file -- LinkDen detects the format automatically.
-4. Review the import summary and click **Confirm Import**.
+2. In LinkDen, go to `/admin/settings/data` → **Migration** and open the LinkStack import.
+3. Select the LinkStack file and choose what to import. Importing the profile or theme **replaces** your current values.
+4. Review the result.
 
 LinkStack fields are mapped as follows:
 
 | LinkStack | LinkDen |
 |-----------|---------|
-| Links | Link blocks |
+| Links (http/https only) | Link blocks, appended after your existing blocks. Popular networks get their brand icon; other buttons get a matching Lucide icon |
 | Title | Display name |
 | Bio | Bio |
-| Theme | Closest matching theme |
+| Theme | Imported only when its name matches a LinkDen preset |
 
-The import summary highlights any fields that couldn't be mapped.
+Links that are not `http(s)` are skipped and reported. A page can hold up to 500 blocks in total.

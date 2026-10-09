@@ -1,11 +1,11 @@
 ---
 title: Social Networks
-description: Set up social media icons from 100+ supported platforms.
+description: Add social media links with brand icons that show under your profile.
 ---
 
 # Social Networks
 
-LinkDen includes 100+ social network icons from [Simple Icons](https://simpleicons.org/). Manage them at `/admin/links/social`, then display them on your page with a Social Icons block.
+LinkDen includes 50+ social network icons based on [Simple Icons](https://simpleicons.org/). Manage them at `/admin/links/social`; active networks appear as a row of icons under your profile on the public page (there is no separate block to add).
 
 ## Finding and Activating Networks
 
@@ -17,34 +17,20 @@ Use the search box to quickly find any network by name.
 
 Filter networks by category:
 
-- **Social** -- Twitter/X, Instagram, Facebook, TikTok, Threads, Bluesky, Mastodon, etc.
-- **Video** -- YouTube, Twitch, Vimeo.
-- **Music** -- Spotify, SoundCloud, Apple Music, Bandcamp.
-- **Development** -- GitHub, GitLab, Bitbucket, Stack Overflow, CodePen.
-- **Professional** -- LinkedIn, Dribbble, Behance.
-- **Messaging** -- Discord, Telegram, WhatsApp, Signal.
-- **Gaming** -- Steam, Epic Games, PlayStation, Xbox, Nintendo.
-- **Other** -- Reddit, Pinterest, Medium, Substack, Patreon, Ko-fi, and more.
+- **Social Media**
+- **Messaging**
+- **Developer**
+- **Business**
+- **Content**
+- **Music & Audio**
+- **Gaming**
 
 ### Toggle and URL
 
-Each network has a toggle switch and a URL field. Turn a network on, then enter the URL to your profile on that platform.
+Each network has a toggle switch and a username/URL field. Turn a network on, then enter your handle, an `@handle`, or paste your full profile URL (with or without `https://` or `www.`); LinkDen stores a clean link. Switching a network off keeps it in your list; use the trash button to remove it. Changes are saved with the save bar.
 
 > **Tip:** Dark brand icons are automatically inverted in dark mode so they stay visible regardless of your theme.
 
-## Adding Social Icons to Your Page
+## How They Appear
 
-Once you've activated the networks you want:
-
-1. Go to `/admin/links`.
-2. Click **Add Block** and select **Social Icons**.
-3. The block automatically pulls in your active networks.
-4. Customize the display:
-
-| Option | Description |
-|--------|-------------|
-| Icon size | Size of each icon |
-| Icon style | Filled, outlined, or rounded |
-| Show labels | Display network names below icons |
-| Spacing | Gap between icons |
-| Use brand colors | Use each network's official color |
+Active networks show as icons under your name and bio. Choose **circle** or **rounded square** icons under Design → Theme (**Social icon shape**). Style them further with Custom CSS (`.ld-social-block`).

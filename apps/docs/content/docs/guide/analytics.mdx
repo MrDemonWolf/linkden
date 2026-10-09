@@ -11,7 +11,7 @@ See how your page is performing at `/admin/insights`. LinkDen tracks visitor act
 
 ### Time Period
 
-Filter all data by **7 days** (default), **30 days**, or **90 days**. Changing the period updates every chart and stat on the page.
+Filter all data by **7 days** (default), **30 days**, **90 days**, or **All time**. Changing the period updates every chart and stat on the page. Days are counted in the timezone set under **Settings → Account** (UTC when unset).
 
 ### Stat Cards
 
@@ -20,9 +20,9 @@ Two cards at the top give you the big picture:
 - **Total Views** -- Page views for the selected period.
 - **Total Clicks** -- Link clicks for the selected period.
 
-### Views Over Time
+### Views vs Clicks
 
-A bar chart showing daily page views. Hover over any bar to see the exact count for that day.
+A chart of daily page views and link clicks (Clicks is the dashed line). Every day of the period is shown, with zero on days without traffic. Hover a day for exact counts; screen readers get a table of the daily numbers.
 
 ### Top Links, Referrers, and Countries
 
@@ -34,19 +34,22 @@ Three cards below the chart break down your traffic:
 
 ## What Gets Tracked
 
-**Page views** record the timestamp, referrer, and visitor country each time someone visits your public page.
+**Page views** record the timestamp, the referring site's hostname (for example `instagram.com`, never the full URL), and the visitor's country.
 
-**Link clicks** record which link was clicked, the referrer, and visitor country.
+**Link clicks** record which link was clicked, the referring hostname, and the visitor's country.
+
+Raw rows are kept for **365 days** and then deleted by the daily retention job.
 
 ## Privacy
 
 LinkDen's analytics are designed to respect your visitors' privacy:
 
-- No cookies are set for tracking.
-- No IP addresses are stored. Country data comes from Cloudflare's request header.
-- No third-party scripts are loaded on the public page.
+- **Consent first (by default):** with the consent banner on, nothing is recorded until the visitor accepts analytics. If you turn the banner off, every visit is recorded without asking. See [Consent Banner](/docs/guide/appearance#-consent-banner).
+- No tracking cookies. The visitor's choice is kept in their browser's local storage.
+- No IP addresses or user-agent strings are stored. Country comes from Cloudflare's request header.
+- LinkDen adds no tracking scripts. Embed blocks and CAPTCHA load third-party content (see the [privacy page](/docs/privacy-policy)).
 - No fingerprinting techniques are used.
-- All data lives in your own database and is never sent to an external service.
+- Analytics data lives in your own database and is never sent to an external service.
 
 ## Next Steps
 

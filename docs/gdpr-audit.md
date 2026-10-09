@@ -8,6 +8,33 @@
 
 ---
 
+## Status update (2026-10-08)
+
+The findings below are the original 2026-03-31 audit and are kept as written. This table records where each one stands in the code as of 2026-10-08. It is a code review, not legal advice.
+
+| # | Status | Evidence |
+|---|--------|----------|
+| 1 | ✅ Resolved (mechanism) | Contact form has a required consent checkbox (`contactSubmissionSchema.consent: z.literal(true)`, `packages/validators/src/blocks.ts`) linked to the privacy notice. The operator still has to state the lawful basis in their notice. |
+| 2 | ✅ Resolved while the consent banner is on (default) | Analytics run only after the visitor accepts (`hasAnalyticsConsent`, `components/public/consent-banner.tsx`). No IP and no user agent are stored (`requestMeta` returns `{ip, country}` only; `user_agent` written NULL); referrer is kept as a hostname only. 🟡 Turning the banner off records every visitor without consent; the docs and admin warn about this. |
+| 3 | 🟡 Partial | The consent banner and contact form link the privacy notice (`branding_pp_url`, URL or in-app text), but configuring a notice is still optional. |
+| 4 | ✅ Resolved | `public.getPage` reads only `user.name` / `user.image` and `PUBLIC_PAGE_SETTING_KEYS`; no email. |
+| 5 | 🔴 Open | No visitor self-service erasure; deletion is admin-only (single, bulk, or full reset). Document an out-of-band process in the notice. |
+| 6 | ✅ Resolved | Daily retention cron: analytics 365d, contacts 365d, audit log 180d, expired sessions and verification tokens deleted (`packages/db/src/retention.ts`, `packages/validators/src/retention.ts`). Values differ from §7's recommendations; see the "Implemented" column there. |
+| 7 | 🟡 Operator task | DPAs are executed by each operator; see the updated processor register (§5). |
+| 8 | 🟡 Operator task | CAPTCHA (Turnstile, reCAPTCHA v2, hCaptcha) now renders on the contact form and the server sends `remoteip`. The shipped privacy page lists the providers; the operator's notice must too. |
+| 9 | 🟡 Partial | `backup.export` gives the admin a JSON export of their data. |
+| 10 | 🔴 Open | Secrets in `site_settings` are masked in API responses and excluded from backups, but stored in plaintext in D1. |
+| 11 | ✅ Resolved | `audit_log` table + `logAudit` for settings, imports, deletes, danger resets, wallet changes and `contact.email_failed`; no IP or UA stored. |
+| 12 | 🟡 Partial | Structured JSON error logs (PII-redacted, `apps/server/src/lib/log.ts`), `/api/health`, and failing cron runs are visible in Workers observability. No breach procedure is documented. |
+| 13 | ✅ Resolved | Birthday is optional and validated. |
+| 14 | ✅ Resolved | "Where did we meet?" is asked only when the block enables `showWhereMet` or uses the `connect` preset (`shouldAskWhereMet`). |
+| 15 | ✅ Resolved while the banner is on | Same as #2: the default is no analytics until opt-in. |
+| 16 | ✅ Resolved | Footer "Cookie settings" link reopens the consent preferences (`openConsentPreferences`); choices expire after 12 months or on a consent-version bump. |
+
+Data flows added since the audit: third-party embed providers (YouTube, Spotify, SoundCloud, custom; click-to-load while the banner is on), CAPTCHA providers, Gravatar (admin panel only, email MD5 when no avatar is uploaded) and a server-side GitHub update check (no personal data). Location blocks contact no map provider (outbound link only).
+
+---
+
 ## 1. Personal Data Identified
 
 | Data Type | Location | Classification | Art. 4(1) Category |
@@ -85,6 +112,10 @@
 | **Resend** (api.resend.com) | Transactional email delivery | User email addresses | EU SCCs available | 🟡 DPA must be requested |
 | **Google reCAPTCHA** (optional) | CAPTCHA verification | Visitor IP, browser fingerprint | EU SCCs | 🟡 Google's DPA covers this; must be verified |
 | **Apple** (Wallet, optional) | Wallet pass signing | Pass metadata only | US company — SCCs required | 🟡 Document if Wallet feature is enabled |
+| **hCaptcha** (optional, added 2026-10) | CAPTCHA verification | Visitor IP, browser signals | EU SCCs | 🟡 Operator must review the provider DPA |
+| **Embed providers** (YouTube, Spotify, SoundCloud, custom; optional, added 2026-10) | Media embeds on the public page | Visitor IP and browser data (loaded directly by the visitor's browser; click-to-load while the consent banner is on) | Provider-specific | 🟡 Disclose in the operator's notice |
+| **Gravatar** (Automattic; added 2026-10) | Admin avatar fallback | MD5 hash of the admin's email (admin panel only) | Provider-specific | 🟢 Admin-only; disclose or upload an avatar |
+| **GitHub** (added 2026-10) | Update check | None (server-side request) | — | ✅ No personal data |
 
 ---
 
@@ -101,14 +132,15 @@
 
 ## 7. Data Retention Recommendations
 
-| Data Category | Recommended Retention | Justification |
-|--------------|----------------------|---------------|
-| Session records | 30 days after session expiry | Sessions have no ongoing value after expiry |
-| Auth tokens (magic link, verification) | Delete immediately on use or 24h expiry | Already time-limited; purge expired records |
-| Analytics (page views, link clicks) | 90 days rolling | Provides sufficient trend analysis; minimises retention |
-| Contact form submissions | 2 years | Reasonable for business contact management |
-| User account data | Duration of service + 30 days after deletion request | Art. 17 compliance |
-| Backup exports | Per admin discretion, but document in privacy policy | Backups are controller responsibility |
+| Data Category | Recommended Retention | Implemented (2026-10-08) | Justification |
+|--------------|----------------------|--------------------------|---------------|
+| Session records | 30 days after session expiry | Deleted daily once expired | Sessions have no ongoing value after expiry |
+| Auth tokens (magic link, verification) | Delete immediately on use or 24h expiry | Magic links expire in 10 min; expired verification rows deleted daily | Already time-limited; purge expired records |
+| Analytics (page views, link clicks) | 90 days rolling | 365 days | Provides sufficient trend analysis; minimises retention |
+| Contact form submissions | 2 years | 365 days | Reasonable for business contact management |
+| Audit log | — | 180 days | Accountability (Art. 5(2)) |
+| User account data | Duration of service + 30 days after deletion request | Until a factory reset | Art. 17 compliance |
+| Backup exports | Per admin discretion, but document in privacy policy | Nightly D1 dumps kept 30 days in R2 | Backups are controller responsibility |
 
 ---
 
@@ -152,23 +184,25 @@ As a self-hosted single-user application, the admin is the **data controller** u
 
 ### Priority Actions (Ordered by Severity)
 
+> **Open items as of 2026-10-08** (see the status update at the top): #3 notice reachability (make a privacy notice mandatory), #5 visitor erasure, #10 secrets at rest, #12 breach procedure, plus the operator tasks #7/#8 (DPAs, disclosure). Items struck through below are done.
+
 **Immediate (🔴 High — address before going live with visitor data):**
-1. **Remove email from `getPage` response** — one-line fix in `packages/api/src/routers/public.ts`
-2. **Add privacy notice to contact form** — link to a GDPR-compliant privacy policy
-3. **Add consent checkbox to contact form** — or document and implement a LIA
-4. **Implement analytics opt-out or anonymisation** — or add cookie consent banner
-5. **Draft and publish a GDPR-compliant privacy notice** — covering all processing activities
+1. ~~**Remove email from `getPage` response**~~ — resolved
+2. **Add privacy notice to contact form** — partial: linked when configured, not yet mandatory
+3. ~~**Add consent checkbox to contact form**~~ — resolved
+4. ~~**Implement analytics opt-out or anonymisation**~~ — resolved (consent banner, on by default; no IP/UA stored)
+5. **Draft and publish a GDPR-compliant privacy notice** — operator task
 
 **Short-term (🟡 Medium — within 30 days):**
-6. **Implement data erasure request flow** for contact form submitters
-7. **Execute DPAs** with Cloudflare and Resend
-8. **Define and implement data retention policies** with automated deletion (Cloudflare CRON)
-9. **Encrypt or migrate application secrets** out of the `site_settings` DB table
-10. **Implement audit logging** for admin actions
-11. **Document breach response procedure**
+6. **Implement data erasure request flow** for contact form submitters — open
+7. **Execute DPAs** with Cloudflare and Resend (and any optional processor in §5) — operator task
+8. ~~**Define and implement data retention policies**~~ — resolved (daily cron)
+9. **Encrypt or migrate application secrets** out of the `site_settings` DB table — open
+10. ~~**Implement audit logging** for admin actions~~ — resolved
+11. **Document breach response procedure** — open
 
 **Ongoing (🟢 Low — best practice improvements):**
-12. Review `whereMet` field necessity
-13. Make birthday optional with clearer UI guidance
-14. Default analytics to disabled (privacy by design, Art. 25)
-15. Complete RoPA documentation for all processing activities
+12. ~~Review `whereMet` field necessity~~ — resolved (opt-in per form)
+13. ~~Make birthday optional with clearer UI guidance~~ — resolved
+14. ~~Default analytics to disabled~~ — resolved while the consent banner is on (default)
+15. Complete RoPA documentation for all processing activities — operator task (update Entry 2: analytics data is now country + referrer hostname, 365 days)

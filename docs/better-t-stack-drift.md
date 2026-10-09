@@ -33,6 +33,12 @@ dev-friendly auth cookies (`secure` derived from URL scheme), and a standalone `
 | Fix 6 latent type errors surfaced by newly-enabled ui typecheck | `packages/ui/src/color-contrast.ts` |
 | Restore `skipValidation: !!process.env.SKIP_ENV_VALIDATION` (CI build escape hatch) | `packages/env/src/web.ts` |
 
+> **Superseded (2026-10):** `packages/env/src/web.ts` no longer uses t3-env's `createEnv` or zod
+> (they shipped all of zod to every client page). It is a small hand-written validator with the
+> same import path and exported shape. It still validates at import time and at build time
+> (`next.config.ts` imports it), and still honours `SKIP_ENV_VALIDATION`. `packages/env/src/server.ts`
+> just re-exports `env` from `cloudflare:workers`.
+
 ---
 
 ## Batch A — version alignment (low risk, needs `bun install`)

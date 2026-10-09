@@ -1,18 +1,18 @@
 ---
 title: Blocks
-description: Add links, headers, embeds, social icons, forms, vCard buttons, and location maps to your page with the drag-and-drop builder.
+description: Add links, headers, embeds, contact forms, vCard buttons, locations, images, text, and dividers to your page with the drag-and-drop builder.
 ---
 
 # 🧱 Blocks
 
-Build your page by adding blocks at `/admin/links`. LinkDen supports **7 block types** that you can mix, match, and reorder however you like.
+Build your page by adding blocks at `/admin/links`. LinkDen supports **9 block types** that you can mix, match, and reorder however you like. Social icons are not a block: add them at `/admin/links/social` and they appear under your profile.
 
 ### ⚡ Summary
-- **7 types:** Link, Header, Social Icons, Embed, Form, vCard, Location.
+- **9 types:** Link, Header, Embed, Connect (contact form), vCard, Location, Image, Text, Divider.
 - **Drag & Drop:** Reorder anything.
 - **Preview:** Live phone frame on the right.
 - **Schedule:** Show/hide blocks automatically by date.
-- **Style:** Custom colors, borders, and animations per block.
+- **Style:** Custom colors, borders, and shadows per block.
 
 ---
 
@@ -20,41 +20,46 @@ Build your page by adding blocks at `/admin/links`. LinkDen supports **7 block t
 
 ### 🔗 Link
 The most common block. A clickable button to any URL.
-- **Includes:** Title, URL, Icon.
-- **Styles:** Outline, fill, text alignment, emoji.
+- **Includes:** Title, URL, Icon (Lucide icons and brand logos).
+- **Card style:** Button, Thumbnail (small image), or Featured image (16:9).
+- **Styles:** Colors, border radius, shadow, alignment.
 
 ### 📝 Header
 A text heading to organize your page.
 - **Includes:** Title text.
-- **Styles:** H1-H6, divider lines, alignment.
-
-### 🌐 Social Icons
-A row of icons linking to your profiles.
-- **Source:** Uses networks from `/admin/links/social`.
-- **Styles:** Size, spacing, brand colors (auto dark mode).
+- **Styles:** H1-H6, alignment.
+- **Layout for blocks below:** List, grid, or carousel.
 
 ### 📺 Embed
 Embed media directly on your page.
 - **Supported:** YouTube, Spotify, SoundCloud, or **any custom URL**.
-- **Styles:** Aspect ratio, max width.
+- **Privacy:** while the consent banner is on, an embed shows a click-to-load placeholder until the visitor allows **Embedded media**, because the provider receives the visitor's IP once it loads.
 
-### ✉️ Form
-An inline contact form. Visitors message you directly.
-- **Presets:** Contact, Feedback, RSVP.
-- **Styles:** Button text, success messages.
+### ✉️ Connect (contact form)
+An inline contact form. Visitors message you directly; messages land in your Inbox.
+- **Fields:** First and last name, email, an optional message, a required consent checkbox, and an optional **Ask where we met** question (off unless you switch it on or use the Connect preset).
+- **Spam protection:** CAPTCHA when configured, plus a hidden honeypot field.
 > **Note:** Turn on **Accepting messages** at `/admin/inbox` first.
 
 ### 📇 vCard
-A **"Download Contact"** button.
-- **Action:** Generates a `.vcf` file for visitors.
-- **Data:** Pulls from your profile settings.
+A **"Save contact"** button.
+- **Action:** Downloads a `.vcf` file with this block's contact details.
+- **Note:** the footer **Save vCard** button uses the first visible vCard block, or the vCard under Design → Branding when there is none.
 
 ### 📍 Location
-An embedded map showing a physical address.
-- **Includes:** Address text, optional label.
-- **Provider:** Apple Maps (via MapKit JS) when configured, Google Maps embed otherwise.
-- **Styles:** Height, zoom level.
-> **Note:** MapKit JS token is optional. See `/admin/settings/integrations` → **MapKit** to enable Apple Maps.
+An address card with an optional "open in maps" link.
+- **Includes:** Address text, optional coordinates.
+- **Link:** Google Maps, Apple Maps, a custom URL, or none.
+> **Note:** No map is embedded on the page, so no map provider is contacted until the visitor clicks the link.
+
+### 🖼️ Image
+A single uploaded image with alt text, an optional caption, and an aspect ratio (auto, 16:9, 1:1, 4:5).
+
+### 🔤 Text
+A paragraph of plain text (up to 2,000 characters) with alignment.
+
+### ➖ Divider
+A visual separator between sections: a line, dots, or empty space.
 
 ---
 
@@ -65,15 +70,17 @@ An embedded map showing a physical address.
 2. Click **Add Block**.
 3. Select a type.
 
+New blocks start **unpublished**; **Publish n new** in the header puts them on your page. Editing, reordering or hiding a block that is already published takes effect immediately.
+
 ### Editing
-Click any block to open the slide-in panel:
+Click any block to open the editor panel:
 - **Content:** Main fields (URL, Title).
 - **Style:** Colors, Icons, Borders.
-- **Options:** Animation, `newTab`, `noFollow`.
 - **Schedule:** Set start/end dates for visibility.
+- **Advanced:** Raw config (must be a JSON object).
 
 ### Reordering
-**Drag & Drop** any block by the grip handle on the left. Autosaves immediately.
+**Drag & Drop** any block by the grip handle on the left, or use the keyboard (the new position is announced). Saves immediately.
 
 ### Hiding (Visibility)
 Click the **Eye Icon** 👁️ to toggle visibility without deleting.
@@ -81,7 +88,7 @@ Click the **Eye Icon** 👁️ to toggle visibility without deleting.
 - Perfect for seasonal links.
 
 ### Deleting
-Click the **Trash Icon** 🗑️ to permanently remove.
+Click the **Trash Icon** 🗑️ and confirm. **Undo** in the toast puts the block back in its old spot, but its click history is gone for good.
 
 ---
 

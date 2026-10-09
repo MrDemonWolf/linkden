@@ -36,26 +36,31 @@ Cloudflare D1 (SQLite)
 
 ## Authentication
 
-LinkDen uses [Better Auth](https://www.better-auth.com/) with email/password sign-in.
+LinkDen uses [Better Auth](https://www.better-auth.com/) with email/password sign-in, optional TOTP two-factor and an optional magic link. Auth routes live under `/api/auth/*`.
 
 ### Session Flow
 
-1. Create an admin account during first-time setup at `/admin/setup`.
-2. Better Auth issues a secure session cookie.
-3. Sign in at `/admin/login` on subsequent visits.
-4. The cookie is sent with every API request to authenticate protected routes.
+1. Create an admin account during first-time setup at `/admin/setup` (with the `x-setup-token` header when `SETUP_TOKEN` is set).
+2. Sign in at `/admin/login`. With two-factor on, Better Auth answers the password step with `twoFactorRedirect` and the login page asks for a TOTP or backup code.
+3. Better Auth issues a secure session cookie, sent with every API request to authenticate protected procedures.
 
 ### Environment Variables
 
 | Variable | Description |
 |----------|-------------|
-| `BETTER_AUTH_SECRET` | Secret key for session signing |
+| `BETTER_AUTH_SECRET` | Secret key for session signing (32+ characters outside localhost, or auth answers 503) |
 | `BETTER_AUTH_URL` | Base URL for the auth server (API server URL) |
 | `CORS_ORIGIN` | Trusted origin for the frontend |
 
 Generate a secret with: `openssl rand -base64 32`
 
 > **Tip:** If you hit 401 errors, double-check that `CORS_ORIGIN` matches your frontend URL exactly -- including protocol, no trailing slash.
+
+### Request rules
+
+- `POST` requests to `/trpc/*` must come from `CORS_ORIGIN` or the API's own origin (403 otherwise). Bodies are capped at 1 MB (16 MB for `backup.*`).
+- Batched requests (`/trpc/a,b?batch=1`) may contain at most 20 calls. `public.submitContact`, `public.trackView` and `public.trackClick` are rate limited **per call**, so a batch spends one token for each of them.
+- Errors never include stack traces; unexpected failures return "Internal server error".
 
 ---
 
@@ -65,99 +70,113 @@ All endpoints live at `/trpc/<router>.<procedure>`. **Public** procedures need n
 
 ### Blocks
 
-Manage content blocks on your page.
+Manage content blocks on your page. New blocks start as drafts (unpublished); edits to published blocks go live immediately.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `blocks.list` | Query | Protected | Get all blocks ordered by position |
-| `blocks.get` | Query | Protected | Get a single block by ID |
-| `blocks.create` | Mutation | Protected | Create a new block |
+| `blocks.list` | Query | Protected | All blocks ordered by `(position, createdAt, id)` |
+| `blocks.create` | Mutation | Protected | Create a block. The server appends it at the end (`MAX(position)+1`) unless it is an Undo re-insert, which goes back to its old slot |
 | `blocks.update` | Mutation | Protected | Update block fields by ID |
-| `blocks.delete` | Mutation | Protected | Delete a block by ID |
-| `blocks.reorder` | Mutation | Protected | Batch update block positions |
+| `blocks.delete` | Mutation | Protected | Delete a block by ID (its click history is deleted too) |
+| `blocks.reorder` | Mutation | Protected | Batch update block positions (max 500) |
 | `blocks.toggleEnabled` | Mutation | Protected | Toggle block visibility |
+| `blocks.publishAll` | Mutation | Protected | Publish every draft block |
+| `blocks.hasDraft` | Query | Protected | `{ hasDraft }`: whether any block is unpublished |
 
 ### Settings
 
-Manage site-wide key-value configuration.
+Manage site-wide key-value configuration. Every key and value is checked against the settings registry; secret values are masked when read.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
 | `settings.get` | Query | Protected | Get a single setting by key |
-| `settings.getAll` | Query | Protected | Get all settings as key-value map |
+| `settings.getAll` | Query | Protected | Get all settings as a key-value map |
 | `settings.update` | Mutation | Protected | Upsert a single key-value pair |
-| `settings.updateBulk` | Mutation | Protected | Upsert multiple key-value pairs |
+| `settings.updateBulk` | Mutation | Protected | Upsert multiple key-value pairs in one atomic batch |
 
-### Contacts
+### Forms (Inbox)
 
-Handle contact form submissions.
+Contact form submissions. Filters: `isRead?: boolean`, `blockId?: string`.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `contacts.list` | Query | Protected | List submissions (filterable by read status) |
-| `contacts.get` | Query | Protected | Get a single submission by ID |
-| `contacts.markRead` | Mutation | Protected | Mark submission as read |
-| `contacts.markUnread` | Mutation | Protected | Mark submission as unread |
-| `contacts.delete` | Mutation | Protected | Delete a submission |
-| `contacts.unreadCount` | Query | Protected | Count of unread submissions |
+| `forms.list` | Query | Protected | Newest first, paged with `limit` (1-100, default 50) and `offset`, plus the filters |
+| `forms.count` | Query | Protected | `{ total }` for the same filters, so "n of total" matches the list |
+| `forms.markRead` | Mutation | Protected | Mark a submission as read |
+| `forms.markUnread` | Mutation | Protected | Mark a submission as unread |
+| `forms.delete` | Mutation | Protected | Delete a submission |
+| `forms.markAllRead` | Mutation | Protected | Mark every submission as read |
+| `forms.deleteMultiple` | Mutation | Protected | Delete up to 100 submissions by ID |
+| `forms.unreadCount` | Query | Protected | Count of unread submissions |
 
 ### Analytics
 
-Track page views and clicks. All queries accept an optional `period` parameter: `"7d"`, `"30d"`, or `"90d"`.
+Page views and clicks. Every query takes `{ period: "7d" | "30d" | "90d" | "all" }` (default `"7d"`). Daily buckets follow the admin's timezone setting.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `analytics.overview` | Query | Protected | Total views and clicks for period |
+| `analytics.overview` | Query | Protected | Total views and clicks for the period |
 | `analytics.viewsOverTime` | Query | Protected | Daily view counts |
 | `analytics.clicksOverTime` | Query | Protected | Daily click counts |
 | `analytics.topLinks` | Query | Protected | Top 10 links by clicks |
-| `analytics.referrers` | Query | Protected | Top 10 referrer domains |
+| `analytics.referrers` | Query | Protected | Top 10 referrer hostnames |
 | `analytics.countries` | Query | Protected | Top 20 countries by views |
 
 ### Social
 
-Manage social network entries for Social Icons blocks.
+Social network links shown under the profile.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `social.list` | Query | Protected | List all networks (optional `activeOnly` filter) |
-| `social.toggle` | Mutation | Protected | Toggle a network on/off by slug |
+| `social.list` | Query | Protected | List saved networks |
+| `social.updateBulk` | Mutation | Protected | Create, update or remove networks in one batch |
 
 ### Wallet
 
-Configure Apple Wallet passes.
+Configure and sign Apple Wallet passes. The `.pkpass` itself is downloaded from `GET /api/admin/wallet-pass` (session required).
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
 | `wallet.getConfig` | Query | Protected | Get wallet settings |
-| `wallet.updateConfig` | Mutation | Protected | Update wallet settings |
-| `wallet.generatePreview` | Query | Protected | Preview data for pass generation |
+| `wallet.updateConfig` | Mutation | Protected | Update wallet settings (fields validated per section; an empty field key is rejected with its section and number) |
+| `wallet.getSigningStatus` | Query | Protected | Which signing items are configured **and loadable** |
+| `wallet.getSigningKeys` | Query | Protected | Saved Team ID / Pass Type ID and whether each key is saved (never the key material) |
+| `wallet.updateSigningKeys` | Mutation | Protected | Save signing material (raw or base64-wrapped PEM, base64 DER certs); unloadable material is rejected with `BAD_REQUEST` |
+| `wallet.generatePreview` | Query | Protected | Pass content as the signer would build it |
 
 ### vCard
 
-Manage and generate vCard contact files.
+The global vCard (Design → Branding). The public download is `GET /api/vcard` (`?block=<id>` for a vCard block's card).
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `vcard.getConfig` | Query | Protected | Get vCard config and data |
-| `vcard.updateConfig` | Mutation | Protected | Update vCard fields |
-| `vcard.preview` | Query | Protected | Generate `.vcf` string |
+| `vcard.getConfig` | Query | Protected | Get the vCard toggle and data |
+| `vcard.updateConfig` | Mutation | Protected | Update the vCard toggle and fields |
 
 ### Backup
 
-Import and export all data.
+Import and export data.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `backup.export` | Query | Protected | Export all data as JSON |
-| `backup.import` | Mutation | Protected | Import data (`"merge"` or `"replace"` mode) |
+| `backup.export` | Query | Protected | Export blocks, non-secret settings, social networks and contact messages as JSON, with `notes` and an `images` list of referenced image keys (image files are not included) |
+| `backup.import` | Mutation | Protected | Import a backup in `"merge"` or `"replace"` mode in one atomic batch. Replace keeps secret settings, upserts blocks in place (removing ones missing from the backup) and deletes only messages absent from the backup. Accepts ISO or epoch-ms dates; caps: 500 blocks, 500 settings, 5,000 messages on the wire (newest 500 written). Returns counts plus `skipped.{blocks, socialNetworks, settings, contactSubmissions}` |
+| `backup.importLinkStack` | Mutation | Protected | Import a LinkStack export (http(s) links appended after existing blocks, profile, matching theme preset) |
+
+### Danger
+
+Destructive resets from Settings → Data. Both are audited and run as one atomic batch.
+
+| Procedure | Type | Auth | Description |
+|-----------|------|------|-------------|
+| `danger.deleteAllContent` | Mutation | Protected | Delete all blocks, analytics and contact messages; keeps the account, settings and social links |
+| `danger.resetEverything` | Mutation | Protected | Wipe every table (including the audit log and the admin account); the client then signs out and returns to setup |
 
 ### Version
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `version.current` | Query | Public | Returns current version |
-| `version.checkUpdate` | Query | Public | Check for available updates |
+| `version.checkUpdate` | Query | Protected | Compare `version.json` with the latest GitHub release. Input `{ force?: boolean }`. Returns `status: "ok" \| "unavailable"` and a `reason` when unavailable. Cached per isolate (6h after success, 10 min after failure); `force` skips the cache but reuses an answer fetched in the last 60s |
 
 ### Public
 
@@ -165,11 +184,21 @@ Public-facing endpoints -- no authentication needed.
 
 | Procedure | Type | Description |
 |-----------|------|-------------|
-| `public.getPage` | Query | Full page data: profile, blocks, theme, settings |
-| `public.submitContact` | Mutation | Submit contact form (with optional CAPTCHA) |
-| `public.trackView` | Mutation | Record a page view |
-| `public.trackClick` | Mutation | Record a link click |
-| `public.getVCard` | Query | Download vCard if enabled |
-| `public.getSetupStatus` | Query | Check if setup is complete |
+| `public.getPage` | Query | Full page data: profile, published blocks, theme, public settings, `captchaProvider` and `captchaSiteKey` (never the secret) |
+| `public.submitContact` | Mutation | Submit the contact form. Input: `firstName`, `lastName`, `email`, `consent: true`, optional `message`, `whereMet`, `blockId`, `blockTitle`, `captchaToken`, and a `website` honeypot that must stay empty. Rate limited per call |
+| `public.trackView` | Mutation | Record a page view. Optional `{ referrer }` (`document.referrer`), stored as its hostname only |
+| `public.trackClick` | Mutation | Record a link click: `{ blockId, referrer? }` |
+| `public.hasUsers` | Query | Whether an admin account exists |
+| `public.getSetupStatus` | Query | Setup complete, email configured, magic link available, and login branding |
 
 All input is validated with shared Zod schemas from `packages/validators`.
+
+### REST routes on the API Worker
+
+| Route | Auth | Description |
+|-------|------|-------------|
+| `GET /api/health` | Public | D1 check, version, email and auth state (`503` when degraded) |
+| `POST /api/upload` | Protected | Image upload (`file`, `purpose`, optional `replaces`) |
+| `GET /api/images/*` | Public | Serve an uploaded image |
+| `GET /api/vcard` | Public | vCard download (`?block=<id>` optional) |
+| `GET /api/admin/wallet-pass` | Protected | Signed `.pkpass` download |

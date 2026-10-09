@@ -1,17 +1,16 @@
 "use client";
 
-import { useState, useEffect, useId, createElement } from "react";
-import { render } from "@react-email/render";
 import { ContactNotification } from "@linkden/email";
+import { render } from "@react-email/render";
+import { createElement, useEffect, useId, useState } from "react";
 
 const defaultData = {
 	name: "Jane Smith",
 	email: "jane@example.com",
 	message:
 		"Hi! I love your work and would like to discuss a potential collaboration. Let me know if you're available for a quick chat this week.",
-	subject: "Collaboration Opportunity",
-	phone: "+1 (555) 123-4567",
-	company: "Acme Corp",
+	whereMet: "Conference",
+	blockTitle: "Let's connect",
 };
 
 function Field({
@@ -57,9 +56,8 @@ export function EmailPreview() {
 					name: data.name,
 					email: data.email,
 					message: data.message,
-					subject: data.subject || undefined,
-					phone: data.phone || undefined,
-					company: data.company || undefined,
+					whereMet: data.whereMet || undefined,
+					blockTitle: data.blockTitle || undefined,
 				});
 				const result = await render(element, { pretty: true });
 				if (!cancelled) setHtml(result);
@@ -90,21 +88,15 @@ export function EmailPreview() {
 						onChange={(v) => setData({ ...data, email: v })}
 					/>
 					<Field
-						label="Subject"
-						value={data.subject}
-						onChange={(v) => setData({ ...data, subject: v })}
+						label="Where we met"
+						value={data.whereMet}
+						onChange={(v) => setData({ ...data, whereMet: v })}
 						placeholder="Optional"
 					/>
 					<Field
-						label="Phone"
-						value={data.phone}
-						onChange={(v) => setData({ ...data, phone: v })}
-						placeholder="Optional"
-					/>
-					<Field
-						label="Company"
-						value={data.company}
-						onChange={(v) => setData({ ...data, company: v })}
+						label="Form (block title)"
+						value={data.blockTitle}
+						onChange={(v) => setData({ ...data, blockTitle: v })}
 						placeholder="Optional"
 					/>
 					<div>
