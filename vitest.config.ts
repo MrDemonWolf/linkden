@@ -99,6 +99,7 @@ export default defineConfig({
 		alias: {
 			"@": path.resolve(__dirname, "apps/web/src"),
 			"@linkden/validators": path.resolve(__dirname, "packages/validators/src"),
+			"cloudflare:workers": path.resolve(__dirname, "test-stubs/cloudflare-workers.ts"),
 		},
 	},
 });
