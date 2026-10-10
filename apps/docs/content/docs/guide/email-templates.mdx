@@ -13,9 +13,9 @@ When a visitor submits your contact form, you receive a **Contact Notification**
 
 - Sender name and email address
 - Message content
-- Optional fields: subject line, phone number, and company name
+- Optional fields: **Where we met** (when the form asks it) and **Form** (the Connect block's title)
 
-The email uses a clean, branded layout with your LinkDen logo in the header and a light footer.
+The email uses a clean layout with a LinkDen header and a light footer linking to the project on GitHub. Sends time out after 10 seconds; a failure is logged (without your API key) and the message stays in your Inbox.
 
 ## Live Preview
 
@@ -27,9 +27,9 @@ Edit the fields below to see how the email renders with different content.
 
 To receive contact form emails, configure an email provider in **Settings > Email**:
 
-1. Choose **Resend** or **Cloudflare Email Workers** as your provider.
+1. Choose **Resend** as your provider (Cloudflare Email Workers coming soon).
 2. Enter your API key.
 3. Set your "From" email address (must be verified with the provider).
-4. Under **Contact Form**, set the delivery mode to include email notifications.
+4. Under **Contact-form delivery**, choose **Email only** or **Inbox and email**.
 
 See the [Contact Form guide](/docs/guide/contact-form) for full setup instructions.

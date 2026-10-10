@@ -1,9 +1,12 @@
 "use client";
 
 import { getPresetById } from "@linkden/ui/banner-presets";
+import { liveCustomCss, previewCustomCss } from "@/lib/custom-css";
 import { Avatar } from "./avatar";
+import type { ResolvedBlockIcon } from "./block-icon";
 import { Carousel } from "./carousel";
 import { ConnectBlock } from "./connect-block";
+import { openConsentPreferences } from "./consent-banner";
 import { DividerBlock } from "./divider-block";
 import { EmbedBlock } from "./embed-block";
 import { FooterActions } from "./footer-actions";
@@ -12,6 +15,7 @@ import { ImageBlock } from "./image-block";
 import { LinkBlock } from "./link-block";
 import { LocationBlock } from "./location-block";
 import { usePreview } from "./preview-context";
+import { type PrivacyNotice, PrivacyNoticeLink, resolvePrivacyNotice } from "./privacy-notice";
 import { ProfileSocialIcons } from "./profile-social-icons";
 import type { ThemeColors } from "./public-page";
 import { ShaderBanner } from "./shader-banner";
@@ -30,7 +34,6 @@ interface SocialNetwork {
 interface PageContentProps {
 	profile: {
 		name: string;
-		email?: string;
 		image: string | null;
 		bio: string | null;
 		isVerified: boolean;
@@ -46,12 +49,16 @@ interface PageContentProps {
 		socialIcons: string | null;
 		config: string | null;
 		position: number;
+		/** Server-resolved block icon (app/page.tsx); absent in the admin preview. */
+		iconSvg?: ResolvedBlockIcon | null;
 	}>;
 	socialNetworks?: SocialNetwork[];
 	settings: {
 		brandingEnabled: boolean;
 		brandingText: string;
 		vcardEnabled?: boolean;
+		/** See PublicPage's PageData: the footer vCard download has data to serve. */
+		vcardDownloadAvailable?: boolean;
 		contactFormEnabled?: boolean;
 		captchaProvider?: string;
 		captchaSiteKey?: string | null;
@@ -60,17 +67,39 @@ interface PageContentProps {
 		bannerMode?: "preset" | "custom";
 		bannerCustomUrl?: string | null;
 		customCss?: string | null;
+		/** Privacy policy link (url mode only) … */
 		brandingPpUrl?: string | null;
+		/** … or its text (text mode only), shown in a dialog. */
+		brandingPpText?: string | null;
+		/** Footer branding link (http/https only). */
+		brandingLink?: string | null;
 		socialIconShape?: "circle" | "rounded-square" | null;
+		/** Consent banner on: embeds wait for consent and the footer offers "Cookie settings". */
+		consentBannerEnabled?: boolean;
 	};
 	themeColors: ThemeColors;
 	colorMode: "light" | "dark";
 }
 
+/** Origins the preview's custom CSS may load assets from (this app + the API). */
+function previewAssetOrigins(): Set<string> {
+	const origins = new Set<string>();
+	if (typeof window !== "undefined") origins.add(window.location.origin);
+	try {
+		if (process.env.NEXT_PUBLIC_SERVER_URL)
+			origins.add(new URL(process.env.NEXT_PUBLIC_SERVER_URL).origin);
+	} catch {
+		// Malformed env — same-origin only.
+	}
+	return origins;
+}
+
+/** A block's config object; {} for anything that isn't a plain JSON object. */
 function parseConfig(config: string | null): Record<string, unknown> {
 	if (!config) return {};
 	try {
-		return JSON.parse(config);
+		const v: unknown = JSON.parse(config);
+		return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
 	} catch {
 		return {};
 	}
@@ -167,6 +196,7 @@ function renderBlock(
 					config={config}
 					colorMode={colorMode}
 					themeColors={themeColors}
+					consentRequired={settings.consentBannerEnabled !== false}
 				/>
 			);
 
@@ -178,7 +208,9 @@ function renderBlock(
 					config={config}
 					colorMode={colorMode}
 					themeColors={themeColors}
-					ppUrl={settings.brandingPpUrl ?? undefined}
+					privacyNotice={resolvePrivacyNotice(settings.brandingPpUrl, settings.brandingPpText)}
+					captchaProvider={settings.captchaProvider}
+					captchaSiteKey={settings.captchaSiteKey}
 				/>
 			);
 		case "vcard":
@@ -257,6 +289,18 @@ export function PageContent({
 	// Filter out social_icons blocks — social icons now render in the hero card
 	const contentBlocks = blocks.filter((b) => b.type !== "social_icons");
 	const hasVcardBlock = contentBlocks.some((b) => b.type === "vcard");
+	// The footer pill only when /api/vcard has something to serve: the page's
+	// own vCard block renders its button instead, and with no block the API
+	// falls back to the global vCard — when getPage says there is one.
+	const showFooterVcard =
+		!hasVcardBlock && (settings.vcardDownloadAvailable ?? !!settings.vcardEnabled);
+	const showConsentLink = !isPreview && settings.consentBannerEnabled === true;
+	// Always reachable from the footer, whichever mode the policy is published in.
+	const privacyNotice: PrivacyNotice | null = resolvePrivacyNotice(
+		settings.brandingPpUrl,
+		settings.brandingPpText,
+	);
+	const showLegalRow = showConsentLink || !!privacyNotice;
 	const sections = groupSections(contentBlocks);
 
 	// Project resolved theme into CSS variables so shared @linkden/ui components
@@ -283,6 +327,9 @@ export function PageContent({
 	// solid, tappable panel over a flat background (no blur backdrop to rely on).
 	const heroCardStyle: React.CSSProperties = {
 		backgroundColor: themeColors.card,
+		// The name/bio sit on the card, so they take the card's foreground (fg
+		// is only guaranteed against the page background).
+		color: themeColors.cardFg,
 		borderColor: themeColors.border,
 		boxShadow: `0 12px 32px -16px ${themeColors.primary}33`,
 		transition: "background-color 0.5s ease, border-color 0.5s ease",
@@ -299,7 +346,12 @@ export function PageContent({
 			style={cssVarStyle}
 		>
 			{settings.customCss && (
-				<style>{settings.customCss.slice(0, 20000).replace(/<\/style/gi, "<\\/style")}</style>
+				// The preview runs inside the admin document: scoped + no external fetches.
+				<style>
+					{isPreview
+						? previewCustomCss(settings.customCss, previewAssetOrigins())
+						: liveCustomCss(settings.customCss)}
+				</style>
 			)}
 
 			{/* Container query (not viewport): the 512px admin preview stays single
@@ -310,7 +362,7 @@ export function PageContent({
 			>
 				{/* Hero card: cover + avatar + name + bio + socials */}
 				<ProfileWrapper
-					className="ld-hero relative mb-6 overflow-hidden rounded-3xl border shadow-lg shadow-black/5 backdrop-blur-2xl @4xl:sticky @4xl:top-8 @4xl:mb-0"
+					className="ld-hero ld-profile relative mb-6 overflow-hidden rounded-3xl border shadow-lg shadow-black/5 backdrop-blur-2xl @4xl:sticky @4xl:top-8 @4xl:mb-0"
 					style={heroCardStyle}
 				>
 					{showCover && (
@@ -322,7 +374,9 @@ export function PageContent({
 									className={`absolute inset-0 ${coverPreset.type === "css" ? (coverPreset.className ?? "") : ""}`}
 									style={coverPreset.type === "css" ? coverPreset.style : undefined}
 								>
-									{coverPreset.type === "shader" && <ShaderBanner preset={coverPreset} />}
+									{coverPreset.type === "shader" && (
+										<ShaderBanner preset={coverPreset} showPauseControl={!isPreview} />
+									)}
 								</div>
 							) : null}
 						</div>
@@ -332,7 +386,6 @@ export function PageContent({
 						<Avatar
 							src={profile.image}
 							name={profile.name}
-							email={profile.email}
 							size="lg"
 							hasBanner={showCover}
 							colorMode={colorMode}
@@ -490,21 +543,48 @@ export function PageContent({
 						})}
 					</div>
 
-					{!isPreview && (
-						<FooterActions
-							vcardEnabled={!!settings.vcardEnabled && !hasVcardBlock}
-							themeColors={themeColors}
-						/>
-					)}
+					{!isPreview && <FooterActions vcardEnabled={showFooterVcard} themeColors={themeColors} />}
 				</div>
 			</Wrapper>
 
-			{settings.brandingEnabled && (
-				<WhitelabelFooter
-					text={settings.brandingText}
-					mutedFg={themeColors.mutedFg}
-					profileName={profile.name}
-				/>
+			{(settings.brandingEnabled || showLegalRow) && (
+				<div className="mt-auto">
+					{showLegalRow && (
+						<div
+							className={`flex flex-wrap items-center justify-center gap-x-2 ${settings.brandingEnabled ? "pt-6" : "pt-6 pb-6"}`}
+						>
+							{privacyNotice && (
+								<PrivacyNoticeLink
+									notice={privacyNotice}
+									themeColors={themeColors}
+									className="ld-privacy-link inline-flex min-h-11 items-center px-3 text-xs underline underline-offset-2 hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2"
+									style={{ color: themeColors.mutedFg, outlineColor: themeColors.primary }}
+								>
+									Privacy
+								</PrivacyNoticeLink>
+							)}
+							{showConsentLink && (
+								// Withdrawing or changing consent must be as easy as giving it.
+								<button
+									type="button"
+									onClick={openConsentPreferences}
+									className="ld-consent-settings min-h-11 px-3 text-xs underline underline-offset-2 hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2"
+									style={{ color: themeColors.mutedFg, outlineColor: themeColors.primary }}
+								>
+									Cookie settings
+								</button>
+							)}
+						</div>
+					)}
+					{settings.brandingEnabled && (
+						<WhitelabelFooter
+							text={settings.brandingText}
+							link={settings.brandingLink}
+							mutedFg={themeColors.mutedFg}
+							profileName={profile.name}
+						/>
+					)}
+				</div>
 			)}
 		</div>
 	);

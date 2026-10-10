@@ -6,56 +6,83 @@
 //   4. Downloads: public /api/vcard, private /api/admin/wallet-pass (.pkpass)
 //   5. /api/health + the daily retention cron (`scheduled`)
 //
-// Rate limiting uses Cloudflare's native rate limiter with four limiters
-// (configured in wrangler.jsonc + packages/infra/alchemy.run.ts, per IP):
-//   - RL_AUTH (10 req/60s): login, contact form — generous for real users
+// Rate limiting uses Cloudflare's native rate limiter (configured in
+// wrangler.jsonc + packages/infra/alchemy.run.ts). Keys are the client IP, with
+// IPv6 collapsed to its /64 so address rotation inside one allocation shares a
+// bucket:
+//   - RL_AUTH (10 req/60s): login, 2FA, contact form — generous for real users
 //   - RL_STRICT (5 req/60s): password reset, magic link, signup — tight to prevent abuse
 //   - RL_UPLOAD (20 req/60s): image uploads — higher since admin may batch-upload
 //   - RL_PUBLIC (60 req/60s): view/click tracking, vCard download — unauthenticated traffic
+//   - RL_SIGNIN (30 req/60s, optional): one shared bucket per auth route (per
+//     Cloudflare location), so the single admin account can't be brute-forced
+//     by rotating through many source addresses
+// tRPC procedures are limited per call, not per URL: a batched request
+// (`/trpc/a,b,c?batch=1`) spends one token per limited procedure in it.
 //
 // Errors: unhandled exceptions (Hono + tRPC + cron) are logged as one-line JSON
-// so Workers observability can filter on `level` / `path`.
+// so Workers observability can filter on `level` / `path` (see lib/log.ts).
+// Request lines carry the path only — never query strings or reset tokens.
 //
 // Security patterns:
+//   - Auth config guard: with an unusable BETTER_AUTH_SECRET, /api/auth/*,
+//     /trpc/*, /api/upload and /api/admin/* answer 503 (auth is never built);
+//     /api/health stays up and reports `auth: "misconfigured"`.
 //   - Signup lock: after the first user registers, /sign-up returns 403 here;
 //     the DB trigger (0007_single_admin_trigger.sql) is the real enforcement.
-//   - Magic link gate: checks the magic_link_enabled setting before allowing
-//     magic link auth requests, so admins can disable it at runtime.
+//     With a SETUP_TOKEN secret bound, the first signup must also send it.
+//   - Magic link gate: both the send and verify steps are refused unless the
+//     magic_link_enabled setting is "true", so admins can disable it at runtime.
+//   - Same-origin writes: POSTs to /trpc/* and /api/upload must come from the
+//     site origin (CORS alone doesn't stop same-site cookie-carrying requests).
+//   - Body limits on /api/auth/* and /trpc/* before anything parses a body.
 //   - File upload validation: extension + MIME + Content-Length precheck, then
 //     the magic-byte signature must match the extension before writing to R2.
 
 import { trpcServer } from "@hono/trpc-server";
-import { cloudflareRateLimiter } from "@hono-rate-limiter/cloudflare";
 import { createContext } from "@linkden/api/context";
 import { appRouter } from "@linkden/api/routers/index";
-import { generateVCardString, vcardDataSchema } from "@linkden/api/routers/vcard";
-import { auth, getSessionQuery } from "@linkden/auth";
+import { resolvePublicVcard } from "@linkden/api/routers/vcard";
+import { auth, authConfigProblem, getSessionQuery } from "@linkden/auth";
 import { db } from "@linkden/db";
-import { block, siteSettings, user } from "@linkden/db/schema/index";
-import { parsePassFieldsJson, parsePassLocationsJson } from "@linkden/validators/wallet";
-import { and, asc, eq } from "drizzle-orm";
-import { Hono } from "hono";
+import { siteSettings, user } from "@linkden/db/schema/index";
+import {
+	normalizeRelevantDate,
+	parsePassLocationsJson,
+	resolvePassContent,
+} from "@linkden/validators/wallet";
+import { eq } from "drizzle-orm";
+import { type Context, Hono, type MiddlewareHandler } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
-import { logger } from "hono/logger";
 import { buildHealth } from "./lib/health";
+import { logError, redactLogPath } from "./lib/log";
+import { allowedOrigin, isTrustedRequestOrigin } from "./lib/origin";
 import { generatePkpass } from "./lib/pkpass";
-import { runScheduledMaintenance } from "./lib/retention-sweep";
+import { rateLimitKey, trpcProcedurePaths } from "./lib/rate-limit";
+import { collectReferencedKeys, runScheduledMaintenance } from "./lib/retention-sweep";
+import { SETUP_TOKEN_HEADER, setupTokenAccepted } from "./lib/setup-token";
 import {
 	buildR2Key,
+	isServableImageKey,
 	replacementKeyForPurpose,
 	signatureMatchesExt,
 	validateUpload,
 	validateUploadContentLength,
 } from "./lib/upload-validation";
 
+// Rate-limit bindings are optional: local `wrangler dev` (miniflare) does not
+// simulate `rate_limits`, and RL_SIGNIN is new, so a missing binding is a no-op.
 type Bindings = {
 	CORS_ORIGIN?: string;
 	IMAGES_BUCKET?: R2Bucket;
-	RL_AUTH: RateLimit;
-	RL_STRICT: RateLimit;
-	RL_UPLOAD: RateLimit;
-	RL_PUBLIC: RateLimit;
+	RL_AUTH?: RateLimit;
+	RL_STRICT?: RateLimit;
+	RL_UPLOAD?: RateLimit;
+	RL_PUBLIC?: RateLimit;
+	RL_SIGNIN?: RateLimit;
+	SETUP_TOKEN?: string;
 	WALLET_SIGNER_CERT?: string;
 	WALLET_SIGNER_KEY?: string;
 	WALLET_WWDR_CERT?: string;
@@ -64,13 +91,25 @@ type Bindings = {
 	WALLET_SIGNER_KEY_PASSPHRASE?: string;
 };
 
-const app = new Hono<{ Bindings: Bindings }>();
+type Variables = {
+	/** Procedure paths of the current /trpc request, parsed like tRPC does. */
+	trpcProcedures: string[];
+};
 
-/** One-line JSON error log, shared by the Hono, tRPC, and cron error paths. */
-function logError(fields: Record<string, unknown>, err: unknown) {
-	const e = err instanceof Error ? err : new Error(String(err));
-	console.error(JSON.stringify({ level: "error", ...fields, message: e.message, stack: e.stack }));
-}
+type AppEnv = { Bindings: Bindings; Variables: Variables };
+
+/**
+ * Max procedures per batched tRPC request. Keep it at or above the web
+ * client's httpBatchLink `maxItems`, or a legitimate batch is rejected.
+ */
+const TRPC_MAX_BATCH_SIZE = 20;
+const AUTH_BODY_LIMIT = 64 * 1024;
+const TRPC_BODY_LIMIT = 1024 * 1024;
+const BACKUP_BODY_LIMIT = 16 * 1024 * 1024;
+const RATE_LIMIT_MESSAGE = "Too many requests, please try again later.";
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+
+const app = new Hono<AppEnv>();
 
 // Unhandled route errors: keep HTTPException status codes (4xx thrown on
 // purpose), log everything else and hide internals from the client.
@@ -90,66 +129,142 @@ app.use("/*", async (c, next) => {
 	c.res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
 });
 
-app.use(logger());
+// Request log: method, path, status, duration. Path only — query strings
+// (magic-link / verify-email tokens) and the reset-password token segment are
+// never written to Worker logs.
+app.use("/*", async (c, next) => {
+	const start = Date.now();
+	await next();
+	console.log(
+		`${c.req.method} ${redactLogPath(c.req.path)} ${c.res.status} ${Date.now() - start}ms`,
+	);
+});
+
 app.use(
 	"/*",
 	cors({
-		origin: (origin, c) => {
-			const allowed = c.env?.CORS_ORIGIN || "http://localhost:3001";
-			return origin === allowed ? origin : null;
-		},
+		origin: (origin, c) => (origin === allowedOrigin(c.env?.CORS_ORIGIN) ? origin : null),
 		credentials: true,
 		allowMethods: ["GET", "POST", "OPTIONS"],
-		allowHeaders: ["Content-Type", "Authorization"],
+		allowHeaders: ["Content-Type", "Authorization", SETUP_TOKEN_HEADER],
 	}),
 );
 
-// Rate limiters (Cloudflare native rate limiting; see header comment for the four limiters)
-const rlKeyGenerator = (c: { req: { header: (name: string) => string | undefined } }) =>
-	c.req.header("cf-connecting-ip") ?? "";
+// Auth misconfigured (empty / short / placeholder BETTER_AUTH_SECRET): every
+// route that needs a session answers 503 instead of touching Better Auth, while
+// /api/health stays up and reports it. Production deploys refuse such a secret
+// up front (packages/infra deployEnvErrors); this covers a hand-edited Worker.
+let authProblemLogged = false;
+const requireAuthConfig: MiddlewareHandler<AppEnv> = async (c, next) => {
+	if (!authConfigProblem) return next();
+	if (!authProblemLogged) {
+		authProblemLogged = true;
+		logError({ path: c.req.path, check: "auth-config" }, new Error(authConfigProblem));
+	}
+	return c.json({ error: "Service unavailable: authentication is misconfigured" }, 503);
+};
+app.use("/api/auth/*", requireAuthConfig);
+app.use("/trpc/*", requireAuthConfig);
+app.use("/api/upload", requireAuthConfig);
+app.use("/api/admin/*", requireAuthConfig);
 
-// Local `wrangler dev` (miniflare) does not simulate `rate_limits` bindings, so
-// env.RL_* are undefined there and @hono-rate-limiter/cloudflare crashes with
-// "Cannot read properties of undefined (reading 'limit')" — which 500s every
-// auth/upload route on a fresh local install. No-op when the binding is absent;
-// production (Alchemy) always provides the bindings.
-const rateLimit = (pickBinding: (env: Bindings) => RateLimit | undefined) => {
-	const limiter = cloudflareRateLimiter<{ Bindings: Bindings }>({
-		rateLimitBinding: (c) => pickBinding(c.env) as RateLimit,
-		keyGenerator: rlKeyGenerator,
+// Same-origin writes. Better Auth checks Origin on /api/auth/* itself.
+const requireSameOrigin: MiddlewareHandler<AppEnv> = async (c, next) => {
+	if (SAFE_METHODS.has(c.req.method)) return next();
+	const trusted = isTrustedRequestOrigin({
+		origin: c.req.header("origin"),
+		secFetchSite: c.req.header("sec-fetch-site"),
+		allowed: allowedOrigin(c.env?.CORS_ORIGIN),
+		self: new URL(c.req.url).origin,
 	});
-	const passthrough: ReturnType<typeof cloudflareRateLimiter<{ Bindings: Bindings }>> = (
-		c,
-		next,
-	) => (pickBinding(c.env) ? limiter(c, next) : next());
-	return passthrough;
+	if (!trusted) return c.json({ error: "Cross-site request blocked" }, 403);
+	await next();
+};
+app.use("/trpc/*", requireSameOrigin);
+app.use("/api/upload", requireSameOrigin);
+
+// Cap request bodies before Better Auth / tRPC buffer and parse them.
+app.use("/api/auth/*", bodyLimit({ maxSize: AUTH_BODY_LIMIT }));
+
+// ─── Rate limiting ───────────────────────────────────────────────────────────
+type Limiter = (env: Bindings) => RateLimit | undefined;
+type KeyFn = (c: Context<AppEnv>) => string;
+
+const clientKey: KeyFn = (c) => rateLimitKey(c.req.header("cf-connecting-ip"));
+const globalKey =
+	(name: string): KeyFn =>
+	() =>
+		`global:${name}`;
+
+/** One limiter token per request; no-op when the binding is absent. */
+const rateLimit =
+	(pick: Limiter, key: KeyFn = clientKey): MiddlewareHandler<AppEnv> =>
+	async (c, next) => {
+		const binding = pick(c.env ?? {});
+		if (binding && !(await binding.limit({ key: key(c) })).success) {
+			return c.text(RATE_LIMIT_MESSAGE, 429);
+		}
+		await next();
+	};
+
+const isMagicLinkEnabled = (value: string | null | undefined) => value === "true";
+
+// Refuse magic-link sends and verifies unless the setting is exactly "true"
+// (unset = off, matching the login UI and Better Auth's sendMagicLink check).
+const magicLinkGate: MiddlewareHandler<AppEnv> = async (c, next) => {
+	const [row] = await db
+		.select({ value: siteSettings.value })
+		.from(siteSettings)
+		.where(eq(siteSettings.key, "magic_link_enabled"));
+	if (!isMagicLinkEnabled(row?.value)) {
+		return c.json({ error: "Magic link sign-in is disabled" }, 403);
+	}
+	await next();
 };
 
+// Per-IP limits run before the global ones, so one noisy client is cut off
+// without draining the shared bucket.
 app.use(
 	"/api/auth/sign-in/*",
 	rateLimit((env) => env.RL_AUTH),
+);
+app.use(
+	"/api/auth/sign-in/*",
+	rateLimit((env) => env.RL_SIGNIN, globalKey("sign-in")),
+);
+app.use("/api/auth/sign-in/magic-link", magicLinkGate);
+app.use(
+	"/api/auth/sign-in/magic-link",
+	rateLimit((env) => env.RL_STRICT),
+);
+app.use(
+	"/api/auth/two-factor/*",
+	rateLimit((env) => env.RL_AUTH),
+);
+app.use(
+	"/api/auth/two-factor/*",
+	rateLimit((env) => env.RL_SIGNIN, globalKey("two-factor")),
 );
 app.use(
 	"/api/auth/request-password-reset",
 	rateLimit((env) => env.RL_STRICT),
 );
 app.use(
+	"/api/auth/request-password-reset",
+	rateLimit((env) => env.RL_SIGNIN, globalKey("password-reset")),
+);
+app.use(
 	"/api/auth/reset-password",
 	rateLimit((env) => env.RL_STRICT),
 );
-// Block magic link requests when the feature is disabled
-app.use("/api/auth/magic-link/*", async (c, next) => {
-	const [row] = await db
-		.select()
-		.from(siteSettings)
-		.where(eq(siteSettings.key, "magic_link_enabled"));
-	if (row?.value === "false") {
-		return c.json({ error: "Magic link sign-in is disabled" }, 403);
-	}
-	await next();
-});
+app.use("/api/auth/magic-link/*", magicLinkGate);
 app.use(
 	"/api/auth/magic-link/*",
+	rateLimit((env) => env.RL_STRICT),
+);
+// Signup: limiter first so failed setup-token guesses spend RL_STRICT budget.
+app.use(
+	"/api/auth/sign-up/*",
 	rateLimit((env) => env.RL_STRICT),
 );
 // Block registration after the first user has been created (single-user app)
@@ -158,27 +273,14 @@ app.use("/api/auth/sign-up/*", async (c, next) => {
 	if (existingUser) {
 		return c.json({ error: "Registration is closed" }, 403);
 	}
+	if (!(await setupTokenAccepted(c.env?.SETUP_TOKEN, c.req.header(SETUP_TOKEN_HEADER)))) {
+		return c.json({ error: "Invalid setup token" }, 403);
+	}
 	await next();
 });
 app.use(
-	"/api/auth/sign-up/*",
-	rateLimit((env) => env.RL_STRICT),
-);
-app.use(
-	"/trpc/public.submitContact*",
-	rateLimit((env) => env.RL_AUTH),
-);
-app.use(
 	"/api/upload",
 	rateLimit((env) => env.RL_UPLOAD),
-);
-app.use(
-	"/trpc/public.trackView*",
-	rateLimit((env) => env.RL_PUBLIC),
-);
-app.use(
-	"/trpc/public.trackClick*",
-	rateLimit((env) => env.RL_PUBLIC),
 );
 app.use(
 	"/api/vcard",
@@ -189,12 +291,49 @@ app.use(
 	rateLimit((env) => env.RL_STRICT),
 );
 
+// ─── tRPC guards: batch size, body size, per-procedure limits ────────────────
+const TRPC_LIMITS = new Map<string, Limiter>([
+	["public.submitContact", (env) => env.RL_AUTH],
+	["public.trackView", (env) => env.RL_PUBLIC],
+	["public.trackClick", (env) => env.RL_PUBLIC],
+]);
+const trpcBodyLimit = bodyLimit({ maxSize: TRPC_BODY_LIMIT });
+const backupBodyLimit = bodyLimit({ maxSize: BACKUP_BODY_LIMIT });
+
+app.use("/trpc/*", async (c, next) => {
+	const procedures = trpcProcedurePaths(new URL(c.req.url));
+	if (!procedures || procedures.length > TRPC_MAX_BATCH_SIZE) {
+		return c.json({ error: "Invalid or oversized tRPC batch" }, 400);
+	}
+	c.set("trpcProcedures", procedures);
+	await next();
+});
+// Backup import is the only procedure that legitimately sends large bodies.
+app.use("/trpc/*", (c, next) =>
+	c.get("trpcProcedures").some((p) => p.startsWith("backup."))
+		? backupBodyLimit(c, next)
+		: trpcBodyLimit(c, next),
+);
+// Every limited procedure in the batch spends its own token, so neither a
+// leading unlimited procedure nor N copies of a limited one gets past the cap.
+app.use("/trpc/*", async (c, next) => {
+	const key = clientKey(c);
+	for (const procedure of c.get("trpcProcedures")) {
+		const binding = TRPC_LIMITS.get(procedure)?.(c.env ?? {});
+		if (binding && !(await binding.limit({ key })).success) {
+			return c.text(RATE_LIMIT_MESSAGE, 429);
+		}
+	}
+	await next();
+});
+
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
 app.use(
 	"/trpc/*",
 	trpcServer({
 		router: appRouter,
+		maxBatchSize: TRPC_MAX_BATCH_SIZE,
 		createContext: (_opts, context) => {
 			return createContext({ context });
 		},
@@ -230,8 +369,10 @@ app.post("/api/upload", async (c) => {
 	}
 
 	const formData = await c.req.formData();
-	const file = formData.get("file");
-	const purpose = formData.get("purpose");
+	// `unknown` + instanceof: the Node and Workers type libs disagree on
+	// FormData.get's return type (string-only in the 2021 Workers types).
+	const file: unknown = formData.get("file");
+	const purpose: unknown = formData.get("purpose");
 
 	if (!file) {
 		return c.json({ error: "No file provided" }, 400);
@@ -262,17 +403,36 @@ app.post("/api/upload", async (c) => {
 		httpMetadata: { contentType: file.type },
 	});
 
-	// Delete the object this upload replaces, so old avatars/banners don't
-	// accumulate as orphans in R2.
+	// `replaces` names an earlier upload from the same unsaved edit, so it
+	// doesn't linger until the orphan sweep. Never delete an object a saved
+	// setting or block still points at: the live page would lose its image if
+	// the edit is then discarded. Saved-then-replaced objects are left to the
+	// daily orphan sweep (24h grace).
 	const oldKey = replacementKeyForPurpose(formData.get("replaces"), result.purpose);
-	if (oldKey && oldKey !== key) {
-		await bucket.delete(oldKey).catch(() => {});
+	if (oldKey && oldKey !== key && !(await collectReferencedKeys()).has(oldKey)) {
+		await bucket
+			.delete(oldKey)
+			.catch((err) => logError({ path: "/api/upload", step: "delete-replaced" }, err));
 	}
 
 	const publicUrl = `/api/images/${key}`;
 
 	return c.json({ publicUrl });
 });
+
+/** The colo's edge cache, when the runtime has one (not in Node/vitest). */
+function edgeCache(): Cache | undefined {
+	return typeof caches !== "undefined" && "default" in caches ? caches.default : undefined;
+}
+
+/** Register background work; a no-op without an execution context. */
+function waitUntil(c: Context<AppEnv>, promise: Promise<unknown>) {
+	try {
+		c.executionCtx.waitUntil(promise);
+	} catch {
+		// No ExecutionContext (e.g. app.request in tests) — let it float.
+	}
+}
 
 // Serve images from R2
 app.get("/api/images/*", async (c) => {
@@ -285,6 +445,20 @@ app.get("/api/images/*", async (c) => {
 	if (key.includes("..")) {
 		return c.json({ error: "Invalid path" }, 400);
 	}
+	// Only key shapes this app writes can exist; skip the R2 read otherwise.
+	if (!isServableImageKey(key)) {
+		return c.notFound();
+	}
+
+	// Workers run in front of Cloudflare's CDN cache, so a Worker response is
+	// only edge-cached when put there explicitly. Keys are random and never
+	// reused, so cached copies never need purging. The cache key drops the
+	// query string so `?x=` can't force an R2 read.
+	const cache = edgeCache();
+	const cacheKey = new Request(new URL(c.req.path, c.req.url).toString());
+	const hit = await cache?.match(cacheKey).catch(() => undefined);
+	if (hit) return new Response(hit.body, hit);
+
 	const object = await bucket.get(key);
 
 	if (!object) {
@@ -294,15 +468,22 @@ app.get("/api/images/*", async (c) => {
 	const headers = new Headers();
 	headers.set("Content-Type", object.httpMetadata?.contentType || "application/octet-stream");
 	headers.set("Cache-Control", "public, max-age=31536000, immutable");
+	headers.set("ETag", object.httpEtag);
 
-	return new Response(object.body, { headers });
+	const res = new Response(object.body, { headers });
+	if (cache)
+		waitUntil(
+			c,
+			cache.put(cacheKey, res.clone()).catch(() => {}),
+		);
+	return res;
 });
 
 // ─── Apple Wallet pass (.pkpass) ─────────────────────────────────────────────
 // Admin-only download. Assembles a signed pass from the wallet_* settings + profile.
-// Field/location parsing is shared with the wallet router via @linkden/validators.
-const parsePassFields = parsePassFieldsJson;
-const parsePassLocations = parsePassLocationsJson;
+// Content (fields capped per section, colours, issuer, description, barcode)
+// comes from resolvePassContent, shared with the wallet router's
+// generatePreview, so the builder preview shows what Wallet renders.
 
 async function fetchPassImage(
 	bucket: R2Bucket | undefined,
@@ -343,23 +524,7 @@ app.get("/api/admin/wallet-pass", async (c) => {
 	}
 
 	const [profile] = await db.select().from(user).limit(1);
-
-	const showName = s.wallet_show_name !== "false";
-	const showEmail = s.wallet_show_email !== "false";
-	const primaryStored = parsePassFields(s.wallet_primary_fields);
-	const secondaryStored = parsePassFields(s.wallet_secondary_fields);
-	const primaryFields =
-		primaryStored.length > 0
-			? primaryStored
-			: showName && profile?.name
-				? [{ key: "name", label: "Name", value: profile.name }]
-				: [];
-	const secondaryFields =
-		secondaryStored.length > 0
-			? secondaryStored
-			: showEmail && profile?.email
-				? [{ key: "email", label: "Email", value: profile.email }]
-				: [];
+	const content = resolvePassContent(s, profile);
 
 	const bucket = c.env.IMAGES_BUCKET;
 	const [icon, logo, thumbnail, strip] = await Promise.all([
@@ -375,22 +540,21 @@ app.get("/api/admin/wallet-pass", async (c) => {
 				passTypeIdentifier,
 				teamIdentifier,
 				serialNumber: profile?.id || "linkden-pass",
-				organizationName: s.wallet_organization_name || "LinkDen",
-				description:
-					s.wallet_pass_description ||
-					(profile?.name ? `${profile.name} — contact card` : "Contact card"),
-				backgroundColor: s.wallet_background_color || "#091533",
-				foregroundColor: s.wallet_foreground_color || "#FFFFFF",
-				labelColor: s.wallet_label_color || "#0FACED",
+				organizationName: content.organizationName,
+				description: content.description,
+				backgroundColor: content.backgroundColor,
+				foregroundColor: content.foregroundColor,
+				labelColor: content.labelColor,
 				logoText: s.wallet_organization_name || undefined,
-				barcodeMessage: s.wallet_show_qr_code !== "false" ? c.env.CORS_ORIGIN || null : null,
-				relevantDate: s.wallet_relevant_date || null,
-				locations: parsePassLocations(s.wallet_locations),
-				headerFields: parsePassFields(s.wallet_header_fields),
-				primaryFields,
-				secondaryFields,
-				auxiliaryFields: parsePassFields(s.wallet_auxiliary_fields),
-				backFields: parsePassFields(s.wallet_back_fields),
+				barcodeMessage: content.showBarcode ? c.env.CORS_ORIGIN || null : null,
+				// Writes are validated; this only hardens legacy stored values.
+				relevantDate: normalizeRelevantDate(s.wallet_relevant_date),
+				locations: parsePassLocationsJson(s.wallet_locations),
+				headerFields: content.headerFields,
+				primaryFields: content.primaryFields,
+				secondaryFields: content.secondaryFields,
+				auxiliaryFields: content.auxiliaryFields,
+				backFields: content.backFields,
 				images: { icon, logo, thumbnail, strip },
 			},
 			{
@@ -413,41 +577,25 @@ app.get("/api/admin/wallet-pass", async (c) => {
 			},
 		});
 	} catch (err) {
-		console.error("pkpass generation failed", err);
+		logError({ path: "/api/admin/wallet-pass", step: "generate" }, err);
 		return c.text("Wallet pass is not available yet.", 503);
 	}
 });
 
 // ─── vCard download (.vcf) ───────────────────────────────────────────────────
-// Public download. Mirrors public.getVCard: requires the vcard_enabled setting
-// plus the first enabled, published vCard block, and generates the .vcf with
-// the same generator the tRPC endpoint uses.
+// Public download, gated on the vcard_enabled setting (resolvePublicVcard is the
+// single source). `?block=<id>` is a vCard block's own button: that block's
+// card or 404. Without it (the footer pill): the first live vCard block, else
+// the global vCard saved under Design → Branding (`vcard_data`).
+const VCARD_BLOCK_ID_MAX = 100;
 app.get("/api/vcard", async (c) => {
-	const [vcardSetting] = await db
-		.select()
-		.from(siteSettings)
-		.where(eq(siteSettings.key, "vcard_enabled"));
-	if (vcardSetting?.value !== "true") return c.notFound();
+	const blockParam = c.req.query("block");
+	// An oversized id can't be a block id; treat it as absent.
+	const blockId = blockParam && blockParam.length <= VCARD_BLOCK_ID_MAX ? blockParam : undefined;
+	const vcard = await resolvePublicVcard(new Date(), blockId);
+	if (!vcard) return c.notFound();
 
-	const [vcardBlock] = await db
-		.select()
-		.from(block)
-		.where(and(eq(block.type, "vcard"), eq(block.isEnabled, true), eq(block.status, "published")))
-		.orderBy(asc(block.position))
-		.limit(1);
-	if (!vcardBlock) return c.notFound();
-
-	let config: unknown = {};
-	try {
-		config = vcardBlock.config ? JSON.parse(vcardBlock.config) : {};
-	} catch {
-		// Corrupted JSON in block config — treat as no vCard rather than crashing
-		return c.notFound();
-	}
-	const result = vcardDataSchema.safeParse(config);
-	if (!result.success) return c.notFound();
-
-	return new Response(generateVCardString(result.data), {
+	return new Response(vcard.vcardString, {
 		headers: {
 			"Content-Type": "text/vcard; charset=utf-8",
 			"Content-Disposition": 'attachment; filename="contact.vcf"',
@@ -460,18 +608,15 @@ app.get("/", (c) => {
 });
 
 app.get("/api/health", async (c) => {
-	const report = await buildHealth(db);
+	const report = await buildHealth(db, { authConfigured: !authConfigProblem });
 	return c.json(report, report.status === "ok" ? 200 : 503);
 });
 
 export default {
 	fetch: app.fetch,
-	// Cron-triggered maintenance (see wrangler.jsonc [triggers]/crons).
-	async scheduled(event: ScheduledController, env: Bindings, ctx: ExecutionContext) {
-		ctx.waitUntil(
-			runScheduledMaintenance(env.IMAGES_BUCKET).catch((err) =>
-				logError({ path: "scheduled", method: event.cron }, err),
-			),
-		);
+	// Cron-triggered maintenance (see wrangler.jsonc [triggers]/crons). Each step
+	// logs its own failure; the rejection marks the invocation as an exception.
+	async scheduled(_event: ScheduledController, env: Bindings, ctx: ExecutionContext) {
+		ctx.waitUntil(runScheduledMaintenance(env.IMAGES_BUCKET));
 	},
 };

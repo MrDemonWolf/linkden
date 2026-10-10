@@ -5,14 +5,14 @@ description: Privacy policy for the LinkDen documentation site and open-source p
 
 # Privacy Policy
 
-**Last updated:** February 2026
+**Last updated:** October 2026
 
 LinkDen is an open-source, self-hosted application. This policy covers the **documentation site** at `mrdemonwolf.github.io/linkden`. If you self-host LinkDen, your own privacy policy applies to your instance.
 
 ### 🔑 Key Takeaways
 - 🚫 **No Tracking:** We don't track you on this docs site.
 - 🏠 **Self-Hosted:** You own all your data on your own instance.
-- 🔒 **Private:** No "phoning home" or telemetry.
+- 🔒 **Private:** No telemetry. The only outbound check is an update lookup on GitHub when the admin opens Settings → Data.
 
 ## What We Collect
 
@@ -34,18 +34,24 @@ When you deploy your own LinkDen instance, **you** are the data controller. Link
 - 👤 **Profile data** -- name, bio, profile image URL
 - 🔗 **Links** -- URLs, titles, icons, sort order
 - ⚙️ **Settings** -- theme, colors, branding, configuration
-- 📈 **Analytics** -- page views, link clicks, referrers, country codes (from Cloudflare headers)
-- 📝 **Contact form submissions** -- name, email, message (if enabled)
+- 📈 **Analytics** -- page views and link clicks with the referring site's hostname (no path or query) and a country code from Cloudflare's header. No IP address and no user-agent string is stored. With the consent banner on (the default), nothing is recorded until the visitor accepts analytics; with it off, every visit is recorded. Kept 365 days.
+- 📝 **Contact form submissions** -- name, email, message, and "where we met" only when the form asks it (if enabled). Kept 365 days.
+- 🔐 **Admin sessions** -- IP address and browser of the admin's own sign-ins (expired sessions are deleted daily)
 - 📇 **vCard data** -- contact information you configure
 
-All data lives in **your own** database. LinkDen does not phone home, send telemetry, or share data with third parties.
+All data lives in **your own** database. LinkDen sends no telemetry. Data only reaches the third parties below when you enable the feature that uses them.
 
 ## Third-Party Services
 
-Self-hosted instances may optionally integrate with:
+Self-hosted instances may integrate with these services. Each applies only when the operator turns it on:
 
-- ☁️ **Cloudflare** -- hosting and CDN (see [Cloudflare's Privacy Policy](https://www.cloudflare.com/privacypolicy/))
-- 📧 **Resend** -- email delivery for contact form notifications (see [Resend's Privacy Policy](https://resend.com/legal/privacy-policy))
+- ☁️ **Cloudflare** -- hosting, database, storage and CDN; always used (see [Cloudflare's Privacy Policy](https://www.cloudflare.com/privacypolicy/))
+- 📧 **Resend** -- email delivery for password reset, magic links and contact form notifications, when email is configured (see [Resend's Privacy Policy](https://resend.com/legal/privacy-policy))
+- 🛡️ **CAPTCHA providers** -- Cloudflare Turnstile, Google reCAPTCHA or hCaptcha, when CAPTCHA is configured. The widget loads from the provider in the visitor's browser, and the server sends the provider the visitor's token and IP address to verify it.
+- 📺 **Embed providers** -- YouTube, Spotify, SoundCloud, or any custom embed URL, when an Embed block is on the page. The visitor's browser loads them directly (receiving the visitor's IP). With the consent banner on, they load only after the visitor clicks **Load** or allows **Embedded media**.
+- 🖼️ **Gravatar** -- the admin panel requests an avatar for an MD5 hash of the admin's email when no avatar has been uploaded (admin only; visitors are not affected).
+- 🗺️ **Map providers** -- none are contacted by the page. A Location block only links to Google Maps, Apple Maps or a custom URL when the visitor clicks it.
+- 🐙 **GitHub API** -- a server-side update check when the admin opens Settings → Data; no personal data is sent.
 
 > **Tip:** Authentication is handled by Better Auth, which runs entirely on your server -- no data is sent to external auth providers.
 

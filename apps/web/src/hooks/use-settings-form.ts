@@ -2,7 +2,7 @@
 
 import type { SettingKey } from "@linkden/validators/settings";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/utils/trpc";
 import { useUnsavedChanges } from "./use-unsaved-changes";
@@ -28,6 +28,11 @@ interface Options<T> {
  * Encapsulates the admin "settings dirty-save" pattern: load via
  * trpc.settings.getAll, mirror current + saved snapshots, expose isDirty,
  * persist via updateBulk, invalidate the query, and toast.
+ *
+ * Fresh server data (the refetch after a save, a window-focus refetch) moves
+ * the saved baseline and every field the admin hasn't edited; edited fields
+ * keep their unsaved values. Save sends only the keys that differ from the
+ * baseline, so a stale tab can't write back fields it never touched.
  */
 export function useSettingsForm<T>(opts: Options<T>) {
 	const { parse, serialize, successMessage, errorMessage, onSaved, validate } = opts;
@@ -37,11 +42,20 @@ export function useSettingsForm<T>(opts: Options<T>) {
 
 	const [state, setState] = useState<T | null>(null);
 	const [saved, setSaved] = useState<T | null>(null);
+	// Latest committed baseline for the hydration effect below (declared first,
+	// so it's synced before that effect runs).
+	const savedRef = useRef(saved);
+	useEffect(() => {
+		savedRef.current = saved;
+	});
 
 	useEffect(() => {
 		if (!query.data) return;
 		const parsed = parse(query.data);
-		setState(parsed);
+		const base = savedRef.current;
+		setState((current) =>
+			current === null || base === null ? parsed : rebase(current, base, parsed),
+		);
 		setSaved(parsed);
 	}, [query.data, parse]);
 
@@ -53,8 +67,15 @@ export function useSettingsForm<T>(opts: Options<T>) {
 
 	const save = useCallback(async () => {
 		if (!state || (validate && Object.keys(validate(state)).length > 0)) return;
+		const baseline = saved ? new Map(serialize(saved).map((e) => [e.key, e.value])) : null;
+		const changes = serialize(state).filter((e) => !baseline || baseline.get(e.key) !== e.value);
+		if (changes.length === 0) {
+			// Different in form, identical on the wire: nothing to write.
+			setSaved(state);
+			return;
+		}
 		try {
-			await mutation.mutateAsync(serialize(state));
+			await mutation.mutateAsync(changes);
 			setSaved(state);
 			qc.invalidateQueries({ queryKey: trpc.settings.getAll.queryOptions().queryKey });
 			if (successMessage) toast.success(successMessage);
@@ -62,7 +83,7 @@ export function useSettingsForm<T>(opts: Options<T>) {
 		} catch {
 			toast.error(errorMessage ?? "Failed to save settings");
 		}
-	}, [state, mutation, serialize, qc, successMessage, errorMessage, onSaved, validate]);
+	}, [state, saved, mutation, serialize, qc, successMessage, errorMessage, onSaved, validate]);
 
 	const reset = useCallback(() => {
 		if (saved) setState(saved);
@@ -75,10 +96,37 @@ export function useSettingsForm<T>(opts: Options<T>) {
 		errors,
 		hasErrors,
 		isLoading: query.isLoading,
+		/** settings.getAll failed with nothing to show: render an error + retry, not a skeleton. */
+		isError: query.isError && state === null,
+		error: query.error,
+		refetch: query.refetch,
 		isSaving: mutation.isPending,
 		save,
 		reset,
 	};
+}
+
+/**
+ * Re-seed from fresh server data without losing unsaved edits: each field the
+ * admin changed (differs from the old baseline) keeps its value, every other
+ * field takes the server's. A clean form simply becomes `next`.
+ */
+function rebase<T>(current: T, base: T, next: T): T {
+	if (
+		typeof current !== "object" ||
+		current === null ||
+		typeof next !== "object" ||
+		next === null
+	) {
+		return shallowEqual(current, base) ? next : current;
+	}
+	const cur = current as Record<string, unknown>;
+	const old = base as Record<string, unknown>;
+	const out: Record<string, unknown> = { ...(next as Record<string, unknown>) };
+	for (const key of Object.keys(cur)) {
+		if (!Object.is(cur[key], old[key])) out[key] = cur[key];
+	}
+	return shallowEqual(out, cur) ? current : (out as T);
 }
 
 function shallowEqual<T>(a: T, b: T): boolean {

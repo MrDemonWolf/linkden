@@ -13,10 +13,10 @@ LinkDen uses a simple, secure setup model:
 
 1. Navigate to `/admin/setup` after deployment to create your admin account.
 2. The first user to register becomes the admin.
-3. After the first user is created, registration is permanently locked -- the API returns **403 "Registration is closed"** for any subsequent signup attempts.
+3. After the first user is created, registration is permanently locked -- the API returns **403 "Registration is closed"** for any subsequent signup attempts, and a database trigger refuses a second account even if that check were bypassed.
 4. If you visit `/admin/login` before an account exists, you'll be redirected to the setup page.
 
-This eliminates the need for setup tokens or invitation codes while ensuring only you can create the admin account.
+**Until you create the account, the setup page is open to whoever reaches it first.** On a public deploy, set the optional `SETUP_TOKEN` secret: the first signup must then present the same value (the wizard's **Setup token** field), otherwise it gets **403 "Invalid setup token"**. See [Environment Variables](/docs/self-hosting/environment-variables#cloudflare-deployment).
 
 ## File Upload Restrictions
 
@@ -27,11 +27,13 @@ Image uploads are validated server-side:
 - **Allowed MIME types:** image/jpeg, image/png, image/gif, image/webp, image/x-icon, image/vnd.microsoft.icon
 - **Magic-byte check:** the file's actual signature must match the claimed extension — an HTML or script file renamed to `.png` is rejected even if its client MIME says `image/png`.
 
-Uploads that fail validation are rejected with descriptive error messages (400 for invalid type or content mismatch, 413 for oversized files). When an image is replaced, the previous R2 object is deleted; a daily retention sweep removes any images no longer referenced by a setting or block.
+Uploads that fail validation are rejected with descriptive error messages (400 for invalid type or content mismatch, 413 for oversized files). When you replace an image during an edit, only the intermediate upload you never saved is deleted right away; the image your live page shows is never deleted on replace, so discarding the edit keeps it. A daily retention sweep removes images no longer referenced by any setting or block once they are 24 hours old.
+
+Images are served from `/api/images/<purpose>/<id>.<ext>` only: any other path is a 404 without touching storage, and served images are cached at the edge.
 
 ## Settings Key Allowlist
 
-The settings API only accepts known setting keys. Attempts to read or write arbitrary keys are rejected by Zod validation. This prevents attackers from injecting unexpected configuration values even if they obtain a valid session.
+The settings API only accepts known setting keys, and every value is checked against that key's rule (length, URL, colour, enum, or a JSON schema) before it is stored. Backup imports, the wallet editor and the vCard editor go through the same gate. Secret settings (email API key, CAPTCHA secret, MapKit token, wallet signing key) are masked when read back and are never included in backups.
 
 ## Input Sanitization
 
@@ -39,7 +41,7 @@ LinkDen sanitizes all user-provided content on the server side before saving it.
 
 **What gets sanitized:**
 
-- **Text fields** (profile name, bio, titles, etc.) -- HTML tags are stripped and length limits are enforced.
+- **Text fields** (profile name, bio, titles, etc.) -- HTML tags are stripped and length limits are enforced. Text such as `x < 5` or `<jane@corp.com>` that is not a tag is kept as written.
 - **URLs** -- Validated to ensure they use `http://` or `https://` protocols. Dangerous protocols like `javascript:` are rejected.
 - **Colors** -- Must match `#RRGGBB` hex format.
 - **Custom CSS** -- Script tags, `expression()` calls, `javascript:` URLs, `@import` directives, `data:` URLs, and backslash escape sequences are blocked.
@@ -50,29 +52,40 @@ LinkDen sanitizes all user-provided content on the server side before saving it.
 
 LinkDen uses [Better Auth](https://www.better-auth.com/) for authentication with email and password.
 
-- Sessions are signed with the `BETTER_AUTH_SECRET` environment variable.
-- All admin routes require a valid session.
-- Public routes are limited to page data, contact submissions, analytics tracking, vCard downloads, and setup.
+- Sessions are signed with `BETTER_AUTH_SECRET`. The secret fails closed: if it is empty, or (outside localhost) shorter than 32 characters or a placeholder, sign-in, the admin API and uploads answer **503** and `/api/health` reports `"auth": "misconfigured"`. Deploys refuse such a secret up front.
+- **Two-factor (TOTP)** with backup codes. Once enabled, password sign-in asks for a code (or a backup code); you can trust a device for 30 days.
+- **Magic link** (optional) is only for the admin address, refused while 2FA is on, never creates an account, and links expire after 10 minutes. It is refused entirely unless **Settings → Account** has it switched on.
+- Resetting the password signs out every session. Changing the email needs a confirmation from the current address and then a verification link at the new one.
+- All admin routes require a valid session. Public routes are limited to page data, contact submissions, analytics tracking, vCard downloads, and setup status.
+- The Apple Wallet pass download (`/api/admin/wallet-pass`) needs a session; there is no public pass URL.
 
-## CORS
+## Same-origin writes and CORS
 
-The API server checks the request origin against the `CORS_ORIGIN` environment variable. Only requests from your configured frontend URL are accepted.
+The API checks the request origin against `CORS_ORIGIN`. On top of CORS, every `POST` to `/trpc/*` and `/api/upload` must come from `CORS_ORIGIN` or the API's own origin (with a `Sec-Fetch-Site` fallback); anything else gets **403**. Request bodies are capped before parsing: 64 KB for `/api/auth/*`, 1 MB for `/trpc/*`, 16 MB for backup import.
 
 Make sure `CORS_ORIGIN` matches your frontend URL exactly (including protocol, no trailing slash).
 
+## Logging
+
+The API logs one line per request with the method, **path only**, status and duration. Query strings (which can carry magic-link and verification tokens) are never logged, the password-reset token in the path is redacted, Cloudflare's own invocation logs (which record full URLs) are turned off, and SQL parameters (which can hold visitor data) are stripped from logged errors. API error responses never include stack traces or internal messages.
+
 ## CAPTCHA
 
-The contact form supports optional CAPTCHA verification via Cloudflare Turnstile or Google reCAPTCHA. When configured, tokens are validated server-side before accepting submissions. See [Contact Form](/docs/guide/contact-form) for setup details.
+The contact form supports optional CAPTCHA via **Cloudflare Turnstile**, **Google reCAPTCHA (v2 checkbox)** or **hCaptcha**. The widget renders on your public page with the site key; the secret key never leaves the server. Verification fails closed: a missing secret, a provider timeout, a token issued for another hostname, or (for Turnstile) a wrong action all reject the submission. See [Contact Form](/docs/guide/contact-form) for setup details.
 
 ## Rate Limiting
 
-When deployed to Cloudflare Workers, LinkDen uses **Cloudflare Rate Limiting** (via Alchemy bindings) to protect all API endpoints. Four independent rate limit buckets are applied:
+When deployed to Cloudflare Workers, LinkDen uses **Cloudflare Rate Limiting** bindings. Limits are counted per client IP (IPv6 addresses share a bucket per /64):
 
-| Binding | Protects | Purpose |
-|---------|----------|---------|
-| `RL_AUTH` | `/auth/*` routes | Prevents brute-force login and password-reset attacks |
-| `RL_STRICT` | Sensitive mutations | Extra protection for admin write operations |
-| `RL_UPLOAD` | `/api/upload` | Limits file upload frequency |
-| `RL_PUBLIC` | Public page + analytics | Prevents scraping and analytics flooding |
+| Binding | Limit | Protects |
+|---------|-------|----------|
+| `RL_AUTH` | 10 / 60s | Sign-in, two-factor, contact form submissions |
+| `RL_STRICT` | 5 / 60s | Password reset, magic link (send and verify), sign-up, wallet pass download |
+| `RL_UPLOAD` | 20 / 60s | `/api/upload` |
+| `RL_PUBLIC` | 60 / 60s | Page-view and click tracking, vCard download |
+| `RL_SIGNIN` | 30 / 60s | A single shared bucket for all sign-in, two-factor and password-reset attempts, so the admin account can't be brute-forced from many addresses |
+| `RL_OG` | 10 / 60s | Open Graph image rendering (web worker) |
 
-Rate limit thresholds are configured in `packages/infra/src/alchemy.run.ts` and apply automatically on deployment. **No additional configuration is needed.** Limits are not active in local development.
+tRPC limits apply **per procedure call**: a batched request spends one token for every `submitContact`, `trackView` or `trackClick` inside it, batches are capped at 20 calls, and malformed batches are rejected. Better Auth's own per-route limiter also runs on top (for example 3 sign-in attempts per 10 seconds).
+
+Thresholds are configured in `packages/infra/alchemy.run.ts` (production) and `apps/server/wrangler.jsonc` (local) and apply automatically on deployment. **No additional configuration is needed.** Cloudflare's limiter is not active in local development.

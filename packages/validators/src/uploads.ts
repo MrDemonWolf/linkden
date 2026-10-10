@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+/** Largest image the upload endpoint accepts (the admin field checks it first). */
+export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+
 export const uploadPurposeEnum = z.enum([
 	"avatar",
 	"banner",

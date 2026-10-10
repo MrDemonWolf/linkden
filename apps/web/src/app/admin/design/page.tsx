@@ -1,17 +1,13 @@
 "use client";
 
 import { themePresets } from "@linkden/ui/themes";
-import type { SettingKey } from "@linkden/validators/settings";
-import { useQuery } from "@tanstack/react-query";
+import { SETTING_REGISTRY } from "@linkden/validators/settings-registry";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { VerifiedBadgeSection } from "@/components/admin/appearance/branding-section";
-import { ColorsSection } from "@/components/admin/appearance/colors-section";
+import { ColorsSection, type PresetColors } from "@/components/admin/appearance/colors-section";
 import { CustomCssSection } from "@/components/admin/appearance/custom-css-section";
-import {
-	type SocialIconShape,
-	SocialIconShapeSection,
-} from "@/components/admin/appearance/social-icon-shape-section";
+import { SocialIconShapeSection } from "@/components/admin/appearance/social-icon-shape-section";
 import { ThemePresetsSection } from "@/components/admin/appearance/theme-presets-section";
 import { QueryError } from "@/components/admin/dashboard/query-error";
 import { FieldError } from "@/components/admin/field-feedback";
@@ -21,54 +17,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useSettingsForm } from "@/hooks/use-settings-form";
 import { fieldError } from "@/lib/validate";
-import { trpc } from "@/utils/trpc";
+import { clearCustomColors, parse, serialize, type ThemeForm } from "./theme-form";
 
 // The public page only injects the first 20k chars of custom CSS.
-const customCssSchema = z.string().max(20_000);
+const customCssSchema = z.string().max(SETTING_REGISTRY.custom_css?.maxLength ?? 20_000);
 
-// Fresh-install fallbacks mirror the default preset's light palette so the
-// pickers (and their contrast badges) match what the public page renders
-// before any custom color is saved.
-const defaultLightVars = themePresets[0].cssVars.light;
-
-interface ThemeForm {
-	theme: string;
-	colorMode: string;
-	primaryColor: string;
-	secondaryColor: string;
-	accentColor: string;
-	bgColor: string;
-	customCss: string;
-	verifiedBadge: boolean;
-	socialIconShape: SocialIconShape;
-}
-
-function parse(s: Record<string, string>): ThemeForm {
+/** The preset's own palette for a mode: what an empty custom-colour field inherits. */
+function presetColorsFor(theme: string, mode: "light" | "dark"): PresetColors | undefined {
+	const vars = themePresets.find((t) => t.name === theme)?.cssVars[mode];
+	if (!vars) return undefined;
 	return {
-		theme: s.theme_preset ?? "default",
-		colorMode: s.default_color_mode ?? "light",
-		primaryColor: s.custom_primary ?? defaultLightVars["--ld-primary"],
-		secondaryColor: s.custom_secondary ?? defaultLightVars["--ld-secondary"],
-		accentColor: s.custom_accent ?? defaultLightVars["--ld-accent"],
-		bgColor: s.custom_background ?? defaultLightVars["--ld-background"],
-		customCss: s.custom_css ?? "",
-		verifiedBadge: s.verified_badge === "true",
-		socialIconShape: (s.social_icon_shape as SocialIconShape) || "circle",
+		primary: vars["--ld-primary"] ?? "",
+		secondary: vars["--ld-secondary"] ?? "",
+		accent: vars["--ld-accent"] ?? "",
+		background: vars["--ld-background"] ?? "",
 	};
-}
-
-function serialize(f: ThemeForm): Array<{ key: SettingKey; value: string }> {
-	return [
-		{ key: "theme_preset", value: f.theme },
-		{ key: "default_color_mode", value: f.colorMode },
-		{ key: "custom_primary", value: f.primaryColor },
-		{ key: "custom_secondary", value: f.secondaryColor },
-		{ key: "custom_accent", value: f.accentColor },
-		{ key: "custom_background", value: f.bgColor },
-		{ key: "custom_css", value: f.customCss },
-		{ key: "verified_badge", value: String(f.verifiedBadge) },
-		{ key: "social_icon_shape", value: f.socialIconShape },
-	];
 }
 
 function validate(f: ThemeForm): Record<string, string> {
@@ -85,8 +48,6 @@ export default function DesignThemePage() {
 		successMessage: "Theme saved",
 		errorMessage: "Failed to save theme",
 	});
-	// Same cache entry the hook reads — only used for the error/retry state.
-	const settingsQuery = useQuery(trpc.settings.getAll.queryOptions());
 	const { state: f, setState } = form;
 	const set = <K extends keyof ThemeForm>(key: K, value: ThemeForm[K]) =>
 		setState((prev) => (prev ? { ...prev, [key]: value } : prev));
@@ -122,8 +83,9 @@ export default function DesignThemePage() {
 		onModeChange: (m) => setPreviewDark(m === "dark"),
 	});
 
-	if (settingsQuery.isError) {
-		return <QueryError message="Couldn't load settings" onRetry={() => settingsQuery.refetch()} />;
+	// Only a load with nothing to show: a failed background refetch keeps the form.
+	if (form.isError) {
+		return <QueryError message="Couldn't load settings" onRetry={() => form.refetch()} />;
 	}
 	if (!f) {
 		return (
@@ -135,21 +97,10 @@ export default function DesignThemePage() {
 		);
 	}
 
+	// Picking a preset adopts its full light + dark palette, so any custom
+	// overrides are cleared rather than replaced with the preset's light values.
 	const handleThemeSelect = (name: string) => {
-		const preset = themePresets.find((t) => t.name === name);
-		setState((prev) => {
-			if (!prev) return prev;
-			if (!preset) return { ...prev, theme: name };
-			const vars = preset.cssVars.light;
-			return {
-				...prev,
-				theme: name,
-				primaryColor: vars["--ld-primary"],
-				secondaryColor: vars["--ld-secondary"],
-				accentColor: vars["--ld-accent"],
-				bgColor: vars["--ld-background"],
-			};
-		});
+		setState((prev) => (prev ? clearCustomColors(prev, name) : prev));
 	};
 
 	return (
@@ -162,6 +113,7 @@ export default function DesignThemePage() {
 				secondaryColor={f.secondaryColor}
 				accentColor={f.accentColor}
 				bgColor={f.bgColor}
+				presetColors={presetColorsFor(f.theme, previewDark ? "dark" : "light")}
 				onColorModeChange={(v) => set("colorMode", v)}
 				onPrimaryChange={(v) => set("primaryColor", v)}
 				onSecondaryChange={(v) => set("secondaryColor", v)}

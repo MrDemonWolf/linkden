@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeUrl, stripHtml, truncateUserAgent } from "../utils/sanitize";
+import { sanitizeUrl, stripHtml } from "../utils/sanitize";
 
 describe("sanitizeUrl", () => {
 	it("returns empty for empty input", () => {
@@ -40,52 +40,30 @@ describe("stripHtml", () => {
 		expect(stripHtml("<script>alert(1)</script>safe")).toBe("alert(1)safe");
 	});
 
-	it("decodes entity-encoded tags and strips them", () => {
-		expect(stripHtml("&lt;b&gt;hi&lt;/b&gt;ok")).toBe("hiok");
+	it("strips tags with attributes and self-closing slash syntax", () => {
+		expect(stripHtml('a<img src=x onerror="alert(1)">b<svg/onload=alert(1)>c<br/>d')).toBe("abcd");
 	});
 
-	it("decodes numeric entities", () => {
-		expect(stripHtml("&#60;b&#62;hi&#60;/b&#62;")).toBe("hi");
+	it("cannot be bypassed by a tag split around another tag", () => {
+		expect(stripHtml("<scr<b>ipt>alert(1)</script>")).toBe("alert(1)");
 	});
 
-	it("decodes hex entities", () => {
-		expect(stripHtml("&#x3C;b&#x3E;hi&#x3C;/b&#x3E;")).toBe("hi");
+	it("keeps an email address in angle brackets", () => {
+		expect(stripHtml("Please reply to my work address <jane@corp.com> rather than this one")).toBe(
+			"Please reply to my work address <jane@corp.com> rather than this one",
+		);
+	});
+
+	it("keeps comparisons and hearts", () => {
+		expect(stripHtml("if x < 5 and y > 3 then")).toBe("if x < 5 and y > 3 then");
+		expect(stripHtml("love you <3")).toBe("love you <3");
+	});
+
+	it("does not decode entities a visitor typed", () => {
+		expect(stripHtml("&lt;3 and &lt;b&gt;")).toBe("&lt;3 and &lt;b&gt;");
 	});
 
 	it("leaves plain text untouched", () => {
 		expect(stripHtml("hello world")).toBe("hello world");
-	});
-});
-
-describe("truncateUserAgent", () => {
-	it("returns null for empty input", () => {
-		expect(truncateUserAgent(undefined)).toBeNull();
-		expect(truncateUserAgent("")).toBeNull();
-	});
-
-	it("recognises Chrome", () => {
-		expect(
-			truncateUserAgent(
-				"Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-			),
-		).toBe("Chrome/120");
-	});
-
-	it("recognises Firefox", () => {
-		expect(
-			truncateUserAgent("Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0"),
-		).toBe("Firefox/121");
-	});
-
-	it("recognises Edge as Edge", () => {
-		expect(truncateUserAgent("Mozilla/5.0 Edg/120.0.0.0")).toBe("Edge/120");
-	});
-
-	it("recognises Opera (OPR)", () => {
-		expect(truncateUserAgent("Mozilla/5.0 OPR/105.0.0.0")).toBe("Opera/105");
-	});
-
-	it("returns Other for unknown UA", () => {
-		expect(truncateUserAgent("CustomBot/1.0")).toBe("Other");
 	});
 });

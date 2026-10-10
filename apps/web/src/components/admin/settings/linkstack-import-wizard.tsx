@@ -1,5 +1,7 @@
 "use client";
 
+import { MAX_BLOCKS } from "@linkden/validators/blocks";
+import { themePresetFromName } from "@linkden/validators/settings-registry";
 import { useMutation } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, CheckCircle2, FileJson, Upload } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -15,22 +17,14 @@ import {
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { trpc } from "@/utils/trpc";
+import {
+	isLinkStackExport,
+	type PreparedLinkStackImport,
+	prepareLinkStackImport,
+} from "./linkstack-payload";
+import { mutationErrorMessage } from "./mutation-error";
 
 type WizardStep = "upload" | "options" | "importing" | "done";
-
-interface LinkStackData {
-	name?: string;
-	littlelink_name?: string;
-	littlelink_description?: string;
-	theme?: string;
-	links?: Array<{
-		button_id?: string;
-		link?: string;
-		title?: string;
-		order?: number;
-	}>;
-	profile_image?: string;
-}
 
 interface ImportStats {
 	linksImported: number;
@@ -43,19 +37,13 @@ interface LinkStackImportWizardProps {
 	onImportComplete: () => void;
 }
 
-function isLinkStackFormat(data: unknown): data is LinkStackData {
-	if (typeof data !== "object" || data === null) return false;
-	const obj = data as Record<string, unknown>;
-	return ("littlelink_name" in obj || "littlelink_description" in obj) && Array.isArray(obj.links);
-}
-
 export function LinkStackImportWizard({
 	open,
 	onOpenChange,
 	onImportComplete,
 }: LinkStackImportWizardProps) {
 	const [step, setStep] = useState<WizardStep>("upload");
-	const [parsedData, setParsedData] = useState<LinkStackData | null>(null);
+	const [parsedData, setParsedData] = useState<PreparedLinkStackImport | null>(null);
 	const [importLinks, setImportLinks] = useState(true);
 	const [importProfile, setImportProfile] = useState(true);
 	const [importTheme, setImportTheme] = useState(true);
@@ -86,12 +74,18 @@ export function LinkStackImportWizard({
 	const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
+		// Same cap as the backup import: refuse before reading it into memory.
+		if (file.size > 10 * 1024 * 1024) {
+			toast.error("That file is too large to be a LinkStack export (max 10 MB).");
+			if (fileInputRef.current) fileInputRef.current.value = "";
+			return;
+		}
 
 		try {
 			const text = await file.text();
 			const parsed = JSON.parse(text);
 
-			if (!isLinkStackFormat(parsed)) {
+			if (!isLinkStackExport(parsed)) {
 				toast.error(
 					"This doesn't look like a LinkStack export file. Make sure it contains links and profile data.",
 				);
@@ -99,12 +93,28 @@ export function LinkStackImportWizard({
 				return;
 			}
 
-			setParsedData(parsed);
+			setParsedData(prepareLinkStackImport(parsed));
 		} catch {
 			toast.error("Failed to parse file. Make sure it is valid JSON.");
 			if (fileInputRef.current) fileInputRef.current.value = "";
 		}
 	};
+
+	const data = parsedData?.payload;
+	// Only http(s) links become blocks, so count what will actually be imported.
+	const linkCount = data?.links.length ?? 0;
+	const skippedCount = parsedData?.linksSkipped ?? 0;
+	const tooManyLinks = linkCount > MAX_BLOCKS;
+	const hasProfile = !!(data?.littlelink_name || data?.littlelink_description);
+	// A theme is carried over only when its name is a LinkDen preset (the
+	// server applies the same rule and writes it to theme_preset).
+	const themePreset = themePresetFromName(data?.theme);
+	const hasTheme = themePreset !== null;
+	const willImportLinks = importLinks && linkCount > 0 && !tooManyLinks;
+	const willImportProfile = importProfile && hasProfile;
+	const willImportTheme = importTheme && hasTheme;
+	const nothingSelected = !willImportLinks && !willImportProfile && !willImportTheme;
+	const nothingImported = !!stats && stats.linksImported === 0 && !stats.settingsUpdated;
 
 	const handleImport = async () => {
 		if (!parsedData) return;
@@ -113,21 +123,22 @@ export function LinkStackImportWizard({
 
 		try {
 			const result = await importMutation.mutateAsync({
-				data: parsedData,
-				options: { importLinks, importProfile, importTheme },
+				data: parsedData.payload,
+				options: {
+					importLinks: willImportLinks,
+					importProfile: willImportProfile,
+					importTheme: willImportTheme,
+				},
 			});
 			setStats(result.stats);
 			setStep("done");
 			onImportComplete();
-		} catch {
-			toast.error("Import failed. Please try again.");
+		} catch (err) {
+			// The router's reason (e.g. the block limit) beats a generic retry prompt.
+			toast.error(mutationErrorMessage(err, "Import failed. Nothing was changed."));
 			setStep("options");
 		}
 	};
-
-	const linkCount = parsedData?.links?.filter((l) => l.link).length ?? 0;
-	const hasProfile = !!(parsedData?.littlelink_name || parsedData?.littlelink_description);
-	const hasTheme = !!parsedData?.theme;
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -157,9 +168,13 @@ export function LinkStackImportWizard({
 										<span className="text-sm font-medium">File parsed successfully</span>
 									</div>
 									<div className="text-xs text-muted-foreground space-y-1">
-										{parsedData.littlelink_name && <p>Profile: {parsedData.littlelink_name}</p>}
-										<p>Links found: {linkCount}</p>
-										{hasTheme && <p>Theme: {parsedData.theme}</p>}
+										{data?.littlelink_name && <p>Profile: {data.littlelink_name}</p>}
+										<p>
+											Links to import: {linkCount}
+											{skippedCount > 0 &&
+												` (${skippedCount} skipped: only http/https links can be imported)`}
+										</p>
+										{hasTheme && <p>Theme: {data?.theme}</p>}
 									</div>
 									<Button
 										variant="ghost"
@@ -202,18 +217,25 @@ export function LinkStackImportWizard({
 						</DialogHeader>
 
 						<div className="space-y-3">
-							<label className="flex items-center gap-3 rounded-lg border border-border/50 p-3 cursor-pointer hover:bg-muted/50 transition-colors">
+							<label
+								className={`flex items-center gap-3 rounded-lg border border-border/50 p-3 transition-colors ${linkCount > 0 && !tooManyLinks ? "cursor-pointer hover:bg-muted/50" : "opacity-50 cursor-not-allowed"}`}
+							>
 								<input
 									type="checkbox"
-									checked={importLinks}
+									checked={willImportLinks}
 									onChange={(e) => setImportLinks(e.target.checked)}
+									disabled={linkCount === 0 || tooManyLinks}
 									className="h-4 w-4 rounded border-border accent-primary"
 								/>
 								<div>
 									<p className="text-sm font-medium">Import Links</p>
 									<p className="text-xs text-muted-foreground">
-										{linkCount} link{linkCount !== 1 ? "s" : ""} found — added to your page, nothing
-										existing is removed
+										{tooManyLinks
+											? `${linkCount} links is more than the ${MAX_BLOCKS}-block limit`
+											: linkCount === 0
+												? "No http/https links found"
+												: `${linkCount} link${linkCount !== 1 ? "s" : ""} added to your page — nothing existing is removed`}
+										{skippedCount > 0 && linkCount > 0 && `; ${skippedCount} non-web skipped`}
 									</p>
 								</div>
 							</label>
@@ -250,8 +272,10 @@ export function LinkStackImportWizard({
 									<p className="text-sm font-medium">Import Theme</p>
 									<p className="text-xs text-muted-foreground">
 										{hasTheme
-											? `Replaces your current theme with "${parsedData?.theme}"`
-											: "No theme data found"}
+											? `Switches your theme preset to "${themePreset}"`
+											: data?.theme
+												? `"${data.theme}" has no matching LinkDen preset, so it will be skipped`
+												: "No theme data found"}
 									</p>
 								</div>
 							</label>
@@ -262,11 +286,7 @@ export function LinkStackImportWizard({
 								<ArrowLeft className="mr-1.5 h-3 w-3" />
 								Back
 							</Button>
-							<Button
-								size="sm"
-								disabled={!importLinks && !importProfile && !importTheme}
-								onClick={handleImport}
-							>
+							<Button size="sm" disabled={nothingSelected} onClick={handleImport}>
 								Import
 								<ArrowRight className="ml-1.5 h-3 w-3" />
 							</Button>
@@ -295,9 +315,11 @@ export function LinkStackImportWizard({
 				{step === "done" && (
 					<>
 						<DialogHeader>
-							<DialogTitle>Import Complete</DialogTitle>
+							<DialogTitle>{nothingImported ? "Nothing Imported" : "Import Complete"}</DialogTitle>
 							<DialogDescription>
-								Your LinkStack data has been imported successfully.
+								{nothingImported
+									? "The file had nothing LinkDen could use for the options you picked."
+									: "Your LinkStack data has been imported."}
 							</DialogDescription>
 						</DialogHeader>
 

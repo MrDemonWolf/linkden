@@ -7,6 +7,7 @@ import {
 	MAX_SETTING_VALUE_LENGTH,
 	maskSecret,
 	SECRET_MASK,
+	type SettingMeta,
 } from "@linkden/validators/settings-registry";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
@@ -73,21 +74,24 @@ export function sanitizeSetting(key: string, value: string): string {
 			return value;
 		case "css":
 			return sanitizeCss(value);
-		case "timezone": {
-			if (value === "") return value; // empty = browser default
-			let supported: string[] | undefined;
+		case "timezone":
+			if (value === "") return value; // empty = UTC (analytics buckets unset as UTC)
+			// Validate by construction, not list membership: on workerd/V8,
+			// Intl.supportedValuesOf only lists ICU canonical ids and leaves out
+			// UTC, Asia/Kolkata, Europe/Kyiv, … which the formatter accepts.
 			try {
-				supported = Intl.supportedValuesOf("timeZone");
+				new Intl.DateTimeFormat("en-US", { timeZone: value });
 			} catch {
-				// Intl.supportedValuesOf not available — skip validation
+				throw bad(`Invalid timezone: ${value}`);
 			}
-			if (supported && !supported.includes(value)) throw bad(`Invalid timezone: ${value}`);
 			return value;
-		}
 		case "emailFrom":
 			if (value && !value.includes("@")) throw bad("Invalid email address for email_from");
 			return value;
 		case "apiKey":
+			// No real key contains the mask character: a mask glued to a pasted
+			// key (from any client, or a backup) must never be stored.
+			if (value.includes(SECRET_MASK[0] as string)) throw bad(`Invalid value for ${key}`);
 			// biome-ignore lint/suspicious/noControlCharactersInRegex: intentionally strips control characters
 			return value.replace(/[\x00-\x1f\x7f]/g, "").slice(0, meta.maxLength ?? 512);
 		case "boolean":
@@ -97,7 +101,12 @@ export function sanitizeSetting(key: string, value: string): string {
 			if (value && !meta.values.includes(value)) throw bad(`Invalid value for ${key}: ${value}`);
 			return value;
 		case "opaque":
+			if (meta.validate && !meta.validate(value)) throw bad(`Invalid value for ${key}`);
 			return value;
+		default: {
+			const unhandled: never = meta;
+			throw bad(`Unknown setting: ${key} (${(unhandled as SettingMeta).kind})`);
+		}
 	}
 }
 

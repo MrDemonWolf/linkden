@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	type Announcements,
 	closestCenter,
 	DndContext,
 	type DragEndEvent,
@@ -13,6 +14,7 @@ import {
 	MouseSensor,
 	PointerSensor,
 	TouchSensor,
+	type UniqueIdentifier,
 	useSensor,
 	useSensors,
 } from "@dnd-kit/core";
@@ -26,7 +28,8 @@ import {
 import type { EmbedType } from "@linkden/validators/blocks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Blocks, Plus, Rocket, Upload } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BlockEditPanel } from "@/components/admin/builder/block-edit-panel";
 import { hasBlockEditChanges } from "@/components/admin/builder/block-edit-state";
@@ -48,6 +51,7 @@ import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { prefersReducedMotion } from "@/hooks/use-reduced-motion";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
@@ -79,6 +83,26 @@ const BLOCK_DEFAULT_TITLE: Record<string, string> = {
 	divider: "Divider",
 };
 
+/**
+ * Follows `?filter=drafts` (the StatePill's "n unpublished" link). A same-route
+ * link only changes the search params — the page doesn't remount — so this
+ * watches them instead of reading the URL once on mount. Isolated behind its
+ * own Suspense boundary so only this null-rendering child bails out of
+ * prerendering.
+ */
+function DraftsFilterSync({ onDrafts }: { onDrafts: () => void }) {
+	const wantsDrafts = useSearchParams().get("filter") === "drafts";
+	useEffect(() => {
+		if (wantsDrafts) onDrafts();
+	}, [wantsDrafts, onDrafts]);
+	return null;
+}
+
+const SCREEN_READER_INSTRUCTIONS = {
+	draggable:
+		"To reorder a block, press Space or Enter to pick it up. Use the up and down arrow keys to move it, then press Space or Enter to drop it, or Escape to cancel.",
+};
+
 /** Links → Blocks: the block list, inline editor (shell preview column ≥lg, bottom Sheet below) and Publish. */
 export default function LinksBlocksPage() {
 	const qc = useQueryClient();
@@ -93,10 +117,16 @@ export default function LinksBlocksPage() {
 	// lg+, the bottom sheet below — never both (duplicate input IDs).
 	const isLg = useMediaQuery("(min-width: 1024px)", true);
 
-	// ponytail: `?filter=drafts` (StatePill) read once after mount — no useSearchParams/Suspense.
-	useEffect(() => {
-		if (new URLSearchParams(window.location.search).get("filter") === "drafts") setFilter("drafts");
-	}, []);
+	const showDrafts = useCallback(() => setFilter("drafts"), []);
+	// Picking a filter by hand drops a stale `?filter=` from the URL (Next syncs
+	// history.replaceState with useSearchParams), so the next pill click is a
+	// real search-param change that DraftsFilterSync can see.
+	const chooseFilter = (next: Filter) => {
+		setFilter(next);
+		if (new URLSearchParams(window.location.search).has("filter")) {
+			window.history.replaceState(null, "", window.location.pathname);
+		}
+	};
 
 	const blocksQuery = useQuery(trpc.blocks.list.queryOptions());
 	const blocks: Block[] = (blocksQuery.data as Block[] | undefined) ?? [];
@@ -108,7 +138,10 @@ export default function LinksBlocksPage() {
 		if (newlyAddedId && blocks.some((b) => b.id === newlyAddedId)) {
 			const el = document.querySelector(`[data-block-id="${newlyAddedId}"]`);
 			if (el instanceof HTMLElement) {
-				el.scrollIntoView({ behavior: "smooth", block: "center" });
+				el.scrollIntoView({
+					behavior: prefersReducedMotion() ? "auto" : "smooth",
+					block: "center",
+				});
 				el.querySelector<HTMLElement>("button")?.focus();
 			}
 			setNewlyAddedId(null);
@@ -155,7 +188,7 @@ export default function LinksBlocksPage() {
 			});
 			invalidate();
 			setNewlyAddedId(id);
-			setFilter("all");
+			chooseFilter("all");
 			toast.success("Block added");
 		} catch {
 			toast.error("Failed to add block");
@@ -180,6 +213,10 @@ export default function LinksBlocksPage() {
 		setPendingDelete(null);
 		try {
 			await deleteBlock.mutateAsync({ id: block.id });
+			// The row's trash button can delete the block that is open in the
+			// editor; leaving it open would make every Save hit NOT_FOUND. Only
+			// after success, so a failed delete keeps the admin's edits.
+			if (editingBlock?.id === block.id) clearEdit();
 			invalidate();
 			// Undo re-creates the row, so it must carry the status back or a live
 			// block would silently return as unpublished. Clicks are gone either
@@ -287,23 +324,71 @@ export default function LinksBlocksPage() {
 
 	const handleDragStart = (event: DragStartEvent) => setActiveId(event.active.id as string);
 
+	// Optimistic: the cache takes the new order before the request goes out,
+	// so the row doesn't snap back on drop and a quick second drag starts from
+	// the order the admin sees (not a stale one it would silently undo).
 	const handleDragEnd = async (event: DragEndEvent) => {
 		const { active, over } = event;
 		setActiveId(null);
 		if (!over || active.id === over.id) return;
-		const oldIndex = blocks.findIndex((b) => b.id === active.id);
-		const newIndex = blocks.findIndex((b) => b.id === over.id);
+		const listKey = trpc.blocks.list.queryKey();
+		await qc.cancelQueries({ queryKey: listKey });
+		const prev = qc.getQueryData(listKey);
+		if (!prev) return;
+		const oldIndex = prev.findIndex((b) => b.id === active.id);
+		const newIndex = prev.findIndex((b) => b.id === over.id);
 		if (oldIndex === -1 || newIndex === -1) return;
-		const updates = arrayMove(blocks, oldIndex, newIndex).map((b, i) => ({
-			id: b.id,
-			position: i,
-		}));
+		const next = arrayMove(prev, oldIndex, newIndex).map((b, i) => ({ ...b, position: i }));
+		qc.setQueryData(listKey, next);
+		// Only the rows between the two indexes change position — at most
+		// |old - new| + 1 of them. That holds only while the stored positions
+		// are 0..n-1; after a delete leaves a gap, send every row once so the
+		// positions are renumbered (a page holds at most MAX_BLOCKS).
+		const contiguous = prev.every((b, i) => b.position === i);
+		const changed = contiguous
+			? next.slice(Math.min(oldIndex, newIndex), Math.max(oldIndex, newIndex) + 1)
+			: next;
 		try {
-			await reorderBlocks.mutateAsync(updates);
-			invalidate();
+			await reorderBlocks.mutateAsync(changed.map((b) => ({ id: b.id, position: b.position })));
 		} catch {
+			qc.setQueryData(listKey, prev);
 			toast.error("Failed to reorder");
+		} finally {
+			// Refetch once the last in-flight reorder settles; an earlier one
+			// landing first would briefly show its intermediate order.
+			if (qc.isMutating({ mutationKey: trpc.blocks.reorder.mutationKey() }) === 0) invalidate();
 		}
+	};
+
+	// Keyboard/screen-reader reordering speaks block titles and positions, not
+	// the UUIDs dnd-kit announces by default.
+	const blockLabel = (id: UniqueIdentifier) => {
+		const block = blocks.find((b) => b.id === id);
+		if (!block) return "Block";
+		return block.title || BLOCK_TYPES.find((t) => t.type === block.type)?.label || "Untitled block";
+	};
+	// Positions are counted in the list the admin sees (a filter shows a subset).
+	const visibleBlocks =
+		filter === "drafts"
+			? blocks.filter((b) => b.status === "draft")
+			: filter === "hidden"
+				? blocks.filter((b) => !b.isEnabled)
+				: blocks;
+	const positionOf = (id: UniqueIdentifier) => visibleBlocks.findIndex((b) => b.id === id) + 1;
+	const ofTotal = visibleBlocks.length;
+	const announcements: Announcements = {
+		onDragStart: ({ active }) =>
+			`Picked up ${blockLabel(active.id)}, position ${positionOf(active.id)} of ${ofTotal}.`,
+		onDragOver: ({ active, over }) =>
+			over
+				? `${blockLabel(active.id)} moved to position ${positionOf(over.id)} of ${ofTotal}.`
+				: `${blockLabel(active.id)} is no longer over the list.`,
+		onDragEnd: ({ active, over }) =>
+			over
+				? `${blockLabel(active.id)} dropped at position ${positionOf(over.id)} of ${ofTotal}.`
+				: `${blockLabel(active.id)} dropped. The order is unchanged.`,
+		onDragCancel: ({ active }) =>
+			`Reordering cancelled. ${blockLabel(active.id)} stays at position ${positionOf(active.id)}.`,
 	};
 
 	// While a block is being edited, the preview shows the enabled blocks with
@@ -345,17 +430,14 @@ export default function LinksBlocksPage() {
 	const activeBlock = activeId ? blocks.find((b) => b.id === activeId) : null;
 	const draftCount = blocks.filter((b) => b.status === "draft").length;
 	const hiddenCount = blocks.filter((b) => !b.isEnabled).length;
-	const visibleBlocks =
-		filter === "drafts"
-			? blocks.filter((b) => b.status === "draft")
-			: filter === "hidden"
-				? blocks.filter((b) => !b.isEnabled)
-				: blocks;
 	const countFor = (f: Filter) =>
 		f === "drafts" ? draftCount : f === "hidden" ? hiddenCount : blocks.length;
 
 	return (
 		<div className="space-y-4">
+			<Suspense fallback={null}>
+				<DraftsFilterSync onDrafts={showDrafts} />
+			</Suspense>
 			{/* One toolbar line, edge-to-edge with the block list panel below it:
 			    the single-select filter group on the left, Publish on the right.
 			    Publish only ever promotes never-published blocks — edits to a live
@@ -370,7 +452,7 @@ export default function LinksBlocksPage() {
 					// empty selection keeps the current filter.
 					onValueChange={(next) => {
 						const picked = next[0] as Filter | undefined;
-						if (picked) setFilter(picked);
+						if (picked) chooseFilter(picked);
 					}}
 					className="min-w-0 gap-1 overflow-x-auto [scrollbar-width:none]"
 				>
@@ -412,6 +494,7 @@ export default function LinksBlocksPage() {
 				collisionDetection={closestCenter}
 				modifiers={[restrictToVerticalAxis, restrictToParentElement]}
 				measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+				accessibility={{ announcements, screenReaderInstructions: SCREEN_READER_INSTRUCTIONS }}
 				onDragStart={handleDragStart}
 				onDragEnd={handleDragEnd}
 			>

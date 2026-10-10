@@ -2,9 +2,10 @@
 
 import { PASS_LOCATION_LIMIT, type PassLocation } from "@linkden/validators/wallet";
 import { CalendarPlus, MapPin, Trash2, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { locationErrors } from "./wallet-validation";
 
 interface ContextPanelProps {
 	relevantDate: string; // datetime-local string ("" when unset)
@@ -26,6 +27,7 @@ export function ContextPanel({
 	onRelevantDateChange,
 	onLocationsChange,
 }: ContextPanelProps) {
+	const baseId = useId();
 	const [showDate, setShowDate] = useState(false);
 	const dateVisible = showDate || relevantDate !== "";
 
@@ -50,56 +52,93 @@ export function ContextPanel({
 				<div className="flex items-center justify-between">
 					<Label className="text-micro">Locations</Label>
 					{locations.length > 0 && (
-						<span className="text-micro text-muted-foreground/60">
+						<span className="text-micro text-muted-foreground">
 							{locations.length}/{PASS_LOCATION_LIMIT}
 						</span>
 					)}
 				</div>
-				{locations.map((loc, i) => (
-					<div key={i} className="space-y-2 rounded-lg border border-border/60 bg-card/40 p-2.5">
-						<div className="grid grid-cols-2 gap-2">
-							<div className="space-y-1">
-								<Label className="text-micro">Latitude</Label>
-								<Input
-									type="number"
-									step="any"
-									value={Number.isFinite(loc.latitude) ? loc.latitude : ""}
-									placeholder="37.7749"
-									onChange={(e) => updateLocation(i, { latitude: parseFloat(e.target.value) })}
-									className="text-micro"
-								/>
-							</div>
-							<div className="space-y-1">
-								<Label className="text-micro">Longitude</Label>
-								<Input
-									type="number"
-									step="any"
-									value={Number.isFinite(loc.longitude) ? loc.longitude : ""}
-									placeholder="-122.4194"
-									onChange={(e) => updateLocation(i, { longitude: parseFloat(e.target.value) })}
-									className="text-micro"
-								/>
-							</div>
-						</div>
-						<div className="space-y-1">
-							<Label className="text-micro">Lock Screen text</Label>
-							<Input
-								value={loc.relevantText ?? ""}
-								maxLength={100}
-								placeholder="Save my contact"
-								onChange={(e) => updateLocation(i, { relevantText: e.target.value })}
-								className="text-micro"
-							/>
-						</div>
-						<button
-							type="button"
-							onClick={() => removeLocation(i)}
-							className="inline-flex min-h-11 items-center gap-1 rounded text-micro text-destructive hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-8"
+				{locations.map((loc, i) => {
+					const n = i + 1;
+					const id = (field: string) => `${baseId}-${field}-${i}`;
+					const errors = locationErrors(loc);
+					return (
+						<fieldset
+							key={i}
+							className="space-y-2 rounded-lg border border-border/60 bg-card/40 p-2.5"
 						>
-							<Trash2 className="h-3 w-3" /> Remove
-						</button>
-					</div>
-				))}
+							<legend className="sr-only">Location {n}</legend>
+							<div className="grid grid-cols-2 gap-2">
+								<div className="space-y-1">
+									<Label htmlFor={id("lat")} className="text-micro">
+										Latitude
+									</Label>
+									<Input
+										id={id("lat")}
+										type="number"
+										step="any"
+										min={-90}
+										max={90}
+										value={Number.isFinite(loc.latitude) ? loc.latitude : ""}
+										placeholder="37.7749"
+										onChange={(e) => updateLocation(i, { latitude: parseFloat(e.target.value) })}
+										className="text-micro"
+										aria-invalid={!!errors.latitude}
+										aria-describedby={errors.latitude ? id("lat-error") : undefined}
+									/>
+									{errors.latitude && (
+										<p id={id("lat-error")} className="text-micro text-destructive">
+											{errors.latitude}
+										</p>
+									)}
+								</div>
+								<div className="space-y-1">
+									<Label htmlFor={id("lng")} className="text-micro">
+										Longitude
+									</Label>
+									<Input
+										id={id("lng")}
+										type="number"
+										step="any"
+										min={-180}
+										max={180}
+										value={Number.isFinite(loc.longitude) ? loc.longitude : ""}
+										placeholder="-122.4194"
+										onChange={(e) => updateLocation(i, { longitude: parseFloat(e.target.value) })}
+										className="text-micro"
+										aria-invalid={!!errors.longitude}
+										aria-describedby={errors.longitude ? id("lng-error") : undefined}
+									/>
+									{errors.longitude && (
+										<p id={id("lng-error")} className="text-micro text-destructive">
+											{errors.longitude}
+										</p>
+									)}
+								</div>
+							</div>
+							<div className="space-y-1">
+								<Label htmlFor={id("text")} className="text-micro">
+									Lock Screen text
+								</Label>
+								<Input
+									id={id("text")}
+									value={loc.relevantText ?? ""}
+									maxLength={100}
+									placeholder="Save my contact"
+									onChange={(e) => updateLocation(i, { relevantText: e.target.value })}
+									className="text-micro"
+								/>
+							</div>
+							<button
+								type="button"
+								onClick={() => removeLocation(i)}
+								aria-label={`Remove location ${n}`}
+								className="inline-flex min-h-11 items-center gap-1 rounded text-micro text-destructive hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-8"
+							>
+								<Trash2 className="h-3 w-3" aria-hidden="true" /> Remove
+							</button>
+						</fieldset>
+					);
+				})}
 				{locations.length < PASS_LOCATION_LIMIT && (
 					<button
 						ref={locationPillRef}
@@ -154,7 +193,7 @@ export function ContextPanel({
 				)}
 			</div>
 
-			<p className="text-micro leading-relaxed text-muted-foreground/70">
+			<p className="text-micro leading-relaxed text-muted-foreground">
 				Add places and timing so Wallet can surface this card when it is most useful.
 			</p>
 		</div>

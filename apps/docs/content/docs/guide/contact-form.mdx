@@ -1,6 +1,6 @@
 ---
 title: Contact Form
-description: Enable a built-in contact form with CAPTCHA protection and email notifications via Resend.
+description: Enable a built-in contact form with CAPTCHA protection, an Inbox, and optional email notifications via Resend.
 ---
 
 # Contact Form
@@ -9,45 +9,58 @@ Let visitors send you messages without exposing your email address. Messages are
 
 ## How It Works
 
-1. A visitor fills out the form on your public page (name, email, message).
-2. If CAPTCHA is configured, it verifies the submission is from a real person.
-3. The message is saved to your database.
-4. If email is configured, you receive a notification with the full submission details.
-5. You can view and manage all submissions at `/admin/inbox`.
+1. A visitor fills out a **Connect** block on your public page (first and last name, email, an optional message, and a consent checkbox).
+2. If CAPTCHA is configured, the widget checks the visitor is a real person and the server verifies the token. A hidden honeypot field catches simple bots either way.
+3. The message is saved to your Inbox and/or emailed to you, depending on the delivery mode.
+4. You can view and manage all submissions at `/admin/inbox`.
+
+Visitors are never told a message failed once it is saved. If an email notification fails (or email isn't set up) the message is kept in your Inbox, and the failure is written to the server log and the audit log (`contact.email_failed`).
 
 ## Setting Up
 
 ### 1. Enable the Form
 
-Go to `/admin/inbox` and turn on **Accepting messages** in the header. Messages are always stored in your database; when email is configured you also receive a notification.
+Go to `/admin/inbox` and turn on **Accepting messages** in the header, then add a **Connect** block at `/admin/links`.
 
 ### 2. Configure Email (Optional)
 
 At `/admin/settings/email`:
 
-1. Select a provider: **Resend** or **Cloudflare Email Workers**.
+1. Select a provider: **Resend** (Cloudflare Email Workers coming soon).
 2. Enter your API key.
 3. Set the "From" email address (must be verified with your provider).
+4. Pick the **Contact-form delivery**:
+   - **Inbox only** (database) — the default.
+   - **Email only** — sends you a notification; if the send fails, the message is saved to the Inbox instead.
+   - **Inbox and email** — saves to the Inbox and emails you.
 
-When email is enabled, LinkDen sends a **Contact Notification** email to you with the full submission details (name, email, message, and any optional fields). You can preview this template in the [Email Templates](/docs/guide/email-templates) section.
+The email modes need an API key and a sender address. The notification contains the visitor's name, email, message, "where we met" (if asked) and the form's block title. You can preview it in the [Email Templates](/docs/guide/email-templates) section.
 
 ### 3. Configure CAPTCHA (Recommended)
 
-At `/admin/settings/integrations` → **CAPTCHA**, choose a provider:
+At `/admin/settings/integrations` → **CAPTCHA**, choose a provider. Both the site key and the secret key are required once a provider is selected. Register the widget for your site's exact hostname (the server rejects tokens issued for another hostname).
 
-**Cloudflare Turnstile** -- A privacy-friendly, invisible challenge.
+**Cloudflare Turnstile** -- A privacy-friendly, usually invisible challenge.
 
 1. Go to **Turnstile** in the Cloudflare dashboard.
 2. Add your site and get the site key and secret key.
 3. Enter both keys in the CAPTCHA settings.
 
-**Google reCAPTCHA** -- A traditional checkbox challenge.
+**Google reCAPTCHA (v2 checkbox)** -- The "I'm not a robot" checkbox.
 
-1. Register your site at [google.com/recaptcha](https://www.google.com/recaptcha).
+1. Register a **reCAPTCHA v2 → "I'm not a robot" Checkbox** site at [google.com/recaptcha](https://www.google.com/recaptcha).
 2. Get the site key and secret key.
 3. Enter both keys in the CAPTCHA settings.
 
-> **Tip:** Without CAPTCHA, the form still works but has no bot protection. Turnstile is recommended for a frictionless visitor experience.
+**hCaptcha** -- A checkbox challenge from [hcaptcha.com](https://www.hcaptcha.com).
+
+1. Add your site in the hCaptcha dashboard.
+2. Get the site key and secret key.
+3. Enter both keys in the CAPTCHA settings.
+
+The widget loads from the provider in the visitor's browser, and the server sends the provider the token and the visitor's IP to verify it. Mention your provider in your privacy notice.
+
+> **Tip:** Without CAPTCHA, the form still works but relies on rate limiting and the honeypot only. Turnstile is recommended for a frictionless visitor experience.
 
 ## Managing Submissions
 
@@ -58,7 +71,7 @@ Navigate to `/admin/inbox` to view all submissions. Each one shows:
 - Date and time
 - Read/unread status
 
-You can **mark as read**, **mark as unread**, or **delete** any submission.
+You can **mark as read**, **mark as unread**, or **delete** any submission, or use **Select** to act on several at once.
 
 The **Inbox** item in the navigation shows an unread badge.
 
@@ -66,7 +79,10 @@ The **Inbox** item in the navigation shows an unread badge.
 
 | Field | Required |
 |-------|----------|
-| Name | Yes |
+| First name | Yes |
+| Last name | Yes |
 | Email | Yes |
-| Message | Yes |
+| Message | No |
+| Consent checkbox | Yes |
+| Where did we meet? | Only when **Ask where we met** is on (or the Connect preset is used) |
 | CAPTCHA | Only if configured |

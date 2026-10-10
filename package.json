@@ -10,22 +10,22 @@
 		"catalog": {
 			"@cloudflare/workers-types": "^4.20260702.1",
 			"@tailwindcss/postcss": "^4.3.3",
-			"@trpc/client": "^11.18.0",
-			"@trpc/server": "^11.18.0",
-			"@types/react": "^19.2.17",
-			"@types/react-dom": "^19.2.3",
+			"@trpc/client": "^11.19.0",
+			"@trpc/server": "^11.19.0",
+			"@types/react": "^19.3.0",
+			"@types/react-dom": "^19.3.0",
 			"alchemy": "^0.93.12",
-			"better-auth": "^1.6.23",
+			"better-auth": "~1.6.33",
 			"dotenv": "^17.4.2",
 			"drizzle-orm": "^0.45.2",
-			"hono": "^4.13.3",
-			"lucide-react": "^1.23.0",
-			"react": "^19.2.7",
-			"react-dom": "^19.2.7",
+			"hono": "^4.13.13",
+			"lucide-react": "^1.52.0",
+			"react": "^19.3.0",
+			"react-dom": "^19.3.0",
 			"tailwindcss": "^4.3.3",
-			"typescript": "^6",
-			"wrangler": "^4.107.0",
-			"zod": "^4.4.3"
+			"typescript": "^6.0.3",
+			"wrangler": "^4.148.0",
+			"zod": "^4.6.5"
 		}
 	},
 	"type": "module",
@@ -40,12 +40,11 @@
 		"dev:web": "turbo -F web dev:bare",
 		"dev:server": "turbo -F server dev:standalone",
 		"dev:docs": "turbo -F docs dev",
-		"db:push": "turbo -F @linkden/db db:push",
 		"db:generate": "turbo -F @linkden/db db:generate",
 		"deploy": "turbo -F @linkden/infra deploy",
 		"ship": "turbo -F @linkden/infra deploy",
 		"destroy": "turbo -F @linkden/infra destroy",
-		"db:reset": "rm -rf apps/server/.wrangler/state && echo 'Local DB wiped. Run bun dev to recreate.'",
+		"db:reset": "rm -rf .alchemy/miniflare apps/server/.wrangler/state && echo 'Local DB wiped (bun dev and bun dev:server stores). Restart bun dev to re-apply migrations; for bun dev:server apply them with wrangler d1 migrations apply / execute.'",
 		"reset:password": "bun scripts/reset-password.ts",
 		"reset:factory": "bun scripts/factory-reset.ts",
 		"test": "vitest run",
@@ -55,27 +54,18 @@
 		"test:e2e:headed": "playwright test --headed",
 		"test:all": "vitest run && playwright test"
 	},
-	"dependencies": {
-		"@linkden/env": "workspace:*",
-		"alchemy": "catalog:",
-		"dotenv": "catalog:",
-		"zod": "catalog:"
-	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.10",
+		"@biomejs/biome": "^2.5.15",
 		"@cloudflare/workers-types": "catalog:",
 		"@linkden/config": "workspace:*",
-		"@playwright/test": "^1.62.1",
-		"@tailwindcss/postcss": "catalog:",
+		"@playwright/test": "^1.63.0",
 		"@testing-library/jest-dom": "^6.10.0",
-		"@testing-library/react": "^16.3.2",
-		"@types/node": "^25.9.5",
+		"@testing-library/react": "^16.3.3",
+		"@types/node": "^25.9.9",
 		"@vitejs/plugin-react": "^5.2.0",
-		"@vitest/coverage-v8": "4.1.6",
-		"bcryptjs": "^3.0.3",
+		"@vitest/coverage-v8": "^4.1.11",
 		"jsdom": "^28.1.0",
-		"tailwindcss": "catalog:",
-		"turbo": "^2.10.11",
+		"turbo": "^2.11.7",
 		"typescript": "catalog:",
 		"vitest": "^4.1.11"
 	},
@@ -86,6 +76,11 @@
 		"workerd"
 	],
 	"overrides": {
-		"drizzle-orm": "0.45.2"
+		"compression": "^1.8.2",
+		"drizzle-orm": "0.45.2",
+		"mdast-util-to-markdown": "2.1.2",
+		"undici": "^7.29.1",
+		"vite": "^7.3.5",
+		"ws": "^8.21.0"
 	}
 }

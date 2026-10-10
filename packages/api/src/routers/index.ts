@@ -1,20 +1,18 @@
-import { router, publicProcedure } from "../index";
-import { blocksRouter } from "./blocks";
-import { settingsRouter } from "./settings";
-import { formsRouter } from "./contacts";
+import { router } from "../index";
 import { analyticsRouter } from "./analytics";
-import { socialRouter } from "./social";
-import { walletRouter } from "./wallet";
-import { vcardRouter } from "./vcard";
 import { backupRouter } from "./backup";
-import { versionRouter } from "./version";
-import { publicRouter } from "./public";
+import { blocksRouter } from "./blocks";
+import { formsRouter } from "./contacts";
 import { dangerRouter } from "./danger";
+import { publicRouter } from "./public";
+import { settingsRouter } from "./settings";
+import { socialRouter } from "./social";
+import { vcardRouter } from "./vcard";
+import { versionRouter } from "./version";
+import { walletRouter } from "./wallet";
 
+// Health lives at GET /api/health (checks D1, reports the version), not here.
 export const appRouter = router({
-	healthCheck: publicProcedure.query(() => {
-		return "OK";
-	}),
 	blocks: blocksRouter,
 	settings: settingsRouter,
 	forms: formsRouter,

@@ -4,7 +4,7 @@ import { getReadableTextColor } from "@linkden/ui/color-contrast";
 import { ArrowRight } from "lucide-react";
 import { safeHttpUrl } from "@/lib/safe-url";
 import { trackClick } from "@/lib/track";
-import { BlockIcon } from "./block-icon";
+import { BlockIcon, type ResolvedBlockIcon } from "./block-icon";
 import { usePreview } from "./preview-context";
 import type { ThemeColors } from "./public-page";
 
@@ -14,6 +14,8 @@ interface LinkBlockProps {
 		title: string | null;
 		url: string | null;
 		icon: string | null;
+		/** Server-resolved glyph (app/page.tsx); absent in the admin preview. */
+		iconSvg?: ResolvedBlockIcon | null;
 	};
 	config: Record<string, unknown>;
 	colorMode: "light" | "dark";
@@ -115,7 +117,7 @@ export function LinkBlock({ block, config, themeColors: colors, tile }: LinkBloc
 	};
 
 	const iconOrEmoji = block.icon ? (
-		<BlockIcon icon={block.icon} />
+		<BlockIcon icon={block.icon} svg={block.iconSvg} />
 	) : emoji && emojiPosition === "left" ? (
 		<span className="text-xl leading-none" aria-hidden="true">
 			{emoji}

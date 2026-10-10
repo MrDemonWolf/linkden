@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getPublicPage } from "@/lib/public-page";
+import { pagePrimaryColor } from "@/lib/theme-colors";
 
 // Brand fallbacks — the same blue/navy as the default theme and the favicon.
 const DEFAULT_THEME_COLOR = "#00ACED";
@@ -22,7 +23,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
 		start_url: "/",
 		scope: "/",
 		display: "standalone",
-		theme_color: data?.settings.customPrimary || DEFAULT_THEME_COLOR,
+		theme_color: pagePrimaryColor(data?.settings, DEFAULT_THEME_COLOR),
 		background_color: data?.settings.customBackground || DEFAULT_BACKGROUND_COLOR,
 		icons: [
 			{ src: "/favicon/web-app-manifest-192x192.png", sizes: "192x192", type: "image/png" },

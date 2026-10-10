@@ -47,19 +47,22 @@ LinkDen uses **Better Auth**.
 - Registration locks automatically after that.
 
 ### How do I reset my password?
-Use the "Forgot password?" link at `/admin/login`.
-> **Note:** Requires email (Resend or Cloudflare) to be configured in Settings.
+Use the "Forgot password?" link at `/admin/login`. Resetting signs out every device.
+> **Note:** Requires email (Resend) to be configured in Settings. Without email, run `bun reset:password -- --email you@example.com --remote` from the repo root; you are prompted for the new password.
+
+### I lost my two-factor device
+Sign in with one of the backup codes you saved when you turned 2FA on. If you have none left, run `bun reset:password -- --email you@example.com --remote --disable-2fa`, then turn 2FA back on under Settings → Account.
 
 ---
 
 ## ✨ Features
 
 ### What block types are available?
-Six types: **Link**, **Header**, **Embed**, **Connect**, **vCard**, and **Location**.
+Nine types: **Link**, **Header**, **Embed**, **Connect** (contact form), **vCard**, **Location**, **Image**, **Text**, and **Divider**. Social icons are not a block: they show under your profile once you add them at `/admin/links/social`.
 
 ### How many themes are there?
-**7 built-in themes** (14 total with dark/light variants).
-- Corporate, Hacker, Neon, Furry, and more.
+**11 built-in themes**, each with light and dark variants: Classic, Graphite, Ocean Blue, Sunset, Forest, Minimal, Corporate Classic, Blood Moon, Hacker Terminal, Hellfire, and Abyssal.
+- Override any colour on top of a preset.
 - Custom CSS is also supported.
 
 ### Can I use my own domain?
@@ -88,5 +91,6 @@ Run `bun run check-types`. Usually fixed by:
 
 1. `git pull origin main`
 2. `bun install`
-3. `bun run db:generate && bun run db:push`
-4. `bun run deploy`
+3. `bun run deploy` (Alchemy applies any new migrations during the deploy)
+
+> `bun db:generate` is for contributors who change the schema. Don't run it on an install you only update.

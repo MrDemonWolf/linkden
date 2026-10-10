@@ -5,7 +5,7 @@ description: Set up a downloadable digital business card (vCard) for your visito
 
 # vCard
 
-Give visitors a one-tap way to save your contact info. When enabled, a download button appears on your public page that saves a `.vcf` file compatible with iOS, Android, macOS, and Windows.
+Give visitors a one-tap way to save your contact info. When enabled, a **Save vCard** button appears in your public page's footer and downloads a `.vcf` file compatible with iOS, Android, macOS, and Windows. You can also add a **vCard block** with its own details anywhere on the page.
 
 ## Enabling vCard
 
@@ -13,11 +13,11 @@ Give visitors a one-tap way to save your contact info. When enabled, a download 
 2. Find the **vCard** section.
 3. Toggle it on.
 
-A download button will appear on your public page.
+The footer button downloads the first visible vCard block's card, or the details from this section when the page has no vCard block.
 
 ## Filling In Your Details
 
-Edit your vCard fields in the vCard section of Design → Branding. Only fields you fill in are included in the downloaded file -- everything else is left out automatically.
+Edit your vCard fields in the vCard section of Design → Branding. Only fields you fill in are included in the downloaded file -- everything else is left out automatically. Phone numbers, work phone and birthday are checked as you type.
 
 ### Personal Information
 
@@ -49,4 +49,4 @@ Add links to your websites, social profiles, or any other URLs. Each entry has a
 
 ## Format
 
-LinkDen generates vCard 3.0 files, which have the widest compatibility across devices and apps.
+LinkDen generates vCard 3.0 files, which have the widest compatibility across devices and apps. Values are escaped (no line breaks can inject extra fields), the file always has a structured name (`N`), and the department is written as part of the organization.

@@ -31,14 +31,15 @@ export function ProfileSocialIcons({
 
 	return (
 		<nav
-			className="ld-social-icons mt-5 flex flex-wrap items-center justify-center gap-2"
+			className="ld-social-icons ld-social-block mt-5 flex flex-wrap items-center justify-center gap-2"
 			aria-label="Social links"
 		>
 			{networks.map((network, index) => {
-				const contrastBg = themeColors.bg;
+				// The icons are drawn on the hero card, not the page background.
+				const contrastBg = themeColors.card;
 				const fill =
-					network.hex && contrastBg && themeColors.fg
-						? getAccessibleIconFill(network.hex, contrastBg, themeColors.fg)
+					network.hex && contrastBg && themeColors.cardFg
+						? getAccessibleIconFill(network.hex, contrastBg, themeColors.cardFg)
 						: network.hex || "currentColor";
 
 				return (
@@ -52,7 +53,7 @@ export function ProfileSocialIcons({
 						style={
 							{
 								"--ld-i": Math.min(index, 12),
-								color: themeColors.fg,
+								color: themeColors.cardFg,
 								outlineColor: themeColors.primary,
 								backgroundColor:
 									colorMode === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",

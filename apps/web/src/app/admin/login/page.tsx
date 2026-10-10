@@ -2,20 +2,34 @@
 
 import { Checkbox } from "@linkden/ui";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, ArrowRight, Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
+import {
+	AlertCircle,
+	ArrowRight,
+	Eye,
+	EyeOff,
+	KeyRound,
+	Loader2,
+	Lock,
+	Mail,
+	ShieldCheck,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { LegalTextDialog } from "@/components/public/legal-text-dialog";
 import { ShaderBanner } from "@/components/public/shader-banner";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { WolfLogo } from "@/components/wolf-logo";
 import { authClient } from "@/lib/auth-client";
 import { getLoginBgStyle, getLoginShaderPreset, isCustomLoginBg } from "@/lib/login-bg";
+import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
+import { postLoginTarget } from "./redirect";
+
+type TwoFactorMode = "totp" | "backup";
 
 export default function AdminLoginPage() {
 	const router = useRouter();
@@ -36,11 +50,27 @@ export default function AdminLoginPage() {
 	const [magicLinkSent, setMagicLinkSent] = useState(false);
 	const [ppDialogOpen, setPpDialogOpen] = useState(false);
 	const [tosDialogOpen, setTosDialogOpen] = useState(false);
+	// Second step after a correct password when the account has 2FA on. Better
+	// Auth answers sign-in with `twoFactorRedirect` and no session; the session
+	// only exists once verifyTotp / verifyBackupCode succeeds.
+	const [twoFactorStep, setTwoFactorStep] = useState(false);
+	const [twoFactorMode, setTwoFactorMode] = useState<TwoFactorMode>("totp");
+	const [twoFactorCode, setTwoFactorCode] = useState("");
+	const [trustDevice, setTrustDevice] = useState(false);
+	const [isVerifying, setIsVerifying] = useState(false);
 
 	const setupStatus = useQuery(trpc.public.getSetupStatus.queryOptions());
 	const hasUsersQuery = useQuery(trpc.public.hasUsers.queryOptions());
 	const branding = setupStatus.data?.branding;
-	const magicLinkEnabled = setupStatus.data?.magicLinkEnabled ?? false;
+	// Non-secret flag (key + sender present). Without it, reset and magic-link
+	// emails are silently skipped server-side, so those paths would only ever
+	// say "check your inbox". A missing field counts as configured.
+	const emailConfigured = !(
+		setupStatus.data &&
+		"emailConfigured" in setupStatus.data &&
+		setupStatus.data.emailConfigured === false
+	);
+	const magicLinkEnabled = (setupStatus.data?.magicLinkEnabled ?? false) && emailConfigured;
 	const loginBgStyle = getLoginBgStyle(branding);
 	const loginShaderPreset = getLoginShaderPreset(branding);
 	const hasCustomBg = isCustomLoginBg(branding);
@@ -64,24 +94,80 @@ export default function AdminLoginPage() {
 
 		setIsSubmitting(true);
 		try {
-			await authClient.signIn.email(
-				{ email, password, rememberMe },
-				{
-					onSuccess: () => {
-						setLoginSuccess(true);
-						window.location.href = "/admin";
-					},
-					onError: (error) => {
-						const msg = error.error.message || "Invalid credentials";
-						setFormError(msg);
-						toast.error(msg);
-					},
-				},
-			);
-		} finally {
-			if (!loginSuccess) {
-				setIsSubmitting(false);
+			const { data, error } = await authClient.signIn.email({ email, password, rememberMe });
+			if (error) {
+				const msg = error.message || "Invalid credentials";
+				setFormError(msg);
+				toast.error(msg);
+				return;
 			}
+			if (data && "twoFactorRedirect" in data && data.twoFactorRedirect) {
+				setPassword("");
+				setTwoFactorCode("");
+				setTwoFactorMode("totp");
+				setTwoFactorStep(true);
+				return;
+			}
+			setLoginSuccess(true);
+			window.location.href = postLoginTarget();
+		} finally {
+			setIsSubmitting(false);
+		}
+	};
+
+	const leaveTwoFactor = () => {
+		setTwoFactorStep(false);
+		setTwoFactorCode("");
+		setFormError("");
+	};
+
+	const handleVerifyTwoFactor = async (e: React.FormEvent) => {
+		e.preventDefault();
+		setFormError("");
+		const code =
+			twoFactorMode === "totp" ? twoFactorCode.replace(/\s+/g, "") : twoFactorCode.trim();
+		if (!code) {
+			setFormError(
+				twoFactorMode === "totp" ? "Enter the code from your app" : "Enter a backup code",
+			);
+			return;
+		}
+		setIsVerifying(true);
+		try {
+			const { error } =
+				twoFactorMode === "totp"
+					? await authClient.twoFactor.verifyTotp({ code, trustDevice })
+					: await authClient.twoFactor.verifyBackupCode({ code, trustDevice });
+			if (error) {
+				// The pending sign-in lives in a short-lived cookie; once it lapses
+				// no code can succeed, so send the admin back to the password step.
+				if (error.code === "INVALID_TWO_FACTOR_COOKIE") {
+					leaveTwoFactor();
+					setFormError("That sign-in attempt expired. Sign in again.");
+					return;
+				}
+				// The challenge allows 5 tries; after that it is spent.
+				if (
+					error.code === "TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE" ||
+					error.code === "ACCOUNT_TEMPORARILY_LOCKED"
+				) {
+					leaveTwoFactor();
+					setFormError(
+						error.code === "ACCOUNT_TEMPORARILY_LOCKED"
+							? error.message || "Too many failed attempts. Try again later."
+							: "Too many incorrect codes. Sign in again to get a new attempt.",
+					);
+					return;
+				}
+				const msg = error.message || "That code didn't work";
+				setFormError(msg);
+				toast.error(msg);
+				return;
+			}
+			setLoginSuccess(true);
+			window.location.href = postLoginTarget();
+		} finally {
+			setIsVerifying(false);
 		}
 	};
 
@@ -94,7 +180,7 @@ export default function AdminLoginPage() {
 			const { error } = await authClient.$fetch("/dev-login", { method: "POST", body: {} });
 			if (error) throw error;
 			setLoginSuccess(true);
-			window.location.href = "/admin";
+			window.location.href = postLoginTarget();
 		} catch {
 			const msg = "Dev login failed — is DEV_LOGIN=true set on the server?";
 			setFormError(msg);
@@ -141,7 +227,7 @@ export default function AdminLoginPage() {
 		setIsMagicLinkSubmitting(true);
 		try {
 			await authClient.signIn.magicLink(
-				{ email, callbackURL: "/admin" },
+				{ email, callbackURL: postLoginTarget() },
 				{
 					onSuccess: () => {
 						setMagicLinkSent(true);
@@ -191,7 +277,13 @@ export default function AdminLoginPage() {
 	);
 
 	return (
-		<div className="login-bg relative min-h-screen overflow-hidden" style={loginBgStyle}>
+		// A background preset/custom image always sits under a black overlay, so
+		// the text outside the card takes the dark tokens there whatever the
+		// admin theme is (light-mode foregrounds measured ~1.1:1 on it).
+		<div
+			className={cn("login-bg relative min-h-screen overflow-hidden", hasCustomBg && "dark")}
+			style={loginBgStyle}
+		>
 			{/* Shader background — full-bleed when a shader preset is selected */}
 			{loginShaderPreset && (
 				<div className="absolute inset-0">
@@ -232,7 +324,7 @@ export default function AdminLoginPage() {
 						</p>
 					</div>
 
-					<div className="data-mono text-micro text-muted-foreground/70">
+					<div className="data-mono text-micro text-muted-foreground">
 						v{process.env.NEXT_PUBLIC_APP_VERSION} · self-hosted
 					</div>
 				</aside>
@@ -282,6 +374,139 @@ export default function AdminLoginPage() {
 										<BackLink
 											onClick={() => {
 												setResetLinkSent(false);
+												setForgotMode(false);
+												setFormError("");
+											}}
+										/>
+									}
+								/>
+							) : twoFactorStep ? (
+								<div className="login-glass-card relative rounded-2xl p-8 sm:p-10 transition-shadow duration-300">
+									<div className="text-center mb-8">
+										<div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20">
+											{twoFactorMode === "totp" ? (
+												<ShieldCheck className="h-5 w-5 text-primary" aria-hidden="true" />
+											) : (
+												<KeyRound className="h-5 w-5 text-primary" aria-hidden="true" />
+											)}
+										</div>
+										<h1 className="mt-5 text-2xl font-bold text-foreground tracking-tight">
+											Two-factor check
+										</h1>
+										<p className="mt-2 text-sm text-muted-foreground">
+											{twoFactorMode === "totp"
+												? "Enter the 6-digit code from your authenticator app"
+												: "Enter one of the backup codes you saved when you turned on 2FA"}
+										</p>
+									</div>
+
+									<form
+										onSubmit={handleVerifyTwoFactor}
+										className="space-y-5"
+										aria-describedby={formError ? "login-error" : undefined}
+									>
+										<div aria-live="polite" aria-atomic="true">
+											{formError && (
+												<div
+													id="login-error"
+													className="flex items-center gap-2 rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2.5 text-xs text-destructive"
+												>
+													<AlertCircle className="h-3.5 w-3.5 shrink-0" />
+													<span>{formError}</span>
+												</div>
+											)}
+										</div>
+
+										<div className="space-y-2">
+											<Label
+												htmlFor="two-factor-code"
+												className="text-sm font-medium text-muted-foreground"
+											>
+												{twoFactorMode === "totp" ? "Authentication code" : "Backup code"}
+											</Label>
+											<Input
+												// Remount on mode switch so autofill hints and focus reset.
+												key={twoFactorMode}
+												id="two-factor-code"
+												value={twoFactorCode}
+												onChange={(e) => setTwoFactorCode(e.target.value)}
+												inputMode={twoFactorMode === "totp" ? "numeric" : "text"}
+												autoComplete="one-time-code"
+												autoCapitalize="off"
+												spellCheck={false}
+												maxLength={twoFactorMode === "totp" ? 10 : 32}
+												placeholder={twoFactorMode === "totp" ? "123456" : "xxxxx-xxxxx"}
+												className="h-11 text-center font-mono tracking-widest"
+												aria-invalid={formError ? true : undefined}
+												autoFocus
+												required
+											/>
+										</div>
+
+										<div className="flex items-center gap-2">
+											<Checkbox
+												id="trust-device"
+												checked={trustDevice}
+												onCheckedChange={(checked) => setTrustDevice(checked === true)}
+											/>
+											<Label
+												htmlFor="trust-device"
+												className="text-xs text-muted-foreground cursor-pointer"
+											>
+												Don&apos;t ask again on this device for 30 days
+											</Label>
+										</div>
+
+										<Button
+											type="submit"
+											className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-medium shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
+											disabled={isVerifying}
+										>
+											{isVerifying ? (
+												<>
+													<Loader2 className="h-4 w-4 animate-spin" />
+													Verifying...
+												</>
+											) : (
+												<>
+													Verify
+													<ArrowRight className="h-4 w-4 ml-1" />
+												</>
+											)}
+										</Button>
+
+										<div className="flex flex-col items-center gap-2 pt-1">
+											<button
+												type="button"
+												className="text-sm text-primary hover:text-primary/80 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
+												onClick={() => {
+													setTwoFactorMode(twoFactorMode === "totp" ? "backup" : "totp");
+													setTwoFactorCode("");
+													setFormError("");
+												}}
+											>
+												{twoFactorMode === "totp"
+													? "Use a backup code instead"
+													: "Use your authenticator app instead"}
+											</button>
+											<BackLink onClick={leaveTwoFactor} />
+										</div>
+									</form>
+								</div>
+							) : forgotMode && !emailConfigured ? (
+								<StatusCard
+									icon={<KeyRound className="h-5 w-5 text-primary" />}
+									title="Reset from the server"
+									description={
+										<>
+											Email isn&apos;t set up on this instance, so a reset link can&apos;t be sent.
+											Run <code className="font-mono text-foreground">bun reset:password</code> on
+											the server to set a new password.
+										</>
+									}
+									action={
+										<BackLink
+											onClick={() => {
 												setForgotMode(false);
 												setFormError("");
 											}}
@@ -565,7 +790,7 @@ export default function AdminLoginPage() {
 							)}
 
 							{/* Below-card link */}
-							{!loginSuccess && !magicLinkSent && !resetLinkSent && (
+							{!loginSuccess && !magicLinkSent && !resetLinkSent && !twoFactorStep && (
 								<p className="mt-5 text-center text-xs text-muted-foreground">
 									Don&apos;t have an account?{" "}
 									<a
@@ -625,29 +850,21 @@ export default function AdminLoginPage() {
 			</div>
 
 			{branding?.ppText && (
-				<Dialog open={ppDialogOpen} onOpenChange={setPpDialogOpen}>
-					<DialogContent className="max-h-[80vh] overflow-y-auto">
-						<DialogHeader>
-							<DialogTitle>Privacy Policy</DialogTitle>
-						</DialogHeader>
-						<div className="whitespace-pre-wrap text-sm text-muted-foreground">
-							{branding.ppText}
-						</div>
-					</DialogContent>
-				</Dialog>
+				<LegalTextDialog
+					open={ppDialogOpen}
+					onOpenChange={setPpDialogOpen}
+					title="Privacy Policy"
+					text={branding.ppText}
+				/>
 			)}
 
 			{branding?.tosText && (
-				<Dialog open={tosDialogOpen} onOpenChange={setTosDialogOpen}>
-					<DialogContent className="max-h-[80vh] overflow-y-auto">
-						<DialogHeader>
-							<DialogTitle>Terms of Service</DialogTitle>
-						</DialogHeader>
-						<div className="whitespace-pre-wrap text-sm text-muted-foreground">
-							{branding.tosText}
-						</div>
-					</DialogContent>
-				</Dialog>
+				<LegalTextDialog
+					open={tosDialogOpen}
+					onOpenChange={setTosDialogOpen}
+					title="Terms of Service"
+					text={branding.tosText}
+				/>
 			)}
 		</div>
 	);

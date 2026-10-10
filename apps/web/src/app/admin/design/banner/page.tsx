@@ -84,8 +84,9 @@ export default function DesignBannerPage() {
 		onModeChange: (m) => setPreviewDark(m === "dark"),
 	});
 
-	if (settingsQuery.isError) {
-		return <QueryError message="Couldn't load settings" onRetry={() => settingsQuery.refetch()} />;
+	// Only a load with nothing to show: a failed background refetch keeps the form.
+	if (form.isError) {
+		return <QueryError message="Couldn't load settings" onRetry={() => form.refetch()} />;
 	}
 	if (!f) {
 		return (

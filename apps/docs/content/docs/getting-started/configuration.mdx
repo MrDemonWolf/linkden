@@ -37,7 +37,7 @@ Run this to generate a strong, random secret:
 ```bash
 openssl rand -base64 32
 ```
-Paste the output as your `BETTER_AUTH_SECRET`. Use a different secret for production.
+Paste the output as your `BETTER_AUTH_SECRET`. Use a different secret for production. Outside localhost the secret must be at least 32 characters and not a placeholder: with a weak or empty secret, sign-in and the admin API answer 503, and `bun ship` refuses to deploy.
 
 ---
 
@@ -70,16 +70,22 @@ NEXT_PUBLIC_SITE_URL=https://links.yourdomain.com
 
 ## 3. 🔐 Authentication
 
-LinkDen uses **email and password** authentication.
+LinkDen uses **email and password** authentication, with optional **two-factor (TOTP)** and **magic link** sign-in.
 - 🚫 **No OAuth needed.**
 - 🚫 **No external auth service needed.**
 
 ### How it works:
 1. Navigate to `/admin/setup`.
-2. Create your admin account.
+2. Create your admin account (enter the **Setup token** if your deploy sets `SETUP_TOKEN`).
 3. The first user becomes the admin.
 4. Registration **locks automatically**.
-5. Sign in at `/admin/login`.
+5. Sign in at `/admin/login`. With two-factor on, you are then asked for the 6-digit code from your authenticator app or one of your backup codes.
+
+### Two-factor authentication
+Turn it on under **Settings → Account → Two-factor authentication**: scan the QR code (or type the key), enter a code to confirm, and **save the backup codes** somewhere safe. 2FA only switches on once the first code verifies. You can tick "trust this device for 30 days" at login. Lost both your authenticator and your codes? Run `bun reset:password -- --email you@example.com --remote --disable-2fa`.
+
+### Magic link
+Optional passwordless sign-in under **Settings → Account**. It can only be turned on once email is configured and while two-factor is off, links expire after 10 minutes, and only your admin address can receive one.
 
 > **Note:** Unauthenticated visitors only see your public link page.
 
@@ -89,14 +95,14 @@ LinkDen uses **email and password** authentication.
 
 Most configuration lives in the admin panel (`/admin/design` for the page, `/admin/settings` for account, email, integrations, wallet and data), **not** in environment variables. This means you can change settings **without redeploying**:
 
-- 📧 **Email provider** -- Resend or Cloudflare Email Workers.
-- 🛡️ **CAPTCHA** -- Cloudflare Turnstile or Google reCAPTCHA.
+- 📧 **Email provider** -- Resend (Cloudflare Email Workers coming soon), plus where contact-form messages go (Inbox, email, or both).
+- 🛡️ **CAPTCHA** -- Cloudflare Turnstile, Google reCAPTCHA (v2 checkbox), or hCaptcha on the contact form.
 - 🏷️ **Branding** -- Whitelabel footer text, link, logo, site name, and admin panel branding.
 - 📇 **vCard** -- Enable or disable the downloadable contact card.
-- 🍏 **Apple Wallet** -- Team ID, Pass Type ID, and custom QR URL.
+- 🍏 **Apple Wallet** -- Pass design, Team ID, Pass Type ID, signing keys, and custom QR URL.
 - 🔍 **SEO** -- Page title, meta description, and OG image.
-- 🗺️ **MapKit** -- Apple Maps embed token for Location blocks (optional).
-- 🍪 **Consent Banner** -- Optional privacy/cookie notice shown at the bottom of your public page.
+- 🗺️ **MapKit** -- Apple Maps token (stored for a planned map embed; Location blocks currently link out to a map).
+- 🍪 **Consent Banner** -- On by default. Asks visitors before analytics and embedded media load.
 - 🖥️ **Admin Branding** -- Show or hide LinkDen branding inside the admin panel itself.
 
 ---

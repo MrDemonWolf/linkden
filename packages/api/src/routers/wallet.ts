@@ -3,29 +3,79 @@ import { block, siteSettings, user } from "@linkden/db/schema/index";
 import { env } from "@linkden/env/server";
 import { maskSecret, WALLET_SETTING_KEYS } from "@linkden/validators/settings-registry";
 import {
+	isCertificateMaterial,
+	isPrivateKeyMaterial,
+	normalizeSigningMaterial,
 	PASS_FIELD_LIMITS,
 	PASS_LOCATION_LIMIT,
 	type PassField,
 	type PassTemplatePreset,
-	parsePassFieldsJson,
 	parsePassLocationsJson,
+	resolvePassContent,
 	walletConfigSchema,
 	walletSigningKeysSchema,
 } from "@linkden/validators/wallet";
+import { TRPCError } from "@trpc/server";
 import { asc, eq } from "drizzle-orm";
 import { protectedProcedure, router } from "../index";
 import { logAudit } from "../utils/audit";
 import { stripHtml } from "../utils/sanitize";
 import { buildSettingsMap, runBatch, settingUpsertStmt } from "../utils/settings";
+import { sanitizeSetting } from "./settings";
 
 const walletKeys: readonly string[] = WALLET_SETTING_KEYS;
 
-function clampFields(fields: PassField[], max: number): PassField[] {
-	return fields.slice(0, max).map((f) => ({
-		key: stripHtml(f.key).slice(0, 64),
-		label: stripHtml(f.label).slice(0, 40),
-		value: stripHtml(f.value).slice(0, 200),
-	}));
+/** Registry-driven write: every wallet key goes through the same gate as settings/backup. */
+const walletUpsert = (key: string, value: string) =>
+	settingUpsertStmt(key, sanitizeSetting(key, value));
+
+const SIGNING_MATERIAL = [
+	{
+		field: "signerCert",
+		key: "wallet_signer_cert",
+		label: "Signer certificate",
+		check: isCertificateMaterial,
+	},
+	{
+		field: "signerKey",
+		key: "wallet_signer_key",
+		label: "Signer key",
+		check: isPrivateKeyMaterial,
+	},
+	{
+		field: "wwdrCert",
+		key: "wallet_wwdr_cert",
+		label: "WWDR certificate",
+		check: isCertificateMaterial,
+	},
+] as const;
+
+/** Configured and loadable by the signer (env values may be base64-wrapped PEM too). */
+const usable = (value: string | undefined, check: (v: string) => boolean) =>
+	!!value && check(normalizeSigningMaterial(value));
+
+type PassSection = keyof typeof PASS_FIELD_LIMITS;
+
+/**
+ * Strip and clamp one section's fields. A key made only of tag syntax would
+ * strip to "" and then fail the registry gate with a generic message for the
+ * whole save, so name the offending field instead.
+ */
+function clampFields(fields: PassField[], section: PassSection): PassField[] {
+	return fields.slice(0, PASS_FIELD_LIMITS[section]).map((f, i) => {
+		const key = stripHtml(f.key).trim().slice(0, 64);
+		if (!key) {
+			throw new TRPCError({
+				code: "BAD_REQUEST",
+				message: `${section} field ${i + 1}: key must contain text (HTML is removed)`,
+			});
+		}
+		return {
+			key,
+			label: stripHtml(f.label).slice(0, 40),
+			value: stripHtml(f.value).slice(0, 200),
+		};
+	});
 }
 
 export const walletRouter = router({
@@ -62,30 +112,21 @@ export const walletRouter = router({
 		if (input.thumbnailUrl !== undefined) push("wallet_thumbnail_url", input.thumbnailUrl);
 		if (input.stripUrl !== undefined) push("wallet_strip_url", input.stripUrl);
 		if (input.headerFields !== undefined)
-			push(
-				"wallet_header_fields",
-				JSON.stringify(clampFields(input.headerFields, PASS_FIELD_LIMITS.header)),
-			);
+			push("wallet_header_fields", JSON.stringify(clampFields(input.headerFields, "header")));
 		if (input.primaryFields !== undefined)
-			push(
-				"wallet_primary_fields",
-				JSON.stringify(clampFields(input.primaryFields, PASS_FIELD_LIMITS.primary)),
-			);
+			push("wallet_primary_fields", JSON.stringify(clampFields(input.primaryFields, "primary")));
 		if (input.secondaryFields !== undefined)
 			push(
 				"wallet_secondary_fields",
-				JSON.stringify(clampFields(input.secondaryFields, PASS_FIELD_LIMITS.secondary)),
+				JSON.stringify(clampFields(input.secondaryFields, "secondary")),
 			);
 		if (input.auxiliaryFields !== undefined)
 			push(
 				"wallet_auxiliary_fields",
-				JSON.stringify(clampFields(input.auxiliaryFields, PASS_FIELD_LIMITS.auxiliary)),
+				JSON.stringify(clampFields(input.auxiliaryFields, "auxiliary")),
 			);
 		if (input.backFields !== undefined)
-			push(
-				"wallet_back_fields",
-				JSON.stringify(clampFields(input.backFields, PASS_FIELD_LIMITS.back)),
-			);
+			push("wallet_back_fields", JSON.stringify(clampFields(input.backFields, "back")));
 		if (input.relevantDate !== undefined) push("wallet_relevant_date", input.relevantDate);
 		if (input.locations !== undefined)
 			push(
@@ -98,17 +139,25 @@ export const walletRouter = router({
 				),
 			);
 
-		await runBatch(updates.map(({ key, value }) => settingUpsertStmt(key, value)));
+		await runBatch(updates.map(({ key, value }) => walletUpsert(key, value)));
 		await logAudit("wallet.updateConfig", "wallet");
 		return { success: true };
 	}),
 
 	getSigningStatus: protectedProcedure.query(async () => {
 		const settingsMap = await buildSettingsMap();
+		// The pass route reads `setting || env`, so a stored value shadows env:
+		// report the effective value as OK only when the signer can load it.
 		return {
-			signerCert: !!settingsMap.wallet_signer_cert || !!env.WALLET_SIGNER_CERT,
-			signerKey: !!settingsMap.wallet_signer_key || !!env.WALLET_SIGNER_KEY,
-			wwdrCert: !!settingsMap.wallet_wwdr_cert || !!env.WALLET_WWDR_CERT,
+			signerCert: usable(
+				settingsMap.wallet_signer_cert || env.WALLET_SIGNER_CERT,
+				isCertificateMaterial,
+			),
+			signerKey: usable(
+				settingsMap.wallet_signer_key || env.WALLET_SIGNER_KEY,
+				isPrivateKeyMaterial,
+			),
+			wwdrCert: usable(settingsMap.wallet_wwdr_cert || env.WALLET_WWDR_CERT, isCertificateMaterial),
 			teamId: !!settingsMap.wallet_team_id || !!env.WALLET_TEAM_ID,
 			passTypeId: !!settingsMap.wallet_pass_type_id || !!env.WALLET_PASS_TYPE_ID,
 			source: {
@@ -155,14 +204,26 @@ export const walletRouter = router({
 			if (input.teamId !== undefined) updates.push({ key: "wallet_team_id", value: input.teamId });
 			if (input.passTypeId !== undefined)
 				updates.push({ key: "wallet_pass_type_id", value: input.passTypeId });
-			if (input.signerCert !== undefined)
-				updates.push({ key: "wallet_signer_cert", value: input.signerCert });
-			if (input.signerKey !== undefined)
-				updates.push({ key: "wallet_signer_key", value: input.signerKey });
-			if (input.wwdrCert !== undefined)
-				updates.push({ key: "wallet_wwdr_cert", value: input.wwdrCert });
+			// The admin form base64-wraps uploads and pastes; store what the signer
+			// reads (raw PEM / base64 DER) and refuse material it can never load,
+			// rather than saving it and reporting green.
+			for (const { field, key, label, check } of SIGNING_MATERIAL) {
+				const raw = input[field];
+				if (raw === undefined) continue;
+				const value = normalizeSigningMaterial(raw);
+				if (value !== "" && !check(value)) {
+					throw new TRPCError({
+						code: "BAD_REQUEST",
+						message:
+							field === "signerKey"
+								? `${label} must be an unencrypted or passphrase-protected RSA private key in PEM format`
+								: `${label} must be a PEM or DER X.509 certificate`,
+					});
+				}
+				updates.push({ key, value });
+			}
 
-			await runBatch(updates.map(({ key, value }) => settingUpsertStmt(key, value)));
+			await runBatch(updates.map(({ key, value }) => walletUpsert(key, value)));
 			await logAudit("wallet.updateSigningKeys", "wallet");
 			return { success: true };
 		}),
@@ -177,29 +238,10 @@ export const walletRouter = router({
 
 		const settingsMap = await buildSettingsMap();
 
-		// Backwards-compat: if new field arrays empty, derive from old toggles + profile
-		const headerFields = parsePassFieldsJson(settingsMap.wallet_header_fields);
-		const primaryFieldsStored = parsePassFieldsJson(settingsMap.wallet_primary_fields);
-		const secondaryFieldsStored = parsePassFieldsJson(settingsMap.wallet_secondary_fields);
-		const auxiliaryFields = parsePassFieldsJson(settingsMap.wallet_auxiliary_fields);
-		const backFields = parsePassFieldsJson(settingsMap.wallet_back_fields);
-
+		// Same resolution as the signed pass (GET /api/admin/wallet-pass).
+		const content = resolvePassContent(settingsMap, profile);
 		const showEmail = settingsMap.wallet_show_email !== "false";
 		const showName = settingsMap.wallet_show_name !== "false";
-
-		const primaryFields =
-			primaryFieldsStored.length > 0
-				? primaryFieldsStored
-				: showName
-					? [{ key: "name", label: "Name", value: profile?.name ?? "" }]
-					: [];
-
-		const secondaryFields =
-			secondaryFieldsStored.length > 0
-				? secondaryFieldsStored
-				: showEmail && profile?.email
-					? [{ key: "email", label: "Email", value: profile.email }]
-					: [];
 
 		return {
 			profile: profile
@@ -214,23 +256,23 @@ export const walletRouter = router({
 			templatePreset: (settingsMap.wallet_template_preset as PassTemplatePreset) || "contact-card",
 			organizationName: settingsMap.wallet_organization_name || "",
 			passDescription: settingsMap.wallet_pass_description || "",
-			backgroundColor: settingsMap.wallet_background_color || "#091533",
-			foregroundColor: settingsMap.wallet_foreground_color || "#FFFFFF",
-			labelColor: settingsMap.wallet_label_color || "#0FACED",
+			backgroundColor: content.backgroundColor,
+			foregroundColor: content.foregroundColor,
+			labelColor: content.labelColor,
 			logoUrl: settingsMap.wallet_logo_url || null,
 			iconUrl: settingsMap.wallet_icon_url || null,
 			thumbnailUrl: settingsMap.wallet_thumbnail_url || null,
 			stripUrl: settingsMap.wallet_strip_url || null,
-			headerFields,
-			primaryFields,
-			secondaryFields,
-			auxiliaryFields,
-			backFields,
+			headerFields: content.headerFields,
+			primaryFields: content.primaryFields,
+			secondaryFields: content.secondaryFields,
+			auxiliaryFields: content.auxiliaryFields,
+			backFields: content.backFields,
 			relevantDate: settingsMap.wallet_relevant_date || "",
 			locations: parsePassLocationsJson(settingsMap.wallet_locations),
 			showEmail,
 			showName,
-			showQrCode: settingsMap.wallet_show_qr_code !== "false",
+			showQrCode: content.showBarcode,
 		};
 	}),
 });

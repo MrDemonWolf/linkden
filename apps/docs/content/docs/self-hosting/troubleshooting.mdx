@@ -17,9 +17,9 @@ Worker names are `linkden` (web) and `linkden-api` (API). Their configuration li
 
 The API Worker can't find the database.
 
-- Verify the D1 database exists: `bunx wrangler d1 list` (it is named `linkden-db`)
+- Verify the D1 database exists: `bunx wrangler d1 list` (it is named `linkden-db`, or whatever `LINKDEN_DB_NAME` says on a pre-0.5.0 install)
 - Check the `DB` binding in `apps/server/wrangler.jsonc` and `packages/infra/alchemy.run.ts`
-- Redeploy with `bun ship` to recreate bindings
+- Redeploy with `bun ship`: Alchemy adopts the existing database by name and re-binds it. Never run `bun run destroy` to fix a binding
 
 ### R2 bucket not working
 
@@ -43,25 +43,50 @@ This is expected. `workers.dev` is a staging target: the public page and `/api/h
 
 ### Reading API errors
 
-Unhandled errors in the API are logged as one JSON line with the request method, path, and error message. Stream them with:
+Unhandled errors in the API are logged as one JSON line with the request method, path, and error message (SQL parameters, which can hold visitor data, are stripped). Every request also logs one line, `METHOD path status ms`: the path only, never the query string, and the password-reset token is redacted. Stream them with:
 
 ```bash
 bunx wrangler tail linkden-api --format=pretty
 ```
 
+The daily retention job (03:00 UTC) logs each failed step as a JSON line with path `scheduled` and step `prune` or `orphan-sweep`, and the run then shows as failed in **Workers → linkden-api → Cron Events**.
+
+### API answers 503 "authentication is misconfigured"
+
+`BETTER_AUTH_SECRET` is empty, shorter than 32 characters, or a placeholder value. Sign-in, the admin API and uploads stay off until it is fixed; `/api/health` reports `"auth": "misconfigured"`. Generate one with `openssl rand -base64 32`, set it, and redeploy.
+
 ### Restore a D1 backup
 
-The `backup-db` workflow exports the database every day to the `linkden-backups` R2 bucket as `d1/<date>.sql` (kept 30 days). To restore one:
+Run every command below from the **repo root**. `DB` is your database name: `LINKDEN_DB_NAME` if you set it, otherwise `linkden-db`.
+
+**1. D1 Time Travel (try this first).** D1 keeps a point-in-time history of the database for its retention window (30 days on paid plans, 7 on the free plan). Every GitHub deploy also records a bookmark in its job summary.
 
 ```bash
-# 1. Download the export you want
-bunx wrangler r2 object get linkden-backups/d1/2026-08-21.sql --file=backup.sql --remote
-
-# 2. Replay it into the live database
-bunx wrangler d1 execute linkden-db --remote --file=backup.sql
+DB=linkden-db
+bunx wrangler d1 time-travel info "$DB"
+bunx wrangler d1 time-travel restore "$DB" --timestamp=2026-10-01T12:00:00Z
+# or, to undo a deploy: --bookmark=<bookmark from the deploy summary>
 ```
 
-The export contains `CREATE TABLE` and `INSERT` statements. Restoring over a database that already has data will fail on duplicate rows, so either restore into a fresh database or run the reset script first (`bun reset:factory`, then restore). Take a manual export before you start (`bunx wrangler d1 export linkden-db --remote --output=before-restore.sql`) so you can undo it.
+The restore rewinds the whole database in place. No redeploy is needed.
+
+**2. The nightly export.** The `backup-db` workflow exports the database every day to the `linkden-backups` R2 bucket as `d1/<date>.sql` (kept 30 days). It only runs once the `production` environment secrets are set, and it fails (rather than uploading) when the dump has no `user` row. An export contains `CREATE TABLE` statements, so restore it into a **fresh** database and point the deploy at that:
+
+```bash
+# Download the export you want
+bunx wrangler r2 object get linkden-backups/d1/2026-08-21.sql --file=backup.sql --remote
+
+# Import it into a new database
+bunx wrangler d1 create linkden-db-restore
+bunx wrangler d1 execute linkden-db-restore --remote --file=backup.sql
+
+# Point production at it and redeploy
+LINKDEN_DB_NAME=linkden-db-restore bun ship
+```
+
+Keep `LINKDEN_DB_NAME=linkden-db-restore` set (in `.env` or as a GitHub `production` variable) for every later deploy, and point the `backup-db` workflow at it through the same variable.
+
+> **Wiping instead?** `bun reset:factory -- --confirm --remote` empties every data table in one atomic step (the schema and migration history stay). It asks you to type the database name (or pass `--confirm-db <name>`). Take an export first: `bunx wrangler d1 export "$DB" --remote --output=before-reset.sql`.
 
 ---
 
@@ -100,11 +125,13 @@ The export contains `CREATE TABLE` and `INSERT` statements. Restoring over a dat
 - From email address not verified with the provider
 
 **Fix:**
-1. Go to `/admin/settings` > **Email**
-2. Select your provider (Resend or Cloudflare Email Workers)
+1. Go to `/admin/settings/email`
+2. Select your provider: Resend (Cloudflare Email Workers coming soon)
 3. Enter a valid API key
 4. Ensure the "From" email is verified with your provider
 5. Check spam folders
+
+Without email, you can still recover the admin account from the command line: `bun reset:password -- --email you@example.com --remote`.
 
 ### "Registration is closed" message
 
@@ -112,7 +139,9 @@ The export contains `CREATE TABLE` and `INSERT` statements. Restoring over a dat
 
 **Explanation:** This is expected behavior. LinkDen is a single-user platform. After the first admin account is created, registration is permanently locked. This protects your instance from unauthorized account creation.
 
-If you need to reset and create a new admin account, clear the user table in your D1 database using the D1 console in the Cloudflare dashboard (or `bunx wrangler d1 execute linkden-db --remote --command "DELETE FROM user;"`).
+Locked out? Reset the password instead: `bun reset:password -- --email you@example.com --remote` (add `--disable-2fa` if you also lost your authenticator and backup codes). To start over completely, factory-reset the database (see **Restore a D1 backup** above).
+
+If the API Worker has a `SETUP_TOKEN` secret, the first signup also needs that token; a wrong one returns 403 "Invalid setup token".
 
 ### File upload errors
 
@@ -121,6 +150,7 @@ If you need to reset and create a new admin account, clear the user table in you
 **Possible causes:**
 - **413 error:** File exceeds the 5 MB size limit. Resize or compress the image.
 - **400 error (file type):** Only image files are allowed: jpg, jpeg, png, gif, webp, ico.
+- **403 error:** The upload did not come from your site's own origin (`CORS_ORIGIN`). Uploads and admin writes must come from the admin panel itself.
 - **400 error (signature):** The file's bytes don't match its extension (for example an HTML file renamed to `.png`). Re-export the file in a supported format.
 - **500 error:** R2 bucket (Cloudflare) or image storage is not configured. Check your deployment's storage bindings.
 
@@ -128,4 +158,8 @@ If you need to reset and create a new admin account, clear the user table in you
 
 **Symptom:** Saving settings fails with a validation error.
 
-**Explanation:** The settings API only accepts known setting keys. If you're making direct API calls, ensure you're using valid keys. The admin UI handles this automatically.
+**Explanation:** The settings API only accepts known setting keys, and each value is checked against its rules (length, URL, colour, enum, JSON shape). The error message names the problem. If you're making direct API calls, ensure you're using valid keys and values. The admin UI handles this automatically.
+
+### "Too many requests"
+
+The API rate-limits sign-in, two-factor, password reset, magic links, sign-up, uploads, the contact form and analytics per client IP (and caps sign-in attempts globally). Wait a minute and try again. A batched tRPC request counts once per limited procedure in it.

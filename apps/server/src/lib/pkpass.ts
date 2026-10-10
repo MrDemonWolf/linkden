@@ -7,9 +7,9 @@
 // node-forge is pure JS (no native crypto), fflate is a tiny pure-JS zip, and
 // PNG/CRC are hand-rolled — all Workers-compatible. Web Crypto does the SHA-1.
 
-import forge from "node-forge";
+import { normalizeSigningMaterial, type PassField } from "@linkden/validators/wallet";
 import { zipSync, zlibSync } from "fflate";
-import type { PassField } from "@linkden/validators/wallet";
+import forge from "node-forge";
 
 export interface PkpassImages {
 	icon?: Uint8Array; // 29pt — required; a solid fallback is generated if absent
@@ -187,7 +187,8 @@ async function buildManifest(files: Record<string, Uint8Array>): Promise<string>
 }
 
 function certFromPemOrDer(value: string): forge.pki.Certificate {
-	const s = value.trim();
+	// Base64-wrapped PEM (how env vars often carry it) is unwrapped first.
+	const s = normalizeSigningMaterial(value);
 	if (s.includes("BEGIN CERTIFICATE")) return forge.pki.certificateFromPem(s);
 	// Assume base64-encoded DER (.cer files are distributed this way)
 	const der = forge.util.decode64(s.replace(/-----[^-]+-----/g, "").replace(/\s+/g, ""));
@@ -200,13 +201,27 @@ function binaryStringToUint8(bin: string): Uint8Array {
 	return out;
 }
 
+function loadSignerKey(material: SigningMaterial): forge.pki.rsa.PrivateKey {
+	let key: forge.pki.rsa.PrivateKey | null = null;
+	let cause: unknown;
+	const pem = normalizeSigningMaterial(material.signerKeyPem);
+	try {
+		key = material.signerKeyPassphrase
+			? forge.pki.decryptRsaPrivateKey(pem, material.signerKeyPassphrase)
+			: forge.pki.privateKeyFromPem(pem);
+	} catch (e) {
+		// A wrong passphrase decrypts to garbage, which forge reports as an
+		// unrelated ASN.1 error ("Only 8, 16, 24, or 32 bits supported").
+		cause = e;
+	}
+	if (!key) throw new Error("Unable to load wallet signer key (wrong passphrase?)", { cause });
+	return key;
+}
+
 export function signManifest(manifest: string, material: SigningMaterial): Uint8Array {
 	const cert = certFromPemOrDer(material.signerCertPem);
 	const wwdr = certFromPemOrDer(material.wwdrCertPem);
-	const key = material.signerKeyPassphrase
-		? forge.pki.decryptRsaPrivateKey(material.signerKeyPem, material.signerKeyPassphrase)
-		: forge.pki.privateKeyFromPem(material.signerKeyPem);
-	if (!key) throw new Error("Unable to load wallet signer key (wrong passphrase?)");
+	const key = loadSignerKey(material);
 
 	const p7 = forge.pkcs7.createSignedData();
 	p7.content = forge.util.createBuffer(manifest, "utf8");

@@ -37,10 +37,20 @@ export function PhoneFrame({ children, previewDark, isLoading }: PhoneFrameProps
 	return (
 		<DeviceFrame width={340} height={SCREEN_HEIGHT} previewDark={previewDark} isLoading={isLoading}>
 			{/* `public-scope` undoes the admin radius scale: this subtree is the real
-			    public page and has to render with the public page's corners. */}
-			<div className="public-scope" style={{ height: contentHeight * SCALE, overflow: "hidden" }}>
+			    public page and has to render with the public page's corners. It is a
+			    picture of the page, not a second copy of it: one labelled image to
+			    assistive tech, and `inert` keeps its links/buttons out of the tab
+			    order (clicks are already off). Wheel scrolling still works — the
+			    scroller is the frame's screen, outside the inert subtree. */}
+			<div
+				className="public-scope"
+				role="img"
+				aria-label="Live preview of your page"
+				style={{ height: contentHeight * SCALE, overflow: "hidden" }}
+			>
 				<div
 					ref={contentRef}
+					inert
 					style={{
 						width: FULL_WIDTH,
 						// Grid stretches the page (`min-h-full`) to at least one full screen.

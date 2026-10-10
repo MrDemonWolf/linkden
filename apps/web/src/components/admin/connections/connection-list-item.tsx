@@ -1,8 +1,18 @@
 "use client";
 
 import { MapPin } from "lucide-react";
+import { formatInTimeZone, useAdminTimeZone } from "@/components/admin/analytics/admin-time-zone";
 import { initials, relativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+
+const WEEK_MS = 7 * 86_400_000;
+
+/** "3h ago" for the last week (as `relativeTime`), then the date in the admin's zone. */
+function receivedLabel(createdAt: string | Date, timeZone: string | undefined): string {
+	const date = new Date(createdAt);
+	if (Date.now() - date.getTime() < WEEK_MS) return relativeTime(date);
+	return formatInTimeZone(date, timeZone, { year: "numeric", month: "numeric", day: "numeric" });
+}
 
 interface Connection {
 	id: string;
@@ -32,6 +42,7 @@ export function ConnectionListItem({
 	onCheck,
 	showCheckbox,
 }: ConnectionListItemProps) {
+	const timeZone = useAdminTimeZone();
 	return (
 		// Same row idiom as the block list on Links: hover lifts to --surface-2,
 		// the selected row is a primary tint, and there is no edge indicator bar.
@@ -81,7 +92,7 @@ export function ConnectionListItem({
 							/>
 						)}
 						<span className="ml-auto shrink-0 text-xs text-muted-foreground">
-							{relativeTime(connection.createdAt)}
+							{receivedLabel(connection.createdAt, timeZone)}
 						</span>
 					</div>
 					<div className="flex items-center gap-1.5">

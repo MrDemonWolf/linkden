@@ -4,6 +4,10 @@ import { AdminShell } from "@/components/admin/admin-shell";
 // The admin console installs as its own PWA ("LinkDen Admin", scope /admin);
 // the public page's manifest lives at app/manifest.ts.
 export const metadata: Metadata = {
+	// Every admin route gets its own title (destination layouts below set the
+	// segment name): WCAG 2.4.2, and Next's route announcer only speaks a client
+	// navigation when document.title changes.
+	title: { template: "%s · LinkDen Admin", default: "LinkDen Admin" },
 	manifest: "/admin/manifest.webmanifest",
 	appleWebApp: { capable: true, title: "LinkDen Admin", statusBarStyle: "black-translucent" },
 };

@@ -8,30 +8,34 @@ description: Customize your page's look with theme presets, custom colors, banne
 Everything visual lives at `/admin/design` (Theme · Banner · Branding · SEO). Changes preview instantly in the phone on the right (tap the preview button on mobile).
 
 ### ⚡ Quick Look
-- **Presets:** 7 themes (14 variants).
-- **Custom:** Override any color.
+- **Presets:** 11 themes, each with light and dark variants.
+- **Custom:** Override any color, in both light and dark.
 - **Banners:** Gradients or custom images.
 - **Social icon shape:** Circle or rounded square.
-- **Consent banner:** Optional cookie/privacy notice.
+- **Consent banner:** On by default; asks visitors before analytics and embeds.
 - **CSS:** Full custom code support.
 
 ---
 
 ## 🌈 Theme Presets
 
-Pick from **7 built-in themes**. Each has a Light, Dark, and Auto mode.
+Pick from **11 built-in themes**. Each has a Light and a Dark palette; your color mode picks between them.
 
-| Theme | Primary Color | Vibe |
-|-------|--------------|------|
-| **Default** 🔵 | Cyan `#0FACED` | Clean, modern |
-| **Classic** 👔 | Navy `#1E3A5F` | Professional, subtle |
-| **Modern** 🏢 | Teal `#0D9488` | Contemporary, balanced |
-| **Hacker** 💻 | Green `#16A34A` | Monospace, sharp corners |
-| **Neon** 🟣 | Purple `#7C3AED` | Vibrant, large radius |
-| **Pastel** 🌸 | Pink `#EC4899` | Warm, fully rounded |
-| **Bold** 🦁 | Orange `#EA580C` | High energy, bold |
+| Theme | Vibe |
+|-------|------|
+| **Classic** | Clean and minimal with bright backgrounds |
+| **Graphite** | Sleek dark theme with subtle contrasts |
+| **Ocean Blue** | Deep blues inspired by the ocean |
+| **Sunset** | Warm oranges and golden tones |
+| **Forest** | Natural greens with earthy warmth |
+| **Minimal** | Ultra-clean with monochrome palette |
+| **Corporate Classic** | Professional blue tones for business |
+| **Blood Moon** | Bold crimson with dramatic contrasts |
+| **Hacker Terminal** | Matrix-inspired neon green on black |
+| **Hellfire** | Fiery orange with blazing intensity |
+| **Abyssal** | Deep purple with mysterious depth |
 
-> **Tip:** Click any card to apply. Color pickers update automatically.
+> **Tip:** Click any card to apply. Picking a preset clears your custom color overrides.
 
 ---
 
@@ -43,7 +47,7 @@ Override individual colors on top of any preset.
 - **Accent:** Highlights.
 - **Background:** Page background.
 
-> **Note:** Custom overrides apply in **Light Mode only**. Dark mode uses the preset palette for accessibility.
+> **Note:** Overrides apply in **both light and dark mode**. Leave a field empty to use the preset's own color in each mode. Colors saved with an older version stay pinned until you clear them.
 
 ---
 
@@ -53,7 +57,7 @@ Control what visitors see first.
 
 - **Light:** Always light.
 - **Dark:** Always dark.
-- **System:** Matches their device (iOS/Android/Windows).
+- **System:** Matches their device (iOS/Android/Windows). Chromium browsers get the right mode on first paint; others switch instantly after load.
 
 ---
 
@@ -61,13 +65,13 @@ Control what visitors see first.
 
 Customize the top of your page.
 
-- **Avatar:** Upload or URL.
+- **Avatar:** Upload and crop.
 - **Display Name:** 50 chars max.
 - **Bio:** 300 chars max.
 - **Verified Badge:** Toggle a blue checkmark (cosmetic).
 
 ### Banner Types
-1. **Preset Gradients:** Adapts to your theme colors automatically.
+1. **Preset Gradients and shaders:** Adapt to your theme colors automatically. Animated shader banners freeze for visitors who prefer reduced motion and have a pause button.
 2. **Custom Image:** Upload anything.
 
 ---
@@ -97,13 +101,18 @@ Control the footer on your public page. **Fully Allowed (MIT).**
 
 ## 🍪 Consent Banner
 
-Show a privacy/cookie notice at the bottom of your public page.
+The consent banner is **on by default**, and it is what decides whether a visitor is counted in your analytics.
+
+- **Banner on (default):** a new visitor's page views and link clicks are recorded only after they accept **Analytics**. Embedded media (YouTube, Spotify, SoundCloud, custom embeds) shows a click-to-load placeholder until they click **Load** or allow **Embedded media**. A first visit is counted the moment they accept.
+- **Banner off:** analytics are recorded for **every visitor without asking**, and embeds load immediately. If you turn it off, you need another lawful basis for analytics (ask your own counsel), and your privacy notice should say so.
+
+Visitors can change their mind any time with the **Cookie settings** link in the footer. A choice expires after 12 months, or sooner when LinkDen changes what it asks. Escape hides the banner for the current page view without recording a choice.
+
+To configure it:
 
 1. Go to `/admin/design/branding` → **Consent Banner**.
-2. Toggle **Show consent banner** on.
-3. Edit the banner text (e.g. _"We use cookies to improve your experience."_).
-
-> The banner is purely informational — no cookie blocking logic is attached. Style it with Custom CSS if needed.
+2. Leave **Show consent banner** on (or turn it off, with the caveat above).
+3. Edit the banner text and the privacy-policy link (it falls back to your branding privacy URL).
 
 ---
 
@@ -115,7 +124,11 @@ For advanced users. Add your own styles.
 - `.ld-page` - Main container.
 - `.ld-profile` - Profile section.
 - `.ld-link-block` - Link buttons.
-- `.ld-social-block` - Social icons.
+- `.ld-social-block` - Social icons under your profile.
+- `.ld-contact-block` - Contact (Connect) form.
+- `.ld-header-block`, `.ld-embed-block`, `.ld-image-block`, `.ld-text-block`, `.ld-divider-block`, `.ld-location-block`, `.ld-vcard-block` - The other block types.
+
+> The admin preview scopes your CSS to the phone frame and strips external `url()` / `@import` fetches; the live page applies it as written.
 
 ### CSS Variables
 `--ld-primary`, `--ld-accent`, `--ld-background`, `--ld-foreground`, `--ld-card`, `--ld-card-foreground`, `--ld-border`, `--ld-muted`, `--ld-muted-foreground`

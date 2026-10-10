@@ -11,7 +11,8 @@ When visitors fill out your contact form, their messages land in the **Inbox** a
 - Messages from your contact form appear here automatically.
 - Filter by **All**, **Unread**, or **Read**.
 - Select any message to read the full details.
-- Bulk-delete or mark-all-read in one click.
+- Older messages load page by page ("Showing n of total").
+- **Select** mode marks read or deletes several messages at once.
 
 ---
 
@@ -20,7 +21,7 @@ When visitors fill out your contact form, their messages land in the **Inbox** a
 Each connection card shows:
 - **Name** and **email** of the visitor.
 - **Message preview** (first line).
-- **Timestamp** of when it was submitted.
+- **Timestamp** of when it was submitted, in the timezone set under Settings → Account.
 - **Read/Unread indicator** — bold title = unread.
 
 Clicking a card opens the full message in a side panel (desktop) or a slide-up sheet (mobile).
@@ -37,7 +38,9 @@ Use the filter buttons at the top of the list:
 | **Unread** | Only messages you haven't opened yet |
 | **Read** | Messages you've already viewed |
 
-> Selecting a connection auto-marks it as **read**.
+> Opening a message marks it as **read** once. If you then choose **Mark as unread**, it stays unread.
+
+Scroll to the bottom and click **Load older messages** to see more.
 
 ---
 
@@ -47,11 +50,13 @@ Use the filter buttons at the top of the list:
 - **Mark as read / unread** — Toggle the read state manually.
 - **Delete** — Permanently removes the connection. Cannot be undone.
 
+- **Reply** — Opens your mail app addressed to the visitor. The address is encoded, so a crafted email can't add extra recipients or headers.
+
 ### Bulk Actions
-1. Check the checkbox on one or more connections to enter bulk mode.
+1. Click **Select** in the list header and tick one or more messages.
 2. Use the toolbar that appears:
-   - **Mark all read** — Marks every visible connection as read.
-   - **Delete selected** — Permanently deletes checked connections.
+   - **Mark read** — Marks the selected messages as read.
+   - **Delete** — Permanently deletes the selected messages (after a confirmation).
 
 > **Warning:** Deletion is permanent. There is no recycle bin.
 
@@ -73,8 +78,8 @@ See the [Contact Form guide](/docs/guide/contact-form) for full setup.
 
 If you'd rather get an email for each new submission than check this inbox:
 
-1. Go to `/admin/settings` → **Email**.
-2. Set your email provider (Resend or Cloudflare Email Workers).
-3. Under **Contact Form**, set delivery to **Email notification** or **Database + email**.
+1. Go to `/admin/settings/email`.
+2. Set your email provider: Resend (Cloudflare Email Workers coming soon), API key and sender address.
+3. Under **Contact-form delivery**, choose **Email only** or **Inbox and email**. In Email only mode a failed send still lands here.
 
 See [Email Templates](/docs/guide/email-templates) for what the notification looks like.

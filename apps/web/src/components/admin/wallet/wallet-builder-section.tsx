@@ -2,9 +2,11 @@
 
 import { hexColorSchema } from "@linkden/validators/blocks";
 import {
+	PASS_FIELD_LIMITS,
 	type PassField,
 	type PassLocation,
 	type PassTemplatePreset,
+	parsePassLocationsJson,
 	seedFromPreset,
 } from "@linkden/validators/wallet";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -12,10 +14,13 @@ import { Layers, Type } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ColorField } from "@/components/admin/color-field";
+import { QueryError } from "@/components/admin/dashboard/query-error";
 import { FieldGroup } from "@/components/admin/settings/field-group";
+import { mutationErrorMessage } from "@/components/admin/settings/mutation-error";
 import type { PassZone } from "@/components/admin/wallet-pass-preview";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { isoToLocal, localToIso } from "@/lib/format";
@@ -27,6 +32,7 @@ import { PassFieldEditor } from "./pass-field-editor";
 import { PassImageSlots } from "./pass-image-slots";
 import { TemplatePresetPicker } from "./template-preset-picker";
 import { WalletTabBar } from "./wallet-tab-bar";
+import { parseStoredFields, walletFieldsError } from "./wallet-validation";
 
 export interface WalletLiveState {
 	templatePreset: PassTemplatePreset;
@@ -79,15 +85,6 @@ const DEFAULTS = {
 	locations: [] as PassLocation[],
 };
 
-function safeParse<T>(raw: string | undefined, fallback: T): T {
-	if (!raw) return fallback;
-	try {
-		return JSON.parse(raw) as T;
-	} catch {
-		return fallback;
-	}
-}
-
 function fieldsEqual(a: PassField[], b: PassField[]) {
 	if (a.length !== b.length) return false;
 	return a.every((f, i) => f.key === b[i].key && f.label === b[i].label && f.value === b[i].value);
@@ -126,14 +123,28 @@ export function WalletBuilderSection({
 			iconUrl: d.wallet_icon_url ?? "",
 			thumbnailUrl: d.wallet_thumbnail_url ?? "",
 			stripUrl: d.wallet_strip_url ?? "",
-			headerFields: safeParse<PassField[]>(d.wallet_header_fields, []),
-			primaryFields: safeParse<PassField[]>(d.wallet_primary_fields, []),
-			secondaryFields: safeParse<PassField[]>(d.wallet_secondary_fields, []),
-			auxiliaryFields: safeParse<PassField[]>(d.wallet_auxiliary_fields, []),
-			backFields: safeParse<PassField[]>(d.wallet_back_fields, []),
+			// Shape-checked: these are opaque settings a backup can set to any JSON,
+			// and a non-array would crash the editor on render.
+			headerFields: parseStoredFields(d.wallet_header_fields, PASS_FIELD_LIMITS.header, "header"),
+			primaryFields: parseStoredFields(
+				d.wallet_primary_fields,
+				PASS_FIELD_LIMITS.primary,
+				"primary",
+			),
+			secondaryFields: parseStoredFields(
+				d.wallet_secondary_fields,
+				PASS_FIELD_LIMITS.secondary,
+				"secondary",
+			),
+			auxiliaryFields: parseStoredFields(
+				d.wallet_auxiliary_fields,
+				PASS_FIELD_LIMITS.auxiliary,
+				"auxiliary",
+			),
+			backFields: parseStoredFields(d.wallet_back_fields, PASS_FIELD_LIMITS.back, "back"),
 			showQrCode: d.wallet_show_qr_code !== "false",
 			relevantDate: isoToLocal(d.wallet_relevant_date),
-			locations: safeParse<PassLocation[]>(d.wallet_locations, []),
+			locations: parsePassLocationsJson(d.wallet_locations),
 		};
 		setSaved(next);
 		if (!dirtyRef.current) setState(next);
@@ -176,10 +187,21 @@ export function WalletBuilderSection({
 	const colorError = [state.backgroundColor, state.foregroundColor, state.labelColor].some(
 		(c) => c && fieldError(hexColorSchema, c),
 	);
+	// One over-long field or out-of-range location makes the server reject the
+	// whole update, so name the row here instead.
+	const fieldsError = walletFieldsError(state);
+	const loaded = !!configQuery.data;
 
 	const handleSave = useCallback(async () => {
+		// Until the saved config has loaded, the editor holds DEFAULTS: saving
+		// would overwrite the stored design with them.
+		if (!loaded) return;
 		if (colorError) {
 			toast.error("Fix the highlighted colour fields first");
+			return;
+		}
+		if (fieldsError) {
+			toast.error(fieldsError);
 			return;
 		}
 		try {
@@ -201,18 +223,16 @@ export function WalletBuilderSection({
 				backFields: state.backFields,
 				showQrCode: state.showQrCode,
 				relevantDate: localToIso(state.relevantDate),
-				locations: state.locations.filter(
-					(l) => Number.isFinite(l.latitude) && Number.isFinite(l.longitude),
-				),
+				locations: state.locations,
 			});
 			setSaved(state);
 			qc.invalidateQueries({ queryKey: trpc.wallet.getConfig.queryOptions().queryKey });
 			qc.invalidateQueries({ queryKey: trpc.wallet.generatePreview.queryOptions().queryKey });
 			toast.success("Wallet pass saved");
-		} catch {
-			toast.error("Failed to save wallet pass");
+		} catch (err) {
+			toast.error(mutationErrorMessage(err, "Failed to save wallet pass"));
 		}
-	}, [state, updateConfig, qc, colorError]);
+	}, [state, updateConfig, qc, colorError, fieldsError, loaded]);
 
 	useEffect(() => {
 		if (resetRef) resetRef.current = () => setState(saved);
@@ -241,6 +261,24 @@ export function WalletBuilderSection({
 
 	const updateImage = (key: "logoUrl" | "iconUrl" | "thumbnailUrl" | "stripUrl", url: string) =>
 		setState((s) => ({ ...s, [key]: url }));
+
+	if (configQuery.isLoading) {
+		return (
+			<div className="space-y-3" aria-busy="true">
+				<Skeleton className="h-9 w-full" />
+				<Skeleton className="h-40 w-full" />
+			</div>
+		);
+	}
+
+	if (!loaded) {
+		return (
+			<QueryError
+				message="Couldn't load your wallet pass design"
+				onRetry={() => configQuery.refetch()}
+			/>
+		);
+	}
 
 	return (
 		<Tabs defaultValue="business" className="flex min-h-0 flex-col">
@@ -410,7 +448,7 @@ function Section({
 				<h3 className="text-micro font-semibold uppercase tracking-wider text-foreground/80">
 					{title}
 				</h3>
-				{hint && <span className="text-micro text-muted-foreground/60">· {hint}</span>}
+				{hint && <span className="text-micro text-muted-foreground">· {hint}</span>}
 			</div>
 			{children}
 		</div>

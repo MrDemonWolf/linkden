@@ -1,47 +1,46 @@
 import { APP_VERSION } from "@linkden/api/utils/version";
 import { siteSettings } from "@linkden/db/schema/index";
 import { createTestDb } from "@linkden/db/testing";
-import { Hono } from "hono";
-import { describe, expect, it } from "vitest";
-import { buildHealth, type HealthReport } from "../lib/health";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { buildHealth } from "../lib/health";
 
-// ponytail: the full server entry binds Cloudflare env at import time, so the
-// route is exercised through a minimal Hono app wired to the same helper.
-async function healthApp() {
-	const { db } = await createTestDb();
-	const app = new Hono().get("/api/health", async (c) => {
-		const report = await buildHealth(db);
-		return c.json(report, report.status === "ok" ? 200 : 503);
-	});
-	const get = async () => {
-		const res = await app.request("/api/health");
-		return { status: res.status, body: (await res.json()) as HealthReport };
-	};
-	return { get, db };
-}
+// The real GET /api/health route (status code mapping) is exercised through
+// the Worker entry in routes.test.ts; these pin the report itself.
 
-describe("GET /api/health", () => {
+afterEach(() => {
+	vi.restoreAllMocks();
+});
+
+describe("buildHealth", () => {
 	it("reports ok, database ok, version, and email presence", async () => {
-		const { get } = await healthApp();
-		const { status, body } = await get();
-		expect(status).toBe(200);
-		expect(body.status).toBe("ok");
-		expect(body.database).toBe("ok");
-		expect(body.version).toBe(APP_VERSION);
-		expect(["configured", "missing"]).toContain(body.email);
+		const { db } = await createTestDb();
+		const report = await buildHealth(db);
+		expect(report).toEqual({
+			status: "ok",
+			database: "ok",
+			auth: "ok",
+			email: "missing",
+			version: APP_VERSION,
+		});
+	});
+
+	it("reports degraded with auth misconfigured (the deploy smoke test checks status)", async () => {
+		const { db } = await createTestDb();
+		const report = await buildHealth(db, { authConfigured: false });
+		expect(report).toMatchObject({ status: "degraded", database: "ok", auth: "misconfigured" });
 	});
 
 	it("flips email to configured once an API key is stored", async () => {
-		const { get, db } = await healthApp();
-		expect((await get()).body.email).toBe("missing");
+		const { db } = await createTestDb();
 		await db.insert(siteSettings).values({ key: "email_api_key", value: "re_test_key" });
-		const { body } = await get();
-		expect(body.email).toBe("configured");
-		expect(body.status).toBe("ok");
+		const report = await buildHealth(db);
+		expect(report.email).toBe("configured");
+		expect(report.status).toBe("ok");
 	});
 
-	it("reports degraded when the database is unreachable", async () => {
-		// ponytail: a stub whose SELECT 1 throws is the cheapest "D1 down" stand-in.
+	it("reports degraded when the database is unreachable, and logs why", async () => {
+		const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+		// A stub whose SELECT 1 throws is the cheapest "D1 down" stand-in.
 		const broken = {
 			run: async () => {
 				throw new Error("D1 offline");
@@ -49,5 +48,7 @@ describe("GET /api/health", () => {
 		} as unknown as Parameters<typeof buildHealth>[0];
 		const down = await buildHealth(broken);
 		expect(down).toMatchObject({ status: "degraded", database: "error", email: "missing" });
+		const line = JSON.parse(String(errors.mock.calls[0]?.[0]));
+		expect(line).toMatchObject({ level: "error", path: "/api/health", message: "D1 offline" });
 	});
 });

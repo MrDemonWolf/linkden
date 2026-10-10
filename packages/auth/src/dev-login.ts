@@ -1,18 +1,25 @@
 import type { BetterAuthPlugin } from "better-auth";
 import { APIError, createAuthEndpoint } from "better-auth/api";
 import { setSessionCookie } from "better-auth/cookies";
+import { isLocalHttpURL, isLoopbackHostHeader } from "./local-url";
 
 /**
  * DEV-ONLY login bypass.
  *
- * Strictly gated: this plugin is only registered by packages/auth/src/index.ts
- * when the DEV_LOGIN env flag is exactly the string "true". In every other case
- * (undefined, "", "1", "TRUE", "false", …) the flag is off, the plugin is never
- * added, and POST /api/auth/dev-login returns 404. Production never sets
- * DEV_LOGIN, so the endpoint does not exist there.
+ * Strictly gated by two independent conditions, so one misconfiguration (say,
+ * DEV_LOGIN=true added as a Worker variable while debugging) is not enough:
+ *
+ * 1. the DEV_LOGIN env flag is exactly the string "true" — undefined, "", "1",
+ *    "TRUE", "false", … all mean off; and
+ * 2. BETTER_AUTH_URL is plain http on a loopback host. Any https / tunnel /
+ *    custom-domain base URL keeps it off.
+ *
+ * When either fails the plugin is never added and POST /api/auth/dev-login
+ * returns 404. Production never sets DEV_LOGIN, so the endpoint does not exist
+ * there. The endpoint additionally refuses requests whose Host is not loopback.
  */
-export function isDevLoginEnabled(flag?: string): boolean {
-	return flag === "true";
+export function isDevLoginEnabled(flag?: string, baseURL?: string): boolean {
+	return flag === "true" && isLocalHttpURL(baseURL);
 }
 
 /** Fixed identity used only when the local DB has no admin yet. */
@@ -35,6 +42,9 @@ export function devLoginPlugin(): BetterAuthPlugin {
 		id: "dev-login",
 		endpoints: {
 			devLogin: createAuthEndpoint("/dev-login", { method: "POST" }, async (ctx) => {
+				if (!isLoopbackHostHeader(ctx.headers?.get("host"))) {
+					throw new APIError("NOT_FOUND");
+				}
 				const adapter = ctx.context.internalAdapter;
 
 				// Single-admin instance — the sole existing user IS the admin.

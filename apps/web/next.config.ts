@@ -17,6 +17,33 @@ const { version } = JSON.parse(
 // own jar, so splitting web and API across hostnames breaks both.
 const devApiOrigin = process.env.NODE_ENV !== "production" ? process.env.DEV_API_ORIGIN : undefined;
 
+// The contact form's CAPTCHA widget (components/public/captcha-widget.tsx) loads
+// the configured provider's script; only that provider's script is ever
+// injected. Frames are already covered by `frame-src *`.
+const CAPTCHA_SCRIPT_SRC = [
+	"https://challenges.cloudflare.com", // Turnstile
+	"https://www.google.com/recaptcha/", // reCAPTCHA loader
+	"https://www.gstatic.com/recaptcha/", // reCAPTCHA runtime
+	"https://js.hcaptcha.com", // hCaptcha loader
+	"https://*.hcaptcha.com", // hCaptcha runtime
+];
+const CAPTCHA_STYLE_SRC = ["https://hcaptcha.com", "https://*.hcaptcha.com"];
+
+function contentSecurityPolicy(production: boolean): string {
+	return `${[
+		"default-src 'self'",
+		`script-src 'self' 'unsafe-inline'${production ? "" : " 'unsafe-eval'"} ${CAPTCHA_SCRIPT_SRC.join(" ")}`,
+		`style-src 'self' 'unsafe-inline' ${CAPTCHA_STYLE_SRC.join(" ")}`,
+		"img-src 'self' data: blob: https:",
+		// frame-src * is intentional: link-in-bio blocks may embed YouTube, Spotify, etc.
+		"frame-src *",
+		`connect-src 'self' https:${production ? "" : " http://localhost:*"}`,
+		"font-src 'self' data:",
+		"object-src 'none'",
+		"base-uri 'self'",
+	].join("; ")};`;
+}
+
 const nextConfig: NextConfig = {
 	env: {
 		NEXT_PUBLIC_APP_VERSION: version,
@@ -76,12 +103,19 @@ const nextConfig: NextConfig = {
 					},
 					{
 						key: "Content-Security-Policy",
-						// frame-src * is intentional: link-in-bio blocks may embed YouTube, Spotify, etc.
-						value:
-							process.env.NODE_ENV === "production"
-								? "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; frame-src *; connect-src 'self' https:; font-src 'self' data:; object-src 'none'; base-uri 'self';"
-								: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; frame-src *; connect-src 'self' https: http://localhost:*; font-src 'self' data:; object-src 'none'; base-uri 'self';",
+						value: contentSecurityPolicy(process.env.NODE_ENV === "production"),
 					},
+				],
+			},
+			{
+				// Ask Chromium for the OS light/dark preference so a `system`
+				// default server-renders in the right palette (app/page.tsx reads
+				// it). Critical-CH makes a first visit retry once with the hint
+				// instead of painting light and flipping after hydration.
+				source: "/",
+				headers: [
+					{ key: "Accept-CH", value: "Sec-CH-Prefers-Color-Scheme" },
+					{ key: "Critical-CH", value: "Sec-CH-Prefers-Color-Scheme" },
 				],
 			},
 		];

@@ -1,8 +1,9 @@
 "use client";
 
+import { SETTING_REGISTRY } from "@linkden/validators/settings-registry";
 import { Check, Image, Layout } from "lucide-react";
 import { z } from "zod";
-import { CharCount, FieldError } from "@/components/admin/field-feedback";
+import { FieldError } from "@/components/admin/field-feedback";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { SectionLabel } from "@/components/admin/section-header";
 import { Input } from "@/components/ui/input";
@@ -12,9 +13,40 @@ import { cn } from "@/lib/utils";
 import { fieldError } from "@/lib/validate";
 import { FieldGroup } from "./field-group";
 
-// Search engines truncate titles past ~70 and descriptions past ~160 chars.
-const SEO_TITLE_MAX = 70;
-const SEO_DESCRIPTION_MAX = 160;
+// Hard limits are the server's (settings registry); a value it accepts must
+// stay editable, e.g. one restored from a backup.
+const SEO_TITLE_MAX = SETTING_REGISTRY.seo_title?.maxLength ?? 100;
+const SEO_DESCRIPTION_MAX = SETTING_REGISTRY.seo_description?.maxLength ?? 250;
+// Search engines truncate titles past ~70 and descriptions past ~160 chars:
+// guidance only, never a validation error.
+const SEO_TITLE_RECOMMENDED = 70;
+const SEO_DESCRIPTION_RECOMMENDED = 160;
+
+/** `n/recommended` counter: amber past the search-engine guideline, red past the hard limit. */
+function LengthHint({
+	value,
+	recommended,
+	max,
+}: {
+	value: string;
+	recommended: number;
+	max: number;
+}) {
+	const n = value.length;
+	return (
+		<p
+			className={cn(
+				"shrink-0 text-right text-micro tabular-nums",
+				n > max ? "text-destructive" : n > recommended ? "text-warning" : "text-muted-foreground",
+			)}
+		>
+			{n}/{recommended}
+			{n > recommended && n <= max && (
+				<span className="sr-only"> — may be cut off in search results</span>
+			)}
+		</p>
+	);
+}
 
 /**
  * Field → message for every invalid SEO value; `{}` when all valid. The OG
@@ -68,7 +100,7 @@ export function SeoSection({
 	onSeoOgModeChange,
 	onSeoOgTemplateChange,
 }: SeoSectionProps) {
-	// ponytail: the social preview card moved to the page (Design → SEO preview column toggle).
+	// The social preview card lives on the page (Design → SEO preview column toggle).
 	const errors = seoErrors({ seoTitle, seoDescription });
 
 	return (
@@ -84,14 +116,20 @@ export function SeoSection({
 							value={seoTitle}
 							onChange={(e) => onSeoTitleChange(e.target.value)}
 							placeholder="My Links"
+							maxLength={SEO_TITLE_MAX}
 							aria-invalid={!!errors.seoTitle}
 							aria-describedby={errors.seoTitle ? "s-seo-title-error" : "s-seo-title-hint"}
 						/>
 						<div className="flex items-start justify-between gap-2">
 							<p id="s-seo-title-hint" className="text-micro text-muted-foreground">
-								Shown in browser tab and search results
+								Shown in browser tab and search results; about {SEO_TITLE_RECOMMENDED} characters
+								show in full
 							</p>
-							<CharCount value={seoTitle} max={SEO_TITLE_MAX} />
+							<LengthHint
+								value={seoTitle}
+								recommended={SEO_TITLE_RECOMMENDED}
+								max={SEO_TITLE_MAX}
+							/>
 						</div>
 						<FieldError id="s-seo-title-error" error={errors.seoTitle} />
 					</div>
@@ -103,15 +141,21 @@ export function SeoSection({
 							onChange={(e) => onSeoDescriptionChange(e.target.value)}
 							rows={2}
 							placeholder="Check out all my links"
+							maxLength={SEO_DESCRIPTION_MAX}
 							aria-invalid={!!errors.seoDescription}
 							aria-describedby={errors.seoDescription ? "s-seo-desc-error" : "s-seo-desc-hint"}
-							className="dark:bg-input/30 border-input aria-invalid:border-destructive w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
+							className="dark:bg-input/30 border-input-border aria-invalid:border-destructive w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
 						/>
 						<div className="flex items-start justify-between gap-2">
 							<p id="s-seo-desc-hint" className="text-micro text-muted-foreground">
-								Appears below the title in search engine results
+								Appears below the title in search results; about {SEO_DESCRIPTION_RECOMMENDED}{" "}
+								characters show in full
 							</p>
-							<CharCount value={seoDescription} max={SEO_DESCRIPTION_MAX} />
+							<LengthHint
+								value={seoDescription}
+								recommended={SEO_DESCRIPTION_RECOMMENDED}
+								max={SEO_DESCRIPTION_MAX}
+							/>
 						</div>
 						<FieldError id="s-seo-desc-error" error={errors.seoDescription} />
 					</div>
@@ -190,17 +234,20 @@ export function SeoSection({
 
 				{/* Upload image mode */}
 				{seoOgMode === "custom" && (
-					<div className="space-y-1.5">
+					// Names the upload's generic Replace / Re-crop / Remove buttons for screen readers.
+					<fieldset className="min-w-0 space-y-1.5" aria-describedby="s-seo-og-image-hint">
+						<legend className="sr-only">Social preview image</legend>
 						<ImageUploadField
+							ariaLabel="social preview image"
 							value={seoOgImage}
 							purpose="og_image"
 							onUploadComplete={onSeoOgImageChange}
 							aspectRatio="banner"
 						/>
-						<p className="text-micro text-muted-foreground">
+						<p id="s-seo-og-image-hint" className="text-micro text-muted-foreground">
 							Recommended size: 1200 x 630 pixels. Max 5MB.
 						</p>
-					</div>
+					</fieldset>
 				)}
 			</div>
 		</div>

@@ -11,7 +11,6 @@
 	},
 	"scripts": {
 		"check-types": "tsc --noEmit",
-		"db:push": "drizzle-kit push",
 		"db:generate": "drizzle-kit generate"
 	},
 	"dependencies": {
@@ -20,12 +19,11 @@
 		"@linkden/validators": "workspace:*",
 		"dotenv": "catalog:",
 		"drizzle-orm": "catalog:",
-		"libsql": "0.5.22",
-		"zod": "catalog:"
+		"libsql": "0.5.22"
 	},
 	"devDependencies": {
 		"@linkden/config": "workspace:*",
-		"drizzle-kit": "^0.31.10",
+		"drizzle-kit": "^0.31.11",
 		"typescript": "catalog:"
 	}
 }

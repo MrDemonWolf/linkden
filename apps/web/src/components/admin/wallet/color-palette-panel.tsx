@@ -68,7 +68,7 @@ export function ColorPalettePanel({
 								aria-label={p.name}
 								title={p.name}
 								onClick={() => onPick(p)}
-								className={`flex h-11 min-h-11 overflow-hidden rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+								className={`flex h-11 min-h-11 overflow-hidden rounded-full transition-all focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground ${
 									active
 										? "ring-2 ring-primary ring-offset-2 ring-offset-background"
 										: "ring-1 ring-border/60 hover:ring-border"

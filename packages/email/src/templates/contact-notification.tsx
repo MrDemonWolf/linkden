@@ -13,22 +13,25 @@ import {
 } from "@react-email/components";
 import type * as React from "react";
 
+/** The project's real home — the domain the footer used to link was never registered. */
+export const LINKDEN_HOME_URL = "https://github.com/mrdemonwolf/LinkDen";
+
 export interface ContactNotificationProps {
 	name: string;
 	email: string;
 	message: string;
-	subject?: string;
-	phone?: string;
-	company?: string;
+	/** The visitor's answer to the Connect block's "Where did we meet?" select. */
+	whereMet?: string | null;
+	/** Title of the block the form was submitted from. */
+	blockTitle?: string | null;
 }
 
 export function ContactNotification({
 	name,
 	email,
 	message,
-	subject,
-	phone,
-	company,
+	whereMet,
+	blockTitle,
 }: ContactNotificationProps) {
 	return (
 		<Html>
@@ -59,24 +62,17 @@ export function ContactNotification({
 								</Link>
 							</Text>
 
-							{subject && (
+							{whereMet && (
 								<>
-									<Text style={label}>Subject</Text>
-									<Text style={value}>{subject}</Text>
+									<Text style={label}>Where we met</Text>
+									<Text style={value}>{whereMet}</Text>
 								</>
 							)}
 
-							{phone && (
+							{blockTitle && (
 								<>
-									<Text style={label}>Phone</Text>
-									<Text style={value}>{phone}</Text>
-								</>
-							)}
-
-							{company && (
-								<>
-									<Text style={label}>Company</Text>
-									<Text style={value}>{company}</Text>
+									<Text style={label}>Form</Text>
+									<Text style={value}>{blockTitle}</Text>
 								</>
 							)}
 						</Section>
@@ -92,7 +88,7 @@ export function ContactNotification({
 					<Section style={footer}>
 						<Text style={footerText}>
 							This email was sent by your{" "}
-							<Link href="https://linkden.io" style={footerLink}>
+							<Link href={LINKDEN_HOME_URL} style={footerLink}>
 								LinkDen
 							</Link>{" "}
 							contact form.

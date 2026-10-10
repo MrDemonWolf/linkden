@@ -4,12 +4,13 @@ import { SETTING_REGISTRY } from "@linkden/validators/settings-registry";
 import { Info } from "lucide-react";
 import { z } from "zod";
 import { FieldError } from "@/components/admin/field-feedback";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { fieldError } from "@/lib/validate";
+import { SecretInput } from "./secret-input";
 
-// Same cap the server applies (it truncates silently past this).
+// Same cap the server applies (it truncates silently past this). The token is
+// a write-only secret: a saved one comes back as the mask.
 const TOKEN_MAX = SETTING_REGISTRY.mapkit_token?.maxLength ?? 512;
 const tokenSchema = z.string().max(TOKEN_MAX);
 
@@ -61,10 +62,12 @@ export function MapKitSection({
 			{mapkitEnabled && (
 				<div className="space-y-1.5">
 					<Label htmlFor="s-mapkit-token">MapKit JS JWT Token</Label>
-					<Input
+					<SecretInput
 						id="s-mapkit-token"
 						value={mapkitToken}
-						onChange={(e) => onMapkitTokenChange(e.target.value)}
+						onValueChange={onMapkitTokenChange}
+						hintId="s-mapkit-token-hint"
+						maxLength={TOKEN_MAX}
 						placeholder="eyJ..."
 						className="font-mono text-xs"
 						aria-invalid={!!errors.mapkitToken}

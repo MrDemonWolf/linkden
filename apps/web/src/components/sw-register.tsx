@@ -11,7 +11,11 @@ export function SwRegister() {
 		if (process.env.NODE_ENV !== "production") return;
 		if (!("serviceWorker" in navigator)) return;
 		const sw = navigator.serviceWorker;
-		sw.register("/sw.js", { scope: "/" })
+		// `?v=` (version.json via next.config.ts) is part of the script URL, so
+		// every release installs a fresh worker whose cache name carries it —
+		// the previous release's static chunks are dropped on activate.
+		const version = encodeURIComponent(process.env.NEXT_PUBLIC_APP_VERSION ?? "0");
+		sw.register(`/sw.js?v=${version}`, { scope: "/" })
 			// Drop the pre-0.6 admin-only registration (scope /admin) so one
 			// root worker controls every page.
 			.then(() => sw.getRegistrations())

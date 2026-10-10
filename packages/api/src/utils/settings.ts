@@ -1,5 +1,6 @@
 import { db } from "@linkden/db";
 import { siteSettings } from "@linkden/db/schema/index";
+import { inArray } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 
 /**
@@ -29,21 +30,29 @@ export async function runBatch(stmts: BatchItem<"sqlite">[]): Promise<void> {
 	await db.batch(stmts as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
 }
 
-/**
- * Load all site settings into a key-value map.
- */
-export async function buildSettingsMap(): Promise<Record<string, string>> {
-	const results = await db.select().from(siteSettings);
+/** Select site settings rows — every key, or only `keys` when given. */
+export function settingsQuery(keys?: readonly string[]) {
+	return db
+		.select()
+		.from(siteSettings)
+		.where(keys ? inArray(siteSettings.key, [...keys]) : undefined);
+}
+
+/** Fold site_settings rows into a key-value map. */
+export function toSettingsMap(
+	rows: readonly { key: string; value: string }[],
+): Record<string, string> {
 	const map: Record<string, string> = {};
-	for (const row of results) {
+	for (const row of rows) {
 		map[row.key] = row.value;
 	}
 	return map;
 }
 
 /**
- * Check if a setting value represents an enabled feature.
+ * Load site settings into a key-value map. Pass `keys` to read only what the
+ * caller needs (public paths should never pull secret rows out of D1).
  */
-export function isEnabled(settings: Record<string, string>, key: string): boolean {
-	return settings[key] === "true";
+export async function buildSettingsMap(keys?: readonly string[]): Promise<Record<string, string>> {
+	return toSettingsMap(await settingsQuery(keys));
 }

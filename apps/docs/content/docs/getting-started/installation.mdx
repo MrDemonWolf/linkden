@@ -9,6 +9,7 @@ Get LinkDen running on your machine in under 5 minutes.
 
 ### 📋 Prerequisites
 - **Bun 1.3+** -- Grab it from [bun.sh](https://bun.sh).
+- **Node.js 24** -- `bun dev` runs Alchemy under Node.
 - **Cloudflare account** -- A free account is enough for development.
 
 ---
@@ -40,31 +41,41 @@ cp .env.example .env
 | `BETTER_AUTH_URL` | API server URL | `http://localhost:3000` |
 | `CORS_ORIGIN` | Web frontend URL | `http://localhost:3001` |
 | `NEXT_PUBLIC_SERVER_URL` | Public API URL | `http://localhost:3000` |
+| `NEXT_PUBLIC_SITE_URL` | Public site URL | `http://localhost:3001` |
 
 ---
 
-## 3. 🗄️ Database Setup
+## 3. 🚀 Start Dev Servers
+
+There are two ways to run LinkDen locally. Both apply the database migrations for you (option B with one command).
+
+### A. `bun dev` (everything, through Alchemy)
 
 ```bash
-bun run db:push
+bun dev
 ```
-This creates the tables needed to run.
 
----
+`bun dev` runs the Alchemy program in dev mode: it starts the web app, the API and the docs and applies every migration in `packages/db/src/migrations` to a local D1. Alchemy keeps its state in the `alchemy-state` worker, so this needs `ALCHEMY_STATE_TOKEN` in `.env` (see the [Cloudflare guide](/docs/self-hosting/cloudflare#about-the-alchemy-state-store) if you don't have one). In this mode `apps/web/.env` and `apps/server/.env` are loaded as well.
 
-## 4. 🚀 Start Dev Servers
+### B. API and web separately (no Alchemy state needed)
 
 ```bash
-bun run dev
+# first run only: apply the migrations to the local D1
+cd apps/server && for f in ../../packages/db/src/migrations/*.sql; do bunx wrangler d1 execute linkden-db --local --file="$f" --yes; done; cd ../..
+
+bun dev:server   # wrangler dev on :3000 (reads apps/server/.dev.vars)
+bun dev:web      # next dev on :3001
 ```
 
 - 🌐 **Web App:** `http://localhost:3001`
 - ⚙️ **API Server:** `http://localhost:3000`
-- 📚 **Docs:** `http://localhost:3002`
+- 📚 **Docs:** `http://localhost:3002` (`bun dev:docs`)
+
+> **No `db:push`.** Schema changes go through migrations: edit `packages/db/src/schema`, run `bun db:generate`, and the new migration is applied on the next `bun dev` / `bun ship`. `bun db:reset` wipes both local databases.
 
 ---
 
-## 5. ✅ Verify It Works
+## 4. ✅ Verify It Works
 
 1. **Visit:** `http://localhost:3001/admin/setup`.
 2. **Create Account:** Enter your name, email, and password.

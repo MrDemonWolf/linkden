@@ -13,6 +13,339 @@ Canonical version: [`version.json`](./version.json) — workspace
 
 ## [Unreleased]
 
+### ✨ What's new
+
+- **Two-factor sign-in works.** Turn on an authenticator app under
+  Settings → Account and save your backup codes. After your password,
+  the login page now asks for the 6-digit code (or a backup code), with
+  an optional "trust this device for 30 days". Before, turning 2FA on
+  could lock you out of your own admin. Lost your phone and your codes?
+  `bun reset:password -- --email you@example.com --disable-2fa`.
+- **CAPTCHA actually shows up.** Cloudflare Turnstile, Google reCAPTCHA
+  (v2 checkbox) or hCaptcha now renders on the public contact form and
+  is checked on the server. Site and secret keys are both required once
+  a provider is picked.
+- **A rebuilt admin console.** Five places instead of eight: Links,
+  Design, Insights, Inbox and Settings, with a sidebar, a live phone
+  preview on every editing page, and an honest status pill (Unsaved /
+  n unpublished / Live). Every page has its own browser-tab title, and
+  old admin links redirect to their new home.
+- **New blocks and a desktop layout.** Image, text and divider blocks;
+  link cards in button, thumbnail or featured-image style; headers that
+  lay out the blocks below them as a list, grid or carousel. On wide
+  screens your profile sits in a sticky column beside your blocks. A
+  share button (with QR code) sits on the page, and the page and admin
+  can be installed as apps.
+- **Editing a live block keeps it live.** Renaming, dragging or hiding a
+  published block no longer pulls it off your page until you click
+  Publish. Publish now only promotes brand-new blocks ("Publish 3 new").
+- **Destructive actions ask first.** Deleting a block, importing a
+  backup and applying a wallet template preset all confirm before
+  anything changes, and Undo puts a deleted block back in its old spot.
+- **Apple Wallet passes are now downloaded by you, not your visitors.**
+  The public "Add to Wallet" button and `/api/wallet-pass` are gone.
+  Download the signed pass from Settings → Wallet ("Downloads enabled")
+  and share it however you like.
+- **Wallet signing keys are easier to get right.** Upload your `.pem`
+  or `.cer` files (or paste PEM) and they are checked before saving.
+  "Ready" now means the keys can really sign a pass, and each saved key
+  can be cleared to fall back to the environment value.
+- **The footer "Save vCard" button works without a vCard block.** It
+  downloads the contact card from Design → Branding.
+- **Contact forms that disappeared after an upgrade are back.** Old
+  `form` / `contact_form` blocks are converted to Connect blocks.
+- **Your visitors are never told a saved message failed.** If the email
+  notification fails (or email isn't set up), the message is kept in
+  your Inbox and the failure is logged. Contact-form delivery
+  (Inbox, email or both) can now be chosen under Settings → Email.
+- **Cookie consent visitors can change.** A footer "Cookie settings"
+  link reopens the banner, a choice expires after 12 months, Accept and
+  Reject look equally prominent, and embedded media (YouTube, Spotify,
+  SoundCloud, custom) waits for a click while the banner is on. A first
+  visit is still counted once the visitor accepts analytics. If you turn
+  the banner off, analytics run for every visitor without asking.
+- **Less data about visitors.** Browser user-agent strings are no longer
+  stored, referrers are kept as a bare hostname, and "Where did we
+  meet?" is only asked when you switch it on for a form.
+- **Inbox upgrades.** Older messages load page by page ("Showing n of
+  total"), a Select mode marks read or deletes in bulk, opening a
+  message marks it read once (Mark unread sticks), timestamps follow the
+  timezone in Settings → Account, and reply links can't be hijacked by a
+  crafted email address.
+- **Insights in your timezone.** Daily views and clicks follow your
+  timezone setting, every day of the period shows (zeros included),
+  dates no longer show a day early west of UTC, "All time" no longer
+  claims +100%, the Clicks line is dashed, and the chart has a
+  screen-reader table.
+- **Paste a social profile link.** Social rows accept a full profile URL
+  or an `@handle` and store a clean link (no more
+  `https://x.com/https://x.com/ada`).
+- **Custom theme colours work in dark mode too.** Leaving a colour empty
+  now means "use the preset" in both light and dark, and picking a
+  preset clears your overrides. Colours you saved before stay pinned
+  until you clear them.
+- **Sign-in is harder to abuse.** Resetting your password signs out
+  every device, changing your email needs a link from the old address
+  and then the new one, magic links can't be turned on without email or
+  while 2FA is on, and login sends you back to the page you came from.
+- **`bun reset:password` no longer locks you out**, works against
+  production, and never takes the password on the command line.
+  Production deploys refuse unsafe auth settings.
+- **Claim your install safely.** Set the optional `SETUP_TOKEN` secret
+  and only someone who knows it can create the admin account on a fresh
+  public deploy.
+- **Image fixes.** Discarding an image change no longer breaks the saved
+  image, crops upload on Safari/iOS, pinch-zoom no longer tilts a crop,
+  and Enter on the crop dialog's buttons does what the button says.
+- **Accessibility and polish.** Form fields, checkboxes and off switches
+  have visible outlines; keyboard focus shows in the account menu and
+  segmented toggles; light-mode success/warning badges pass AA; the
+  Grain Dark banner shows its grain; Corporate Classic dark mode uses a
+  readable lighter blue; shader banners freeze under reduced motion and
+  have a pause button; the sidebar remembers if it was collapsed; browser
+  Back asks before discarding unsaved edits; reverted edits no longer
+  show "Unsaved"; "Show preview" keeps your block edits; the Admin panel
+  branding switch works; a "system" colour mode renders in the visitor's
+  OS theme without a flash on Chromium.
+
+### 🔧 Technical
+
+#### Added
+
+- Better Auth `twoFactor` plugin (issuer "LinkDen") with the `two_factor`
+  table (encrypted secret + backup codes, FK → `user` ON DELETE CASCADE).
+  Migration `0008_two_factor` adds it and drops the unused
+  `user.two_factor_secret` / `two_factor_backup_codes` columns.
+  `two_factor_enabled` turns on only after the first TOTP code verifies.
+- Migration `0009_auth_and_block_data_fixes` (data only): backfills
+  `user.email_verified = 1` and converts `form` / `contact_form` blocks to
+  `connect`. Migration `0010_drop_social_icons_blocks` removes retired
+  `social_icons` block rows.
+- `createAuthOptions(deps)` in `packages/auth/src/auth-options.ts`: the
+  env-free Better Auth factory; `index.ts` only wires env, D1, Resend and
+  secret validation, and tests build instances from the same factory.
+- Optional `SETUP_TOKEN` secret (`apps/server/src/lib/setup-token.ts`):
+  when bound, the first signup must send a matching `x-setup-token`
+  header (constant-time compare) or gets 403 `Invalid setup token`.
+  Bound by Alchemy only when set; wired into `deploy.yml`, `turbo.json`
+  and `.env.example`.
+- `RL_SIGNIN` rate limit (30/60s, namespace 1006 prod / 2006 non-prod)
+  with constant keys `global:sign-in` / `global:two-factor` /
+  `global:password-reset`, so the single admin can't be brute-forced by
+  rotating addresses.
+- `components/public/captcha-widget.tsx` (Turnstile, reCAPTCHA v2,
+  hCaptcha) sending `captchaToken` with action `contact`; `getPage`
+  exposes `captchaProvider` + `captchaSiteKey` only.
+- `forms.count({ isRead?, blockId? })`; `forms.list` takes
+  `limit`/`offset`. `submitContact` gains a `website` honeypot and an
+  optional `whereMet`; `trackView` / `trackClick` take an optional
+  `referrer`. `version.checkUpdate` takes `{ force?: boolean }`.
+- `resolvePublicVcard()` (`packages/api/src/routers/vcard.ts`): single
+  source for `GET /api/vcard` (`?block=<id>`, else the first live vCard
+  block, else `vcard_data`).
+- Settings registry: opaque keys can declare `validate` (vcard_data,
+  consent_categories, wallet field/location JSON, relevant date, signing
+  material); new `site_language` key (Design → SEO) drives `<html lang>`.
+- `@linkden/validators/consent`, `MAX_BLOCKS = 500`
+  (`@linkden/validators/blocks`), `@linkden/db/settings-read`
+  (`readSettings`, `AnySqliteDb`).
+- Backup export adds top-level `notes` and an `images` list of
+  referenced keys (images themselves are still not in backups).
+- Web: `lib/admin-routes.ts`, `lib/theme-colors.ts`, `lib/custom-css.ts`,
+  `lib/contact-form.ts`, `lib/block-icons.ts`;
+  `components/admin/analytics/daily-series.ts` + `admin-time-zone.ts`;
+  `components/admin/social/social-url.ts`;
+  `components/admin/connections/mailto.ts`; `SecretInput`;
+  `mutationErrorMessage`; `--input-border` token
+  (`border-input-border`); `unsavedEditSnapshot()`;
+  `prefersReducedMotion()` / `useReducedMotion()`.
+- `.github/workflows/release.yml`: a `version.json` change on `main`
+  tags `vX.Y.Z` and publishes a GitHub release, so
+  `version.checkUpdate` has something to compare against.
+- Deploy: preflight step naming missing secrets/vars, a D1 Time Travel
+  restore-point bookmark in every job summary, and a web smoke probe.
+- Tests: Worker-entry route tests (`apps/server/src/__tests__/routes.test.ts`),
+  router integration tests in `packages/api/src/routers/__tests__/`, and
+  per-glob coverage floors for routers, the tRPC middleware,
+  auth-options/dev-login, `apps/web` `proxy.ts` + `lib/**`,
+  `packages/infra/deploy-config.ts` and `scripts/lib/reset-sql.ts`.
+  `PW_API_URL` overrides the API origin for the e2e `getPage` check.
+
+#### Changed
+
+- **Rate limits apply per tRPC call.** A Hono `/trpc/*` middleware parses
+  the batch like tRPC does and spends one token per `submitContact`
+  (RL_AUTH) / `trackView` / `trackClick` (RL_PUBLIC) call; batches are
+  capped at 20 (`maxBatchSize`) and oversize or undecodable batches get
+  400. Limiter keys are the client IP with IPv6 collapsed to its /64.
+  `/api/auth/two-factor/*` is limited (RL_AUTH + RL_SIGNIN) and the
+  magic-link send path gets RL_STRICT. The server calls
+  `RateLimit.limit()` directly (`@hono-rate-limiter/cloudflare` is no
+  longer imported).
+- Better Auth's built-in limiter is explicitly enabled
+  (`rateLimit: { enabled: true }`, in-memory per isolate; it was always
+  off on Workers because `NODE_ENV` is never "production"): 3/10s for
+  sign-in, change-email, change-password and `/two-factor/*`, 5/60s for
+  magic link.
+- Request logging: `hono/logger` replaced by a path-only line
+  (`METHOD path status ms`, reset-password token redacted). `logError`
+  (`apps/server/src/lib/log.ts`) strips Drizzle bound params. Workers
+  invocation logs are off. `/api/health` logs the D1 error when degraded.
+- Retention cron also prunes expired `verification` rows (reset,
+  magic-link, 2FA challenge, trusted device) in the same batch, logs each
+  failed step (path `scheduled`, step `prune` | `orphan-sweep`) and
+  rejects with an `AggregateError`. Orphan deletes are batched per listed
+  page and counted only when R2 confirms them.
+- Uploads: `replaces` is honoured only for a same-purpose key that no
+  saved setting or block references. `ImageUploadField` sends it only for
+  an upload made during the current unsaved edit; saved-then-replaced
+  objects go to the daily orphan sweep (24h grace).
+- `GET /api/images/*` 404s key shapes the app never writes without an R2
+  read, sends an `ETag`, and edge-caches via `caches.default` (cache key
+  without the query string).
+- `requestMeta` returns only `{ ip, country }`; analytics `user_agent` is
+  written NULL (`truncateUserAgent` removed) and the Referer header is no
+  longer read. The client `referrer` is stored as its lowercased hostname
+  and dropped for the site's own host.
+- `verifyCaptcha`: empty secret = misconfigured; hostname must equal the
+  `CORS_ORIGIN` hostname whenever it is set (fails closed if
+  unparseable); Turnstile always needs action `contact`; reCAPTCHA v3
+  needs action `contact` and score ≥ 0.5.
+- tRPC: `isDev` pinned false; an `errorFormatter` strips `data.stack` and
+  replaces INTERNAL_SERVER_ERROR messages with "Internal server error".
+- Magic link: single admin only, refused while 2FA is on,
+  `disableSignUp`, 10-minute links, enabled-gate in a Better Auth
+  before-hook (403 before a token is stored); the server gate covers both
+  `/api/auth/sign-in/magic-link` and `/api/auth/magic-link/*` and needs
+  `magic_link_enabled` to be exactly `"true"`.
+- Change email is two-step and returns 400 "Email delivery is not
+  configured…" without a Resend key. Password reset sets
+  `revokeSessionsOnPasswordReset`. The admin is created with
+  `emailVerified = true`.
+- `BETTER_AUTH_SECRET` fails closed: empty, or under 32 characters / a
+  placeholder on any non-loopback `BETTER_AUTH_URL`, means auth is never
+  built; `/api/auth/*`, `/trpc/*`, `/api/upload` and `/api/admin/*`
+  answer 503 and `/api/health` reports `auth: "misconfigured"`.
+- `DEV_LOGIN` needs `DEV_LOGIN="true"` plus a plain-http loopback
+  `BETTER_AUTH_URL`, and the endpoint 404s for a non-loopback Host.
+- `alchemy.run.ts` validates the deploy env before touching state
+  (`deployEnvErrors`); `LINKDEN_DB_NAME` / `LINKDEN_IMAGES_BUCKET` apply
+  to the prod stage only; prod D1/R2 use `delete: false` and a prod
+  destroy needs `LINKDEN_CONFIRM_DESTROY_PROD=yes`; the Workers
+  compatibility date is pinned (2026-04-24); `apps/*/.env` load only for
+  `bun dev`. `deploy.yml` deploys only `push` runs from this repo's
+  `main` and never cancels a running deploy.
+- `backup-db.yml` honours `LINKDEN_DB_NAME` and refuses to upload a dump
+  with no `user` row. CI runs Vitest once (`test:coverage`).
+- `bun reset:password` uses Better Auth's scrypt hash, reads the password
+  from a prompt / stdin / `LINKDEN_RESET_PASSWORD`, signs every session
+  out, fails when no account matches, and supports `--remote`,
+  `--db` and `--disable-2fa`. `bun reset:factory` is one atomic batch over
+  every data table and asks you to type the DB name for `--remote`.
+  `bun db:reset` wipes both local dev stores.
+- `drizzle.config.ts`: `db:generate` needs no credentials; the `db:push`
+  script is gone (push bypasses the migration ledger and the 0007
+  trigger).
+- `backup.import` replace mode keeps secret settings, upserts blocks in
+  place (deleting ids missing from the backup, so click history of
+  restored blocks survives) and never wipes the contact table (only
+  messages absent from the backup are deleted; the newest 500 backup
+  messages are upserted). Import accepts what export emits (ISO dates;
+  epoch ms still accepted), maps retired block types, skips secret keys
+  and counts them; the response adds `skipped.contactSubmissions`. Caps:
+  500 blocks, 500 settings, 5000 contacts on the wire / 500 written.
+- Wallet: `updateSigningKeys` normalizes base64-wrapped PEM to raw PEM,
+  keeps base64 DER certs and rejects unloadable material (EC keys,
+  PKCS#12, garbage) with BAD_REQUEST; `getSigningStatus` booleans mean
+  "configured and loadable"; the `.pkpass` route caps field sections with
+  `PASS_FIELD_LIMITS`; a wrong `WALLET_SIGNER_KEY_PASSPHRASE` fails with
+  "Unable to load wallet signer key (wrong passphrase?)". Empty pass-field
+  keys are rejected with the section and field number.
+- vCard output is RFC 6350 escaped (no CR/LF injection), always has an
+  `N` line, puts department in `ORG` and reduces URL `TYPE` to a token.
+- Blocks: the server assigns positions (append at `MAX(position)+1`;
+  Undo re-inserts at its old slot in one batch); lists order by
+  `(position, createdAt, id)`. `stripHtml` strips only real tags and no
+  longer decodes entities (`<jane@corp.com>` and `x < 5` stay verbatim).
+- `danger.resetEverything` derives its table list from every table in
+  `@linkden/db/schema`, so new tables (like `two_factor`) are wiped too.
+- `getPage` is one D1 batch reading only `PUBLIC_PAGE_SETTING_KEYS`,
+  honours privacy/terms URL vs text mode and falls the consent banner's
+  privacy link back to `branding_pp_url`. Insights day buckets use the
+  admin timezone's current UTC offset. Timezone validation uses
+  `Intl.DateTimeFormat` (UTC, Asia/Kolkata, Europe/Kyiv accepted).
+- `version.checkUpdate` is admin-only with a 5s timeout and a
+  per-isolate cache (6h ok / 10min failure; `force` reuses an answer under 60s old;
+  concurrent misses share one request), returning `status: 'ok' |
+  'unavailable'` plus `reason`.
+- Web: root layout metadata is static (profile/SEO/OG/favicon metadata
+  moved to `app/page.tsx`); block icons resolved server-side;
+  `AdminBadge` loads only with a session cookie; an API outage on `/`
+  renders `app/error.tsx` with HTTP 500; the service worker is
+  `/sw.js?v=<version>` with cache `linkden-v4-<version>`, navigation
+  preload and 2xx-only caching; `/og` runs on Node with the Workers Cache
+  API (anonymous requests always render the stored profile); the CSP
+  (`contentSecurityPolicy()`) allows the CAPTCHA providers; `/` sends
+  `Accept-CH` / `Critical-CH: Sec-CH-Prefers-Color-Scheme`.
+- Admin: `useSettingsForm` saves only changed keys and keeps unsaved
+  edits across refetches; one module-level unsaved guard (beforeunload,
+  capture click, Navigation API `traverse`); `PreviewColumn` keeps the
+  block editor mounted while collapsed; every admin route has a server
+  `layout.tsx` title; login honours `?from=` via `safeAdminRedirect`.
+- `@linkden/env/web` no longer uses t3-env or zod (same import path and
+  shape, still validates at import/build time; `SKIP_ENV_VALIDATION`
+  honoured).
+- Email: `ContactNotificationProps` has `whereMet` and `blockTitle` in
+  place of `subject` (phone and company removed); the footer links to
+  the GitHub repo; Resend sends time out after 10s and throw
+  `Failed to send email (<status>): <message>` without the API key. An
+  unset `email_provider` means Resend; other providers never send.
+- UI: `Alert` no longer defaults to `role="alert"`; the sidebar shortcut
+  is Cmd+B / Ctrl+B (ignored in editable fields, disabled below md);
+  `SidebarMenuButton` sets `aria-current="page"`; Switch/Checkbox disabled
+  styles key off `data-disabled`. Security upgrade: next 16.3.8,
+  OpenNext 1.20.9, hono 4.13.13.
+- Admin console rebuilt on shadcn/Base UI with five destinations and
+  path-segment sub-tabs; legacy routes 307 from `proxy.ts`.
+
+#### Removed
+
+- Public `GET /api/wallet-pass` and the footer wallet button (download is
+  now `GET /api/admin/wallet-pass`, session-gated).
+- tRPC procedures `public.getVCard`, `public.getBranding`,
+  `analytics.recentClicks`, `analytics.purgeExpiredData`, `blocks.get`,
+  `forms.get`, `version.current`, `wallet.applyPreset`. Analytics inputs
+  accept only `{ period: 7d | 30d | 90d | all }`.
+- `.github/workflows/check-social-icons.yml` and its script/data.
+- `.p12` uploads for wallet signing keys.
+
+#### Fixed
+
+- Contact forms missing from public pages after upgrading (legacy
+  `form` / `contact_form` rows).
+- The footer vCard download 404ed when the page had no vCard block.
+- `bun reset:password` wrote a hash Better Auth could not verify and only
+  touched one local store; `bun reset:factory` reported success after
+  failing and was not atomic.
+- Enabling 2FA locked the admin out (no login step); the first magic-link
+  sign-in could delete the admin's password (unverified email).
+- Theme overrides only applied in light mode; Insights trends showed
+  `+100%` for "All time" and dates shifted west of UTC.
+- Social URLs doubled their prefix when a profile URL was pasted.
+
+#### Security
+
+- Same-origin writes: POSTs to `/trpc/*` and `/api/upload` must come from
+  `CORS_ORIGIN` (normalized) or the request's own origin, with a
+  `Sec-Fetch-Site` fallback, else 403. Body limits: 64KB on
+  `/api/auth/*`, 1MB on `/trpc/*`, 16MB for `backup.*`. CORS
+  `allowHeaders` include `x-setup-token`.
+- Auth tokens never reach logs (path-only request line, invocation logs
+  off); visitor PII is stripped from logged SQL errors.
+- Inbox `mailto:` links are percent-encoded so a stored contact email
+  can't add Bcc/Subject headers.
+- tRPC error responses no longer carry stacks or internal messages.
+
 ## [0.5.0] — 2026-08-21
 
 ### ✨ What's new

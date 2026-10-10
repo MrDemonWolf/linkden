@@ -19,19 +19,19 @@ const alertVariants = cva(
 	},
 );
 
+/**
+ * A static callout — not a live region. Most alerts are advisory content that
+ * arrives with the page (Insights nudges), and a default `role="alert"` would
+ * interrupt the screen reader each time one is inserted or its text changes.
+ * Pass `role="alert"` (urgent) or `role="status"` (polite) when an
+ * announcement is genuinely wanted.
+ */
 function Alert({
 	className,
 	variant,
 	...props
 }: React.ComponentProps<"div"> & VariantProps<typeof alertVariants>) {
-	return (
-		<div
-			data-slot="alert"
-			role="alert"
-			className={cn(alertVariants({ variant }), className)}
-			{...props}
-		/>
-	);
+	return <div data-slot="alert" className={cn(alertVariants({ variant }), className)} {...props} />;
 }
 
 function AlertTitle({ className, ...props }: React.ComponentProps<"div">) {

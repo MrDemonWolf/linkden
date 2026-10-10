@@ -1,3 +1,4 @@
+import { CAPTCHA_PROVIDERS, SETTING_REGISTRY } from "@linkden/validators/settings-registry";
 import { z } from "zod";
 import { FieldError } from "@/components/admin/field-feedback";
 import { Input } from "@/components/ui/input";
@@ -5,8 +6,29 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { fieldError } from "@/lib/validate";
 import { FieldGroup } from "./field-group";
+import { SecretInput } from "./secret-input";
 
-const keySchema = z.string().max(200);
+// Same caps the server applies (settings registry).
+const SITE_KEY_MAX = SETTING_REGISTRY.captcha_site_key?.maxLength ?? 512;
+const SECRET_KEY_MAX = SETTING_REGISTRY.captcha_secret_key?.maxLength ?? 512;
+
+/**
+ * Both keys are required once a provider is on: the contact form renders the
+ * widget from the site key, and the server verifies with the secret and fails
+ * closed, so a missing key means every submission is rejected.
+ */
+const siteKeySchema = z.string().trim().min(1, "Required").max(SITE_KEY_MAX);
+const secretKeySchema = z.string().trim().min(1, "Required").max(SECRET_KEY_MAX);
+
+const PROVIDER_LABELS: Record<(typeof CAPTCHA_PROVIDERS)[number], string> = {
+	none: "None",
+	turnstile: "Cloudflare Turnstile",
+	recaptcha: "Google reCAPTCHA v2 (checkbox)",
+	hcaptcha: "hCaptcha",
+};
+
+// Every provider the server can verify (the registry enum), nothing more.
+const PROVIDER_ITEMS = CAPTCHA_PROVIDERS.map((value) => ({ value, label: PROVIDER_LABELS[value] }));
 
 /** Field → message for invalid CAPTCHA keys. Only checked while a provider is selected. */
 export function captchaErrors(v: {
@@ -16,9 +38,10 @@ export function captchaErrors(v: {
 }): Record<string, string> {
 	if (!v.captchaProvider || v.captchaProvider === "none") return {};
 	const errors: Record<string, string> = {};
-	const site = fieldError(keySchema, v.captchaSiteKey);
+	const site = fieldError(siteKeySchema, v.captchaSiteKey);
 	if (site) errors.captchaSiteKey = site;
-	const secret = fieldError(keySchema, v.captchaSecretKey);
+	// A saved secret comes back masked, which counts as filled.
+	const secret = fieldError(secretKeySchema, v.captchaSecretKey);
 	if (secret) errors.captchaSecretKey = secret;
 	return errors;
 }
@@ -49,12 +72,12 @@ export function CaptchaSection({
 					id="s-captcha-provider"
 					value={captchaProvider}
 					onValueChange={onCaptchaProviderChange}
-					items={[
-						{ value: "none", label: "None" },
-						{ value: "turnstile", label: "Cloudflare Turnstile" },
-						{ value: "recaptcha", label: "Google reCAPTCHA" },
-					]}
+					items={PROVIDER_ITEMS}
 				/>
+				<p className="text-micro text-muted-foreground">
+					Visitors solve the challenge on the contact form before it sends. Use the site and secret
+					keys from the same provider and site.
+				</p>
 			</div>
 			{captchaProvider !== "none" && (
 				<FieldGroup columns={2}>
@@ -64,6 +87,9 @@ export function CaptchaSection({
 							id="s-captcha-site"
 							value={captchaSiteKey}
 							onChange={(e) => onCaptchaSiteKeyChange(e.target.value)}
+							maxLength={SITE_KEY_MAX}
+							spellCheck={false}
+							autoComplete="off"
 							aria-invalid={!!errors.captchaSiteKey}
 							aria-describedby={errors.captchaSiteKey ? "s-captcha-site-error" : undefined}
 						/>
@@ -71,11 +97,13 @@ export function CaptchaSection({
 					</div>
 					<div className="space-y-1.5">
 						<Label htmlFor="s-captcha-secret">Secret Key</Label>
-						<Input
+						<SecretInput
 							id="s-captcha-secret"
 							type="password"
 							value={captchaSecretKey}
-							onChange={(e) => onCaptchaSecretKeyChange(e.target.value)}
+							onValueChange={onCaptchaSecretKeyChange}
+							hintId="s-captcha-secret-hint"
+							maxLength={SECRET_KEY_MAX}
 							aria-invalid={!!errors.captchaSecretKey}
 							aria-describedby={errors.captchaSecretKey ? "s-captcha-secret-error" : undefined}
 						/>

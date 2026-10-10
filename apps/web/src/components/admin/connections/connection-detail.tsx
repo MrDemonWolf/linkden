@@ -12,11 +12,13 @@ import {
 	Trash2,
 	Users,
 } from "lucide-react";
+import { formatInTimeZone, useAdminTimeZone } from "@/components/admin/analytics/admin-time-zone";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { mailtoHref } from "./mailto";
 
 interface Connection {
 	id: string;
@@ -83,6 +85,7 @@ export function ConnectionDetail({
 	isMarkingRead,
 	isMarkingUnread,
 }: ConnectionDetailProps) {
+	const timeZone = useAdminTimeZone();
 	const hasExtraFields =
 		connection.subject ||
 		connection.rating !== null ||
@@ -114,7 +117,7 @@ export function ConnectionDetail({
 				</div>
 				<div className="flex items-center gap-2">
 					<p className="text-micro text-muted-foreground">
-						{new Date(connection.createdAt).toLocaleString()}
+						{formatInTimeZone(connection.createdAt, timeZone)}
 					</p>
 				</div>
 			</div>
@@ -144,7 +147,7 @@ export function ConnectionDetail({
 						<div className="space-y-1.5">
 							<div className="flex items-center gap-2 text-xs">
 								<Mail className="h-3.5 w-3.5 text-muted-foreground" />
-								<a href={`mailto:${connection.email}`} className="text-primary hover:underline">
+								<a href={mailtoHref(connection.email)} className="text-primary hover:underline">
 									{connection.email}
 								</a>
 							</div>
@@ -232,7 +235,7 @@ export function ConnectionDetail({
 					</Button>
 				)}
 				<a
-					href={`mailto:${connection.email}`}
+					href={mailtoHref(connection.email)}
 					className={cn(buttonVariants({ variant: "outline", size: "xs" }))}
 				>
 					<Reply className="mr-1 h-3 w-3" />

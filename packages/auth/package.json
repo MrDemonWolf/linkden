@@ -17,7 +17,6 @@
 		"@linkden/email": "workspace:*",
 		"@linkden/env": "workspace:*",
 		"better-auth": "catalog:",
-		"dotenv": "catalog:",
 		"zod": "catalog:"
 	},
 	"devDependencies": {

@@ -32,13 +32,21 @@
   /* Deep red: white-on-solid ~5.9:1, as-text on /10 tint ~4.6:1 */
   --destructive: oklch(0.51 0.2 27);
   --destructive-foreground: oklch(0.985 0 0);
-  --success: oklch(0.52 0.13 160);
+  /* Status text sits on its own 10–20% tint (Unsaved pill, trend chips,
+     warning notes): >=4.5:1 on a 15% tint over the card and the ground, and
+     white-on-solid ~5.8:1. Was 0.52/0.55 — 4.1–4.4:1 on the tint, sub-AA. */
+  --success: oklch(0.48 0.12 160);
   --success-foreground: oklch(0.985 0 0);
-  --warning: oklch(0.55 0.13 70);
+  --warning: oklch(0.5 0.12 70);
   --warning-foreground: oklch(0.985 0 0);
   /* Hairline that reads as an edge on both white cards and the off-white ground */
   --border: oklch(0.88 0.01 250);
+  /* Fill token (bg-input/30, disabled:bg-input/50) — not a boundary. */
   --input: oklch(0.922 0 0);
+  /* The boundary that identifies a form control (text fields, select trigger,
+     checkbox box, off-switch track): >=3:1 on the card, ground and inset plane
+     (WCAG 1.4.11). --input alone was ~1.26:1. */
+  --input-border: oklch(0.63 0.012 250);
   --ring: oklch(0.55 0.16 233);
   --chart-1: oklch(0.809 0.105 251.813);
   --chart-2: oklch(0.623 0.214 259.815);
@@ -59,7 +67,8 @@
   --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
-  --data-up: oklch(0.52 0.13 160);
+  /* Kept equal to --success */
+  --data-up: oklch(0.48 0.12 160);
   --data-down: oklch(0.51 0.2 27);
   --dim: oklch(0.55 0 0);
   --radius: 1rem;
@@ -107,6 +116,8 @@
   --warning-foreground: #111318;
   --border: rgba(226, 232, 240, 0.13);
   --input: rgba(255, 255, 255, 0.06);
+  /* Opaque control boundary: >=3:1 on card, ground, popover and surface-2. */
+  --input-border: #687282;
   --ring: #7dd3fc;
   --chart-1: #7dd3fc;
   --chart-2: #38bdf8;
@@ -165,6 +176,7 @@
   --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
+  --color-input-border: var(--input-border);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
@@ -319,6 +331,19 @@
   animation: login-card-enter 200ms ease-out both;
 }
 
+/* "Grain Dark" banner preset (packages/ui banner-presets.ts). The host is
+   `absolute inset-0`, so the pseudo-element fills it; the noise is a static
+   SVG feTurbulence tile, so there is nothing for reduced motion to cut. */
+.banner-grain-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.18;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+}
+
 /* Shared glass card for login, setup, and reset-password — theme-aware */
 .login-glass-card {
   /* --glass-bg, not --card: the admin card plane went solid, the login keeps its glass */
@@ -355,8 +380,10 @@
 }
 /* The global reduced-motion reset above is a universal selector, so these
    class rules would outrank it (and `both` would hold late blocks at opacity
-   0 for the whole delay). Switch the entrance off explicitly. */
+   0 for the whole delay). Switch the entrance off explicitly — every class
+   that sets an `animation` shorthand belongs in this list. */
 @media (prefers-reduced-motion: reduce) {
+  .login-card-enter,
   .ld-hero,
   .ld-blocks > *,
   .ld-social-icons > a {

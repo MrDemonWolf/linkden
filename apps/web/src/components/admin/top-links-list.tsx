@@ -38,9 +38,11 @@ export function TopLinksList({
 	return (
 		<Card className={className}>
 			<CardHeader>
-				<CardTitle className="flex items-center gap-1.5">
-					<Trophy className="h-4 w-4 text-primary" aria-hidden="true" />
-					{title}
+				<CardTitle>
+					<h2 className="flex items-center gap-1.5">
+						<Trophy className="h-4 w-4 text-primary" aria-hidden="true" />
+						{title}
+					</h2>
 				</CardTitle>
 			</CardHeader>
 			<CardContent>

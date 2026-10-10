@@ -3,6 +3,7 @@
 import { Check, RotateCw, X, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Cropper, { type Area } from "react-easy-crop";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -33,6 +34,45 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
 	});
 }
 
+// Same cap the upload endpoint enforces (and ImageUploadField checks up front).
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+
+function canvasToBlob(canvas: HTMLCanvasElement, mime: string, quality?: number): Promise<Blob> {
+	return new Promise((resolve, reject) => {
+		canvas.toBlob(
+			(blob) => (blob ? resolve(blob) : reject(new Error("Canvas export failed"))),
+			mime,
+			quality,
+		);
+	});
+}
+
+/**
+ * Encode the crop in the preset's format. A browser that can't encode WebP
+ * from a canvas (Safari/WebKit, so every iOS browser) silently hands back PNG;
+ * the WebP presets are photos, so that falls back to JPEG, which keeps big
+ * crops under the upload cap.
+ */
+export async function encodeCrop(
+	canvas: HTMLCanvasElement,
+	format: CropPreset["format"],
+): Promise<Blob> {
+	if (format === "jpeg") return canvasToBlob(canvas, "image/jpeg", 0.85);
+	if (format !== "webp") return canvasToBlob(canvas, "image/png");
+	const webp = await canvasToBlob(canvas, "image/webp", 0.92);
+	return webp.type === "image/webp" ? webp : canvasToBlob(canvas, "image/jpeg", 0.9);
+}
+
+/**
+ * Name the file after the bytes actually encoded, never the requested format:
+ * the server checks that extension, MIME and magic bytes agree.
+ */
+export function croppedFile(blob: Blob, fileName?: string): File {
+	const ext = blob.type === "image/webp" ? "webp" : blob.type === "image/jpeg" ? "jpg" : "png";
+	const baseName = (fileName ?? "image").replace(/\.\w+$/, "");
+	return new File([blob], `${baseName}.${ext}`, { type: blob.type || "image/png" });
+}
+
 async function renderCrop(
 	source: string,
 	area: Area,
@@ -40,38 +80,23 @@ async function renderCrop(
 	preset: CropPreset,
 ): Promise<Blob> {
 	const img = await loadImage(source);
+	const imgW = img.naturalWidth || img.width;
+	const imgH = img.naturalHeight || img.height;
 
+	// react-easy-crop reports the crop area inside the rotated image's bounding box.
 	const rad = (rotation * Math.PI) / 180;
 	const sin = Math.abs(Math.sin(rad));
 	const cos = Math.abs(Math.cos(rad));
-	const rotW = img.width * cos + img.height * sin;
-	const rotH = img.width * sin + img.height * cos;
-
-	const rotCanvas = document.createElement("canvas");
-	rotCanvas.width = rotW;
-	rotCanvas.height = rotH;
-	const rctx = rotCanvas.getContext("2d");
-	if (!rctx) throw new Error("Canvas context unavailable");
-	rctx.translate(rotW / 2, rotH / 2);
-	rctx.rotate(rad);
-	rctx.drawImage(img, -img.width / 2, -img.height / 2);
+	const rotW = imgW * cos + imgH * sin;
+	const rotH = imgW * sin + imgH * cos;
 
 	let outW = area.width;
 	let outH = area.height;
-	if (preset.aspect) {
-		const longest = Math.max(outW, outH);
+	const longest = Math.max(outW, outH);
+	if (longest > preset.maxSize) {
 		const scale = preset.maxSize / longest;
-		if (scale < 1) {
-			outW = Math.round(outW * scale);
-			outH = Math.round(outH * scale);
-		}
-	} else {
-		const longest = Math.max(outW, outH);
-		if (longest > preset.maxSize) {
-			const scale = preset.maxSize / longest;
-			outW = Math.round(outW * scale);
-			outH = Math.round(outH * scale);
-		}
+		outW = Math.round(outW * scale);
+		outH = Math.round(outH * scale);
 	}
 
 	const out = document.createElement("canvas");
@@ -81,21 +106,21 @@ async function renderCrop(
 	if (!octx) throw new Error("Canvas context unavailable");
 	octx.imageSmoothingEnabled = true;
 	octx.imageSmoothingQuality = "high";
-	octx.drawImage(rotCanvas, area.x, area.y, area.width, area.height, 0, 0, out.width, out.height);
+	// JPEG has no alpha: transparent pixels would encode black, so paint white first.
+	if (preset.format === "jpeg") {
+		octx.fillStyle = "#ffffff";
+		octx.fillRect(0, 0, out.width, out.height);
+	}
+	// Draw the source once, straight into the output canvas (crop → rotate →
+	// scale as one transform). Only output pixels are ever allocated — a
+	// full-resolution rotated copy of a 24MP photo is past iOS Safari's canvas
+	// area limit, and the export would fail.
+	octx.scale(out.width / area.width, out.height / area.height);
+	octx.translate(rotW / 2 - area.x, rotH / 2 - area.y);
+	octx.rotate(rad);
+	octx.drawImage(img, -imgW / 2, -imgH / 2);
 
-	const mime = preset.format === "webp" ? "image/webp" : "image/png";
-	const quality = preset.format === "webp" ? 0.92 : undefined;
-
-	return new Promise((resolve, reject) => {
-		out.toBlob(
-			(blob) => {
-				if (!blob) reject(new Error("Canvas export failed"));
-				else resolve(blob);
-			},
-			mime,
-			quality,
-		);
-	});
+	return encodeCrop(out, preset.format);
 }
 
 export function ImageCropDialog({
@@ -110,6 +135,9 @@ export function ImageCropDialog({
 	const [zoom, setZoom] = useState(1);
 	const [rotation, setRotation] = useState(0);
 	const [exporting, setExporting] = useState(false);
+	// Synchronous guard: a double activation would otherwise start two exports
+	// (and two uploads) before `exporting` re-renders.
+	const exportingRef = useRef(false);
 	const areaRef = useRef<Area | null>(null);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: source intentionally re-triggers the reset when a new image is loaded while the dialog stays open
@@ -126,32 +154,26 @@ export function ImageCropDialog({
 		areaRef.current = areaPixels;
 	}, []);
 
+	// No window-level Enter shortcut: Enter on the rotate, Cancel or close
+	// button must do what that button says, not export the crop.
 	const handleConfirm = useCallback(async () => {
-		if (!source || !areaRef.current) return;
+		if (!source || !areaRef.current || exportingRef.current) return;
+		exportingRef.current = true;
 		setExporting(true);
 		try {
 			const blob = await renderCrop(source, areaRef.current, rotation, preset);
-			const ext = preset.format === "webp" ? "webp" : "png";
-			const baseName = (fileName ?? "image").replace(/\.\w+$/, "");
-			const file = new File([blob], `${baseName}.${ext}`, { type: blob.type });
-			onConfirm(file);
+			if (blob.size > MAX_UPLOAD_BYTES) {
+				toast.error("The cropped image is over 5MB — try a smaller crop");
+				return;
+			}
+			onConfirm(croppedFile(blob, fileName));
+		} catch {
+			toast.error("Couldn't process this image — try a smaller one");
 		} finally {
+			exportingRef.current = false;
 			setExporting(false);
 		}
 	}, [source, rotation, preset, fileName, onConfirm]);
-
-	const handleKey = useCallback(
-		(e: KeyboardEvent) => {
-			if (!open) return;
-			if (e.key === "Enter" && !exporting) handleConfirm();
-		},
-		[open, exporting, handleConfirm],
-	);
-
-	useEffect(() => {
-		window.addEventListener("keydown", handleKey);
-		return () => window.removeEventListener("keydown", handleKey);
-	}, [handleKey]);
 
 	const aspectLabel = useMemo(() => {
 		if (!preset.aspect) return "Free aspect";
@@ -183,7 +205,8 @@ export function ImageCropDialog({
 							aspect={preset.aspect}
 							onCropChange={setCrop}
 							onZoomChange={setZoom}
-							onRotationChange={setRotation}
+							// No onRotationChange: react-easy-crop would then turn a two-finger
+							// pinch-zoom into a few degrees of tilt. Rotation is the 90° button.
 							onCropComplete={onCropComplete}
 							restrictPosition
 							objectFit="contain"
@@ -223,9 +246,12 @@ export function ImageCropDialog({
 						size="sm"
 						onClick={() => setRotation((r) => (r + 90) % 360)}
 						className="gap-1.5"
+						aria-label={`Rotate 90° (currently ${rotation}°)`}
 					>
 						<RotateCw className="h-3.5 w-3.5" />
-						<span className="font-mono text-micro tabular-nums">{rotation}°</span>
+						<span aria-hidden className="font-mono text-micro tabular-nums">
+							{rotation}°
+						</span>
 					</Button>
 
 					<div className="ml-auto font-mono text-micro uppercase tracking-wider text-muted-foreground">

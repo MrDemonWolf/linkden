@@ -91,18 +91,25 @@ BETTER_AUTH_URL=https://linkden-api.<your-subdomain>.workers.dev
 # ── Custom domain (leave unset until you are ready) ────────
 # SITE_DOMAIN=links.yourdomain.com
 
+# ── First-run guard (recommended on a public deploy) ───────
+# SETUP_TOKEN=paste-a-random-secret-here
+
 # ── Apple Wallet (optional — skip if you don't need Wallet passes) ──
-# WALLET_SIGNER_CERT=base64encodedcert...
-# WALLET_SIGNER_KEY=base64encodedkey...
-# WALLET_WWDR_CERT=base64encodedwwdr...
+# One line each: base64 of the PEM file (raw PEM also works) — see the Apple Wallet guide.
+# WALLET_SIGNER_CERT=base64-of-signer_cert.pem
+# WALLET_SIGNER_KEY=base64-of-signer_key.pem
+# WALLET_WWDR_CERT=base64-of-AppleWWDRCAG4.cer
+# WALLET_SIGNER_KEY_PASSPHRASE=only-if-the-key-is-encrypted
 # WALLET_TEAM_ID=ABC12DEF34
 # WALLET_PASS_TYPE_ID=pass.com.yourname.linkden
 ```
 
-**Generate a secret** (run it twice, once for `ALCHEMY_PASSWORD` and once for `BETTER_AUTH_SECRET`):
+**Generate a secret** (once each for `ALCHEMY_PASSWORD`, `BETTER_AUTH_SECRET` and `SETUP_TOKEN`):
 ```bash
 openssl rand -base64 32
 ```
+
+> 🛡️ **The deploy checks these before it touches anything.** `bun ship` refuses to run while a required value is empty, while `BETTER_AUTH_SECRET` is shorter than 32 characters (or is Better Auth's public default), while a URL is not `https://`, while `CORS_ORIGIN` is more than a bare origin, or (once `SITE_DOMAIN` is set) while `BETTER_AUTH_URL`, `CORS_ORIGIN` or `NEXT_PUBLIC_SITE_URL` differ from `https://SITE_DOMAIN`. `apps/web/.env` and `apps/server/.env` are dev-only and never read by a deploy.
 
 ### About the Alchemy state store
 
@@ -124,7 +131,7 @@ LINKDEN_DB_NAME=linkden-database-runner
 LINKDEN_IMAGES_BUCKET=linkden-images-runner
 ```
 
-In GitHub Actions these are **variables** on the `production` environment (next to `SITE_DOMAIN`). The `prod` stage then adopts your existing resources by name, runs any pending migrations against them, and nothing is re-created. The old `runner` (or `<login>`) stage's state is simply left behind. Do **not** try to keep the old stage by setting `ALCHEMY_STAGE` to it instead: in the same stage Alchemy treats the new name as a rename, which creates the new resource and deletes the old one.
+In GitHub Actions these are **variables** on the `production` environment (next to `SITE_DOMAIN`). The overrides apply to the **`prod` stage only**: any other stage ignores them (with a warning), so a staging deploy can never adopt your production data. The `prod` stage then adopts your existing resources by name, runs any pending migrations against them, and nothing is re-created. The old `runner` (or `<login>`) stage's state is simply left behind. Do **not** try to keep the old stage by setting `ALCHEMY_STAGE` to it instead: in the same stage Alchemy treats the new name as a rename, which creates the new resource and deletes the old one.
 
 > 💡 **What's my subdomain?** It's the account name shown in the Cloudflare dashboard sidebar (e.g. `myname` → `linkden-api.myname.workers.dev`). You can also find it after the first deploy in the command output.
 
@@ -205,16 +212,37 @@ See the [Custom Domain guide](/docs/self-hosting/custom-domain) for DNS details 
 ## 👤 Step 6 — Create Your Admin Account
 
 1. Open `https://links.yourdomain.com/admin/setup`.
-2. Fill in your email and password.
+2. Fill in your email and password. If you set `SETUP_TOKEN`, paste it into the **Setup token** field.
 3. Click **Create Account**.
 
-> **First user is admin.** Registration permanently locks after this — no one else can sign up.
+> **First user is admin.** Registration permanently locks after this — no one else can sign up. Until you finish this step, anyone who reaches `/admin/setup` first could claim the install, which is what `SETUP_TOKEN` prevents.
 
 ---
 
 ## 🤖 Deploying from GitHub Actions
 
-The repo ships `.github/workflows/deploy.yml`, which runs the same `bun run deploy` after CI passes on `main`. Put the values from Step 2 into the repo's **`production` environment**: everything sensitive as **secrets**, and `SITE_DOMAIN` plus `NEXT_PUBLIC_SITE_URL` as **variables**. A separate `backup-db.yml` workflow exports D1 to `linkden-backups` daily.
+The repo ships `.github/workflows/deploy.yml`, which runs the same `bun run deploy` after CI passes on a **push** to this repository's `main` (a fork's pull request never deploys, even from a branch named `main`). A running deploy is never cancelled by a newer one.
+
+Put the values from Step 2 into the repo's **`production` environment**:
+
+- **Secrets:** `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `ALCHEMY_PASSWORD`, `ALCHEMY_STATE_TOKEN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CORS_ORIGIN`, `NEXT_PUBLIC_SERVER_URL`, plus the optional `WALLET_*` and `SETUP_TOKEN`.
+- **Variables:** `SITE_DOMAIN`, `NEXT_PUBLIC_SITE_URL`, and `LINKDEN_DB_NAME` / `LINKDEN_IMAGES_BUCKET` for pre-0.5.0 installs.
+
+A **preflight** step lists any missing secret or variable by name, and the deploy refuses empty, weak or mismatched auth values (same rules as above). Every deploy's job summary records a **D1 Time Travel bookmark** taken just before the deploy (see **Rollback** below), and a smoke test probes the web app afterwards.
+
+A separate `backup-db.yml` workflow exports D1 to `linkden-backups` daily. It only runs once the `production` environment secrets are set; run it once by hand (`workflow_dispatch`) and check that `linkden-backups/d1/<date>.sql` exists.
+
+> 🔐 **Recommended GitHub settings:** give the `production` environment a required reviewer and a `main`-only deployment branch policy, keep the Alchemy secrets on the environment (not the repository), and require approval for workflows from external contributors.
+
+---
+
+## ⏪ Rollback
+
+Every deploy uploads both Workers and applies any pending migrations.
+
+- **Undo a bad code release:** `bunx wrangler rollback --name linkden-api` (API) and/or `bunx wrangler rollback --name linkden` (web). The next `bun ship` re-uploads both Workers, so nothing needs reconciling in Alchemy state.
+- **Undo a migration** (only when a migration itself has to go): restore D1 to the bookmark printed in that deploy's job summary — `bunx wrangler d1 time-travel restore <db> --bookmark=<id>` (run from the repo root; `<db>` is `LINKDEN_DB_NAME`, default `linkden-db`). This rewinds *all* data to that moment.
+- Migrations are written **additive-only** (expand, then contract in a later release), so rolling back code alone is always safe.
 
 ---
 
@@ -222,12 +250,12 @@ The repo ships `.github/workflows/deploy.yml`, which runs the same `bun run depl
 
 | Command | What it does |
 |---------|-------------|
-| `bun ship` | Build and deploy (safe to run repeatedly) |
-| `bun run destroy` | ⚠️ **Irreversible.** Deletes all Cloudflare resources |
+| `bun ship` | Build and deploy (safe to run repeatedly; applies pending migrations) |
+| `bun run destroy` | ⚠️ Tears down the Workers. On `prod` it refuses unless `LINKDEN_CONFIRM_DESTROY_PROD=yes`, and keeps D1/R2 (`delete: false`) once a deploy from this version has recorded it. Staging: `ALCHEMY_STAGE=<stage> bun run destroy` |
 | `bunx wrangler tail linkden-api` | Stream live API logs |
 | `bunx wrangler tail linkden` | Stream live web logs |
-| `bun db:generate` | Generate a migration from schema changes |
-| `bun db:push` | Push schema to local dev D1 |
+| `bun db:generate` | Generate a migration from schema changes (contributors only) |
+| `bun reset:password -- --email <you> --remote` | Reset the admin password on production (prompted, never on the command line) |
 
 ---
 
@@ -254,12 +282,22 @@ You skipped Step 4. Update `.env` with the real URLs and run `bun ship` again.
 You are on `workers.dev`, where web and API are different origins. Set `SITE_DOMAIN` (Step 5) so both run on one hostname.
 
 ### "Registration is closed" on `/admin/setup`
-An account already exists. Go to `/admin/login` instead. If you've lost access, run `bun reset:password` locally.
+An account already exists. Go to `/admin/login` instead. If you've lost access, run this from the repo root (you are prompted for the new password; add `--disable-2fa` if you also lost your authenticator and backup codes):
+
+```bash
+bun reset:password -- --email you@example.com --remote
+```
+
+### "Invalid setup token" on `/admin/setup`
+`SETUP_TOKEN` is set on the API Worker. Paste the same value into the **Setup token** field.
+
+### API answers 503 "authentication is misconfigured"
+`BETTER_AUTH_SECRET` is empty, shorter than 32 characters, or a placeholder. `/api/health` reports `"auth": "misconfigured"`. Set a real secret (`openssl rand -base64 32`) and redeploy. Changing it signs everyone out.
 
 ### Worker returns 500 on all routes
-Check your `BETTER_AUTH_SECRET` — it must be set and match what was used on the previous deploy. Run `bunx wrangler tail linkden-api` to see the error; errors are logged as JSON with the request path.
+Run `bunx wrangler tail linkden-api` to see the error; errors are logged as JSON with the request path (never query strings or tokens).
 
 ### D1 binding not found
-Alchemy provisions bindings at deploy time. If you deleted and re-created resources manually, run `bun run destroy` then `bun ship` to start fresh.
+Re-run `bun ship`. Alchemy adopts the existing `linkden-db` / `linkden-images` by their pinned names (`adopt: true`) and re-binds them. If your resources have other names (a pre-0.5.0 install), set `LINKDEN_DB_NAME` / `LINKDEN_IMAGES_BUCKET` first. Do **not** run `bun run destroy` to "start fresh".
 
 More in the [Troubleshooting guide](/docs/self-hosting/troubleshooting).

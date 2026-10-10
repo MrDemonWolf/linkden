@@ -15,6 +15,24 @@ LinkDen has a solid set of **baseline technical controls** in place (authenticat
 
 ---
 
+## Status Update (2026-10-08)
+
+The analysis below is the original 2026-03-31 assessment, kept as written. Technological controls that have changed since, per a code review on 2026-10-08:
+
+| Control | Was | Now | Evidence |
+|---------|-----|-----|----------|
+| A.5.17 Authentication information | 🟡 Partial | 🟡 Partial | `BETTER_AUTH_SECRET` fails closed (auth routes 503 when empty/short/placeholder) and deploys refuse a weak secret (`packages/infra/deploy-config.ts`). Passwords use Better Auth's scrypt, including `bun reset:password`. App secrets in `site_settings` are masked and excluded from backups but still plaintext at rest. No infra password is committed (`packages/infra/.env` is untracked). |
+| A.8.3 Information access restriction | ✅ (with exception) | ✅ Implemented | `getPage` no longer returns the admin email and reads only `PUBLIC_PAGE_SETTING_KEYS`. The wallet pass download is session-gated (`/api/admin/wallet-pass`). |
+| A.8.5 Secure authentication | ✅ Implemented | ✅ Implemented | TOTP 2FA with backup codes and a login step; magic link limited to the admin and refused while 2FA is on; password reset revokes every session; per-call Cloudflare rate limits plus a global `RL_SIGNIN` bucket; optional `SETUP_TOKEN` for the first signup; same-origin checks on writes. |
+| A.8.9 Configuration management | 🟡 Partial | 🟡 Partial | Deploy env validated before any change (`deployEnvErrors`), compatibility date pinned, prod D1/R2 `delete: false`, prod destroy needs explicit confirmation, deploys only from pushes to `main`. No written hardening baseline beyond `CLAUDE.md`. |
+| A.8.10 Information deletion | ❌ Not implemented | ✅ Implemented (automated); 🔴 no visitor self-service | Daily retention cron (analytics 365d, contacts 365d, audit 180d, expired sessions and verification tokens), orphan image sweep, atomic factory reset. |
+| A.8.12 Data leakage prevention | 🟡 Partial | 🟡 Partial | No admin email on public endpoints; tRPC errors carry no stacks; logs are path-only with Drizzle params stripped; Workers invocation logs (full URLs) are off. |
+| A.5.30 ICT readiness for BC / A.8.13 Information backup | ❌ Not implemented (A.5.30) | 🟡 Partial | Nightly D1 export to R2 (30-day expiry, refuses empty dumps), D1 Time Travel bookmark before every deploy, documented restore and rollback runbooks. No RTO/RPO defined. |
+| A.8.15 Logging | 🟡 Partial | 🟡 Partial | Structured JSON error logs and an `audit_log` (no IP/UA) for admin actions; the retention cron reports failed steps. No log retention policy beyond Cloudflare's defaults. |
+| A.8.16 Monitoring activities | ❌ Not implemented | 🟡 Partial | `/api/health` (D1, version, auth state), deploy smoke tests, Workers observability for errors and failed cron runs. No external alerting. |
+
+---
+
 ## Mandatory Clause Gap Analysis (Clauses 4–10)
 
 | Clause | Requirement | Status | Gap Notes |

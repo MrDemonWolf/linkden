@@ -16,12 +16,36 @@ concurrency:
 
 jobs:
   backup:
-    name: Export linkden-db to R2
+    name: Export D1 to R2
     environment: production
     runs-on: ubuntu-latest
+    env:
+      # Installs deployed before 0.5.0 keep their generated database name
+      # (e.g. linkden-database-runner) via the LINKDEN_DB_NAME variable — the
+      # same one deploy.yml/alchemy.run.ts honour. Exporting a hardcoded
+      # `linkden-db` there would back up the wrong (or an empty) database.
+      DB_NAME: ${{ vars.LINKDEN_DB_NAME || 'linkden-db' }}
     steps:
+      # Fail with a named list instead of wrangler's generic auth error. An unset
+      # secret arrives as "", so test for emptiness.
+      - name: Preflight — required secrets
+        run: |
+          missing=""
+          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
+            if [ -z "${!name// /}" ]; then missing="$missing $name"; fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error title=Backup not configured::Missing secrets in the production environment:${missing}"
+            exit 1
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@ecf28ddc73e819eb6fa29df6b34ef8921c743461 # v2.1.3
@@ -48,8 +72,17 @@ jobs:
       - name: Export D1 and upload to R2
         run: |
           WRANGLER=./apps/server/node_modules/.bin/wrangler
-          "$WRANGLER" d1 export linkden-db --remote --output=backup.sql --skip-confirmation
+          echo "Exporting $DB_NAME"
+          "$WRANGLER" d1 export "$DB_NAME" --remote --output=backup.sql --skip-confirmation
+          # A schema-only dump is not empty, so `test -s` alone would happily
+          # upload the backup of an empty database (wrong DB name, or a fresh
+          # one created by a deploy that missed LINKDEN_DB_NAME). Every set-up
+          # install has its admin row, so require it.
           test -s backup.sql
+          if ! grep -Eq '^INSERT INTO "?user"? ' backup.sql; then
+            echo "::error title=Empty backup::$DB_NAME has no rows in \"user\" — refusing to upload. Is LINKDEN_DB_NAME pointing at the live database?"
+            exit 1
+          fi
           "$WRANGLER" r2 object put "linkden-backups/d1/$(date -u +%F).sql" --file=backup.sql --remote
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

@@ -3,12 +3,10 @@
 import { getReadableTextColor } from "@linkden/ui/color-contrast";
 import { useState } from "react";
 import { initials } from "@/lib/format";
-import { getGravatarUrl } from "@/lib/gravatar";
 
 interface AvatarProps {
 	src: string | null;
 	name: string;
-	email?: string;
 	size?: "sm" | "md" | "lg";
 	className?: string;
 	hasBanner?: boolean;
@@ -26,7 +24,6 @@ const sizeClasses = {
 export function Avatar({
 	src,
 	name,
-	email,
 	size = "md",
 	className,
 	hasBanner,
@@ -98,8 +95,9 @@ export function Avatar({
 		</div>
 	);
 
-	// Resolve the image URL: src takes priority, then Gravatar, then initials
-	const imageSrc = src ?? (email ? getGravatarUrl(email) : null);
+	// The public payload never carries an email, so there is no Gravatar
+	// fallback here (it pulled a Node crypto polyfill into the public bundle).
+	const imageSrc = src;
 
 	return (
 		<div className="ld-avatar flex justify-center">
