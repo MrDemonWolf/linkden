@@ -108,6 +108,8 @@ export function deployEnvErrors(env: Env): string[] {
 		}
 	}
 
+	// Already reported as malformed: left out of the same-origin check below.
+	const invalidUrls = new Set<string>();
 	for (const name of [
 		"BETTER_AUTH_URL",
 		"CORS_ORIGIN",
@@ -117,7 +119,10 @@ export function deployEnvErrors(env: Env): string[] {
 		const value = values[name];
 		if (value === undefined) continue;
 		const error = httpsUrlError(name, value);
-		if (error) errors.push(error);
+		if (error) {
+			errors.push(error);
+			invalidUrls.add(name);
+		}
 	}
 
 	// CORS / trusted-origin matching is an exact string compare against the
@@ -127,20 +132,38 @@ export function deployEnvErrors(env: Env): string[] {
 	const cors = values.CORS_ORIGIN;
 	const corsOrigin = cors === undefined ? undefined : parsedOrigin(cors);
 	if (cors !== undefined && corsOrigin !== undefined && corsOrigin !== cors) {
+		invalidUrls.add("CORS_ORIGIN");
 		errors.push(
 			`CORS_ORIGIN (${cors}) must be a bare origin like https://links.example.com (no path or trailing slash).`,
 		);
 	}
 
-	// With a custom domain everything is same-origin (the API is routed under
-	// the site's hostname), so these must all be that origin.
+	// The browser only ever talks to the site's origin: with a custom domain the
+	// API is routed under it, and on workers.dev the web worker proxies the API
+	// paths over its service binding (apps/web/src/lib/api-proxy.ts). So every
+	// URL must be that origin: https://SITE_DOMAIN, else NEXT_PUBLIC_SITE_URL's.
 	const siteDomain = env.SITE_DOMAIN?.trim();
-	if (siteDomain) {
-		const expected = `https://${siteDomain}`;
-		for (const name of ["BETTER_AUTH_URL", "CORS_ORIGIN", "NEXT_PUBLIC_SITE_URL"] as const) {
+	const siteUrl = values.NEXT_PUBLIC_SITE_URL;
+	const expected = siteDomain
+		? `https://${siteDomain}`
+		: siteUrl === undefined || invalidUrls.has("NEXT_PUBLIC_SITE_URL")
+			? undefined
+			: parsedOrigin(siteUrl);
+	if (expected !== undefined) {
+		const names = siteDomain
+			? ([
+					"BETTER_AUTH_URL",
+					"CORS_ORIGIN",
+					"NEXT_PUBLIC_SERVER_URL",
+					"NEXT_PUBLIC_SITE_URL",
+				] as const)
+			: (["BETTER_AUTH_URL", "CORS_ORIGIN", "NEXT_PUBLIC_SERVER_URL"] as const);
+		const source = siteDomain ? "SITE_DOMAIN" : "NEXT_PUBLIC_SITE_URL";
+		for (const name of names) {
 			const value = values[name];
-			if (value !== undefined && value.replace(/\/$/, "") !== expected) {
-				errors.push(`${name} (${value}) must be ${expected} when SITE_DOMAIN is set.`);
+			if (value === undefined || invalidUrls.has(name)) continue;
+			if (value.replace(/\/$/, "") !== expected) {
+				errors.push(`${name} (${value}) must be ${expected}, the site origin from ${source}.`);
 			}
 		}
 	}

@@ -61,7 +61,7 @@ Only needed when deploying with `bun ship` or the GitHub Actions deploy workflow
 | `ALCHEMY_STAGE` | Alchemy stage name. Defaults to `prod`. Any other value (for example `dev`) deploys a second, independent copy whose resources carry the stage as a suffix (`linkden-db-dev`, `linkden-images-dev`, `linkden-api-dev`, `linkden-dev`) so it can never adopt, overwrite, or destroy the production ones |
 | `LINKDEN_DB_NAME` / `LINKDEN_IMAGES_BUCKET` | **Upgrades and restores only, `prod` stage only.** Deploys made before 0.5.0 let Alchemy generate the D1/R2 names (a CI deploy produced `linkden-database-runner` and `linkden-images-runner`). Set these to those existing names so the `prod` stage adopts your data instead of creating an empty `linkden-db` / `linkden-images`. Any other stage ignores them (with a warning). The backup workflow and `bun reset:password --remote` read `LINKDEN_DB_NAME` too. See [upgrading an older deploy](/docs/self-hosting/cloudflare#upgrading-a-deploy-made-before-050) |
 | `LINKDEN_CONFIRM_DESTROY_PROD` | Set to `yes` to let `bun run destroy` tear down the `prod` stage. Without it the command refuses. Even then the production D1 database and R2 buckets are kept (`delete: false`) once a deploy from this version has recorded that |
-| `SITE_DOMAIN` | Your hostname, for example `links.yourdomain.com`. When set, Alchemy attaches a Custom Domain to the web Worker and `/api/*` + `/trpc/*` routes to the API Worker. Leave unset to deploy to `workers.dev` (staging; admin login does not work there) |
+| `SITE_DOMAIN` | Your hostname, for example `links.yourdomain.com`. When set, Alchemy attaches a Custom Domain to the web Worker and `/api/*` + `/trpc/*` routes to the API Worker. Leave unset to deploy to `workers.dev`, where the web Worker forwards `/api/*` + `/trpc/*` to the API over its service binding (everything works, one extra hop) |
 
 ## Runtime Configuration
 
@@ -149,8 +149,7 @@ After deployment, navigate to `/admin/setup` to create your admin account. The f
 ### Authentication not working
 
 - Verify `BETTER_AUTH_SECRET` is set (32+ characters); `/api/health` shows `"auth": "misconfigured"` otherwise
-- Verify `BETTER_AUTH_URL` matches the URL the browser actually reaches the API on (`https://SITE_DOMAIN` in production)
-- If you are on `workers.dev`, the web and API Workers are different origins and the session cookie cannot cross them. Set `SITE_DOMAIN` and redeploy
+- Verify `BETTER_AUTH_URL`, `NEXT_PUBLIC_SERVER_URL` and `CORS_ORIGIN` are the site's own URL (`https://SITE_DOMAIN`, or the web Worker's `workers.dev` URL), never the API Worker's
 
 ### Changes not taking effect
 

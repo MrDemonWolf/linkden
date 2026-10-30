@@ -187,13 +187,19 @@ Key production-readiness invariants — don't regress these:
   admin-only, 5s timeout, per-isolate cache (6h ok / 10min failure; `force: true` skips it but
   reuses an answer under 60s old).
 - **Deployment is Cloudflare-only, through Alchemy** (Docker/Coolify/Railway removed).
+  - The browser only ever talks to the site origin. With `SITE_DOMAIN`, zone Routes send
+    `/api/*` + `/trpc/*` to the API worker; without it (workers.dev) the web worker's entry
+    (`apps/web/worker.ts`, Alchemy `entrypoint`) forwards them over the `API` service binding
+    (`apps/web/src/lib/api-proxy.ts`). `deployEnvErrors` requires `BETTER_AUTH_URL`,
+    `CORS_ORIGIN` and `NEXT_PUBLIC_SERVER_URL` to equal that origin. Keep the proxy prefixes in
+    step with the Routes.
   - `deploy.yml` deploys only `workflow_run.event == 'push'` from this repo's `main` (fork PRs
     named `main` can't deploy), never cancels a running deploy, runs a preflight that names
     missing secrets/vars, records a D1 Time Travel bookmark before deploying, and smoke-tests web.
   - `alchemy.run.ts` validates the deploy env before touching state (`deployEnvErrors` in
     `packages/infra/deploy-config.ts`: non-empty values, `BETTER_AUTH_SECRET` ≥ 32 chars and not
-    Better Auth's default, https URLs, bare-origin `CORS_ORIGIN`, all equal to
-    `https://SITE_DOMAIN` when it is set).
+    Better Auth's default, https URLs, bare-origin `CORS_ORIGIN`, all equal to the site
+    origin: `https://SITE_DOMAIN`, else `NEXT_PUBLIC_SITE_URL`'s).
   - `LINKDEN_DB_NAME` / `LINKDEN_IMAGES_BUCKET` overrides apply to the `prod` stage only.
   - Prod D1/R2 use `delete: false`; a prod destroy needs `LINKDEN_CONFIRM_DESTROY_PROD=yes`.
   - The Workers compatibility date is pinned (`COMPATIBILITY_DATE` in `alchemy.run.ts`,

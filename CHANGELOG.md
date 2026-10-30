@@ -15,6 +15,11 @@ Canonical version: [`version.json`](./version.json) — workspace
 
 ### ✨ What's new
 
+- **Admin works on workers.dev, no domain needed.** Deploy and your whole
+  site, admin included, runs on `linkden.<you>.workers.dev`. Then open
+  `/admin/setup` and claim it, like a fresh WordPress install (whoever
+  finishes setup first becomes the admin, so do it right away). A custom
+  domain is still supported and a little faster.
 - **Two-factor sign-in works.** Turn on an authenticator app under
   Settings → Account and save your backup codes. After your password,
   the login page now asks for the 6-digit code (or a backup code), with
@@ -106,6 +111,15 @@ Canonical version: [`version.json`](./version.json) — workspace
   OS theme without a flash on Chromium.
 
 ### 🔧 Technical
+
+- Web worker entry `apps/web/worker.ts` (Alchemy `entrypoint`) forwards
+  `/api/*` and `/trpc/*` to the API worker over the `API` service binding
+  (`apps/web/src/lib/api-proxy.ts`), so workers.dev deploys are single-origin.
+  With `SITE_DOMAIN`, zone Routes still win. `deployEnvErrors` now requires
+  `BETTER_AUTH_URL`, `CORS_ORIGIN` and `NEXT_PUBLIC_SERVER_URL` to equal the
+  site origin in both modes.
+- Removed the `SETUP_TOKEN` first-run gate (server check, wizard field,
+  `x-setup-token` CORS header, Alchemy binding, deploy wiring).
 
 #### Added
 

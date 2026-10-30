@@ -52,9 +52,9 @@ describe("resolveResourceNames", () => {
 describe("deployEnvErrors", () => {
 	const valid = {
 		BETTER_AUTH_SECRET: "x".repeat(44),
-		BETTER_AUTH_URL: "https://linkden-api.example.workers.dev",
+		BETTER_AUTH_URL: "https://linkden.example.workers.dev",
 		CORS_ORIGIN: "https://linkden.example.workers.dev",
-		NEXT_PUBLIC_SERVER_URL: "https://linkden-api.example.workers.dev",
+		NEXT_PUBLIC_SERVER_URL: "https://linkden.example.workers.dev",
 		NEXT_PUBLIC_SITE_URL: "https://linkden.example.workers.dev",
 	};
 
@@ -81,7 +81,7 @@ describe("deployEnvErrors", () => {
 	it("requires https URLs and a bare CORS origin", () => {
 		const errors = deployEnvErrors({
 			...valid,
-			BETTER_AUTH_URL: "http://linkden-api.example.workers.dev",
+			BETTER_AUTH_URL: "http://linkden.example.workers.dev",
 			CORS_ORIGIN: "https://linkden.example.workers.dev/",
 			NEXT_PUBLIC_SERVER_URL: "not a url",
 		});
@@ -110,7 +110,16 @@ describe("deployEnvErrors", () => {
 		expect(deployEnvErrors(sameOrigin)).toEqual([]);
 		const errors = deployEnvErrors({ ...sameOrigin, BETTER_AUTH_URL: valid.BETTER_AUTH_URL });
 		expect(errors).toEqual([
-			`BETTER_AUTH_URL (${valid.BETTER_AUTH_URL}) must be ${site} when SITE_DOMAIN is set.`,
+			`BETTER_AUTH_URL (${valid.BETTER_AUTH_URL}) must be ${site}, the site origin from SITE_DOMAIN.`,
+		]);
+	});
+
+	it("requires every URL to be the web worker's origin on workers.dev", () => {
+		const api = "https://linkden-api.example.workers.dev";
+		const errors = deployEnvErrors({ ...valid, BETTER_AUTH_URL: api, NEXT_PUBLIC_SERVER_URL: api });
+		expect(errors).toEqual([
+			`BETTER_AUTH_URL (${api}) must be ${valid.NEXT_PUBLIC_SITE_URL}, the site origin from NEXT_PUBLIC_SITE_URL.`,
+			`NEXT_PUBLIC_SERVER_URL (${api}) must be ${valid.NEXT_PUBLIC_SITE_URL}, the site origin from NEXT_PUBLIC_SITE_URL.`,
 		]);
 	});
 });

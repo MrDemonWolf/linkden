@@ -35,11 +35,7 @@ Image uploads fail with "Image storage not configured".
 
 ### Admin login loops back to the login page on workers.dev
 
-On `workers.dev` the web Worker (`linkden.<sub>.workers.dev`) and the API Worker (`linkden-api.<sub>.workers.dev`) are separate origins. `workers.dev` is on the Public Suffix List, so the session cookie set by the API is never sent back from the web origin and `/admin` bounces to `/admin/login` on every request.
-
-This is expected. `workers.dev` is a staging target: the public page and `/api/health` prove the deploy, nothing more.
-
-**Fix:** set `SITE_DOMAIN` to your hostname, point `BETTER_AUTH_URL`, `NEXT_PUBLIC_SERVER_URL`, `CORS_ORIGIN`, and `NEXT_PUBLIC_SITE_URL` at `https://SITE_DOMAIN`, and redeploy. The web app gets the hostname as a Custom Domain and the API is routed under it at `/api/*` and `/trpc/*`, so everything is one origin. See [Custom Domain](/docs/self-hosting/custom-domain).
+The browser must reach the API on the site's own origin. On `workers.dev` the web Worker forwards `/api/*` and `/trpc/*` to the API Worker over its service binding, so `BETTER_AUTH_URL`, `NEXT_PUBLIC_SERVER_URL`, `CORS_ORIGIN` and `NEXT_PUBLIC_SITE_URL` must all be `https://linkden.<sub>.workers.dev`. Pointing any of them at `linkden-api.<sub>.workers.dev` puts the session cookie on a different site (`workers.dev` is on the Public Suffix List) and `/admin` bounces to `/admin/login`. The deploy refuses that mismatch.
 
 ### Reading API errors
 
@@ -107,12 +103,11 @@ Keep `LINKDEN_DB_NAME=linkden-db-restore` set (in `.env` or as a GitHub `product
 
 **Causes:**
 - `BETTER_AUTH_URL` doesn't match the actual API URL the browser reaches
-- Frontend and API are on different origins (the `workers.dev` case above)
+- The URLs point at the API Worker instead of the site (the `workers.dev` case above)
 - `BETTER_AUTH_SECRET` changed between deployments (invalidates existing sessions)
 
 **Fix:**
-- Ensure `BETTER_AUTH_URL` matches the publicly accessible API URL (`https://SITE_DOMAIN` in production)
-- Set `SITE_DOMAIN` so web and API share one origin
+- Ensure `BETTER_AUTH_URL` is the site's own URL (the web Worker's `workers.dev` URL, or `https://SITE_DOMAIN`)
 - If you changed `BETTER_AUTH_SECRET`, users need to log in again
 
 ### Email sending failures

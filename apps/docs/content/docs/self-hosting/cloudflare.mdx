@@ -80,13 +80,13 @@ ALCHEMY_STATE_TOKEN=paste-your-state-worker-token-here
 # ── App URLs ────────────────────────────────────────────────
 # Use placeholder values for now — you'll get real URLs after first deploy.
 # Your subdomain is your Cloudflare account name (shown in the dashboard).
-NEXT_PUBLIC_SERVER_URL=https://linkden-api.<your-subdomain>.workers.dev
+NEXT_PUBLIC_SERVER_URL=https://linkden.<your-subdomain>.workers.dev
 CORS_ORIGIN=https://linkden.<your-subdomain>.workers.dev
 NEXT_PUBLIC_SITE_URL=https://linkden.<your-subdomain>.workers.dev
 
 # ── Better Auth ─────────────────────────────────────────────
 BETTER_AUTH_SECRET=paste-a-random-secret-here
-BETTER_AUTH_URL=https://linkden-api.<your-subdomain>.workers.dev
+BETTER_AUTH_URL=https://linkden.<your-subdomain>.workers.dev
 
 # ── Custom domain (leave unset until you are ready) ────────
 # SITE_DOMAIN=links.yourdomain.com
@@ -159,13 +159,13 @@ Server -> https://linkden-api.myname.workers.dev
 > **This step is required.** Workers need to know their own URLs to handle auth and CORS correctly.
 
 1. Copy the URLs from the Step 3 output.
-2. Update `.env` with the real URLs (replace the placeholder `<your-subdomain>` values):
+2. Update `.env` with the real URLs (replace the placeholder `<your-subdomain>` values). All four are the **web** Worker's URL: it forwards `/api/*` and `/trpc/*` to the API Worker, so the browser only ever talks to one origin.
 
 ```bash
-NEXT_PUBLIC_SERVER_URL=https://linkden-api.myname.workers.dev
+NEXT_PUBLIC_SERVER_URL=https://linkden.myname.workers.dev
 CORS_ORIGIN=https://linkden.myname.workers.dev
 NEXT_PUBLIC_SITE_URL=https://linkden.myname.workers.dev
-BETTER_AUTH_URL=https://linkden-api.myname.workers.dev
+BETTER_AUTH_URL=https://linkden.myname.workers.dev
 ```
 
 3. Run deploy again:
@@ -174,7 +174,7 @@ BETTER_AUTH_URL=https://linkden-api.myname.workers.dev
 bun ship
 ```
 
-> ⚠️ **Admin login does not work on `workers.dev`.** The web and API Workers sit on two different `workers.dev` origins, and the session cookie cannot cross them, so `/admin` redirects back to the login page. The public page and `/api/health` work fine, which is what a `workers.dev` deploy is for (staging). For a working admin, finish Step 5.
+> ✅ **Your site is live, admin included.** Open `/admin/setup` now and create your account. A custom domain (Step 5) is optional: nicer URL, and API calls skip the hop through the web Worker.
 
 ---
 
@@ -276,7 +276,7 @@ For a typical single-user LinkDen instance, you will stay **100% within Cloudfla
 You skipped Step 4. Update `.env` with the real URLs and run `bun ship` again.
 
 ### Admin redirects to login in a loop
-You are on `workers.dev`, where web and API are different origins. Set `SITE_DOMAIN` (Step 5) so both run on one hostname.
+`BETTER_AUTH_URL`, `NEXT_PUBLIC_SERVER_URL` and `CORS_ORIGIN` must all be the site's own URL (the web Worker's `workers.dev` URL, or `https://SITE_DOMAIN`), never the API Worker's. The deploy refuses a mismatch; fix `.env` and run `bun ship`.
 
 ### "Registration is closed" on `/admin/setup`
 An account already exists. Go to `/admin/login` instead. If you've lost access, run this from the repo root (you are prompted for the new password; add `--disable-2fa` if you also lost your authenticator and backup codes):
