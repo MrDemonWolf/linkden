@@ -91,9 +91,6 @@ BETTER_AUTH_URL=https://linkden-api.<your-subdomain>.workers.dev
 # ── Custom domain (leave unset until you are ready) ────────
 # SITE_DOMAIN=links.yourdomain.com
 
-# ── First-run guard (recommended on a public deploy) ───────
-# SETUP_TOKEN=paste-a-random-secret-here
-
 # ── Apple Wallet (optional — skip if you don't need Wallet passes) ──
 # One line each: base64 of the PEM file (raw PEM also works) — see the Apple Wallet guide.
 # WALLET_SIGNER_CERT=base64-of-signer_cert.pem
@@ -104,7 +101,7 @@ BETTER_AUTH_URL=https://linkden-api.<your-subdomain>.workers.dev
 # WALLET_PASS_TYPE_ID=pass.com.yourname.linkden
 ```
 
-**Generate a secret** (once each for `ALCHEMY_PASSWORD`, `BETTER_AUTH_SECRET` and `SETUP_TOKEN`):
+**Generate a secret** (once each for `ALCHEMY_PASSWORD` and `BETTER_AUTH_SECRET`):
 ```bash
 openssl rand -base64 32
 ```
@@ -212,10 +209,10 @@ See the [Custom Domain guide](/docs/self-hosting/custom-domain) for DNS details 
 ## 👤 Step 6 — Create Your Admin Account
 
 1. Open `https://links.yourdomain.com/admin/setup`.
-2. Fill in your email and password. If you set `SETUP_TOKEN`, paste it into the **Setup token** field.
+2. Fill in your name, email and password.
 3. Click **Create Account**.
 
-> **First user is admin.** Registration permanently locks after this — no one else can sign up. Until you finish this step, anyone who reaches `/admin/setup` first could claim the install, which is what `SETUP_TOKEN` prevents.
+> **First user is admin.** Registration permanently locks after this — no one else can sign up. Until you finish this step, anyone who reaches `/admin/setup` first could claim the install, so do it right after the first deploy.
 
 ---
 
@@ -225,7 +222,7 @@ The repo ships `.github/workflows/deploy.yml`, which runs the same `bun run depl
 
 Put the values from Step 2 into the repo's **`production` environment**:
 
-- **Secrets:** `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `ALCHEMY_PASSWORD`, `ALCHEMY_STATE_TOKEN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CORS_ORIGIN`, `NEXT_PUBLIC_SERVER_URL`, plus the optional `WALLET_*` and `SETUP_TOKEN`.
+- **Secrets:** `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `ALCHEMY_PASSWORD`, `ALCHEMY_STATE_TOKEN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CORS_ORIGIN`, `NEXT_PUBLIC_SERVER_URL`, plus the optional `WALLET_*`.
 - **Variables:** `SITE_DOMAIN`, `NEXT_PUBLIC_SITE_URL`, and `LINKDEN_DB_NAME` / `LINKDEN_IMAGES_BUCKET` for pre-0.5.0 installs.
 
 A **preflight** step lists any missing secret or variable by name, and the deploy refuses empty, weak or mismatched auth values (same rules as above). Every deploy's job summary records a **D1 Time Travel bookmark** taken just before the deploy (see **Rollback** below), and a smoke test probes the web app afterwards.
@@ -287,9 +284,6 @@ An account already exists. Go to `/admin/login` instead. If you've lost access, 
 ```bash
 bun reset:password -- --email you@example.com --remote
 ```
-
-### "Invalid setup token" on `/admin/setup`
-`SETUP_TOKEN` is set on the API Worker. Paste the same value into the **Setup token** field.
 
 ### API answers 503 "authentication is misconfigured"
 `BETTER_AUTH_SECRET` is empty, shorter than 32 characters, or a placeholder. `/api/health` reports `"auth": "misconfigured"`. Set a real secret (`openssl rand -base64 32`) and redeploy. Changing it signs everyone out.

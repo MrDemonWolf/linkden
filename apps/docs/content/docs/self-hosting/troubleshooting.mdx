@@ -141,8 +141,6 @@ Without email, you can still recover the admin account from the command line: `b
 
 Locked out? Reset the password instead: `bun reset:password -- --email you@example.com --remote` (add `--disable-2fa` if you also lost your authenticator and backup codes). To start over completely, factory-reset the database (see **Restore a D1 backup** above).
 
-If the API Worker has a `SETUP_TOKEN` secret, the first signup also needs that token; a wrong one returns 403 "Invalid setup token".
-
 ### File upload errors
 
 **Symptom:** Image uploads are rejected.

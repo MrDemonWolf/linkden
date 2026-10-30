@@ -161,16 +161,6 @@ describe("sign-up gate", () => {
 		expect(authHandler).toHaveBeenCalledOnce();
 	});
 
-	it("requires the setup token when SETUP_TOKEN is bound", async () => {
-		const env = envWith({ SETUP_TOKEN: "first-run-token" });
-		const missing = await signUp({}, env);
-		expect(missing.status).toBe(403);
-		expect(await missing.json()).toEqual({ error: "Invalid setup token" });
-		expect((await signUp({ "x-setup-token": "wrong" }, env)).status).toBe(403);
-		expect(authHandler).not.toHaveBeenCalled();
-		expect((await signUp({ "x-setup-token": "first-run-token" }, env)).status).toBe(200);
-	});
-
 	it("closes registration once a user exists", async () => {
 		await db.insert(user).values({ id: "u1", name: "Admin", email: "admin@x.co" });
 		const res = await signUp();

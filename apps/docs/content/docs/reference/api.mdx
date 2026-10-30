@@ -40,7 +40,7 @@ LinkDen uses [Better Auth](https://www.better-auth.com/) with email/password sig
 
 ### Session Flow
 
-1. Create an admin account during first-time setup at `/admin/setup` (with the `x-setup-token` header when `SETUP_TOKEN` is set).
+1. Create an admin account during first-time setup at `/admin/setup`.
 2. Sign in at `/admin/login`. With two-factor on, Better Auth answers the password step with `twoFactorRedirect` and the login page asks for a TOTP or backup code.
 3. Better Auth issues a secure session cookie, sent with every API request to authenticate protected procedures.
 

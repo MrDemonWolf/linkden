@@ -61,7 +61,6 @@ Only needed when deploying with `bun ship` or the GitHub Actions deploy workflow
 | `ALCHEMY_STAGE` | Alchemy stage name. Defaults to `prod`. Any other value (for example `dev`) deploys a second, independent copy whose resources carry the stage as a suffix (`linkden-db-dev`, `linkden-images-dev`, `linkden-api-dev`, `linkden-dev`) so it can never adopt, overwrite, or destroy the production ones |
 | `LINKDEN_DB_NAME` / `LINKDEN_IMAGES_BUCKET` | **Upgrades and restores only, `prod` stage only.** Deploys made before 0.5.0 let Alchemy generate the D1/R2 names (a CI deploy produced `linkden-database-runner` and `linkden-images-runner`). Set these to those existing names so the `prod` stage adopts your data instead of creating an empty `linkden-db` / `linkden-images`. Any other stage ignores them (with a warning). The backup workflow and `bun reset:password --remote` read `LINKDEN_DB_NAME` too. See [upgrading an older deploy](/docs/self-hosting/cloudflare#upgrading-a-deploy-made-before-050) |
 | `LINKDEN_CONFIRM_DESTROY_PROD` | Set to `yes` to let `bun run destroy` tear down the `prod` stage. Without it the command refuses. Even then the production D1 database and R2 buckets are kept (`delete: false`) once a deploy from this version has recorded that |
-| `SETUP_TOKEN` | **Optional, recommended on a public deploy.** While no admin exists, sign-up must send this value in the `x-setup-token` header (the setup wizard's **Setup token** field does that); a wrong or missing token gets 403 "Invalid setup token". Unset = whoever reaches `/admin/setup` first becomes the admin. Generate with `openssl rand -base64 32`; store it as a `production` environment **secret** in GitHub |
 | `SITE_DOMAIN` | Your hostname, for example `links.yourdomain.com`. When set, Alchemy attaches a Custom Domain to the web Worker and `/api/*` + `/trpc/*` routes to the API Worker. Leave unset to deploy to `workers.dev` (staging; admin login does not work there) |
 
 ## Runtime Configuration
@@ -114,7 +113,6 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3001
 # ALCHEMY_STATE_TOKEN=your-state-worker-token
 # ALCHEMY_STAGE=prod
 # SITE_DOMAIN=links.yourdomain.com
-# SETUP_TOKEN=your-generated-setup-token
 # LINKDEN_CONFIRM_DESTROY_PROD=yes   # only when you really mean to destroy prod
 
 # Apple Wallet (optional — all 5 required together)
@@ -132,7 +130,7 @@ Alchemy binds these to the Workers at deploy time from your `.env` (local `bun s
 
 ## First-Time Setup
 
-After deployment, navigate to `/admin/setup` to create your admin account. The first user becomes the admin and registration locks automatically (a database trigger enforces a single admin). Until then the setup page is open to anyone who finds it, so on a public deploy set `SETUP_TOKEN` and enter it in the wizard's **Setup token** field.
+After deployment, navigate to `/admin/setup` to create your admin account. The first user becomes the admin and registration locks automatically (a database trigger enforces a single admin). Until then the setup page is open to anyone who finds it, so create the account right after your first deploy.
 
 ## Local development only
 

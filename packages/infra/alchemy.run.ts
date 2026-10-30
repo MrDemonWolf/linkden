@@ -210,11 +210,6 @@ export const server = await Worker("server", {
 		BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
 		BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
 		...walletBindings,
-		// Optional first-run guard (apps/server/src/lib/setup-token.ts): while
-		// no admin exists, sign-up must present it. Bound only when set.
-		...(process.env.SETUP_TOKEN?.trim() && {
-			SETUP_TOKEN: alchemy.secret.env.SETUP_TOKEN!,
-		}),
 	},
 	dev: {
 		port: 3000,

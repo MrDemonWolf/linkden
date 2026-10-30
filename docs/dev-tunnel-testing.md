@@ -80,8 +80,7 @@ cd apps/server && for f in ../../packages/db/src/migrations/*.sql; do bunx wrang
   non-loopback `Host`. A tunnel needs an `https://` `BETTER_AUTH_URL`, so sign in
   with a real account instead.
 - On a fresh LinkDen DB, complete `/admin/setup` immediately — first account
-  becomes the single admin. Setting `SETUP_TOKEN` in `apps/server/.dev.vars`
-  closes that window (enter it in the wizard's Setup token field).
+  becomes the single admin.
 - With an `https://` tunnel `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET` must be 32+
   characters and not a placeholder, or auth answers 503.
 - Want a stable hostname + real auth? Use a **named** tunnel

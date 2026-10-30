@@ -102,9 +102,6 @@ that file is the source of truth.
 - **`bun reset:password` no longer locks you out**, works against
   production, and never takes the password on the command line.
   Production deploys refuse unsafe auth settings.
-- **Claim your install safely.** Set the optional `SETUP_TOKEN` secret
-  and only someone who knows it can create the admin account on a fresh
-  public deploy.
 - **Image fixes.** Discarding an image change no longer breaks the saved
   image, crops upload on Safari/iOS, pinch-zoom no longer tilts a crop,
   and Enter on the crop dialog's buttons does what the button says.
@@ -135,11 +132,6 @@ that file is the source of truth.
 - `createAuthOptions(deps)` in `packages/auth/src/auth-options.ts`: the
   env-free Better Auth factory; `index.ts` only wires env, D1, Resend and
   secret validation, and tests build instances from the same factory.
-- Optional `SETUP_TOKEN` secret (`apps/server/src/lib/setup-token.ts`):
-  when bound, the first signup must send a matching `x-setup-token`
-  header (constant-time compare) or gets 403 `Invalid setup token`.
-  Bound by Alchemy only when set; wired into `deploy.yml`, `turbo.json`
-  and `.env.example`.
 - `RL_SIGNIN` rate limit (30/60s, namespace 1006 prod / 2006 non-prod)
   with constant keys `global:sign-in` / `global:two-factor` /
   `global:password-reset`, so the single admin can't be brute-forced by
@@ -349,8 +341,7 @@ that file is the source of truth.
 - Same-origin writes: POSTs to `/trpc/*` and `/api/upload` must come from
   `CORS_ORIGIN` (normalized) or the request's own origin, with a
   `Sec-Fetch-Site` fallback, else 403. Body limits: 64KB on
-  `/api/auth/*`, 1MB on `/trpc/*`, 16MB for `backup.*`. CORS
-  `allowHeaders` include `x-setup-token`.
+  `/api/auth/*`, 1MB on `/trpc/*`, 16MB for `backup.*`.
 - Auth tokens never reach logs (path-only request line, invocation logs
   off); visitor PII is stripped from logged SQL errors.
 - Inbox `mailto:` links are percent-encoded so a stored contact email
