@@ -91,6 +91,19 @@ describe("deployEnvErrors", () => {
 		expect(errors.join("\n")).toMatch(/CORS_ORIGIN .* must be a bare origin/);
 	});
 
+	it("requires bare origins for the URLs the client and Better Auth build on", () => {
+		const site = valid.NEXT_PUBLIC_SITE_URL;
+		const errors = deployEnvErrors({
+			...valid,
+			NEXT_PUBLIC_SERVER_URL: `${site}/`,
+			BETTER_AUTH_URL: `${site}/api`,
+		});
+		expect(errors).toEqual([
+			`BETTER_AUTH_URL (${site}/api) must be a bare origin like https://links.example.com (no path or trailing slash).`,
+			`NEXT_PUBLIC_SERVER_URL (${site}/) must be a bare origin like https://links.example.com (no path or trailing slash).`,
+		]);
+	});
+
 	it("rejects values with surrounding whitespace", () => {
 		expect(deployEnvErrors({ ...valid, BETTER_AUTH_URL: " https://a.example " })[0]).toMatch(
 			/whitespace/,
@@ -128,6 +141,14 @@ describe("parity with the runtime secret check (packages/auth)", () => {
 	it("uses the same default secret and minimum length", () => {
 		expect(BETTER_AUTH_DEFAULT_SECRET).toBe(runtimeAuth.BETTER_AUTH_DEFAULT_SECRET);
 		expect(MIN_AUTH_SECRET_LENGTH).toBe(runtimeAuth.MIN_AUTH_SECRET_LENGTH);
+	});
+});
+
+describe("Workers invocation logs stay off (they record full URLs incl. tokens)", () => {
+	it("disables them on both the API and the web worker", async () => {
+		const { readFileSync } = await import("node:fs");
+		const src = readFileSync(new URL("../alchemy.run.ts", import.meta.url), "utf8");
+		expect(src.match(/observability: \{ logs: \{ invocationLogs: false \} \}/g)).toHaveLength(2);
 	});
 });
 

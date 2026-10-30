@@ -228,6 +228,10 @@ export const web = await Nextjs("linkden", {
 	// Wraps the OpenNext handler: /api/* and /trpc/* go to the API worker over
 	// the service binding, so workers.dev deploys are single-origin too.
 	entrypoint: "worker.ts",
+	// Same reason as the API worker: invocation logs record full URLs, and this
+	// worker serves /admin/reset-password?token=… and, on workers.dev, proxies
+	// every /api/auth/* token link.
+	observability: { logs: { invocationLogs: false } },
 	compatibilityDate: COMPATIBILITY_DATE,
 	...(siteDomain && { domains: [{ domainName: siteDomain, adopt: true }] }),
 	bindings: {

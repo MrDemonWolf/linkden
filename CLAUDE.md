@@ -169,8 +169,8 @@ Key production-readiness invariants — don't regress these:
   replaces INTERNAL_SERVER_ERROR messages; raw causes are logged server-side.
 - **Logging never carries tokens or visitor PII.** The request line is path-only
   (`METHOD path status ms`, reset-password token segment redacted, no query strings) — never
-  reintroduce `hono/logger`. Workers invocation logs are off (`observability.logs.invocationLogs:
-  false` in `alchemy.run.ts`) because they record full URLs. `logError`
+  reintroduce `hono/logger`. Workers invocation logs are off on both workers (`observability.logs.invocationLogs:
+  false` in `alchemy.run.ts`, pinned by a test) because they record full URLs. `logError`
   (`apps/server/src/lib/log.ts`) strips Drizzle bound params from messages and stacks.
 - **Uploads:** magic-byte signature check + `Content-Length` precheck. `replaces` is honoured
   only for a same-purpose key that no saved setting or block references (normally an unsaved

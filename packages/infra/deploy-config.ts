@@ -126,16 +126,20 @@ export function deployEnvErrors(env: Env): string[] {
 	}
 
 	// CORS / trusted-origin matching is an exact string compare against the
-	// browser's Origin header: no path, no trailing slash.
+	// browser's Origin header, and the web client builds `${SERVER_URL}/trpc`
+	// (a trailing slash makes `//trpc`, which no Route or proxy prefix matches):
+	// no path, no trailing slash on any of the three.
 	// (try/new URL rather than URL.canParse: this file is also type-checked under
 	// the Workers lib through packages/env/env.d.ts, which lacks canParse.)
-	const cors = values.CORS_ORIGIN;
-	const corsOrigin = cors === undefined ? undefined : parsedOrigin(cors);
-	if (cors !== undefined && corsOrigin !== undefined && corsOrigin !== cors) {
-		invalidUrls.add("CORS_ORIGIN");
-		errors.push(
-			`CORS_ORIGIN (${cors}) must be a bare origin like https://links.example.com (no path or trailing slash).`,
-		);
+	for (const name of ["CORS_ORIGIN", "BETTER_AUTH_URL", "NEXT_PUBLIC_SERVER_URL"] as const) {
+		const value = values[name];
+		if (value === undefined || invalidUrls.has(name)) continue;
+		if (parsedOrigin(value) !== value) {
+			invalidUrls.add(name);
+			errors.push(
+				`${name} (${value}) must be a bare origin like https://links.example.com (no path or trailing slash).`,
+			);
+		}
 	}
 
 	// The browser only ever talks to the site's origin: with a custom domain the
