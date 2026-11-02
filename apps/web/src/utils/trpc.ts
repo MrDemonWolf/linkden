@@ -2,7 +2,7 @@ import type { AppRouter } from "@linkden/api/routers/index";
 
 import { env } from "@linkden/env/web";
 import { QueryCache, QueryClient } from "@tanstack/react-query";
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
+import { createTRPCClient, httpBatchLink, httpLink, splitLink } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { toast } from "sonner";
 
@@ -25,20 +25,25 @@ export const queryClient = new QueryClient({
 	}),
 });
 
+const trpcUrl = `${env.NEXT_PUBLIC_SERVER_URL}/trpc`;
+const withCredentials: typeof fetch = (url, options) =>
+	fetch(url, { ...options, credentials: "include" });
+
 const trpcClient = createTRPCClient<AppRouter>({
 	links: [
-		httpBatchLink({
-			url: `${env.NEXT_PUBLIC_SERVER_URL}/trpc`,
-			// The API rejects batches above TRPC_MAX_BATCH_SIZE (20) in
-			// apps/server/src/index.ts; stay under it so a busy admin page
-			// splits into several requests instead of failing.
-			maxItems: 10,
-			fetch(url, options) {
-				return fetch(url, {
-					...options,
-					credentials: "include",
-				});
-			},
+		splitLink({
+			// backup.* calls get a request of their own: the API grants the 16MB
+			// backup body limit only to a request made solely of backup calls.
+			condition: (op) => op.path.startsWith("backup."),
+			true: httpLink({ url: trpcUrl, fetch: withCredentials }),
+			false: httpBatchLink({
+				url: trpcUrl,
+				// The API rejects batches above TRPC_MAX_BATCH_SIZE (20) in
+				// apps/server/src/index.ts; stay under it so a busy admin page
+				// splits into several requests instead of failing.
+				maxItems: 10,
+				fetch: withCredentials,
+			}),
 		}),
 	],
 });

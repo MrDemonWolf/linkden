@@ -2,10 +2,12 @@ import { db } from "@linkden/db";
 import { block } from "@linkden/db/schema/index";
 import {
 	createBlockSchema,
+	EMBED_PROVIDER_MAP,
 	MAX_BLOCKS,
 	parseBlockConfig,
 	reorderBlocksSchema,
 	updateBlockSchema,
+	validateEmbedUrl,
 } from "@linkden/validators/blocks";
 import { TRPCError } from "@trpc/server";
 import { asc, eq, gte, sql } from "drizzle-orm";
@@ -86,14 +88,45 @@ export const blocksRouter = router({
 
 	update: protectedProcedure.input(updateBlockSchema).mutation(async ({ input }) => {
 		const { id, ...data } = input;
-		// The schema only validates config against the type when both are sent;
-		// on a type-less update, check it against the stored row's type.
-		if (data.config !== undefined && !data.type) {
-			const [existing] = await db.select({ type: block.type }).from(block).where(eq(block.id, id));
+		// The schema can only check what the (partial) update carries. When the
+		// type, config or embed fields change, validate the row as it will be
+		// after the update: stored values merged with the new ones.
+		const changesType = data.type !== undefined || data.config !== undefined;
+		const changesEmbed = data.embedType !== undefined || data.embedUrl !== undefined;
+		if (changesType || changesEmbed) {
+			const [existing] = await db
+				.select({
+					type: block.type,
+					config: block.config,
+					embedType: block.embedType,
+					embedUrl: block.embedUrl,
+				})
+				.from(block)
+				.where(eq(block.id, id));
 			if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
-			const parsed = parseBlockConfig(existing.type, data.config);
-			if (!parsed.ok) {
-				throw new TRPCError({ code: "BAD_REQUEST", message: parsed.issues.join("; ") });
+			const merged = {
+				type: data.type ?? existing.type,
+				config: data.config !== undefined ? data.config : existing.config,
+				embedType: data.embedType !== undefined ? data.embedType : existing.embedType,
+				embedUrl: data.embedUrl !== undefined ? data.embedUrl : existing.embedUrl,
+			};
+			if (changesType) {
+				const parsed = parseBlockConfig(merged.type, merged.config);
+				if (!parsed.ok) {
+					throw new TRPCError({ code: "BAD_REQUEST", message: parsed.issues.join("; ") });
+				}
+			}
+			if (
+				changesEmbed &&
+				merged.embedType &&
+				merged.embedUrl &&
+				!validateEmbedUrl(merged.embedType, merged.embedUrl)
+			) {
+				const label = EMBED_PROVIDER_MAP[merged.embedType]?.label ?? merged.embedType;
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: `This doesn't look like a ${label} URL`,
+				});
 			}
 		}
 		const [result] = await db

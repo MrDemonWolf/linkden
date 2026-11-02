@@ -302,9 +302,12 @@ app.use("/trpc/*", async (c, next) => {
 	c.set("trpcProcedures", procedures);
 	await next();
 });
-// Backup import is the only procedure that legitimately sends large bodies.
+// Backup import is the only procedure that legitimately sends large bodies, and
+// only a request made solely of backup calls gets the large limit (the web
+// client sends backup.* unbatched): a mixed batch would otherwise make tRPC
+// parse a 16MB body for its public procedures.
 app.use("/trpc/*", (c, next) =>
-	c.get("trpcProcedures").some((p) => p.startsWith("backup."))
+	c.get("trpcProcedures").every((p) => p.startsWith("backup."))
 		? backupBodyLimit(c, next)
 		: trpcBodyLimit(c, next),
 );

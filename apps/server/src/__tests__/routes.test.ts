@@ -311,6 +311,12 @@ describe("body limits", () => {
 		// Over the general cap, under the backup cap: reaches tRPC (401, no session).
 		expect((await call("/trpc/backup.import", post(big))).status).toBe(401);
 	});
+
+	it("gives a mixed batch the ordinary cap, not the backup one", async () => {
+		const big = { pad: "x".repeat(1_100_000) };
+		const res = await call("/trpc/backup.import,public.trackView?batch=1", post(big));
+		expect(res.status).toBe(413);
+	});
 });
 
 // ─── Upload ──────────────────────────────────────────────────────────────────

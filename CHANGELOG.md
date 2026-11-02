@@ -15,6 +15,11 @@ Canonical version: [`version.json`](./version.json) — workspace
 
 ### ✨ What's new
 
+- **Safer sign-in and tidier data.** Five wrong two-factor codes now lock
+  sign-in for an hour. Uploaded images are saved in a way that survives
+  moving your site to a new address (existing ones are converted). Visitors
+  who chose cookie settings under an older banner are asked again before
+  any analytics or embeds run.
 - **Admin works on workers.dev, no domain needed.** Deploy and your whole
   site, admin included, runs on `linkden.<you>.workers.dev`. Then open
   `/admin/setup` and claim it, like a fresh WordPress install (whoever
@@ -112,6 +117,21 @@ Canonical version: [`version.json`](./version.json) — workspace
 
 ### 🔧 Technical
 
+- Uploads are stored as origin-relative `/api/images/…` paths
+  (`imageUrlSchema`, `UPLOADED_IMAGE_PATH`); migration 0011 rewrites older
+  absolute upload URLs in image settings and block `thumbnail`/`src`.
+- 2FA `accountLockout` set explicitly (5 failures → 1h) on top of Better
+  Auth's 5-per-challenge cap, with a test that fails if it is disabled.
+- Consent: an outdated (legacy / older-version) choice grants nothing while
+  the banner is on; a decline is still honoured.
+- The 16MB tRPC body limit applies only to all-`backup.*` requests; the web
+  client sends `backup.*` unbatched via `splitLink`.
+- `blocks.update` validates the merged row (stored + new type, config and
+  embed fields). `settings.update`/`updateBulk` reject enabling magic link
+  without an email key or while 2FA is on.
+- Public renderers re-check social and custom map links (`safeHttpUrl`);
+  image-only links get an accessible name; three controls use
+  `border-input-border`.
 - Web worker entry `apps/web/worker.ts` (Alchemy `entrypoint`) forwards
   `/api/*` and `/trpc/*` to the API worker over the `API` service binding
   (`apps/web/src/lib/api-proxy.ts`), so workers.dev deploys are single-origin.

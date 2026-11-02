@@ -111,3 +111,53 @@ describe("0010_drop_social_icons_blocks", () => {
 		expect(clicks.rows.map((r) => r.id)).toEqual(["c2"]);
 	});
 });
+
+describe("0011_relative_image_paths", () => {
+	it("rewrites absolute upload URLs to paths, leaves external and non-image values alone", async () => {
+		const client = await freshClient();
+		await applyThrough(client, "0010");
+
+		const api = "https://linkden-api.me.workers.dev";
+		await client.batch(
+			[
+				{
+					sql: "INSERT INTO site_settings (key, value) VALUES ('avatar_url', ?), ('branding_logo_url', ?), ('branding_link', ?)",
+					args: [
+						`${api}/api/images/avatar/a1.png`,
+						"https://cdn.test/logo.png",
+						`${api}/api/images/avatar/a1.png`,
+					],
+				},
+				{
+					sql: "INSERT INTO block (id, type, position, config) VALUES ('b1', 'link', 0, ?), ('b2', 'image', 1, ?), ('b3', 'link', 2, ?)",
+					args: [
+						JSON.stringify({ thumbnail: `${api}/api/images/block_thumbnail/t1.webp`, style: "x" }),
+						JSON.stringify({ src: `${api}/api/images/block_image/i1.jpg`, alt: "hi" }),
+						"not json",
+					],
+				},
+			],
+			"write",
+		);
+
+		await applyThrough(client, "0011", "0011");
+
+		const settings = await client.execute("SELECT key, value FROM site_settings ORDER BY key");
+		expect(Object.fromEntries(settings.rows.map((r) => [r.key, r.value]))).toEqual({
+			avatar_url: "/api/images/avatar/a1.png",
+			branding_link: `${api}/api/images/avatar/a1.png`,
+			branding_logo_url: "https://cdn.test/logo.png",
+		});
+		const blocks = await client.execute("SELECT id, config FROM block ORDER BY id");
+		const config = Object.fromEntries(blocks.rows.map((r) => [r.id, r.config]));
+		expect(JSON.parse(String(config.b1))).toEqual({
+			thumbnail: "/api/images/block_thumbnail/t1.webp",
+			style: "x",
+		});
+		expect(JSON.parse(String(config.b2))).toEqual({
+			src: "/api/images/block_image/i1.jpg",
+			alt: "hi",
+		});
+		expect(config.b3).toBe("not json");
+	});
+});

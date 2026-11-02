@@ -116,6 +116,8 @@ Key production-readiness invariants — don't regress these:
   - 2FA (`twoFactor({ issuer: "LinkDen" })`, table `two_factor`, migration 0008): enabled only
     after the first TOTP code verifies; password sign-in then returns `twoFactorRedirect` and the
     login page asks for the TOTP or a backup code. Never ship a 2FA path without the login step.
+    Guessing is capped: Better Auth ends a challenge after 5 wrong codes and `accountLockout`
+    (5 consecutive failures → 1h) is set explicitly; a test fails if the lockout is turned off.
   - Magic link: single admin only, refused while 2FA is on, `disableSignUp`, 10-minute expiry,
     enabled-gate in a before-hook (403 before any token is stored), unknown addresses get the same
     `{status:true}` with nothing stored or sent. The server also 403s both
@@ -165,7 +167,8 @@ Key production-readiness invariants — don't regress these:
   (`rateLimit: { enabled: true }`, in-memory per isolate) and stacks on top.
 - **Same-origin writes + body limits.** POSTs to `/trpc/*` and `/api/upload` must come from
   `CORS_ORIGIN` or the request's own origin (Sec-Fetch-Site fallback), else 403. Body limits:
-  64KB `/api/auth/*`, 1MB `/trpc/*`, 16MB for `backup.*`. tRPC `errorFormatter` strips stacks and
+  64KB `/api/auth/*`, 1MB `/trpc/*`, 16MB only for a request made solely of `backup.*` calls
+  (the web client's `splitLink` sends them unbatched). tRPC `errorFormatter` strips stacks and
   replaces INTERNAL_SERVER_ERROR messages; raw causes are logged server-side.
 - **Logging never carries tokens or visitor PII.** The request line is path-only
   (`METHOD path status ms`, reset-password token segment redacted, no query strings) — never
@@ -217,7 +220,8 @@ Key production-readiness invariants — don't regress these:
 
 ### File Storage (R2)
 - **Bucket binding:** `IMAGES_BUCKET` (R2Bucket on Cloudflare Workers)
-- **Upload endpoint:** `POST /api/upload` — accepts `file` + `purpose` (+ optional `replaces`) form fields, returns `{ publicUrl }`
+- **Upload endpoint:** `POST /api/upload` — accepts `file` + `purpose` (+ optional `replaces`) form fields, returns `{ publicUrl }` (an origin-relative `/api/images/<purpose>/<id>.<ext>` path)
+- **Stored as paths:** image settings and block `thumbnail`/`src` hold that relative path (`UPLOADED_IMAGE_PATH` / `imageUrlSchema` in `@linkden/validators/primitives`, accepted by the `url` setting kind), so images survive an origin change. Migration 0011 rewrote older absolute upload URLs; public renderers use `safeImageSrc` (`lib/safe-url.ts`), which also reduces any leftover absolute upload URL to its path.
 - **Serving endpoint:** `GET /api/images/*` — 404s key shapes the app never writes (`<purpose>/<uuid|ms-timestamp>.<ext>`) without reading R2; serves with immutable cache headers + `ETag` and edge-caches via `caches.default` (cache key without the query string). Edge copies are never purged (keys are random and never reused), so an orphan-swept image may linger in a colo cache until evicted.
 - **Valid purposes:** `UPLOAD_PURPOSES` in `@linkden/validators/uploads` (`avatar`, `banner`, `og_image`, `wallet_*`, `logo`, `favicon`, `login_*`, `block_thumbnail`, `block_image`)
 - **Client component:** `ImageUploadField` — drag-and-drop upload with preview, replace, and remove buttons. Sends `replaces` only for an upload it made during the current unsaved edit (tracked with `unsavedEditSnapshot()` from `hooks/use-unsaved-changes.ts`; any form save, discard or close ends the edit) — never the saved value. Without a `label` it is wrapped in `<fieldset><legend>` so its Replace/Re-crop/Remove buttons get group context.
@@ -292,6 +296,6 @@ All settings stored as key-value in `site_settings` table. Per-key metadata (whi
 - **SEO:** `seo_title` (max 100), `seo_description` (max 250), `seo_og_image`, `seo_og_mode`, `seo_og_template`, `site_language`
 - **Branding:** `branding_enabled`, `branding_text`, `branding_link`, `branding_logo_url`, `branding_favicon_url`, `branding_site_name`, `branding_pp_url`, `branding_tos_url`, `admin_branding_enabled`
 - **Features:** `wallet_pass_enabled`, `vcard_enabled`, `vcard_data`, `contact_form_enabled`, `mapkit_enabled`, `mapkit_token`
-- **Auth/CAPTCHA:** `magic_link_enabled` (can't be turned on without email or while 2FA is on), `captcha_provider`, `captcha_site_key`, `captcha_secret_key`
+- **Auth/CAPTCHA:** `magic_link_enabled` (can't be turned on without email or while 2FA is on; the settings router rejects it too), `captcha_provider`, `captcha_site_key`, `captcha_secret_key`
 - **Email:** `email_provider` (unset = Resend; other providers never send), `email_api_key`, `email_from`, `contact_delivery` (`database` / `email` / `both`; a failed or unconfigured email send falls back to the Inbox and is audited as `contact.email_failed`)
 - **System:** `default_color_mode`, `timezone` (drives Insights day buckets; unset = UTC), `consent_banner_enabled`, `consent_banner_text`, `consent_categories`
