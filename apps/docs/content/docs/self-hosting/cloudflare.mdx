@@ -13,7 +13,7 @@ Deploy LinkDen to Cloudflare's **free tier** with two Workers, a D1 database, an
 3. Run `bun ship`. *(Deploy everything in one shot.)*
 4. Copy the real URLs from the output → update `.env` → run `bun ship` again.
 5. Set `SITE_DOMAIN` to your hostname, point the URLs at it, `bun ship` once more.
-6. Go to `/admin/setup` and create your account. Done.
+6. Open your site. Until an admin exists it sends you to the setup wizard (`/admin/setup`). Create your account. Done.
 
 ---
 
@@ -121,7 +121,7 @@ That shared worker is specific to the MrDemonWolf account. As a third-party self
 
 ### Upgrading a deploy made before 0.5.0
 
-Before 0.5.0 the D1 database and R2 bucket had no fixed names, so Alchemy generated them: a GitHub Actions deploy created **`linkden-database-runner`** and **`linkden-images-runner`** (a local `bun ship` used your login name instead of `runner`). 0.5.0 pins the names to `linkden-db` / `linkden-images` and moves state to the `prod` stage. On its own that would create a brand-new, empty database and bucket, put the public page back on the Welcome screen, and reopen `/admin/setup` to anyone — so **before you deploy 0.5.0 over an existing install**, set two variables to the names you already have (Cloudflare dashboard → Storage & Databases → D1 / R2):
+Before 0.5.0 the D1 database and R2 bucket had no fixed names, so Alchemy generated them: a GitHub Actions deploy created **`linkden-database-runner`** and **`linkden-images-runner`** (a local `bun ship` used your login name instead of `runner`). 0.5.0 pins the names to `linkden-db` / `linkden-images` and moves state to the `prod` stage. On its own that would create a brand-new, empty database and bucket, send your home page back to the setup wizard, and reopen `/admin/setup` to anyone — so **before you deploy 0.5.0 over an existing install**, set two variables to the names you already have (Cloudflare dashboard → Storage & Databases → D1 / R2):
 
 ```bash
 LINKDEN_DB_NAME=linkden-database-runner
@@ -174,7 +174,7 @@ BETTER_AUTH_URL=https://linkden.myname.workers.dev
 bun ship
 ```
 
-> ✅ **Your site is live, admin included.** Open `/admin/setup` now and create your account. A custom domain (Step 5) is optional: nicer URL, and API calls skip the hop through the web Worker.
+> ✅ **Your site is live, admin included.** Open your site now: it redirects to the setup wizard until an admin exists. Create your account. A custom domain (Step 5) is optional: nicer URL, and API calls skip the hop through the web Worker.
 
 ---
 
@@ -208,7 +208,7 @@ See the [Custom Domain guide](/docs/self-hosting/custom-domain) for DNS details 
 
 ## 👤 Step 6 — Create Your Admin Account
 
-1. Open `https://links.yourdomain.com/admin/setup`.
+1. Open `https://links.yourdomain.com`. Before an admin exists it redirects to `/admin/setup`.
 2. Fill in your name, email and password.
 3. Click **Create Account**.
 

@@ -285,7 +285,7 @@ Key production-readiness invariants — don't regress these:
 - Wrap sections in `Card` / `CardContent`
 - Section headers: `<h2 className="text-sm font-semibold">`
 - Settings forms: `useSettingsForm` scope per page + one `StickySaveBar` (sits above the bottom tab bar below lg). It saves only keys that differ from the saved baseline (still one `updateBulk`/`runBatch`), keeps unsaved edits across a refetch, and exposes `isError`/`error`/`refetch` for a `QueryError` retry state.
-- Setup wizard: `/admin/setup` — 4-step split-panel onboarding (Account → Profile → Theme → Done); redirects to `/admin/login` if account already exists; `?test=true` prefill is dev-only
+- Setup wizard: `/admin/setup` — 4-step split-panel onboarding (Account → Profile → Theme → Done); `/` 307s here and `/admin/login` sends here while no admin exists (WordPress-style); redirects to `/admin/login` if account already exists; `?test=true` prefill is dev-only
 - Login page: `/admin/login` — split-panel layout; left side customizable via branding settings (`branding_login_*`). After password sign-in it shows a TOTP / backup-code step when Better Auth answers `twoFactorRedirect` (optional "trust this device for 30 days"). Honours `?from=` after every sign-in method, validated by `safeAdminRedirect` (`app/admin/login/redirect.ts`: plain `/admin` paths only, never login/setup/reset-password).
 - Design → Theme: `custom_primary/secondary/accent/background` are true overrides — empty inherits the preset in light and dark; picking a preset clears them (`app/admin/design/theme-form.ts`).
 

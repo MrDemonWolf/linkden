@@ -22,7 +22,8 @@ Canonical version: [`version.json`](./version.json) — workspace
   any analytics or embeds run.
 - **Admin works on workers.dev, no domain needed.** Deploy and your whole
   site, admin included, runs on `linkden.<you>.workers.dev`. Then open
-  `/admin/setup` and claim it, like a fresh WordPress install (whoever
+  your site: like a fresh WordPress install it sends you straight to the
+  setup wizard to claim it (whoever
   finishes setup first becomes the admin, so do it right away). A custom
   domain is still supported and a little faster.
 - **Two-factor sign-in works.** Turn on an authenticator app under
@@ -117,6 +118,8 @@ Canonical version: [`version.json`](./version.json) — workspace
 
 ### 🔧 Technical
 
+- `/` answers a 307 to `/admin/setup` while no admin exists (server-side
+  `redirect()` in `app/page.tsx`); the WelcomePage splash is removed.
 - Uploads are stored as origin-relative `/api/images/…` paths
   (`imageUrlSchema`, `UPLOADED_IMAGE_PATH`); migration 0011 rewrites older
   absolute upload URLs in image settings and block `thumbnail`/`src`.

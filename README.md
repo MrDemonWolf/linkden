@@ -71,7 +71,7 @@ Quick start:
    ```bash
    bun dev
    ```
-4. Open `http://localhost:3001/admin/setup` to create your admin
+4. Open `http://localhost:3001` (it redirects to `/admin/setup`) to create your admin
    account, then turn on two-factor sign-in under Settings → Account.
    With 2FA on, the login page asks for a code from your
    authenticator app (or one of your backup codes) after the password.
