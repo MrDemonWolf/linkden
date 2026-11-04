@@ -61,7 +61,9 @@ const bad = (message: string) => new TRPCError({ code: "BAD_REQUEST", message })
  * so the admin isn't shown a switch that silently does nothing.
  * `entries` are the values being written in this request (secrets unmasked).
  */
-async function assertMagicLinkAllowed(entries: ReadonlyArray<{ key: string; value: string }>) {
+export async function assertMagicLinkAllowed(
+	entries: ReadonlyArray<{ key: string; value: string }>,
+) {
 	if (!entries.some(({ key, value }) => key === "magic_link_enabled" && value === "true")) return;
 	const sentKey = entries.find(({ key }) => key === "email_api_key")?.value;
 	let emailConfigured = !!sentKey && sentKey !== SECRET_MASK;
