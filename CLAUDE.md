@@ -102,11 +102,9 @@ Key production-readiness invariants — don't regress these:
 
 - **Single admin, enforced in the DB.** A `BEFORE INSERT` trigger on `user`
   (`packages/db/src/migrations/0007_single_admin_trigger.sql`) aborts a second
-  insert; middleware 403 is just a nicer message. Not middleware-only. Optional
-  `SETUP_TOKEN` secret: when bound, the first signup must send a matching
-  `x-setup-token` header (constant-time compare, `apps/server/src/lib/setup-token.ts`;
-  the setup wizard has an optional field), else 403 `Invalid setup token`. Unset = open
-  first-run window, so set it on any public deploy.
+  insert; middleware 403 is just a nicer message. Not middleware-only. First run
+  is WordPress-style on purpose: no setup token, whoever completes `/admin/setup`
+  first becomes the admin, so the owner does it right after deploying.
 - **Auth options live in `createAuthOptions`** (`packages/auth/src/auth-options.ts`); never
   configure `betterAuth` inline in `index.ts` (it only wires env, D1, Resend and secret
   validation). Tests build instances from the same factory.
@@ -118,6 +116,8 @@ Key production-readiness invariants — don't regress these:
   - 2FA (`twoFactor({ issuer: "LinkDen" })`, table `two_factor`, migration 0008): enabled only
     after the first TOTP code verifies; password sign-in then returns `twoFactorRedirect` and the
     login page asks for the TOTP or a backup code. Never ship a 2FA path without the login step.
+    Guessing is capped: Better Auth ends a challenge after 5 wrong codes and `accountLockout`
+    (5 consecutive failures → 1h) is set explicitly; a test fails if the lockout is turned off.
   - Magic link: single admin only, refused while 2FA is on, `disableSignUp`, 10-minute expiry,
     enabled-gate in a before-hook (403 before any token is stored), unknown addresses get the same
     `{status:true}` with nothing stored or sent. The server also 403s both
@@ -167,12 +167,13 @@ Key production-readiness invariants — don't regress these:
   (`rateLimit: { enabled: true }`, in-memory per isolate) and stacks on top.
 - **Same-origin writes + body limits.** POSTs to `/trpc/*` and `/api/upload` must come from
   `CORS_ORIGIN` or the request's own origin (Sec-Fetch-Site fallback), else 403. Body limits:
-  64KB `/api/auth/*`, 1MB `/trpc/*`, 16MB for `backup.*`. tRPC `errorFormatter` strips stacks and
+  64KB `/api/auth/*`, 1MB `/trpc/*`, 16MB only for a request made solely of `backup.*` calls
+  (the web client's `splitLink` sends them unbatched). tRPC `errorFormatter` strips stacks and
   replaces INTERNAL_SERVER_ERROR messages; raw causes are logged server-side.
 - **Logging never carries tokens or visitor PII.** The request line is path-only
   (`METHOD path status ms`, reset-password token segment redacted, no query strings) — never
-  reintroduce `hono/logger`. Workers invocation logs are off (`observability.logs.invocationLogs:
-  false` in `alchemy.run.ts`) because they record full URLs. `logError`
+  reintroduce `hono/logger`. Workers invocation logs are off on both workers (`observability.logs.invocationLogs:
+  false` in `alchemy.run.ts`, pinned by a test) because they record full URLs. `logError`
   (`apps/server/src/lib/log.ts`) strips Drizzle bound params from messages and stacks.
 - **Uploads:** magic-byte signature check + `Content-Length` precheck. `replaces` is honoured
   only for a same-purpose key that no saved setting or block references (normally an unsaved
@@ -189,13 +190,19 @@ Key production-readiness invariants — don't regress these:
   admin-only, 5s timeout, per-isolate cache (6h ok / 10min failure; `force: true` skips it but
   reuses an answer under 60s old).
 - **Deployment is Cloudflare-only, through Alchemy** (Docker/Coolify/Railway removed).
+  - The browser only ever talks to the site origin. With `SITE_DOMAIN`, zone Routes send
+    `/api/*` + `/trpc/*` to the API worker; without it (workers.dev) the web worker's entry
+    (`apps/web/worker.ts`, Alchemy `entrypoint`) forwards them over the `API` service binding
+    (`apps/web/src/lib/api-proxy.ts`). `deployEnvErrors` requires `BETTER_AUTH_URL`,
+    `CORS_ORIGIN` and `NEXT_PUBLIC_SERVER_URL` to equal that origin. Keep the proxy prefixes in
+    step with the Routes.
   - `deploy.yml` deploys only `workflow_run.event == 'push'` from this repo's `main` (fork PRs
     named `main` can't deploy), never cancels a running deploy, runs a preflight that names
     missing secrets/vars, records a D1 Time Travel bookmark before deploying, and smoke-tests web.
   - `alchemy.run.ts` validates the deploy env before touching state (`deployEnvErrors` in
     `packages/infra/deploy-config.ts`: non-empty values, `BETTER_AUTH_SECRET` ≥ 32 chars and not
-    Better Auth's default, https URLs, bare-origin `CORS_ORIGIN`, all equal to
-    `https://SITE_DOMAIN` when it is set).
+    Better Auth's default, https URLs, bare-origin `CORS_ORIGIN`, all equal to the site
+    origin: `https://SITE_DOMAIN`, else `NEXT_PUBLIC_SITE_URL`'s).
   - `LINKDEN_DB_NAME` / `LINKDEN_IMAGES_BUCKET` overrides apply to the `prod` stage only.
   - Prod D1/R2 use `delete: false`; a prod destroy needs `LINKDEN_CONFIRM_DESTROY_PROD=yes`.
   - The Workers compatibility date is pinned (`COMPATIBILITY_DATE` in `alchemy.run.ts`,
@@ -213,7 +220,8 @@ Key production-readiness invariants — don't regress these:
 
 ### File Storage (R2)
 - **Bucket binding:** `IMAGES_BUCKET` (R2Bucket on Cloudflare Workers)
-- **Upload endpoint:** `POST /api/upload` — accepts `file` + `purpose` (+ optional `replaces`) form fields, returns `{ publicUrl }`
+- **Upload endpoint:** `POST /api/upload` — accepts `file` + `purpose` (+ optional `replaces`) form fields, returns `{ publicUrl }` (an origin-relative `/api/images/<purpose>/<id>.<ext>` path)
+- **Stored as paths:** image settings and block `thumbnail`/`src` hold that relative path (`UPLOADED_IMAGE_PATH` / `imageUrlSchema` in `@linkden/validators/primitives`, accepted by the `url` setting kind), so images survive an origin change. Migration 0011 rewrote older absolute upload URLs; public renderers use `safeImageSrc` (`lib/safe-url.ts`), which also reduces any leftover absolute upload URL to its path.
 - **Serving endpoint:** `GET /api/images/*` — 404s key shapes the app never writes (`<purpose>/<uuid|ms-timestamp>.<ext>`) without reading R2; serves with immutable cache headers + `ETag` and edge-caches via `caches.default` (cache key without the query string). Edge copies are never purged (keys are random and never reused), so an orphan-swept image may linger in a colo cache until evicted.
 - **Valid purposes:** `UPLOAD_PURPOSES` in `@linkden/validators/uploads` (`avatar`, `banner`, `og_image`, `wallet_*`, `logo`, `favicon`, `login_*`, `block_thumbnail`, `block_image`)
 - **Client component:** `ImageUploadField` — drag-and-drop upload with preview, replace, and remove buttons. Sends `replaces` only for an upload it made during the current unsaved edit (tracked with `unsavedEditSnapshot()` from `hooks/use-unsaved-changes.ts`; any form save, discard or close ends the edit) — never the saved value. Without a `label` it is wrapped in `<fieldset><legend>` so its Replace/Re-crop/Remove buttons get group context.
@@ -277,7 +285,7 @@ Key production-readiness invariants — don't regress these:
 - Wrap sections in `Card` / `CardContent`
 - Section headers: `<h2 className="text-sm font-semibold">`
 - Settings forms: `useSettingsForm` scope per page + one `StickySaveBar` (sits above the bottom tab bar below lg). It saves only keys that differ from the saved baseline (still one `updateBulk`/`runBatch`), keeps unsaved edits across a refetch, and exposes `isError`/`error`/`refetch` for a `QueryError` retry state.
-- Setup wizard: `/admin/setup` — 4-step split-panel onboarding (Account → Profile → Theme → Done); redirects to `/admin/login` if account already exists; optional Setup token field (sent as `x-setup-token`); `?test=true` prefill is dev-only
+- Setup wizard: `/admin/setup` — 4-step split-panel onboarding (Account → Profile → Theme → Done); `/` 307s here and `/admin/login` sends here while no admin exists (WordPress-style); redirects to `/admin/login` if account already exists; `?test=true` prefill is dev-only
 - Login page: `/admin/login` — split-panel layout; left side customizable via branding settings (`branding_login_*`). After password sign-in it shows a TOTP / backup-code step when Better Auth answers `twoFactorRedirect` (optional "trust this device for 30 days"). Honours `?from=` after every sign-in method, validated by `safeAdminRedirect` (`app/admin/login/redirect.ts`: plain `/admin` paths only, never login/setup/reset-password).
 - Design → Theme: `custom_primary/secondary/accent/background` are true overrides — empty inherits the preset in light and dark; picking a preset clears them (`app/admin/design/theme-form.ts`).
 
@@ -288,6 +296,6 @@ All settings stored as key-value in `site_settings` table. Per-key metadata (whi
 - **SEO:** `seo_title` (max 100), `seo_description` (max 250), `seo_og_image`, `seo_og_mode`, `seo_og_template`, `site_language`
 - **Branding:** `branding_enabled`, `branding_text`, `branding_link`, `branding_logo_url`, `branding_favicon_url`, `branding_site_name`, `branding_pp_url`, `branding_tos_url`, `admin_branding_enabled`
 - **Features:** `wallet_pass_enabled`, `vcard_enabled`, `vcard_data`, `contact_form_enabled`, `mapkit_enabled`, `mapkit_token`
-- **Auth/CAPTCHA:** `magic_link_enabled` (can't be turned on without email or while 2FA is on), `captcha_provider`, `captcha_site_key`, `captcha_secret_key`
+- **Auth/CAPTCHA:** `magic_link_enabled` (can't be turned on without email or while 2FA is on; the settings router rejects it too), `captcha_provider`, `captcha_site_key`, `captcha_secret_key`
 - **Email:** `email_provider` (unset = Resend; other providers never send), `email_api_key`, `email_from`, `contact_delivery` (`database` / `email` / `both`; a failed or unconfigured email send falls back to the Inbox and is audited as `contact.email_failed`)
 - **System:** `default_color_mode`, `timezone` (drives Insights day buckets; unset = UTC), `consent_banner_enabled`, `consent_banner_text`, `consent_categories`

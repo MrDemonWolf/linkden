@@ -1,3 +1,5 @@
+import { safeHttpUrl } from "./safe-url";
+
 /**
  * Generate a map URL based on provider type, address, and optional coordinates.
  */
@@ -21,7 +23,8 @@ export function getMapUrl(
 			}
 			return `https://maps.apple.com/?q=${encodeURIComponent(address)}`;
 		case "custom":
-			return customLinkUrl || null;
+			// Validated on write, re-checked here like every public link renderer.
+			return safeHttpUrl(customLinkUrl);
 		default:
 			return null;
 	}

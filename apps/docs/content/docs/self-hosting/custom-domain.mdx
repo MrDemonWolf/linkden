@@ -5,7 +5,7 @@ description: Point a custom domain at your LinkDen instance.
 
 # 🌐 Custom Domain Setup
 
-Give your LinkDen instance a custom domain instead of the default `*.workers.dev` URLs. This is the recommended production setup: on a custom domain the web app and the API share one origin, so admin login works without any cookie or CORS tricks.
+Give your LinkDen instance a custom domain instead of the default `*.workers.dev` URLs. On both, the browser only ever talks to one origin, so admin login works either way. A custom domain is faster: Cloudflare sends `/api/*` and `/trpc/*` straight to the API Worker instead of through the web Worker.
 
 ### ⚡ TL;DR
 - Your domain must be a zone in your Cloudflare account, and the hostname must have **no existing DNS record**.
@@ -26,7 +26,7 @@ Alchemy does the wiring for you from a single variable, `SITE_DOMAIN`:
 
 Cloudflare matches routes before the custom-domain Worker, so requests to `/api/*` and `/trpc/*` reach the API and everything else reaches the web app. There is no separate API hostname.
 
-Without `SITE_DOMAIN` the deploy targets `workers.dev`, where the two Workers are different origins and `/admin` cannot hold a session. Treat `workers.dev` as staging only.
+Without `SITE_DOMAIN` the deploy targets `workers.dev`: the web Worker forwards `/api/*` and `/trpc/*` to the API Worker over its service binding, so everything still runs on `linkden.<sub>.workers.dev`.
 
 ## ✅ Requirements
 
@@ -73,5 +73,5 @@ Custom Domains require the zone to be on Cloudflare DNS. If your DNS lives elsew
 ## 🔄 Changing or Removing the Domain
 
 - **Change:** update `SITE_DOMAIN` and the four URLs, make sure the new hostname has no DNS record, and run `bun ship`. Alchemy removes the old domain and routes and creates the new ones.
-- **Remove:** unset `SITE_DOMAIN`, point the URLs back at the `workers.dev` addresses, and run `bun ship`. The DNS record Cloudflare created is deleted with the Custom Domain.
+- **Remove:** unset `SITE_DOMAIN`, point the four URLs back at `https://linkden.<sub>.workers.dev`, and run `bun ship`. The DNS record Cloudflare created is deleted with the Custom Domain.
 - **Roll back to a previous site on that hostname:** re-create the old DNS record after removing `SITE_DOMAIN` and redeploying. Nothing else needs undoing.

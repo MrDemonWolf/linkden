@@ -185,7 +185,7 @@ function SegmentedControl({
 		<div
 			role="group"
 			aria-labelledby={ariaLabelledby}
-			className="flex rounded-lg border border-input overflow-hidden"
+			className="flex rounded-lg border border-input-border overflow-hidden"
 		>
 			{options.map((opt) => (
 				<button
@@ -1009,7 +1009,7 @@ export function BlockEditPanel({
 								type="button"
 								onClick={() => updateConfigField("urls", [...vcardUrls, { label: "", url: "" }])}
 								disabled={vcardUrls.length >= 20}
-								className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-input dark:bg-input/30 px-3 text-small font-medium transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-50 md:min-h-9"
+								className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-input-border dark:bg-input/30 px-3 text-small font-medium transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-50 md:min-h-9"
 							>
 								<Plus className="h-3.5 w-3.5" />
 								Add URL

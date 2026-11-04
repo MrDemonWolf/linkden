@@ -16,7 +16,7 @@ LinkDen uses a simple, secure setup model:
 3. After the first user is created, registration is permanently locked -- the API returns **403 "Registration is closed"** for any subsequent signup attempts, and a database trigger refuses a second account even if that check were bypassed.
 4. If you visit `/admin/login` before an account exists, you'll be redirected to the setup page.
 
-**Until you create the account, the setup page is open to whoever reaches it first.** On a public deploy, set the optional `SETUP_TOKEN` secret: the first signup must then present the same value (the wizard's **Setup token** field), otherwise it gets **403 "Invalid setup token"**. See [Environment Variables](/docs/self-hosting/environment-variables#cloudflare-deployment).
+**Until you create the account, the setup page is open to whoever reaches it first.** Like a fresh WordPress install, open `/admin/setup` and finish it right after your first deploy.
 
 ## File Upload Restrictions
 

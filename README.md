@@ -40,8 +40,8 @@ Own your presence. Host your own link page.
 - **Edge-cached** — Served from Cloudflare's global network for
   near-zero-latency response times.
 - **Secure** — Two-factor sign-in (authenticator app + backup
-  codes), a single-admin lock enforced in the database, optional
-  setup token, same-origin write checks, per-call Cloudflare rate
+  codes), a single-admin lock enforced in the database, same-origin
+  write checks, per-call Cloudflare rate
   limiting, XSS protection, and secret masking baked in.
 
 ## Getting Started
@@ -71,7 +71,7 @@ Quick start:
    ```bash
    bun dev
    ```
-4. Open `http://localhost:3001/admin/setup` to create your admin
+4. Open `http://localhost:3001` (it redirects to `/admin/setup`) to create your admin
    account, then turn on two-factor sign-in under Settings → Account.
    With 2FA on, the login page asks for a code from your
    authenticator app (or one of your backup codes) after the password.

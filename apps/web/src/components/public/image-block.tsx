@@ -1,6 +1,6 @@
 "use client";
 
-import { safeHttpUrl } from "@/lib/safe-url";
+import { safeHttpUrl, safeImageSrc } from "@/lib/safe-url";
 import { trackClick } from "@/lib/track";
 import { usePreview } from "./preview-context";
 import type { ThemeColors } from "./public-page";
@@ -25,12 +25,15 @@ const aspectClasses: Record<string, string> = {
 
 export function ImageBlock({ block, config, themeColors }: ImageBlockProps) {
 	const { isPreview } = usePreview();
-	const src = safeHttpUrl(config.src);
+	const src = safeImageSrc(config.src);
 	if (!src) return null;
 	const href = safeHttpUrl(block.url);
 	const alt = (config.alt as string) || block.title || "";
 	const caption = config.caption as string | undefined;
 	const aspect = aspectClasses[(config.aspect as string) || "auto"] ?? "";
+	// A link whose only content is an image is named by its alt text; without
+	// one, name it from the caption or the destination host (WCAG 2.4.4).
+	const linkLabel = href && !alt ? caption || `Open ${new URL(href).hostname}` : undefined;
 
 	const picture = (
 		<span
@@ -48,6 +51,7 @@ export function ImageBlock({ block, config, themeColors }: ImageBlockProps) {
 					href={href}
 					target="_blank"
 					rel="noopener noreferrer"
+					aria-label={linkLabel}
 					onClick={(e) => {
 						if (isPreview) e.preventDefault();
 						trackClick(block.id, { preview: isPreview });

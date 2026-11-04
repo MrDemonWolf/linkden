@@ -1,5 +1,6 @@
 import { db } from "@linkden/db";
-import { siteSettings } from "@linkden/db/schema/index";
+import { siteSettings, user } from "@linkden/db/schema/index";
+import { UPLOADED_IMAGE_PATH } from "@linkden/validators/primitives";
 import { settingKeySchema, VALID_SETTING_KEYS } from "@linkden/validators/settings";
 import {
 	getSettingMeta,
@@ -24,10 +25,11 @@ import { runBatch, settingUpsertStmt, upsertSetting } from "../utils/settings";
 // settings registry (@linkden/validators/settings-registry), so the settings,
 // wallet, and backup routers all agree on one source of truth.
 
-// Empty values are allowed; non-empty values must be http(s) URLs.
+// Empty values are allowed; non-empty values must be http(s) URLs or an
+// uploaded image's origin-relative path (what POST /api/upload returns).
 function isValidUrl(url: string): boolean {
 	if (!url) return true;
-	return sanitizeUrl(url) !== "";
+	return UPLOADED_IMAGE_PATH.test(url) || sanitizeUrl(url) !== "";
 }
 
 function isValidHexColor(color: string): boolean {
@@ -51,6 +53,31 @@ function sanitizeCss(css: string): string {
 }
 
 const bad = (message: string) => new TRPCError({ code: "BAD_REQUEST", message });
+
+/**
+ * Magic link can't be turned on without an email provider (links are sent by
+ * email) or while 2FA is on (a link would skip the second factor). The auth
+ * hooks refuse to send in both states anyway; this rejects the setting itself
+ * so the admin isn't shown a switch that silently does nothing.
+ * `entries` are the values being written in this request (secrets unmasked).
+ */
+async function assertMagicLinkAllowed(entries: ReadonlyArray<{ key: string; value: string }>) {
+	if (!entries.some(({ key, value }) => key === "magic_link_enabled" && value === "true")) return;
+	const sentKey = entries.find(({ key }) => key === "email_api_key")?.value;
+	let emailConfigured = !!sentKey && sentKey !== SECRET_MASK;
+	if (!emailConfigured && sentKey !== "") {
+		const [row] = await db
+			.select({ value: siteSettings.value })
+			.from(siteSettings)
+			.where(eq(siteSettings.key, "email_api_key"));
+		emailConfigured = !!row?.value;
+	}
+	if (!emailConfigured) throw bad("Set up an email provider first: magic links are sent by email");
+	const [admin] = await db.select({ twoFactorEnabled: user.twoFactorEnabled }).from(user).limit(1);
+	if (admin?.twoFactorEnabled) {
+		throw bad("Magic links can't be used while two-factor authentication is on");
+	}
+}
 
 // Exported so backup.import runs the same whitelist + sanitization pipeline
 // instead of raw upserts. Per-key behavior comes from the settings registry;
@@ -134,6 +161,7 @@ export const settingsRouter = router({
 				return { success: true };
 			}
 			const sanitizedValue = sanitizeSetting(input.key, input.value);
+			await assertMagicLinkAllowed([{ key: input.key, value: sanitizedValue }]);
 			await upsertSetting(input.key, sanitizedValue);
 			await logAudit("settings.update", "setting", input.key);
 
@@ -147,9 +175,11 @@ export const settingsRouter = router({
 				.max(VALID_SETTING_KEYS.length),
 		)
 		.mutation(async ({ input }) => {
-			const stmts = input
+			const entries = input
 				.filter(({ key, value }) => !(isSecretKey(key) && value === SECRET_MASK))
-				.map(({ key, value }) => settingUpsertStmt(key, sanitizeSetting(key, value)));
+				.map(({ key, value }) => ({ key, value: sanitizeSetting(key, value) }));
+			await assertMagicLinkAllowed(entries);
+			const stmts = entries.map(({ key, value }) => settingUpsertStmt(key, value));
 			await runBatch(stmts);
 			await logAudit("settings.updateBulk", "setting");
 

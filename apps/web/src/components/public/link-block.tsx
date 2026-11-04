@@ -2,7 +2,7 @@
 
 import { getReadableTextColor } from "@linkden/ui/color-contrast";
 import { ArrowRight } from "lucide-react";
-import { safeHttpUrl } from "@/lib/safe-url";
+import { safeHttpUrl, safeImageSrc } from "@/lib/safe-url";
 import { trackClick } from "@/lib/track";
 import { BlockIcon, type ResolvedBlockIcon } from "./block-icon";
 import { usePreview } from "./preview-context";
@@ -68,7 +68,7 @@ export function LinkBlock({ block, config, themeColors: colors, tile }: LinkBloc
 	const emojiPosition = (config.emojiPosition as string) || "left";
 	const textAlign = (config.textAlign as string) || "center";
 	const description = config.description as string | undefined;
-	const thumbnail = safeHttpUrl(config.thumbnail) ?? undefined;
+	const thumbnail = safeImageSrc(config.thumbnail) ?? undefined;
 	const variant = (config.variant as string) || (thumbnail ? "thumbnail" : "classic");
 	const isHighlighted = config.isHighlighted as boolean | undefined;
 	const isOutlined = config.isOutlined as boolean | undefined;

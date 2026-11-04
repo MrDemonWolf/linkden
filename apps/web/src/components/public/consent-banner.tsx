@@ -41,15 +41,17 @@ let consentBannerEnabled = true;
 
 interface StoredConsentRecord {
 	choices: ConsentCategories;
-	/** False for legacy values and older versions: honoured, but asked again. */
+	/** False for legacy values and older versions: asked again, and until then
+	 * they grant nothing while the banner is on (a decline is still honoured). */
 	current: boolean;
 }
 
 /**
  * Parse the stored choice. Returns null when nothing usable is stored or the
  * choice has expired (it then grants nothing). Legacy values — the
- * "accepted"/"declined" strings and the unversioned JSON — still count, but
- * are not `current`, so the banner asks again to record a dated choice.
+ * "accepted"/"declined" strings, the unversioned JSON and older versions — are
+ * not `current`: the banner asks again, and `hasConsent` treats them as no
+ * consent until it gets a dated choice under this version.
  */
 export function parseStoredConsent(
 	stored: string | null,
@@ -98,6 +100,9 @@ export function hasConsent(
 	if (typeof window === "undefined") return false;
 	const record = readStoredConsent();
 	if (!record) return !bannerEnabled;
+	// A choice made under an older banner (or undated) consented to something
+	// else: with the banner on it grants nothing until the visitor chooses again.
+	if (!record.current && bannerEnabled) return false;
 	return record.choices[category] === true;
 }
 

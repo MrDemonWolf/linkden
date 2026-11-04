@@ -1,7 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { allowedOrigin, isTrustedRequestOrigin } from "../lib/origin";
-import { setupTokenAccepted } from "../lib/setup-token";
 
 describe("allowedOrigin", () => {
 	it("normalizes CORS_ORIGIN to scheme://host[:port]", () => {
@@ -42,19 +41,5 @@ describe("isTrustedRequestOrigin", () => {
 
 	it("lets non-browser callers (no Origin, no Sec-Fetch-*) through", () => {
 		expect(isTrustedRequestOrigin(base)).toBe(true);
-	});
-});
-
-describe("setupTokenAccepted", () => {
-	it("is open when no SETUP_TOKEN is configured", async () => {
-		expect(await setupTokenAccepted(undefined, undefined)).toBe(true);
-		expect(await setupTokenAccepted("", "anything")).toBe(true);
-	});
-
-	it("requires an exact match when configured", async () => {
-		expect(await setupTokenAccepted("s3cret-token", "s3cret-token")).toBe(true);
-		expect(await setupTokenAccepted("s3cret-token", undefined)).toBe(false);
-		expect(await setupTokenAccepted("s3cret-token", "s3cret-tokeN")).toBe(false);
-		expect(await setupTokenAccepted("s3cret-token", "s3cret")).toBe(false);
 	});
 });

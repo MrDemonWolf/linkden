@@ -1,6 +1,7 @@
 import { env } from "@linkden/env/web";
 import type { Metadata, Viewport } from "next";
 import { cookies, headers } from "next/headers";
+import { redirect } from "next/navigation";
 import {
 	COLOR_MODE_COOKIE,
 	COLOR_SCHEME_HINT_HEADER,
@@ -8,7 +9,6 @@ import {
 	resolveInitialColorMode,
 } from "@/components/public/color-mode-script";
 import { PublicPage } from "@/components/public/public-page";
-import { WelcomePage } from "@/components/welcome-page";
 import { hasSessionCookie } from "@/lib/admin-routes";
 import { withResolvedIcons } from "@/lib/block-icons";
 import { ogAllowedOrigins, ogContentFromPage, ogImagePath } from "@/lib/og-params";
@@ -87,8 +87,9 @@ export default async function Home() {
 	// service worker's last good copy of "/" (it caches only 2xx).
 	if (!result.ok) throw new Error("Public page data is unavailable");
 	const data = result.data;
-	// Not set up yet: the welcome page, not the error card.
-	if (!data.profile) return <WelcomePage />;
+	// Not set up yet (no admin row): send the visitor straight into the setup
+	// wizard, WordPress-style, so the owner lands there right after deploying.
+	if (!data.profile) redirect("/admin/setup");
 
 	const [cookieStore, headerStore, blocks] = await Promise.all([
 		cookies(),

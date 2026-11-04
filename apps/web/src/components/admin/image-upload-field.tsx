@@ -103,10 +103,10 @@ export function ImageUploadField({
 					throw new Error("Upload failed");
 				}
 
+				// Stored as returned: the origin-relative /api/images/… path, so saved
+				// images keep working if the site moves to another origin.
 				const data = (await res.json()) as { publicUrl: string };
-				const fullUrl = data.publicUrl.startsWith("http")
-					? data.publicUrl
-					: `${serverUrl}${data.publicUrl}`;
+				const fullUrl = data.publicUrl;
 				unsavedUploadsRef.current.delete(value);
 				unsavedUploadsRef.current.set(fullUrl, unsavedEditSnapshot().epoch);
 				lastUploadedRef.current = fullUrl;

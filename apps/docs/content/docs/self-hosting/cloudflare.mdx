@@ -13,7 +13,7 @@ Deploy LinkDen to Cloudflare's **free tier** with two Workers, a D1 database, an
 3. Run `bun ship`. *(Deploy everything in one shot.)*
 4. Copy the real URLs from the output → update `.env` → run `bun ship` again.
 5. Set `SITE_DOMAIN` to your hostname, point the URLs at it, `bun ship` once more.
-6. Go to `/admin/setup` and create your account. Done.
+6. Open your site. Until an admin exists it sends you to the setup wizard (`/admin/setup`). Create your account. Done.
 
 ---
 
@@ -80,19 +80,16 @@ ALCHEMY_STATE_TOKEN=paste-your-state-worker-token-here
 # ── App URLs ────────────────────────────────────────────────
 # Use placeholder values for now — you'll get real URLs after first deploy.
 # Your subdomain is your Cloudflare account name (shown in the dashboard).
-NEXT_PUBLIC_SERVER_URL=https://linkden-api.<your-subdomain>.workers.dev
+NEXT_PUBLIC_SERVER_URL=https://linkden.<your-subdomain>.workers.dev
 CORS_ORIGIN=https://linkden.<your-subdomain>.workers.dev
 NEXT_PUBLIC_SITE_URL=https://linkden.<your-subdomain>.workers.dev
 
 # ── Better Auth ─────────────────────────────────────────────
 BETTER_AUTH_SECRET=paste-a-random-secret-here
-BETTER_AUTH_URL=https://linkden-api.<your-subdomain>.workers.dev
+BETTER_AUTH_URL=https://linkden.<your-subdomain>.workers.dev
 
 # ── Custom domain (leave unset until you are ready) ────────
 # SITE_DOMAIN=links.yourdomain.com
-
-# ── First-run guard (recommended on a public deploy) ───────
-# SETUP_TOKEN=paste-a-random-secret-here
 
 # ── Apple Wallet (optional — skip if you don't need Wallet passes) ──
 # One line each: base64 of the PEM file (raw PEM also works) — see the Apple Wallet guide.
@@ -104,7 +101,7 @@ BETTER_AUTH_URL=https://linkden-api.<your-subdomain>.workers.dev
 # WALLET_PASS_TYPE_ID=pass.com.yourname.linkden
 ```
 
-**Generate a secret** (once each for `ALCHEMY_PASSWORD`, `BETTER_AUTH_SECRET` and `SETUP_TOKEN`):
+**Generate a secret** (once each for `ALCHEMY_PASSWORD` and `BETTER_AUTH_SECRET`):
 ```bash
 openssl rand -base64 32
 ```
@@ -124,7 +121,7 @@ That shared worker is specific to the MrDemonWolf account. As a third-party self
 
 ### Upgrading a deploy made before 0.5.0
 
-Before 0.5.0 the D1 database and R2 bucket had no fixed names, so Alchemy generated them: a GitHub Actions deploy created **`linkden-database-runner`** and **`linkden-images-runner`** (a local `bun ship` used your login name instead of `runner`). 0.5.0 pins the names to `linkden-db` / `linkden-images` and moves state to the `prod` stage. On its own that would create a brand-new, empty database and bucket, put the public page back on the Welcome screen, and reopen `/admin/setup` to anyone — so **before you deploy 0.5.0 over an existing install**, set two variables to the names you already have (Cloudflare dashboard → Storage & Databases → D1 / R2):
+Before 0.5.0 the D1 database and R2 bucket had no fixed names, so Alchemy generated them: a GitHub Actions deploy created **`linkden-database-runner`** and **`linkden-images-runner`** (a local `bun ship` used your login name instead of `runner`). 0.5.0 pins the names to `linkden-db` / `linkden-images` and moves state to the `prod` stage. On its own that would create a brand-new, empty database and bucket, send your home page back to the setup wizard, and reopen `/admin/setup` to anyone — so **before you deploy 0.5.0 over an existing install**, set two variables to the names you already have (Cloudflare dashboard → Storage & Databases → D1 / R2):
 
 ```bash
 LINKDEN_DB_NAME=linkden-database-runner
@@ -162,13 +159,13 @@ Server -> https://linkden-api.myname.workers.dev
 > **This step is required.** Workers need to know their own URLs to handle auth and CORS correctly.
 
 1. Copy the URLs from the Step 3 output.
-2. Update `.env` with the real URLs (replace the placeholder `<your-subdomain>` values):
+2. Update `.env` with the real URLs (replace the placeholder `<your-subdomain>` values). All four are the **web** Worker's URL: it forwards `/api/*` and `/trpc/*` to the API Worker, so the browser only ever talks to one origin.
 
 ```bash
-NEXT_PUBLIC_SERVER_URL=https://linkden-api.myname.workers.dev
+NEXT_PUBLIC_SERVER_URL=https://linkden.myname.workers.dev
 CORS_ORIGIN=https://linkden.myname.workers.dev
 NEXT_PUBLIC_SITE_URL=https://linkden.myname.workers.dev
-BETTER_AUTH_URL=https://linkden-api.myname.workers.dev
+BETTER_AUTH_URL=https://linkden.myname.workers.dev
 ```
 
 3. Run deploy again:
@@ -177,7 +174,7 @@ BETTER_AUTH_URL=https://linkden-api.myname.workers.dev
 bun ship
 ```
 
-> ⚠️ **Admin login does not work on `workers.dev`.** The web and API Workers sit on two different `workers.dev` origins, and the session cookie cannot cross them, so `/admin` redirects back to the login page. The public page and `/api/health` work fine, which is what a `workers.dev` deploy is for (staging). For a working admin, finish Step 5.
+> ✅ **Your site is live, admin included.** Open your site now: it redirects to the setup wizard until an admin exists. Create your account. A custom domain (Step 5) is optional: nicer URL, and API calls skip the hop through the web Worker.
 
 ---
 
@@ -211,11 +208,11 @@ See the [Custom Domain guide](/docs/self-hosting/custom-domain) for DNS details 
 
 ## 👤 Step 6 — Create Your Admin Account
 
-1. Open `https://links.yourdomain.com/admin/setup`.
-2. Fill in your email and password. If you set `SETUP_TOKEN`, paste it into the **Setup token** field.
+1. Open `https://links.yourdomain.com`. Before an admin exists it redirects to `/admin/setup`.
+2. Fill in your name, email and password.
 3. Click **Create Account**.
 
-> **First user is admin.** Registration permanently locks after this — no one else can sign up. Until you finish this step, anyone who reaches `/admin/setup` first could claim the install, which is what `SETUP_TOKEN` prevents.
+> **First user is admin.** Registration permanently locks after this — no one else can sign up. Until you finish this step, anyone who reaches `/admin/setup` first could claim the install, so do it right after the first deploy.
 
 ---
 
@@ -225,7 +222,7 @@ The repo ships `.github/workflows/deploy.yml`, which runs the same `bun run depl
 
 Put the values from Step 2 into the repo's **`production` environment**:
 
-- **Secrets:** `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `ALCHEMY_PASSWORD`, `ALCHEMY_STATE_TOKEN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CORS_ORIGIN`, `NEXT_PUBLIC_SERVER_URL`, plus the optional `WALLET_*` and `SETUP_TOKEN`.
+- **Secrets:** `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `ALCHEMY_PASSWORD`, `ALCHEMY_STATE_TOKEN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CORS_ORIGIN`, `NEXT_PUBLIC_SERVER_URL`, plus the optional `WALLET_*`.
 - **Variables:** `SITE_DOMAIN`, `NEXT_PUBLIC_SITE_URL`, and `LINKDEN_DB_NAME` / `LINKDEN_IMAGES_BUCKET` for pre-0.5.0 installs.
 
 A **preflight** step lists any missing secret or variable by name, and the deploy refuses empty, weak or mismatched auth values (same rules as above). Every deploy's job summary records a **D1 Time Travel bookmark** taken just before the deploy (see **Rollback** below), and a smoke test probes the web app afterwards.
@@ -279,7 +276,7 @@ For a typical single-user LinkDen instance, you will stay **100% within Cloudfla
 You skipped Step 4. Update `.env` with the real URLs and run `bun ship` again.
 
 ### Admin redirects to login in a loop
-You are on `workers.dev`, where web and API are different origins. Set `SITE_DOMAIN` (Step 5) so both run on one hostname.
+`BETTER_AUTH_URL`, `NEXT_PUBLIC_SERVER_URL` and `CORS_ORIGIN` must all be the site's own URL (the web Worker's `workers.dev` URL, or `https://SITE_DOMAIN`), never the API Worker's. The deploy refuses a mismatch; fix `.env` and run `bun ship`.
 
 ### "Registration is closed" on `/admin/setup`
 An account already exists. Go to `/admin/login` instead. If you've lost access, run this from the repo root (you are prompted for the new password; add `--disable-2fa` if you also lost your authenticator and backup codes):
@@ -287,9 +284,6 @@ An account already exists. Go to `/admin/login` instead. If you've lost access, 
 ```bash
 bun reset:password -- --email you@example.com --remote
 ```
-
-### "Invalid setup token" on `/admin/setup`
-`SETUP_TOKEN` is set on the API Worker. Paste the same value into the **Setup token** field.
 
 ### API answers 503 "authentication is misconfigured"
 `BETTER_AUTH_SECRET` is empty, shorter than 32 characters, or a placeholder. `/api/health` reports `"auth": "misconfigured"`. Set a real secret (`openssl rand -base64 32`) and redeploy. Changing it signs everyone out.

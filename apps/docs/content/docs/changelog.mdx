@@ -26,6 +26,17 @@ that file is the source of truth.
 
 ### ✨ What's new
 
+- **Safer sign-in and tidier data.** Five wrong two-factor codes now lock
+  sign-in for an hour. Uploaded images are saved in a way that survives
+  moving your site to a new address (existing ones are converted). Visitors
+  who chose cookie settings under an older banner are asked again before
+  any analytics or embeds run.
+- **Admin works on workers.dev, no domain needed.** Deploy and your whole
+  site, admin included, runs on `linkden.<you>.workers.dev`. Then open
+  your site: like a fresh WordPress install it sends you straight to the
+  setup wizard to claim it (whoever
+  finishes setup first becomes the admin, so do it right away). A custom
+  domain is still supported and a little faster.
 - **Two-factor sign-in works.** Turn on an authenticator app under
   Settings → Account and save your backup codes. After your password,
   the login page now asks for the 6-digit code (or a backup code), with
@@ -102,9 +113,6 @@ that file is the source of truth.
 - **`bun reset:password` no longer locks you out**, works against
   production, and never takes the password on the command line.
   Production deploys refuse unsafe auth settings.
-- **Claim your install safely.** Set the optional `SETUP_TOKEN` secret
-  and only someone who knows it can create the admin account on a fresh
-  public deploy.
 - **Image fixes.** Discarding an image change no longer breaks the saved
   image, crops upload on Safari/iOS, pinch-zoom no longer tilts a crop,
   and Enter on the crop dialog's buttons does what the button says.
@@ -121,6 +129,32 @@ that file is the source of truth.
 
 ### 🔧 Technical
 
+- `/` answers a 307 to `/admin/setup` while no admin exists (server-side
+  `redirect()` in `app/page.tsx`); the WelcomePage splash is removed.
+- Uploads are stored as origin-relative `/api/images/…` paths
+  (`imageUrlSchema`, `UPLOADED_IMAGE_PATH`); migration 0011 rewrites older
+  absolute upload URLs in image settings and block `thumbnail`/`src`.
+- 2FA `accountLockout` set explicitly (5 failures → 1h) on top of Better
+  Auth's 5-per-challenge cap, with a test that fails if it is disabled.
+- Consent: an outdated (legacy / older-version) choice grants nothing while
+  the banner is on; a decline is still honoured.
+- The 16MB tRPC body limit applies only to all-`backup.*` requests; the web
+  client sends `backup.*` unbatched via `splitLink`.
+- `blocks.update` validates the merged row (stored + new type, config and
+  embed fields). `settings.update`/`updateBulk` reject enabling magic link
+  without an email key or while 2FA is on.
+- Public renderers re-check social and custom map links (`safeHttpUrl`);
+  image-only links get an accessible name; three controls use
+  `border-input-border`.
+- Web worker entry `apps/web/worker.ts` (Alchemy `entrypoint`) forwards
+  `/api/*` and `/trpc/*` to the API worker over the `API` service binding
+  (`apps/web/src/lib/api-proxy.ts`), so workers.dev deploys are single-origin.
+  With `SITE_DOMAIN`, zone Routes still win. `deployEnvErrors` now requires
+  `BETTER_AUTH_URL`, `CORS_ORIGIN` and `NEXT_PUBLIC_SERVER_URL` to equal the
+  site origin in both modes.
+- Removed the `SETUP_TOKEN` first-run gate (server check, wizard field,
+  `x-setup-token` CORS header, Alchemy binding, deploy wiring).
+
 #### Added
 
 - Better Auth `twoFactor` plugin (issuer "LinkDen") with the `two_factor`
@@ -135,11 +169,6 @@ that file is the source of truth.
 - `createAuthOptions(deps)` in `packages/auth/src/auth-options.ts`: the
   env-free Better Auth factory; `index.ts` only wires env, D1, Resend and
   secret validation, and tests build instances from the same factory.
-- Optional `SETUP_TOKEN` secret (`apps/server/src/lib/setup-token.ts`):
-  when bound, the first signup must send a matching `x-setup-token`
-  header (constant-time compare) or gets 403 `Invalid setup token`.
-  Bound by Alchemy only when set; wired into `deploy.yml`, `turbo.json`
-  and `.env.example`.
 - `RL_SIGNIN` rate limit (30/60s, namespace 1006 prod / 2006 non-prod)
   with constant keys `global:sign-in` / `global:two-factor` /
   `global:password-reset`, so the single admin can't be brute-forced by
@@ -349,8 +378,7 @@ that file is the source of truth.
 - Same-origin writes: POSTs to `/trpc/*` and `/api/upload` must come from
   `CORS_ORIGIN` (normalized) or the request's own origin, with a
   `Sec-Fetch-Site` fallback, else 403. Body limits: 64KB on
-  `/api/auth/*`, 1MB on `/trpc/*`, 16MB for `backup.*`. CORS
-  `allowHeaders` include `x-setup-token`.
+  `/api/auth/*`, 1MB on `/trpc/*`, 16MB for `backup.*`.
 - Auth tokens never reach logs (path-only request line, invocation logs
   off); visitor PII is stripped from logged SQL errors.
 - Inbox `mailto:` links are percent-encoded so a stored contact email

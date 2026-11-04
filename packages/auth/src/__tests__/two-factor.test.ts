@@ -109,6 +109,25 @@ describe("two-factor authentication", () => {
 		expect(session?.user.email).toBe(EMAIL);
 	});
 
+	it("locks the second factor after 5 wrong codes, even for the right code", async () => {
+		const { auth } = await setupAdmin();
+		const { totpURI } = await enableAndVerify(auth);
+		const right = totpFromURI(totpURI);
+		const wrong = right === "000000" ? "111111" : "000000";
+
+		const { cookie } = await passwordChallenge(auth);
+		for (let i = 0; i < 5; i++) {
+			await expect(
+				auth.api.verifyTOTP({ body: { code: wrong }, headers: new Headers({ cookie }) }),
+			).rejects.toThrow();
+		}
+		// A fresh challenge doesn't reset it: the account is locked.
+		const { cookie: fresh } = await passwordChallenge(auth);
+		await expect(
+			auth.api.verifyTOTP({ body: { code: right }, headers: new Headers({ cookie: fresh }) }),
+		).rejects.toThrow();
+	});
+
 	it("accepts a backup code (once) when the authenticator is unavailable", async () => {
 		const { auth } = await setupAdmin();
 		const { backupCodes } = await enableAndVerify(auth);

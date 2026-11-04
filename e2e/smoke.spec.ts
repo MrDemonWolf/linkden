@@ -15,8 +15,8 @@ test("public page renders with live data", async ({ page }) => {
 	expect(res?.status()).toBe(200);
 	await expect(page.locator("body")).toBeVisible();
 	await expect(page.getByText(/load this page/i)).toHaveCount(0);
-	// Fresh DB: the WelcomePage. Configured: the profile page. Either renders
-	// real content, never a blank body.
+	// Fresh DB: "/" redirects to the setup wizard. Configured: the profile
+	// page. Either renders real content, never a blank body.
 	await expect(page.locator("body")).not.toBeEmpty();
 });
 

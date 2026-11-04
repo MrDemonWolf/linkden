@@ -50,11 +50,13 @@ if (names.ignoredOverrides.length > 0) {
 	);
 }
 
-// Routing model: the web worker owns the custom domain; the API worker gets
-// zone Routes for `/api/*` and `/trpc/*` on that same hostname (Routes are
-// matched before the custom-domain worker). Same origin for both, so no CORS
-// and no cookie domain. When SITE_DOMAIN is unset (staging / first deploy)
-// both workers stay on their workers.dev URLs.
+// Routing model: the browser only ever talks to the web worker's origin.
+// With SITE_DOMAIN the web worker owns the custom domain and the API worker
+// gets zone Routes for `/api/*` and `/trpc/*` on that hostname (matched before
+// the custom-domain worker, so the API answers directly). Without it, both stay
+// on workers.dev and the web worker's entry (apps/web/worker.ts) forwards those
+// paths to the API over the service binding. Same origin either way: no CORS,
+// no cookie domain.
 const siteDomain = process.env.SITE_DOMAIN;
 
 // The public origin is baked into robots/sitemap/OG URLs at build time. An
@@ -210,11 +212,6 @@ export const server = await Worker("server", {
 		BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
 		BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
 		...walletBindings,
-		// Optional first-run guard (apps/server/src/lib/setup-token.ts): while
-		// no admin exists, sign-up must present it. Bound only when set.
-		...(process.env.SETUP_TOKEN?.trim() && {
-			SETUP_TOKEN: alchemy.secret.env.SETUP_TOKEN!,
-		}),
 	},
 	dev: {
 		port: 3000,
@@ -228,6 +225,13 @@ export const web = await Nextjs("linkden", {
 	adopt: true,
 	name: `linkden${suffix}`,
 	cwd: "../../apps/web",
+	// Wraps the OpenNext handler: /api/* and /trpc/* go to the API worker over
+	// the service binding, so workers.dev deploys are single-origin too.
+	entrypoint: "worker.ts",
+	// Same reason as the API worker: invocation logs record full URLs, and this
+	// worker serves /admin/reset-password?token=… and, on workers.dev, proxies
+	// every /api/auth/* token link.
+	observability: { logs: { invocationLogs: false } },
 	compatibilityDate: COMPATIBILITY_DATE,
 	...(siteDomain && { domains: [{ domainName: siteDomain, adopt: true }] }),
 	bindings: {
