@@ -19,7 +19,8 @@
 		},
 		"dev:bare": {
 			"cache": false,
-			"persistent": true
+			"persistent": true,
+			"passThroughEnv": ["DEV_API_ORIGIN"]
 		},
 		"dev:standalone": {
 			"cache": false,
