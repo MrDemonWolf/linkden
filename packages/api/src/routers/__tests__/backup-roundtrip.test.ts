@@ -11,7 +11,7 @@ vi.mock("@linkden/db", async () => {
 });
 
 const { db } = await import("@linkden/db");
-const { block, contactSubmission, linkClick, siteSettings, socialNetwork } = await import(
+const { block, contactSubmission, linkClick, siteSettings, socialNetwork, user } = await import(
 	"@linkden/db/schema/index"
 );
 const { MAX_BLOCKS, MAX_IMPORT_CONTACTS } = await import("@linkden/validators");
@@ -33,6 +33,7 @@ async function wipe() {
 	await db.delete(contactSubmission);
 	await db.delete(socialNetwork);
 	await db.delete(siteSettings);
+	await db.delete(user);
 }
 
 async function seed() {
@@ -151,6 +152,20 @@ describe("backup export → import round-trip", () => {
 			.where(eq(siteSettings.key, "email_api_key"));
 		expect(secret?.value).toBe("re_live_secret");
 		expect(await db.select().from(block).where(eq(block.id, "evil"))).toHaveLength(0);
+	});
+
+	it("does not restore enabled magic links while two-factor authentication is on", async () => {
+		await db
+			.insert(user)
+			.values({ id: "u1", name: "Admin", email: "admin@example.com", twoFactorEnabled: true });
+		const wire = await exportOverTheWire();
+		wire.data.settings.magic_link_enabled = "true";
+
+		const result = await caller.backup.import({ mode: "merge", data: wire.data });
+		expect(result.skipped.settings).toBe(1);
+		expect(
+			await db.select().from(siteSettings).where(eq(siteSettings.key, "magic_link_enabled")),
+		).toHaveLength(0);
 	});
 
 	it("maps a legacy form block to connect and never persists socialIcons", async () => {

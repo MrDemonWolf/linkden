@@ -224,10 +224,10 @@ export function createAuthOptions(deps: AuthOptionsDeps) {
 			},
 			session: {
 				create: {
-					// Backstop for magic links issued before 2FA was turned on: refuse
-					// to mint a session that would skip the second factor.
+					// Backstop for magic links issued before 2FA was turned on and
+					// signed-out change-email links: neither may skip the second factor.
 					before: async (session, ctx) => {
-						if (ctx?.path !== "/magic-link/verify") return;
+						if (ctx?.path !== "/magic-link/verify" && ctx?.path !== "/verify-email") return;
 						const found = await ctx.context.internalAdapter.findUserById(session.userId);
 						if ((found as { twoFactorEnabled?: boolean | null } | null)?.twoFactorEnabled) {
 							return false;

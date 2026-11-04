@@ -1,9 +1,18 @@
 // @vitest-environment node
 // (jose, which signs the email-verification JWTs, rejects jsdom's Uint8Array.)
-import { user } from "@linkden/db/schema/auth";
+import { session, user } from "@linkden/db/schema/auth";
 import { describe, expect, it } from "vitest";
 import { EMAIL_NOT_CONFIGURED_MESSAGE } from "../auth-options";
-import { EMAIL, linkFrom, setupAdmin, signInCookie, type TestAuth } from "./auth-test-utils";
+import {
+	cookieHeader,
+	EMAIL,
+	linkFrom,
+	PASSWORD,
+	setupAdmin,
+	signInCookie,
+	type TestAuth,
+	totpFromURI,
+} from "./auth-test-utils";
 
 // Settings › Account › Change email. Better Auth 1.6 needs
 // emailVerification.sendVerificationEmail + changeEmail.sendChangeEmailConfirmation;
@@ -60,5 +69,41 @@ describe("change email", () => {
 			}),
 		).rejects.toMatchObject({ message: EMAIL_NOT_CONFIGURED_MESSAGE });
 		expect((await db.select().from(user))[0]?.email).toBe(EMAIL);
+	});
+
+	it("does not sign in through a new-email verification link when 2FA is enabled", async () => {
+		const { db, auth, sent } = await setupAdmin();
+		const cookie = await signInCookie(auth);
+		const { totpURI } = await auth.api.enableTwoFactor({
+			body: { password: PASSWORD },
+			headers: new Headers({ cookie }),
+		});
+		const { headers } = await auth.api.verifyTOTP({
+			body: { code: totpFromURI(totpURI) },
+			headers: new Headers({ cookie }),
+			returnHeaders: true,
+		});
+		const verifiedCookie = cookieHeader(headers);
+		expect(verifiedCookie).toMatch(/session_token=/);
+		expect((await db.select().from(user))[0]?.twoFactorEnabled).toBe(true);
+
+		await auth.api.changeEmail({
+			body: { newEmail: NEW_EMAIL, callbackURL: "/admin/settings" },
+			headers: new Headers({ cookie: verifiedCookie }),
+		});
+		await followLink(auth, linkFrom(sent[0]), verifiedCookie);
+		const finalLink = linkFrom(sent[1]);
+		const sessionCount = (await db.select().from(session)).length;
+
+		// A holder of the new mailbox link must not receive an admin session
+		// without the owner's existing session and completed second factor.
+		const signedOut = await auth.handler(new Request(finalLink));
+		expect(cookieHeader(signedOut.headers)).not.toMatch(/session_token=/);
+		expect(await db.select().from(session)).toHaveLength(sessionCount);
+		expect((await db.select().from(user))[0]?.email).toBe(EMAIL);
+
+		// The owner can still complete the two-mailbox change while signed in.
+		await followLink(auth, finalLink, verifiedCookie);
+		expect((await db.select().from(user))[0]?.email).toBe(NEW_EMAIL);
 	});
 });

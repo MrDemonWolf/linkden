@@ -27,7 +27,7 @@ import { logAudit } from "../utils/audit";
 import { transformLinkStackData } from "../utils/linkstack-transformer";
 import { stripHtml } from "../utils/sanitize";
 import { runBatch, settingUpsertStmt } from "../utils/settings";
-import { sanitizeSetting } from "./settings";
+import { assertMagicLinkAllowed, sanitizeSetting } from "./settings";
 
 // ─── Backup Router ─────────────────────────────────────────────────────────
 // Export format is versioned ("1.0") so future migrations can detect and upgrade
@@ -225,7 +225,9 @@ export const backupRouter = router({
 						continue;
 					}
 					try {
-						stmts.push(settingUpsertStmt(key, sanitizeSetting(key, value)));
+						const sanitizedValue = sanitizeSetting(key, value);
+						await assertMagicLinkAllowed([{ key, value: sanitizedValue }]);
+						stmts.push(settingUpsertStmt(key, sanitizedValue));
 					} catch {
 						// Value failed validation (bad URL/color/enum/JSON shape/…) —
 						// skip it rather than aborting the whole restore.
