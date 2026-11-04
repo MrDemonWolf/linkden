@@ -63,6 +63,12 @@ describe("OG image parameters", () => {
 
 	it("uses only Cloudflare's trusted client address for rate limiting", () => {
 		expect(ogRateLimitKey(new Headers({ "cf-connecting-ip": "192.0.2.1" }))).toBe("192.0.2.1");
+		expect(ogRateLimitKey(new Headers({ "cf-connecting-ip": "2001:db8:abcd:12::1" }))).toBe(
+			"2001:db8:abcd:12::/64",
+		);
+		expect(ogRateLimitKey(new Headers({ "cf-connecting-ip": "2001:db8:abcd:12::2" }))).toBe(
+			"2001:db8:abcd:12::/64",
+		);
 		expect(ogRateLimitKey(new Headers({ "x-forwarded-for": "198.51.100.8" }))).toBe("");
 	});
 

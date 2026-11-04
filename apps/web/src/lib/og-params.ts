@@ -1,3 +1,4 @@
+import { rateLimitKey } from "@linkden/validators/rate-limit";
 import { OG_TEMPLATE_IDS, SETTING_REGISTRY } from "@linkden/validators/settings-registry";
 import { pagePrimaryColor } from "./theme-colors";
 
@@ -54,7 +55,7 @@ export function canonicalOgSearch(params: OgParams, avatar: string): string {
 }
 
 export function ogRateLimitKey(headers: Pick<Headers, "get">): string {
-	return headers.get("cf-connecting-ip") ?? "";
+	return rateLimitKey(headers.get("cf-connecting-ip"));
 }
 
 export function normalizeOgAvatar(

@@ -52,7 +52,6 @@ import {
 } from "@linkden/validators/wallet";
 import { eq } from "drizzle-orm";
 import { type Context, Hono, type MiddlewareHandler } from "hono";
-import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
 import { buildHealth } from "./lib/health";
@@ -64,6 +63,7 @@ import { collectReferencedKeys, runScheduledMaintenance } from "./lib/retention-
 import {
 	buildR2Key,
 	isServableImageKey,
+	MAX_UPLOAD_BODY_SIZE,
 	replacementKeyForPurpose,
 	signatureMatchesExt,
 	validateUpload,
@@ -105,6 +105,52 @@ const TRPC_BODY_LIMIT = 1024 * 1024;
 const BACKUP_BODY_LIMIT = 16 * 1024 * 1024;
 const RATE_LIMIT_MESSAGE = "Too many requests, please try again later.";
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+
+/** Count the bytes received even when Content-Length understates them. */
+async function bodyWithinLimit(c: Context<AppEnv>, maxSize: number): Promise<boolean> {
+	const raw = c.req.raw;
+	const declared = raw.headers.get("content-length");
+	if (declared && Number(declared) > maxSize) return false;
+	if (!raw.body) return true;
+
+	const reader = raw.body.getReader();
+	const chunks: Uint8Array[] = [];
+	let size = 0;
+	try {
+		for (;;) {
+			const { done, value } = await reader.read();
+			if (done) break;
+			size += value.byteLength;
+			if (size > maxSize) {
+				await reader.cancel();
+				return false;
+			}
+			chunks.push(value);
+		}
+	} finally {
+		reader.releaseLock();
+	}
+
+	// Match Hono's stream reconstruction so Better Auth, tRPC and formData can
+	// still parse the already-read body. Keep the original headers and method.
+	c.req.raw = new Request(raw, {
+		body: new ReadableStream({
+			start(controller) {
+				for (const chunk of chunks) controller.enqueue(chunk);
+				controller.close();
+			},
+		}),
+		duplex: "half",
+	} as RequestInit);
+	return true;
+}
+
+const countedBodyLimit =
+	(maxSize: number): MiddlewareHandler<AppEnv> =>
+	async (c, next) => {
+		if (!(await bodyWithinLimit(c, maxSize))) return c.text("Payload Too Large", 413);
+		await next();
+	};
 
 const app = new Hono<AppEnv>();
 
@@ -181,7 +227,7 @@ app.use("/trpc/*", requireSameOrigin);
 app.use("/api/upload", requireSameOrigin);
 
 // Cap request bodies before Better Auth / tRPC buffer and parse them.
-app.use("/api/auth/*", bodyLimit({ maxSize: AUTH_BODY_LIMIT }));
+app.use("/api/auth/*", countedBodyLimit(AUTH_BODY_LIMIT));
 
 // ─── Rate limiting ───────────────────────────────────────────────────────────
 type Limiter = (env: Bindings) => RateLimit | undefined;
@@ -291,8 +337,8 @@ const TRPC_LIMITS = new Map<string, Limiter>([
 	["public.trackView", (env) => env.RL_PUBLIC],
 	["public.trackClick", (env) => env.RL_PUBLIC],
 ]);
-const trpcBodyLimit = bodyLimit({ maxSize: TRPC_BODY_LIMIT });
-const backupBodyLimit = bodyLimit({ maxSize: BACKUP_BODY_LIMIT });
+const trpcBodyLimit = countedBodyLimit(TRPC_BODY_LIMIT);
+const backupBodyLimit = countedBodyLimit(BACKUP_BODY_LIMIT);
 
 app.use("/trpc/*", async (c, next) => {
 	const procedures = trpcProcedurePaths(new URL(c.req.url));
@@ -363,6 +409,9 @@ app.post("/api/upload", async (c) => {
 	const contentLength = validateUploadContentLength(c.req.header("content-length"));
 	if (!contentLength.ok) {
 		return c.json({ error: contentLength.error }, contentLength.status);
+	}
+	if (!(await bodyWithinLimit(c, MAX_UPLOAD_BODY_SIZE))) {
+		return c.json({ error: "File too large. Maximum size is 5MB." }, 413);
 	}
 
 	const formData = await c.req.formData();

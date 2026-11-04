@@ -3,6 +3,7 @@
 // gates, limiters, origin/body guards, upload, image serving, downloads, cron.
 // Workers-only modules are mocked; the DB is the in-memory libsql test DB.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MAX_UPLOAD_BODY_SIZE } from "../lib/upload-validation";
 
 const ORIGIN = "https://links.example.com";
 
@@ -305,6 +306,15 @@ describe("body limits", () => {
 		expect(authHandler).not.toHaveBeenCalled();
 	});
 
+	it("counts auth bytes even when Content-Length is understated", async () => {
+		const res = await call(
+			"/api/auth/sign-in/email",
+			post({ pad: "x".repeat(70_000) }, { "content-length": "1" }),
+		);
+		expect(res.status).toBe(413);
+		expect(authHandler).not.toHaveBeenCalled();
+	});
+
 	it("caps ordinary tRPC bodies but leaves room for backup import", async () => {
 		const big = { pad: "x".repeat(1_100_000) };
 		expect((await call("/trpc/settings.update", post(big))).status).toBe(413);
@@ -315,6 +325,23 @@ describe("body limits", () => {
 	it("gives a mixed batch the ordinary cap, not the backup one", async () => {
 		const big = { pad: "x".repeat(1_100_000) };
 		const res = await call("/trpc/backup.import,public.trackView?batch=1", post(big));
+		expect(res.status).toBe(413);
+	});
+
+	it("counts actual bytes for a mixed batch with a false length", async () => {
+		const big = { pad: "x".repeat(1_100_000) };
+		const res = await call(
+			"/trpc/backup.import,public.trackView?batch=1",
+			post(big, { "content-length": "1" }),
+		);
+		expect(res.status).toBe(413);
+	});
+
+	it("caps backup-only requests at 16MB even with a false length", async () => {
+		const res = await call(
+			"/trpc/backup.import",
+			post({ pad: "x".repeat(16 * 1024 * 1024) }, { "content-length": "1" }),
+		);
 		expect(res.status).toBe(413);
 	});
 });
@@ -333,9 +360,24 @@ describe("POST /api/upload", () => {
 		const init = await uploadInit(png);
 		const headers = new Headers(init.headers);
 		headers.delete("content-length");
+		headers.set("transfer-encoding", "chunked");
 		expect((await call("/api/upload", { ...init, headers })).status).toBe(411);
+		headers.delete("transfer-encoding");
 		headers.set("content-length", String(6 * 1024 * 1024));
 		expect((await call("/api/upload", { ...init, headers })).status).toBe(413);
+		expect(bucket.put).not.toHaveBeenCalled();
+	});
+
+	it("rejects an upload larger than the body cap despite a false length", async () => {
+		getSession.mockResolvedValue({ user: { id: "u1" } });
+		const init = await uploadInit(png, {
+			purpose: "avatar",
+			padding: "x".repeat(MAX_UPLOAD_BODY_SIZE),
+		});
+		const headers = new Headers(init.headers);
+		headers.set("content-length", "1");
+		const res = await call("/api/upload", { ...init, headers });
+		expect(res.status).toBe(413);
 		expect(bucket.put).not.toHaveBeenCalled();
 	});
 
