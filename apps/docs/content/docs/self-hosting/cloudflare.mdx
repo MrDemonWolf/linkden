@@ -216,6 +216,12 @@ See the [Custom Domain guide](/docs/self-hosting/custom-domain) for DNS details 
 
 ---
 
+## Workers Free and Paid
+
+LinkDen's D1, R2, rate-limit, cron and service bindings have no documented Workers Paid requirement. On Free, the shared `alchemy-state` prerequisite must use a SQLite-backed Durable Object, and R2 must be activated separately. Static assets that bypass the Worker do not spend the Workers request allowance.
+
+Free has a [10 ms CPU limit per invocation and 100,000 Worker requests per day](https://developers.cloudflare.com/workers/platform/limits/). Dynamic page rendering, `/og`, wallet signing and the daily retention job may need more CPU. Paid starts HTTP requests at a 30-second CPU limit and gives the daily cron more headroom; both plans retain the 128 MB memory limit. Check CPU usage and the final Worker bundle size on your own deployment before relying on Free for every feature. See [D1 limits](https://developers.cloudflare.com/d1/platform/limits/) and [R2 pricing and activation](https://developers.cloudflare.com/r2/pricing/) for their separate allowances.
+
 ## 🤖 Deploying from GitHub Actions
 
 The repo ships `.github/workflows/deploy.yml`, which runs the same `bun run deploy` after CI passes on a **push** to this repository's `main` (a fork's pull request never deploys, even from a branch named `main`). A running deploy is never cancelled by a newer one.
@@ -237,9 +243,9 @@ A separate `backup-db.yml` workflow exports D1 to `linkden-backups` daily. It on
 
 Every deploy uploads both Workers and applies any pending migrations.
 
-- **Undo a bad code release:** `bunx wrangler rollback --name linkden-api` (API) and/or `bunx wrangler rollback --name linkden` (web). The next `bun ship` re-uploads both Workers, so nothing needs reconciling in Alchemy state.
+- **Undo a bad code release:** first check that the previous code supports the current D1 schema. If it does, run `bunx wrangler rollback --name linkden-api` (API) and/or `bunx wrangler rollback --name linkden` (web). The next `bun ship` re-uploads both Workers.
 - **Undo a migration** (only when a migration itself has to go): restore D1 to the bookmark printed in that deploy's job summary — `bunx wrangler d1 time-travel restore <db> --bookmark=<id>` (run from the repo root; `<db>` is `LINKDEN_DB_NAME`, default `linkden-db`). This rewinds *all* data to that moment.
-- Migrations are written **additive-only** (expand, then contract in a later release), so rolling back code alone is always safe.
+- New migrations must be **additive** (expand, then contract in a later release) to keep code rollback safe. Historical migrations `0002`, `0008` and `0010` removed data or columns; a code-only rollback across those releases needs a compatibility check first.
 
 ---
 

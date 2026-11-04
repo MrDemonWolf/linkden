@@ -33,7 +33,8 @@ Self-hosted link-in-bio application built for Cloudflare-first deployment.
 - `bun run test:coverage` — Run tests with V8 coverage + thresholds
 - `bun run test:e2e` — Run Playwright e2e suite (`e2e/*.spec.ts`, split from Vitest; `PW_BASE_URL`
   overrides the web origin, `PW_API_URL` (default `http://127.0.0.1:3000`) the API origin for the
-  direct `public.getPage` check)
+  direct `public.getPage` check). Its local web server sets `DEV_API_ORIGIN` and public URLs to
+  `127.0.0.1:3001`; `turbo.json` passes the proxy variable through to Next.
 - `bun run test:all` — Vitest then Playwright
 - `bun run db:generate` — Generate Drizzle migrations (no credentials needed; contributors only).
   There is no `db:push` script: push/studio bypass the migration ledger and the 0007 trigger.
@@ -124,7 +125,9 @@ Key production-readiness invariants — don't regress these:
     `/api/auth/sign-in/magic-link` and `/api/auth/magic-link/*` unless `magic_link_enabled` is
     exactly `"true"`.
   - Change email is two-step (confirm from the current address, then verify the new one) and
-    returns 400 when no Resend key is configured. Password reset revokes every session.
+    returns 400 when no Resend key is configured. With 2FA on, signed-out new-email verification
+    cannot create a session; the signed-in owner can still finish it. Password reset revokes every
+    session.
   - `DEV_LOGIN` needs `DEV_LOGIN="true"` AND a plain-http loopback `BETTER_AUTH_URL`; the endpoint
     404s for a non-loopback Host. Never bound by Alchemy.
 - **Atomic multi-writes.** Backup import, block reorder/undo-insert, bulk settings, wallet
@@ -207,7 +210,10 @@ Key production-readiness invariants — don't regress these:
   - Prod D1/R2 use `delete: false`; a prod destroy needs `LINKDEN_CONFIRM_DESTROY_PROD=yes`.
   - The Workers compatibility date is pinned (`COMPATIBILITY_DATE` in `alchemy.run.ts`,
     2026-04-24); bump it together with `apps/server/wrangler.jsonc`.
-  - Migrations must be additive (expand/contract) so a code-only `wrangler rollback` is safe.
+  - New migrations must be additive (expand/contract) before relying on a code-only
+    `wrangler rollback`. Historical migrations 0002, 0008 and 0010 remove data or
+    columns; verify old code against the migrated schema, or restore the pre-deploy
+    D1 Time Travel bookmark (which also rewinds later data).
   - CI actions are SHA-pinned with minimal permissions; `/api/health` checks D1 (logs the error
     when degraded) + reports version and auth state.
 - **Test DB:** integration tests use the in-memory libsql helper

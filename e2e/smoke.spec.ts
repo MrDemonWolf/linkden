@@ -41,6 +41,24 @@ test("health endpoint responds through the web origin", async ({ request }) => {
 	expect(body.database).toBe("ok");
 });
 
+test("cross-site API writes are blocked through the web origin", async ({ request }) => {
+	const res = await request.post("/trpc/public.trackView", {
+		data: {},
+		headers: { Origin: "https://attacker.invalid", "Sec-Fetch-Site": "cross-site" },
+	});
+	expect(res.status()).toBe(403);
+	expect(await res.json()).toEqual({ error: "Cross-site request blocked" });
+});
+
+test("oversized tRPC bodies are rejected through the web origin", async ({ request }) => {
+	const res = await request.post("/trpc/public.trackView", {
+		data: { pad: "x".repeat(1_100_000) },
+		headers: { "Sec-Fetch-Site": "same-origin" },
+	});
+	expect(res.status()).toBe(413);
+	expect(await res.text()).toBe("Payload Too Large");
+});
+
 test("/og is served by Next, not proxied to the API", async ({ request }) => {
 	const res = await request.get("/og");
 	expect(res.status()).toBe(200);

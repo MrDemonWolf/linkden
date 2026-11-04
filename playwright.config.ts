@@ -38,6 +38,11 @@ export default defineConfig({
 		{
 			command: "bun dev:web",
 			url: "http://127.0.0.1:3001",
+			env: {
+				DEV_API_ORIGIN: "http://127.0.0.1:3000",
+				NEXT_PUBLIC_SERVER_URL: "http://127.0.0.1:3001",
+				NEXT_PUBLIC_SITE_URL: "http://127.0.0.1:3001",
+			},
 			reuseExistingServer: true,
 			timeout: 120_000,
 		},
