@@ -231,8 +231,6 @@ function Step1Account({
 	setShowPassword,
 	showConfirmPassword,
 	setShowConfirmPassword,
-	setupToken,
-	setSetupToken,
 	formErrors,
 	setFormErrors,
 	isSubmitting,
@@ -250,8 +248,6 @@ function Step1Account({
 	setShowPassword: (v: boolean) => void;
 	showConfirmPassword: boolean;
 	setShowConfirmPassword: (v: boolean) => void;
-	setupToken: string;
-	setSetupToken: (v: string) => void;
 	formErrors: Record<string, string>;
 	setFormErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>;
 	isSubmitting: boolean;
@@ -400,37 +396,6 @@ function Step1Account({
 						</button>
 					</div>
 					<FieldError id="setup-confirm-password-error" message={formErrors.confirmPassword} />
-				</div>
-
-				{/* Only enforced when the server has a SETUP_TOKEN secret bound. */}
-				<div className="space-y-1.5">
-					<Label htmlFor="setup-token" className="text-sm font-medium text-foreground">
-						Setup token <span className="font-normal text-muted-foreground">(optional)</span>
-					</Label>
-					<Input
-						id="setup-token"
-						value={setupToken}
-						onChange={(e) => {
-							setSetupToken(e.target.value);
-							clear("setupToken");
-						}}
-						autoComplete="off"
-						spellCheck={false}
-						aria-invalid={!!formErrors.setupToken}
-						aria-describedby={describedBy(
-							formErrors.setupToken,
-							"setup-token-error",
-							"setup-token-hint",
-						)}
-					/>
-					{formErrors.setupToken ? (
-						<FieldError id="setup-token-error" message={formErrors.setupToken} />
-					) : (
-						<p id="setup-token-hint" className="mt-1 text-micro text-muted-foreground">
-							Only needed if this server was deployed with a SETUP_TOKEN. Your setup link fills it
-							in.
-						</p>
-					)}
 				</div>
 			</div>
 
@@ -771,8 +736,6 @@ export default function SetupPage() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
-	// First-run guard (server SETUP_TOKEN). Never persisted with the progress.
-	const [setupToken, setSetupToken] = useState("");
 	const [displayName, setDisplayName] = useState("");
 	const [bio, setBio] = useState("");
 	const [themePreset, setThemePreset] = useState("default");
@@ -816,17 +779,6 @@ export default function SetupPage() {
 			isLocalDevelopmentUrl(window.location.href) &&
 			new URLSearchParams(window.location.search).get("test") === "true",
 	);
-
-	// `?token=` (the setup link from the deploy output) prefills the setup token,
-	// then leaves the address bar so it doesn't sit in history or a screenshot.
-	useEffect(() => {
-		const url = new URL(window.location.href);
-		const token = url.searchParams.get("token");
-		if (!token) return;
-		setSetupToken(token);
-		url.searchParams.delete("token");
-		window.history.replaceState(window.history.state, "", url);
-	}, []);
 
 	// Restore from localStorage after mount to avoid SSR hydration mismatch
 	useEffect(() => {
@@ -954,11 +906,9 @@ export default function SetupPage() {
 
 		setIsSubmitting(true);
 		try {
-			const token = setupToken.trim();
 			await authClient.signUp.email(
 				{ name: name.trim(), email: email.trim(), password },
 				{
-					headers: token ? { "x-setup-token": token } : undefined,
 					onSuccess: () => {
 						const dn = name.trim();
 						setAccountCreated(true);
@@ -967,17 +917,7 @@ export default function SetupPage() {
 						goStep(2);
 					},
 					onError: (error) => {
-						// The server's first-run gate answers 403 { error: "Invalid setup token" }.
-						const body = error.error as { status?: number; error?: unknown; message?: string };
-						if (body.status === 403 && body.error === "Invalid setup token") {
-							setFormErrors({
-								setupToken: token
-									? "That setup token doesn't match. Copy it again from your deploy output."
-									: "This server requires a setup token. Paste the one from your deploy output.",
-							});
-							document.getElementById("setup-token")?.focus();
-							return;
-						}
+						const body = error.error as { error?: unknown; message?: string };
 						const msg =
 							body.message ||
 							(typeof body.error === "string" ? body.error : "") ||
@@ -1077,8 +1017,6 @@ export default function SetupPage() {
 									setShowPassword={setShowPassword}
 									showConfirmPassword={showConfirmPassword}
 									setShowConfirmPassword={setShowConfirmPassword}
-									setupToken={setupToken}
-									setSetupToken={setSetupToken}
 									formErrors={formErrors}
 									setFormErrors={setFormErrors}
 									isSubmitting={isSubmitting}

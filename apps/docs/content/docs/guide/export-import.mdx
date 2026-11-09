@@ -22,7 +22,7 @@ Back up your configuration, move between instances, or migrate from LinkStack --
 ### What's Not Included
 
 - Historical analytics data (page views, clicks), publication revisions/receipts, or runner credentials
-- Uploaded image files (only their URLs; keep the originals — after a reset, unreferenced images are deleted by the next daily cleanup)
+- Uploaded image files (only their origin-relative `/api/images/...` paths, which resolve against whichever instance imports them; keep the originals — after a reset, unreferenced images are deleted by the next daily cleanup)
 - Secrets: email API key, CAPTCHA secret, MapKit token, wallet signing keys, and environment variables
 - Your admin account and password
 

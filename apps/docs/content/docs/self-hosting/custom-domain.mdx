@@ -6,6 +6,8 @@ description: Plan legacy or split hostnames without silently replacing existing 
 
 Choose the serving mode before changing hostnames. The default remains legacy; split native publication is a separate opt-in cutover.
 
+In legacy mode a custom domain is optional. With or without one, the browser talks to a single origin, so admin sign-in works on `workers.dev` too. A custom domain gives a nicer URL and is faster: Cloudflare sends `/api/*` and `/trpc/*` straight to the API Worker instead of through the web Worker.
+
 ## Inspect the existing hostname first
 
 Inventory DNS records, Worker routes/custom domains, certificates, Access policies and alternate Workers URLs read-only. Confirm the account, zone and current owner of each hostname. Do not delete a working DNS record or repoint an existing hostname just to make a deployment succeed.
@@ -23,7 +25,9 @@ NEXT_PUBLIC_SERVER_URL=https://links.example.com
 NEXT_PUBLIC_SITE_URL=https://links.example.com
 ```
 
-Alchemy attaches the web custom hostname and routes `/api/*` and `/trpc/*` to the API Worker on it. Browser cookies stay on that origin. With `SITE_DOMAIN` unset, legacy staging can use the actual web `workers.dev` origin for all four URL values; the web API bridge uses its service binding.
+Alchemy attaches the web custom hostname and routes `/api/*` and `/trpc/*` to the API Worker on it. Routes are matched before the custom-domain Worker, so those paths reach the API directly and everything else reaches the web app. Browser cookies stay on that origin.
+
+With `SITE_DOMAIN` unset, the deploy runs on the web Worker's `workers.dev` origin; use it for all four URL values. The web Worker's API bridge forwards `/api/*` and `/trpc/*` to the API Worker over its service binding. Never point the URL values at the API Worker's own `workers.dev` hostname: the session cookie would land on a different site.
 
 After an approved deployment, verify the profile page, health response, sign-in, 2FA, sign-out and cookie persistence. A health response alone does not prove authentication or public rendering.
 
@@ -70,4 +74,4 @@ These are required verification tasks, not claims that this checkout has passed 
 
 Treat this as another routing cutover. Review existing resource adoption and Alchemy state first, prepare a rollback, then approve the exact DNS/routes/certificate changes. Preserve existing services until a deliberate migration plan is accepted.
 
-Do not assume that removing `SITE_DOMAIN` or restoring a DNS record reverses every routing, certificate, cookie, data or public-publication change. See [Rollback](/docs/self-hosting/cloudflare#rollback).
+Removing `SITE_DOMAIN` returns legacy mode to the web Worker's `workers.dev` origin; point all four URL values back at it before the approved redeploy. Do not assume that removing `SITE_DOMAIN` or restoring a DNS record reverses every routing, certificate, cookie, data or public-publication change. See [Rollback](/docs/self-hosting/cloudflare#rollback).

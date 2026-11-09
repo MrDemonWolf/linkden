@@ -23,6 +23,7 @@ export function getMapUrl(
 			}
 			return `https://maps.apple.com/?q=${encodeURIComponent(address)}`;
 		case "custom":
+			// Validated on write, re-checked here like every public link renderer.
 			return safeHttpUrl(customLinkUrl);
 		default:
 			return null;

@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+// The account tab blocks the magic-link switch without email or with 2FA on;
+// the router enforces the same rule so the setting can't be written anyway.
 vi.mock("@linkden/env/server", () => ({ env: {} }));
 vi.mock("@linkden/db", async () => {
 	const { createTestDb } = await import("@linkden/db/testing");
@@ -40,7 +42,10 @@ describe("magic-link settings policy", () => {
 	it("refuses enabling without a usable email configuration", async () => {
 		await expect(
 			admin.settings.update({ key: "magic_link_enabled", value: "true" }),
-		).rejects.toMatchObject({ code: "BAD_REQUEST" });
+		).rejects.toMatchObject({ code: "BAD_REQUEST", message: expect.stringMatching(/Resend/) });
+		await expect(
+			admin.settings.updateBulk([{ key: "magic_link_enabled", value: "true" }]),
+		).rejects.toMatchObject({ code: "BAD_REQUEST", message: expect.stringMatching(/Resend/) });
 		expect(await stored("magic_link_enabled")).toBeUndefined();
 	});
 
@@ -49,7 +54,10 @@ describe("magic-link settings policy", () => {
 		await db.update(user).set({ twoFactorEnabled: true }).where(eq(user.id, "u1"));
 		await expect(
 			admin.settings.update({ key: "magic_link_enabled", value: "true" }),
-		).rejects.toMatchObject({ code: "BAD_REQUEST" });
+		).rejects.toMatchObject({ code: "BAD_REQUEST", message: expect.stringMatching(/two-factor/) });
+		await expect(
+			admin.settings.updateBulk([{ key: "magic_link_enabled", value: "true" }]),
+		).rejects.toMatchObject({ code: "BAD_REQUEST", message: expect.stringMatching(/two-factor/) });
 		expect(await stored("magic_link_enabled")).toBeUndefined();
 	});
 
@@ -77,6 +85,10 @@ describe("magic-link settings policy", () => {
 		]);
 		expect(await stored("magic_link_enabled")).toBe("true");
 		expect(await stored("email_from")).toBe(email.email_from);
+		// Once saved, a later request that only flips the switch uses the stored transport.
+		await expect(
+			admin.settings.updateBulk([{ key: "magic_link_enabled", value: "true" }]),
+		).resolves.toEqual({ success: true });
 	});
 
 	it("does not treat an unsaved mask as credentials or partially save a rejected bulk request", async () => {
@@ -110,6 +122,9 @@ describe("magic-link settings policy", () => {
 	});
 
 	it("allows disabling magic links without email or while two-factor is on", async () => {
+		await expect(
+			admin.settings.updateBulk([{ key: "magic_link_enabled", value: "false" }]),
+		).resolves.toEqual({ success: true });
 		await db.update(user).set({ twoFactorEnabled: true }).where(eq(user.id, "u1"));
 		await admin.settings.update({ key: "magic_link_enabled", value: "false" });
 		expect(await stored("magic_link_enabled")).toBe("false");

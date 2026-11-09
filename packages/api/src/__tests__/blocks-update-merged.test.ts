@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+// blocks.update is partial, so the input schema alone can't see the stored
+// type/config/embed fields. The router validates the merged row instead.
 vi.mock("@linkden/env/server", () => ({ env: {} }));
 vi.mock("@linkden/db", async () => {
 	const { createTestDb } = await import("@linkden/db/testing");
@@ -94,6 +96,28 @@ describe("blocks.update validates coupled stored values", () => {
 			config: "legacy invalid JSON",
 			status: "published",
 		});
+	});
+
+	it("rejects a type change that the missing stored config would not satisfy", async () => {
+		await seed({ type: "link", config: null, embedType: null, embedUrl: null });
+		await expect(caller.blocks.update({ id: "b1", type: "text" })).rejects.toMatchObject({
+			code: "BAD_REQUEST",
+			message: expect.stringContaining("config.body"),
+		});
+		expect((await caller.blocks.list())[0]?.type).toBe("link");
+	});
+
+	it("still accepts ordinary partial edits", async () => {
+		await seed({
+			type: "link",
+			url: "https://example.com",
+			embedType: null,
+			embedUrl: null,
+		});
+		await expect(caller.blocks.update({ id: "b1", title: "Hi" })).resolves.toMatchObject({
+			title: "Hi",
+		});
+		await expect(caller.blocks.update({ id: "b1", config: "{}" })).resolves.toBeTruthy();
 	});
 
 	it("reports a missing block before validating a coupled update", async () => {

@@ -60,14 +60,13 @@ async function isolatedDatabase() {
 }
 
 async function existingContent(client: Client) {
-	return Promise.all(
-		[
-			"SELECT * FROM user ORDER BY id",
-			"SELECT * FROM two_factor ORDER BY id",
-			"SELECT * FROM block ORDER BY id",
-			"SELECT * FROM site_settings ORDER BY key",
-		].map(async (sql) => (await client.execute(sql)).rows),
-	);
+	const rows = async (sql: string) => (await client.execute(sql)).rows.map((row) => ({ ...row }));
+	return Promise.all([
+		rows("SELECT * FROM user ORDER BY id"),
+		rows("SELECT * FROM two_factor ORDER BY id"),
+		rows("SELECT * FROM block ORDER BY id"),
+		rows("SELECT * FROM site_settings ORDER BY key"),
+	]);
 }
 
 async function seedContent(client: Client) {
@@ -77,15 +76,35 @@ async function seedContent(client: Client) {
 		INSERT INTO two_factor (id,secret,backup_codes,user_id,verified)
 		VALUES ('factor','fixture-secret','fixture-backup','owner',1);
 		INSERT INTO site_settings (key,value) VALUES
-			('avatar_url','https://foreign.example/api/images/avatar/unchanged.png'),
-			('banner_custom_url','/api/images/banner/unchanged.png'),
+			('avatar_url','https://api.example/api/images/avatar/a1.png'),
+			('banner_custom_url','/api/images/banner/b1.png'),
 			('branding_logo_url','https://cdn.example/logo.png'),
 			('bio','Preserve profile copy');
 		INSERT INTO block (id,type,position,url,config) VALUES
-			('image','image',0,NULL,'{"src":"https://foreign.example/api/images/block_image/unchanged.png","alt":"Keep alt"}'),
-			('link','link',1,'https://foreign.example/api/images/link-target','{"thumbnail":"https://cdn.example/thumbnail.png","label":"Keep card"}'),
-			('relative','image',2,NULL,'{"src":"/api/images/block_image/unchanged.png"}');
+			('image','image',0,NULL,'{"src":"https://api.example/api/images/block_image/i1.png","alt":"Keep alt"}'),
+			('link','link',1,'https://api.example/api/images/link-target','{"thumbnail":"https://cdn.example/thumbnail.png","label":"Keep card"}'),
+			('relative','image',2,NULL,'{"src":"/api/images/block_image/r1.png"}');
 	`);
+}
+
+type Content = Awaited<ReturnType<typeof existingContent>>;
+
+// What 0011_relative_image_paths does to the seeded rows: absolute upload URLs in
+// image settings and block `src`/`thumbnail` become origin-relative paths. Link
+// targets, external images and already-relative paths are left alone.
+function withRelativeImagePaths([users, factors, blocks, settings]: Content): Content {
+	return [
+		users,
+		factors,
+		blocks.map((row) =>
+			row.id === "image"
+				? { ...row, config: '{"src":"/api/images/block_image/i1.png","alt":"Keep alt"}' }
+				: row,
+		),
+		settings.map((row) =>
+			row.key === "avatar_url" ? { ...row, value: "/api/images/avatar/a1.png" } : row,
+		),
+	];
 }
 
 async function seedFrozenRevision(client: Client) {
@@ -100,7 +119,7 @@ async function seedFrozenRevision(client: Client) {
 	`);
 }
 
-describe("Alchemy migration filename compatibility", () => {
+describe("Alchemy migration upgrades", () => {
 	it("applies the complete current history to a fresh database", async () => {
 		const { client, apply } = await isolatedDatabase();
 		try {
@@ -125,35 +144,26 @@ describe("Alchemy migration filename compatibility", () => {
 	});
 
 	it.each([
-		{ label: "main through 0010", prefix: "0010", legacyImageMigration: false },
-		{
-			label: "dev with its extra applied 0011 image migration",
-			prefix: "0010",
-			legacyImageMigration: true,
-		},
-		{
-			label: "a frozen publication through 0013",
-			prefix: "0013",
-			legacyImageMigration: false,
-		},
+		// Main's history: the upgrade runs the 0011 image-path rewrite over existing rows.
+		{ label: "main through 0010", prefix: "0010", rewritesImagePaths: true },
+		// Dev's history already ran 0011; the rest of the chain only adds tables and columns.
+		{ label: "dev through 0011", prefix: "0011", rewritesImagePaths: false },
+		{ label: "a frozen publication through 0014", prefix: "0014", rewritesImagePaths: false },
 	])(
-		"upgrades $label without replaying applied files or changing stored content",
-		async ({ prefix, legacyImageMigration }) => {
+		"upgrades $label without replaying applied files or changing other stored content",
+		async ({ prefix, rewritesImagePaths }) => {
 			const { client, requests, apply } = await isolatedDatabase();
 			try {
 				await apply(migrations.filter(({ id }) => id.slice(0, 4) <= prefix));
-				if (legacyImageMigration) {
-					// This ledger entry belongs to the existing dev history, not this source tree.
-					await client.execute(
-						"INSERT INTO d1_migrations (id,name,applied_at) VALUES ('00012','0011_relative_image_paths.sql','2026-11-02')",
-					);
-				}
 				await seedContent(client);
-				// Seeded before 0014 so the runner adds the approval columns over a frozen revision.
-				if (prefix === "0013") await seedFrozenRevision(client);
+				// Seeded before 0015 so the runner adds the approval columns over a frozen revision.
+				if (prefix === "0014") await seedFrozenRevision(client);
 				const contentBefore = await existingContent(client);
+				const contentAfter = rewritesImagePaths
+					? withRelativeImagePaths(contentBefore)
+					: contentBefore;
 				const frozenBefore =
-					prefix === "0013"
+					prefix === "0014"
 						? {
 								revisions: (await client.execute("SELECT * FROM publication_revision")).rows,
 								state: (await client.execute("SELECT * FROM publication_state")).rows,
@@ -161,9 +171,9 @@ describe("Alchemy migration filename compatibility", () => {
 						: null;
 				requests.length = 0;
 				await apply();
-				expect(await existingContent(client)).toEqual(contentBefore);
+				expect(await existingContent(client)).toEqual(contentAfter);
 				if (frozenBefore) {
-					// 0014 only adds columns: every pre-0014 value is unchanged.
+					// 0015 only adds columns: every pre-0015 value is unchanged.
 					expect((await client.execute("SELECT * FROM publication_revision")).rows).toMatchObject(
 						frozenBefore.revisions,
 					);
@@ -176,18 +186,13 @@ describe("Alchemy migration filename compatibility", () => {
 				const names = (
 					await client.execute("SELECT name FROM d1_migrations ORDER BY name")
 				).rows.map((row) => row.name);
-				expect(names).toEqual(
-					[
-						...migrations.map(({ id }) => id),
-						...(legacyImageMigration ? ["0011_relative_image_paths.sql"] : []),
-					].sort(),
-				);
+				expect(names).toEqual(migrations.map(({ id }) => id).sort());
 				const frozen = (await client.execute("SELECT * FROM publication_revision")).rows;
 				const state = (await client.execute("SELECT * FROM publication_state")).rows;
 				requests.length = 0;
 				await apply();
 				expect(requests.every((sql) => /^(PRAGMA|SELECT)\s/i.test(sql.trim()))).toBe(true);
-				expect(await existingContent(client)).toEqual(contentBefore);
+				expect(await existingContent(client)).toEqual(contentAfter);
 				expect((await client.execute("SELECT * FROM publication_revision")).rows).toEqual(frozen);
 				expect((await client.execute("SELECT * FROM publication_state")).rows).toEqual(state);
 				await expect(

@@ -19,14 +19,14 @@ Deployments read `packages/infra/.env` or CI values. Alchemy development also lo
 | `BETTER_AUTH_SECRET` | Session/auth secret. Generate a separate random value with `openssl rand -base64 32`; deployment requires at least 32 characters and rejects the public default. |
 | `BETTER_AUTH_URL` | Bare origin the browser uses for authentication. |
 | `CORS_ORIGIN` | Exact admin/browser origin, including protocol and port where applicable; no trailing slash. |
-| `NEXT_PUBLIC_SERVER_URL` | Browser API origin, baked into the web build. |
+| `NEXT_PUBLIC_SERVER_URL` | Bare browser API origin (no path or trailing slash), baked into the web build. |
 | `NEXT_PUBLIC_SITE_URL` | Public profile origin used for metadata, sitemap and links; baked into the web build. |
 
 Deploy validation requires HTTPS URLs and matching mode-specific origins. A missing/unsafe auth secret disables protected routes and reports `auth: "misconfigured"` through health checks. Restarting or redeploying with a different auth secret invalidates existing sessions.
 
 ### Legacy serving (default)
 
-`LINKDEN_SERVING_MODE` defaults to `legacy`. All four URL values use the web origin, including `workers.dev` staging. Browser requests use the web Worker's API bridge/service binding rather than the API Worker's separate hostname.
+`LINKDEN_SERVING_MODE` defaults to `legacy`. All four URL values use the web origin, including a `workers.dev` deployment without a custom domain. Browser requests use the web Worker's API bridge/service binding rather than the API Worker's separate hostname.
 
 ```bash
 LINKDEN_SERVING_MODE=legacy
@@ -37,7 +37,7 @@ NEXT_PUBLIC_SERVER_URL=https://links.example.com
 NEXT_PUBLIC_SITE_URL=https://links.example.com
 ```
 
-`SITE_DOMAIN` is optional in legacy mode. When present, Alchemy attaches the web custom hostname and the API's `/api/*` and `/trpc/*` routes there. See [Custom Domain](/docs/self-hosting/custom-domain) before changing DNS or existing routes.
+`SITE_DOMAIN` is optional in legacy mode. When present, Alchemy attaches the web custom hostname and the API's `/api/*` and `/trpc/*` routes there, and all four URL values must be `https://SITE_DOMAIN`. When unset, the site, admin included, runs on the web Worker's `workers.dev` origin, and the auth, CORS and API values must equal `NEXT_PUBLIC_SITE_URL`. See [Custom Domain](/docs/self-hosting/custom-domain) before changing DNS or existing routes.
 
 ### Split serving (opt-in)
 
@@ -63,10 +63,11 @@ The serving mode is part of the web build hash. Changing a runtime value alone d
 | `ALCHEMY_STAGE` | Defaults to `prod`. Other stages use suffixed resource names; inspect the exact target before deploying or destroying it. |
 | `LINKDEN_DB_NAME` | Existing production D1 name to adopt for an upgrade/restore; ignored outside `prod`. |
 | `LINKDEN_IMAGES_BUCKET` | Existing production image bucket name to adopt; ignored outside `prod`. |
-| `SETUP_TOKEN` | Recommended first-run secret. The initial signup sends it in `x-setup-token`; the setup wizard provides a field. |
 | `LINKDEN_CONFIRM_DESTROY_PROD` | `yes` permits the otherwise refused production destroy operation. This is destructive operations configuration, not normal setup. |
 
 Production D1/R2 use `delete: false` after that configuration has been recorded in state. This is not permission to destroy or repoint an existing installation.
+
+No variable guards first-run setup. Until an admin exists, the site redirects to `/admin/setup` and whoever finishes it first becomes the admin, so complete setup right after the first deploy.
 
 ## Public publisher API bindings
 

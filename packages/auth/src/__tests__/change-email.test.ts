@@ -84,7 +84,7 @@ describe("change email", () => {
 			returnHeaders: true,
 		});
 		const verifiedCookie = cookieHeader(headers);
-		expect(/session_token=/.test(verifiedCookie)).toBe(true);
+		expect(verifiedCookie).toMatch(/session_token=/);
 		expect((await db.select().from(user))[0]?.twoFactorEnabled).toBe(true);
 
 		await auth.api.changeEmail({
@@ -95,12 +95,14 @@ describe("change email", () => {
 		const finalLink = linkFrom(sent[1]);
 		const sessionCount = (await db.select().from(session)).length;
 
-		// A mailbox link alone must not mint a session that skips the second factor.
+		// A holder of the new mailbox link must not receive an admin session
+		// without the owner's existing session and completed second factor.
 		const signedOut = await auth.handler(new Request(finalLink));
-		expect(/session_token=/.test(cookieHeader(signedOut.headers))).toBe(false);
+		expect(cookieHeader(signedOut.headers)).not.toMatch(/session_token=/);
 		expect(await db.select().from(session)).toHaveLength(sessionCount);
 		expect((await db.select().from(user))[0]?.email).toBe(EMAIL);
 
+		// The owner can still complete the two-mailbox change while signed in.
 		await followLink(auth, finalLink, verifiedCookie);
 		expect((await db.select().from(user))[0]?.email).toBe(NEW_EMAIL);
 	});

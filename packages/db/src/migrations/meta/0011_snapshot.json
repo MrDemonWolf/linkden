@@ -1,8 +1,8 @@
 {
+	"id": "cfd0df39-21fd-451f-b1e3-315c8fa8e6a7",
+	"prevId": "36cb55c0-f76c-4899-8851-0a7ff6c6550d",
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "4b2cfc5c-5196-48c8-bcb5-3e77d15fc33a",
-	"prevId": "36cb55c0-f76c-4899-8851-0a7ff6c6550d",
 	"tables": {
 		"link_click": {
 			"name": "link_click",
@@ -72,11 +72,11 @@
 				"link_click_block_id_block_id_fk": {
 					"name": "link_click_block_id_block_id_fk",
 					"tableFrom": "link_click",
-					"tableTo": "block",
 					"columnsFrom": ["block_id"],
+					"tableTo": "block",
 					"columnsTo": ["id"],
-					"onDelete": "cascade",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "cascade"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -311,11 +311,11 @@
 				"account_user_id_user_id_fk": {
 					"name": "account_user_id_user_id_fk",
 					"tableFrom": "account",
-					"tableTo": "user",
 					"columnsFrom": ["user_id"],
+					"tableTo": "user",
 					"columnsTo": ["id"],
-					"onDelete": "cascade",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "cascade"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -399,11 +399,11 @@
 				"session_user_id_user_id_fk": {
 					"name": "session_user_id_user_id_fk",
 					"tableFrom": "session",
-					"tableTo": "user",
 					"columnsFrom": ["user_id"],
+					"tableTo": "user",
 					"columnsTo": ["id"],
-					"onDelete": "cascade",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "cascade"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -481,11 +481,11 @@
 				"two_factor_user_id_user_id_fk": {
 					"name": "two_factor_user_id_user_id_fk",
 					"tableFrom": "two_factor",
-					"tableTo": "user",
 					"columnsFrom": ["user_id"],
+					"tableTo": "user",
 					"columnsTo": ["id"],
-					"onDelete": "cascade",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "cascade"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -770,37 +770,6 @@
 			"uniqueConstraints": {},
 			"checkConstraints": {}
 		},
-		"contact_quota": {
-			"name": "contact_quota",
-			"columns": {
-				"id": {
-					"name": "id",
-					"type": "text",
-					"primaryKey": true,
-					"notNull": true,
-					"autoincrement": false
-				},
-				"day": {
-					"name": "day",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": true,
-					"autoincrement": false
-				},
-				"reserved": {
-					"name": "reserved",
-					"type": "integer",
-					"primaryKey": false,
-					"notNull": true,
-					"autoincrement": false
-				}
-			},
-			"indexes": {},
-			"foreignKeys": {},
-			"compositePrimaryKeys": {},
-			"uniqueConstraints": {},
-			"checkConstraints": {}
-		},
 		"contact_submission": {
 			"name": "contact_submission",
 			"columns": {
@@ -1016,9 +985,9 @@
 	"views": {},
 	"enums": {},
 	"_meta": {
+		"columns": {},
 		"schemas": {},
-		"tables": {},
-		"columns": {}
+		"tables": {}
 	},
 	"internal": {
 		"indexes": {}

@@ -1,3 +1,13 @@
+// Same-origin web -> API bridge, mounted by the filesystem route handlers
+// app/api/[[...path]]/route.ts and app/trpc/[[...path]]/route.ts. On a legacy
+// workers.dev deploy (no SITE_DOMAIN) this is what keeps the site and its API on
+// one origin: workers.dev is on the Public Suffix List, so the session cookie
+// could not cross from the web worker's hostname to the API worker's. With
+// SITE_DOMAIN set, zone Routes send /api/* and /trpc/* straight to the API
+// worker and this never runs; in split mode the API is reachable only through
+// the `API` service binding. Keep the prefixes in step with those Routes in
+// packages/infra/alchemy.run.ts.
+
 import { localHttpOrigin, localHttpUrl } from "./local-development";
 import { apiServiceBinding } from "./server-api";
 
@@ -71,6 +81,23 @@ function withoutHopHeaders(headers: Headers): Headers {
 	return result;
 }
 
+/**
+ * Uploaded images are public, immutable objects under random never-reused keys,
+ * and the API 404s every key shape it never writes. A successful image read
+ * keeps the API's `public, max-age=31536000, immutable` + ETag so a legacy
+ * workers.dev page does not refetch every image on each visit. Every other
+ * path and status (auth, tRPC, errors, anything setting a cookie) is no-store.
+ */
+function keepsUpstreamCaching(request: Request, pathname: string, response: Response): boolean {
+	return (
+		(request.method === "GET" || request.method === "HEAD") &&
+		pathname.startsWith("/api/images/") &&
+		(response.status === 200 || response.status === 304) &&
+		response.headers.has("cache-control") &&
+		!response.headers.has("set-cookie")
+	);
+}
+
 function failure(message: string, status: number): Response {
 	return Response.json(
 		{ error: message },
@@ -132,10 +159,12 @@ export async function proxyApiRequest(request: Request): Promise<Response> {
 	};
 	try {
 		const upstream = new Request(target, init);
-		// Bodies remain streams. The API's auth/tRPC/upload byte limits remain authoritative.
+		// Bodies are forwarded as streams here, but deployed OpenNext has already buffered non-GET/HEAD
+		// bodies in this worker; the API's auth/tRPC/upload byte limits decide the status.
 		const response = api ? await api.fetch(upstream) : await fetch(upstream, { cache: "no-store" });
 		const responseHeaders = withoutHopHeaders(response.headers);
-		responseHeaders.set("cache-control", "private, no-store");
+		if (!keepsUpstreamCaching(request, incoming.pathname, response))
+			responseHeaders.set("cache-control", "private, no-store");
 		return new Response(request.method === "HEAD" ? null : response.body, {
 			status: response.status,
 			statusText: response.statusText,

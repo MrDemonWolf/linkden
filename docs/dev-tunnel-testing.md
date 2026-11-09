@@ -61,9 +61,10 @@ bun run --cwd apps/server wrangler d1 migrations apply linkden-db --local
 
 - `NEXT_PUBLIC_*` vars are **inlined at compile time even in `next dev`** —
   changing the tunnel URL requires restarting `next dev`, not just re-saving.
-- `allowedDevOrigins: ["*.trycloudflare.com"]` is required in `next.config.ts`
-  or the HMR WebSocket is 403'd and Fast Refresh dies (assets still load,
-  which makes it confusing).
+- `allowedDevOrigins` in `next.config.ts` must list `*.trycloudflare.com`
+  (it also lists `127.0.0.1` for Playwright's local web server) or the HMR
+  WebSocket is 403'd and Fast Refresh dies (assets still load, which makes it
+  confusing).
 - Use `127.0.0.1`, not `localhost`, for proxy destinations — Node may resolve
   `localhost` to `::1` while the backend binds IPv4 only.
 - Server-side fetches use a validated bare HTTP loopback `INTERNAL_SERVER_URL`
@@ -84,8 +85,7 @@ bun run --cwd apps/server wrangler d1 migrations apply linkden-db --local
   non-loopback `Host`. A tunnel needs an `https://` `BETTER_AUTH_URL`, so sign in
   with a real account instead.
 - On a fresh LinkDen DB, complete `/admin/setup` immediately — first account
-  becomes the single admin. Setting `SETUP_TOKEN` in `apps/server/.dev.vars`
-  closes that window (enter it in the wizard's Setup token field).
+  becomes the single admin.
 - With an `https://` tunnel `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET` must be 32+
   characters and not a placeholder, or auth answers 503.
 - Want a stable hostname + real auth? Use a **named** tunnel

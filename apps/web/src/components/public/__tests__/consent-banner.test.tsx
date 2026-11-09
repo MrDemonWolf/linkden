@@ -86,6 +86,28 @@ describe("hasConsent", () => {
 	});
 });
 
+describe("hasConsent with an outdated choice", () => {
+	beforeEach(() => localStorage.clear());
+
+	it("grants nothing while the banner is on, until the visitor chooses again", () => {
+		localStorage.setItem("linkden-consent", "accepted");
+		expect(hasAnalyticsConsent(true)).toBe(false);
+		localStorage.setItem(
+			"linkden-consent",
+			JSON.stringify({ analytics: true, functional: true, v: 1, ts: Date.now() }),
+		);
+		expect(hasAnalyticsConsent(true)).toBe(false);
+		expect(hasConsent("functional", true)).toBe(false);
+	});
+
+	it("still honours an old decline when the banner is off", () => {
+		localStorage.setItem("linkden-consent", "declined");
+		expect(hasAnalyticsConsent(false)).toBe(false);
+		localStorage.setItem("linkden-consent", "accepted");
+		expect(hasAnalyticsConsent(false)).toBe(true);
+	});
+});
+
 describe("ConsentBanner", () => {
 	beforeEach(() => localStorage.clear());
 	afterEach(cleanup);

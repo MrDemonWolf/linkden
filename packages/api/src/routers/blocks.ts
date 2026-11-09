@@ -85,6 +85,9 @@ export const blocksRouter = router({
 
 	update: protectedProcedure.input(updateBlockSchema).mutation(async ({ input }) => {
 		const { id, ...data } = input;
+		// The schema can only check what the (partial) update carries. When the
+		// type, config or embed fields change, validate the row as it will be
+		// after the update: stored values merged with the new ones.
 		const changesConfig = data.type !== undefined || data.config !== undefined;
 		const changesEmbed = data.embedType !== undefined || data.embedUrl !== undefined;
 		if (changesConfig || changesEmbed) {
@@ -98,12 +101,14 @@ export const blocksRouter = router({
 				.from(block)
 				.where(eq(block.id, id));
 			if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
-			// Only changed pairs are rechecked; empty strings encode cleared nullable fields.
+			// Only changed pairs are rechecked; empty strings encode cleared nullable
+			// fields. A missing stored config is checked as `{}`, so a type change
+			// can't leave a block whose config the new type requires (e.g. text body).
 			const parsed = updateBlockSchema.safeParse({
 				id,
 				...(changesConfig && {
 					type: data.type ?? existing.type,
-					config: data.config ?? existing.config ?? undefined,
+					config: data.config ?? existing.config ?? "",
 				}),
 				...(changesEmbed && {
 					embedType: (data.embedType !== undefined ? data.embedType : existing.embedType) ?? "",

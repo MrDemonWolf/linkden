@@ -40,7 +40,7 @@ LinkDen uses [Better Auth](https://www.better-auth.com/) with email/password sig
 
 ### Session Flow
 
-1. Create an admin account during first-time setup at `/admin/setup` (with the `x-setup-token` header when `SETUP_TOKEN` is set).
+1. Create an admin account during first-time setup at `/admin/setup`. Until one exists, `/` and `/admin/login` redirect there; whoever finishes setup first becomes the admin.
 2. Sign in at `/admin/login`. With two-factor on, Better Auth answers the password step with `twoFactorRedirect` and the login page asks for a TOTP or backup code.
 3. Better Auth issues a secure session cookie, sent with every API request to authenticate protected procedures.
 
@@ -226,4 +226,4 @@ All input is validated with shared Zod schemas from `packages/validators`.
 
 In split mode the legacy routes above are reachable through the private admin transport, not an alternate public API hostname. Only an explicitly configured contact action is allowed through public ingress. Existing assets-only profiles serve bundled images/vCards and do not rely on `/api/images/*` or `/api/vcard` per visit.
 
-Upload replacements never delete a saved referenced object immediately. The editor expands a relative upload path to its configured API origin before saving; existing absolute URLs are preserved. See [Security](/docs/guide/security#uploads-and-media) for cleanup and validation behavior.
+Upload replacements never delete a saved referenced object immediately. The editor saves the relative upload path as returned, and image fields accept that path or an external HTTP(S) URL. Migration `0011` rewrote older absolute upload URLs to paths; public renderers reduce any remaining one to its path, and the publication compiler resolves upload paths against the public origin. See [Security](/docs/guide/security#uploads-and-media) for cleanup and validation behavior.

@@ -200,6 +200,55 @@ describe("frozen public publication contract", () => {
 		expect(JSON.stringify(snapshot)).not.toContain("PRIVATE_");
 	});
 
+	it("names origin-relative uploads on the public origin and keeps other relative URLs out", () => {
+		const input = source();
+		input.profile.image = "/api/images/avatar/1730000000000.png" as never;
+		Object.assign(input.settings, {
+			avatar_url: "/api/images/avatar/1730000000001.png",
+			seo_og_image: "/api/images/og_image/1730000000002.webp",
+		});
+		input.blocks = [
+			{
+				id: "photo",
+				type: "image",
+				position: 0,
+				config: '{"src":"/api/images/block_image/1730000000003.jpg"}',
+			},
+			{
+				id: "thumb",
+				type: "link",
+				position: 1,
+				config:
+					'{"variant":"thumbnail","thumbnail":"/api/images/block_thumbnail/1730000000004.png"}',
+			},
+		] as never;
+		const snapshot = createPublicationSnapshot(input);
+		const origin = "https://public.example";
+		expect(snapshot.profile.image).toBe(`${origin}/api/images/avatar/1730000000000.png`);
+		expect(snapshot.settings.avatar_url).toBe(`${origin}/api/images/avatar/1730000000001.png`);
+		expect(snapshot.settings.seo_og_image).toBe(`${origin}/api/images/og_image/1730000000002.webp`);
+		expect(JSON.parse(snapshot.blocks[0]!.config).src).toBe(
+			`${origin}/api/images/block_image/1730000000003.jpg`,
+		);
+		expect(JSON.parse(snapshot.blocks[1]!.config).thumbnail).toBe(
+			`${origin}/api/images/block_thumbnail/1730000000004.png`,
+		);
+		// The approved source and every boundary snapshot carry the same absolute form.
+		const approved = createApprovedPublicationSource(input);
+		expect(snapshotFromApprovedSource(approved, "revision-2", input.builtAt).profile.image).toBe(
+			snapshot.profile.image,
+		);
+
+		for (const relative of ["/avatar.png", "//evil.example/a.png"]) {
+			const bad = source();
+			bad.profile.image = relative as never;
+			expect(() => createPublicationSnapshot(bad)).toThrow();
+		}
+		const badSetting = source();
+		Object.assign(badSetting.settings, { avatar_url: "/avatar.png" });
+		expect(() => createPublicationSnapshot(badSetting)).toThrow();
+	});
+
 	it("rejects private or raw-authoring additions to a frozen revision", () => {
 		const snapshot = createPublicationSnapshot(source());
 		for (const invalid of [

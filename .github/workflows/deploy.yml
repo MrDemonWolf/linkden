@@ -183,9 +183,6 @@ jobs:
           WALLET_TEAM_ID: ${{ secrets.WALLET_TEAM_ID }}
           WALLET_PASS_TYPE_ID: ${{ secrets.WALLET_PASS_TYPE_ID }}
           WALLET_SIGNER_KEY_PASSPHRASE: ${{ secrets.WALLET_SIGNER_KEY_PASSPHRASE }}
-          # Optional: required by the first sign-up (x-setup-token) while no
-          # admin exists, so a fresh public deploy cannot be claimed by a stranger.
-          SETUP_TOKEN: ${{ secrets.SETUP_TOKEN }}
 
       # Three probes: the API worker (/api/health — DB reachable, auth
       # configured, version reported), the web worker (the public page renders

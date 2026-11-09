@@ -76,3 +76,44 @@ describe("ImageBlock", () => {
 		expect(screen.queryByRole("img")).toBeNull();
 	});
 });
+
+describe("ImageBlock uploaded and legacy sources", () => {
+	it("renders an origin-relative uploaded image path", () => {
+		render(picture({ src: "/api/images/block_image/abc-123.webp" }));
+		expect(screen.getByRole("img").getAttribute("src")).toBe(
+			"/api/images/block_image/abc-123.webp",
+		);
+	});
+
+	it("reduces a legacy absolute upload URL to its path and drops non-image paths", () => {
+		const { rerender } = render(
+			picture({ src: "https://linkden-api.me.workers.dev/api/images/block_image/abc.png" }),
+		);
+		expect(screen.getByRole("img").getAttribute("src")).toBe("/api/images/block_image/abc.png");
+		rerender(picture({ src: "/etc/passwd" }));
+		expect(screen.queryByRole("img")).toBeNull();
+	});
+});
+
+describe("ImageBlock link name (WCAG 2.4.4)", () => {
+	const linked = (config: Record<string, unknown>) => (
+		<ImageBlock
+			block={{ id: "b1", title: null, url: "https://shop.test/x" }}
+			config={{ src: "/api/images/block_image/a.png", ...config }}
+			colorMode="light"
+			themeColors={themeColors}
+		/>
+	);
+
+	it("names an image-only link from its alt text", () => {
+		render(linked({ alt: "My shop" }));
+		expect(screen.getByRole("link", { name: "My shop" })).toBeTruthy();
+	});
+
+	it("falls back to the caption, then the destination host, without alt text", () => {
+		const { rerender } = render(linked({ caption: "New drop" }));
+		expect(screen.getByRole("link", { name: "New drop" })).toBeTruthy();
+		rerender(linked({}));
+		expect(screen.getByRole("link", { name: "Open shop.test" })).toBeTruthy();
+	});
+});

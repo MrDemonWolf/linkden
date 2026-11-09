@@ -111,6 +111,45 @@ describe("same-origin API binding proxy", () => {
 		expect((transport.api.mock.calls[0]?.[0] as Request | undefined)?.redirect).toBe("manual");
 	});
 
+	it("keeps the API's immutable caching for successful image reads only", async () => {
+		const immutable = "public, max-age=31536000, immutable";
+		const image = (status = 200, extra: Record<string, string> = {}) =>
+			new Response(status === 304 ? null : "png", {
+				status,
+				headers: { "cache-control": immutable, etag: '"abc"', ...extra },
+			});
+		const path = "/api/images/avatar/0f8b3c2e-1d4a-4b6c-9e7f-123456789abc.png";
+		for (const [method, status] of [
+			["GET", 200],
+			["HEAD", 200],
+			["GET", 304],
+		] as const) {
+			transport.api.mockResolvedValueOnce(image(status));
+			const response = await proxyApiRequest(
+				new Request(`https://linkden.example.workers.dev${path}`, { method }),
+			);
+			expect(response.status).toBe(status);
+			expect(response.headers.get("cache-control")).toBe(immutable);
+			expect(response.headers.get("etag")).toBe('"abc"');
+		}
+		// Errors, cookie-bearing responses and every non-image path stay private.
+		const privateCases: [string, string, Response][] = [
+			["GET", path, image(404)],
+			["GET", path, image(200, { "set-cookie": "s=1; Path=/" })],
+			["POST", path, image()],
+			["GET", "/api/imagesx/avatar/a.png", image()],
+			["GET", "/api/auth/get-session", image()],
+			["GET", "/trpc/public.getPage", image()],
+		];
+		for (const [method, privatePath, upstream] of privateCases) {
+			transport.api.mockResolvedValueOnce(upstream);
+			const response = await proxyApiRequest(
+				new Request(`https://linkden.example.workers.dev${privatePath}`, { method }),
+			);
+			expect(response.headers.get("cache-control")).toBe("private, no-store");
+		}
+	});
+
 	it("strips forwarding metadata and nominated headers but retains only trusted edge IP", async () => {
 		await proxyApiRequest(
 			new Request("https://admin.example.test/api/health", {
@@ -157,6 +196,37 @@ describe("same-origin API binding proxy", () => {
 		expect(
 			(transport.api.mock.calls[1]?.[0] as Request | undefined)?.headers.has("cf-connecting-ip"),
 		).toBe(false);
+	});
+
+	it("keeps a legacy workers.dev sign-in single-origin through the binding", async () => {
+		// workers.dev is on the Public Suffix List: the session cookie cannot reach
+		// the API worker's own hostname, so the web origin must carry auth calls.
+		let received: Request | undefined;
+		let body = "";
+		transport.api.mockImplementation(async (request: Request) => {
+			received = request;
+			body = await request.text();
+			return new Response("{}", { status: 200 });
+		});
+		const response = await proxyApiRequest(
+			new Request("https://linkden.example.workers.dev/api/auth/sign-in/email", {
+				method: "POST",
+				headers: {
+					cookie: "s=1",
+					"cf-connecting-ip": "203.0.113.7",
+					origin: "https://linkden.example.workers.dev",
+					"content-type": "application/json",
+				},
+				body: "{}",
+			}),
+		);
+		expect(response.status).toBe(200);
+		expect(received?.url).toBe("https://api.internal/api/auth/sign-in/email");
+		expect(received?.headers.get("cookie")).toBe("s=1");
+		expect(received?.headers.get("cf-connecting-ip")).toBe("203.0.113.7");
+		expect(received?.headers.get("origin")).toBe("https://linkden.example.workers.dev");
+		expect(body).toBe("{}");
+		expect(transport.network).not.toHaveBeenCalled();
 	});
 
 	it("preserves cross-site Origin evidence for the API's real CSRF check", async () => {
@@ -208,7 +278,9 @@ describe("same-origin API binding proxy", () => {
 		"/",
 		"/admin",
 		"/apix/test",
+		"/apiary",
 		"/trpcx/test",
+		"/og",
 		"/api/../admin",
 		"/api/%2f%2fevil.example/test",
 		"/api/%5cadmin",

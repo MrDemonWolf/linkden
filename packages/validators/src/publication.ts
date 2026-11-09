@@ -11,6 +11,7 @@ import {
 	validateBlockImport,
 } from "./blocks";
 import { consentCategoriesSchema } from "./consent-schema";
+import { UPLOADED_IMAGE_PATH } from "./primitives";
 import { PUBLIC_PAGE_SETTING_KEYS } from "./public-settings";
 import { getSettingMeta, MAX_SETTING_VALUE_LENGTH } from "./settings-registry";
 import { vcardDataSchema } from "./vcard";
@@ -147,15 +148,29 @@ const publicationUrlSchema = z
 		}
 	}, "Enter an HTTP or HTTPS URL without credentials");
 
+/** Frozen profile fields: every image is an absolute URL. */
+const publicProfileSchema = z.object({
+	name: z.string().min(1).max(200),
+	image: publicationUrlSchema.nullable(),
+	bio: z.string().max(2_000).nullable(),
+	isVerified: z.boolean(),
+});
+
+/**
+ * Uploads are stored as origin-relative `/api/images/…` paths. The frozen
+ * snapshot names them on its public origin, so the media bundler treats them
+ * as owned uploads and the static renderer never sees a relative image URL.
+ */
+function absoluteUpload(value: string, origin: URL): string {
+	return UPLOADED_IMAGE_PATH.test(value) ? `${origin.origin}${value}` : value;
+}
+
 export const publicationInputSchema = z.object({
 	revision: z.string().regex(/^[A-Za-z0-9_-]{1,80}$/),
 	publicOrigin: z.url({ protocol: /^https?$/ }),
 	builtAt: z.iso.datetime(),
-	profile: z.object({
-		name: z.string().min(1).max(200),
-		image: publicationUrlSchema.nullable(),
-		bio: z.string().max(2_000).nullable(),
-		isVerified: z.boolean(),
+	profile: publicProfileSchema.extend({
+		image: z.union([publicationUrlSchema, z.string().regex(UPLOADED_IMAGE_PATH)]).nullable(),
 	}),
 	settings: z.record(z.string(), z.string().max(MAX_SETTING_VALUE_LENGTH)),
 	blocks: z.array(blockImportSchema).max(MAX_BLOCKS),
@@ -292,7 +307,7 @@ export const publicSnapshotSchema = z
 		publicOrigin: publicationInputSchema.shape.publicOrigin,
 		builtAt: z.iso.datetime(),
 		nextVisibilityBoundary: z.iso.datetime().nullable(),
-		profile: publicationInputSchema.shape.profile.strict(),
+		profile: publicProfileSchema.strict(),
 		settings: z.record(z.string(), z.string().max(MAX_SETTING_VALUE_LENGTH)),
 		blocks: z.array(publicBlockSchema).max(MAX_BLOCKS),
 		socialNetworks: z
@@ -376,7 +391,17 @@ export function createPublicationSnapshot(raw: unknown) {
 	const settings = Object.fromEntries(
 		PUBLIC_PAGE_SETTING_KEYS.flatMap((key) =>
 			!hiddenSettings.has(key) && Object.hasOwn(input.settings, key)
-				? [[key, publicSettingValue(key, input.settings[key]!)]]
+				? [
+						[
+							key,
+							publicSettingValue(
+								key,
+								getSettingMeta(key)?.kind === "url"
+									? absoluteUpload(input.settings[key]!, origin)
+									: input.settings[key]!,
+							),
+						],
+					]
 				: [],
 		),
 	);
@@ -424,6 +449,10 @@ export function createPublicationSnapshot(raw: unknown) {
 			) {
 				config.data.customLinkUrl = publicationUrlSchema.parse(config.data.customLinkUrl);
 			}
+			if (block.type === "image" && "src" in config.data && config.data.src)
+				config.data.src = absoluteUpload(config.data.src, origin);
+			if (block.type === "link" && "thumbnail" in config.data && config.data.thumbnail)
+				config.data.thumbnail = absoluteUpload(config.data.thumbnail, origin);
 			return [
 				{
 					id: block.id,
@@ -446,7 +475,10 @@ export function createPublicationSnapshot(raw: unknown) {
 		nextVisibilityBoundary: boundaries.length
 			? new Date(Math.min(...boundaries)).toISOString()
 			: null,
-		profile: input.profile,
+		profile: {
+			...input.profile,
+			image: input.profile.image ? absoluteUpload(input.profile.image, origin) : null,
+		},
 		settings,
 		blocks,
 		socialNetworks: input.socialNetworks

@@ -64,7 +64,7 @@ const nextConfig: NextConfig = {
 	// but the HMR WebSocket handshake does — without this it is rejected by Next's
 	// cross-site dev guard and Fast Refresh dies behind a tunnel. Matched as a
 	// hostname, so no scheme.
-	allowedDevOrigins: ["*.trycloudflare.com"],
+	allowedDevOrigins: ["127.0.0.1", "*.trycloudflare.com"],
 	async rewrites() {
 		if (!devApiOrigin) return [];
 		// Explicit dev proxying must precede the filesystem API bridge's loopback fallback.

@@ -36,6 +36,7 @@ export function ProfileSocialIcons({
 			aria-label="Social links"
 		>
 			{networks.map((network, index) => {
+				// Validated on write, re-checked here like every public link renderer.
 				const href = safeHttpUrl(network.url);
 				if (!href) return null;
 				// The icons are drawn on the hero card, not the page background.

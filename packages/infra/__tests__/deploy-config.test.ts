@@ -215,7 +215,7 @@ describe("deployEnvErrors", () => {
 	it("requires https URLs and a bare CORS origin", () => {
 		const errors = deployEnvErrors({
 			...valid,
-			BETTER_AUTH_URL: "http://linkden-api.example.workers.dev",
+			BETTER_AUTH_URL: "http://linkden.example.workers.dev",
 			CORS_ORIGIN: "https://linkden.example.workers.dev/",
 			NEXT_PUBLIC_SERVER_URL: "not a url",
 		});
@@ -223,6 +223,57 @@ describe("deployEnvErrors", () => {
 		expect(errors.join("\n")).toMatch(/BETTER_AUTH_URL .* must be an https:\/\/ URL/);
 		expect(errors.join("\n")).toMatch(/NEXT_PUBLIC_SERVER_URL .* is not a valid URL/);
 		expect(errors.join("\n")).toMatch(/CORS_ORIGIN must be a bare origin/);
+	});
+
+	it("requires bare origins for the URLs the client and Better Auth build on", () => {
+		const site = valid.NEXT_PUBLIC_SITE_URL;
+		const errors = deployEnvErrors({
+			...valid,
+			NEXT_PUBLIC_SERVER_URL: `${site}/`,
+			BETTER_AUTH_URL: `${site}/api`,
+		});
+		// One error each (not also a same-origin mismatch), without echoing the value.
+		expect(errors).toEqual([
+			"BETTER_AUTH_URL must be a bare origin (no credentials, path, query or trailing slash).",
+			"NEXT_PUBLIC_SERVER_URL must be a bare origin (no credentials, path, query or trailing slash).",
+		]);
+	});
+
+	it("never echoes URL credentials into deploy errors", () => {
+		const value = "https://user:hunter2@linkden.example.workers.dev";
+		const errors = deployEnvErrors({ ...valid, BETTER_AUTH_URL: value }).join("\n");
+		expect(errors).toContain("BETTER_AUTH_URL must be a bare origin");
+		expect(errors).not.toContain("hunter2");
+	});
+
+	it("reports a malformed site URL once instead of blaming the other URLs", () => {
+		expect(
+			deployEnvErrors({ ...valid, NEXT_PUBLIC_SITE_URL: "http://linkden.example.workers.dev" }),
+		).toEqual([
+			"NEXT_PUBLIC_SITE_URL (http://linkden.example.workers.dev) must be an https:// URL.",
+		]);
+	});
+
+	it("reports a site URL with a path or query once, against the site URL itself", () => {
+		const site = valid.NEXT_PUBLIC_SITE_URL;
+		const message =
+			"NEXT_PUBLIC_SITE_URL must be a bare origin (no credentials, path or query; one trailing slash is allowed).";
+		for (const value of [
+			`${site}/foo`,
+			`${site}?ref=x`,
+			"https://user:pw@linkden.example.workers.dev",
+		]) {
+			expect(deployEnvErrors({ ...valid, NEXT_PUBLIC_SITE_URL: value })).toEqual([message]);
+			// With SITE_DOMAIN the site URL is still checked, not silently skipped.
+			expect(
+				deployEnvErrors({
+					...valid,
+					SITE_DOMAIN: "linkden.example.workers.dev",
+					NEXT_PUBLIC_SITE_URL: value,
+				}),
+			).toEqual([message]);
+		}
+		expect(deployEnvErrors({ ...valid, NEXT_PUBLIC_SITE_URL: `${site}/` })).toEqual([]);
 	});
 
 	it("rejects values with surrounding whitespace", () => {
@@ -272,12 +323,29 @@ describe("deployEnvErrors", () => {
 			`BETTER_AUTH_URL (${valid.BETTER_AUTH_URL}) must be ${site} when SITE_DOMAIN is set.`,
 		]);
 	});
+
+	it("requires every URL to be the web worker's origin on workers.dev (API via the web bridge)", () => {
+		const api = "https://linkden-api.example.workers.dev";
+		const errors = deployEnvErrors({ ...valid, BETTER_AUTH_URL: api, NEXT_PUBLIC_SERVER_URL: api });
+		expect(errors).toEqual([
+			"BETTER_AUTH_URL must match NEXT_PUBLIC_SITE_URL in legacy mode; browser API calls use the web service binding.",
+			"NEXT_PUBLIC_SERVER_URL must match NEXT_PUBLIC_SITE_URL in legacy mode; browser API calls use the web service binding.",
+		]);
+	});
 });
 
 describe("parity with the runtime secret check (packages/auth)", () => {
 	it("uses the same default secret and minimum length", () => {
 		expect(BETTER_AUTH_DEFAULT_SECRET).toBe(runtimeAuth.BETTER_AUTH_DEFAULT_SECRET);
 		expect(MIN_AUTH_SECRET_LENGTH).toBe(runtimeAuth.MIN_AUTH_SECRET_LENGTH);
+	});
+});
+
+describe("Workers invocation logs stay off (they record full URLs incl. tokens)", () => {
+	it("disables them on both the API and the web worker", async () => {
+		const { readFileSync } = await import("node:fs");
+		const src = readFileSync(new URL("../alchemy.run.ts", import.meta.url), "utf8");
+		expect(src.match(/observability: \{ logs: \{ invocationLogs: false \} \}/g)).toHaveLength(2);
 	});
 });
 

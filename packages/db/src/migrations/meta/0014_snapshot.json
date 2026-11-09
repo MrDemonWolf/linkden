@@ -1,8 +1,8 @@
 {
+	"id": "27caec50-7bab-430a-881d-1bb98f7969be",
+	"prevId": "e318e263-07a2-4278-8a49-7faa1e1adb6c",
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "c5548bdd-8cc7-495b-8c2a-2e96af585bde",
-	"prevId": "27caec50-7bab-430a-881d-1bb98f7969be",
 	"tables": {
 		"link_click": {
 			"name": "link_click",
@@ -72,11 +72,11 @@
 				"link_click_block_id_block_id_fk": {
 					"name": "link_click_block_id_block_id_fk",
 					"tableFrom": "link_click",
-					"tableTo": "block",
 					"columnsFrom": ["block_id"],
+					"tableTo": "block",
 					"columnsTo": ["id"],
-					"onDelete": "cascade",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "cascade"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -311,11 +311,11 @@
 				"account_user_id_user_id_fk": {
 					"name": "account_user_id_user_id_fk",
 					"tableFrom": "account",
-					"tableTo": "user",
 					"columnsFrom": ["user_id"],
+					"tableTo": "user",
 					"columnsTo": ["id"],
-					"onDelete": "cascade",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "cascade"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -399,11 +399,11 @@
 				"session_user_id_user_id_fk": {
 					"name": "session_user_id_user_id_fk",
 					"tableFrom": "session",
-					"tableTo": "user",
 					"columnsFrom": ["user_id"],
+					"tableTo": "user",
 					"columnsTo": ["id"],
-					"onDelete": "cascade",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "cascade"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -481,11 +481,11 @@
 				"two_factor_user_id_user_id_fk": {
 					"name": "two_factor_user_id_user_id_fk",
 					"tableFrom": "two_factor",
-					"tableTo": "user",
 					"columnsFrom": ["user_id"],
+					"tableTo": "user",
 					"columnsTo": ["id"],
-					"onDelete": "cascade",
-					"onUpdate": "no action"
+					"onUpdate": "no action",
+					"onDelete": "cascade"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -987,42 +987,6 @@
 					"notNull": true,
 					"autoincrement": false
 				},
-				"approved_source_json": {
-					"name": "approved_source_json",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": false,
-					"autoincrement": false
-				},
-				"approved_source_digest": {
-					"name": "approved_source_digest",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": false,
-					"autoincrement": false
-				},
-				"approval_revision": {
-					"name": "approval_revision",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": false,
-					"autoincrement": false
-				},
-				"request_kind": {
-					"name": "request_kind",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": true,
-					"autoincrement": false,
-					"default": "'manual'"
-				},
-				"parent_generation": {
-					"name": "parent_generation",
-					"type": "integer",
-					"primaryKey": false,
-					"notNull": false,
-					"autoincrement": false
-				},
 				"next_visibility_boundary": {
 					"name": "next_visibility_boundary",
 					"type": "integer",
@@ -1159,27 +1123,6 @@
 					"autoincrement": false,
 					"default": 0
 				},
-				"approval_revision": {
-					"name": "approval_revision",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": false,
-					"autoincrement": false
-				},
-				"last_schedule_attempt_at": {
-					"name": "last_schedule_attempt_at",
-					"type": "integer",
-					"primaryKey": false,
-					"notNull": false,
-					"autoincrement": false
-				},
-				"schedule_failure_code": {
-					"name": "schedule_failure_code",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": false,
-					"autoincrement": false
-				},
 				"last_requested_at": {
 					"name": "last_requested_at",
 					"type": "integer",
@@ -1310,9 +1253,9 @@
 	"views": {},
 	"enums": {},
 	"_meta": {
+		"columns": {},
 		"schemas": {},
-		"tables": {},
-		"columns": {}
+		"tables": {}
 	},
 	"internal": {
 		"indexes": {}

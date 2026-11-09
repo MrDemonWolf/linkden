@@ -34,7 +34,9 @@ Self-hosted link-in-bio application built for Cloudflare-first deployment.
 - `bun run test:coverage` — Run tests with V8 coverage + thresholds
 - `bun run test:e2e` — Run Playwright e2e suite (`e2e/*.spec.ts`, split from Vitest; `PW_BASE_URL`
   overrides the web origin, `PW_API_URL` (default `http://127.0.0.1:3000`) the API origin for the
-  direct `public.getPage` check)
+  direct `public.getPage` check). Its local web server runs `next dev` on `127.0.0.1` with the
+  public URLs on the web origin and `INTERNAL_SERVER_URL` pointed at the API, so browser calls go
+  through the filesystem API bridge.
 - `bun run test:all` — Vitest then Playwright
 - `bun run db:generate` — Generate Drizzle migrations (no credentials needed; contributors only).
   There is no `db:push` script: push/studio bypass the migration ledger and the 0007 trigger.
@@ -111,11 +113,9 @@ Key production-readiness invariants — don't regress these:
 
 - **Single admin, enforced in the DB.** A `BEFORE INSERT` trigger on `user`
   (`packages/db/src/migrations/0007_single_admin_trigger.sql`) aborts a second
-  insert; middleware 403 is just a nicer message. Not middleware-only. Optional
-  `SETUP_TOKEN` secret: when bound, the first signup must send a matching
-  `x-setup-token` header (constant-time compare, `apps/server/src/lib/setup-token.ts`;
-  the setup wizard has an optional field), else 403 `Invalid setup token`. Unset = open
-  first-run window, so set it on any public deploy.
+  insert; middleware 403 is just a nicer message. Not middleware-only. First run
+  is WordPress-style on purpose: no setup token, whoever completes `/admin/setup`
+  first becomes the admin, so the owner does it right after deploying.
 - **Auth options live in `createAuthOptions`** (`packages/auth/src/auth-options.ts`); never
   configure `betterAuth` inline in `index.ts` (it only wires env, D1, Resend and secret
   validation). Tests build instances from the same factory.
@@ -127,13 +127,17 @@ Key production-readiness invariants — don't regress these:
   - 2FA (`twoFactor({ issuer: "LinkDen" })`, table `two_factor`, migration 0008): enabled only
     after the first TOTP code verifies; password sign-in then returns `twoFactorRedirect` and the
     login page asks for the TOTP or a backup code. Never ship a 2FA path without the login step.
+    Guessing is capped: Better Auth ends a challenge after 5 wrong codes and `accountLockout`
+    (5 consecutive failures → 1h) is set explicitly; a test fails if the lockout is turned off.
   - Magic link: single admin only, refused while 2FA is on, `disableSignUp`, 10-minute expiry,
     enabled-gate in a before-hook (403 before any token is stored), unknown addresses get the same
     `{status:true}` with nothing stored or sent. The server also 403s both
     `/api/auth/sign-in/magic-link` and `/api/auth/magic-link/*` unless `magic_link_enabled` is
     exactly `"true"`.
   - Change email is two-step (confirm from the current address, then verify the new one) and
-    returns 400 when no Resend key is configured. Password reset revokes every session.
+    returns 400 when no Resend key is configured. With 2FA on, signed-out new-email verification
+    (and a magic link issued before 2FA) cannot create a session (`databaseHooks.session.create`);
+    the signed-in owner can still finish it. Password reset revokes every session.
   - `DEV_LOGIN` needs `DEV_LOGIN="true"` AND a strict plain-HTTP loopback `BETTER_AUTH_URL`; an explicit non-development runtime mode disables it. Request URL and Host must agree and stay local, as must Origin/Referer and any proxy metadata. Edge/tunnel headers cannot establish trust. Better Auth's first-login CSRF middleware validates Origin/Fetch Metadata even without a session cookie. Never bound by Alchemy; keep local listeners on loopback. The login button and setup test prefill also require a local development page, even when the public feature flag is set.
 - **Atomic multi-writes.** Backup import, block reorder/undo-insert, bulk settings, wallet
   config, retention prune, and danger resets run in a single `db.batch([...])` via
@@ -175,16 +179,19 @@ Key production-readiness invariants — don't regress these:
   (`rateLimit: { enabled: true }`, in-memory per isolate) and stacks on top.
 - **Same-origin writes + body limits.** POSTs to `/trpc/*` and `/api/upload` must come from
   `CORS_ORIGIN` or the request's own origin (Sec-Fetch-Site fallback), else 403. Body limits:
-  64KB `/api/auth/*`, 1MB `/trpc/*`, 16MB only when every procedure in the batch is `backup.*`.
-  `bodyWithinLimit` counts actual bytes even when Content-Length understates them, bounds its
-  buffer, and cancels oversized streams before parsing or side effects. Uploads and the public
-  contact action use the same counter. tRPC `errorFormatter` strips stacks and
+  64KB `/api/auth/*`, 1MB `/trpc/*`, 16MB only when every procedure in the batch is `backup.*`
+  (the web client's `splitLink` sends `backup.*` calls as their own request).
+  `bodyWithinLimit` (`apps/server/src/lib/body-limit.ts`) counts actual bytes even when
+  Content-Length understates them, bounds its buffer, and cancels oversized streams before parsing
+  or side effects. Uploads and the public contact action use the same counter. Don't add a second
+  inline counter in `index.ts`. tRPC `errorFormatter` strips stacks and
   replaces INTERNAL_SERVER_ERROR messages; raw causes are logged server-side.
-- **Shared web API transport.** The filesystem API bridge uses the Cloudflare service binding, or a validated plain-HTTP loopback transport for local requests. SSR shares that binding lookup and honors only a bare loopback `INTERNAL_SERVER_URL`. Explicit `DEV_API_ORIGIN` tunnel rewrites run before filesystem handlers in development only; the API still independently rejects tunneled development login.
+- **Shared web API transport.** The filesystem API bridge uses the Cloudflare service binding, or a validated plain-HTTP loopback transport for local requests. `lib/api-proxy.ts` strips hop-by-hop, forwarding and `cf-*` headers (keeping `cf-connecting-ip` only from a trusted edge), rejects encoded slashes, unknown methods, loops and Connection-nominated auth/CSRF headers, and marks responses `private, no-store` except successful GET/HEAD `/api/images/*` reads, which keep the API's immutable `Cache-Control` + `ETag` (keys are random and never reused); the API's own body limits stay authoritative. Deployed, OpenNext reads non-GET/HEAD bodies into the web worker's memory before the bridge runs (bounded only by Cloudflare's per-plan request size), so those limits decide the status, not how much the web worker buffers. SSR shares that binding lookup and honors only a bare loopback `INTERNAL_SERVER_URL`. Explicit `DEV_API_ORIGIN` tunnel rewrites run before filesystem handlers in development only; the API still independently rejects tunneled development login.
 - **Logging never carries tokens or visitor PII.** The request line is path-only
-  (`METHOD path status ms`, reset-password token segment redacted, no query strings) — never
-  reintroduce `hono/logger`. Workers invocation logs are off (`observability.logs.invocationLogs:
-  false` for both API and web in `alchemy.run.ts`) because they record full URLs. `logError`
+  (`METHOD path status ms`, reset-password token segment redacted by `redactLogPath`, which
+  `logError` also applies to its `path`; no query strings) — never reintroduce `hono/logger`. Workers invocation logs are off (`observability.logs.invocationLogs:
+  false` for both API and web in `alchemy.run.ts`, pinned by `deploy-config.test.ts`) because they
+  record full URLs; the web worker serves reset-password links and bridges `/api/auth/*`. `logError`
   (`apps/server/src/lib/log.ts`) strips Drizzle bound params from messages and stacks.
 - **Uploads:** magic-byte signature check + `Content-Length` precheck. `replaces` is honoured
   only for a same-purpose key that no saved setting or block references (normally an unsaved
@@ -201,13 +208,23 @@ Key production-readiness invariants — don't regress these:
   admin-only, 5s timeout, per-isolate cache (6h ok / 10min failure; `force: true` skips it but
   reuses an answer under 60s old).
 - **Deployment is Cloudflare-only, through Alchemy** (Docker/Coolify/Railway removed).
+  - Legacy: the browser only ever talks to the site origin. With `SITE_DOMAIN`, zone Routes send
+    `/api/*` + `/trpc/*` to the API worker; without it (workers.dev, admin included) the web
+    worker's filesystem bridge (`app/api/[[...path]]`, `app/trpc/[[...path]]` →
+    `lib/api-proxy.ts`) forwards them over the `API` service binding to the fixed
+    `https://api.internal` origin. There is no custom web Worker entrypoint: in split mode,
+    split ingress (`apps/server/src/lib/split-ingress.ts`) admits only binding traffic addressed
+    to `https://api.internal` plus the optional exact `PUBLIC_CONTACT_URL` action, so a
+    passthrough entry would 404. Keep the bridge prefixes in step with the Routes.
   - `deploy.yml` deploys only `workflow_run.event == 'push'` from this repo's `main` (fork PRs
     named `main` can't deploy), never cancels a running deploy, runs a preflight that names
     missing secrets/vars, records a D1 Time Travel bookmark before deploying, and smoke-tests web.
   - `alchemy.run.ts` validates the deploy env before touching state (`deployEnvErrors` in
     `packages/infra/deploy-config.ts`: non-empty values, `BETTER_AUTH_SECRET` ≥ 32 chars and not
-    Better Auth's default, https URLs, bare-origin `CORS_ORIGIN`, all equal to
-    `https://SITE_DOMAIN` when it is set).
+    Better Auth's default, https URLs, bare-origin `BETTER_AUTH_URL`/`CORS_ORIGIN`/
+    `NEXT_PUBLIC_SERVER_URL` (the error never echoes the value), a bare-origin
+    `NEXT_PUBLIC_SITE_URL` (one trailing slash allowed), and in legacy mode all equal to
+    the site origin: `https://SITE_DOMAIN`, else `NEXT_PUBLIC_SITE_URL`'s).
   - `LINKDEN_DB_NAME` / `LINKDEN_IMAGES_BUCKET` overrides apply to the `prod` stage only.
   - `LINKDEN_SERVING_MODE` defaults to `legacy`. Opt-in `split` is an owner-approved routing
     cutover: require separate bare HTTPS `ADMIN_SITE_URL` and `PUBLIC_SITE_URL`, unset
@@ -235,7 +252,11 @@ Key production-readiness invariants — don't regress these:
   - Prod D1/R2 use `delete: false`; a prod destroy needs `LINKDEN_CONFIRM_DESTROY_PROD=yes`.
   - The Workers compatibility date is pinned (`COMPATIBILITY_DATE` in `alchemy.run.ts`,
     2026-04-24); bump it together with `apps/server/wrangler.jsonc`.
-  - Migrations must be additive (expand/contract) so a code-only `wrangler rollback` is safe.
+  - Migration history is `0000`–`0015` (`0011_relative_image_paths` is a data-only upload-path
+    rewrite, `0012` adds `contact_quota`, `0013`–`0015` the publication tables). New migrations
+    must be additive (expand/contract) before relying on a code-only `wrangler rollback`. Historical migrations 0002, 0008 and 0010 remove data or
+    columns, and 0011 rewrites stored upload URLs to relative paths; verify old code against the migrated schema, or restore the pre-deploy
+    D1 Time Travel bookmark (which also rewinds later data).
   - CI actions are SHA-pinned with minimal permissions; `/api/health` checks D1 (logs the error
     when degraded) + reports version and auth state.
 - **Test DB:** integration tests use the in-memory libsql helper
@@ -248,7 +269,8 @@ Key production-readiness invariants — don't regress these:
 
 ### File Storage (R2)
 - **Bucket binding:** `IMAGES_BUCKET` (R2Bucket on Cloudflare Workers)
-- **Upload endpoint:** `POST /api/upload` — accepts `file` + `purpose` (+ optional `replaces`) form fields, returns `{ publicUrl }`
+- **Upload endpoint:** `POST /api/upload` — accepts `file` + `purpose` (+ optional `replaces`) form fields, returns `{ publicUrl }` (an origin-relative `/api/images/<purpose>/<id>.<ext>` path)
+- **Stored as paths:** image settings and block `thumbnail`/`src` hold that relative path (`UPLOADED_IMAGE_PATH` / `imageUrlSchema` in `@linkden/validators/primitives`, accepted by the `url` setting kind), so images survive an origin change. Migration 0011 rewrote older absolute upload URLs; public renderers use `safeImageSrc` (`lib/safe-url.ts`), which also reduces any leftover absolute upload URL to its path.
 - **Serving endpoint:** `GET /api/images/*` — 404s key shapes the app never writes (`<purpose>/<uuid|ms-timestamp>.<ext>`) without reading R2; serves with immutable cache headers + `ETag` and edge-caches via `caches.default` (cache key without the query string). Edge copies are never purged (keys are random and never reused), so an orphan-swept image may linger in a colo cache until evicted.
 - **Valid purposes:** `UPLOAD_PURPOSES` in `@linkden/validators/uploads` (`avatar`, `banner`, `og_image`, `wallet_*`, `logo`, `favicon`, `login_*`, `block_thumbnail`, `block_image`)
 - **Client component:** `ImageUploadField` — drag-and-drop upload with preview, replace, and remove buttons. Sends `replaces` only for an upload it made during the current unsaved edit (tracked with `unsavedEditSnapshot()` from `hooks/use-unsaved-changes.ts`; any form save, discard or close ends the edit) — never the saved value. Without a `label` it is wrapped in `<fieldset><legend>` so its Replace/Re-crop/Remove buttons get group context.
@@ -279,7 +301,7 @@ Key production-readiness invariants — don't regress these:
 - **Shared web modules:** `lib/admin-routes.ts` (`PUBLIC_ADMIN_ROUTES`, `hasSessionCookie`, used by `proxy.ts`), `lib/theme-colors.ts` (`getThemeColors`), `lib/contact-form.ts` (client mirror of `submitContact` rules)
 
 ### Public Page
-- Root layout metadata is static; profile/SEO/OG/favicon/theme-colour metadata live in `app/page.tsx`, so admin routes, `/offline` and 404s never call `public.getPage`. An API outage on `/` throws → `app/error.tsx` (HTTP 500).
+- Root layout metadata is static; profile/SEO/OG/favicon/theme-colour metadata live in `app/page.tsx`, so admin routes, `/offline` and 404s never call `public.getPage`. An API outage on `/` throws → `app/error.tsx` (HTTP 500). While no admin exists (`getPage` returns `profile: null`) `/` answers a 307 to `/admin/setup`; there is no Welcome splash.
 - `/og` runs on Node (no Edge runtime — OpenNext Cloudflare can't serve it) with the Workers Cache API keyed on the canonical URL. Anonymous requests always render the stored profile; only a session-cookie request (SEO live preview) renders query values, uncached.
 - `public.getPage` is one D1 batch, honours privacy/terms URL vs text mode and `site_language` (`lang`).
 - Service worker: `/sw.js?v=<version>`, cache keyed by the worker's `CACHE_VERSION` and app version, navigation preload, home cached under one `/` key, 2xx only; redirected responses and responses ending outside the same-origin root are never cached. Local loopback requests bypass this caching policy.
@@ -313,12 +335,12 @@ Key production-readiness invariants — don't regress these:
 - **Block drafts:** the block toolbar's `Apply n new` calls the existing `blocks.publishAll` status update. `No block drafts` means only that all blocks are applied. Legacy public reads include enabled, applied blocks immediately; static public revisions still require the header's separate Publish action and verified receipt. Keep applying content distinct from deploying it in labels, toasts, and previews.
 - **Unsaved guard:** one module-level guard (beforeunload, capture click, Navigation API `traverse` for Back/Forward) shared by every `useUnsavedChanges`, so the user is prompted once. `unsavedEditSnapshot()` exposes the current edit for `ImageUploadField`.
 - Cards use matte `bg-card border-border shadow-surface` surfaces without blur. Navigation uses restrained solid state fills; `SectionRule` and public profile dividers use the signal gradient. The Unsaved control uses a warning outline and text without a glow or animated dot.
-- Motion: preview collapse uses a 220ms width transition. Keep decorative entrance effects off admin forms and charts. The global `prefers-reduced-motion` rule shortens transitions and explicitly disables public entrance classes. JS motion checks itself: `useEntranceAnimation` reads the media query, imperative smooth scrolls use `prefersReducedMotion()` from `hooks/use-reduced-motion.ts`.
+- Motion: preview collapse uses a 220ms width transition. Keep decorative entrance effects off admin forms and charts. The global `prefers-reduced-motion` rule shortens transitions and explicitly disables public entrance classes. JS motion checks itself: imperative smooth scrolls use `prefersReducedMotion()` from `hooks/use-reduced-motion.ts`.
 - AdminShell sets `scroll-padding-top/bottom` on `<html>` while mounted (WCAG 2.4.11). The sidebar shortcut is Cmd+B (Apple) / Ctrl+B, ignored in editable fields and below md.
 - Wrap sections in `Card` / `CardContent`
 - Section headers: use the shared 16px `CardTitle`; choose `as="h3"` for a subsection.
 - Settings forms: `useSettingsForm` scope per page + one `StickySaveBar` (sits above the bottom tab bar below lg). It saves only keys that differ from the saved baseline (still one `updateBulk`/`runBatch`), keeps unsaved edits across a refetch, and exposes `isError`/`error`/`refetch` for a `QueryError` retry state.
-- Setup wizard: `/admin/setup` - 4-step centered-card onboarding (Account → Profile → Theme → Done); redirects to `/admin/login` if account already exists; optional Setup token field (sent as `x-setup-token`); `?test=true` prefill is dev-only.
+- Setup wizard: `/admin/setup` - 4-step centered-card onboarding (Account → Profile → Theme → Done); `/` 307s here (`app/page.tsx`, when `getPage` has no profile) and `/admin/login` sends here while no admin exists (WordPress-style, no setup token); redirects to `/admin/login` if account already exists; `?test=true` prefill is dev-only.
 - Login page: `/admin/login` - compact centered form using normal site branding and semantic theme tokens; reset-password uses the same direction. Dedicated login logo/background controls are removed. Existing `branding_login_*` records remain for backup compatibility and are not cleared by preference saves. After password sign-in it shows a TOTP / backup-code step when Better Auth answers `twoFactorRedirect` (optional "trust this device for 30 days"). Honours `?from=` after every sign-in method, validated by `safeAdminRedirect` (`app/admin/login/redirect.ts`: plain `/admin` paths only, never login/setup/reset-password).
 - Design → Theme: `custom_primary/secondary/accent/background` are true overrides — empty inherits the preset in light and dark; picking a preset clears them (`app/admin/design/theme-form.ts`).
 
@@ -329,14 +351,14 @@ All settings stored as key-value in `site_settings` table. Per-key metadata (whi
 - **SEO:** `seo_title` (max 100), `seo_description` (max 250), `seo_og_image`, `seo_og_mode`, `seo_og_template`, `site_language`
 - **Branding:** `branding_enabled`, `branding_text`, `branding_link`, `branding_logo_url`, `branding_favicon_url`, `branding_site_name`, `branding_pp_url`, `branding_tos_url`, `admin_branding_enabled`
 - **Features:** `wallet_pass_enabled`, `vcard_enabled`, `vcard_data`, `contact_form_enabled`, `mapkit_enabled`, `mapkit_token`
-- **Auth/CAPTCHA:** `magic_link_enabled` (can't be turned on without email or while 2FA is on), `captcha_provider`, `captcha_site_key`, `captcha_secret_key`
+- **Auth/CAPTCHA:** `magic_link_enabled` (can't be turned on without email or while 2FA is on; the settings router rejects it too), `captcha_provider`, `captcha_site_key`, `captcha_secret_key`
 - **Email:** `email_provider` (unset = Resend; other providers never send), `email_api_key`, `email_from`, `contact_delivery` (`database` / `email` / `both`; a failed or unconfigured email send falls back to the Inbox and is audited as `contact.email_failed`)
 - **System:** `default_color_mode`, `timezone` (historical analytics API day buckets; unset = UTC; Inbox timestamps use the same preference), `consent_banner_enabled`, `consent_banner_text`, `consent_categories`
 
 ### Explicit static publication
 
 - `publication.request/status` are protected tRPC procedures. The default disabled status does not query publication tables, so existing local databases can still run the editor. Opt-in configuration and GitHub dispatch live in `utils/publication-dispatch.ts`; credentials never enter browser settings or snapshots.
-- Immutable public snapshots, compiler validation and canonical artifact receipts live in `@linkden/validators/publication`. Scheduled releases use a separate immutable private approved source; future content must never enter public artifacts, status responses or the CI build input. Boundary jobs must not reread mutable authoring rows.
+- Immutable public snapshots, compiler validation and canonical artifact receipts live in `@linkden/validators/publication`. `createPublicationSnapshot` resolves origin-relative upload paths (profile image, URL-kind settings, image `src`, link `thumbnail`) against the snapshot's public origin, so frozen snapshots only hold absolute URLs. Scheduled releases use a separate immutable private approved source; future content must never enter public artifacts, status responses or the CI build input. Boundary jobs must not reread mutable authoring rows.
 - `apps/public/build.ts` reuses the actual public components, local fonts and shared OG templates. Approved image keys are read individually and rewritten to hashed assets; no bucket listing or arbitrary media fetch. The OG child denies network fetch and preconnect. Unresolved local media, external HTTP media and custom CSS dependencies block the CI runner.
 - `apps/public/publish.ts` claims a frozen revision, verifies every local file, stages an immutable version, checks the current approval/head, activates, verifies exact HTTP assets/404/security headers, then commits its receipt. Verification is bounded. Failure restores and verifies the last good version; ambiguous activation/completion latches recovery instead of inventing live status.
 - `apps/public/stage.ts` generates native assets-only Wrangler configuration with no entrypoint, bindings, routes or Worker-first fallback. `cloudflare.ts` requires an owned, bootstrapped target with closed preview aliases before activation. CI publication is serialized per target, requires owner opt-in and the exact approved main commit with successful CI, and retains public artifacts for 30 days. The workflow and Cloudflare/D1 adapters require an approved cloud integration test before claiming deployment readiness.

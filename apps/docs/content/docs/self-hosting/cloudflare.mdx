@@ -43,7 +43,7 @@ NEXT_PUBLIC_SERVER_URL=https://links.example.com
 NEXT_PUBLIC_SITE_URL=https://links.example.com
 ```
 
-Set `BETTER_AUTH_SECRET`, `SETUP_TOKEN`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `ALCHEMY_PASSWORD` and the appropriate Alchemy state configuration privately. Generate separate random secrets with:
+Set `BETTER_AUTH_SECRET`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `ALCHEMY_PASSWORD` and the appropriate Alchemy state configuration privately. Generate separate random secrets with:
 
 ```bash
 openssl rand -base64 32
@@ -53,7 +53,18 @@ Scope the Cloudflare token to the selected account and zones. The existing IaC n
 
 A deployment reads `packages/infra/.env` or CI values. It does not use `apps/web/.env` or `apps/server/.env`. The preflight rejects missing values, weak auth secrets, non-HTTPS deployment URLs and mismatched origins before provisioning.
 
-For legacy `workers.dev` staging, use the **actual web Worker origin** for all four URL variables. Find the Workers subdomain in your account; do not infer it from the account name. Browser calls use the web origin's API bridge, not the API Worker's separate hostname. Verify sign-in and cookies in that environment.
+A custom domain is optional in legacy mode. Without `SITE_DOMAIN`, the whole site, admin included, runs on the web Worker's `workers.dev` URL, so use the **actual web Worker origin** for all four URL variables:
+
+```bash
+LINKDEN_SERVING_MODE=legacy
+# SITE_DOMAIN unset
+BETTER_AUTH_URL=https://linkden.<workers-subdomain>.workers.dev
+CORS_ORIGIN=https://linkden.<workers-subdomain>.workers.dev
+NEXT_PUBLIC_SERVER_URL=https://linkden.<workers-subdomain>.workers.dev
+NEXT_PUBLIC_SITE_URL=https://linkden.<workers-subdomain>.workers.dev
+```
+
+Find the Workers subdomain in your account; do not infer it from the account name. The web Worker's API bridge forwards `/api/*` and `/trpc/*` to the API Worker over its service binding, so the browser never calls the API Worker's separate `linkden-api` hostname. Pointing any URL there would put the session cookie on a different site (`workers.dev` is on the Public Suffix List); the preflight refuses auth, CORS and API URLs that differ from `NEXT_PUBLIC_SITE_URL`. With `SITE_DOMAIN`, zone Routes send those paths straight to the API Worker and skip the bridge. Verify sign-in and cookies in either environment.
 
 ### Alchemy state
 
@@ -70,13 +81,19 @@ LINKDEN_DB_NAME=linkden-database-runner
 LINKDEN_IMAGES_BUCKET=linkden-images-runner
 ```
 
-Export the database and inventory uploaded objects before changing adoption or state configuration. A new empty database would reopen first-run setup. Do not destroy an old stage to repair adoption.
+Export the database and inventory uploaded objects before changing adoption or state configuration. A new empty database would send the home page back to the setup wizard and reopen first-run setup to anyone. Do not destroy an old stage to repair adoption.
 
 ### Migration history
 
-Alchemy tracks **full SQL filenames** in `d1_migrations`, not just their numeric prefixes. Preserve applied filenames and the current Drizzle snapshot lineage. This checkout's history runs from `0000` to `0014`; its `0011_parallel_gertrude_yorkes.sql` and a dev ledger's `0011_relative_image_paths.sql` are different identities, and an extra already-applied ledger entry is tolerated.
+Alchemy tracks **full SQL filenames** in `d1_migrations`, not just their numeric prefixes. Preserve applied filenames and the current Drizzle snapshot lineage. The history runs from `0000` to `0015`:
 
-Do not blindly merge or replay the older image-path rewrite. It matches URL paths without proving the host belongs to this instance and could alter external images. The current history does not automatically normalize those URLs. Inventory legacy upload origins before deciding whether a data migration is needed. Local upgrade tests do not replace an approved staging migration and restore test.
+| Migration | Change |
+|-----------|--------|
+| `0011_relative_image_paths` | Data only: rewrites absolute upload URLs in image settings and block `thumbnail`/`src` to origin-relative `/api/images/…` paths |
+| `0012_parallel_gertrude_yorkes` | Adds the `contact_quota` table for the daily contact delivery quota |
+| `0013_publication_revisions`–`0015_publication_approvals` | Add the publication revision/state tables, their guard triggers and approval columns |
+
+`0011` matches any `http(s)` URL whose value contains `/api/images/`; it does not check the host. An external image hosted under another LinkDen instance's `/api/images/` path would also be shortened, so inventory such values before upgrading. Local upgrade tests do not replace an approved staging migration and restore test.
 
 ## Deploy and initialize
 
@@ -89,11 +106,11 @@ bun run deploy
 This applies pending migrations and provisions or updates the selected web/API Workers, D1 and R2 resources. It is a cloud mutation, not a preview command.
 
 1. Read the actual output and verify `/api/health` through the web/admin origin.
-2. Open `/admin/setup` on that origin and supply `SETUP_TOKEN` to create the sole admin account.
+2. Open the site right away. Until an admin exists, `/` redirects to `/admin/setup`; create the sole admin account there.
 3. Enable two-factor authentication in Settings → Account and save backup codes.
 4. Verify sign-out, password sign-in, the TOTP/backup-code step and session persistence.
 
-The database enforces one admin. Without a setup token, the first person to finish setup can claim a new public instance.
+The database enforces one admin. First-run setup is WordPress-style with no setup token: until setup is finished, the first person to complete it claims a new public instance.
 
 ## Split deployment and public publication
 
@@ -133,11 +150,17 @@ The native row requires an assets-only target with no application fallback or Wo
 
 Cloudflare distinguishes static asset delivery from Worker script execution in its [current asset billing documentation](https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/). Shared account usage, billed D1 rows, CPU time, storage and retries must be measured separately. No verified account plan, Free-plan CPU result or savings estimate is implied here.
 
+### Workers Free and Paid
+
+LinkDen's D1, R2, rate-limit, cron and service bindings have no documented Workers Paid requirement. On Free, the shared `alchemy-state` prerequisite must use a SQLite-backed Durable Object, and R2 must be activated separately. Static assets that bypass the Worker do not spend the Workers request allowance.
+
+Free has a [10 ms CPU limit per invocation and 100,000 Worker requests per day](https://developers.cloudflare.com/workers/platform/limits/). Dynamic page rendering, `/og`, wallet signing and the daily retention job may need more CPU. Paid starts HTTP requests at a 30-second CPU limit and gives the daily cron more headroom; both plans retain the 128 MB memory limit. Check CPU usage and the final Worker bundle size on your own deployment before relying on Free for every feature. See [D1 limits](https://developers.cloudflare.com/d1/platform/limits/) and [R2 pricing and activation](https://developers.cloudflare.com/r2/pricing/) for their separate allowances.
+
 ## Rollback
 
 Preserve an export, the exact deployed code/version IDs, the D1 bookmark and a tested recovery procedure before cutover.
 
-- A web/API code rollback does not undo database changes. Confirm schema compatibility with the version being restored.
+- A web/API code rollback does not undo database changes. Confirm schema compatibility with the version being restored. New migrations are additive (expand, then contract in a later release), but historical migrations `0002`, `0008` and `0010` removed data or columns, and `0011` rewrote stored upload URLs.
 - D1 Time Travel rewinds the entire database. Check the provider's [current Time Travel documentation](https://developers.cloudflare.com/d1/reference/time-travel/) and the exact database/bookmark before an approved restore.
 - Public publication uses its recorded last-good immutable version and HTTP checks. Explicit interrupted-job recovery restores that version rather than publishing mutable drafts. A missing last-good receipt remains a recovery gate.
 - Deleting editor content or resetting its database does not withdraw files already published to the separate native target. Replace or disable that target through the approved publication/operations procedure.

@@ -1,15 +1,15 @@
 ---
 title: Security
-description: Configure setup protection, two-factor sign-in, local development access, and bounded API requests.
+description: Claim first-run setup, configure two-factor sign-in and local development access, and understand bounded API requests.
 ---
 
 LinkDen includes authentication, server-side validation, request limits, and a single-admin database constraint. Operators still need to configure deployment access, provider credentials, backups, and recovery.
 
 ## Protect first-time setup
 
-The first account created at `/admin/setup` becomes the administrator. Subsequent signups receive 403, and a database trigger prevents a second account.
+The first account created at `/admin/setup` becomes the administrator. Subsequent signups receive **403 "Registration is closed"**, and a database trigger prevents a second account even if that check were bypassed.
 
-Set a random `SETUP_TOKEN` before exposing a fresh instance. The setup wizard sends it through `x-setup-token`; an incorrect token is rejected. Without it, the first-account window is open to whoever reaches setup first.
+First-run setup is WordPress-style and has no setup token. Until an admin exists, the home page and `/admin/login` send visitors to `/admin/setup`, and whoever finishes setup first becomes the administrator. **Finish setup right after your first deploy.**
 
 ## Two-factor sign-in
 
@@ -18,11 +18,11 @@ Set a random `SETUP_TOKEN` before exposing a fresh instance. The setup wizard se
 3. Save the backup codes somewhere separate from your device.
 4. Test sign-out and sign-in before relying on the new setup.
 
-Enrollment becomes active only after a valid confirmation code. Password sign-in then requires a TOTP or an unused backup code before an authenticated session is issued. Each backup code works once. The optional trusted-device choice lasts 30 days.
+Enrollment becomes active only after a valid confirmation code. Password sign-in then requires a TOTP or an unused backup code before an authenticated session is issued. Each backup code works once. The optional trusted-device choice lasts 30 days. A sign-in attempt ends after five wrong codes, and five consecutive failures lock two-factor sign-in for an hour.
 
-Magic-link sign-in requires configured Resend email and two-factor to be off. It serves only the existing admin, expires after ten minutes, and cannot create another account. Turning it off also blocks outstanding verification routes.
+Magic-link sign-in requires configured Resend email and two-factor to be off; settings saves and backup imports refuse to enable it otherwise. It serves only the existing admin, expires after ten minutes, and cannot create another account. Turning it off also blocks outstanding verification routes.
 
-A password change revokes other sessions. Password reset revokes every session. An email change requires confirmation from the current address and verification at the new address.
+A password change revokes other sessions. Password reset revokes every session. An email change requires confirmation from the current address and verification at the new address. While two-factor is on, a signed-out magic-link or email-verification link cannot create a session.
 
 ## Account recovery
 
@@ -58,7 +58,7 @@ The API requires a valid positive `Content-Length`. It can reject a declared ove
 
 Accepted extensions are `jpg`, `jpeg`, `png`, `gif`, `webp`, and `ico`; MIME and magic-byte signatures must agree. Invalid files get 400, oversized bodies/files get 413, and a missing length gets 411.
 
-The upload response contains a relative `/api/images/<purpose>/<id>.<ext>` path. The current editor expands it to the configured API origin before saving because URL fields require absolute HTTP(S) values.
+The upload response contains a relative `/api/images/<purpose>/<id>.<ext>` path, and the editor saves it as returned, so saved images keep working when the site moves to another origin. Image fields accept that upload path or an external HTTP(S) URL. Migration `0011` rewrote older absolute upload URLs to paths, and public renderers reduce any remaining absolute upload URL to its path.
 
 Replacement removes only an unreferenced intermediate upload from the same unsaved edit. Saved media is retained when you discard a replacement. The daily orphan sweep reclaims unreferenced objects after a 24-hour grace period; cached copies can outlive storage deletion. JSON backups contain references, not the image files.
 
@@ -82,7 +82,7 @@ Actual received bytes are capped before parsing:
 | --- | --- |
 | Auth | 64 KiB |
 | Ordinary tRPC, including mixed backup/non-backup batches | 1 MiB |
-| tRPC batches containing only `backup.*` procedures | 16 MiB |
+| tRPC requests containing only `backup.*` procedures (the editor sends these on their own) | 16 MiB |
 | Public contact action | 64 KiB |
 | Upload multipart body | 5 MiB + 16 KiB |
 

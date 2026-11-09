@@ -30,7 +30,6 @@
 //     /api/health stays up and reports `auth: "misconfigured"`.
 //   - Signup lock: after the first user registers, /sign-up returns 403 here;
 //     the DB trigger (0007_single_admin_trigger.sql) is the real enforcement.
-//     With a SETUP_TOKEN secret bound, the first signup must also send it.
 //   - Magic link gate: both the send and verify steps are refused unless the
 //     magic_link_enabled setting is "true", so admins can disable it at runtime.
 //   - Same-origin writes: POSTs to /trpc/* and /api/upload must come from the
@@ -70,7 +69,6 @@ import { allowedOrigin, isTrustedRequestOrigin, publicContactOrigin } from "./li
 import { generatePkpass } from "./lib/pkpass";
 import { rateLimitKey, trpcProcedurePaths } from "./lib/rate-limit";
 import { collectReferencedKeys, runScheduledMaintenance } from "./lib/retention-sweep";
-import { SETUP_TOKEN_HEADER, setupTokenAccepted } from "./lib/setup-token";
 import { splitApiIngress } from "./lib/split-ingress";
 import {
 	buildR2Key,
@@ -94,7 +92,6 @@ type Bindings = {
 	RL_UPLOAD?: RateLimit;
 	RL_PUBLIC?: RateLimit;
 	RL_SIGNIN?: RateLimit;
-	SETUP_TOKEN?: string;
 	WALLET_SIGNER_CERT?: string;
 	WALLET_SIGNER_KEY?: string;
 	WALLET_WWDR_CERT?: string;
@@ -166,7 +163,7 @@ const adminCors = cors({
 	origin: (origin, c) => (origin === allowedOrigin(c.env?.CORS_ORIGIN) ? origin : null),
 	credentials: true,
 	allowMethods: ["GET", "POST", "OPTIONS"],
-	allowHeaders: ["Content-Type", "Authorization", SETUP_TOKEN_HEADER],
+	allowHeaders: ["Content-Type", "Authorization"],
 });
 app.use("/*", (c, next) => (c.req.path === "/api/contact" ? next() : adminCors(c, next)));
 
@@ -349,7 +346,7 @@ app.use(
 	"/api/auth/magic-link/*",
 	rateLimit((env) => env.RL_STRICT),
 );
-// Signup: limiter first so failed setup-token guesses spend RL_STRICT budget.
+// Signup: limiter first, then the single-admin lock.
 app.use(
 	"/api/auth/sign-up/*",
 	rateLimit((env) => env.RL_STRICT),
@@ -359,9 +356,6 @@ app.use("/api/auth/sign-up/*", async (c, next) => {
 	const [existingUser] = await db.select({ id: user.id }).from(user).limit(1);
 	if (existingUser) {
 		return c.json({ error: "Registration is closed" }, 403);
-	}
-	if (!(await setupTokenAccepted(c.env?.SETUP_TOKEN, c.req.header(SETUP_TOKEN_HEADER)))) {
-		return c.json({ error: "Invalid setup token" }, 403);
 	}
 	await next();
 });
@@ -395,7 +389,10 @@ app.use("/trpc/*", async (c, next) => {
 	c.set("trpcProcedures", procedures);
 	await next();
 });
-// Backup import is the only procedure that legitimately sends large bodies.
+// Backup import is the only procedure that legitimately sends large bodies, and
+// only a request made solely of backup calls gets the large limit (the web
+// client sends backup.* unbatched): a mixed batch would otherwise make tRPC
+// parse a 16MB body for its public procedures.
 app.use("/trpc/*", (c, next) =>
 	c.get("trpcProcedures").every((p) => p.startsWith("backup."))
 		? backupBodyLimit(c, next)

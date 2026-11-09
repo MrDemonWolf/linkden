@@ -83,7 +83,7 @@ The Alchemy and standalone paths use separate local databases. Switching paths d
 
 ## Complete setup
 
-Open `http://localhost:3001/admin/setup`. The wizard takes you through **Account → Profile → Theme → Done**. Enter a setup token if you configured one. The first account becomes the single administrator; subsequent registration is blocked.
+Open `http://localhost:3001`. Until an admin exists, it redirects to `/admin/setup`. The wizard takes you through **Account → Profile → Theme → Done**. The first account becomes the single administrator; subsequent registration is blocked.
 
 Open the editor, save a profile change, and reload to confirm persistence. Enable [two-factor authentication](/docs/guide/security#two-factor-sign-in) before using a public instance.
 

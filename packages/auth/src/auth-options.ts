@@ -226,7 +226,8 @@ export function createAuthOptions(deps: AuthOptionsDeps) {
 			},
 			session: {
 				create: {
-					// Neither an old magic link nor signed-out email verification may skip 2FA.
+					// Backstop for magic links issued before 2FA was turned on and
+					// signed-out change-email links: neither may skip the second factor.
 					before: async (session, ctx) => {
 						if (ctx?.path !== "/magic-link/verify" && ctx?.path !== "/verify-email") return;
 						const found = await ctx.context.internalAdapter.findUserById(session.userId);
@@ -290,8 +291,14 @@ export function createAuthOptions(deps: AuthOptionsDeps) {
 			// Enabling stores an unverified secret; `twoFactorEnabled` only flips
 			// after the first TOTP code verifies, so a half-finished setup can't
 			// lock the admin out. The login page answers `twoFactorRedirect` with
-			// the TOTP / backup-code step.
-			twoFactor({ issuer: "LinkDen" }),
+			// the TOTP / backup-code step. Guessing is capped twice: Better Auth
+			// ends a sign-in challenge after 5 wrong codes, and the lockout below
+			// refuses every challenge for an hour after 5 consecutive failures, so
+			// a stolen password buys ~120 TOTP guesses a day, not thousands.
+			twoFactor({
+				issuer: "LinkDen",
+				accountLockout: { enabled: true, maxFailedAttempts: 5, durationSeconds: 3600 },
+			}),
 			magicLink({
 				// Single admin: never create an account from a magic link.
 				disableSignUp: true,

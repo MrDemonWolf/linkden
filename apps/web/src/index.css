@@ -437,22 +437,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Login/Setup background — theme-aware, uses primary color glow over base background */
-.login-bg {
-  background:
-    radial-gradient(ellipse at 50% 40%, oklch(from var(--primary) l c h / 0.08) 0%, transparent 60%),
-    var(--background);
-  background-attachment: fixed;
-}
-
-@keyframes login-card-enter {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-.login-card-enter {
-  animation: login-card-enter 200ms ease-out both;
-}
-
 /* "Grain Dark" banner preset (packages/ui banner-presets.ts). The host is
    `absolute inset-0`, so the pseudo-element fills it; the noise is a static
    SVG feTurbulence tile, so there is nothing for reduced motion to cut. */
@@ -511,7 +495,6 @@
    0 for the whole delay). Switch the entrance off explicitly — every class
    that sets an `animation` shorthand belongs in this list. */
 @media (prefers-reduced-motion: reduce) {
-  .login-card-enter,
   .ld-hero,
   .ld-blocks > *,
   .ld-social-icons > a {

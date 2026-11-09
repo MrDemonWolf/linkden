@@ -1,8 +1,8 @@
 {
-	"id": "27caec50-7bab-430a-881d-1bb98f7969be",
-	"prevId": "e318e263-07a2-4278-8a49-7faa1e1adb6c",
 	"version": "6",
 	"dialect": "sqlite",
+	"id": "e318e263-07a2-4278-8a49-7faa1e1adb6c",
+	"prevId": "4b2cfc5c-5196-48c8-bcb5-3e77d15fc33a",
 	"tables": {
 		"link_click": {
 			"name": "link_click",
@@ -72,11 +72,11 @@
 				"link_click_block_id_block_id_fk": {
 					"name": "link_click_block_id_block_id_fk",
 					"tableFrom": "link_click",
-					"columnsFrom": ["block_id"],
 					"tableTo": "block",
+					"columnsFrom": ["block_id"],
 					"columnsTo": ["id"],
-					"onUpdate": "no action",
-					"onDelete": "cascade"
+					"onDelete": "cascade",
+					"onUpdate": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -311,11 +311,11 @@
 				"account_user_id_user_id_fk": {
 					"name": "account_user_id_user_id_fk",
 					"tableFrom": "account",
-					"columnsFrom": ["user_id"],
 					"tableTo": "user",
+					"columnsFrom": ["user_id"],
 					"columnsTo": ["id"],
-					"onUpdate": "no action",
-					"onDelete": "cascade"
+					"onDelete": "cascade",
+					"onUpdate": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -399,11 +399,11 @@
 				"session_user_id_user_id_fk": {
 					"name": "session_user_id_user_id_fk",
 					"tableFrom": "session",
-					"columnsFrom": ["user_id"],
 					"tableTo": "user",
+					"columnsFrom": ["user_id"],
 					"columnsTo": ["id"],
-					"onUpdate": "no action",
-					"onDelete": "cascade"
+					"onDelete": "cascade",
+					"onUpdate": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -481,11 +481,11 @@
 				"two_factor_user_id_user_id_fk": {
 					"name": "two_factor_user_id_user_id_fk",
 					"tableFrom": "two_factor",
-					"columnsFrom": ["user_id"],
 					"tableTo": "user",
+					"columnsFrom": ["user_id"],
 					"columnsTo": ["id"],
-					"onUpdate": "no action",
-					"onDelete": "cascade"
+					"onDelete": "cascade",
+					"onUpdate": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
@@ -1253,9 +1253,9 @@
 	"views": {},
 	"enums": {},
 	"_meta": {
-		"columns": {},
 		"schemas": {},
-		"tables": {}
+		"tables": {},
+		"columns": {}
 	},
 	"internal": {
 		"indexes": {}

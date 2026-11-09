@@ -198,6 +198,8 @@ export function deployEnvErrors(env: Env): string[] {
 		}
 	}
 
+	// Already reported as malformed: left out of the same-origin check below.
+	const invalidUrls = new Set<string>();
 	for (const name of [
 		"BETTER_AUTH_URL",
 		"CORS_ORIGIN",
@@ -207,24 +209,48 @@ export function deployEnvErrors(env: Env): string[] {
 		const value = values[name];
 		if (value === undefined) continue;
 		const error = httpsUrlError(name, value);
-		if (error) errors.push(error);
+		if (error) {
+			errors.push(error);
+			invalidUrls.add(name);
+		}
 	}
 
 	// CORS / trusted-origin matching is an exact string compare against the
-	// browser's Origin header: no path, no trailing slash.
+	// browser's Origin header, and the web client builds `${SERVER_URL}/trpc`
+	// (a trailing slash makes `//trpc`, which neither the zone Routes nor the web
+	// API bridge match): no path, no trailing slash on any of the three. The
+	// message never echoes the value, which may carry URL credentials.
 	// (try/new URL rather than URL.canParse: this file is also type-checked under
 	// the Workers lib through packages/env/env.d.ts, which lacks canParse.)
 	for (const name of ["BETTER_AUTH_URL", "CORS_ORIGIN", "NEXT_PUBLIC_SERVER_URL"] as const) {
 		const value = values[name];
-		const origin = value === undefined ? undefined : parsedOrigin(value);
-		if (origin !== undefined && origin !== value)
+		if (value === undefined || invalidUrls.has(name)) continue;
+		if (parsedOrigin(value) !== value) {
+			invalidUrls.add(name);
 			errors.push(`${name} must be a bare origin (no credentials, path, query or trailing slash).`);
+		}
+	}
+	// The site URL is the origin the other three must equal, so it is checked the
+	// same way (one trailing slash allowed): a path or query is reported here once
+	// rather than as an unfixable mismatch on the other URLs.
+	const siteUrl = values.NEXT_PUBLIC_SITE_URL;
+	if (siteUrl !== undefined && !invalidUrls.has("NEXT_PUBLIC_SITE_URL")) {
+		const canonical = siteUrl.replace(/\/$/, "");
+		if (parsedOrigin(canonical) !== canonical) {
+			invalidUrls.add("NEXT_PUBLIC_SITE_URL");
+			errors.push(
+				"NEXT_PUBLIC_SITE_URL must be a bare origin (no credentials, path or query; one trailing slash is allowed).",
+			);
+		}
 	}
 
 	// The web API bridge keeps browser auth same-origin, including workers.dev.
 	const siteDomain = env.SITE_DOMAIN?.trim();
 	if (env.LINKDEN_SERVING_MODE !== "split") {
-		const site = values.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+		// A malformed site URL is already reported; don't blame the others for it.
+		const site = invalidUrls.has("NEXT_PUBLIC_SITE_URL")
+			? undefined
+			: values.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
 		const expected = siteDomain ? `https://${siteDomain}` : site;
 		for (const name of [
 			"BETTER_AUTH_URL",
@@ -233,6 +259,7 @@ export function deployEnvErrors(env: Env): string[] {
 			"NEXT_PUBLIC_SITE_URL",
 		] as const) {
 			const value = values[name];
+			if (invalidUrls.has(name)) continue;
 			const canonical = name === "NEXT_PUBLIC_SITE_URL" ? value?.replace(/\/$/, "") : value;
 			if (
 				expected &&

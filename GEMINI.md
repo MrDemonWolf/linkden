@@ -17,7 +17,8 @@ documentation in the same change.
 A few facts that older copies of this file got wrong:
 
 - The UI library is Base UI (`@base-ui/react`), not Radix.
-- `useEntranceAnimation` is used on Insights only; admin pages have no page fade.
+- Admin pages and charts have no decorative entrance animation or page fade (the Insights
+  dashboard is retired).
 - The app version lives in `version.json` only (compared with `compareSemver` in
   `packages/api/src/utils/version.ts`). Never hardcode a version.
 - There is no `db:push` script. Schema changes go through `bun run db:generate` migrations,

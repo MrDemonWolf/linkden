@@ -25,9 +25,10 @@ production routing has been deployed.
   Visitors can download configured `.vcf` contact details.
 - **Data portability** — Protected JSON backup/import and LinkStack import.
   Image references in JSON exports do not include the uploaded image files.
-- **Auth controls** — Password sign-in, authenticator/backup-code 2FA,
-  database-enforced single admin, optional first-run setup token, secret masking,
-  validation and security rate limits. Development login is strict-local only.
+- **Auth controls** — Password sign-in, authenticator/backup-code 2FA with an
+  account lockout, a database-enforced single admin claimed through a
+  WordPress-style first-run wizard, secret masking, validation and security rate
+  limits. Development login is strict-local only.
 - **Privacy** — Profile event collection is retired; historical records/read APIs
   remain compatible.
 - **Opt-in frozen publication** — Build approved public-only snapshots, bundled
@@ -81,8 +82,8 @@ bun run --cwd apps/server wrangler d1 migrations apply linkden-db --local
 
 This writes the selected local database. Inspect/export an existing store before
 upgrading it; do not reset it or replay every SQL file manually. Alchemy tracks
-full migration filenames, including historical names whose numeric prefixes may
-coincide. Preserve those identities and the current Drizzle snapshot chain.
+full migration filenames (`0000` to `0015`); preserve them and the current Drizzle
+snapshot chain.
 
 Run these in separate terminals:
 
@@ -94,8 +95,9 @@ bun run dev:server
 bun run dev:web
 ```
 
-Open `http://localhost:3001/admin/setup`, create the single admin, and configure
-2FA under Settings → Account. Use the same hostname consistently for the local
+Open `http://localhost:3001`. Until an admin exists, the home page redirects to
+`/admin/setup`; create the single admin there, then configure 2FA under
+Settings → Account. Use the same hostname consistently for the local
 API and web app. `DEV_API_ORIGIN` can configure a standalone local web rewrite;
 `DEV_LOGIN` and `NEXT_PUBLIC_DEV_LOGIN` remain optional development-only flags.
 They do not enable login through tunnels or production pages.
@@ -119,8 +121,15 @@ it. Production deployment, DNS/routes/certificates, billing and destructive
 changes require explicit operator approval.
 
 In default legacy serving, auth, CORS, browser API and public URL values use the
-web origin. In opt-in split mode, the approved admin origin handles auth and the
-API bridge while a separate target owns the public profile. The API has no public
+web origin. Without `SITE_DOMAIN` the whole site, admin included, runs on the web
+Worker's `workers.dev` URL: the web Worker bridges `/api/*` and `/trpc/*` to the
+API Worker over its service binding. With `SITE_DOMAIN`, zone Routes send those
+paths straight to the API Worker. After the first deploy, open the site right away:
+it redirects to the setup wizard, and whoever finishes setup first becomes the
+admin.
+
+In opt-in split mode, the approved admin origin handles auth and the API bridge
+while a separate target owns the public profile. The API has no public
 routes unless one exact contact action is explicitly configured. Protect and
 verify admin access and all alternate URLs before cutover.
 

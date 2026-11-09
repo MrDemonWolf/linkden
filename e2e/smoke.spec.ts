@@ -15,14 +15,14 @@ test("public page renders with live data", async ({ page }) => {
 	expect(res?.status()).toBe(200);
 	await expect(page.locator("body")).toBeVisible();
 	await expect(page.getByText(/load this page/i)).toHaveCount(0);
-	// Fresh DB: the WelcomePage. Configured: the profile page. Either renders
-	// real content, never a blank body.
+	// Fresh DB: "/" redirects to the setup wizard. Configured: the profile
+	// page. Either renders real content, never a blank body.
 	await expect(page.locator("body")).not.toBeEmpty();
 });
 
 test("public.getPage answers through the API", async ({ request }) => {
-	// Hits the API directly (the web origin only proxies /trpc when the dev
-	// rewrite is active), so it covers the tRPC route + D1 read on its own.
+	// Hits the API directly, bypassing the web API bridge, so it covers the
+	// tRPC route + D1 read on its own.
 	// biome-ignore lint/suspicious/noUndeclaredEnvVars: Playwright-only override, not a turbo task input
 	const apiOrigin = process.env.PW_API_URL ?? "http://127.0.0.1:3000";
 	const res = await request.get(`${apiOrigin}/trpc/public.getPage`);
@@ -41,11 +41,14 @@ test("health endpoint responds through the web origin", async ({ request }) => {
 });
 
 test("the web API bridge preserves cross-site write rejection", async ({ request }) => {
-	const res = await request.post("/trpc/settings.update", {
-		headers: { Origin: "https://untrusted.example" },
-		data: { key: "profile_name", value: "Must never be saved" },
-	});
-	expect(res.status()).toBe(403);
+	for (const path of ["/trpc/settings.update", "/trpc/public.trackView"]) {
+		const res = await request.post(path, {
+			headers: { Origin: "https://untrusted.example", "Sec-Fetch-Site": "cross-site" },
+			data: { key: "profile_name", value: "Must never be saved" },
+		});
+		expect(res.status()).toBe(403);
+		expect(await res.json()).toEqual({ error: "Cross-site request blocked" });
+	}
 });
 
 test("the web API bridge preserves auth body limits", async ({ request, baseURL }) => {
@@ -54,6 +57,15 @@ test("the web API bridge preserves auth body limits", async ({ request, baseURL 
 		data: { email: "oversize@example.test", password: "x".repeat(70_000) },
 	});
 	expect(res.status()).toBe(413);
+});
+
+test("the web API bridge preserves tRPC body limits", async ({ request }) => {
+	const res = await request.post("/trpc/public.trackView", {
+		data: { pad: "x".repeat(1_100_000) },
+		headers: { "Sec-Fetch-Site": "same-origin" },
+	});
+	expect(res.status()).toBe(413);
+	expect(await res.text()).toBe("Payload Too Large");
 });
 
 test("/og is served by Next, not proxied to the API", async ({ request }) => {
@@ -114,7 +126,7 @@ test("setup wizard or login is reachable", async ({ page }) => {
 	const res = await page.goto("/admin/setup");
 	expect(res?.status()).toBeLessThan(400);
 	await expect(page).toHaveURL(/\/admin\/(setup|login)/);
-	await expect(page.locator("body")).toContainText(/LinkDen|Sign in|Welcome/i);
+	await expect(page.locator("body")).toContainText(/LinkDen|Sign in|Create/i);
 });
 
 test("the emailed reset-password link is not bounced to login", async ({ page }) => {

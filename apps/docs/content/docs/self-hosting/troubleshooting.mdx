@@ -9,7 +9,8 @@ Start with the exact environment, Worker/resource names and last verified revisi
 
 The deploy preflight lists missing variables/secrets by name. Check the selected GitHub environment or `packages/infra/.env`; app-specific development files do not configure deployment.
 
-- Legacy mode uses the web origin for auth, CORS, browser API and public site URLs, including `workers.dev` staging.
+- Legacy mode uses the web origin for auth, CORS, browser API and public site URLs, including a `workers.dev` deployment without `SITE_DOMAIN`.
+- `BETTER_AUTH_URL`, `CORS_ORIGIN` and `NEXT_PUBLIC_SERVER_URL` must be bare origins: no path, query or trailing slash. A trailing slash would make the client call `//trpc`, which neither the zone Routes nor the web API bridge match. `NEXT_PUBLIC_SITE_URL` must also be a bare origin, though one trailing slash is allowed.
 - Split mode requires separate bare HTTPS admin/public origins, admin auth/CORS/browser API values, public metadata values, and an unset `SITE_DOMAIN`.
 - An optional split contact URL must be the exact HTTPS `/api/contact` action on an approved custom hostname distinct from admin.
 - Changing the built serving mode or public frontend variables requires a new build.
@@ -20,7 +21,7 @@ Do not weaken validation, enable dev login, or point a staging run at production
 
 Check `BETTER_AUTH_URL`, `CORS_ORIGIN` and `NEXT_PUBLIC_SERVER_URL` against the actual browser/admin origin. A trailing slash, different hostname, direct API hostname or changed auth secret can break the session flow.
 
-The web API bridge keeps requests on the web origin through a service binding. `workers.dev` alone is not a reason to configure the browser to call the separate API Worker. In split mode, also verify the intended Access policy and alternate-URL closure. A successful password response does not prove that the subsequent session/2FA step succeeded.
+The web API bridge keeps requests on the web origin through a service binding. `workers.dev` alone is not a reason to configure the browser to call the separate API Worker: on `workers.dev`, all four URL values must be the web Worker's origin (`https://linkden.<workers-subdomain>.workers.dev`). Pointing any of them at the API Worker's `linkden-api` hostname puts the session cookie on a different site (`workers.dev` is on the Public Suffix List), and `/admin` bounces back to `/admin/login`. The deploy preflight refuses auth, CORS and API values that differ from `NEXT_PUBLIC_SITE_URL`. In split mode, also verify the intended Access policy and alternate-URL closure. A successful password response does not prove that the subsequent session/2FA step succeeded.
 
 ## Dev login is unavailable
 
@@ -32,11 +33,11 @@ Tunnels, public hostnames, production pages and edge/proxy headers must not esta
 
 A missing, weak or placeholder `BETTER_AUTH_SECRET` disables auth and protected routes; health reports `auth: "misconfigured"`. Configure a proper private secret and approve the required redeployment. Rotating that secret invalidates sessions.
 
-## Setup is closed or rejects its token
+## Setup is closed or already claimed
 
-An existing admin closes registration; the database enforces the single-admin rule. Go to `/admin/login` rather than resetting the database.
+An existing admin closes registration with 403 "Registration is closed"; the database enforces the single-admin rule. Go to `/admin/login` rather than resetting the database.
 
-On first setup, a configured `SETUP_TOKEN` must be supplied in the wizard. Without it, an unclaimed public installation can be claimed by its first signup.
+Until an admin exists, `/` and `/admin/login` redirect to `/admin/setup`. There is no setup token: the first signup on an unclaimed public installation becomes the admin, so finish setup right after deploying. If an unknown account claimed a fresh install, treat it as a security incident: export the database for review, then factory-reset the still-empty install (`bun reset:factory -- --confirm --remote`) and complete setup immediately.
 
 For owner-controlled recovery, the repository provides a password-reset command. Confirm the target database before using a remote action; it signs existing sessions out. Add `--disable-2fa` only when deliberately removing two-factor protection after losing both the authenticator and backup codes.
 
@@ -59,11 +60,13 @@ bunx wrangler r2 bucket list
 
 Older production deployments may need `LINKDEN_DB_NAME` and `LINKDEN_IMAGES_BUCKET` to preserve adoption. Fix the approved configuration and redeploy only after confirming the target. Do not destroy resources or create an empty replacement to repair a missing binding.
 
-## Migration filename disagreement
+## Migrations fail or filenames disagree
 
-Alchemy uses the full `d1_migrations.name` filename. An old dev ledger entry named `0011_relative_image_paths.sql` is not the same migration as this checkout's `0011_parallel_gertrude_yorkes.sql`. Already-applied names are skipped; extra historical ledger entries are tolerated.
+Alchemy uses the full `d1_migrations.name` filename and skips names it has already applied. The history runs from `0000` to `0015`; `0011_relative_image_paths` is a data-only rewrite of absolute upload URLs to `/api/images/…` paths (see [Migration history](/docs/self-hosting/cloudflare#migration-history)).
 
-Preserve applied filenames and the current snapshot chain. Do not rename applied SQL files or replay raw SQL loops. The older image-path rewrite is not automatically added to this history because its host matching can alter external URLs. Inspect an existing database read-only and test its upgrade/restore in isolation before an approved migration. Never use `drizzle-kit push` to bypass this history.
+Preserve applied filenames and the current snapshot chain. Do not rename applied SQL files or replay raw SQL loops. Inspect an existing database read-only and test its upgrade/restore in isolation before an approved migration. Never use `drizzle-kit push` to bypass this history.
+
+A local development store created from an unreleased checkout that numbered the contact-quota and publication migrations `0011`–`0014` fails on `0012_parallel_gertrude_yorkes` because `contact_quota` already exists. That only affects local stores: wipe them with `bun db:reset` and apply the migrations again. Never edit ledger rows to silence the error.
 
 ## Publishing is off, stuck or failed
 

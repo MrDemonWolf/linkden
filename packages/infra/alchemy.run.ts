@@ -55,11 +55,15 @@ if (names.ignoredOverrides.length > 0) {
 	);
 }
 
-// Routing model: the web worker owns the custom domain; the API worker gets
-// zone Routes for `/api/*` and `/trpc/*` on that same hostname (Routes are
-// matched before the custom-domain worker). Same origin for both, so no CORS
-// and no cookie domain. When SITE_DOMAIN is unset (staging / first deploy)
-// both workers stay on their workers.dev URLs.
+// Routing model (legacy): the browser only ever talks to the web worker's
+// origin. With SITE_DOMAIN the web worker owns the custom domain and the API
+// worker gets zone Routes for `/api/*` and `/trpc/*` on that hostname (Routes
+// are matched before the custom-domain worker, so the API answers directly).
+// Without it, both stay on workers.dev and the web worker's filesystem API
+// bridge (apps/web/src/app/{api,trpc}/[[...path]] -> src/lib/api-proxy.ts)
+// forwards those paths to the API over the `API` service binding. Same origin
+// either way: no CORS, no cookie domain. Split mode (deploy-config.ts) keeps
+// the API private behind that binding.
 const serving = resolveServingConfiguration(process.env);
 const siteDomain = serving.webDomain;
 
@@ -251,11 +255,6 @@ export const server = await Worker("server", {
 		BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
 		...walletBindings,
 		...publicationBindings,
-		// Optional first-run guard (apps/server/src/lib/setup-token.ts): while
-		// no admin exists, sign-up must present it. Bound only when set.
-		...(process.env.SETUP_TOKEN?.trim() && {
-			SETUP_TOKEN: alchemy.secret.env.SETUP_TOKEN!,
-		}),
 	},
 	dev: {
 		port: 3000,
@@ -271,7 +270,9 @@ export const web = await Nextjs("linkden", {
 	cwd: "../../apps/web",
 	compatibilityDate: COMPATIBILITY_DATE,
 	build: { env: { LINKDEN_SERVING_MODE: serving.mode } },
-	// Invocation URLs can include password-reset tokens on editor routes.
+	// Same reason as the API worker: invocation logs record full URLs, and this
+	// worker serves /admin/reset-password?token=… and, through its API bridge,
+	// every /api/auth/* token link on workers.dev.
 	observability: { logs: { invocationLogs: false } },
 	...(serving.mode === "split" && { url: false, previewSubdomains: false }),
 	...(siteDomain && { domains: [{ domainName: siteDomain, adopt: true }] }),

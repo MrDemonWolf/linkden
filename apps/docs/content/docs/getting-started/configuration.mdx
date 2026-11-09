@@ -48,13 +48,13 @@ Restart the frontend after changing public environment values. Do not put privat
 
 ### Deployment origins
 
-The legacy same-host deployment uses one public HTTPS origin for auth, CORS, the browser API, and the profile.
+The legacy deployment uses one public HTTPS origin for auth, CORS, the browser API, and the profile: `https://SITE_DOMAIN`, or the web Worker's `workers.dev` URL when no custom domain is set. On `workers.dev` the web Worker forwards `/api/*` and `/trpc/*` to the API over its service binding, so admin sign-in works without a custom domain.
 
 The opt-in split topology uses separate public and admin origins. The admin reaches its private API through a service binding; public profile assets are published separately. Do not switch an existing deployment by changing a few URLs: follow the [Cloudflare guide](/docs/self-hosting/cloudflare) and [environment reference](/docs/self-hosting/environment-variables). Access policies, alternate-host closure, public contact ingress, and staged verification remain deployment gates.
 
 ## Authentication
 
-Setup at `/admin/setup` creates one administrator. Set `SETUP_TOKEN` before exposing a fresh instance, then enter it in the wizard to prevent someone else claiming the first account.
+Setup at `/admin/setup` creates one administrator. Until an admin exists, the home page and `/admin/login` redirect there. There is no setup token: whoever finishes setup first becomes the admin and registration then locks, so complete it right after the first deploy.
 
 Under **Settings → Account**:
 

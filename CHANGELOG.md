@@ -33,10 +33,12 @@ production routing, provider delivery, account plan or CPU compatibility.
   controls, distinguish unavailable status and report failed requests.
   Unused historical dashboard components and duplicate validation helpers
   were removed or consolidated without deleting historical records.
-- Additive migrations `0011`–`0014` add the contact quota and publication
-  tables; released `0000`–`0010` filenames and snapshots are unchanged.
-  Fresh, main, dev-ledger and publication-history upgrade tests exercise the
-  installed migration runner; no blanket legacy image-URL rewrite is added.
+- Migration `0011_relative_image_paths` (data only) rewrites absolute upload
+  URLs to origin-relative paths; additive migrations `0012`–`0015` add the
+  contact quota and publication tables. Released `0000`–`0010` filenames and
+  snapshots are unchanged. Upgrade tests run the installed migration runner
+  on a fresh database and on stores migrated through `0010`, `0011` and a
+  frozen-publication `0014`.
 - Native public delivery is designed to avoid application Worker/D1/R2 work
   per ordinary HTML/bundled-asset request. Publishing, cron, admin,
   contact, backups and external content still consume resources. No billing
@@ -45,6 +47,17 @@ production routing, provider delivery, account plan or CPU compatibility.
 
 ### ✨ What's new
 
+- **Safer sign-in and tidier data.** Five wrong two-factor codes now lock
+  sign-in for an hour. Uploaded images are saved in a way that survives
+  moving your site to a new address (existing ones are converted). Visitors
+  who chose cookie settings under an older banner are asked again before
+  any embedded media loads.
+- **Admin works on workers.dev, no domain needed.** Deploy and your whole
+  site, admin included, runs on `linkden.<you>.workers.dev`. Then open
+  your site: like a fresh WordPress install it sends you straight to the
+  setup wizard to claim it (whoever finishes setup first becomes the
+  admin, so do it right away). A custom domain is still supported and a
+  little faster.
 - **Two-factor sign-in works.** Turn on an authenticator app under
   Settings → Account and save your backup codes. After your password,
   the login page now asks for the 6-digit code (or a backup code), with
@@ -118,9 +131,6 @@ production routing, provider delivery, account plan or CPU compatibility.
 - **`bun reset:password` no longer locks you out**, works against
   production, and never takes the password on the command line.
   Production deploys refuse unsafe auth settings.
-- **Claim your install safely.** Set the optional `SETUP_TOKEN` secret
-  and only someone who knows it can create the admin account on a fresh
-  public deploy.
 - **Image fixes.** Discarding an image change no longer breaks the saved
   image, crops upload on Safari/iOS, pinch-zoom no longer tilts a crop,
   and Enter on the crop dialog's buttons does what the button says.
@@ -147,15 +157,13 @@ production routing, provider delivery, account plan or CPU compatibility.
 - Migration `0009_auth_and_block_data_fixes` (data only): backfills
   `user.email_verified = 1` and converts `form` / `contact_form` blocks to
   `connect`. Migration `0010_drop_social_icons_blocks` removes retired
-  `social_icons` block rows.
+  `social_icons` block rows. Migration `0011_relative_image_paths` (data
+  only) rewrites absolute upload URLs in image settings and block
+  `thumbnail`/`src` to origin-relative `/api/images/…` paths; it matches
+  any host whose URL contains `/api/images/`.
 - `createAuthOptions(deps)` in `packages/auth/src/auth-options.ts`: the
   env-free Better Auth factory; `index.ts` only wires env, D1, Resend and
   secret validation, and tests build instances from the same factory.
-- Optional `SETUP_TOKEN` secret (`apps/server/src/lib/setup-token.ts`):
-  when bound, the first signup must send a matching `x-setup-token`
-  header (constant-time compare) or gets 403 `Invalid setup token`.
-  Bound by Alchemy only when set; wired into `deploy.yml`, `turbo.json`
-  and `.env.example`.
 - `RL_SIGNIN` rate limit (30/60s, namespace 1006 prod / 2006 non-prod)
   with constant keys `global:sign-in` / `global:two-factor` /
   `global:password-reset`, so the single admin can't be brute-forced by
@@ -186,12 +194,23 @@ production routing, provider delivery, account plan or CPU compatibility.
   `components/admin/connections/mailto.ts`; `SecretInput`;
   `mutationErrorMessage`; `--input-border` token
   (`border-input-border`); `unsavedEditSnapshot()`;
-  `prefersReducedMotion()` / `useReducedMotion()`.
+  `prefersReducedMotion()`.
 - `.github/workflows/release.yml`: a `version.json` change on `main`
   tags `vX.Y.Z` and publishes a GitHub release, so
   `version.checkUpdate` has something to compare against.
 - Deploy: preflight step naming missing secrets/vars, a D1 Time Travel
   restore-point bookmark in every job summary, and a web smoke probe.
+- Single-origin `workers.dev` deploys: the web Worker's filesystem API
+  bridge (`app/api/[[...path]]`, `app/trpc/[[...path]]` →
+  `apps/web/src/lib/api-proxy.ts`) forwards `/api/*` and `/trpc/*` to the
+  API Worker over the `API` service binding at the fixed
+  `https://api.internal` origin. It strips hop-by-hop, forwarding and
+  `cf-*` headers (keeping `cf-connecting-ip` only from a trusted edge),
+  rejects encoded slashes, unknown methods and proxy loops, and marks
+  responses `private, no-store`, except successful `GET`/`HEAD`
+  `/api/images/*` reads, which keep the API's immutable `Cache-Control` and
+  `ETag`. With `SITE_DOMAIN`, zone Routes still reach the API directly. No
+  custom web Worker entrypoint is used.
 - Tests: Worker-entry route tests (`apps/server/src/__tests__/routes.test.ts`),
   router integration tests in `packages/api/src/routers/__tests__/`, and
   per-glob coverage floors for routers, the tRPC middleware,
@@ -337,9 +356,31 @@ production routing, provider delivery, account plan or CPU compatibility.
   OpenNext 1.20.9, hono 4.13.13.
 - Admin console uses four destinations and path-segment sub-tabs on the
   existing Base UI components; legacy routes 307 from `proxy.ts`.
+- First run is WordPress-style: `/` answers a 307 to `/admin/setup` while
+  no admin exists (server-side `redirect()` in `app/page.tsx` when
+  `getPage` has no profile), as `/admin/login` already did client-side.
+- Uploads are stored as origin-relative `/api/images/…` paths
+  (`imageUrlSchema`, `UPLOADED_IMAGE_PATH`; the `url` setting kind accepts
+  them). Public renderers use `safeImageSrc`, which also reduces a leftover
+  absolute upload URL to its path, and `createPublicationSnapshot`
+  resolves upload paths against the snapshot's public origin.
+- Consent: an outdated (legacy / older-version) choice grants nothing while
+  the banner is on; a decline is still honoured.
+- `blocks.update` validates the merged row (stored + new type, config and
+  embed fields; a missing stored config counts as empty).
+- `deployEnvErrors` requires bare-origin `BETTER_AUTH_URL`, `CORS_ORIGIN`
+  and `NEXT_PUBLIC_SERVER_URL` (a trailing slash made the client call
+  `//trpc`; the error never echoes the value) and, in legacy mode, all
+  four URLs equal to the site origin (`https://SITE_DOMAIN`, else
+  `NEXT_PUBLIC_SITE_URL`). Web Worker invocation logs are off too.
 
 #### Removed
 
+- The `SETUP_TOKEN` first-run gate: server check
+  (`apps/server/src/lib/setup-token.ts`), wizard field, `x-setup-token`
+  CORS header, Alchemy binding and `turbo.json` / `deploy.yml` /
+  `.env.example` wiring. The single-admin DB trigger is unchanged.
+- The `WelcomePage` splash shown on `/` before setup.
 - Public `GET /api/wallet-pass` and the footer wallet button (download is
   now `GET /api/admin/wallet-pass`, session-gated).
 - tRPC procedures `public.getVCard`, `public.getBranding`,
@@ -362,17 +403,32 @@ production routing, provider delivery, account plan or CPU compatibility.
 - Theme overrides only applied in light mode; Insights trends showed
   `+100%` for "All time" and dates shifted west of UTC.
 - Social URLs doubled their prefix when a profile URL was pasted.
+- Public renderers re-check social and custom map links (`safeHttpUrl`)
+  and image `src`/thumbnails (`safeImageSrc`); image-only links get an
+  accessible name; segmented and toggle controls use
+  `border-input-border`.
 
 #### Security
 
 - Same-origin writes: POSTs to `/trpc/*` and `/api/upload` must come from
   `CORS_ORIGIN` (normalized) or the request's own origin, with a
   `Sec-Fetch-Site` fallback, else 403. Body limits: 64KB on
-  `/api/auth/*`, 1MB on `/trpc/*`, 16MB for `backup.*`. CORS
-  `allowHeaders` include `x-setup-token`.
-- Request logs omit query strings and redact token-bearing reset paths;
-  invocation logs are disabled in IaC and Drizzle bound parameters are
+  `/api/auth/*`, 1MB on `/trpc/*`, 16MB only when every procedure in the
+  request is `backup.*` (the web client sends those through `splitLink`
+  as their own request). `bodyWithinLimit` counts actual bytes even when
+  `Content-Length` understates them and cancels oversized streams before
+  parsing.
+- Request and error logs omit query strings and redact token-bearing reset
+  paths (`redactLogPath`, also applied by `logError`); invocation logs are
+  disabled for both Workers in IaC and Drizzle bound parameters are
   removed from structured error descriptions.
+- 2FA `accountLockout` is set explicitly (5 failures → 1h) on top of
+  Better Auth's 5-per-challenge cap, with a test that fails if it is
+  disabled. With 2FA on, a signed-out email-change verification or an
+  older magic link cannot create a session.
+- Enabling magic link is refused without a configured email transport or
+  while 2FA is on, for `settings.update`/`updateBulk` and backup imports
+  (`assertMagicLinkAllowed`).
 - Inbox `mailto:` links are percent-encoded so a stored contact email
   can't add Bcc/Subject headers.
 - tRPC error responses no longer carry stacks or internal messages.

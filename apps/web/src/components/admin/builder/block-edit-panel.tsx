@@ -1010,7 +1010,7 @@ export function BlockEditPanel({
 								type="button"
 								onClick={() => updateConfigField("urls", [...vcardUrls, { label: "", url: "" }])}
 								disabled={vcardUrls.length >= 20}
-								className="w-full"
+								className="w-full border-input-border dark:border-input-border"
 							>
 								<Plus className="h-3.5 w-3.5" />
 								Add URL

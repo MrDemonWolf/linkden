@@ -1,3 +1,4 @@
+import { UPLOADED_IMAGE_PATH } from "@linkden/validators/primitives";
 import {
 	getSettingMeta,
 	MAX_SETTING_VALUE_LENGTH,
@@ -7,10 +8,11 @@ import {
 import { TRPCError } from "@trpc/server";
 import { sanitizeUrl, stripHtml } from "./sanitize";
 
-// Empty values are allowed; non-empty values must be http(s) URLs.
+// Empty values are allowed; non-empty values must be http(s) URLs or an
+// uploaded image's origin-relative path (what POST /api/upload returns).
 function isValidUrl(url: string): boolean {
 	if (!url) return true;
-	return sanitizeUrl(url) !== "";
+	return UPLOADED_IMAGE_PATH.test(url) || sanitizeUrl(url) !== "";
 }
 
 function isValidHexColor(color: string): boolean {
