@@ -7,6 +7,10 @@ const getSession = vi.hoisted(() => vi.fn());
 const generatePkpass = vi.hoisted(() => vi.fn(async () => new Uint8Array([1, 2, 3])));
 vi.mock("../lib/pkpass", () => ({ generatePkpass }));
 vi.mock("@linkden/env/server", () => ({ env: { CORS_ORIGIN: "https://admin.example" } }));
+// The legacy form runs in packages/api, whose `@linkden/env/server` import can resolve through a
+// different link under CI's isolated installs and escape the mock above. Its source module,
+// `cloudflare:workers`, is aliased to one stub file, so mock that too.
+vi.mock("cloudflare:workers", () => ({ env: { CORS_ORIGIN: "https://admin.example" } }));
 vi.mock("@linkden/auth", () => ({
 	auth: { api: { getSession }, handler: vi.fn() },
 	authConfigProblem: null,
