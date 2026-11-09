@@ -3,6 +3,9 @@
 // Node's type stripping, so this file must stay erasable TypeScript only (no
 // enums, no parameter properties, type-only imports marked `import type`).
 
+import { validatePublicContactUrl } from "../validators/src/public-contact.ts";
+import { publicationConfiguration } from "../validators/src/publication-config.ts";
+
 type Env = Record<string, string | undefined>;
 
 /** Better Auth's built-in fallback secret. It is public, so never acceptable. */
@@ -63,6 +66,84 @@ function httpsUrlError(name: string, value: string): string | undefined {
 	return undefined;
 }
 
+function servingEnvErrors(env: Env): string[] {
+	const mode = env.LINKDEN_SERVING_MODE || "legacy";
+	if (!["legacy", "split"].includes(mode))
+		return ["LINKDEN_SERVING_MODE must be exactly legacy or split."];
+	if (mode === "legacy")
+		return env.PUBLIC_CONTACT_URL ? ["PUBLIC_CONTACT_URL requires split serving mode."] : [];
+	const errors: string[] = [];
+	const origins: Record<string, URL> = {};
+	for (const name of ["ADMIN_SITE_URL", "PUBLIC_SITE_URL"] as const) {
+		try {
+			const value = env[name] || "";
+			const url = new URL(value);
+			if (url.protocol !== "https:" || url.origin !== value || url.port) throw new Error();
+			origins[name] = url;
+		} catch {
+			errors.push(`${name} must be a bare HTTPS origin without a port in split mode.`);
+		}
+	}
+	if (origins.ADMIN_SITE_URL?.hostname.endsWith(".workers.dev"))
+		errors.push(
+			"ADMIN_SITE_URL must use an approved custom hostname; admin workers.dev access is disabled in split mode.",
+		);
+	if (
+		origins.ADMIN_SITE_URL &&
+		origins.PUBLIC_SITE_URL &&
+		origins.ADMIN_SITE_URL.hostname === origins.PUBLIC_SITE_URL.hostname
+	)
+		errors.push("ADMIN_SITE_URL and PUBLIC_SITE_URL must use separate hostnames.");
+	if (env.SITE_DOMAIN)
+		errors.push(
+			"SITE_DOMAIN must be unset in split mode; public domain ownership belongs to the separate publisher target.",
+		);
+	if (origins.ADMIN_SITE_URL) {
+		for (const name of ["BETTER_AUTH_URL", "CORS_ORIGIN", "NEXT_PUBLIC_SERVER_URL"] as const) {
+			if (env[name] && env[name] !== origins.ADMIN_SITE_URL.origin)
+				errors.push(`${name} must equal ADMIN_SITE_URL in split mode.`);
+		}
+	}
+	if (
+		origins.PUBLIC_SITE_URL &&
+		env.NEXT_PUBLIC_SITE_URL &&
+		env.NEXT_PUBLIC_SITE_URL !== origins.PUBLIC_SITE_URL.origin
+	)
+		errors.push("NEXT_PUBLIC_SITE_URL must equal PUBLIC_SITE_URL in split mode.");
+	const contact = validatePublicContactUrl(env.PUBLIC_CONTACT_URL, env.PUBLIC_SITE_URL);
+	if (
+		env.PUBLIC_CONTACT_URL &&
+		(!contact || new URL(contact).origin === origins.ADMIN_SITE_URL?.origin)
+	)
+		errors.push(
+			"PUBLIC_CONTACT_URL must be the exact HTTPS /api/contact URL on an approved custom hostname distinct from admin.",
+		);
+	return errors;
+}
+
+/** Explicit source preparation only: selecting split mode is an owner-approved routing cutover. */
+export function resolveServingConfiguration(env: Env): {
+	mode: "legacy" | "split";
+	webDomain: string | undefined;
+	publicOrigin: string | undefined;
+	publicContactUrl: string | null;
+} {
+	const errors = servingEnvErrors(env);
+	if (errors.length)
+		throw new Error(`Serving configuration is invalid:\n  - ${errors.join("\n  - ")}`);
+	const mode = env.LINKDEN_SERVING_MODE === "split" ? "split" : "legacy";
+	return {
+		mode,
+		webDomain:
+			mode === "split" ? new URL(env.ADMIN_SITE_URL!).hostname : env.SITE_DOMAIN || undefined,
+		publicOrigin: mode === "split" ? env.PUBLIC_SITE_URL : env.NEXT_PUBLIC_SITE_URL,
+		publicContactUrl:
+			mode === "split"
+				? validatePublicContactUrl(env.PUBLIC_CONTACT_URL, env.PUBLIC_SITE_URL)
+				: null,
+	};
+}
+
 /**
  * Everything wrong with the values the deployed Workers need, all at once (an
  * empty list means the deploy may proceed).
@@ -75,7 +156,16 @@ function httpsUrlError(name: string, value: string): string | undefined {
  * the server fall back to localhost. So refuse them here, by name.
  */
 export function deployEnvErrors(env: Env): string[] {
-	const errors: string[] = [];
+	const errors = servingEnvErrors(env);
+	for (const name of ["PUBLICATION_ENABLED", "PUBLICATION_SCHEDULER_ENABLED"] as const) {
+		if (env[name] && !["true", "false"].includes(env[name]!))
+			errors.push(`${name} must be exactly true or false.`);
+	}
+	const publication = publicationConfiguration(env);
+	if (env.PUBLICATION_ENABLED === "true" && !publication.enabled)
+		errors.push(`Publication is not configured: ${publication.unavailableReason}.`);
+	if (env.PUBLICATION_SCHEDULER_ENABLED === "true" && !publication.enabled)
+		errors.push("Scheduled publication requires an enabled, approved publication target.");
 	const required = [
 		"BETTER_AUTH_SECRET",
 		"BETTER_AUTH_URL",
@@ -124,23 +214,37 @@ export function deployEnvErrors(env: Env): string[] {
 	// browser's Origin header: no path, no trailing slash.
 	// (try/new URL rather than URL.canParse: this file is also type-checked under
 	// the Workers lib through packages/env/env.d.ts, which lacks canParse.)
-	const cors = values.CORS_ORIGIN;
-	const corsOrigin = cors === undefined ? undefined : parsedOrigin(cors);
-	if (cors !== undefined && corsOrigin !== undefined && corsOrigin !== cors) {
-		errors.push(
-			`CORS_ORIGIN (${cors}) must be a bare origin like https://links.example.com (no path or trailing slash).`,
-		);
+	for (const name of ["BETTER_AUTH_URL", "CORS_ORIGIN", "NEXT_PUBLIC_SERVER_URL"] as const) {
+		const value = values[name];
+		const origin = value === undefined ? undefined : parsedOrigin(value);
+		if (origin !== undefined && origin !== value)
+			errors.push(`${name} must be a bare origin (no credentials, path, query or trailing slash).`);
 	}
 
-	// With a custom domain everything is same-origin (the API is routed under
-	// the site's hostname), so these must all be that origin.
+	// The web API bridge keeps browser auth same-origin, including workers.dev.
 	const siteDomain = env.SITE_DOMAIN?.trim();
-	if (siteDomain) {
-		const expected = `https://${siteDomain}`;
-		for (const name of ["BETTER_AUTH_URL", "CORS_ORIGIN", "NEXT_PUBLIC_SITE_URL"] as const) {
+	if (env.LINKDEN_SERVING_MODE !== "split") {
+		const site = values.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+		const expected = siteDomain ? `https://${siteDomain}` : site;
+		for (const name of [
+			"BETTER_AUTH_URL",
+			"CORS_ORIGIN",
+			"NEXT_PUBLIC_SERVER_URL",
+			"NEXT_PUBLIC_SITE_URL",
+		] as const) {
 			const value = values[name];
-			if (value !== undefined && value.replace(/\/$/, "") !== expected) {
-				errors.push(`${name} (${value}) must be ${expected} when SITE_DOMAIN is set.`);
+			const canonical = name === "NEXT_PUBLIC_SITE_URL" ? value?.replace(/\/$/, "") : value;
+			if (
+				expected &&
+				canonical?.startsWith("https://") &&
+				parsedOrigin(canonical) === canonical &&
+				canonical !== expected
+			) {
+				errors.push(
+					siteDomain
+						? `${name} (${value}) must be ${expected} when SITE_DOMAIN is set.`
+						: `${name} must match NEXT_PUBLIC_SITE_URL in legacy mode; browser API calls use the web service binding.`,
+				);
 			}
 		}
 	}

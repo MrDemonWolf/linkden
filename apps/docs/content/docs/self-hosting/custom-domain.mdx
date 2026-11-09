@@ -1,77 +1,73 @@
 ---
 title: Custom Domain
-description: Point a custom domain at your LinkDen instance.
+description: Plan legacy or split hostnames without silently replacing existing DNS and routes.
 ---
 
-# 🌐 Custom Domain Setup
 
-Give your LinkDen instance a custom domain instead of the default `*.workers.dev` URLs. This is the recommended production setup: on a custom domain the web app and the API share one origin, so admin login works without any cookie or CORS tricks.
+Choose the serving mode before changing hostnames. The default remains legacy; split native publication is a separate opt-in cutover.
 
-### ⚡ TL;DR
-- Your domain must be a zone in your Cloudflare account, and the hostname must have **no existing DNS record**.
-- Set `SITE_DOMAIN` and point `BETTER_AUTH_URL`, `NEXT_PUBLIC_SERVER_URL`, `CORS_ORIGIN`, and `NEXT_PUBLIC_SITE_URL` at it.
-- Run `bun ship`. Alchemy creates the Custom Domain (DNS + certificate) and the `/api/*` and `/trpc/*` routes.
-- Verify: the page loads over HTTPS, `/api/health` returns `"status":"ok"`, and `/admin/login` stays signed in.
+## Inspect the existing hostname first
 
----
+Inventory DNS records, Worker routes/custom domains, certificates, Access policies and alternate Workers URLs read-only. Confirm the account, zone and current owner of each hostname. Do not delete a working DNS record or repoint an existing hostname just to make a deployment succeed.
 
-## 🧭 How It Works
+Cloudflare's [Custom Domains documentation](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/) describes current provider requirements. DNS, routing and certificate changes require explicit operator approval.
 
-Alchemy does the wiring for you from a single variable, `SITE_DOMAIN`:
+## Legacy: one browser origin
 
-| Worker | What Alchemy creates |
-|--------|----------------------|
-| `linkden` (web) | A **Custom Domain** on `SITE_DOMAIN` (DNS record + certificate) |
-| `linkden-api` (API) | Two **Routes**: `SITE_DOMAIN/api/*` and `SITE_DOMAIN/trpc/*` |
+```bash
+LINKDEN_SERVING_MODE=legacy
+SITE_DOMAIN=links.example.com
+BETTER_AUTH_URL=https://links.example.com
+CORS_ORIGIN=https://links.example.com
+NEXT_PUBLIC_SERVER_URL=https://links.example.com
+NEXT_PUBLIC_SITE_URL=https://links.example.com
+```
 
-Cloudflare matches routes before the custom-domain Worker, so requests to `/api/*` and `/trpc/*` reach the API and everything else reaches the web app. There is no separate API hostname.
+Alchemy attaches the web custom hostname and routes `/api/*` and `/trpc/*` to the API Worker on it. Browser cookies stay on that origin. With `SITE_DOMAIN` unset, legacy staging can use the actual web `workers.dev` origin for all four URL values; the web API bridge uses its service binding.
 
-Without `SITE_DOMAIN` the deploy targets `workers.dev`, where the two Workers are different origins and `/admin` cannot hold a session. Treat `workers.dev` as staging only.
+After an approved deployment, verify the profile page, health response, sign-in, 2FA, sign-out and cookie persistence. A health response alone does not prove authentication or public rendering.
 
-## ✅ Requirements
+## Split: public profile and private admin
 
-1. Your domain is a **zone in your Cloudflare account** (Cloudflare nameservers). If it is not yet, go to the [Cloudflare dashboard](https://dash.cloudflare.com) → **Add a site**, pick the Free plan, and switch your registrar's nameservers to the ones Cloudflare shows you. Propagation takes anywhere from 15 minutes to 24 hours.
-2. The hostname you choose **must not already have a DNS record**. Cloudflare creates the record when it attaches the Custom Domain and refuses to overwrite an existing A, AAAA, or CNAME. If something lives there today, delete that record first.
-3. Your `CLOUDFLARE_API_TOKEN` has the Zone permissions listed in the [Cloudflare guide](/docs/self-hosting/cloudflare): Workers Routes:Edit, Zone:Read, DNS:Edit, SSL and Certificates:Edit.
+For an approved split deployment:
 
-## 🚀 Set It Up
+```bash
+LINKDEN_SERVING_MODE=split
+ADMIN_SITE_URL=https://admin.example.com
+PUBLIC_SITE_URL=https://example.com
+BETTER_AUTH_URL=https://admin.example.com
+CORS_ORIGIN=https://admin.example.com
+NEXT_PUBLIC_SERVER_URL=https://admin.example.com
+NEXT_PUBLIC_SITE_URL=https://example.com
 
-- [ ] Set `SITE_DOMAIN` and point every URL at it. In production all four URLs are the same value:
+```
 
-  ```bash
-  SITE_DOMAIN=links.yourdomain.com
-  BETTER_AUTH_URL=https://links.yourdomain.com
-  NEXT_PUBLIC_SERVER_URL=https://links.yourdomain.com
-  CORS_ORIGIN=https://links.yourdomain.com
-  NEXT_PUBLIC_SITE_URL=https://links.yourdomain.com
-  ```
+| Host | Responsibility |
+|------|----------------|
+| `admin.example.com` | Editor and same-origin browser API/auth bridge. |
+| `example.com` | Separately published immutable native assets. |
+| Optional `api.example.com/api/contact` | Exact POST/OPTIONS public contact action. Other public API paths remain unavailable. |
 
-  If you deploy from GitHub Actions, `SITE_DOMAIN` and `NEXT_PUBLIC_SITE_URL` go in as **variables** on the `production` environment; the rest are **secrets**.
+The public hostname belongs to the separate publisher. Setting `PUBLIC_SITE_URL` does not attach it to an Alchemy Worker, publish content, or authorize DNS changes. The publisher's `PUBLICATION_CONTACT_ACTION` must match the deployed contact action URL.
 
-- [ ] Redeploy:
+Protect the admin origin with the intended [Cloudflare Access policy](https://developers.cloudflare.com/workers/configuration/cloudflare-access/) where required. The checked-in IaC does not create that policy. Access protection also requires checking alternate origins and existing version-preview URLs; protecting only the custom hostname is insufficient.
 
-  ```bash
-  bun ship
-  ```
+The split deploy guard checks both web/API Workers' `workers.dev` and preview-subdomain settings before provisioning and after finalization. It refuses open aliases instead of closing them silently. The API's only private transport uses its service binding; a hostname check is not a replacement for that network boundary or authentication.
 
-  The deploy log lists the custom domain and the two routes as they are created. Certificate issuance usually finishes within a minute.
+## Cutover checks
 
-- [ ] Verify:
+Before moving production traffic:
 
-  - `https://links.yourdomain.com` loads your link page with a lock icon.
-  - `curl https://links.yourdomain.com/api/health` returns `"status":"ok"`, and `curl -I` on the same URL shows the API's `Strict-Transport-Security` header, which proves the route won over the web Worker.
-  - `/admin/login` signs you in and stays signed in.
+- [ ] Prove the assets-only target serves HTML, bundled images and static 404s without application fallback.
+- [ ] Disable the application API in designated staging and confirm the published profile continues working.
+- [ ] Verify admin Access, session/2FA behavior and alternate-URL closure.
+- [ ] If contact is enabled, test profile-Origin CORS, CAPTCHA, delivery limits and an emergency endpoint-disable procedure.
+- [ ] Preserve the last-good public version, database backup/bookmark and tested recovery steps.
 
-## 🌐 Apex Domains
+These are required verification tasks, not claims that this checkout has passed them in Cloudflare.
 
-An apex domain is `yourdomain.com` with no subdomain. Cloudflare Custom Domains support it directly (CNAME flattening is automatic), so `SITE_DOMAIN=yourdomain.com` works as long as the apex has no existing record. Most people still prefer a subdomain such as `links.yourdomain.com` so the apex stays free for a main website.
+## Change or remove a hostname
 
-## 🔀 External DNS
+Treat this as another routing cutover. Review existing resource adoption and Alchemy state first, prepare a rollback, then approve the exact DNS/routes/certificate changes. Preserve existing services until a deliberate migration plan is accepted.
 
-Custom Domains require the zone to be on Cloudflare DNS. If your DNS lives elsewhere (Namecheap, GoDaddy, Route 53, and so on), move the zone to Cloudflare first. The Free plan is enough, the registrar stays where it is, and switching the nameservers is the only change. Cloudflare imports your existing records when you add the site, so nothing else breaks.
-
-## 🔄 Changing or Removing the Domain
-
-- **Change:** update `SITE_DOMAIN` and the four URLs, make sure the new hostname has no DNS record, and run `bun ship`. Alchemy removes the old domain and routes and creates the new ones.
-- **Remove:** unset `SITE_DOMAIN`, point the URLs back at the `workers.dev` addresses, and run `bun ship`. The DNS record Cloudflare created is deleted with the Custom Domain.
-- **Roll back to a previous site on that hostname:** re-create the old DNS record after removing `SITE_DOMAIN` and redeploying. Nothing else needs undoing.
+Do not assume that removing `SITE_DOMAIN` or restoring a DNS record reverses every routing, certificate, cookie, data or public-publication change. See [Rollback](/docs/self-hosting/cloudflare#rollback).

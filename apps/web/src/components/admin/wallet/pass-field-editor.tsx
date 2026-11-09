@@ -111,7 +111,7 @@ export function PassFieldEditor({ zone, fields, onChange, onZoneFocus }: FieldEd
 	return (
 		<fieldset
 			aria-label={`${meta.name} fields`}
-			className="rounded-lg border border-border/60 bg-card/40"
+			className="@container/wallet-fields rounded-lg border border-border/60 bg-card/40"
 			onFocus={() => onZoneFocus?.(zone)}
 			onBlur={(e) => {
 				if (!e.currentTarget.contains(e.relatedTarget as Node)) onZoneFocus?.(null);
@@ -119,9 +119,7 @@ export function PassFieldEditor({ zone, fields, onChange, onZoneFocus }: FieldEd
 		>
 			<div className="flex items-center justify-between border-b border-border/60 px-3 py-2">
 				<div className="flex items-center gap-2">
-					<h3 className="text-micro font-semibold uppercase tracking-wider text-foreground/80">
-						{meta.name}
-					</h3>
+					<h3 className="text-sm font-semibold text-foreground/80">{meta.name}</h3>
 					<span className="font-mono text-micro text-muted-foreground tabular-nums">
 						{fields.length}/{max}
 					</span>
@@ -197,7 +195,6 @@ function SortableFieldRow({
 		transition,
 	};
 
-	const jsonPath = `${zone}Fields[${idx}]`;
 	// The counter only appears once a value is getting long (back-of-pass text).
 	const showValueCount = field.value.length >= PASS_FIELD_VALUE_MAX * 0.75;
 
@@ -212,7 +209,7 @@ function SortableFieldRow({
 		>
 			<button
 				type="button"
-				className="flex h-11 w-8 cursor-grab touch-none items-center justify-center rounded text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing md:mt-0.5 md:size-6"
+				className="flex size-11 shrink-0 cursor-grab touch-none items-center justify-center rounded-md text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing md:mt-0.5 md:size-8"
 				aria-label={`Drag ${zone} field ${idx + 1} to reorder`}
 				{...attributes}
 				{...listeners}
@@ -220,14 +217,13 @@ function SortableFieldRow({
 				<GripVertical className="h-3.5 w-3.5" />
 			</button>
 
-			<div className="grid flex-1 grid-cols-[1fr_2fr] gap-1.5">
+			<div className="grid min-w-0 flex-1 gap-2 @min-[440px]/wallet-fields:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
 				<Input
 					id={labelId}
 					placeholder="Label"
 					value={field.label}
 					maxLength={PASS_FIELD_LABEL_MAX}
 					onChange={(e) => onUpdate({ label: e.target.value })}
-					className="h-11 text-micro md:h-7"
 					aria-label={`${zone} field ${idx + 1} label`}
 				/>
 				<Input
@@ -236,11 +232,10 @@ function SortableFieldRow({
 					value={field.value}
 					maxLength={PASS_FIELD_VALUE_MAX}
 					onChange={(e) => onUpdate({ value: e.target.value })}
-					className="h-11 text-micro md:h-7"
 					aria-label={`${zone} field ${idx + 1} value`}
 				/>
-				<p className="col-span-2 -mt-0.5 flex justify-between gap-2 font-mono text-micro text-muted-foreground">
-					<span>{jsonPath}</span>
+				<p className="col-span-full -mt-0.5 flex justify-between gap-2 text-xs text-muted-foreground">
+					<span>Field {idx + 1}</span>
 					{showValueCount && (
 						<span className="tabular-nums">
 							{field.value.length}/{PASS_FIELD_VALUE_MAX}
@@ -249,14 +244,16 @@ function SortableFieldRow({
 				</p>
 			</div>
 
-			<button
+			<Button
+				variant="ghost"
+				size="icon-sm"
 				type="button"
 				onClick={onRemove}
-				className="flex h-11 w-11 items-center justify-center rounded text-muted-foreground transition-all md:mt-0.5 md:size-6 md:opacity-0 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+				className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
 				aria-label={`Delete ${zone} field ${idx + 1}`}
 			>
 				<Trash2 className="h-3 w-3" />
-			</button>
+			</Button>
 		</li>
 	);
 }

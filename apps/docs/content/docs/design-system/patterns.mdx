@@ -1,0 +1,107 @@
+---
+title: Layout and interaction patterns
+description: How the shared pieces form editing, preview, saving, and public-page flows.
+---
+
+## Admin page structure
+
+`AdminShell` owns the sidebar, 64px top bar, one `main`, global footer, and preview rail. Below 1024px, the shell uses a 56px bottom navigation bar and opens preview in a sheet. Pages supply content through `PageShell` and `PageHeader`; they do not create a second main landmark or right-hand preview column.
+
+```tsx
+import { PageHeader } from "@/components/admin/page-header";
+import { PageShell } from "@/components/admin/page-shell";
+
+<PageShell>
+  <PageHeader title="Profile" kicker="Profile">
+    <p className="text-sm text-muted-foreground">
+      Edit the details visitors see at the top of your page.
+    </p>
+  </PageHeader>
+  {profileSection}
+</PageShell>
+```
+
+`PageHeader` places actions after the description on narrow screens. The optional `kicker` reports the current section to the shell breadcrumb. Destination layouts own their `SubTabs`, and server layouts supply descriptive page metadata.
+
+The shell supplies a skip link and scroll padding so focused content stays clear of the sticky bars. Keep page content within its existing width and spacing constraints.
+
+## Save, discard, and publication state
+
+Use one `useSettingsForm` scope and one `StickySaveBar` per settings page. The hook validates before save, writes only changed keys, and preserves unsaved fields when fresh server data arrives. Show `QueryError` for an initial load failure instead of leaving a permanent skeleton.
+
+```tsx
+import { StickySaveBar } from "@/components/admin/sticky-save-bar";
+
+<StickySaveBar
+  isDirty={form.isDirty}
+  isSaving={form.isSaving}
+  hasErrors={form.hasErrors}
+  onSave={form.save}
+  onDiscard={form.reset}
+/>
+```
+
+The save bar sits above mobile navigation and disables save for invalid fields. `useUnsavedChanges` shares one navigation/unload guard, so multiple dirty sections do not prompt repeatedly.
+
+A successful save updates authoring data. It does not prove that the public site is published. `StatePill` keeps Unsaved state separate from publication receipts and exposes the explicit Publish action only through the configured publication flow. Keep pending, unavailable, failed, and verified states distinct.
+
+## Document preview
+
+Editing pages register with `usePreviewSlot` on every render. The shell uses that registration for both the desktop rail and mobile sheet.
+
+```tsx
+import { usePreviewSlot } from "@/components/admin/preview-slot";
+
+usePreviewSlot({ overrides: { profile: { name, bio } } });
+```
+
+`PagePreview` renders the real `PublicPage` with unsaved overrides. Do not fork block markup for preview. Sample blocks appear only when the saved block inventory is empty; hidden or disabled saved blocks must remain an honest empty preview.
+
+`PagePreviewViewport` is a plain bordered document viewport. It fits a 390px layout to the available width, keeps short pages at natural height, and scrolls long pages within a 570px height cap. The toolbar stays at normal admin size. There is no phone bezel, clock, status bar, or notch.
+
+The preview content is `inert` and named as one `role="img"`; its outer scroller stays usable. Use View live for interactive checking. Responsive public content measures `.ld-page`, so a narrow inline preview does not adopt the desktop editor's width.
+
+From 1024px, `PreviewColumn` is sticky and collapsible. A block editor replaces the page preview between 1024px and 1279px, with a Show preview action; from 1280px it stacks above the preview. Hidden panels stay mounted to preserve in-progress edits. Below 1024px, `MobilePreviewSheet` keeps preview, sharing, and close controls in one overlay.
+
+## Wallet preview
+
+Settings → Wallet registers `WalletPassPreview` directly in the shared preview slot. Show the pass card itself, without a phone or a simulated Wallet app screen.
+
+The card uses system typography, configured pass colors, logo/thumbnail/strip assets, fields, and a generated QR preview. Back fields can be viewed on the reverse. Content limits come from `PASS_FIELD_LIMITS` and `resolvePassContent` so editor and generated pass stay aligned.
+
+The preview is not proof of signing or installation in Apple Wallet. Pass download remains an authenticated admin action and requires configured signing material; it is not a public footer action.
+
+## Public layouts and blocks
+
+`page_layout` offers two page structures:
+
+| Setting | Wide page from 896px | Narrow page |
+| --- | --- | --- |
+| `split` (default) | Sticky 320px profile column on the left; one vertical block list on the right; 40px gap | Profile above one vertical block list |
+| `stacked` | Profile above one vertical block list | Same stacked structure |
+
+The split threshold is a container query on `.ld-page`, not the browser viewport. Split pages use `max-w-lg` until that threshold, then `max-w-6xl`; stacked pages use `max-w-2xl`. The profile has a 32px sticky top offset and its own bounded scroll area on wide pages.
+
+Every section renders a vertical list with 12px between blocks and 24px between sections. Header layout values remain accepted for saved-data compatibility; they no longer turn the content list into adjacent block columns or a section carousel.
+
+Images default to `contain`, so the complete image stays visible; explicit `cover` crops to fill its media area. Preserve the selected fit in the real page, inline preview, and static rendering.
+
+`PublicPageContent` is shared by the live page, preview, and static output. Public fonts and resolved theme settings come from the same shared sources. Public customization must not leak into surrounding editor controls.
+
+## Authentication and motion
+
+Login and password reset use compact centered forms with normal site branding and semantic tokens. Dedicated login-logo and background controls are removed from the UI; saved legacy settings remain compatible with backups. Password sign-in continues into a TOTP or backup-code step when required. Sign out returns to login.
+
+Keep decorative entrance animations on public content rather than admin pages or forms. Retain loading indicators for actual work. Honor reduced motion in CSS and JavaScript; see [Foundations](/docs/design-system/foundations#surfaces-and-motion).
+
+The local development-login button is a development-only convenience with independent server checks. It must not appear or authenticate through a public hostname, proxy, or tunnel; visual preview is not an authorization boundary.
+
+## Source locations
+
+All paths below start at `apps/web/src/`.
+
+- Shell and navigation: `components/admin/{admin-shell,nav-list,sub-tabs,admin-footer}.tsx`.
+- Save flow: `hooks/{use-settings-form,use-unsaved-changes}.ts` and `components/admin/{sticky-save-bar,state-pill}.tsx`.
+- Preview: `components/admin/{preview-slot,preview-column,page-preview,page-preview-viewport,mobile-preview-sheet}.tsx`.
+- Wallet: `components/admin/wallet-pass-preview.tsx`; shared pass rules are in `packages/validators/src/wallet.ts` from the repository root.
+- Public layout and media: `components/public/{public-page,public-page-content,image-block}.tsx`.

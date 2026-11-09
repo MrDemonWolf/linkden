@@ -1,25 +1,23 @@
 import { db } from "@linkden/db";
-import {
-	block,
-	contactSubmission,
-	linkClick,
-	pageView,
-	socialNetwork,
-	user,
-} from "@linkden/db/schema/index";
+import { block, contactSubmission, socialNetwork, user } from "@linkden/db/schema/index";
 import { createResendEmailService, renderContactNotification } from "@linkden/email";
 import { env } from "@linkden/env/server";
 import { socialBrandMap } from "@linkden/ui/social-brands";
-import { contactSubmissionSchema } from "@linkden/validators/blocks";
+import { type ContactSubmissionInput, contactSubmissionSchema } from "@linkden/validators/blocks";
+import {
+	PUBLIC_PAGE_SETTING_KEYS,
+	resolvePublicPageSettings,
+} from "@linkden/validators/public-settings";
 import { TRPCError } from "@trpc/server";
 import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { publicProcedure, router } from "../index";
 import { logAudit } from "../utils/audit";
-import { CAPTCHA_VERIFY_URLS, type CaptchaProvider, verifyCaptcha } from "../utils/captcha";
+import { verifyCaptcha } from "../utils/captcha";
 import { resolveDeliveryMode } from "../utils/contact-delivery";
+import { reserveContactDelivery } from "../utils/contact-quota";
 import { EMAIL_TRANSPORT_SETTING_KEYS, resolveEmailTransport } from "../utils/email";
-import { ownHostnames, referrerHost, requestMeta } from "../utils/request-meta";
+import { requestMeta } from "../utils/request-meta";
 import { stripHtml } from "../utils/sanitize";
 import { publicBlockWhere } from "../utils/schedule";
 import { buildSettingsMap, settingsQuery, toSettingsMap } from "../utils/settings";
@@ -27,62 +25,15 @@ import { hasVcardContent, safeParseVcardData } from "./vcard";
 
 // Fail closed: without a parseable site origin a token's hostname can't be
 // checked, so CAPTCHA is treated as misconfigured rather than skipped.
-function expectedCaptchaHostname(): string {
+function expectedCaptchaHostname(origin: string): string {
 	try {
-		return new URL(env.CORS_ORIGIN).hostname;
+		return new URL(origin).hostname;
 	} catch {
 		throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "CAPTCHA is misconfigured" });
 	}
 }
 
-// Settings getPage actually returns. Read by key so a page view never pulls the
-// secret rows (wallet signer key, API keys) or large unused blobs out of D1.
-export const PUBLIC_PAGE_SETTING_KEYS = [
-	"profile_name",
-	"avatar_url",
-	"bio",
-	"verified_badge",
-	"theme",
-	"theme_preset",
-	"custom_primary",
-	"custom_secondary",
-	"custom_accent",
-	"custom_background",
-	"custom_css",
-	"social_icon_shape",
-	"default_color_mode",
-	"seo_title",
-	"seo_description",
-	"seo_og_image",
-	"seo_og_mode",
-	"seo_og_template",
-	"site_language",
-	"branding_enabled",
-	"branding_text",
-	"branding_link",
-	"branding_logo_url",
-	"branding_favicon_url",
-	"branding_site_name",
-	"branding_pp_url",
-	"branding_pp_mode",
-	"branding_pp_text",
-	"branding_tos_url",
-	"branding_tos_mode",
-	"branding_tos_text",
-	"banner_preset",
-	"banner_enabled",
-	"banner_mode",
-	"banner_custom_url",
-	"vcard_enabled",
-	"vcard_data",
-	"contact_form_enabled",
-	"captcha_provider",
-	"captcha_site_key",
-	"consent_banner_enabled",
-	"consent_banner_text",
-	"consent_privacy_url",
-	"consent_categories",
-] as const;
+export { PUBLIC_PAGE_SETTING_KEYS } from "@linkden/validators/public-settings";
 
 // Email keys are read only to report `emailConfigured`; their values never leave.
 const SETUP_STATUS_SETTING_KEYS = [
@@ -111,11 +62,6 @@ const CONTACT_SETTING_KEYS = [
 	"email_api_key",
 	"email_from",
 ] as const;
-
-/** The configured provider when it is one we can verify, else "none". */
-function publicCaptchaProvider(value: string | undefined): CaptchaProvider | "none" {
-	return value && Object.hasOwn(CAPTCHA_VERIFY_URLS, value) ? (value as CaptchaProvider) : "none";
-}
 
 /** Plain-text field: tags stripped, blank → null. */
 function optionalText(value: string | undefined): string | null {
@@ -172,13 +118,56 @@ async function notifyAdmin(settings: Record<string, string>, s: Submission): Pro
 				html,
 			});
 			return true;
-		} catch (err) {
-			reason = err instanceof Error ? err.message : "Failed to send notification email";
+		} catch {
+			reason = "Failed to send notification email";
 		}
 	}
 	logContactFailure("email", reason);
 	await logAudit("contact.email_failed", "contact", undefined, { reason });
 	return false;
+}
+
+export async function submitContact(
+	input: ContactSubmissionInput,
+	options: {
+		headers: Headers;
+		expectedOrigin: string;
+		requireCaptcha?: boolean;
+	},
+) {
+	const settings = await buildSettingsMap(CONTACT_SETTING_KEYS);
+	if (settings.contact_form_enabled !== "true")
+		throw new TRPCError({ code: "FORBIDDEN", message: "Contact form is disabled" });
+	if (input.website) return { success: true };
+	const provider = settings.captcha_provider;
+	if (options.requireCaptcha && (!provider || provider === "none"))
+		throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "CAPTCHA is misconfigured" });
+	if (provider && provider !== "none") {
+		const { ip } = requestMeta(options.headers);
+		await verifyCaptcha({
+			provider,
+			secret: settings.captcha_secret_key || "",
+			token: input.captchaToken,
+			remoteip: ip || undefined,
+			expectedHostname: expectedCaptchaHostname(options.expectedOrigin),
+		});
+	}
+	const submission: Submission = {
+		name: stripHtml(`${input.firstName} ${input.lastName}`),
+		email: input.email,
+		message: input.message ? stripHtml(input.message) : "",
+		whereMet: optionalText(input.whereMet),
+		blockId: input.blockId ?? null,
+		blockTitle: optionalText(input.blockTitle),
+	};
+	await reserveContactDelivery();
+	const { wantDb, wantEmail } = resolveDeliveryMode(settings.contact_delivery);
+	if (wantDb) await storeSubmission(submission);
+	if (wantEmail) {
+		const emailed = await notifyAdmin(settings, submission);
+		if (!emailed && !wantDb) await storeSubmission(submission);
+	}
+	return { success: true };
 }
 
 // ─── Public Router ─────────────────────────────────────────────────────────
@@ -200,8 +189,8 @@ async function notifyAdmin(settings: Record<string, string>, s: Submission): Pro
 //   and audited instead of failing the visitor; in email-only mode a failed
 //   send falls back to the Inbox so a lead is never dropped.
 //
-// trackView/trackClick: Lightweight analytics endpoints — fire-and-forget from
-//   the client. No auth required so they work for all visitors.
+// trackView/trackClick: Retired collectors. Keep explicit errors for old clients;
+//   historical analytics remain readable through the protected analytics router.
 
 export const publicRouter = router({
 	getPage: publicProcedure.query(async () => {
@@ -267,13 +256,6 @@ export const publicRouter = router({
 			) ||
 				hasVcardContent(safeParseVcardData(settings.vcard_data)));
 
-		const captchaProvider = publicCaptchaProvider(settings.captcha_provider);
-		// Legal documents: a link only in URL mode, the text only in text mode, so
-		// switching modes can never leave a stale link behind.
-		const ppMode = settings.branding_pp_mode === "text" ? "text" : "url";
-		const tosMode = settings.branding_tos_mode === "text" ? "text" : "url";
-		const ppUrl = ppMode === "url" ? settings.branding_pp_url || null : null;
-
 		return {
 			profile: profile
 				? {
@@ -286,50 +268,7 @@ export const publicRouter = router({
 			blocks: visibleBlocks,
 			socialNetworks,
 			theme,
-			settings: {
-				seoTitle: settings.seo_title || null,
-				seoDescription: settings.seo_description || null,
-				seoOgImage: settings.seo_og_image || null,
-				seoOgMode: settings.seo_og_mode || null,
-				seoOgTemplate: settings.seo_og_template || null,
-				brandingEnabled: settings.branding_enabled !== "false",
-				brandingText: settings.branding_text || "Powered by LinkDen · by MrDemonWolf, Inc.",
-				// http(s) only: the registry's url sanitizer guards every write.
-				brandingLink: settings.branding_link || null,
-				defaultColorMode: settings.default_color_mode || "system",
-				vcardEnabled: settings.vcard_enabled === "true",
-				vcardDownloadAvailable,
-				contactFormEnabled: settings.contact_form_enabled === "true",
-				captchaProvider,
-				captchaSiteKey: captchaProvider !== "none" ? settings.captcha_site_key || null : null,
-				bannerPreset: settings.banner_preset || null,
-				bannerEnabled: settings.banner_enabled === "true",
-				bannerMode: (settings.banner_mode as "preset" | "custom") || "preset",
-				bannerCustomUrl: settings.banner_custom_url || null,
-				themePreset: settings.theme_preset || "default",
-				customPrimary: settings.custom_primary || null,
-				customSecondary: settings.custom_secondary || null,
-				customAccent: settings.custom_accent || null,
-				customBackground: settings.custom_background || null,
-				customCss: settings.custom_css || null,
-				socialIconShape: (settings.social_icon_shape as "circle" | "rounded-square") || null,
-				brandingLogoUrl: settings.branding_logo_url || null,
-				brandingFaviconUrl: settings.branding_favicon_url || null,
-				brandingSiteName: settings.branding_site_name || null,
-				brandingPpUrl: ppUrl,
-				brandingTosUrl: tosMode === "url" ? settings.branding_tos_url || null : null,
-				brandingPpMode: ppMode,
-				brandingPpText: ppMode === "text" ? settings.branding_pp_text || null : null,
-				brandingTosMode: tosMode,
-				brandingTosText: tosMode === "text" ? settings.branding_tos_text || null : null,
-				consentBannerEnabled: settings.consent_banner_enabled !== "false",
-				consentBannerText: settings.consent_banner_text || null,
-				// One privacy-notice source: the banner falls back to the branding link.
-				consentPrivacyUrl: settings.consent_privacy_url || ppUrl,
-				consentCategories: settings.consent_categories || null,
-				/** BCP-47 page language; null = English. */
-				siteLanguage: settings.site_language || null,
-			},
+			settings: resolvePublicPageSettings(settings, vcardDownloadAvailable),
 		};
 	}),
 
@@ -337,83 +276,27 @@ export const publicRouter = router({
 	// `whereMet` is optional: the block's showWhereMet toggle decides whether
 	// the form asks for it.
 	submitContact: publicProcedure.input(contactSubmissionSchema).mutation(async ({ input, ctx }) => {
-		const settings = await buildSettingsMap(CONTACT_SETTING_KEYS);
-		if (settings.contact_form_enabled !== "true") {
-			throw new TRPCError({ code: "FORBIDDEN", message: "Contact form is disabled" });
-		}
-
-		// A filled honeypot gets the same success response, but nothing is
-		// stored or emailed.
-		if (input.website) return { success: true };
-
-		const provider = settings.captcha_provider;
-		if (provider && provider !== "none") {
-			const { ip } = requestMeta(ctx.headers);
-			await verifyCaptcha({
-				provider,
-				secret: settings.captcha_secret_key || "",
-				token: input.captchaToken,
-				remoteip: ip || undefined,
-				expectedHostname: expectedCaptchaHostname(),
-			});
-		}
-
-		// Tags are stripped as defence in depth (every sink escapes anyway).
-		const submission: Submission = {
-			name: stripHtml(`${input.firstName} ${input.lastName}`),
-			email: input.email,
-			message: input.message ? stripHtml(input.message) : "",
-			whereMet: optionalText(input.whereMet),
-			blockId: input.blockId ?? null,
-			blockTitle: optionalText(input.blockTitle),
-		};
-
-		const { wantDb, wantEmail } = resolveDeliveryMode(settings.contact_delivery);
-		// Persist first so a later email failure never drops the submission.
-		if (wantDb) await storeSubmission(submission);
-		if (wantEmail) {
-			const emailed = await notifyAdmin(settings, submission);
-			// Email-only mode: a failed send falls back to the Inbox rather than
-			// losing the lead. The visitor's message was received either way.
-			if (!emailed && !wantDb) await storeSubmission(submission);
-		}
-
-		return { success: true };
+		return submitContact(input, { headers: ctx.headers, expectedOrigin: env.CORS_ORIGIN });
 	}),
 
-	// Analytics tracking — country is derived from trusted Cloudflare request
-	// headers. The referrer is the one client-supplied field (the page's
-	// `document.referrer`; the request's own Referer is the link page itself),
-	// stored as a hostname only. The user agent is not collected.
 	trackView: publicProcedure
 		.input(z.object({ referrer: z.string().max(2048).optional() }).optional())
-		.mutation(async ({ input, ctx }) => {
-			await db.insert(pageView).values({
-				id: crypto.randomUUID(),
-				referrer: referrerHost(input?.referrer, ownHostnames(ctx.headers, env.CORS_ORIGIN)),
-				country: requestMeta(ctx.headers).country,
+		.mutation(() => {
+			throw new TRPCError({
+				code: "NOT_FOUND",
+				message:
+					"Profile analytics collection has been retired. Historical reports remain available.",
 			});
-			return { success: true };
 		}),
 
 	trackClick: publicProcedure
 		.input(z.object({ blockId: z.string().max(100), referrer: z.string().max(2048).optional() }))
-		.mutation(async ({ input, ctx }) => {
-			// Only record clicks for blocks that actually exist — prevents anyone
-			// from polluting stats or creating orphan rows with arbitrary ids.
-			const [target] = await db
-				.select({ id: block.id })
-				.from(block)
-				.where(eq(block.id, input.blockId));
-			if (!target) return { success: true };
-
-			await db.insert(linkClick).values({
-				id: crypto.randomUUID(),
-				blockId: input.blockId,
-				referrer: referrerHost(input.referrer, ownHostnames(ctx.headers, env.CORS_ORIGIN)),
-				country: requestMeta(ctx.headers).country,
+		.mutation(() => {
+			throw new TRPCError({
+				code: "NOT_FOUND",
+				message:
+					"Profile analytics collection has been retired. Historical reports remain available.",
 			});
-			return { success: true };
 		}),
 
 	hasUsers: publicProcedure.query(async () => {

@@ -2,7 +2,12 @@ import alchemy from "alchemy";
 import { D1Database, Nextjs, R2Bucket, RateLimit, Worker } from "alchemy/cloudflare";
 import { CloudflareStateStore } from "alchemy/state";
 import { config } from "dotenv";
-import { deployEnvErrors, resolveResourceNames } from "./deploy-config.ts";
+import {
+	deployEnvErrors,
+	resolveResourceNames,
+	resolveServingConfiguration,
+} from "./deploy-config.ts";
+import { assertSplitAliasClosure } from "./split-alias-guard.ts";
 
 // Run under Node rather than Bun — Bun segfaults executing this Alchemy program
 // (exit 132/SIGILL), the same lesson as wolfathon and dirework. The
@@ -20,7 +25,7 @@ const isDev = process.argv.includes("--dev") || process.argv.includes("--local")
 const isDeploy = !isDestroy && !isDev;
 
 // The app-level .env files hold dev values (localhost URLs, a dev auth secret).
-// They feed `bun dev` only: a deploy must take every value from the root .env
+// They feed `bun dev` only: a deploy must take every value from the infra .env
 // or the CI environment, never silently fall back to a dev secret.
 if (isDev) {
 	config({ path: "../../apps/web/.env" });
@@ -55,7 +60,8 @@ if (names.ignoredOverrides.length > 0) {
 // matched before the custom-domain worker). Same origin for both, so no CORS
 // and no cookie domain. When SITE_DOMAIN is unset (staging / first deploy)
 // both workers stay on their workers.dev URLs.
-const siteDomain = process.env.SITE_DOMAIN;
+const serving = resolveServingConfiguration(process.env);
+const siteDomain = serving.webDomain;
 
 // The public origin is baked into robots/sitemap/OG URLs at build time. An
 // unset GitHub variable arrives as "" (not undefined), which `alchemy.env`
@@ -74,12 +80,21 @@ if (isDeploy) {
 			"NEXT_PUBLIC_SITE_URL is not set. Set it to the public origin of the site (https://SITE_DOMAIN, or the web worker's workers.dev URL for staging).",
 		);
 	}
-	if (siteDomain && siteUrl.replace(/\/$/, "") !== `https://${siteDomain}`) {
+	if (
+		serving.mode === "legacy" &&
+		siteDomain &&
+		siteUrl.replace(/\/$/, "") !== `https://${siteDomain}`
+	) {
 		throw new Error(
 			`NEXT_PUBLIC_SITE_URL (${siteUrl}) must be https://${siteDomain} when SITE_DOMAIN is set.`,
 		);
 	}
 }
+
+// Existing aliases must be closed deliberately before any Alchemy state or
+// resource mutation. Only absent workers are allowed on the first setup.
+const aliasGuard = { mode: serving.mode, isDeploy, stage, env: process.env };
+await assertSplitAliasClosure({ ...aliasGuard, phase: "before" });
 
 const app = await alchemy("linkden", {
 	// Explicit stage so state never keys off $USER (which is "runner" in CI and
@@ -170,6 +185,21 @@ const walletBindings = {
 	}),
 };
 
+// Publication is opt-in and server-only; the existing deployment stays unchanged while disabled.
+const publicationScheduler =
+	process.env.PUBLICATION_ENABLED === "true" &&
+	process.env.PUBLICATION_SCHEDULER_ENABLED === "true";
+const publicationBindings = {
+	...(process.env.PUBLIC_SITE_URL && { PUBLIC_SITE_URL: alchemy.env.PUBLIC_SITE_URL! }),
+	...(process.env.PUBLICATION_ENABLED === "true" && {
+		PUBLICATION_ENABLED: "true",
+		PUBLICATION_TARGET: alchemy.env.PUBLICATION_TARGET!,
+		PUBLICATION_RENDERER_SOURCE_ID: alchemy.env.PUBLICATION_RENDERER_SOURCE_ID!,
+		PUBLICATION_GITHUB_TOKEN: alchemy.secret.env.PUBLICATION_GITHUB_TOKEN!,
+	}),
+	...(publicationScheduler && { PUBLICATION_SCHEDULER_ENABLED: "true" }),
+};
+
 // Workers runtime semantics are date-gated. Pin the date instead of inheriting
 // Alchemy's default (miniflare's bundled workerd date), which would silently
 // move production to a newer runtime on any lockfile bump. Bump it
@@ -187,18 +217,28 @@ export const server = await Worker("server", {
 	compatibility: "node",
 	compatibilityDate: COMPATIBILITY_DATE,
 	// Daily retention sweep (prune analytics/sessions/contacts/audit + orphan R2).
-	crons: ["0 3 * * *"],
+	crons: ["0 3 * * *", ...(publicationScheduler ? ["*/5 * * * *"] : [])],
 	// Invocation logs record each request's full URL, query string included,
 	// which would put magic-link / email-verification tokens in Workers Logs.
 	// The app's own request line (apps/server/src/index.ts) logs the path only.
 	observability: { logs: { invocationLogs: false } },
-	...(siteDomain && {
-		routes: [
-			{ pattern: `${siteDomain}/api/*`, adopt: true },
-			{ pattern: `${siteDomain}/trpc/*`, adopt: true },
-		],
-	}),
+	...(serving.mode === "split"
+		? {
+				url: false,
+				previewSubdomains: false,
+				routes: serving.publicContactUrl
+					? [{ pattern: `${new URL(serving.publicContactUrl).hostname}/api/contact`, adopt: false }]
+					: [],
+			}
+		: siteDomain && {
+				routes: [
+					{ pattern: `${siteDomain}/api/*`, adopt: true },
+					{ pattern: `${siteDomain}/trpc/*`, adopt: true },
+				],
+			}),
 	bindings: {
+		LINKDEN_SERVING_MODE: serving.mode,
+		...(serving.publicContactUrl && { PUBLIC_CONTACT_URL: serving.publicContactUrl }),
 		DB: db,
 		IMAGES_BUCKET: imagesBucket,
 		RL_AUTH: rlAuth,
@@ -210,6 +250,7 @@ export const server = await Worker("server", {
 		BETTER_AUTH_SECRET: alchemy.secret.env.BETTER_AUTH_SECRET!,
 		BETTER_AUTH_URL: alchemy.env.BETTER_AUTH_URL!,
 		...walletBindings,
+		...publicationBindings,
 		// Optional first-run guard (apps/server/src/lib/setup-token.ts): while
 		// no admin exists, sign-up must present it. Bound only when set.
 		...(process.env.SETUP_TOKEN?.trim() && {
@@ -229,9 +270,14 @@ export const web = await Nextjs("linkden", {
 	name: `linkden${suffix}`,
 	cwd: "../../apps/web",
 	compatibilityDate: COMPATIBILITY_DATE,
+	build: { env: { LINKDEN_SERVING_MODE: serving.mode } },
+	// Invocation URLs can include password-reset tokens on editor routes.
+	observability: { logs: { invocationLogs: false } },
+	...(serving.mode === "split" && { url: false, previewSubdomains: false }),
 	...(siteDomain && { domains: [{ domainName: siteDomain, adopt: true }] }),
 	bindings: {
 		API: server,
+		LINKDEN_SERVING_MODE: serving.mode,
 		NEXT_PUBLIC_SERVER_URL: alchemy.env.NEXT_PUBLIC_SERVER_URL!,
 		NEXT_PUBLIC_SITE_URL: siteUrl,
 		RL_OG: rlOg,
@@ -243,10 +289,16 @@ export const web = await Nextjs("linkden", {
 	},
 });
 
-console.log(`Web    -> ${web.url}`);
-console.log(`Server -> ${server.url}`);
-if (siteDomain) {
-	console.log(`Site   -> https://${siteDomain} (API routes: /api/*, /trpc/*)`);
-}
-
 await app.finalize();
+// Mandatory provider readback: IaC options alone do not prove alias closure.
+await assertSplitAliasClosure({ ...aliasGuard, phase: "after" });
+
+console.log(`Web    -> ${web.url}`);
+console.log(`Server -> ${serving.mode === "split" ? "private API binding" : server.url}`);
+if (siteDomain) {
+	console.log(
+		serving.mode === "split"
+			? `Admin  -> https://${siteDomain} (same-origin API binding); public assets -> ${serving.publicOrigin}`
+			: `Site   -> https://${siteDomain} (API routes: /api/*, /trpc/*)`,
+	);
+}

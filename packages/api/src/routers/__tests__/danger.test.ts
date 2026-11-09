@@ -57,6 +57,17 @@ async function seedAll() {
 	await db.insert(schema.socialNetwork).values({ slug: "github", url: "https://github.com/a" });
 	await db.insert(schema.siteSettings).values({ key: "profile_name", value: "A" });
 	await db.insert(schema.auditLog).values({ id: "l1", action: "seed" });
+	await db.insert(schema.contactQuota).values({ id: "site", day: "2026-11-05", reserved: 1 });
+	// The request trigger also seeds the singleton publication_state row.
+	await db.insert(schema.publicationRevision).values({
+		revision: "seed-publication",
+		sourceDigest: "a".repeat(64),
+		targetId: "test-target",
+		rendererSourceId: "test-build",
+		publicOrigin: "https://example.com",
+		snapshotJson: "{}",
+		createdAt: now,
+	});
 	await db
 		.insert(schema.twoFactor)
 		.values({ id: "tf1", secret: "s", backupCodes: "c", userId: "u1" });
@@ -73,6 +84,8 @@ describe("danger zone", () => {
 		expect(await count(schema.user)).toBe(1);
 		expect(await count(schema.siteSettings)).toBe(1);
 		expect(await count(schema.socialNetwork)).toBe(1);
+		expect(await count(schema.publicationRevision)).toBe(1);
+		expect(await count(schema.publicationState)).toBe(1);
 		expect(await count(schema.auditLog)).toBeGreaterThanOrEqual(2); // seed + this action
 	});
 

@@ -79,8 +79,15 @@ function ratio(a: Rgb, b: Rgb): number {
 	return (hi + 0.05) / (lo + 0.05);
 }
 
-const light = block(":root");
-const modes = { light, dark: { ...light, ...block(".dark") } };
+const light = { ...block(":root, .public-scope"), ...block(".admin-scope") };
+const modes = {
+	light,
+	dark: {
+		...light,
+		...block(".dark, .dark .public-scope"),
+		...block(".dark .admin-scope, .admin-scope.dark"),
+	},
+};
 
 describe("admin palette contrast (WCAG AA)", () => {
 	for (const [mode, vars] of Object.entries(modes)) {
@@ -127,7 +134,21 @@ describe("admin palette contrast (WCAG AA)", () => {
 		});
 
 		it(`${mode}: --data-up tracks --success`, () => {
-			expect(vars["--data-up"]).toBe(vars["--success"]);
+			expect(vars["--data-up"]).toBe("var(--success)");
+		});
+
+		it(`${mode}: primary and muted body text clear 4.5:1 on every content plane`, () => {
+			for (const text of ["--primary", "--foreground", "--muted-foreground"]) {
+				for (const plane of ["--card", "--background", "--surface-2", "--popover"]) {
+					expect(
+						ratio(opaque(text), opaque(plane)),
+						`${mode}: ${text} on ${plane}`,
+					).toBeGreaterThanOrEqual(4.5);
+				}
+			}
+			expect(ratio(opaque("--primary-foreground"), opaque("--primary"))).toBeGreaterThanOrEqual(
+				4.5,
+			);
 		});
 	}
 });

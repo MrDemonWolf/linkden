@@ -2,7 +2,6 @@
 
 import { ExternalLink, MapPin } from "lucide-react";
 import { getMapUrl } from "@/lib/map-url";
-import { trackClick } from "@/lib/track";
 import { usePreview } from "./preview-context";
 import type { ThemeColors } from "./public-page";
 
@@ -54,7 +53,6 @@ export function LocationBlock({ block, config, themeColors }: LocationBlockProps
 					rel={isPreview ? undefined : "noopener noreferrer"}
 					onClick={(e: React.MouseEvent) => {
 						if (isPreview) e.preventDefault();
-						trackClick(block.id, { preview: isPreview });
 					}}
 					className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-3 py-2 text-small underline decoration-dotted underline-offset-4 transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2"
 					style={{ ...style, outlineColor: themeColors?.primary || "#3b82f6" }}

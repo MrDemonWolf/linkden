@@ -1,9 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-
-// sanitizeSetting is pure; routers/settings.ts only needs the D1 client to load.
-vi.mock("@linkden/db", () => ({ db: {} }));
-
-const { sanitizeSetting } = await import("../settings");
+import { describe, expect, it } from "vitest";
+import { sanitizeSetting } from "../../utils/sanitize-setting";
 
 describe("sanitizeSetting: timezone", () => {
 	it("accepts IANA aliases the workerd supportedValuesOf list leaves out", () => {

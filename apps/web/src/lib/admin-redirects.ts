@@ -15,7 +15,7 @@ const ROOT: Record<string, string> = {
 	"/admin/builder": "/admin/links",
 	"/admin/social": "/admin/links/social",
 	"/admin/appearance": "/admin/design",
-	"/admin/analytics": "/admin/insights",
+	"/admin/analytics": "/admin/links",
 	"/admin/connections": "/admin/inbox",
 	"/admin/forms": "/admin/inbox",
 	"/admin/account": "/admin/settings",

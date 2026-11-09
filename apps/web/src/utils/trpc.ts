@@ -1,12 +1,22 @@
 import type { AppRouter } from "@linkden/api/routers/index";
 
 import { env } from "@linkden/env/web";
-import { QueryCache, QueryClient } from "@tanstack/react-query";
+import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";
 import { toast } from "sonner";
+import { changesPublicationSource } from "@/lib/publication-state";
 
 export const queryClient = new QueryClient({
+	mutationCache: new MutationCache({
+		onSuccess: (_data, variables, _context, mutation) => {
+			if (changesPublicationSource(mutation.options.mutationKey, variables)) {
+				void queryClient.invalidateQueries({
+					queryKey: trpc.publication.status.queryOptions().queryKey,
+				});
+			}
+		},
+	}),
 	queryCache: new QueryCache({
 		onError: (error, query) => {
 			if (query.meta?.skipErrorToast) return;
@@ -25,7 +35,7 @@ export const queryClient = new QueryClient({
 	}),
 });
 
-const trpcClient = createTRPCClient<AppRouter>({
+export const trpcClient = createTRPCClient<AppRouter>({
 	links: [
 		httpBatchLink({
 			url: `${env.NEXT_PUBLIC_SERVER_URL}/trpc`,

@@ -42,6 +42,14 @@ describe("logError", () => {
 		const line = JSON.parse(String(spy.mock.calls[0]?.[0]));
 		expect(line).toMatchObject({ level: "error", path: "/x", step: "y", message: "bad" });
 	});
+
+	it("redacts a reset token from structured error paths", () => {
+		const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+		logError({ path: "/api/auth/reset-password/dummy-secret" }, new Error("bad"));
+		const line = String(spy.mock.calls[0]?.[0]);
+		expect(line).not.toContain("dummy-secret");
+		expect(JSON.parse(line).path).toBe("/api/auth/reset-password/[redacted]");
+	});
 });
 
 describe("redactLogPath", () => {

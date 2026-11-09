@@ -1,64 +1,65 @@
 ---
 title: Privacy Policy
-description: Privacy policy for the LinkDen documentation site and open-source project.
+description: Data handling on the documentation site and in self-hosted LinkDen instances.
 ---
 
-# Privacy Policy
 
-**Last updated:** October 2026
+**Last updated:** November 2026
 
-LinkDen is an open-source, self-hosted application. This policy covers the **documentation site** at `mrdemonwolf.github.io/linkden`. If you self-host LinkDen, your own privacy policy applies to your instance.
+This page describes the LinkDen documentation site at `mrdemonwolf.github.io/linkden` and the data handling in the current project source. A self-hosted instance is operated by its owner; that instance's own policy and configured providers apply.
 
-### 🔑 Key Takeaways
-- 🚫 **No Tracking:** We don't track you on this docs site.
-- 🏠 **Self-Hosted:** You own all your data on your own instance.
-- 🔒 **Private:** No telemetry. The only outbound check is an update lookup on GitHub when the admin opens Settings → Data.
+## Documentation site
 
-## What We Collect
+The docs are a static GitHub Pages site. The current source does not add application visitor analytics or advertising trackers. Search uses the site's static index. Display preferences, such as theme, may be stored in the browser.
 
-### Documentation Site
+GitHub processes hosting/request information under its [Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement). Loading a hosted site is not a promise that its hosting provider receives no IP address or request metadata.
 
-This is a static site hosted on **GitHub Pages**. We do not:
+## Data held by a self-hosted instance
 
-- 🍪 Use cookies or tracking scripts
-- 👤 Collect personal information
-- 📊 Use analytics services
-- 💾 Store any visitor data
+The operator controls its database, storage, backups, publication settings and integrations. Depending on the configured features, records can include:
 
-GitHub Pages may collect basic server logs (IP addresses, user-agent strings) as part of standard hosting. See [GitHub's Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement) for details.
+- Profile information, blocks, social links, images, public branding and vCard contact details.
+- Admin account/authentication data, two-factor configuration, recovery material and session security metadata.
+- Contact submissions: the submitted name, email, message and any enabled optional meeting question.
+- Settings and private integration/signing credentials.
+- Audit records, publication jobs and frozen/approved source required for publication and recovery.
+- Previously collected historical profile view/click records, if that instance still retains them.
 
-### Self-Hosted Instances
+Cloudflare D1/R2 and the configured deployment/state/backup services process or store the relevant data. This is self-hosting in the operator's account, not a claim that no service provider can process the data. See [Cloudflare's Privacy Policy](https://www.cloudflare.com/privacypolicy/) for the provider's policy.
 
-When you deploy your own LinkDen instance, **you** are the data controller. LinkDen stores the following in your Cloudflare D1 database:
+## Collection is Off
 
-- 👤 **Profile data** -- name, bio, profile image URL
-- 🔗 **Links** -- URLs, titles, icons, sort order
-- ⚙️ **Settings** -- theme, colors, branding, configuration
-- 📈 **Analytics** -- page views and link clicks with the referring site's hostname (no path or query) and a country code from Cloudflare's header. No IP address and no user-agent string is stored. With the consent banner on (the default), nothing is recorded until the visitor accepts analytics; with it off, every visit is recorded. Kept 365 days.
-- 📝 **Contact form submissions** -- name, email, message, and "where we met" only when the form asks it (if enabled). Kept 365 days.
-- 🔐 **Admin sessions** -- IP address and browser of the admin's own sign-ins (expired sessions are deleted daily)
-- 📇 **vCard data** -- contact information you configure
+Profile page-view and button-click collection is retired in this source. The current public renderer sends no profile analytics events. Legacy records are left in existing databases until the operator explicitly chooses to delete them.
 
-All data lives in **your own** database. LinkDen sends no telemetry. Data only reaches the third parties below when you enable the feature that uses them.
+Historical records can remain in the database and backups under the previous methodology. Their presence does not mean current collection is active. The retired profile dashboard is removed; protected historical read APIs and backup compatibility remain.
 
-## Third-Party Services
+Hosting providers may still process ordinary request/security information. Contact submissions, authentication, CAPTCHA and embedded media have separate purposes and behavior.
 
-Self-hosted instances may integrate with these services. Each applies only when the operator turns it on:
+## Public publication
 
-- ☁️ **Cloudflare** -- hosting, database, storage and CDN; always used (see [Cloudflare's Privacy Policy](https://www.cloudflare.com/privacypolicy/))
-- 📧 **Resend** -- email delivery for password reset, magic links and contact form notifications, when email is configured (see [Resend's Privacy Policy](https://resend.com/legal/privacy-policy))
-- 🛡️ **CAPTCHA providers** -- Cloudflare Turnstile, Google reCAPTCHA or hCaptcha, when CAPTCHA is configured. The widget loads from the provider in the visitor's browser, and the server sends the provider the visitor's token and IP address to verify it.
-- 📺 **Embed providers** -- YouTube, Spotify, SoundCloud, or any custom embed URL, when an Embed block is on the page. The visitor's browser loads them directly (receiving the visitor's IP). With the consent banner on, they load only after the visitor clicks **Load** or allows **Embedded media**.
-- 🖼️ **Gravatar** -- the admin panel requests an avatar for an MD5 hash of the admin's email when no avatar has been uploaded (admin only; visitors are not affected).
-- 🗺️ **Map providers** -- none are contacted by the page. A Location block only links to Google Maps, Apple Maps or a custom URL when the visitor clicks it.
-- 🐙 **GitHub API** -- a server-side update check when the admin opens Settings → Data; no personal data is sent.
+Opt-in native publication creates public files from approved profile content. The builder excludes private settings and unpublished future content from public artifacts; the separate approved scheduling source stays private.
 
-> **Tip:** Authentication is handled by Better Auth, which runs entirely on your server -- no data is sent to external auth providers.
+An enabled GitHub publication workflow processes the approved build and retains public artifacts according to its configured retention. Previously published files or provider versions can remain accessible until the operator replaces or withdraws them. Deleting editor data or resetting D1 does not automatically remove the separate published site. Database backups and exported files also have their own retention.
 
-## Your Rights
+## Contact forms, email and external content
 
-Since LinkDen is self-hosted, you have complete control over all data. Export, delete, or modify anything at any time through the admin panel or directly in your D1 database.
+- **Contact forms:** configured delivery can store submissions in the Inbox and/or send them by email. Failed or unavailable notification delivery falls back to the Inbox. Server-side validation, throttling, CAPTCHA and a daily reservation limit protect the action; rejected requests can still be processed by the hosting/security layer.
+- **Resend:** configured password-reset, email-change, magic-link and contact-notification delivery sends the necessary message/address data to the email provider. Unconfigured or unsupported providers do not send. See [Resend's Privacy Policy](https://resend.com/legal/privacy-policy).
+- **CAPTCHA:** a configured Turnstile, reCAPTCHA or hCaptcha widget contacts its provider. Server verification includes the submitted token and transient visitor IP address. CAPTCHA is separate from analytics consent.
+- **Embeds:** YouTube, Spotify, SoundCloud or a configured custom embed receives browser requests when loaded, including the visitor's IP address. With the consent banner enabled, embeds wait for an explicit load action or permission for Embedded media. Disabling that banner permits direct loading.
+- **External images and links:** retained third-party image URLs are requested by the browser; following a link contacts its destination. A static snapshot does not make those providers local.
+- **Gravatar:** the admin UI can request an avatar using an MD5 hash of the admin email when no uploaded image is set. Public visitors do not use that admin avatar lookup.
+- **Maps:** Location blocks provide outbound map links; the map provider is contacted when the visitor follows the link.
+- **GitHub:** Settings → Data performs a server-side version lookup. Enabled publication automation also uses GitHub; it is not the application's only possible outbound integration.
+
+Embedded-media consent choices and theme preferences can use browser storage. They do not activate retired profile collection.
+
+## Retention and deletion
+
+The current daily maintenance defaults prune contact submissions and legacy analytics older than 365 days, audit entries older than 180 days, and expired sessions/verification records. Actual removal depends on successful scheduled execution. Exports, provider logs, emails, R2 backups and published versions have separate retention; deleting a database row does not recall those copies.
+
+Operators can use the protected data tools to export or delete stored content. Before making a privacy request, identify the operator of the particular instance: the open-source project's maintainers cannot access every self-hoster's database. Removing public content also requires the operator's publication/takedown procedure.
 
 ## Contact
 
-For questions about this policy, please [open an issue on GitHub](https://github.com/mrdemonwolf/linkden/issues).
+For this documentation site's policy, [open a project issue](https://github.com/MrDemonWolf/linkden/issues). For information stored by another LinkDen instance, contact the operator identified on that instance.

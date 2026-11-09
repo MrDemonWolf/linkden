@@ -3,15 +3,13 @@ title: Apple Wallet
 description: Build a signed Apple Wallet business-card pass that you download from the admin and share.
 ---
 
-# Apple Wallet
-
 Build an Apple Wallet pass with your contact info and a QR code back to your page. The pass is **private**: you download it from **Settings → Wallet** and share it yourself (AirDrop, Messages, email). There is no button for visitors on your public page, and no public download link. Visitors save your contact details with the **Save vCard** button instead.
 
 ## Prerequisites
 
 Before you start, make sure you have:
 
-- A paid **Apple Developer Program** membership ($99/year) at [developer.apple.com](https://developer.apple.com)
+- An **Apple Developer Program** membership with access to pass identifiers and certificates at [developer.apple.com](https://developer.apple.com)
 - A registered **Pass Type Identifier**
 - A **signing certificate** and the **Apple WWDR** intermediate certificate
 
@@ -57,6 +55,8 @@ openssl pkcs12 -in pass.p12 -clcerts -nokeys -out signer_cert.pem
 openssl pkcs12 -in pass.p12 -nocerts -nodes -out signer_key.pem
 ```
 
+Use the intermediate matching your signing certificate. Apple's [WWDR certificate guidance](https://developer.apple.com/support/expiration/) identifies G4 for current Pass Type ID certificates.
+
 Keeping the key encrypted? Drop `-nodes`, and set `WALLET_SIGNER_KEY_PASSPHRASE` to the passphrase you choose. A wrong passphrase shows up as "Unable to load wallet signer key (wrong passphrase?)" in the API logs.
 
 ### 5. Add the Keys
@@ -81,7 +81,7 @@ base64 -i AppleWWDRCAG4.cer | tr -d '\n' > wwdr_base64.txt
 | `WALLET_SIGNER_KEY_PASSPHRASE` | Only for an encrypted key |
 | `WALLET_TEAM_ID`, `WALLET_PASS_TYPE_ID` | Or set them in the admin |
 
-> **Tip:** The **Signing Status** panel shows each item as ready only when it is set **and** loadable, so "Ready" means the pass can really be signed.
+The **Signing Status** panel reports whether each item is configured and loadable. It does not prove that Apple will accept the certificate chain or the finished pass; test a signed download on the intended device.
 
 ### 6. Configure in Admin
 
@@ -99,14 +99,16 @@ Go to `/admin/settings/wallet`, turn on **Downloads enabled** in the header, and
 - **Background Color** -- Hex color for the pass background.
 - **Foreground Color** -- Hex color for the pass text.
 - **Label Color** -- Hex color for field labels.
-- **Logo URL** -- Logo image displayed on the pass.
+- **Images** -- Upload logo, icon, thumbnail, and strip images using the image controls.
 - **Custom QR URL** -- Optional custom URL for the QR code.
 
 **Context-aware (optional):** a relevant date and up to 10 locations make Wallet surface the pass on the Lock Screen at the right time and place.
 
 ## Pass Preview
 
-The admin page includes a live preview showing how your pass will look with your current colors, logo, and content. Field sections are capped the same way in the preview and the real pass.
+The admin page uses a simple Wallet-style card preview with your current colors, logo, fields, and QR code. It has no phone frame. Start with a template, then use the **Business**, **Images**, **Context**, **Colors**, and **Background** sections. Field sections share the generated pass's limits.
+
+The preview is illustrative; its styling and QR do not prove a signed pass has been accepted by Apple Wallet.
 
 ## Downloading and Sharing
 

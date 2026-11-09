@@ -3,8 +3,6 @@ title: Export & Import
 description: Back up your LinkDen data as JSON or migrate from LinkStack.
 ---
 
-# Export & Import
-
 Back up your configuration, move between instances, or migrate from LinkStack -- all through JSON files.
 
 ## Exporting Data
@@ -23,7 +21,7 @@ Back up your configuration, move between instances, or migrate from LinkStack --
 
 ### What's Not Included
 
-- Analytics data (page views, clicks)
+- Historical analytics data (page views, clicks), publication revisions/receipts, or runner credentials
 - Uploaded image files (only their URLs; keep the originals — after a reset, unreferenced images are deleted by the next daily cleanup)
 - Secrets: email API key, CAPTCHA secret, MapKit token, wallet signing keys, and environment variables
 - Your admin account and password
@@ -42,6 +40,8 @@ The admin imports in **merge** mode: blocks, settings and social links with matc
 The API (`backup.import`) also has a **replace** mode that makes the page match the backup: non-secret settings are replaced (saved secrets are kept), blocks are updated in place and blocks missing from the backup are removed (restored blocks keep their click history), and messages that are not in the backup are deleted. The newest 500 messages from the backup are written; older ones already stored are left alone.
 
 Rows that fail validation (for example a `javascript:` link) are skipped and counted in the result instead of being imported. Limits per import: 500 blocks, 500 settings, 5,000 messages in the file (500 written). Older backups still import: retired block types are converted, and dates in either ISO or epoch format are accepted.
+
+Review the result and reload the editor before publishing restored content. A JSON backup does not move image files.
 
 ## Migrating from LinkStack
 

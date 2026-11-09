@@ -1,91 +1,103 @@
 ---
 title: Security
-description: How LinkDen protects your data with input sanitization, secure setup, and authentication.
+description: Configure setup protection, two-factor sign-in, local development access, and bounded API requests.
 ---
 
-# Security
+LinkDen includes authentication, server-side validation, request limits, and a single-admin database constraint. Operators still need to configure deployment access, provider credentials, backups, and recovery.
 
-LinkDen includes built-in protections against common web attacks. Most security measures work automatically -- this page explains what's covered and what you can configure.
+## Protect first-time setup
 
-## First-User-Is-Admin
+The first account created at `/admin/setup` becomes the administrator. Subsequent signups receive 403, and a database trigger prevents a second account.
 
-LinkDen uses a simple, secure setup model:
+Set a random `SETUP_TOKEN` before exposing a fresh instance. The setup wizard sends it through `x-setup-token`; an incorrect token is rejected. Without it, the first-account window is open to whoever reaches setup first.
 
-1. Navigate to `/admin/setup` after deployment to create your admin account.
-2. The first user to register becomes the admin.
-3. After the first user is created, registration is permanently locked -- the API returns **403 "Registration is closed"** for any subsequent signup attempts, and a database trigger refuses a second account even if that check were bypassed.
-4. If you visit `/admin/login` before an account exists, you'll be redirected to the setup page.
+## Two-factor sign-in
 
-**Until you create the account, the setup page is open to whoever reaches it first.** On a public deploy, set the optional `SETUP_TOKEN` secret: the first signup must then present the same value (the wizard's **Setup token** field), otherwise it gets **403 "Invalid setup token"**. See [Environment Variables](/docs/self-hosting/environment-variables#cloudflare-deployment).
+1. Open **Settings → Account → Two-factor authentication**.
+2. Start enrollment, scan the QR code or enter the secret in an authenticator, and verify its first code.
+3. Save the backup codes somewhere separate from your device.
+4. Test sign-out and sign-in before relying on the new setup.
 
-## File Upload Restrictions
+Enrollment becomes active only after a valid confirmation code. Password sign-in then requires a TOTP or an unused backup code before an authenticated session is issued. Each backup code works once. The optional trusted-device choice lasts 30 days.
 
-Image uploads are validated server-side:
+Magic-link sign-in requires configured Resend email and two-factor to be off. It serves only the existing admin, expires after ten minutes, and cannot create another account. Turning it off also blocks outstanding verification routes.
 
-- **Max file size:** 5 MB — enforced from the `Content-Length` header **before** the body is buffered, so oversized uploads are rejected without loading them into memory.
-- **Allowed extensions:** jpg, jpeg, png, gif, webp, ico
-- **Allowed MIME types:** image/jpeg, image/png, image/gif, image/webp, image/x-icon, image/vnd.microsoft.icon
-- **Magic-byte check:** the file's actual signature must match the claimed extension — an HTML or script file renamed to `.png` is rejected even if its client MIME says `image/png`.
+A password change revokes other sessions. Password reset revokes every session. An email change requires confirmation from the current address and verification at the new address.
 
-Uploads that fail validation are rejected with descriptive error messages (400 for invalid type or content mismatch, 413 for oversized files). When you replace an image during an edit, only the intermediate upload you never saved is deleted right away; the image your live page shows is never deleted on replace, so discarding the edit keeps it. A daily retention sweep removes images no longer referenced by any setting or block once they are 24 hours old.
+## Account recovery
 
-Images are served from `/api/images/<purpose>/<id>.<ext>` only: any other path is a 404 without touching storage, and served images are cached at the edge.
+With working email, use **Forgot password?** on the login page.
 
-## Settings Key Allowlist
+An operator with repository and D1 access can recover an instance from the repository root:
 
-The settings API only accepts known setting keys, and every value is checked against that key's rule (length, URL, colour, enum, or a JSON schema) before it is stored. Backup imports, the wallet editor and the vCard editor go through the same gate. Secret settings (email API key, CAPTCHA secret, MapKit token, wallet signing key) are masked when read back and are never included in backups.
+```bash
+bun run reset:password -- --email you@example.com --remote --db your-database-name
+```
 
-## Input Sanitization
+The command prompts for a new password instead of accepting it in the command line. Omit `--remote` for local stores. Without `--db`, remote recovery uses `LINKDEN_DB_NAME`, then `linkden-db`; confirm the intended database before running it.
 
-LinkDen sanitizes all user-provided content on the server side before saving it. This protects against stored XSS attacks even if someone bypasses frontend validation.
+If both the authenticator and backup codes are lost, add `--disable-2fa`. This resets the password, signs sessions out, and disables two-factor. Enroll again and save new codes afterward.
 
-**What gets sanitized:**
+## Local development login
 
-- **Text fields** (profile name, bio, titles, etc.) -- HTML tags are stripped and length limits are enforced. Text such as `x < 5` or `<jane@corp.com>` that is not a tag is kept as written.
-- **URLs** -- Validated to ensure they use `http://` or `https://` protocols. Dangerous protocols like `javascript:` are rejected.
-- **Colors** -- Must match `#RRGGBB` hex format.
-- **Custom CSS** -- Script tags, `expression()` calls, `javascript:` URLs, `@import` directives, `data:` URLs, and backslash escape sequences are blocked.
-- **Contact form submissions** -- All text fields are stripped of HTML before storage.
-- **Embed URLs** -- Validated against platform-specific patterns (e.g., YouTube, Spotify, SoundCloud).
+The bypass is opt-in and local only:
 
-## Authentication
+- Put `DEV_LOGIN="true"` in the standalone API's gitignored `apps/server/.dev.vars`.
+- Set `NEXT_PUBLIC_DEV_LOGIN=true` in the local frontend environment to show its button.
+- Use plain HTTP on loopback hosts for both the configured auth URL and the actual request.
 
-LinkDen uses [Better Auth](https://www.better-auth.com/) for authentication with email and password.
+An explicit non-development runtime disables the bypass. Request URL, Host, Origin/Referer, and proxy metadata must pass the local checks. Tunnels and forwarded public hosts cannot establish trust. Better Auth's first-login CSRF middleware still runs. Alchemy does not bind `DEV_LOGIN` into deployed Workers.
 
-- Sessions are signed with `BETTER_AUTH_SECRET`. The secret fails closed: if it is empty, or (outside localhost) shorter than 32 characters or a placeholder, sign-in, the admin API and uploads answer **503** and `/api/health` reports `"auth": "misconfigured"`. Deploys refuse such a secret up front.
-- **Two-factor (TOTP)** with backup codes. Once enabled, password sign-in asks for a code (or a backup code); you can trust a device for 30 days.
-- **Magic link** (optional) is only for the admin address, refused while 2FA is on, never creates an account, and links expire after 10 minutes. It is refused entirely unless **Settings → Account** has it switched on.
-- Resetting the password signs out every session. Changing the email needs a confirmation from the current address and then a verification link at the new one.
-- All admin routes require a valid session. Public routes are limited to page data, contact submissions, analytics tracking, vCard downloads, and setup status.
-- The Apple Wallet pass download (`/api/admin/wallet-pass`) needs a session; there is no public pass URL.
+Keep local listeners on loopback. The frontend also hides its test prefill and development sign-in on nonlocal pages.
 
-## Same-origin writes and CORS
+## Uploads and media
 
-The API checks the request origin against `CORS_ORIGIN`. On top of CORS, every `POST` to `/trpc/*` and `/api/upload` must come from `CORS_ORIGIN` or the API's own origin (with a `Sec-Fetch-Site` fallback); anything else gets **403**. Request bodies are capped before parsing: 64 KB for `/api/auth/*`, 1 MB for `/trpc/*`, 16 MB for backup import.
+Only signed-in administrators can upload. Files are limited to **5 MiB**, with a separate **16 KiB allowance for multipart framing**.
 
-Make sure `CORS_ORIGIN` matches your frontend URL exactly (including protocol, no trailing slash).
+The API requires a valid positive `Content-Length`. It can reject a declared oversized request early, but also counts actual bytes with a bounded buffer before multipart parsing. Understating the header does not bypass the cap.
 
-## Logging
+Accepted extensions are `jpg`, `jpeg`, `png`, `gif`, `webp`, and `ico`; MIME and magic-byte signatures must agree. Invalid files get 400, oversized bodies/files get 413, and a missing length gets 411.
 
-The API logs one line per request with the method, **path only**, status and duration. Query strings (which can carry magic-link and verification tokens) are never logged, the password-reset token in the path is redacted, Cloudflare's own invocation logs (which record full URLs) are turned off, and SQL parameters (which can hold visitor data) are stripped from logged errors. API error responses never include stack traces or internal messages.
+The upload response contains a relative `/api/images/<purpose>/<id>.<ext>` path. The current editor expands it to the configured API origin before saving because URL fields require absolute HTTP(S) values.
 
-## CAPTCHA
+Replacement removes only an unreferenced intermediate upload from the same unsaved edit. Saved media is retained when you discard a replacement. The daily orphan sweep reclaims unreferenced objects after a 24-hour grace period; cached copies can outlive storage deletion. JSON backups contain references, not the image files.
 
-The contact form supports optional CAPTCHA via **Cloudflare Turnstile**, **Google reCAPTCHA (v2 checkbox)** or **hCaptcha**. The widget renders on your public page with the site key; the secret key never leaves the server. Verification fails closed: a missing secret, a provider timeout, a token issued for another hostname, or (for Turnstile) a wrong action all reject the submission. See [Contact Form](/docs/guide/contact-form) for setup details.
+Assets-only publication copies individually approved media into hashed public assets. It does not expose the whole R2 bucket or rewrite every historical external URL.
 
-## Rate Limiting
+## Validation and secrets
 
-When deployed to Cloudflare Workers, LinkDen uses **Cloudflare Rate Limiting** bindings. Limits are counted per client IP (IPv6 addresses share a bucket per /64):
+Settings use a shared key allowlist and per-key rules for length, URL, color, enum, or structured data. Blocks validate the resulting type/config together. Backup, wallet, and vCard writes reuse these checks.
 
-| Binding | Limit | Protects |
-|---------|-------|----------|
-| `RL_AUTH` | 10 / 60s | Sign-in, two-factor, contact form submissions |
-| `RL_STRICT` | 5 / 60s | Password reset, magic link (send and verify), sign-up, wallet pass download |
-| `RL_UPLOAD` | 20 / 60s | `/api/upload` |
-| `RL_PUBLIC` | 60 / 60s | Page-view and click tracking, vCard download |
-| `RL_SIGNIN` | 30 / 60s | A single shared bucket for all sign-in, two-factor and password-reset attempts, so the admin account can't be brute-forced from many addresses |
-| `RL_OG` | 10 / 60s | Open Graph image rendering (web worker) |
+Text fields strip real HTML tags; ordinary text such as `x < 5` is preserved. URLs require HTTP(S); publication additionally rejects credentials, whitespace and control characters. Custom CSS is sanitized, and preview CSS is scoped to the public canvas with external fetches removed.
 
-tRPC limits apply **per procedure call**: a batched request spends one token for every `submitContact`, `trackView` or `trackClick` inside it, batches are capped at 20 calls, and malformed batches are rejected. Better Auth's own per-route limiter also runs on top (for example 3 sign-in attempts per 10 seconds).
+Secret settings are masked when read and excluded from backups. Do not place secrets in `NEXT_PUBLIC_*` variables or exported public artifacts.
 
-Thresholds are configured in `packages/infra/alchemy.run.ts` (production) and `apps/server/wrangler.jsonc` (local) and apply automatically on deployment. **No additional configuration is needed.** Cloudflare's limiter is not active in local development.
+## Origin checks and body limits
+
+Write requests to `/trpc/*` and `/api/upload` must pass the trusted-origin/Fetch Metadata checks independently of CORS. Configure `CORS_ORIGIN` to the exact editor origin.
+
+Actual received bytes are capped before parsing:
+
+| Request | Limit |
+| --- | --- |
+| Auth | 64 KiB |
+| Ordinary tRPC, including mixed backup/non-backup batches | 1 MiB |
+| tRPC batches containing only `backup.*` procedures | 16 MiB |
+| Public contact action | 64 KiB |
+| Upload multipart body | 5 MiB + 16 KiB |
+
+tRPC batches allow at most 20 procedure calls. Cloudflare rate-limit bindings protect auth, uploads, contact, vCard, and OG rendering, with IPv6 grouped by /64. Limited batched procedures each spend a token. Better Auth adds its own limiter. These controls are abuse defenses, not hard spending caps; absent optional test bindings do not simulate a provider limit.
+
+## Public and private ingress
+
+The legacy renderer exposes its intentional public page data and form/download routes. Profile view/click collection is retired; legacy collection procedures return NOT_FOUND.
+
+The opt-in split topology keeps the API private behind the admin service binding, except for an explicitly configured public `POST /api/contact` action. That action rejects account credentials, validates the exact public profile origin, requires CAPTCHA, and shares an atomic **100-delivery-reservation UTC daily quota** across contact paths. Failed delivery does not refund a reservation.
+
+Access policies, closed alternate Worker URLs, and cloud ingress tests must be verified before split cutover. Source code alone does not prove those account settings.
+
+## Logging and private downloads
+
+Request logs contain paths rather than token-bearing query strings; password-reset token path segments are redacted. Error logging strips SQL parameters, and API errors omit stack traces and unexpected internals. Workers invocation logs are disabled in the deployment configuration.
+
+Wallet downloads require an admin session and use private, no-store responses. There is no public pass URL. CAPTCHA secrets and signing keys stay server-side; CAPTCHA providers still receive verification data. See [Contact form](/docs/guide/contact-form) for the privacy and delivery setup.

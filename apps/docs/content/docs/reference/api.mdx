@@ -3,8 +3,6 @@ title: API Reference
 description: Architecture overview and endpoint reference for LinkDen's tRPC API.
 ---
 
-# API Reference
-
 LinkDen's API is built with [tRPC](https://trpc.io/) v11 on [Hono](https://hono.dev/), running on Cloudflare Workers. Every call is end-to-end type-safe -- no code generation required.
 
 ## Architecture
@@ -29,10 +27,12 @@ Drizzle ORM (packages/db)
 Cloudflare D1 (SQLite)
 ```
 
-- **Hono** -- Lightweight web framework for edge runtimes. Zero cold start on Cloudflare Workers.
+- **Hono** -- API request handling on Cloudflare Workers.
 - **tRPC v11** -- End-to-end type safety. Router definitions live in `packages/api`.
 - **Better Auth** -- Email/password authentication. Session cookies validated on protected procedures.
 - **Drizzle ORM** -- Type-safe SQL for Cloudflare D1. Schema lives in `packages/db/src/schema/`.
+
+The web app shares an API transport: a private Cloudflare service binding when available, or a validated loopback transport for local development. The opt-in split topology publishes profile HTML, media, vCards, and OG images separately as static artifacts. Visiting that static profile does not fetch this API or probe the admin session.
 
 ## Authentication
 
@@ -49,8 +49,12 @@ LinkDen uses [Better Auth](https://www.better-auth.com/) with email/password sig
 | Variable | Description |
 |----------|-------------|
 | `BETTER_AUTH_SECRET` | Secret key for session signing (32+ characters outside localhost, or auth answers 503) |
-| `BETTER_AUTH_URL` | Base URL for the auth server (API server URL) |
+| `BETTER_AUTH_URL` | Browser-facing auth origin; recommended local value `http://localhost:3001` |
 | `CORS_ORIGIN` | Trusted origin for the frontend |
+| `NEXT_PUBLIC_SERVER_URL` | Browser-facing API origin; recommended local value `http://localhost:3001` |
+| `INTERNAL_SERVER_URL` | Standalone web bridge/server-side transport; locally `http://127.0.0.1:3000` |
+
+The recommended local setup keeps page, auth, and browser API requests on port 3001. The web bridge forwards to the actual API listener on port 3000, where `/api/health` can be checked directly.
 
 Generate a secret with: `openssl rand -base64 32`
 
@@ -58,29 +62,30 @@ Generate a secret with: `openssl rand -base64 32`
 
 ### Request rules
 
-- `POST` requests to `/trpc/*` must come from `CORS_ORIGIN` or the API's own origin (403 otherwise). Bodies are capped at 1 MB (16 MB for `backup.*`).
-- Batched requests (`/trpc/a,b?batch=1`) may contain at most 20 calls. `public.submitContact`, `public.trackView` and `public.trackClick` are rate limited **per call**, so a batch spends one token for each of them.
+- Write requests to `/trpc/*` and `/api/upload` must pass trusted-origin/Fetch Metadata checks (403 otherwise), independently of CORS.
+- Actual body bytes are capped at 64 KiB for auth, 1 MiB for ordinary tRPC, and 16 MiB only when every call in the batch is `backup.*`. A mixed batch uses the 1 MiB cap. Understated Content-Length does not bypass counting.
+- Batched requests (`/trpc/a,b?batch=1`) may contain at most 20 calls. Contact submissions and retired `public.trackView`/`public.trackClick` requests are rate limited **per call**, so a batch spends one token for each. Retired collectors return NOT_FOUND and write no new activity.
 - Errors never include stack traces; unexpected failures return "Internal server error".
 
 ---
 
 ## Endpoint Reference
 
-All endpoints live at `/trpc/<router>.<procedure>`. **Public** procedures need no auth. **Protected** procedures require a valid session cookie.
+All procedures use `/trpc/<router>.<procedure>`. **Public** procedures need no auth in the legacy serving mode. **Protected** procedures require a valid session cookie. Split-mode external ingress blocks legacy public API access; the admin's private binding remains available. The dedicated public contact action is separate.
 
 ### Blocks
 
-Manage content blocks on your page. New blocks start as drafts (unpublished); edits to published blocks go live immediately.
+Manage content blocks on your page. New blocks start as drafts. `publishAll` marks them eligible for published content; it does not deploy a static revision. The legacy renderer reads saved changes directly, while assets-only publication requires `publication.request` and a verified result.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
 | `blocks.list` | Query | Protected | All blocks ordered by `(position, createdAt, id)` |
 | `blocks.create` | Mutation | Protected | Create a block. The server appends it at the end (`MAX(position)+1`) unless it is an Undo re-insert, which goes back to its old slot |
-| `blocks.update` | Mutation | Protected | Update block fields by ID |
+| `blocks.update` | Mutation | Protected | Update by ID, validating the resulting type/config and embed provider together |
 | `blocks.delete` | Mutation | Protected | Delete a block by ID (its click history is deleted too) |
 | `blocks.reorder` | Mutation | Protected | Batch update block positions (max 500) |
 | `blocks.toggleEnabled` | Mutation | Protected | Toggle block visibility |
-| `blocks.publishAll` | Mutation | Protected | Publish every draft block |
+| `blocks.publishAll` | Mutation | Protected | Include every draft block in published source content |
 | `blocks.hasDraft` | Query | Protected | `{ hasDraft }`: whether any block is unpublished |
 
 ### Settings
@@ -110,6 +115,19 @@ Contact form submissions. Filters: `isRead?: boolean`, `blockId?: string`.
 | `forms.unreadCount` | Query | Protected | Count of unread submissions |
 
 ### Analytics
+
+The `analytics.*` queries read historical profile records. They do not indicate current collection.
+
+### Publication
+
+| Procedure | Type | Auth | Purpose |
+| --- | --- | --- | --- |
+| `publication.status` | Query | Protected | Availability, verified last-good receipt, current revision, failure/recovery state, scheduler status, and limits |
+| `publication.request` | Mutation | Protected | Freeze saved public source and request an authorized publication; deduplicate unchanged work and bound build frequency |
+
+Publication is disabled by default until an approved target and runner are configured. A saved draft is not a live receipt. The publisher stages immutable assets, verifies activation, and retains last-good recovery; cloud adapter and routing proof still require the designated environment. Scheduled jobs use the approved frozen source, never fresh mutable authoring data.
+
+### Historical analytics queries
 
 Page views and clicks. Every query takes `{ period: "7d" | "30d" | "90d" | "all" }` (default `"7d"`). Daily buckets follow the admin's timezone setting.
 
@@ -159,9 +177,11 @@ Import and export data.
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `backup.export` | Query | Protected | Export blocks, non-secret settings, social networks and contact messages as JSON, with `notes` and an `images` list of referenced image keys (image files are not included) |
+| `backup.export` | Query | Protected | Export blocks, non-secret settings, social networks and contact messages; includes `notes` and referenced image keys, not image files |
 | `backup.import` | Mutation | Protected | Import a backup in `"merge"` or `"replace"` mode in one atomic batch. Replace keeps secret settings, upserts blocks in place (removing ones missing from the backup) and deletes only messages absent from the backup. Accepts ISO or epoch-ms dates; caps: 500 blocks, 500 settings, 5,000 messages on the wire (newest 500 written). Returns counts plus `skipped.{blocks, socialNetworks, settings, contactSubmissions}` |
 | `backup.importLinkStack` | Mutation | Protected | Import a LinkStack export (http(s) links appended after existing blocks, profile, matching theme preset) |
+
+Backup exports do not include publication receipts, signing secrets, or uploaded file bytes.
 
 ### Danger
 
@@ -169,7 +189,7 @@ Destructive resets from Settings → Data. Both are audited and run as one atomi
 
 | Procedure | Type | Auth | Description |
 |-----------|------|------|-------------|
-| `danger.deleteAllContent` | Mutation | Protected | Delete all blocks, analytics and contact messages; keeps the account, settings and social links |
+| `danger.deleteAllContent` | Mutation | Protected | Delete blocks, historical analytics and messages; revoke approved scheduled source while preserving an uncertain in-flight activation; keeps account, settings, social links  |
 | `danger.resetEverything` | Mutation | Protected | Wipe every table (including the audit log and the admin account); the client then signs out and returns to setup |
 
 ### Version
@@ -180,16 +200,16 @@ Destructive resets from Settings → Data. Both are audited and run as one atomi
 
 ### Public
 
-Public-facing endpoints -- no authentication needed.
+Legacy public-facing procedures. They are not a public fallback for an assets-only deployment.
 
 | Procedure | Type | Description |
 |-----------|------|-------------|
 | `public.getPage` | Query | Full page data: profile, published blocks, theme, public settings, `captchaProvider` and `captchaSiteKey` (never the secret) |
 | `public.submitContact` | Mutation | Submit the contact form. Input: `firstName`, `lastName`, `email`, `consent: true`, optional `message`, `whereMet`, `blockId`, `blockTitle`, `captchaToken`, and a `website` honeypot that must stay empty. Rate limited per call |
-| `public.trackView` | Mutation | Record a page view. Optional `{ referrer }` (`document.referrer`), stored as its hostname only |
-| `public.trackClick` | Mutation | Record a link click: `{ blockId, referrer? }` |
+| `public.trackView` | Mutation | Retired: bounded legacy inputs return NOT_FOUND; no new records |
+| `public.trackClick` | Mutation | Retired: bounded legacy inputs return NOT_FOUND; no new records |
 | `public.hasUsers` | Query | Whether an admin account exists |
-| `public.getSetupStatus` | Query | Setup complete, email configured, magic link available, and login branding |
+| `public.getSetupStatus` | Query | Setup complete, email configured, magic-link availability, and normal site branding for sign-in |
 
 All input is validated with shared Zod schemas from `packages/validators`.
 
@@ -198,7 +218,12 @@ All input is validated with shared Zod schemas from `packages/validators`.
 | Route | Auth | Description |
 |-------|------|-------------|
 | `GET /api/health` | Public | D1 check, version, email and auth state (`503` when degraded) |
-| `POST /api/upload` | Protected | Image upload (`file`, `purpose`, optional `replaces`) |
+| `POST /api/upload` | Protected | Multipart `file`, `purpose`, optional unsaved `replaces`; valid Content-Length required; 5 MiB file + 16 KiB framing cap; returns `{ publicUrl: "/api/images/..." }` |
 | `GET /api/images/*` | Public | Serve an uploaded image |
 | `GET /api/vcard` | Public | vCard download (`?block=<id>` optional) |
 | `GET /api/admin/wallet-pass` | Protected | Signed `.pkpass` download |
+| `POST /api/contact` | Exact public profile origin; no account credentials | Optional explicit public action; CAPTCHA required, actual 64 KiB body cap, shared 100-reservation UTC daily quota |
+
+In split mode the legacy routes above are reachable through the private admin transport, not an alternate public API hostname. Only an explicitly configured contact action is allowed through public ingress. Existing assets-only profiles serve bundled images/vCards and do not rely on `/api/images/*` or `/api/vcard` per visit.
+
+Upload replacements never delete a saved referenced object immediately. The editor expands a relative upload path to its configured API origin before saving; existing absolute URLs are preserved. See [Security](/docs/guide/security#uploads-and-media) for cleanup and validation behavior.

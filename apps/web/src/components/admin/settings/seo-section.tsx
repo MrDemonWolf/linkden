@@ -8,6 +8,7 @@ import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { SectionLabel } from "@/components/admin/section-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { OG_TEMPLATES } from "@/lib/og-templates";
 import { cn } from "@/lib/utils";
 import { fieldError } from "@/lib/validate";
@@ -108,7 +109,7 @@ export function SeoSection({
 			{/* Page Title & Meta Description */}
 			<div className="space-y-4">
 				<SectionLabel>Meta Tags</SectionLabel>
-				<FieldGroup columns={2}>
+				<FieldGroup>
 					<div className="space-y-1.5">
 						<Label htmlFor="s-seo-title">Page Title</Label>
 						<Input
@@ -135,7 +136,7 @@ export function SeoSection({
 					</div>
 					<div className="space-y-1.5">
 						<Label htmlFor="s-seo-desc">Meta Description</Label>
-						<textarea
+						<Textarea
 							id="s-seo-desc"
 							value={seoDescription}
 							onChange={(e) => onSeoDescriptionChange(e.target.value)}
@@ -144,7 +145,6 @@ export function SeoSection({
 							maxLength={SEO_DESCRIPTION_MAX}
 							aria-invalid={!!errors.seoDescription}
 							aria-describedby={errors.seoDescription ? "s-seo-desc-error" : "s-seo-desc-hint"}
-							className="dark:bg-input/30 border-input-border aria-invalid:border-destructive w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
 						/>
 						<div className="flex items-start justify-between gap-2">
 							<p id="s-seo-desc-hint" className="text-micro text-muted-foreground">

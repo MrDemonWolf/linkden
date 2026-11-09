@@ -1,78 +1,58 @@
 ---
 title: Quick Start
-description: Get your LinkDen instance set up and publish your first links in minutes.
+description: Create your profile, add content, and understand preview and publication.
 ---
 
-# 🚀 Quick Start
+Start with the [local installation](/docs/getting-started/installation) or an instance your operator has already configured.
 
-You'll go from a fresh install to a live link page in about five minutes.
+## 1. Create your administrator account
 
-> **Pre-requisite:** If you haven't installed LinkDen yet, start with the [Installation Guide](/docs/getting-started/installation).
+Open `/admin/setup`. Enter your name, email, password, and the setup token if one is configured. Complete the **Profile**, **Theme**, and **Done** steps.
 
----
+The first account becomes the single administrator. If setup is complete, sign in at `/admin/login`.
 
-## 1. 👤 Create Your Admin Account
+## 2. Add your first link
 
-Navigate to `/admin/setup` in your browser.
+1. Open **Profile page → Blocks** at `/admin/links`.
+2. Choose **Add block → Link**.
+3. Enter a title and an HTTP or HTTPS destination.
+4. Choose an icon or card style if needed, then save the block.
+5. Use **Apply n new** above the block list to include new blocks in the saved page content. This is separate from publishing an assets-only public revision.
 
-- [ ] Enter your **Name**
-- [ ] Enter your **Email**
-- [ ] Create a **Password**
-- [ ] Enter the **Setup token** if your deploy sets `SETUP_TOKEN`
-- [ ] Click **Create Account**
+Saving and including blocks prepares the source for publication. On an assets-only deployment, the public page keeps its previous revision until a publication succeeds.
 
-> **Note:** The first user becomes the admin and registration locks automatically.
+## 3. Make the page yours
 
----
+- **Profile page → Profile:** name, avatar, bio, and badge.
+- **Profile page → Social:** find networks, enter handles or URLs, toggle visibility, and save.
+- **Design → Theme:** public theme, colors, desktop layout, and social icon shape.
+- **Design → Banner:** a preset banner or your own image.
+- **Design → Branding:** public branding, legal notices, vCard, and embedded-media consent.
+- **Design → SEO:** title, description, and share image.
 
-## 2. 🧱 Add Your First Blocks
+The desktop preview sits beside your editing tools and can be collapsed. On smaller screens, use **Preview** in the header. It has light/dark controls and a plain document canvas. Its buttons, forms, and embeds are inert placeholders; test them on the real page.
 
-Go to `/admin/links`.
+Choose **Side by side** or **Stacked** under Design → Theme. Mobile always places the profile above a single column of blocks.
 
-- **Left:** Your blocks.
-- **Right:** Live phone preview (the preview button on mobile).
+## 4. Set up the features you need
 
-### Try adding a link:
-1. Click **Add Block** → Select **Link**.
-2. Fill in **Title** (button text) and **URL**.
-3. (Optional) Customize colors/icons in the **Style** section.
-4. Click **Save Changes**.
-5. Click **Publish 1 new** in the header. New blocks start unpublished; edits to published blocks go live immediately.
+| Task | Location |
+| --- | --- |
+| Accept messages | **Inbox → Accepting messages** |
+| Configure Resend and delivery mode | **Settings → Email** |
+| Configure CAPTCHA | **Settings → Integrations** |
+| Enable TOTP and save backup codes | **Settings → Account** |
+| Design and download a private Wallet pass | **Settings → Wallet** |
+| Export a backup or import existing data | **Settings → Data** |
 
----
+Profile pages and their buttons do not collect analytics.
 
-## 3. 🌐 Set Up Social Icons
+## 5. Review publication
 
-Go to `/admin/links/social`.
+Open the publishing status in the header. Save or discard unsaved edits first. When an approved target and runner are enabled, **Publish** requests a public revision; **Published** requires a verified receipt.
 
-- [ ] Search for your platform (e.g., "GitHub", "Twitter").
-- [ ] Toggle it **ON**.
-- [ ] Enter your handle or paste your profile URL, then save.
+If publication is unavailable, the status explains the missing setup. Saving locally does not enable cloud publication. Scheduled content also needs the publication scheduler; its status explains the configured cadence or need for a manual publish.
 
-> **Tip:** Dark mode is automatic for brand icons!
+Use **View live** to inspect the current public page. Confirm the intended content and interactions before sharing its URL.
 
----
-
-## 4. ⚙️ Configure Settings
-
-- **Profile:** `/admin/links/profile` -- display name, avatar, bio.
-- **SEO:** `/admin/design/seo` -- page title, description.
-- **Messages:** `/admin/inbox` -- toggle **Accepting messages**.
-- **Branding:** `/admin/design/branding` -- remove LinkDen branding.
-- **Account, email, integrations, wallet, data:** `/admin/settings`. Turn on **two-factor authentication** under Account.
-
----
-
-## 5. 🎉 View Your Public Page
-
-Click **View Page** in the header.
-**That's it!** Share your URL anywhere.
-
----
-
-## Next Steps
-
-- 🧱 [Blocks](/docs/guide/blocks) -- Deep dive into block types.
-- 🎨 [Appearance](/docs/guide/appearance) -- Themes & Colors.
-- 🍏 [Apple Wallet](/docs/guide/apple-wallet) -- Digital business cards.
-- 📈 [Analytics](/docs/guide/analytics) -- Track your views.
+Continue with [Blocks](/docs/guide/blocks) or [Security](/docs/guide/security).

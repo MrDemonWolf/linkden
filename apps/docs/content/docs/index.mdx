@@ -1,39 +1,33 @@
 ---
 title: Welcome to LinkDen
-description: A self-hosted link-in-bio platform with a full admin panel, edge performance, and complete whitelabel support.
+description: Own your profile page and a single-admin editor on Cloudflare.
 ---
 
-# Welcome to LinkDen
+LinkDen is an open-source, self-hosted profile page builder. Build your page, keep control of its data, and customize the public design separately from the admin interface.
 
-Create a fast, beautiful link-in-bio page that you fully own and control. LinkDen runs on your own infrastructure, gives you a polished admin panel, and loads instantly for visitors worldwide.
+## What you can do
 
-**Your links, your brand, your rules.**
+- **Build a profile page:** nine block types, social icons, an avatar, a bio, banners, and search previews.
+- **Choose your layout:** a sticky profile beside a vertical block list on desktop, or a stacked page. Mobile always uses one column.
+- **Customize your brand:** 11 public theme presets with light and dark palettes, color overrides, custom CSS, and optional LinkDen branding.
+- **Handle messages:** a built-in Inbox, optional Resend delivery, CAPTCHA, and embedded-media consent.
+- **Share contact details:** public vCard downloads and a private, signed Apple Wallet pass.
+- **Protect the editor:** one administrator, password sign-in, optional TOTP with backup codes, and local-only development login.
+- **Back up your data:** JSON export/import.
 
-### ⚡ TL;DR
-LinkDen is a self-hosted alternative to Linktree.
-- 🚀 **Fast:** Runs on Cloudflare Edge.
-- 🎨 **Beautiful:** 11 themes, dark mode, custom banners.
-- 📱 **Mobile-First:** Apple Wallet integration, vCard support.
-- 🔒 **Private:** You own the data.
+## Know what is saved and what is public
 
-## Why LinkDen?
+The editor preview shows your current work in a plain page viewport. It is a visual preview; use **View live** to test real public interactions.
 
-- ⚡ **Blazing fast** -- Pages load in under a second, served from the edge.
-- 🎛️ **Full admin panel** -- Manage blocks, appearance, analytics, vCard, and Apple Wallet passes from one dashboard.
-- 🎨 **11 built-in themes** -- Each with dark and light variants plus auto mode.
-- 🧱 **9 block types** -- Links, headers, embeds, connect (contact form), vCard, location, image, text, and divider.
-- 🌐 **50+ social brands** -- Searchable icon library with automatic dark-mode support.
-- 🖼️ **Banner system** -- Pick from preset gradients or upload your own image.
-- 🍏 **Apple Wallet** -- Generate a signed `.pkpass` business card to share from your iPhone.
-- 🏷️ **Whitelabel** -- Remove all LinkDen branding with a single toggle. MIT licensed.
-- 💾 **Export/Import** -- Back up and restore all your data as JSON.
-- 🛡️ **Secure by default** -- Two-factor sign-in, rate limiting, XSS protection, URL validation, CSS sanitization, file upload restrictions, and a single-admin lock enforced in the database.
+Saving changes updates authoring data. An assets-only public deployment updates after a successful explicit publication. The header's publishing status reports whether publication is configured and verified; saving alone does not prove a deployment.
 
-## Next Steps
+**Profile analytics collection is retired.** Public pages and buttons send no tracking events.
 
-- 🚀 [Quick Start](/docs/getting-started/quick-start) -- Set up your first instance in minutes.
-- 💻 [Installation](/docs/getting-started/installation) -- Get LinkDen running locally.
-- ⚙️ [Configuration](/docs/getting-started/configuration) -- Set up authentication and environment variables.
-- 🧱 [Blocks](/docs/guide/blocks) -- Explore the block types and builder.
-- 🎨 [Appearance](/docs/guide/appearance) -- Customize themes, colors, banners, and branding.
-- 🔒 [Security](/docs/guide/security) -- Learn about protections and input sanitization.
+## Start here
+
+- [Install locally](/docs/getting-started/installation), then [create your page](/docs/getting-started/quick-start).
+- Explore [blocks](/docs/guide/blocks) and [appearance](/docs/guide/appearance).
+- Read [security](/docs/guide/security) before exposing setup or the editor publicly.
+- Follow the [Cloudflare hosting guide](/docs/self-hosting/cloudflare) for deployment requirements and approval gates.
+
+LinkDen is MIT licensed. Hosting, domains, email, Apple membership, and other providers can have their own costs and limits.

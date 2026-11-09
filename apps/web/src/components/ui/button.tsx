@@ -4,7 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-	"group/button inline-flex shrink-0 items-center justify-center rounded-md border border-transparent bg-clip-padding text-sm font-medium md:text-xs whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-1 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+	"group/button inline-flex shrink-0 items-center justify-center rounded-md border border-transparent bg-clip-padding text-sm font-medium md:text-[length:var(--control-font-size,0.75rem)] whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-1 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
 	{
 		variants: {
 			variant: {
@@ -20,19 +20,19 @@ const buttonVariants = cva(
 				link: "text-primary underline-offset-4 hover:underline",
 			},
 			// SIZING RULE — do not let a `shadcn add button` overwrite flatten this.
-			// Every size is a >=44px (h-11 / size-11) touch target below `md` (WCAG
-			// 2.5.8) and only collapses to the dense desktop height at `md` and up.
-			// A size that reads `h-8` with no `md:` prefix is a regression.
+			// Touch controls stay >=44px; admin desktop sizes use the scoped tokens.
+			// Fallbacks preserve the public footer button sizes.
 			size: {
 				default:
-					"h-11 gap-1.5 px-3 md:h-8 md:px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-				xs: "h-11 gap-1 px-2.5 md:h-6 md:px-2 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-				sm: "h-11 gap-1 px-3 md:h-7 md:px-2.5 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
-				lg: "h-11 gap-1.5 px-3.5 md:h-9 md:px-3 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-				icon: "size-11 md:size-8",
-				"icon-xs": "size-11 md:size-6 [&_svg:not([class*='size-'])]:size-3",
-				"icon-sm": "size-11 md:size-7",
-				"icon-lg": "size-11 md:size-9",
+					"h-11 gap-2 px-3 md:pointer-fine:h-[var(--control-height,2rem)] has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+				xs: "h-11 gap-1.5 px-2.5 md:pointer-fine:h-[var(--control-height-compact,1.5rem)] has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+				sm: "h-11 gap-1.5 px-3 md:pointer-fine:h-[var(--control-height-compact,1.75rem)] has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+				lg: "h-11 gap-2 px-3.5 md:pointer-fine:h-[var(--control-height-large,2.25rem)] md:px-3 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+				icon: "size-11 md:pointer-fine:size-[var(--control-height,2rem)]",
+				"icon-xs":
+					"size-11 md:pointer-fine:size-[var(--control-height-compact,1.5rem)] [&_svg:not([class*='size-'])]:size-3.5",
+				"icon-sm": "size-11 md:pointer-fine:size-[var(--control-height-compact,1.75rem)]",
+				"icon-lg": "size-11 md:pointer-fine:size-[var(--control-height-large,2.25rem)]",
 			},
 		},
 		defaultVariants: {

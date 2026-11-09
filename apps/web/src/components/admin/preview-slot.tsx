@@ -6,19 +6,19 @@ import type { ColorMode } from "@/components/public/public-page";
 
 /**
  * What an editing page hands to the shell-owned preview column (and, below
- * lg, the shell-owned FAB + MobilePreviewSheet). Register it every render via
+ * lg, the shell-owned header action + MobilePreviewSheet). Register it every render via
  * `usePreviewSlot`; pages keep owning their form state.
  */
 export interface PreviewRegistration {
-	/** Custom phone content, such as the Wallet pass preview. */
+	/** Custom preview content, such as the Wallet pass preview. */
 	preview?: ReactNode;
-	/** Use the full 393px phone rail instead of the compact page-preview rail. */
+	/** Use a wider preview rail for content such as Wallet passes. */
 	size?: "default" | "wide";
 	/** profile | settings | blocks | socialNetworks — layered over `public.getPage`. */
 	overrides?: PreviewOverrides;
 	mode?: ColorMode;
 	onModeChange?: (mode: ColorMode) => void;
-	/** BlockEditPanel: replaces the phone at lg, stacks above it at xl. */
+	/** BlockEditPanel: replaces the page preview at lg, stacks above it at xl. */
 	panel?: ReactNode;
 	/** SEO: an alternate view (OgPreviewCard) the column header can toggle to. */
 	altView?: { label: string; node: ReactNode };

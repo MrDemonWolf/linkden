@@ -1,96 +1,82 @@
 ---
 title: FAQ
-description: Frequently asked questions about LinkDen.
+description: Answers about LinkDen's editor, hosting, privacy, and recovery.
 ---
 
-# ❓ Frequently Asked Questions
+## What is LinkDen?
 
-## 🌟 General
+A self-hosted, MIT-licensed profile page builder with one administrator per instance.
 
-### What is LinkDen?
-A self-hosted, open-source link-in-bio platform. Think Linktree, but you own everything and it runs on the edge.
+## Is hosting free?
 
-### Is LinkDen free?
-**Yes.** MIT licensed, zero cost. Cloudflare's free tier covers Workers, D1, and Pages -- so hosting is free too.
+The software is free to use under the MIT license. Cloudflare services, a domain, email delivery, Apple membership, and traffic can have their own charges and quotas. A free account does not guarantee that every build, authentication workload, or traffic level fits its limits.
 
-### Can I use LinkDen commercially?
-**Absolutely.** The MIT license allows unrestricted commercial use. Remove all branding, use it for clients -- no strings attached.
+## Can I use it commercially or remove branding?
 
-### How is LinkDen different from Linktree?
+Yes, subject to the MIT license. Public footer branding is under **Design → Branding**; admin branding is under **Settings → Account**. Keep required license notices when distributing the software.
 
-| Feature | LinkDen | Linktree |
-|---------|---------|----------|
-| 💰 **Pricing** | Free (self-hosted) | Free tier + paid plans |
-| 🏠 **Data ownership** | **You own it all** | Linktree owns it |
-| 🌐 **Custom domain** | Full support | Paid plans only |
-| 🏷️ **Whitelabel** | **100% (Fully Allowed)** | Not available |
-| 📊 **Analytics** | Private & Built-in | Linktree has access |
-| 🎨 **Customization** | Full code access | Limited editor |
-| 🍏 **Apple Wallet** | Built-in | Not available |
+## Where does it run?
 
----
+The supported deployment uses Cloudflare Workers, D1, and R2, managed through Alchemy. The separately published public target uses native static assets. The docs site is a static export. See [Self-hosting](/docs/self-hosting/cloudflare).
 
-## 🚀 Deployment
+## Does it support multiple administrators?
 
-### Do I need a Cloudflare account?
-**Yes.** LinkDen runs on Cloudflare Workers + Pages (D1 and R2), so a Cloudflare account is required.
+No. Setup creates one administrator, and a database trigger prevents a second account. Deploy separate instances for separate profiles.
 
-### Does LinkDen support multiple users?
-**No.** LinkDen is a **single-user** platform.
-- One instance = One link page.
-- Need more? Deploy separate instances.
+## Why did saving not change my public page?
 
-### How does authentication work?
-LinkDen uses **Better Auth**.
-- No external services needed.
-- First user to `/admin/setup` becomes the admin.
-- Registration locks automatically after that.
+Saving updates authoring data. Include new blocks with **Apply n new**. **No block drafts** confirms only that all blocks are applied. The legacy dynamic page reads enabled, applied blocks immediately; an assets-only public page needs the header's separate **Publish** action, a configured target and runner, and a verified publication receipt.
 
-### How do I reset my password?
-Use the "Forgot password?" link at `/admin/login`. Resetting signs out every device.
-> **Note:** Requires email (Resend) to be configured in Settings. Without email, run `bun reset:password -- --email you@example.com --remote` from the repo root; you are prompted for the new password.
+**Published** means a verified publication receipt. An unavailable publisher or a failed build does not make a saved draft live.
 
-### I lost my two-factor device
-Sign in with one of the backup codes you saved when you turned 2FA on. If you have none left, run `bun reset:password -- --email you@example.com --remote --disable-2fa`, then turn 2FA back on under Settings → Account.
+## Is the preview interactive?
 
----
+It is a visual preview in a plain page canvas. Scroll and switch light/dark mode there; use **View live** to test links, embeds, contact submissions, and downloads. The preview may show drafts and unsaved edits that are absent from the public page.
 
-## ✨ Features
+## Can desktop and mobile have different layouts?
 
-### What block types are available?
-Nine types: **Link**, **Header**, **Embed**, **Connect** (contact form), **vCard**, **Location**, **Image**, **Text**, and **Divider**. Social icons are not a block: they show under your profile once you add them at `/admin/links/social`.
+Choose **Side by side** or **Stacked** under **Design → Theme**. Side by side keeps the profile sticky beside a vertical list on wide pages. Mobile always stacks the profile and all blocks in one column.
 
-### How many themes are there?
-**11 built-in themes**, each with light and dark variants: Classic, Graphite, Ocean Blue, Sunset, Forest, Minimal, Corporate Classic, Blood Moon, Hacker Terminal, Hellfire, and Abyssal.
-- Override any colour on top of a preset.
-- Custom CSS is also supported.
+## How many themes and block types are available?
 
-### Can I use my own domain?
-**Yes.** See the [custom domain guide](/docs/self-hosting/custom-domain).
+There are **11 public theme presets**, each with light and dark palettes, plus custom colors and CSS. The nine block types are Link, Header, Embed, Connect, vCard, Location, Image, Text, and Divider. Social icons are separate.
 
----
+The admin uses its own neutral light/dark appearance. Changing its theme does not overwrite your public design.
 
-## 🛠️ Troubleshooting
+## Does LinkDen collect profile analytics?
 
-### "Failed to..." errors in Admin Panel
-1. **Is the server running?** Check your terminal.
-2. **Check `NEXT_PUBLIC_SERVER_URL`:** Should be `http://localhost:3000` locally.
+Profile pages and buttons send no LinkDen analytics beacons. Historical records remain available through protected APIs; no analytics dashboard or collection job is enabled.
 
-### CORS errors in browser
-Set `CORS_ORIGIN` to your frontend URL (e.g., `http://localhost:3001`).
-> **Tip:** No trailing slash!
+## How do I reset my password?
 
-### Build fails with type errors
-Run `bun run check-types`. Usually fixed by:
-- Adding missing environment variables.
-- Running `bun install`.
+Use **Forgot password?** on the login page when Resend is configured. A password reset signs out existing sessions.
 
----
+Without email, an operator with the repository and database access can run this from the repository root:
 
-## 🔄 Updating LinkDen
+```bash
+bun run reset:password -- --email you@example.com --remote
+```
 
-1. `git pull origin main`
-2. `bun install`
-3. `bun run deploy` (Alchemy applies any new migrations during the deploy)
+The command prompts for the new password. Confirm the intended database using the [recovery instructions](/docs/guide/security#account-recovery) before using `--remote`.
 
-> `bun db:generate` is for contributors who change the schema. Don't run it on an install you only update.
+## What if I lose my authenticator?
+
+Use an unused backup code. If none remain, an operator can reset the password with `--disable-2fa`, then enroll again and save new backup codes. The recovery command changes account security; use it only for the instance you administer.
+
+## Why is Dev sign-in unavailable?
+
+It works only with an explicitly enabled standalone local API and strict plain-HTTP loopback configuration. It is unavailable on deployed sites, tunnels, nonlocal hosts, or explicit non-development runtimes. Use your real account remotely.
+
+## How do I troubleshoot failed admin requests?
+
+Check that both local servers are running and that your browser API URL, auth URL, and exact CORS origin match the [configuration](/docs/getting-started/configuration). Restart the frontend after public environment changes. A weak secret produces a named authentication configuration error instead of a working login.
+
+The recommended local setup uses `http://localhost:3001` for `BETTER_AUTH_URL`, `NEXT_PUBLIC_SERVER_URL`, and the editor origin. Set `INTERNAL_SERVER_URL=http://127.0.0.1:3000` in the standalone web environment so the bridge reaches the actual API listener.
+
+For a type/build problem, run `bun run check-types` and inspect its actual error; missing dependencies and environment values are different problems.
+
+## How do I update an existing installation?
+
+Preserve local changes and take a verified backup before updating. Review the release notes and migration requirements, install the locked dependencies, and run the repository checks. Deploy only through your approved Alchemy workflow.
+
+Do not generate new migrations just to upgrade, reset a database to resolve a migration error, or assume a code rollback reverses schema or data changes. See the [Cloudflare guide](/docs/self-hosting/cloudflare) for the deployment procedure.

@@ -56,6 +56,7 @@ function buildAuth(secret: string) {
 			baseURL,
 			trustedOrigins: [env.CORS_ORIGIN],
 			devLogin: (env as { DEV_LOGIN?: string }).DEV_LOGIN,
+			nodeEnv: (env as { NODE_ENV?: string }).NODE_ENV ?? process.env.NODE_ENV,
 			sendEmail: sendAuthEmail,
 			isEmailConfigured,
 		}),

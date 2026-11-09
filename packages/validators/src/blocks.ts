@@ -129,6 +129,7 @@ export const imageConfigSchema = z.object({
 	alt: z.string().max(200).optional(),
 	caption: z.string().max(200).optional(),
 	aspect: z.enum(["auto", "16:9", "1:1", "4:5"]).optional(),
+	fit: z.enum(["contain", "cover"]).optional(),
 });
 
 export const textConfigSchema = z.object({

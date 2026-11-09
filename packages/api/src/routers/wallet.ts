@@ -1,7 +1,7 @@
 import { db } from "@linkden/db";
-import { block, siteSettings, user } from "@linkden/db/schema/index";
+import { block, user } from "@linkden/db/schema/index";
 import { env } from "@linkden/env/server";
-import { maskSecret, WALLET_SETTING_KEYS } from "@linkden/validators/settings-registry";
+import { WALLET_SETTING_KEYS } from "@linkden/validators/settings-registry";
 import {
 	isCertificateMaterial,
 	isPrivateKeyMaterial,
@@ -20,10 +20,13 @@ import { asc, eq } from "drizzle-orm";
 import { protectedProcedure, router } from "../index";
 import { logAudit } from "../utils/audit";
 import { stripHtml } from "../utils/sanitize";
-import { buildSettingsMap, runBatch, settingUpsertStmt } from "../utils/settings";
-import { sanitizeSetting } from "./settings";
-
-const walletKeys: readonly string[] = WALLET_SETTING_KEYS;
+import { sanitizeSetting } from "../utils/sanitize-setting";
+import {
+	buildMaskedSettingsMap,
+	buildSettingsMap,
+	runBatch,
+	settingUpsertStmt,
+} from "../utils/settings";
 
 /** Registry-driven write: every wallet key goes through the same gate as settings/backup. */
 const walletUpsert = (key: string, value: string) =>
@@ -79,16 +82,7 @@ function clampFields(fields: PassField[], section: PassSection): PassField[] {
 }
 
 export const walletRouter = router({
-	getConfig: protectedProcedure.query(async () => {
-		const results = await db.select().from(siteSettings);
-		const config: Record<string, string> = {};
-		for (const row of results) {
-			if (walletKeys.includes(row.key)) {
-				config[row.key] = maskSecret(row.key, row.value);
-			}
-		}
-		return config;
-	}),
+	getConfig: protectedProcedure.query(() => buildMaskedSettingsMap(WALLET_SETTING_KEYS)),
 
 	updateConfig: protectedProcedure.input(walletConfigSchema).mutation(async ({ input }) => {
 		const updates: { key: string; value: string }[] = [];

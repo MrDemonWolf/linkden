@@ -1,10 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-
-// routers/settings.ts pulls in the D1 client at import time; sanitizeSetting
-// itself is pure, so stub the database out.
-vi.mock("@linkden/db", () => ({ db: {} }));
-
-const { sanitizeSetting } = await import("../routers/settings");
+import { describe, expect, it } from "vitest";
+import { sanitizeSetting } from "../utils/sanitize-setting";
 
 describe("sanitizeSetting", () => {
 	it("rejects unknown keys", () => {

@@ -3,7 +3,7 @@
 import { getAccessibleIconFill, isLowLuminance } from "@linkden/ui/color-contrast";
 import { socialBrands } from "@linkden/ui/social-brands";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Globe, Plus, Save, Search, Trash2, Undo2 } from "lucide-react";
+import { Globe, Plus, Search, Trash2 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ import { SkeletonRows } from "@/components/admin/skeleton-rows";
 import { NetworkRow } from "@/components/admin/social/network-row";
 import { CATEGORY_LABELS, type NetworkDraft } from "@/components/admin/social/social-constants";
 import { buildSocialUrl } from "@/components/admin/social/social-url";
+import { StickySaveBar } from "@/components/admin/sticky-save-bar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -94,7 +95,10 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 	const { resolvedTheme } = useTheme();
 
 	const socialsQuery = useQuery(trpc.social.list.queryOptions());
-	const updateBulk = useMutation(trpc.social.updateBulk.mutationOptions());
+	const updateBulk = useMutation({
+		...trpc.social.updateBulk.mutationOptions(),
+		onSuccess: () => qc.invalidateQueries({ queryKey: trpc.social.list.queryOptions().queryKey }),
+	});
 
 	// Unsaved work only, layered over the saved rows (see social-drafts.ts):
 	// nothing is seeded from `social.list`, so a failed or late load can't be
@@ -266,7 +270,6 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 
 		try {
 			await updateBulk.mutateAsync(changes);
-			await qc.invalidateQueries({ queryKey: trpc.social.list.queryOptions().queryKey });
 			setEdits(NO_SOCIAL_EDITS);
 			toast.success(`${changes.length} network${changes.length > 1 ? "s" : ""} updated`);
 		} catch {
@@ -297,9 +300,9 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 	}
 
 	return (
-		<div className="space-y-4">
+		<fieldset disabled={updateBulk.isPending} className="min-w-0 space-y-4">
 			{/* Active Social Links */}
-			<Card className="border-t-2 border-t-primary bg-gradient-to-b from-primary/5 to-transparent">
+			<Card>
 				<SectionHeader
 					icon={Globe}
 					title="Active Social Links"
@@ -310,7 +313,7 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 					{listedNetworks.length === 0 ? (
 						<div className="py-8 text-center">
 							<Globe className="mx-auto h-8 w-8 text-muted-foreground/40" />
-							<p className="mt-2 text-xs text-muted-foreground">No social links yet</p>
+							<p className="mt-2 text-sm font-medium">No social links yet</p>
 							<p className="mt-1 text-micro text-muted-foreground">
 								Search below to add your first social network
 							</p>
@@ -349,24 +352,6 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 								);
 							})}
 						</ul>
-					)}
-
-					{socialDirty && (
-						<div className="flex gap-2 pt-2 border-t border-border/30">
-							<Button variant="ghost" size="sm" onClick={handleDiscardSocial} className="flex-1">
-								<Undo2 className="mr-1.5 h-3.5 w-3.5" />
-								Discard
-							</Button>
-							<Button
-								size="sm"
-								onClick={handleSaveSocial}
-								disabled={updateBulk.isPending || missingUrls.length > 0}
-								className="flex-1 shadow-lg shadow-primary/25"
-							>
-								<Save className="mr-1.5 h-3.5 w-3.5" />
-								{updateBulk.isPending ? "Saving..." : "Save Social Links"}
-							</Button>
-						</div>
 					)}
 				</CardContent>
 			</Card>
@@ -415,7 +400,7 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 											</svg>
 										</div>
 										<div className="min-w-0 flex-1">
-											<p className="text-xs font-medium truncate">{network.name}</p>
+											<p className="text-sm font-medium truncate">{network.name}</p>
 											<p className="text-micro text-muted-foreground">
 												{CATEGORY_LABELS[network.category] || network.category}
 											</p>
@@ -428,6 +413,14 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 					)}
 				</CardContent>
 			</Card>
+
+			<StickySaveBar
+				isDirty={socialDirty}
+				isSaving={updateBulk.isPending}
+				hasErrors={missingUrls.length > 0}
+				onSave={handleSaveSocial}
+				onDiscard={handleDiscardSocial}
+			/>
 
 			<Dialog
 				open={pendingSlug !== null}
@@ -472,7 +465,7 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 						}}
 						className="space-y-2"
 					>
-						<Label htmlFor="add-network-url" className="text-xs">
+						<Label htmlFor="add-network-url" className="text-sm">
 							URL
 						</Label>
 						<Input
@@ -505,6 +498,6 @@ export function SocialTab({ onDirtyChange, onLiveChange }: SocialTabProps) {
 					</form>
 				</DialogContent>
 			</Dialog>
-		</div>
+		</fieldset>
 	);
 }

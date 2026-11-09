@@ -7,6 +7,7 @@ import { z } from "zod";
 import { CharCount, FieldError } from "@/components/admin/field-feedback";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { fieldError } from "@/lib/validate";
 
 // The server's cap (settings registry), not a copy of it.
@@ -57,46 +58,86 @@ export function ConsentSection({
 	const errors = consentErrors({ enabled, bannerText, privacyUrl });
 	return (
 		<div className="space-y-6">
-			{/* Enable/disable toggle */}
-			<div className="flex items-center justify-between">
+			<div className="flex items-start justify-between gap-4">
 				<div>
-					<Label className="text-sm font-medium">Show Consent Banner</Label>
-					<p className="text-micro text-muted-foreground">
-						Display a cookie consent banner to visitors
+					<Label htmlFor="consent-banner-enabled" className="text-sm font-medium">
+						Show consent banner
+					</Label>
+					<p id="consent-banner-enabled-hint" className="mt-1 text-micro text-muted-foreground">
+						{enabled
+							? "Ask before loading embedded media. Profile views and button clicks are not tracked."
+							: "When off, supported embeds can load without asking. Profile activity is still not tracked."}
 					</p>
 				</div>
 				<Switch
+					id="consent-banner-enabled"
 					checked={enabled}
 					onCheckedChange={onEnabledChange}
 					aria-label="Show consent banner"
+					aria-describedby="consent-banner-enabled-hint"
 				/>
 			</div>
 
 			{enabled && (
 				<>
-					{/* Banner Text */}
+					<div className="space-y-3">
+						<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+							Visitor choices
+						</p>
+						<div className="divide-y divide-border rounded-lg border border-border bg-muted/20 px-3">
+							<div className="flex items-start justify-between gap-4 py-3">
+								<div>
+									<p className="text-xs font-medium">Essential</p>
+									<p className="mt-1 text-micro text-muted-foreground">
+										Essential preferences and core features
+									</p>
+								</div>
+								<Switch checked disabled aria-label="Essential cookies" />
+							</div>
+							<div className="flex items-start justify-between gap-4 py-3">
+								<div>
+									<Label htmlFor="consent-embedded-media" className="text-sm font-medium">
+										Embedded media
+									</Label>
+									<p
+										id="consent-embedded-media-hint"
+										className="mt-1 text-micro text-muted-foreground"
+									>
+										Offer a choice to allow YouTube, Spotify and other embeds. Until allowed, embeds
+										show a click-to-load placeholder.
+									</p>
+								</div>
+								<Switch
+									id="consent-embedded-media"
+									checked={categories.functional}
+									onCheckedChange={(v) => onCategoriesChange({ ...categories, functional: v })}
+									aria-label="Embedded media"
+									aria-describedby="consent-embedded-media-hint"
+								/>
+							</div>
+						</div>
+					</div>
+
 					<div className="space-y-1.5">
 						<Label htmlFor="consent-text">Banner Text</Label>
-						<textarea
+						<Textarea
 							id="consent-text"
 							value={bannerText}
 							onChange={(e) => onBannerTextChange(e.target.value)}
 							rows={3}
-							placeholder="This site uses cookies for authentication and optional analytics..."
+							placeholder="Choose whether to load videos and music from third parties."
 							aria-invalid={!!errors.bannerText}
 							aria-describedby={errors.bannerText ? "consent-text-error" : "consent-text-hint"}
-							className="dark:bg-input/30 border-input-border aria-invalid:border-destructive w-full rounded-md border bg-transparent backdrop-blur-sm px-3 py-2 text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring"
 						/>
 						<div className="flex items-start justify-between gap-2">
 							<p id="consent-text-hint" className="text-micro text-muted-foreground">
-								Customize the message shown in the consent banner
+								Leave blank to use the default message.
 							</p>
 							<CharCount value={bannerText} max={CONSENT_TEXT_MAX} />
 						</div>
 						<FieldError id="consent-text-error" error={errors.bannerText} />
 					</div>
 
-					{/* Privacy Policy URL */}
 					<div className="space-y-1.5">
 						<Label htmlFor="consent-privacy-url">Privacy Policy URL</Label>
 						<Input
@@ -115,62 +156,6 @@ export function ConsentSection({
 							Link shown in the banner for your privacy policy
 						</p>
 						<FieldError id="consent-privacy-url-error" error={errors.privacyUrl} />
-					</div>
-
-					{/* Cookie Categories */}
-					<div className="space-y-3">
-						<p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-							Cookie Categories
-						</p>
-
-						<div className="space-y-3 rounded-lg border border-border/50 bg-muted/20 p-3">
-							{/* Essential — always on */}
-							<div className="flex items-center justify-between">
-								<div>
-									<p className="text-xs font-medium">Essential</p>
-									<p className="text-micro text-muted-foreground">
-										Required for authentication and core features
-									</p>
-								</div>
-								<Switch checked disabled aria-label="Essential cookies" />
-							</div>
-
-							<div className="border-t border-border/30" />
-
-							{/* Analytics */}
-							<div className="flex items-center justify-between">
-								<div>
-									<p className="text-xs font-medium">Analytics</p>
-									<p className="text-micro text-muted-foreground">
-										Track page views, clicks, and visitor behaviour
-									</p>
-								</div>
-								<Switch
-									checked={categories.analytics}
-									onCheckedChange={(v) => onCategoriesChange({ ...categories, analytics: v })}
-									aria-label="Analytics cookies"
-								/>
-							</div>
-
-							<div className="border-t border-border/30" />
-
-							{/* Embedded media (stored as "functional"). Marketing is no longer
-							    offered: nothing on the page used it. Stored values keep the key. */}
-							<div className="flex items-center justify-between">
-								<div>
-									<p className="text-xs font-medium">Embedded media</p>
-									<p className="text-micro text-muted-foreground">
-										Loads YouTube, Spotify and other embeds; until allowed, embeds show a
-										click-to-load placeholder
-									</p>
-								</div>
-								<Switch
-									checked={categories.functional}
-									onCheckedChange={(v) => onCategoriesChange({ ...categories, functional: v })}
-									aria-label="Embedded media"
-								/>
-							</div>
-						</div>
 					</div>
 				</>
 			)}

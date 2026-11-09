@@ -12,12 +12,13 @@ import { SectionCard, SectionHeader } from "@/components/admin/section-header";
 import { DangerConfirmDialog } from "@/components/admin/settings/danger-confirm-dialog";
 import { DataSection } from "@/components/admin/settings/data-section";
 import { MigrationSection } from "@/components/admin/settings/migration-section";
+import { mutationErrorMessage } from "@/components/admin/settings/mutation-error";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
 
-/** "12 blocks, 34 settings, 5 social links" — only the parts the file carries. */
+/** Summarize only the data the selected backup carries. */
 function describeImport(data: {
 	blocks?: unknown[];
 	settings?: Record<string, string>;
@@ -49,7 +50,7 @@ const RESTORED_MESSAGES = MAX_IMPORT_CONTACTS;
 
 // Derived from the policy the daily cron actually enforces — never retyped.
 const RETENTION = [
-	["Page views & link clicks", `${DEFAULT_RETENTION.analyticsDays} days`],
+	["Legacy profile activity", `${DEFAULT_RETENTION.analyticsDays} days`],
 	["Contact-form messages", `${DEFAULT_RETENTION.contactsDays} days`],
 	["Audit log", `${DEFAULT_RETENTION.auditDays} days`],
 ] as const;
@@ -85,7 +86,8 @@ export default function DataSettingsPage() {
 
 	const handleExport = async () => {
 		try {
-			const result = await exportData.refetch();
+			// Refetch otherwise resolves with stale cached data on a network error.
+			const result = await exportData.refetch({ throwOnError: true });
 			if (result.data) {
 				const blob = new Blob([JSON.stringify(result.data, null, 2)], {
 					type: "application/json",
@@ -175,8 +177,10 @@ export default function DataSettingsPage() {
 			} else {
 				toast.success("Import successful");
 			}
-		} catch {
-			toast.error("Failed to import. Make sure the file is a LinkDen export.");
+		} catch (error) {
+			toast.error(
+				mutationErrorMessage(error, "Failed to import. Make sure the file is a LinkDen export."),
+			);
 		}
 		clearFileInput();
 	};
@@ -190,7 +194,7 @@ export default function DataSettingsPage() {
 	const handleDeleteAllContent = async () => {
 		try {
 			await deleteAllContent.mutateAsync();
-			toast.success("All content removed");
+			toast.success("Saved profile content removed");
 			qc.invalidateQueries();
 			setDeleteContentOpen(false);
 		} catch {
@@ -241,7 +245,7 @@ export default function DataSettingsPage() {
 				title="Retention"
 				description="A daily job prunes old rows and unreferenced images automatically"
 			>
-				<dl className="divide-y divide-dashed divide-border text-xs">
+				<dl className="divide-y divide-border text-sm">
 					{RETENTION.map(([label, days]) => (
 						<div key={label} className="flex items-center justify-between py-2">
 							<dt className="text-muted-foreground">{label}</dt>
@@ -255,20 +259,20 @@ export default function DataSettingsPage() {
 			<Card className="border-destructive/40 bg-destructive/5">
 				<SectionHeader icon={AlertTriangle} title="Danger zone" variant="muted" />
 				<CardContent className="space-y-3 pt-0">
-					<div className="grid grid-cols-[1fr_auto] items-center gap-3">
+					<div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
 						<div className="min-w-0">
-							<div className="text-xs font-medium">Delete all content</div>
+							<div className="text-sm font-medium">Delete profile content</div>
 							<div className="text-micro text-muted-foreground">
-								removes blocks + analytics · keeps account
+								removes profile blocks, legacy activity, and messages · keeps your account
 							</div>
 						</div>
 						<Button size="sm" variant="outline" onClick={() => setDeleteContentOpen(true)}>
 							Delete
 						</Button>
 					</div>
-					<div className="grid grid-cols-[1fr_auto] items-center gap-3 border-t border-dashed border-destructive/30 pt-3">
+					<div className="grid gap-3 border-t border-destructive/30 pt-4 sm:grid-cols-[1fr_auto] sm:items-center">
 						<div className="min-w-0">
-							<div className="text-xs font-medium">Reset everything</div>
+							<div className="text-sm font-medium">Reset everything</div>
 							<div className="text-micro text-muted-foreground">
 								full wipe · returns to setup wizard · images no longer used are deleted at the next
 								daily cleanup
@@ -284,8 +288,8 @@ export default function DataSettingsPage() {
 			<DangerConfirmDialog
 				open={deleteContentOpen}
 				onOpenChange={setDeleteContentOpen}
-				title="Delete all content?"
-				description="This permanently removes every block, analytics row, and form submission. Your account, settings, and theme stay intact. This cannot be undone."
+				title="Delete profile content?"
+				description="This permanently removes every saved profile block, legacy analytics row, and form submission, and cancels approved scheduled publications. Your account, settings, theme, and social links stay intact. If you have published a static page, it stays online until you publish a replacement separately. This cannot be undone."
 				confirmWord="DELETE"
 				confirmLabel="Delete content"
 				isPending={deleteAllContent.isPending}
@@ -295,7 +299,7 @@ export default function DataSettingsPage() {
 				open={resetDialogOpen}
 				onOpenChange={setResetDialogOpen}
 				title="Reset LinkDen completely?"
-				description="This wipes all content, analytics, settings, social links, AND your user account. You will be signed out and the setup wizard will start fresh. Uploaded images that nothing uses any more are deleted at the next daily cleanup (backups don't contain images). This cannot be undone."
+				description="This wipes all saved profile content, messages, analytics, settings, social links, publication approvals, AND your user account. You will be signed out and the setup wizard will start fresh. If you have published a static page, it stays online until it is replaced separately. Uploaded images that nothing uses any more are deleted at the next daily cleanup (backups don't contain images). This cannot be undone."
 				confirmWord="RESET"
 				confirmLabel="Reset everything"
 				isPending={resetEverything.isPending}
@@ -313,7 +317,7 @@ export default function DataSettingsPage() {
 				title="Restore this backup?"
 				description={
 					pendingImport
-						? `${describeImport(pendingImport)} will be written over your current values. Blocks, settings and social links with matching ids are replaced; nothing else is deleted.`
+						? `${describeImport(pendingImport)} will be written over your current values. Profile blocks, settings, and social links with matching identities are updated; nothing else is deleted.`
 						: ""
 				}
 				confirmLabel="Restore"

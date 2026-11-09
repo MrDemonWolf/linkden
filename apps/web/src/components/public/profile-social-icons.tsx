@@ -1,4 +1,5 @@
 import { getAccessibleIconFill } from "@linkden/ui/color-contrast";
+import { safeHttpUrl } from "@/lib/safe-url";
 import type { ThemeColors } from "./public-page";
 
 interface SocialNetwork {
@@ -35,6 +36,8 @@ export function ProfileSocialIcons({
 			aria-label="Social links"
 		>
 			{networks.map((network, index) => {
+				const href = safeHttpUrl(network.url);
+				if (!href) return null;
 				// The icons are drawn on the hero card, not the page background.
 				const contrastBg = themeColors.card;
 				const fill =
@@ -46,7 +49,7 @@ export function ProfileSocialIcons({
 					// Each <a> is an `.ld-social-icons > a` entrance target; `--ld-i` staggers it.
 					<a
 						key={network.slug}
-						href={network.url}
+						href={href}
 						target="_blank"
 						rel="noopener noreferrer"
 						className={`group inline-flex h-11 w-11 items-center justify-center ${radiusClass} transition-all duration-300 hover:scale-110 hover:-translate-y-0.5 hover:bg-[var(--ld-primary)]/10 focus-visible:outline-2 focus-visible:outline-offset-2 [&_svg_path]:transition-[fill] [&_svg_path]:duration-200 hover:[&_svg_path]:!fill-[var(--ld-primary)]`}

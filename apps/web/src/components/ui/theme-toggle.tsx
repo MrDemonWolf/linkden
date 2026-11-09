@@ -45,7 +45,7 @@ export function ThemeToggle() {
 						key={opt.value}
 						value={opt.value}
 						aria-label={`${opt.label} theme`}
-						className="size-11 md:size-7 aria-pressed:bg-primary/15 aria-pressed:text-primary"
+						className="size-11 md:size-8 aria-pressed:bg-primary/15 aria-pressed:text-primary"
 					>
 						<Icon className="size-3.5" />
 					</ToggleGroupItem>

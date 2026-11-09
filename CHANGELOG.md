@@ -1,17 +1,47 @@
 # Changelog
 
-All notable changes to LinkDen. Each release has two sections:
+Repository change notes. The Unreleased section describes work awaiting release;
+versioned sections preserve earlier repository notes and do not prove a published
+GitHub release or deployed site.
 
-- **✨ What's new** — plain-language summary for site owners.
-- **🔧 Technical** — internal changes, refactors, security details for
-  developers and self-hosters.
+- **What's new** describes behavior for site owners.
+- **Technical** records implementation details for developers and self-hosters.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-Canonical version: [`version.json`](./version.json) — workspace
-`package.json` files mirror it.
+Canonical version: [`version.json`](./version.json).
 
 ## [Unreleased]
+
+This section describes the current worktree, including changes not committed,
+released or deployed. Local implementation/checks do not establish staging,
+production routing, provider delivery, account plan or CPU compatibility.
+
+### Current worktree
+
+- Documentation now includes the implemented design system, a neutral Notebook
+  layout, current setup/feature guides and a static search index that respects
+  the GitHub Pages base path. Standalone migrations use the shared SQL history.
+- Opt-in static publication reuses public components, fonts and OG templates,
+  bundles approved media, and emits security artifacts.
+  Publishing is serialized and frozen-source based, with last-good rollback and
+  explicit interrupted-job recovery. Cloud integration remains gated.
+- Legacy serving remains the default. Split mode adds the approved private
+  admin/service-binding boundary and optional exact public contact action.
+  Access policies, alternate-URL closure and production cutover are not claimed.
+- Wallet and account forms preserve drafts, expose usable labels/keyboard
+  controls, distinguish unavailable status and report failed requests.
+  Unused historical dashboard components and duplicate validation helpers
+  were removed or consolidated without deleting historical records.
+- Additive migrations `0011`–`0014` add the contact quota and publication
+  tables; released `0000`–`0010` filenames and snapshots are unchanged.
+  Fresh, main, dev-ledger and publication-history upgrade tests exercise the
+  installed migration runner; no blanket legacy image-URL rewrite is added.
+- Native public delivery is designed to avoid application Worker/D1/R2 work
+  per ordinary HTML/bundled-asset request. Publishing, cron, admin,
+  contact, backups and external content still consume resources. No billing
+  savings or Free-plan CPU result is asserted.
+
 
 ### ✨ What's new
 
@@ -25,23 +55,25 @@ Canonical version: [`version.json`](./version.json) — workspace
   (v2 checkbox) or hCaptcha now renders on the public contact form and
   is checked on the server. Site and secret keys are both required once
   a provider is picked.
-- **A rebuilt admin console.** Five places instead of eight: Links,
-  Design, Insights, Inbox and Settings, with a sidebar, a live phone
-  preview on every editing page, and an honest status pill (Unsaved /
-  n unpublished / Live). Every page has its own browser-tab title, and
-  old admin links redirect to their new home.
-- **New blocks and a desktop layout.** Image, text and divider blocks;
-  link cards in button, thumbnail or featured-image style; headers that
-  lay out the blocks below them as a list, grid or carousel. On wide
-  screens your profile sits in a sticky column beside your blocks. A
-  share button (with QR code) sits on the page, and the page and admin
-  can be installed as apps.
-- **Editing a live block keeps it live.** Renaming, dragging or hiding a
-  published block no longer pulls it off your page until you click
-  Publish. Publish now only promotes brand-new blocks ("Publish 3 new").
-- **Destructive actions ask first.** Deleting a block, importing a
-  backup and applying a wallet template preset all confirm before
-  anything changes, and Undo puts a deleted block back in its old spot.
+- **A simpler admin console.** Profile page, Design, Inbox and
+  Settings share consistent controls, neutral
+  gray/charcoal surfaces, restrained blue accents and a global footer.
+  The public preview is a document viewport; Wallet shows a pass card,
+  with no simulated phone chrome. Legacy admin links still redirect.
+- **Two public layouts.** Desktop can show a sticky profile beside
+  full-width stacked blocks, or a single vertical page. Narrow pages
+  always stack one block per row. Live rendering, editor preview and
+  static builds reuse the same layout; old grid/carousel configuration
+  remains compatible without retaining the cramped presentation.
+- **Saved and Published are separate.** Draft-block visibility remains
+  separate from saving. The opt-in native publisher freezes approved
+  source and requires activation plus HTTP verification before reporting
+  Published. Legacy dynamic pages continue to render saved public data.
+- **Explicit editing and data actions.** Block deletion and backup import
+  keep their confirmations; Undo restores a deleted block's position.
+  Wallet presets explain that they replace draft fields, with changes
+  still requiring Save. Data confirmations explain that an already
+  published static site is separate from editor data.
 - **Apple Wallet passes are now downloaded by you, not your visitors.**
   The public "Add to Wallet" button and `/api/wallet-pass` are gone.
   Download the signed pass from Settings → Wallet ("Downloads enabled")
@@ -58,25 +90,20 @@ Canonical version: [`version.json`](./version.json) — workspace
   notification fails (or email isn't set up), the message is kept in
   your Inbox and the failure is logged. Contact-form delivery
   (Inbox, email or both) can now be chosen under Settings → Email.
-- **Cookie consent visitors can change.** A footer "Cookie settings"
-  link reopens the banner, a choice expires after 12 months, Accept and
-  Reject look equally prominent, and embedded media (YouTube, Spotify,
-  SoundCloud, custom) waits for a click while the banner is on. A first
-  visit is still counted once the visitor accepts analytics. If you turn
-  the banner off, analytics run for every visitor without asking.
-- **Less data about visitors.** Browser user-agent strings are no longer
-  stored, referrers are kept as a bare hostname, and "Where did we
-  meet?" is only asked when you switch it on for a form.
+- **Embedded-media consent.** A footer "Cookie settings" link reopens
+  preferences. With the banner enabled, embeds wait for a load action or
+  permission for Embedded media; disabling it permits direct loading.
+  These choices do not enable retired profile analytics.
+- **Profile collection is retired.** The public page and buttons send
+  no profile tracking events. Historical records/read APIs remain
+  compatible. Contact forms ask "Where did we meet?" only when enabled.
 - **Inbox upgrades.** Older messages load page by page ("Showing n of
   total"), a Select mode marks read or deletes in bulk, opening a
   message marks it read once (Mark unread sticks), timestamps follow the
   timezone in Settings → Account, and reply links can't be hijacked by a
   crafted email address.
-- **Insights in your timezone.** Daily views and clicks follow your
-  timezone setting, every day of the period shows (zeros included),
-  dates no longer show a day early west of UTC, "All time" no longer
-  claims +100%, the Clicks line is dashed, and the chart has a
-  screen-reader table.
+- **Privacy controls.** Profile analytics collection remains retired. Public pages
+  do not collect events; the historical profile dashboard is removed.
 - **Paste a social profile link.** Social rows accept a full profile URL
   or an `@handle` and store a clean link (no more
   `https://x.com/https://x.com/ada`).
@@ -138,8 +165,9 @@ Canonical version: [`version.json`](./version.json) — workspace
   exposes `captchaProvider` + `captchaSiteKey` only.
 - `forms.count({ isRead?, blockId? })`; `forms.list` takes
   `limit`/`offset`. `submitContact` gains a `website` honeypot and an
-  optional `whereMet`; `trackView` / `trackClick` take an optional
-  `referrer`. `version.checkUpdate` takes `{ force?: boolean }`.
+  optional `whereMet`. Legacy `trackView` / `trackClick` payloads stay
+  bounded but the procedures reject collection. `version.checkUpdate`
+  takes `{ force?: boolean }`.
 - `resolvePublicVcard()` (`packages/api/src/routers/vcard.ts`): single
   source for `GET /api/vcard` (`?block=<id>`, else the first live vCard
   block, else `vcard_data`).
@@ -203,10 +231,9 @@ Canonical version: [`version.json`](./version.json) — workspace
 - `GET /api/images/*` 404s key shapes the app never writes without an R2
   read, sends an `ETag`, and edge-caches via `caches.default` (cache key
   without the query string).
-- `requestMeta` returns only `{ ip, country }`; analytics `user_agent` is
-  written NULL (`truncateUserAgent` removed) and the Referer header is no
-  longer read. The client `referrer` is stored as its lowercased hostname
-  and dropped for the site's own host.
+- `requestMeta` retains transient security metadata for CAPTCHA.
+  Retired tracking transports and unused referrer helpers are removed;
+  no new profile analytics rows are written.
 - `verifyCaptcha`: empty secret = misconfigured; hostname must equal the
   `CORS_ORIGIN` hostname whenever it is set (fails closed if
   unparseable); Turnstile always needs action `contact`; reCAPTCHA v3
@@ -226,14 +253,17 @@ Canonical version: [`version.json`](./version.json) — workspace
   placeholder on any non-loopback `BETTER_AUTH_URL`, means auth is never
   built; `/api/auth/*`, `/trpc/*`, `/api/upload` and `/api/admin/*`
   answer 503 and `/api/health` reports `auth: "misconfigured"`.
-- `DEV_LOGIN` needs `DEV_LOGIN="true"` plus a plain-http loopback
-  `BETTER_AUTH_URL`, and the endpoint 404s for a non-loopback Host.
+- `DEV_LOGIN` requires the exact flag, strict plain-HTTP loopback
+  auth/request/Host values, local Origin/Referer and trusted local proxy
+  metadata. Explicit non-development runtimes disable it; the matching
+  UI is restricted to local development pages. It never works through
+  a public hostname or tunnel and is not bound by Alchemy.
 - `alchemy.run.ts` validates the deploy env before touching state
   (`deployEnvErrors`); `LINKDEN_DB_NAME` / `LINKDEN_IMAGES_BUCKET` apply
   to the prod stage only; prod D1/R2 use `delete: false` and a prod
   destroy needs `LINKDEN_CONFIRM_DESTROY_PROD=yes`; the Workers
-  compatibility date is pinned (2026-04-24); `apps/*/.env` load only for
-  `bun dev`. `deploy.yml` deploys only `push` runs from this repo's
+  compatibility date is pinned (2026-04-24); Alchemy reads app `.env`
+  files only in dev mode; standalone Next also loads its own env files. `deploy.yml` deploys only `push` runs from this repo's
   `main` and never cancels a running deploy.
 - `backup-db.yml` honours `LINKDEN_DB_NAME` and refuses to upload a dump
   with no `user` row. CI runs Vitest once (`test:coverage`).
@@ -280,10 +310,10 @@ Canonical version: [`version.json`](./version.json) — workspace
   'unavailable'` plus `reason`.
 - Web: root layout metadata is static (profile/SEO/OG/favicon metadata
   moved to `app/page.tsx`); block icons resolved server-side;
-  `AdminBadge` loads only with a session cookie; an API outage on `/`
-  renders `app/error.tsx` with HTTP 500; the service worker is
-  `/sw.js?v=<version>` with cache `linkden-v4-<version>`, navigation
-  preload and 2xx-only caching; `/og` runs on Node with the Workers Cache
+  the public admin shortcut performs no session probe; an API outage
+  on legacy `/` renders `app/error.tsx` with HTTP 500. Its service worker
+  uses cache `linkden-v5-<version>` and rejects redirected/non-root
+  navigation responses. Native public pages retire the old worker/cache; `/og` runs on Node with the Workers Cache
   API (anonymous requests always render the stored profile); the CSP
   (`contentSecurityPolicy()`) allows the CAPTCHA providers; `/` sends
   `Accept-CH` / `Critical-CH: Sec-CH-Prefers-Color-Scheme`.
@@ -305,8 +335,8 @@ Canonical version: [`version.json`](./version.json) — workspace
   `SidebarMenuButton` sets `aria-current="page"`; Switch/Checkbox disabled
   styles key off `data-disabled`. Security upgrade: next 16.3.8,
   OpenNext 1.20.9, hono 4.13.13.
-- Admin console rebuilt on shadcn/Base UI with five destinations and
-  path-segment sub-tabs; legacy routes 307 from `proxy.ts`.
+- Admin console uses four destinations and path-segment sub-tabs on the
+  existing Base UI components; legacy routes 307 from `proxy.ts`.
 
 #### Removed
 
@@ -340,8 +370,9 @@ Canonical version: [`version.json`](./version.json) — workspace
   `Sec-Fetch-Site` fallback, else 403. Body limits: 64KB on
   `/api/auth/*`, 1MB on `/trpc/*`, 16MB for `backup.*`. CORS
   `allowHeaders` include `x-setup-token`.
-- Auth tokens never reach logs (path-only request line, invocation logs
-  off); visitor PII is stripped from logged SQL errors.
+- Request logs omit query strings and redact token-bearing reset paths;
+  invocation logs are disabled in IaC and Drizzle bound parameters are
+  removed from structured error descriptions.
 - Inbox `mailto:` links are percent-encoded so a stored contact email
   can't add Bcc/Subject headers.
 - tRPC error responses no longer carry stacks or internal messages.

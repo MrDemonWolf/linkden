@@ -32,6 +32,8 @@
 	"scripts": {
 		"dev": "turbo dev",
 		"build": "turbo build",
+		"build:public-artifacts": "bun scripts/build-public-artifacts.ts",
+		"build:public": "bun apps/public/build.ts",
 		"check-types": "turbo check-types",
 		"typecheck": "turbo check-types",
 		"lint": "biome lint .",

@@ -1,13 +1,13 @@
 "use client";
 
-import { BarChart3, Link, Palette } from "lucide-react";
+import { Link, Palette, ShieldCheck } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { WolfLogo } from "@/components/wolf-logo";
 import { useEntranceAnimation } from "@/hooks/use-entrance-animation";
 
 const features = [
-	{ label: "Custom Links", desc: "Add unlimited blocks", icon: Link },
-	{ label: "Analytics", desc: "Track every click", icon: BarChart3 },
+	{ label: "Custom Links", desc: "Build your profile page", icon: Link },
+	{ label: "Your Data", desc: "Private by default", icon: ShieldCheck },
 	{ label: "Your Brand", desc: "Fully customizable", icon: Palette },
 ];
 

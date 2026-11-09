@@ -1,11 +1,12 @@
 "use client";
 
+import { env } from "@linkden/env/web";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, ExternalLink, Moon, Sun } from "lucide-react";
 import { type ComponentProps, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { QueryError } from "@/components/admin/dashboard/query-error";
-import { PhoneFrame } from "@/components/admin/phone-frame";
+import { PagePreviewViewport } from "@/components/admin/page-preview-viewport";
 import { type ColorMode, PublicPage } from "@/components/public/public-page";
 import { Button } from "@/components/ui/button";
 import { TooltipHint } from "@/components/ui/tooltip";
@@ -33,8 +34,6 @@ interface PagePreviewProps {
 	showHeader?: boolean;
 	/** `null` drops the "Preview" label (the column above already said it) and keeps the toolbar. */
 	headerLabel?: React.ReactNode;
-	/** Column-level controls (collapse, peek) appended after the phone toolbar. */
-	headerEnd?: React.ReactNode;
 	className?: string;
 }
 
@@ -111,7 +110,7 @@ function defaultMode(pref: string | undefined): ColorMode {
 }
 
 /**
- * The admin previewer: the real `PublicPage` inside a phone frame, fed by the
+ * The admin previewer: the real `PublicPage` inside a plain document viewport, fed by the
  * same `public.getPage` payload the live page renders from (so footer text,
  * theme resolution and block rendering can't drift). Blocks come from
  * `blocks.list` instead so enabled drafts show before they're published.
@@ -122,7 +121,6 @@ export function PagePreview({
 	onModeChange,
 	showHeader = true,
 	headerLabel = "Preview",
-	headerEnd,
 	className,
 }: PagePreviewProps) {
 	const qc = useQueryClient();
@@ -136,7 +134,7 @@ export function PagePreview({
 		return qc.getQueryCache().subscribe((event) => {
 			if (event.type !== "updated" || event.action.type !== "invalidate") return;
 			const path = event.query.queryKey[0];
-			if (!Array.isArray(path) || (path[0] !== "settings" && path[0] !== "social")) return;
+			if (!Array.isArray(path) || !["settings", "social", "vcard"].includes(path[0])) return;
 			qc.invalidateQueries({ queryKey: trpc.public.getPage.queryKey() });
 		});
 	}, [qc]);
@@ -156,11 +154,15 @@ export function PagePreview({
 	const featureVisible = (b: { type: string }) =>
 		!(b.type === "connect" && !settings?.contactFormEnabled) &&
 		!(b.type === "vcard" && !settings?.vcardEnabled);
-	const liveBlocks = (blocksQuery.data ?? []).filter((b) => b.isEnabled);
+	const inventory = blocksQuery.data ?? [];
+	const liveBlocks = inventory.filter((b) => b.isEnabled);
 	const blocks = overrides?.blocks
 		? overrides.blocks.filter(featureVisible).map(previewSafe)
 		: liveBlocks.filter(featureVisible);
-	const isSample = blocks.length === 0;
+	const isSample = blocksQuery.data?.length === 0 && blocks.length === 0;
+	const includesDrafts = blocks.some((b) =>
+		inventory.some((saved) => saved.id === b.id && saved.status === "draft"),
+	);
 
 	const data: PageData | null =
 		page && settings
@@ -181,7 +183,7 @@ export function PagePreview({
 
 	function handleCopyLink() {
 		navigator.clipboard
-			.writeText(window.location.origin)
+			.writeText(env.NEXT_PUBLIC_SITE_URL)
 			.then(() => toast.success("Link copied"))
 			.catch(() => toast.error("Failed to copy"));
 	}
@@ -249,21 +251,33 @@ export function PagePreview({
 								aria-label="Open live page"
 								className="text-muted-foreground"
 								nativeButton={false}
-								render={<a href="/" target="_blank" rel="noopener noreferrer" />}
+								render={
+									<a href={env.NEXT_PUBLIC_SITE_URL} target="_blank" rel="noopener noreferrer" />
+								}
 							>
 								<ExternalLink className="h-3.5 w-3.5" />
 							</Button>
 						</TooltipHint>
-						{headerEnd}
 					</div>
 				</div>
+			)}
+			{data && blocksQuery.data && !isError && (
+				<p className="mb-3 text-xs text-muted-foreground" role="status">
+					{isSample
+						? "Sample content · no blocks yet"
+						: includesDrafts
+							? "Includes block drafts"
+							: blocks.length === 0
+								? "No visible blocks"
+								: "Preview of enabled blocks"}
+				</p>
 			)}
 			{isError ? (
 				<QueryError message="Couldn't load the preview" onRetry={refetch} />
 			) : (
-				<PhoneFrame previewDark={previewMode === "dark"} isLoading={!data || !blocksQuery.data}>
+				<PagePreviewViewport isLoading={!data || !blocksQuery.data}>
 					{data && <PublicPage data={data} previewMode={previewMode} />}
-				</PhoneFrame>
+				</PagePreviewViewport>
 			)}
 		</div>
 	);

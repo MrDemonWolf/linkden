@@ -14,12 +14,11 @@ import {
 	validateContactForm,
 	WHERE_MET_OPTIONS,
 } from "@/lib/contact-form";
-import { trackClick } from "@/lib/track";
-import { trpc } from "@/utils/trpc";
 import { CaptchaWidget, isCaptchaRequired, resolveCaptchaProvider } from "./captcha-widget";
 import { usePreview } from "./preview-context";
 import { type PrivacyNotice, PrivacyNoticeLink } from "./privacy-notice";
 import type { ThemeColors } from "./public-page";
+import { usePublicRuntime } from "./public-runtime";
 
 // Public blocks style inline from the resolved themeColors instead of CSS design
 // tokens: the public page renders under a per-page theme preset, not the app's
@@ -380,10 +379,10 @@ export function ConnectForm({
 		setCaptchaKey((k) => k + 1);
 	};
 
+	const runtime = usePublicRuntime();
 	const submitContact = useMutation({
-		...trpc.public.submitContact.mutationOptions(),
+		mutationFn: runtime.submitContact,
 		onSuccess: () => {
-			trackClick(blockId, { preview: !!isPreview });
 			setSubmitted(true);
 			setSubmitAttempted(false);
 			setFormData(EMPTY_FORM);
@@ -533,7 +532,10 @@ export function ConnectForm({
 				</label>
 			</div>
 
-			<div className="grid gap-3 sm:grid-cols-2">
+			{/* Live dialogs portal outside the page container; previews remain inside it. */}
+			<div
+				className={`grid gap-3 ${isPreview || config.displayMode === "inline" ? "@min-[640px]:grid-cols-2" : "sm:grid-cols-2"}`}
+			>
 				<FloatingField
 					id={fieldIds.firstName}
 					label="First Name"
@@ -907,10 +909,10 @@ export function ConnectBlock({
 						className="ld-connect-dialog fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl p-6 shadow-2xl outline-none duration-200 data-[open]:animate-in data-[open]:fade-in-0 data-[open]:zoom-in-95"
 						style={modalCardStyle}
 					>
-						<div className="mb-5 flex items-center justify-between">
-							<Dialog.Title className="text-lg font-semibold">{modalTitle}</Dialog.Title>
+						<div className="mb-5 flex items-start justify-between gap-3">
+							<Dialog.Title className="min-w-0 text-lg font-semibold">{modalTitle}</Dialog.Title>
 							<Dialog.Close
-								className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2"
+								className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2"
 								style={{ outlineColor: themeColors?.primary || "#3b82f6" }}
 								aria-label="Close"
 							>

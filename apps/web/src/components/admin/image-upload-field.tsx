@@ -18,6 +18,8 @@ interface ImageUploadFieldProps {
 	purpose: ImagePurpose;
 	onUploadComplete: (url: string) => void;
 	aspectRatio?: "square" | "banner" | "logo";
+	/** Preview only; the crop dialog controls the uploaded file itself. */
+	previewFit?: "contain" | "cover";
 	hint?: string;
 }
 
@@ -28,6 +30,7 @@ export function ImageUploadField({
 	purpose,
 	onUploadComplete,
 	aspectRatio = "square",
+	previewFit = "cover",
 	hint,
 }: ImageUploadFieldProps) {
 	const [preview, setPreview] = useState<string | null>(null);
@@ -222,7 +225,12 @@ export function ImageUploadField({
 				>
 					{displayUrl ? (
 						<>
-							<img src={displayUrl} alt={name ?? ""} className={cn("object-cover", imgClass)} />
+							<img
+								src={displayUrl}
+								alt={name ?? ""}
+								className={imgClass}
+								style={{ objectFit: previewFit }}
+							/>
 							{uploading && (
 								<div className="absolute inset-0 flex items-center justify-center rounded-inherit bg-black/40">
 									<div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />

@@ -11,7 +11,7 @@ import {
 } from "@linkden/validators/wallet";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Layers, Type } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ColorField } from "@/components/admin/color-field";
 import { QueryError } from "@/components/admin/dashboard/query-error";
@@ -97,6 +97,7 @@ export function WalletBuilderSection({
 	saveRef,
 	resetRef,
 }: Props) {
+	const qrId = useId();
 	const qc = useQueryClient();
 	const configQuery = useQuery(trpc.wallet.getConfig.queryOptions());
 	const updateConfig = useMutation(trpc.wallet.updateConfig.mutationOptions());
@@ -287,6 +288,10 @@ export function WalletBuilderSection({
 			<TabsContent value="business" keepMounted className="mt-0 space-y-6">
 				<Section icon={Layers} title="Template" hint="Pick a starting layout">
 					<TemplatePresetPicker value={state.templatePreset} onChange={handlePresetChange} />
+					<p className="text-micro text-muted-foreground">
+						Applying a template replaces the card fields in this draft. Discard restores your saved
+						pass.
+					</p>
 				</Section>
 
 				<Section icon={Type} title="Identity" hint="Org + description">
@@ -316,8 +321,11 @@ export function WalletBuilderSection({
 
 				<Section title="QR code" hint="Scan to view profile">
 					<div className="flex items-center justify-between rounded-lg border border-border/60 bg-card/40 px-3 py-2">
-						<Label className="cursor-pointer text-xs">Show QR code on the pass</Label>
+						<Label htmlFor={qrId} className="cursor-pointer text-sm">
+							Show QR code on the pass
+						</Label>
 						<Switch
+							id={qrId}
 							aria-label="Show QR code"
 							checked={state.showQrCode}
 							onCheckedChange={(v) => setState((s) => ({ ...s, showQrCode: v }))}
@@ -445,9 +453,7 @@ function Section({
 		<div className="space-y-2">
 			<div className="flex items-baseline gap-2">
 				{Icon && <Icon className="h-3 w-3 self-center text-muted-foreground" />}
-				<h3 className="text-micro font-semibold uppercase tracking-wider text-foreground/80">
-					{title}
-				</h3>
+				<h3 className="text-sm font-semibold text-foreground/80">{title}</h3>
 				{hint && <span className="text-micro text-muted-foreground">· {hint}</span>}
 			</div>
 			{children}

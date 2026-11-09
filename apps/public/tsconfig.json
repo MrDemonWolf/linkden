@@ -1,0 +1,12 @@
+{
+	"extends": "../web/tsconfig.json",
+	"compilerOptions": {
+		"incremental": false,
+		"types": ["node", "bun", "@cloudflare/workers-types"],
+		"paths": {
+			"@/*": ["../web/src/*"]
+		}
+	},
+	"include": ["./**/*.ts", "../web/next-env.d.ts", "../server/env.d.ts"],
+	"exclude": ["./node_modules"]
+}

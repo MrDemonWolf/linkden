@@ -1,10 +1,12 @@
 "use client";
 
+import { env } from "@linkden/env/web";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronsUpDown, Globe, LogOut, Smartphone, UserCog, Wallet } from "lucide-react";
+import { ChevronsUpDown, Ellipsis, Globe, LogOut, Smartphone, UserCog, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AdminFooter } from "@/components/admin/admin-footer";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
 import { activeNavItem, isNavActive, NAV_ITEMS } from "@/components/admin/nav-list";
 import { KickerSetter } from "@/components/admin/page-header";
@@ -44,6 +46,7 @@ import {
 	SidebarFooter,
 	SidebarGroup,
 	SidebarGroupContent,
+	SidebarGroupLabel,
 	SidebarHeader,
 	SidebarInset,
 	SidebarMenu,
@@ -54,7 +57,6 @@ import {
 	SidebarRail,
 	SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { WolfLogo } from "@/components/wolf-logo";
 import { isPublicAdminRoute } from "@/lib/admin-routes";
 import { authClient } from "@/lib/auth-client";
@@ -64,10 +66,6 @@ import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 
 type SessionUser = { name: string; email: string; image?: string | null };
-
-const APP_VERSION = `v${process.env.NEXT_PUBLIC_APP_VERSION}${
-	process.env.NODE_ENV === "development" ? " · DEV" : ""
-}`;
 
 /** Destination + the page's sub-tab (label, or the path segment) — the breadcrumb trail. */
 function crumbsFor(pathname: string, subLabel: string | null) {
@@ -102,13 +100,11 @@ function UserAvatar({ user, className }: { user: SessionUser; className?: string
 function AccountMenu({
 	user,
 	onSignOut,
-	adminBrandingEnabled,
 	side,
 	children,
 }: {
 	user: SessionUser;
 	onSignOut: () => void;
-	adminBrandingEnabled: boolean;
 	/** "top" from the sidebar footer, "bottom" from the top bar. */
 	side: "top" | "bottom";
 	children: React.ReactNode;
@@ -122,7 +118,7 @@ function AccountMenu({
 				    destinations it names are one group. Sign out stays outside it. */}
 				<DropdownMenuGroup>
 					<DropdownMenuLabel>
-						<span className="block truncate text-xs font-semibold text-foreground">
+						<span className="block truncate text-sm font-semibold text-foreground">
 							{user.name || "Admin"}
 						</span>
 						<span className="block truncate text-micro font-normal text-muted-foreground">
@@ -131,14 +127,14 @@ function AccountMenu({
 					</DropdownMenuLabel>
 					<DropdownMenuSeparator />
 					<DropdownMenuItem
-						className="min-h-11 md:min-h-9"
+						className="min-h-11 md:pointer-fine:min-h-9"
 						render={<Link href="/admin/settings" />}
 					>
 						<UserCog />
 						Account
 					</DropdownMenuItem>
 					<DropdownMenuItem
-						className="min-h-11 md:min-h-9"
+						className="min-h-11 md:pointer-fine:min-h-9"
 						render={<Link href="/admin/settings/wallet" />}
 					>
 						<Wallet />
@@ -146,28 +142,14 @@ function AccountMenu({
 					</DropdownMenuItem>
 				</DropdownMenuGroup>
 				<DropdownMenuSeparator />
-				<DropdownMenuItem variant="destructive" className="min-h-11 md:min-h-9" onClick={onSignOut}>
+				<DropdownMenuItem
+					variant="destructive"
+					className="min-h-11 md:pointer-fine:min-h-9"
+					onClick={onSignOut}
+				>
 					<LogOut />
 					Sign out
 				</DropdownMenuItem>
-				<p className="px-3 pt-2.5 pb-1 text-micro text-muted-foreground">
-					{adminBrandingEnabled && (
-						<>
-							Powered by{" "}
-							<a
-								href="https://github.com/mrdemonwolf/LinkDen"
-								target="_blank"
-								rel="noopener noreferrer"
-								className="transition-colors hover:text-foreground"
-							>
-								LinkDen
-								<span className="sr-only">(opens in new tab)</span>
-							</a>{" "}
-							·{" "}
-						</>
-					)}
-					{APP_VERSION}
-				</p>
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
@@ -175,7 +157,7 @@ function AccountMenu({
 
 /**
  * The shadcn Sidebar, icon-collapsible: brand mark + site name on top (the
- * name folds away when collapsed), the five destinations in one group, the
+ * name folds away when collapsed), the six destinations in two groups, the
  * account menu in the footer. Every button carries its label as a tooltip so
  * the collapsed rail explains itself.
  */
@@ -186,7 +168,6 @@ function AdminSidebar({
 	siteName,
 	user,
 	onSignOut,
-	adminBrandingEnabled,
 }: {
 	pathname: string;
 	unreadCount: number;
@@ -194,11 +175,10 @@ function AdminSidebar({
 	siteName: string;
 	user: SessionUser;
 	onSignOut: () => void;
-	adminBrandingEnabled: boolean;
 }) {
 	return (
 		<Sidebar collapsible="icon" className="border-r border-sidebar-border">
-			<SidebarHeader className="h-13 shrink-0 justify-center border-b border-sidebar-border">
+			<SidebarHeader className="h-16 shrink-0 justify-center border-b border-sidebar-border">
 				<div className="flex items-center gap-2 overflow-hidden px-1 group-data-[collapsible=icon]:px-0">
 					{logoUrl ? (
 						<img src={logoUrl} alt="" className="size-8 shrink-0 rounded-md object-cover" />
@@ -215,60 +195,60 @@ function AdminSidebar({
 				{/* The sidebar renders plain divs; the landmark (and its label) match the
 				    bottom tab bar's — only one of the two is ever displayed. */}
 				<nav aria-label="Main navigation">
-					<SidebarGroup>
-						<SidebarGroupContent>
-							<SidebarMenu>
-								{NAV_ITEMS.map((item) => {
-									const isActive = isNavActive(item.href, pathname);
-									const showBadge = item.label === "Inbox" && unreadCount > 0;
-									const Icon = item.icon;
-									return (
-										<SidebarMenuItem key={item.href}>
-											<SidebarMenuButton
-												isActive={isActive}
-												tooltip={item.label}
-												aria-label={showBadge ? `${item.label}, ${unreadCount} unread` : undefined}
-												className="min-h-11 md:min-h-8 data-active:[&_svg]:text-sidebar-primary"
-												render={
-													<Link href={item.href} aria-current={isActive ? "page" : undefined} />
-												}
-											>
-												<Icon />
-												<span>{item.label}</span>
-											</SidebarMenuButton>
-											{showBadge && (
-												<SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground peer-hover/menu-button:text-sidebar-primary-foreground peer-data-active/menu-button:text-sidebar-primary-foreground">
-													{unreadCount > 99 ? "99+" : unreadCount}
-												</SidebarMenuBadge>
-											)}
-										</SidebarMenuItem>
-									);
-								})}
-							</SidebarMenu>
-						</SidebarGroupContent>
-					</SidebarGroup>
+					{(["Create", "Manage"] as const).map((group) => (
+						<SidebarGroup key={group}>
+							<SidebarGroupLabel className="px-2 text-micro font-medium uppercase tracking-[0.12em]">
+								{group}
+							</SidebarGroupLabel>
+							<SidebarGroupContent>
+								<SidebarMenu>
+									{NAV_ITEMS.filter((item) => item.group === group).map((item) => {
+										const isActive = isNavActive(item.href, pathname);
+										const showBadge = item.label === "Inbox" && unreadCount > 0;
+										const Icon = item.icon;
+										return (
+											<SidebarMenuItem key={item.href}>
+												<SidebarMenuButton
+													isActive={isActive}
+													tooltip={item.label}
+													aria-label={
+														showBadge ? `${item.label}, ${unreadCount} unread` : item.label
+													}
+													className="min-h-11 rounded-lg data-active:bg-sidebar-accent data-active:font-semibold data-active:[&_svg]:text-sidebar-primary"
+													render={
+														<Link href={item.href} aria-current={isActive ? "page" : undefined} />
+													}
+												>
+													<Icon />
+													<span>{item.label}</span>
+												</SidebarMenuButton>
+												{showBadge && (
+													<SidebarMenuBadge className="bg-sidebar-primary text-sidebar-primary-foreground peer-hover/menu-button:text-sidebar-primary-foreground peer-data-active/menu-button:text-sidebar-primary-foreground">
+														{unreadCount > 99 ? "99+" : unreadCount}
+													</SidebarMenuBadge>
+												)}
+											</SidebarMenuItem>
+										);
+									})}
+								</SidebarMenu>
+							</SidebarGroupContent>
+						</SidebarGroup>
+					))}
 				</nav>
 			</SidebarContent>
 
 			<SidebarFooter className="border-t border-sidebar-border">
 				<SidebarMenu>
 					<SidebarMenuItem>
-						<AccountMenu
-							user={user}
-							onSignOut={onSignOut}
-							adminBrandingEnabled={adminBrandingEnabled}
-							side="top"
-						>
+						<AccountMenu user={user} onSignOut={onSignOut} side="top">
 							<DropdownMenuTrigger
 								aria-label="Account menu"
 								render={<SidebarMenuButton size="lg" />}
 							>
 								<UserAvatar user={user} />
 								<span className="grid min-w-0 flex-1 text-left">
-									<span className="truncate text-xs font-medium">{user.name || "Admin"}</span>
-									<span className="truncate font-mono text-micro text-muted-foreground">
-										{APP_VERSION}
-									</span>
+									<span className="truncate text-sm font-medium">{user.name || "Admin"}</span>
+									<span className="truncate text-xs text-muted-foreground">{user.email}</span>
 								</span>
 								<ChevronsUpDown className="ml-auto" />
 							</DropdownMenuTrigger>
@@ -282,13 +262,15 @@ function AdminSidebar({
 	);
 }
 
-function BottomTabBar({ pathname, unreadCount }: { pathname: string; unreadCount: number }) {
+export function BottomTabBar({ pathname, unreadCount }: { pathname: string; unreadCount: number }) {
+	const overflowItems = NAV_ITEMS.filter((item) => !item.mobileLabel);
+	const overflowActive = overflowItems.some((item) => isNavActive(item.href, pathname));
 	return (
 		<nav
 			aria-label="Main navigation"
 			className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border bg-card pb-[env(safe-area-inset-bottom)] lg:hidden"
 		>
-			{NAV_ITEMS.map((item) => {
+			{NAV_ITEMS.filter((item) => item.mobileLabel).map((item) => {
 				const isActive = isNavActive(item.href, pathname);
 				const Icon = item.icon;
 				const showBadge = item.label === "Inbox" && unreadCount > 0;
@@ -297,9 +279,9 @@ function BottomTabBar({ pathname, unreadCount }: { pathname: string; unreadCount
 						key={item.href}
 						href={item.href}
 						aria-current={isActive ? "page" : undefined}
-						aria-label={showBadge ? `${item.label}, ${unreadCount} unread` : undefined}
+						aria-label={showBadge ? `${item.label}, ${unreadCount} unread` : item.label}
 						className={cn(
-							"flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 text-micro font-medium transition-colors",
+							"flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 text-[length:var(--text-micro)] font-medium transition-colors",
 							isActive ? "text-primary" : "text-muted-foreground",
 						)}
 					>
@@ -311,15 +293,52 @@ function BottomTabBar({ pathname, unreadCount }: { pathname: string; unreadCount
 								</span>
 							)}
 						</span>
-						<span className="max-w-full truncate">{item.label}</span>
+						<span className="max-w-full truncate">{item.mobileLabel ?? item.label}</span>
 					</Link>
 				);
 			})}
+			<DropdownMenu>
+				<DropdownMenuTrigger
+					aria-label="More navigation"
+					aria-current={overflowActive ? "page" : undefined}
+					render={
+						<Button
+							variant="ghost"
+							className={cn(
+								"h-14 min-h-14 min-w-0 flex-1 flex-col gap-1 rounded-none px-0.5 text-[length:var(--text-micro)] md:h-14 md:text-[length:var(--text-micro)]",
+								overflowActive ? "text-primary" : "text-muted-foreground",
+							)}
+						/>
+					}
+				>
+					<Ellipsis className="size-5" aria-hidden="true" />
+					<span>More</span>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent side="top" align="end" sideOffset={8} className="min-w-48">
+					<DropdownMenuGroup>
+						<DropdownMenuLabel>More destinations</DropdownMenuLabel>
+						{overflowItems.map((item) => {
+							const Icon = item.icon;
+							const active = isNavActive(item.href, pathname);
+							return (
+								<DropdownMenuItem
+									key={item.href}
+									className="min-h-11"
+									render={<Link href={item.href} aria-current={active ? "page" : undefined} />}
+								>
+									<Icon aria-hidden="true" />
+									{item.label}
+								</DropdownMenuItem>
+							);
+						})}
+					</DropdownMenuGroup>
+				</DropdownMenuContent>
+			</DropdownMenu>
 		</nav>
 	);
 }
 
-/** Below lg: FAB + MobilePreviewSheet, only while a page has a preview registered. */
+/** Inline header action below lg; never overlays a page's form controls. */
 function MobilePreview() {
 	const reg = usePreviewRegistration();
 	const [open, setOpen] = useState(false);
@@ -329,9 +348,11 @@ function MobilePreview() {
 			<Button
 				type="button"
 				size="icon"
+				variant="ghost"
 				onClick={() => setOpen(true)}
-				className="fixed right-4 bottom-[calc(56px+env(safe-area-inset-bottom)+1rem)] z-40 h-12 w-12 rounded-full shadow-glow lg:hidden"
+				className="lg:hidden"
 				aria-label="Open live preview"
+				title="Preview"
 			>
 				<Smartphone className="h-5 w-5" />
 			</Button>
@@ -341,7 +362,8 @@ function MobilePreview() {
 						overrides={reg.overrides}
 						mode={reg.mode}
 						onModeChange={reg.onModeChange}
-						showHeader={false}
+						headerLabel={null}
+						className="w-full max-w-[390px] p-3 sm:p-0"
 					/>
 				)}
 			</MobilePreviewSheet>
@@ -364,7 +386,7 @@ function MainGrid({ children }: { children: React.ReactNode }) {
 						// own width (300px at lg, 372px at xl, 40px collapsed) and a fixed
 						// track would either overflow at xl or leave dead space collapsed.
 						"lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-8"
-					: "max-w-[960px]",
+					: "max-w-[1120px]",
 			)}
 		>
 			<div className={cn("min-w-0", hasPreview && "max-w-[760px]")}>{children}</div>
@@ -374,12 +396,18 @@ function MainGrid({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Client-side admin chrome: session gate, shadcn Sidebar (>=lg), 52px top bar
+ * Client-side admin chrome: session gate, shadcn Sidebar (>=lg), 64px top bar
  * with the breadcrumb and page actions, main grid with the shell-owned preview
- * column, FAB + preview sheet and bottom tab bar (<lg). Rendered by the server
+ * column, header Preview action + preview sheet and bottom tab bar (<lg). Rendered by the server
  * `app/admin/layout.tsx`, which owns the metadata.
  */
-export function AdminShell({ children }: { children: React.ReactNode }) {
+export function AdminShell({
+	children,
+	fontClassName = "",
+}: {
+	children: React.ReactNode;
+	fontClassName?: string;
+}) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const { data: session, isPending } = authClient.useSession();
@@ -421,20 +449,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 	// onto <body> for as long as the console is mounted is what makes the
 	// tighter radius scale actually console-wide.
 	useEffect(() => {
-		if (isPublicRoute) return;
-		document.body.classList.add("admin-scope");
-		return () => document.body.classList.remove("admin-scope");
-	}, [isPublicRoute]);
+		const classes = ["admin-scope", ...fontClassName.split(" ").filter(Boolean)];
+		document.body.classList.add(...classes);
+		return () => document.body.classList.remove(...classes);
+	}, [fontClassName]);
 
-	// The 52px sticky top bar, and below lg the fixed 56px tab bar with the
+	// The 64px sticky top bar, and below lg the fixed 56px tab bar with the
 	// StickySaveBar stacked on it, would otherwise cover a field that focus or
 	// an anchor scrolls to (WCAG 2.4.11). The document is the scroller, so the
 	// padding goes on <html>, only while the console is mounted.
 	useEffect(() => {
 		if (isPublicRoute) return;
 		const root = document.documentElement.style;
-		root.scrollPaddingTop = "calc(52px + 0.75rem)";
-		root.scrollPaddingBottom = "calc(56px + env(safe-area-inset-bottom) + 4.5rem)";
+		root.scrollPaddingTop = "calc(64px + 0.75rem)";
+		root.scrollPaddingBottom = "calc(56px + env(safe-area-inset-bottom) + 8rem)";
 		return () => {
 			root.scrollPaddingTop = "";
 			root.scrollPaddingBottom = "";
@@ -453,13 +481,13 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 	}
 
 	if (isPublicRoute) {
-		return <>{children}</>;
+		return <div className={cn("admin-scope min-h-dvh", fontClassName)}>{children}</div>;
 	}
 
 	if (isPending) {
 		return (
 			<div
-				className="flex min-h-screen items-center justify-center"
+				className={cn("admin-scope flex min-h-screen items-center justify-center", fontClassName)}
 				role="status"
 				aria-label="Loading"
 			>
@@ -484,7 +512,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 			<PreviewSlotState value={registration}>
 				<KickerSetter value={setSubLabel}>
 					{/* `admin-scope` retunes the radius scale for the whole console. */}
-					<SidebarProvider className="admin-scope min-h-dvh bg-background">
+					<SidebarProvider className={cn("admin-scope min-h-dvh bg-background", fontClassName)}>
 						<a
 							href="#main-content"
 							className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg"
@@ -502,19 +530,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 								siteName={siteName}
 								user={sessionUser}
 								onSignOut={handleSignOut}
-								adminBrandingEnabled={adminBrandingEnabled}
 							/>
 						</div>
 
 						<SidebarInset className="min-w-0">
-							<header className="sticky top-0 z-30 flex h-13 shrink-0 items-center gap-2 border-b border-border bg-card px-4">
+							<header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b border-border bg-card px-4">
 								<SidebarTrigger className="-ml-1 hidden lg:inline-flex" />
 								<Separator
 									orientation="vertical"
 									className="hidden h-4 data-vertical:self-center lg:block"
 								/>
 								<Breadcrumb className="min-w-0 flex-1">
-									<BreadcrumbList className="flex-nowrap text-micro">
+									<BreadcrumbList className="flex-nowrap text-sm">
 										{destination &&
 											(sub ? (
 												<>
@@ -542,29 +569,28 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 								</Breadcrumb>
 								<div className="flex shrink-0 items-center gap-1 lg:gap-2">
 									<StatePill />
+									<MobilePreview />
 									<SharePopover />
 									<Button
 										size="sm"
 										variant="outline"
 										className="hidden lg:inline-flex"
 										nativeButton={false}
-										render={<a href="/" target="_blank" rel="noopener noreferrer" />}
+										render={
+											<a
+												href={env.NEXT_PUBLIC_SITE_URL}
+												target="_blank"
+												rel="noopener noreferrer"
+											/>
+										}
 									>
 										<Globe className="h-3.5 w-3.5" />
 										View live
 									</Button>
-									<span className="hidden lg:inline-flex">
-										<ThemeToggle />
-									</span>
 									{/* Below lg the sidebar footer is not rendered, so the account
 									    menu (and with it, sign-out) lives here instead. */}
 									<span className="lg:hidden">
-										<AccountMenu
-											user={sessionUser}
-											onSignOut={handleSignOut}
-											adminBrandingEnabled={adminBrandingEnabled}
-											side="bottom"
-										>
+										<AccountMenu user={sessionUser} onSignOut={handleSignOut} side="bottom">
 											<DropdownMenuTrigger
 												aria-label="Account menu"
 												render={<Button variant="ghost" size="icon" />}
@@ -576,18 +602,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 								</div>
 							</header>
 
-							{/* SidebarInset is itself the <main> landmark, so this is a div —
-							    two nested <main> elements would be one landmark too many. */}
-							<div
+							<main
 								id="main-content"
 								tabIndex={-1}
-								className="px-6 py-6 pb-[calc(56px+env(safe-area-inset-bottom)+1.5rem)] outline-none lg:px-8 lg:pb-6"
+								className="mx-auto w-full max-w-[1680px] flex-1 px-4 py-6 outline-none sm:px-6 lg:px-8 lg:py-8"
 							>
 								<MainGrid>{children}</MainGrid>
-							</div>
+							</main>
+							<AdminFooter brandingEnabled={adminBrandingEnabled} />
 						</SidebarInset>
 
-						<MobilePreview />
 						<BottomTabBar pathname={pathname} unreadCount={unreadCount} />
 					</SidebarProvider>
 				</KickerSetter>

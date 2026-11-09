@@ -47,6 +47,19 @@ describe("getMapUrl", () => {
 			const url = getMapUrl("custom", "Some Address");
 			expect(url).toBeNull();
 		});
+
+		it("preserves an external HTTP map URL", () => {
+			expect(getMapUrl("custom", "", undefined, "http://maps.example.com/place")).toBe(
+				"http://maps.example.com/place",
+			);
+		});
+
+		it.each(["javascript:alert(1)", "data:text/html,example", "/admin/settings", "not a URL"])(
+			"rejects unsafe or malformed custom URL %s",
+			(url) => {
+				expect(getMapUrl("custom", "Chicago", undefined, url)).toBeNull();
+			},
+		);
 	});
 
 	describe("None", () => {

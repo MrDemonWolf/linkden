@@ -3,6 +3,7 @@
 	"ui": "tui",
 	"tasks": {
 		"build": {
+			"env": ["LINKDEN_SERVING_MODE"],
 			"dependsOn": ["^build"],
 			"inputs": ["$TURBO_DEFAULT$", ".env*"],
 			"outputs": ["dist/**", ".next/**", "!.next/cache/**"]
@@ -19,7 +20,8 @@
 		},
 		"dev:bare": {
 			"cache": false,
-			"persistent": true
+			"persistent": true,
+			"passThroughEnv": ["INTERNAL_SERVER_URL", "DEV_API_ORIGIN", "LINKDEN_SERVING_MODE"]
 		},
 		"dev:standalone": {
 			"cache": false,
@@ -39,6 +41,8 @@
 				"LINKDEN_DB_NAME",
 				"LINKDEN_IMAGES_BUCKET",
 				"SITE_DOMAIN",
+				"LINKDEN_SERVING_MODE",
+				"ADMIN_SITE_URL",
 				"BETTER_AUTH_SECRET",
 				"BETTER_AUTH_URL",
 				"NEXT_PUBLIC_SERVER_URL",
@@ -50,7 +54,14 @@
 				"WALLET_TEAM_ID",
 				"WALLET_PASS_TYPE_ID",
 				"WALLET_SIGNER_KEY_PASSPHRASE",
-				"SETUP_TOKEN"
+				"SETUP_TOKEN",
+				"PUBLIC_SITE_URL",
+				"PUBLIC_CONTACT_URL",
+				"PUBLICATION_ENABLED",
+				"PUBLICATION_TARGET",
+				"PUBLICATION_RENDERER_SOURCE_ID",
+				"PUBLICATION_GITHUB_TOKEN",
+				"PUBLICATION_SCHEDULER_ENABLED"
 			]
 		},
 		"destroy": {

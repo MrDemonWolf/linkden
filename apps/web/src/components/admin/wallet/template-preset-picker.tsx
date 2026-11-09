@@ -24,44 +24,47 @@ interface Props {
 
 export function TemplatePresetPicker({ value, onChange, disabled }: Props) {
 	return (
-		<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-			{PRESETS.map((p) => {
-				const Icon = p.icon;
-				const active = p.id === value;
-				return (
-					<button
-						key={p.id}
-						type="button"
-						disabled={disabled}
-						onClick={() => onChange(p.id)}
-						className={cn(
-							"group relative flex flex-col items-start gap-1.5 rounded-lg border p-2.5 text-left transition-all",
-							"hover:border-foreground/20 hover:bg-foreground/[0.02]",
-							active
-								? "border-primary/60 bg-primary/[0.06] shadow-[inset_0_0_0_1px] shadow-primary/30"
-								: "border-border/60",
-							disabled && "cursor-not-allowed opacity-50",
-						)}
-					>
-						<div className="flex w-full items-center justify-between">
-							<Icon
-								className={cn("h-3.5 w-3.5", active ? "text-primary" : "text-muted-foreground")}
-							/>
-							<span className="font-mono text-micro uppercase tracking-wider text-muted-foreground">
-								{p.tag}
-							</span>
-						</div>
-						<span
+		<div className="@container/wallet-templates">
+			<div className="grid gap-2 @min-[260px]/wallet-templates:grid-cols-2 @min-[560px]/wallet-templates:grid-cols-4">
+				{PRESETS.map((p) => {
+					const Icon = p.icon;
+					const active = p.id === value;
+					return (
+						<button
+							key={p.id}
+							type="button"
+							disabled={disabled}
+							aria-pressed={active}
+							onClick={() => onChange(p.id)}
 							className={cn(
-								"text-xs font-semibold tracking-tight",
-								active ? "text-foreground" : "text-foreground/85",
+								"group relative flex flex-col items-start gap-1.5 rounded-lg border p-2.5 text-left transition-all",
+								"hover:border-foreground/20 hover:bg-foreground/[0.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+								active
+									? "border-primary/60 bg-primary/[0.06] shadow-[inset_0_0_0_1px] shadow-primary/30"
+									: "border-border/60",
+								disabled && "cursor-not-allowed opacity-50",
 							)}
 						>
-							{p.name}
-						</span>
-					</button>
-				);
-			})}
+							<div className="flex w-full items-center justify-between">
+								<Icon
+									className={cn("h-3.5 w-3.5", active ? "text-primary" : "text-muted-foreground")}
+								/>
+								<span className="font-mono text-micro uppercase tracking-wider text-muted-foreground">
+									{p.tag}
+								</span>
+							</div>
+							<span
+								className={cn(
+									"text-xs font-semibold tracking-tight",
+									active ? "text-foreground" : "text-foreground/85",
+								)}
+							>
+								{p.name}
+							</span>
+						</button>
+					);
+				})}
+			</div>
 		</div>
 	);
 }

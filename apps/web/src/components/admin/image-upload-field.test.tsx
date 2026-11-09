@@ -84,6 +84,21 @@ describe("ImageUploadField", () => {
 		vi.unstubAllGlobals();
 	});
 
+	it("shows the selected image fit without changing other upload previews", () => {
+		const props = {
+			label: "Image",
+			value: SAVED,
+			purpose: "block_image" as const,
+			onUploadComplete: () => {},
+		};
+		const { rerender } = render(<ImageUploadField {...props} previewFit="contain" />);
+		expect(getComputedStyle(screen.getByRole("img")).objectFit).toBe("contain");
+		rerender(<ImageUploadField {...props} previewFit="cover" />);
+		expect(getComputedStyle(screen.getByRole("img")).objectFit).toBe("cover");
+		rerender(<ImageUploadField {...props} purpose="avatar" />);
+		expect(getComputedStyle(screen.getByRole("img")).objectFit).toBe("cover");
+	});
+
 	it("deletes only this session's unsaved uploads, never the saved image", async () => {
 		render(<Harness />);
 

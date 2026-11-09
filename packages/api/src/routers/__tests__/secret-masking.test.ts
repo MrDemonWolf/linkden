@@ -44,6 +44,9 @@ describe("secret settings never leave the server and survive a masked re-save", 
 		expect(all.email_api_key).toBe(SECRET_MASK);
 		const one = await admin.settings.get({ key: "email_api_key" });
 		const wallet = await admin.wallet.getConfig();
+		expect(wallet.wallet_signer_key).toBe(SECRET_MASK);
+		expect(wallet).not.toHaveProperty("email_from");
+		expect(wallet).not.toHaveProperty("email_api_key");
 		for (const payload of [all, one, wallet]) {
 			const text = JSON.stringify(payload);
 			expect(text).not.toContain(API_KEY);

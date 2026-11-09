@@ -4,13 +4,8 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const submitFn = vi.fn();
+const fetchFn = vi.fn();
 
-vi.mock("@/utils/trpc", () => ({
-	trpc: {
-		public: { submitContact: { mutationOptions: () => ({ mutationFn: submitFn }) } },
-	},
-}));
-vi.mock("@/lib/track", () => ({ trackClick: vi.fn() }));
 // The real widget injects the provider's script; this stand-in "solves" on click.
 vi.mock("../captcha-widget", async (importOriginal) => {
 	const actual = await importOriginal<typeof import("../captcha-widget")>();
@@ -25,10 +20,17 @@ vi.mock("../captcha-widget", async (importOriginal) => {
 });
 
 import { ConnectBlock, ConnectForm } from "../connect-block";
+import { PublicRuntimeProvider } from "../public-runtime";
 
 function wrap(ui: ReactNode) {
 	const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
-	return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+	return render(
+		<QueryClientProvider client={client}>
+			<PublicRuntimeProvider value={{ submitContact: submitFn, vcardHref: () => "/contact.vcf" }}>
+				{ui}
+			</PublicRuntimeProvider>
+		</QueryClientProvider>,
+	);
 }
 
 function fillRequired() {
@@ -45,10 +47,16 @@ describe("ConnectForm", () => {
 	beforeEach(() => {
 		submitFn.mockReset();
 		submitFn.mockResolvedValue({ success: true });
+		fetchFn.mockReset();
+		fetchFn.mockResolvedValue(new Response(null, { status: 204 }));
+		vi.stubGlobal("fetch", fetchFn);
 	});
-	afterEach(cleanup);
+	afterEach(() => {
+		cleanup();
+		vi.unstubAllGlobals();
+	});
 
-	it("sends the hidden honeypot only when something filled it in", async () => {
+	it("submits without a tracking beacon and sends the honeypot only when filled", async () => {
 		const { container } = wrap(
 			<ConnectForm blockId="b1" blockTitle={null} config={{}} colorMode="light" />,
 		);
@@ -60,6 +68,8 @@ describe("ConnectForm", () => {
 		fireEvent.click(screen.getByRole("button", { name: "Connect" }));
 		await waitFor(() => expect(submitFn).toHaveBeenCalledOnce());
 		expect(submitFn.mock.calls[0]?.[0].website).toBeUndefined();
+		await waitFor(() => expect(screen.getByRole("status")).toBeTruthy());
+		expect(fetchFn).not.toHaveBeenCalled();
 	});
 
 	it("passes a filled honeypot through so the server can drop the bot", async () => {

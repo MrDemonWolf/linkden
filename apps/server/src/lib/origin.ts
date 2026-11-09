@@ -6,6 +6,24 @@
 
 const DEFAULT_ORIGIN = "http://localhost:3001";
 
+/** Public contact has no inferred/default origin and never inherits admin cookies. */
+export function publicContactOrigin(value: string | undefined): string | null {
+	if (!value) return null;
+	try {
+		const url = new URL(value);
+		return /^https?:$/.test(url.protocol) &&
+			!url.username &&
+			!url.password &&
+			url.pathname === "/" &&
+			!url.search &&
+			!url.hash
+			? url.origin
+			: null;
+	} catch {
+		return null;
+	}
+}
+
 /** The configured site origin (CORS_ORIGIN), normalized to scheme://host[:port]. */
 export function allowedOrigin(corsOrigin: string | undefined): string {
 	const raw = corsOrigin || DEFAULT_ORIGIN;

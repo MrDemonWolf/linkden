@@ -1,13 +1,33 @@
 "use client";
 
+import { env } from "@linkden/env/web";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
-import { queryClient } from "@/utils/trpc";
+import { queryClient, trpcClient } from "@/utils/trpc";
+import { type PublicRuntime, PublicRuntimeProvider } from "./public/public-runtime";
 
 import { ThemeProvider } from "./theme-provider";
 import { Toaster } from "./ui/sonner";
+
+const DynamicBlockIcon = lazy(() => import("./public/block-icon-dynamic"));
+
+const publicRuntime: PublicRuntime = {
+	renderUnresolvedIcon: (icon, className) => (
+		<Suspense
+			fallback={
+				<span className={cn("inline-flex h-5 w-5 shrink-0", className)} aria-hidden="true" />
+			}
+		>
+			<DynamicBlockIcon icon={icon} className={className} />
+		</Suspense>
+	),
+	submitContact: (input) => trpcClient.public.submitContact.mutate(input),
+	vcardHref: (blockId) =>
+		`${env.NEXT_PUBLIC_SERVER_URL}/api/vcard${blockId ? `?block=${encodeURIComponent(blockId)}` : ""}`,
+};
 
 export default function Providers({ children }: { children: React.ReactNode }) {
 	// Devtools crash with "RangeError: Incorrect locale information provided"
@@ -28,7 +48,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 	return (
 		<ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
 			<QueryClientProvider client={queryClient}>
-				{children}
+				<PublicRuntimeProvider value={publicRuntime}>{children}</PublicRuntimeProvider>
 				{devtoolsSupported && <ReactQueryDevtools />}
 			</QueryClientProvider>
 			<Toaster richColors />

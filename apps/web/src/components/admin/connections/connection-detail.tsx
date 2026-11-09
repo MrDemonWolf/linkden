@@ -101,7 +101,7 @@ export function ConnectionDetail({
 						{initials(connection.name)}
 					</div>
 					<div className="min-w-0 flex-1">
-						<p className="text-sm font-semibold truncate">{connection.name || "Anonymous"}</p>
+						<h2 className="truncate text-base font-semibold">{connection.name || "Anonymous"}</h2>
 						<p className="text-micro text-muted-foreground truncate">{connection.email}</p>
 					</div>
 					{connection.isRead ? (
@@ -129,10 +129,8 @@ export function ConnectionDetail({
 					{/* Where Met - prominent placement for connections */}
 					{connection.whereMet && (
 						<div className="space-y-1">
-							<h3 className="text-micro font-medium uppercase tracking-wider text-muted-foreground">
-								Where You Met
-							</h3>
-							<div className="flex items-center gap-2 text-xs">
+							<h3 className="text-sm font-semibold text-foreground">Where You Met</h3>
+							<div className="flex items-center gap-2 text-sm">
 								<MapPin className="h-3.5 w-3.5 text-primary" />
 								<span className="font-medium">{connection.whereMet}</span>
 							</div>
@@ -141,18 +139,16 @@ export function ConnectionDetail({
 
 					{/* Contact info */}
 					<div className="space-y-2">
-						<h3 className="text-micro font-medium uppercase tracking-wider text-muted-foreground">
-							Contact Info
-						</h3>
+						<h3 className="text-sm font-semibold text-foreground">Contact Info</h3>
 						<div className="space-y-1.5">
-							<div className="flex items-center gap-2 text-xs">
+							<div className="flex items-center gap-2 text-sm">
 								<Mail className="h-3.5 w-3.5 text-muted-foreground" />
 								<a href={mailtoHref(connection.email)} className="text-primary hover:underline">
 									{connection.email}
 								</a>
 							</div>
 							{connection.phone && (
-								<div className="flex items-center gap-2 text-xs">
+								<div className="flex items-center gap-2 text-sm">
 									<Phone className="h-3.5 w-3.5 text-muted-foreground" />
 									<a href={`tel:${connection.phone}`} className="text-primary hover:underline">
 										{connection.phone}
@@ -160,7 +156,7 @@ export function ConnectionDetail({
 								</div>
 							)}
 							{connection.company && (
-								<div className="flex items-center gap-2 text-xs">
+								<div className="flex items-center gap-2 text-sm">
 									<Building2 className="h-3.5 w-3.5 text-muted-foreground" />
 									<span>{connection.company}</span>
 								</div>
@@ -171,19 +167,15 @@ export function ConnectionDetail({
 					{/* Subject */}
 					{connection.subject && (
 						<div className="space-y-1">
-							<h3 className="text-micro font-medium uppercase tracking-wider text-muted-foreground">
-								Subject
-							</h3>
-							<p className="text-xs font-medium">{connection.subject}</p>
+							<h3 className="text-sm font-semibold text-foreground">Subject</h3>
+							<p className="text-sm font-medium">{connection.subject}</p>
 						</div>
 					)}
 
 					{/* Message */}
 					<div className="space-y-1">
-						<h3 className="text-micro font-medium uppercase tracking-wider text-muted-foreground">
-							Message
-						</h3>
-						<p className="whitespace-pre-wrap text-xs leading-relaxed">
+						<h3 className="text-sm font-semibold text-foreground">Message</h3>
+						<p className="whitespace-pre-wrap text-sm leading-relaxed">
 							{connection.message || "No message provided"}
 						</p>
 					</div>
@@ -191,24 +183,22 @@ export function ConnectionDetail({
 					{/* Extra fields */}
 					{hasExtraFields && (
 						<div className="space-y-2">
-							<h3 className="text-micro font-medium uppercase tracking-wider text-muted-foreground">
-								Additional Info
-							</h3>
+							<h3 className="text-sm font-semibold text-foreground">Additional Info</h3>
 							<div className="space-y-2">
 								{connection.rating !== null && (
-									<div className="flex items-center gap-2 text-xs">
+									<div className="flex items-center gap-2 text-sm">
 										<span className="text-muted-foreground">Rating:</span>
 										<StarRating rating={connection.rating} />
 									</div>
 								)}
 								{connection.attending && (
-									<div className="flex items-center gap-2 text-xs">
+									<div className="flex items-center gap-2 text-sm">
 										<CalendarCheck className="h-3.5 w-3.5 text-muted-foreground" />
 										<AttendingBadge attending={connection.attending} />
 									</div>
 								)}
 								{connection.guests !== null && (
-									<div className="flex items-center gap-2 text-xs">
+									<div className="flex items-center gap-2 text-sm">
 										<Users className="h-3.5 w-3.5 text-muted-foreground" />
 										<span>
 											{connection.guests} guest{connection.guests !== 1 ? "s" : ""}
@@ -224,25 +214,25 @@ export function ConnectionDetail({
 			{/* Actions */}
 			<div className="flex flex-wrap gap-2 border-t px-4 py-3">
 				{connection.isRead ? (
-					<Button variant="outline" size="xs" onClick={onMarkUnread} disabled={isMarkingUnread}>
-						<Mail className="mr-1 h-3 w-3" />
+					<Button variant="outline" size="sm" onClick={onMarkUnread} disabled={isMarkingUnread}>
+						<Mail aria-hidden="true" />
 						Mark Unread
 					</Button>
 				) : (
-					<Button variant="outline" size="xs" onClick={onMarkRead} disabled={isMarkingRead}>
-						<MailOpen className="mr-1 h-3 w-3" />
+					<Button variant="outline" size="sm" onClick={onMarkRead} disabled={isMarkingRead}>
+						<MailOpen aria-hidden="true" />
 						Mark Read
 					</Button>
 				)}
 				<a
 					href={mailtoHref(connection.email)}
-					className={cn(buttonVariants({ variant: "outline", size: "xs" }))}
+					className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
 				>
-					<Reply className="mr-1 h-3 w-3" />
+					<Reply aria-hidden="true" />
 					Reply
 				</a>
-				<Button variant="destructive" size="xs" onClick={onDelete}>
-					<Trash2 className="mr-1 h-3 w-3" />
+				<Button variant="destructive" size="sm" onClick={onDelete}>
+					<Trash2 aria-hidden="true" />
 					Delete
 				</Button>
 			</div>

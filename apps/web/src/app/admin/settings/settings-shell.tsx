@@ -39,7 +39,7 @@ export function SettingsShell({ children }: { children: React.ReactNode }) {
 				    (the unsaved-changes guard hooks capture-phase clicks on <a>). */}
 				<nav
 					aria-label="Settings sections"
-					className="sticky top-[calc(52px+1.5rem)] hidden flex-col gap-1 self-start xl:flex"
+					className="sticky top-[calc(64px+1.5rem)] hidden flex-col gap-1 self-start xl:flex"
 				>
 					{TABS.map((tab) => {
 						const active = tab === current;

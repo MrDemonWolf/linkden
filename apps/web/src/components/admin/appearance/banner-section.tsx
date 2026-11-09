@@ -33,18 +33,16 @@ export function BannerSection({
 	return (
 		<Card>
 			<CardHeader>
-				<h2>
-					<CardTitle className="flex items-center gap-1.5">
-						<ImageIcon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-						Banner
-					</CardTitle>
-				</h2>
+				<CardTitle className="flex items-center gap-1.5">
+					<ImageIcon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+					Banner
+				</CardTitle>
 			</CardHeader>
 			<CardContent className="space-y-3">
 				{/* Enable toggle */}
 				<div className="flex items-start gap-3 rounded-lg border border-border p-3">
 					<div className="min-w-0 flex-1">
-						<Label htmlFor="a-banner-enabled" className="text-xs font-medium">
+						<Label htmlFor="a-banner-enabled" className="text-sm font-medium">
 							Show banner on public page
 						</Label>
 						<p className="mt-0.5 text-micro leading-tight text-muted-foreground">
@@ -61,7 +59,7 @@ export function BannerSection({
 
 				{/* Banner options (when enabled) */}
 				{bannerEnabled && (
-					<div className="space-y-3 animate-in fade-in-0 slide-in-from-top-1 duration-200">
+					<div className="space-y-4">
 						{/* Mode toggle */}
 						<div className="flex gap-2">
 							<button
@@ -69,7 +67,7 @@ export function BannerSection({
 								aria-pressed={bannerMode === "preset"}
 								onClick={() => onBannerModeChange("preset")}
 								className={cn(
-									"flex min-h-11 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all md:min-h-8",
+									"flex min-h-11 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors md:min-h-8",
 									"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 									bannerMode === "preset"
 										? "border-primary/60 bg-primary/10 text-primary shadow-sm"
@@ -84,7 +82,7 @@ export function BannerSection({
 								aria-pressed={bannerMode === "custom"}
 								onClick={() => onBannerModeChange("custom")}
 								className={cn(
-									"flex min-h-11 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all md:min-h-8",
+									"flex min-h-11 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors md:min-h-8",
 									"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 									bannerMode === "custom"
 										? "border-primary/60 bg-primary/10 text-primary shadow-sm"

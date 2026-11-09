@@ -183,7 +183,7 @@ export default function DesignSeoPage() {
 				description="Tells browsers, screen readers and search engines which language your page is in"
 			>
 				<div className="space-y-1.5">
-					<Label htmlFor="seo-site-language" className="text-xs">
+					<Label htmlFor="seo-site-language" className="text-sm">
 						Language
 					</Label>
 					<Select

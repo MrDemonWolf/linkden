@@ -27,12 +27,12 @@ export default function ResetPasswordPage() {
 
 	const setupStatus = useQuery(trpc.public.getSetupStatus.queryOptions());
 	const branding = setupStatus.data?.branding;
-	const loginLogoUrl = branding?.loginLogoUrl || branding?.logoUrl || null;
+	const logoUrl = branding?.logoUrl || null;
 
 	const Logo = () =>
-		loginLogoUrl ? (
+		logoUrl ? (
 			<img
-				src={loginLogoUrl}
+				src={logoUrl}
 				alt=""
 				className="mx-auto h-11 w-11 rounded-xl object-cover ring-1 ring-border"
 			/>
@@ -89,11 +89,11 @@ export default function ResetPasswordPage() {
 	};
 
 	return (
-		<div className="login-bg relative min-h-screen flex flex-col">
+		<div className="min-h-screen bg-background text-foreground flex flex-col">
 			<main className="flex-1 flex items-center justify-center p-4 sm:p-6">
-				<div className="w-full max-w-[400px] login-card-enter">
+				<div className="w-full max-w-[400px]">
 					{success ? (
-						<div className="login-glass-card rounded-2xl p-6 sm:p-8 text-center space-y-3">
+						<div className="rounded-xl border border-border bg-card shadow-sm p-6 sm:p-8 text-center space-y-3">
 							<div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-success/10">
 								<CheckCircle2 className="h-5 w-5 text-success" />
 							</div>
@@ -111,7 +111,7 @@ export default function ResetPasswordPage() {
 						</div>
 					) : !token ? (
 						/* Missing / expired token — dedicated state, no form shown */
-						<div className="login-glass-card rounded-2xl p-6 sm:p-8 text-center space-y-4">
+						<div className="rounded-xl border border-border bg-card shadow-sm p-6 sm:p-8 text-center space-y-4">
 							<div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 ring-1 ring-destructive/20">
 								<AlertTriangle className="h-5 w-5 text-destructive" />
 							</div>
@@ -124,11 +124,7 @@ export default function ResetPasswordPage() {
 									and we&apos;ll email you a new one.
 								</p>
 							</div>
-							<Button
-								type="button"
-								className="w-full shadow-lg shadow-primary/20 active:scale-[0.98]"
-								onClick={() => router.push("/admin/login")}
-							>
+							<Button type="button" className="w-full" onClick={() => router.push("/admin/login")}>
 								Request a new link
 							</Button>
 							<button
@@ -140,11 +136,11 @@ export default function ResetPasswordPage() {
 							</button>
 						</div>
 					) : (
-						<div className="login-glass-card rounded-2xl p-6 sm:p-8">
+						<div className="rounded-xl border border-border bg-card shadow-sm p-6 sm:p-8">
 							{/* Title inside card */}
 							<div className="text-center mb-8">
 								<Logo />
-								<h1 className="mt-4 text-2xl font-bold text-foreground tracking-tight">
+								<h1 className="mt-4 text-xl font-semibold text-foreground tracking-tight">
 									Reset Password
 								</h1>
 								<p className="mt-1 text-sm text-muted-foreground">
@@ -240,12 +236,7 @@ export default function ResetPasswordPage() {
 									</div>
 								</div>
 
-								<Button
-									type="submit"
-									variant="default"
-									className="w-full shadow-lg shadow-primary/20 active:scale-[0.98]"
-									disabled={isSubmitting}
-								>
+								<Button type="submit" variant="default" className="w-full" disabled={isSubmitting}>
 									{isSubmitting ? (
 										<>
 											<Loader2 className="h-4 w-4 animate-spin" />

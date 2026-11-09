@@ -1,10 +1,13 @@
+import { env } from "@linkden/env/server";
 import { router } from "../index";
+import { dispatchPublication, publicationConfiguration } from "../utils/publication-dispatch";
 import { analyticsRouter } from "./analytics";
 import { backupRouter } from "./backup";
 import { blocksRouter } from "./blocks";
 import { formsRouter } from "./contacts";
 import { dangerRouter } from "./danger";
 import { publicRouter } from "./public";
+import { createPublicationRouter } from "./publication";
 import { settingsRouter } from "./settings";
 import { socialRouter } from "./social";
 import { vcardRouter } from "./vcard";
@@ -23,6 +26,10 @@ export const appRouter = router({
 	backup: backupRouter,
 	version: versionRouter,
 	public: publicRouter,
+	publication: createPublicationRouter({
+		configuration: () => publicationConfiguration(env),
+		dispatch: (job) => dispatchPublication(env, job),
+	}),
 	danger: dangerRouter,
 });
 

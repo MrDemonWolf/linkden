@@ -1,13 +1,12 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
-import dynamic from "next/dynamic";
+import type { PageLayout } from "@linkden/validators/settings-registry";
 import { useEffect, useRef, useState } from "react";
 import { getThemeColors } from "@/lib/theme-colors";
-import { trpc } from "@/utils/trpc";
+import { AdminBadge } from "./admin-badge";
 import type { ResolvedBlockIcon } from "./block-icon";
 import { COLOR_MODE_COOKIE } from "./color-mode-script";
-import { ConsentBanner, hasAnalyticsConsent, onConsentChange } from "./consent-banner";
+import { ConsentBanner } from "./consent-banner";
 import { PreviewProvider } from "./preview-context";
 import { PageContent } from "./public-page-content";
 import { ShareButton } from "./share-button";
@@ -15,13 +14,6 @@ import { ThemeToggle } from "./theme-toggle";
 
 // Re-exported so the block components keep importing the palette type from here.
 export { getThemeColors, type ThemeColors } from "@/lib/theme-colors";
-
-// Only a signed-in admin ever sees the pill, so its better-auth client and the
-// get-session request stay out of every anonymous visit: the server passes
-// `maybeAdmin` (session cookie present) and the badge loads on demand.
-const AdminBadge = dynamic(() => import("./admin-badge").then((m) => m.AdminBadge), {
-	ssr: false,
-});
 
 /** A BCP-47-shaped tag (e.g. "en", "de", "pt-BR"); anything else is ignored. */
 const LANG_TAG = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8}){0,3}$/;
@@ -59,6 +51,7 @@ interface PageData {
 		customColors?: Record<string, string>;
 	} | null;
 	settings: {
+		pageLayout?: PageLayout;
 		seoTitle: string | null;
 		seoDescription: string | null;
 		seoOgImage: string | null;
@@ -113,8 +106,8 @@ interface PublicPageProps {
 	 */
 	previewMode?: ColorMode;
 	/**
-	 * A Better Auth session cookie came with the request (app/page.tsx). Only
-	 * gates loading the Admin pill — the badge still verifies the session.
+	 * A session cookie came with the editor-host request. Shows only a shortcut;
+	 * the destination enforces authentication without a public session probe.
 	 */
 	maybeAdmin?: boolean;
 }
@@ -166,27 +159,6 @@ export function PublicPage({ data, initialColorMode, previewMode, maybeAdmin }: 
 		document.cookie = `${COLOR_MODE_COOKIE}=${next}; path=/; max-age=31536000; SameSite=Lax`;
 	};
 
-	const { mutate: trackView } = useMutation(trpc.public.trackView.mutationOptions());
-	// At most one view per page load: on mount when consent is already stored,
-	// otherwise the moment the visitor grants analytics in the banner (a
-	// first visit has no stored consent yet, and its clicks are counted after
-	// accepting — the view must be too, or CTR runs past 100%).
-	const viewTracked = useRef(false);
-	useEffect(() => {
-		if (previewMode) return;
-		const track = () => {
-			if (viewTracked.current) return;
-			viewTracked.current = true;
-			// Country is derived server-side; the referrer is the page's own
-			// document.referrer (the request's Referer would be this page).
-			trackView({ referrer: document.referrer || undefined });
-		};
-		if (hasAnalyticsConsent(data.settings.consentBannerEnabled)) track();
-		return onConsentChange((consent) => {
-			if (consent.analytics) track();
-		});
-	}, [previewMode, data.settings.consentBannerEnabled, trackView]);
-
 	const themeColors = getThemeColors(data.settings.themePreset, colorMode, {
 		primary: data.settings.customPrimary,
 		secondary: data.settings.customSecondary,
@@ -202,6 +174,7 @@ export function PublicPage({ data, initialColorMode, previewMode, maybeAdmin }: 
 			settings={{
 				brandingEnabled: data.settings.brandingEnabled,
 				brandingText: data.settings.brandingText,
+				pageLayout: data.settings.pageLayout,
 				vcardEnabled: data.settings.vcardEnabled,
 				contactFormEnabled: data.settings.contactFormEnabled,
 				vcardDownloadAvailable: data.settings.vcardDownloadAvailable,

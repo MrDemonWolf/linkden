@@ -87,7 +87,7 @@ function TextField({
 	const { visibleError, markTouched } = useVisibleError(error);
 	return (
 		<Field>
-			<FieldLabel htmlFor={id} className="text-small">
+			<FieldLabel htmlFor={id} className="text-sm">
 				{label}
 			</FieldLabel>
 			<Input
@@ -129,7 +129,7 @@ function SelectField({
 }) {
 	return (
 		<Field>
-			<FieldLabel htmlFor={id} className="text-small">
+			<FieldLabel htmlFor={id} className="text-sm">
 				{label}
 			</FieldLabel>
 			<Select
@@ -159,7 +159,7 @@ function ToggleSwitch({
 	return (
 		<Field orientation="horizontal">
 			<FieldContent>
-				<FieldLabel htmlFor={id} className="text-small">
+				<FieldLabel htmlFor={id} className="text-sm">
 					{label}
 				</FieldLabel>
 				{description && <FieldDescription>{description}</FieldDescription>}
@@ -185,7 +185,7 @@ function SegmentedControl({
 		<div
 			role="group"
 			aria-labelledby={ariaLabelledby}
-			className="flex rounded-lg border border-input overflow-hidden"
+			className="flex rounded-lg border border-input-border overflow-hidden"
 		>
 			{options.map((opt) => (
 				<button
@@ -194,7 +194,7 @@ function SegmentedControl({
 					aria-pressed={value === opt.value}
 					onClick={() => onChange(opt.value)}
 					className={cn(
-						"flex min-h-11 flex-1 items-center justify-center px-2 text-xs font-medium transition-colors md:min-h-8",
+						"flex min-h-11 flex-1 items-center justify-center px-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring md:min-h-9",
 						value === opt.value
 							? "bg-primary/15 text-primary"
 							: "text-muted-foreground hover:text-foreground",
@@ -210,9 +210,7 @@ function SegmentedControl({
 function SectionLabel({ children }: { children: React.ReactNode }) {
 	return (
 		<div className="pt-2">
-			<p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-				{children}
-			</p>
+			<p className="text-sm font-medium text-muted-foreground">{children}</p>
 		</div>
 	);
 }
@@ -446,20 +444,22 @@ export function BlockEditPanel({
 				<h3 className="text-sm font-medium">
 					Edit {TYPE_LABELS[block.type] ?? block.type.replace("_", " ")}
 				</h3>
-				<button
+				<Button
+					variant="ghost"
+					size="icon-sm"
 					type="button"
 					onClick={onClose}
-					className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors lg:h-8 lg:w-8"
+					className="text-muted-foreground"
 					aria-label="Close edit panel"
 				>
 					<X className="h-4 w-4" />
-				</button>
+				</Button>
 			</div>
 
 			{/* Scrollable content */}
 			<div className="flex-1 overflow-y-auto">
 				{/* CONTENT (always visible) */}
-				<div className="space-y-3 px-4 py-4">
+				<div className="space-y-4 px-4 py-5">
 					<TextField
 						id="edit-title"
 						label="Title"
@@ -539,32 +539,18 @@ export function BlockEditPanel({
 					)}
 
 					{block.type === "header" && (
-						<>
-							<SelectField
-								id="edit-heading-level"
-								label="Heading level"
-								value={str("headingLevel", "h2")}
-								onValueChange={(v) => updateConfigField("headingLevel", v)}
-								items={[
-									{ value: "h2", label: "H2 — section" },
-									{ value: "h3", label: "H3 — sub-section" },
-									{ value: "h4", label: "H4 — minor" },
-								]}
-								hint="Your name is the page's H1. Pick the level by structure, not size."
-							/>
-							<SelectField
-								id="edit-layout"
-								label="Layout for blocks below"
-								value={str("layout", "list")}
-								onValueChange={(v) => updateConfigField("layout", v)}
-								items={[
-									{ value: "list", label: "List" },
-									{ value: "grid", label: "Grid" },
-									{ value: "carousel", label: "Carousel" },
-								]}
-								hint="Applies to every block under this header, up to the next header."
-							/>
-						</>
+						<SelectField
+							id="edit-heading-level"
+							label="Heading level"
+							value={str("headingLevel", "h2")}
+							onValueChange={(v) => updateConfigField("headingLevel", v)}
+							items={[
+								{ value: "h2", label: "H2 — section" },
+								{ value: "h3", label: "H3 — sub-section" },
+								{ value: "h4", label: "H4 — minor" },
+							]}
+							hint="Your name is the page's H1. Pick the level by structure, not size."
+						/>
 					)}
 
 					{block.type === "image" && (
@@ -575,6 +561,7 @@ export function BlockEditPanel({
 									value={str("src")}
 									purpose="block_image"
 									aspectRatio="banner"
+									previewFit={str("fit") === "cover" ? "cover" : "contain"}
 									hint="up to 1600px"
 									onUploadComplete={(u) => updateConfigField("src", u)}
 								/>
@@ -613,6 +600,17 @@ export function BlockEditPanel({
 									{ value: "4:5", label: "4:5 — portrait" },
 								]}
 							/>
+							<SelectField
+								id="edit-image-fit"
+								label="Image fit"
+								value={str("fit", "contain")}
+								onValueChange={(v) => updateConfigField("fit", v)}
+								items={[
+									{ value: "contain", label: "Fit whole image" },
+									{ value: "cover", label: "Crop to fill" },
+								]}
+								hint="Fit keeps every edge visible. Crop fills the selected aspect ratio."
+							/>
 							<TextField
 								id="edit-url"
 								label="Link URL"
@@ -629,7 +627,7 @@ export function BlockEditPanel({
 					{block.type === "text" && (
 						<>
 							<Field>
-								<FieldLabel htmlFor="edit-body" className="text-small">
+								<FieldLabel htmlFor="edit-body" className="text-sm">
 									Text
 								</FieldLabel>
 								<Textarea
@@ -774,7 +772,7 @@ export function BlockEditPanel({
 								maxLength={16}
 							/>
 							<Field>
-								<FieldLabel id="edit-emoji-position-label" className="text-small">
+								<FieldLabel id="edit-emoji-position-label" className="text-sm">
 									Emoji position
 								</FieldLabel>
 								<SegmentedControl
@@ -817,7 +815,7 @@ export function BlockEditPanel({
 								maxLength={16}
 							/>
 							<Field>
-								<FieldLabel id="edit-vcard-emoji-position-label" className="text-small">
+								<FieldLabel id="edit-vcard-emoji-position-label" className="text-sm">
 									Emoji position
 								</FieldLabel>
 								<SegmentedControl
@@ -951,7 +949,7 @@ export function BlockEditPanel({
 									<div key={idx} className="space-y-1">
 										<div className="flex items-end gap-2">
 											<Field className="flex-1">
-												<FieldLabel htmlFor={`vc-url-${idx}-label`} className="text-small">
+												<FieldLabel htmlFor={`vc-url-${idx}-label`} className="text-sm">
 													Label
 												</FieldLabel>
 												<Input
@@ -968,7 +966,7 @@ export function BlockEditPanel({
 												/>
 											</Field>
 											<Field className="flex-[2]">
-												<FieldLabel htmlFor={`vc-url-${idx}-url`} className="text-small">
+												<FieldLabel htmlFor={`vc-url-${idx}-url`} className="text-sm">
 													URL
 												</FieldLabel>
 												<Input
@@ -986,7 +984,9 @@ export function BlockEditPanel({
 													className="dark:bg-input/30"
 												/>
 											</Field>
-											<button
+											<Button
+												variant="ghost"
+												size="icon-sm"
 												type="button"
 												aria-label={`Remove URL ${idx + 1}`}
 												onClick={() => {
@@ -994,10 +994,10 @@ export function BlockEditPanel({
 													urls.splice(idx, 1);
 													updateConfigField("urls", urls);
 												}}
-												className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive md:h-8 md:w-8"
+												className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
 											>
 												<Trash2 className="h-4 w-4" />
-											</button>
+											</Button>
 										</div>
 										<FieldError id={rowErrorId} role="status" className="text-micro">
 											{rowError}
@@ -1005,32 +1005,24 @@ export function BlockEditPanel({
 									</div>
 								);
 							})}
-							<button
+							<Button
+								variant="outline"
 								type="button"
 								onClick={() => updateConfigField("urls", [...vcardUrls, { label: "", url: "" }])}
 								disabled={vcardUrls.length >= 20}
-								className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-input dark:bg-input/30 px-3 text-small font-medium transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-50 md:min-h-9"
+								className="w-full"
 							>
 								<Plus className="h-3.5 w-3.5" />
 								Add URL
-							</button>
+							</Button>
 						</>
 					)}
 
 					{block.type === "location" && (
 						<>
-							{siteSettings && siteSettings.mapkit_enabled !== "true" && (
-								<FieldDescription>
-									Want an embedded Apple Map?{" "}
-									<Link
-										href="/admin/settings/integrations"
-										className="font-medium text-foreground underline underline-offset-2"
-									>
-										Configure MapKit in Settings → Integrations
-									</Link>
-									.
-								</FieldDescription>
-							)}
+							<FieldDescription>
+								Shows an address and a link to open it in your chosen map service.
+							</FieldDescription>
 							<TextField
 								id="edit-address"
 								label="Address"
@@ -1041,7 +1033,7 @@ export function BlockEditPanel({
 								maxLength={300}
 							/>
 							<Field>
-								<FieldLabel id="edit-link-type-label" className="text-small">
+								<FieldLabel id="edit-link-type-label" className="text-sm">
 									Link type
 								</FieldLabel>
 								<SegmentedControl
@@ -1088,7 +1080,7 @@ export function BlockEditPanel({
 						{block.type === "link" && (
 							<>
 								<Field>
-									<FieldLabel htmlFor="edit-icon" className="text-small">
+									<FieldLabel htmlFor="edit-icon" className="text-sm">
 										Icon
 									</FieldLabel>
 									<IconPicker id="edit-icon" value={icon} onChange={setIcon} />
@@ -1228,7 +1220,6 @@ export function BlockEditPanel({
 						<Button
 							variant="ghost"
 							size="sm"
-							className="min-h-11 md:min-h-7"
 							onClick={() => {
 								setScheduledStart("");
 								setScheduledEnd("");
@@ -1242,7 +1233,7 @@ export function BlockEditPanel({
 				{/* ADVANCED (collapsible) */}
 				<CollapsibleSection label="Advanced" forceOpen={showAllErrors && !!configError}>
 					<Field>
-						<FieldLabel htmlFor="edit-config" className="text-small">
+						<FieldLabel htmlFor="edit-config" className="text-sm">
 							Config JSON
 						</FieldLabel>
 						<Textarea
@@ -1282,14 +1273,15 @@ export function BlockEditPanel({
 					{onDelete && (
 						<Button
 							variant="outline"
-							className="h-11 w-11 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive lg:h-8 lg:w-8"
+							size="icon"
+							className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
 							onClick={onDelete}
 							aria-label="Delete block"
 						>
 							<Trash2 className="h-4 w-4" />
 						</Button>
 					)}
-					<Button className="h-11 flex-1 lg:h-8" onClick={handleSave} disabled={isSaving}>
+					<Button className="flex-1" onClick={handleSave} disabled={isSaving}>
 						{isSaving ? "Saving..." : "Save Changes"}
 					</Button>
 				</div>

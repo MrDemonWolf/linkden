@@ -1,0 +1,128 @@
+---
+title: Shared components
+description: Reuse the primitives and form patterns that already power the app.
+---
+
+## Where components live
+
+`apps/web/src/components/ui/` contains the app's Base UI/Tailwind primitives. `packages/ui/src/` exports the shared `Checkbox`, `Switch`, `Avatar`, and `Tabs`, along with themes and `cn`. The package is not a second copy of every web primitive.
+
+Import the existing component from its owning module. Do not install another component library to recreate a button, dialog, form grid, or preview.
+
+## Buttons and form controls
+
+`Button` supports `default`, `outline`, `secondary`, `ghost`, `destructive`, and `link`. Its sizes are `default`, `xs`, `sm`, `lg`, and the corresponding icon sizes. Use the [control scale](/docs/design-system/foundations#controls-and-radii) rather than overriding heights on each page.
+
+```tsx
+import { Button } from "@/components/ui/button";
+
+<div className="flex flex-wrap items-center gap-2">
+  <Button disabled={isSaving} onClick={save}>
+    {isSaving ? "Saving…" : "Save changes"}
+  </Button>
+  <Button variant="ghost" disabled={isSaving} onClick={discard}>
+    Discard
+  </Button>
+</div>
+```
+
+Keep a visible label for text actions. Icon-only buttons need an accessible name. `disabled` blocks repeat actions while pending; `aria-invalid` applies the shared error treatment.
+
+`Input`, `Textarea`, and `Select` share form-boundary and focus tokens. `Select` takes an `items` array and `onValueChange`, and forwards `aria-labelledby`, `aria-describedby`, and `aria-invalid` to its trigger.
+
+```tsx
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+<div className="space-y-1.5">
+  <Label htmlFor="profile-name">Display name</Label>
+  <Input
+    id="profile-name"
+    value={name}
+    onChange={(event) => setName(event.target.value)}
+    aria-describedby="profile-name-help"
+  />
+  <p id="profile-name-help" className="text-xs text-muted-foreground">
+    Shown at the top of your public page.
+  </p>
+</div>
+```
+
+For validation, associate the error text with the control and set `aria-invalid`. Use the shared schemas in `@linkden/validators`; descriptions and limits must reflect the actual accepted values.
+
+## Cards and form sections
+
+| Component | Current contract |
+| --- | --- |
+| `Card` | Matte bordered surface; `size="sm"` supplies compact spacing |
+| `CardHeader`, `CardContent` | Own the aligned card gutters |
+| `CardTitle` | Native `h2`; use `as="h3"` for a subsection |
+| `SectionCard` | Card with an icon, title, optional description, and body |
+| `SectionLabel` | `h3` group label within a section |
+| `FieldGroup` | 16px grid gap; `columns={2}` splits only when its own container reaches 480px |
+
+Do not wrap `CardTitle` in another heading or add a second set of card gutters around `CardContent`.
+
+```tsx
+import { User } from "lucide-react";
+import { SectionCard } from "@/components/admin/section-header";
+import { FieldGroup } from "@/components/admin/settings/field-group";
+
+<SectionCard icon={User} title="Profile" description="Details visitors see on your page.">
+  <FieldGroup columns={2}>
+    {nameField}
+    {bioField}
+  </FieldGroup>
+</SectionCard>
+```
+
+Use `ImageUploadField` for image uploads, `ColorField` for hex plus native color selection, and `SecretInput` for write-only credentials. They preserve the existing validation, upload replacement, contrast, and masked-secret behavior.
+
+## Navigation and the shell
+
+`NAV_ITEMS` in `components/admin/nav-list.tsx` owns the four destinations: Profile page, Design, Inbox, and Settings. `AdminShell` derives the sidebar, mobile navigation, and breadcrumb from it.
+
+`SidebarMenu` uses `gap-1` (4px), keeping adjacent hover/active backgrounds separate. `SubTabs` also uses 4px gaps, horizontal overflow, a static active underline, and `aria-current="page"`. These are route links, not an ARIA tab widget. The longest matching path selects the active item.
+
+`AdminFooter` owns the admin branding link, version/development metadata, and theme control. Account menus hold identity and account actions. Keep those responsibilities separate when adding a destination.
+
+## Feedback and destructive actions
+
+| Need | Existing component or hook |
+| --- | --- |
+| Settings load failure | `QueryError` with retry |
+| Advisory content | `Alert`, with no live-region role by default |
+| Urgent error announcement | Explicit `role="alert"` |
+| Polite state announcement | Explicit `role="status"` |
+| Dirty form actions | `StickySaveBar` |
+| Save/navigation protection | `useSettingsForm` and `useUnsavedChanges` |
+| Delete confirmation | `ConfirmDialog` |
+| Destructive data reset | `DangerConfirmDialog` |
+
+`ConfirmDialog` uses the shared AlertDialog, with Cancel first and both actions disabled while pending. `DangerConfirmDialog` requires an exact confirmation word, resets the typed value when opened or closed, and focuses its input. Use it for the existing Settings → Data reset operations rather than a browser confirm prompt.
+
+```tsx
+import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+
+<ConfirmDialog
+  open={deleteOpen}
+  onOpenChange={setDeleteOpen}
+  title="Delete this block?"
+  description="This removes the block from your page."
+  confirmLabel="Delete block"
+  onConfirm={deleteBlock}
+  isPending={isDeleting}
+/>
+```
+
+Dialogs need their shared title and description. Preserve keyboard focus, Escape behavior, and focus return through the Base UI primitives.
+
+## Source locations
+
+All app paths below start at `apps/web/src/`.
+
+- Primitives: `components/ui/{button,input,textarea,select,card,label,alert,dialog,alert-dialog}.tsx`.
+- Page structure: `components/admin/{page-shell,page-header,section-header}.tsx`.
+- Forms: `components/admin/settings/{field-group,secret-input}.tsx`, `components/admin/image-upload-field.tsx`, and `components/admin/color-field.tsx`.
+- Feedback: `components/admin/{sticky-save-bar,confirm-dialog}.tsx`, `components/admin/settings/danger-confirm-dialog.tsx`, and `components/admin/dashboard/query-error.tsx`.
+- Shared controls and class merging: `packages/ui/src/` from the repository root.

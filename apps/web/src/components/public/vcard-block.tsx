@@ -1,9 +1,9 @@
 "use client";
 
 import { getReadableTextColor } from "@linkden/ui/color-contrast";
-import { trackClick } from "@/lib/track";
 import { usePreview } from "./preview-context";
 import type { ThemeColors } from "./public-page";
+import { usePublicRuntime } from "./public-runtime";
 
 interface VCardBlockProps {
 	block: {
@@ -15,10 +15,9 @@ interface VCardBlockProps {
 	themeColors?: ThemeColors;
 }
 
-const apiBase = process.env.NEXT_PUBLIC_SERVER_URL ?? "";
-
 export function VCardBlock({ block, config, colorMode, themeColors }: VCardBlockProps) {
 	const { isPreview } = usePreview();
+	const runtime = usePublicRuntime();
 	const buttonText = (config.buttonText as string) || block.title || "Download Contact";
 	const buttonEmoji = config.buttonEmoji as string | undefined;
 	const buttonEmojiPosition = (config.buttonEmojiPosition as string) || "left";
@@ -80,11 +79,10 @@ export function VCardBlock({ block, config, colorMode, themeColors }: VCardBlock
 		<a
 			// `?block=` asks for THIS block's card; a server without per-block
 			// lookup ignores it and serves the first live vCard block.
-			href={isPreview ? undefined : `${apiBase}/api/vcard?block=${encodeURIComponent(block.id)}`}
+			href={isPreview ? undefined : runtime.vcardHref(block.id)}
 			download={isPreview ? undefined : "contact.vcf"}
 			onClick={(e: React.MouseEvent) => {
 				if (isPreview) e.preventDefault();
-				trackClick(block.id, { preview: isPreview });
 			}}
 			className={`ld-vcard-block ${baseClasses} ${colorClasses} cursor-pointer hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 no-underline`}
 			style={{ ...style, outlineColor: themeColors?.primary || "#3b82f6" }}

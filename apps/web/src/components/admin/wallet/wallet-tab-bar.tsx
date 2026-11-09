@@ -23,7 +23,7 @@ export function WalletTabBar({ className }: { className?: string }) {
 	return (
 		<TabsList
 			className={cn(
-				"flex h-auto gap-1 overflow-x-auto rounded-none border-b border-border bg-transparent p-0 [scrollbar-width:none]",
+				"flex h-auto min-w-0 justify-start gap-1 overflow-x-auto rounded-none border-b border-border bg-transparent p-0 [scrollbar-width:none]",
 				className,
 			)}
 		>
@@ -33,7 +33,7 @@ export function WalletTabBar({ className }: { className?: string }) {
 					<TabsTrigger
 						key={tab.value}
 						value={tab.value}
-						className="-mb-px min-h-11 shrink-0 gap-1.5 whitespace-nowrap rounded-none border-b-2 border-transparent bg-transparent px-3 text-xs font-medium text-muted-foreground shadow-none ring-0 hover:bg-transparent hover:text-foreground data-[active]:border-foreground data-[active]:bg-transparent data-[active]:text-foreground data-[active]:shadow-none data-[active]:ring-0 md:min-h-10"
+						className="-mb-px min-h-11 shrink-0 gap-1.5 whitespace-nowrap rounded-none border-b-2 border-transparent bg-transparent px-3 text-sm font-medium text-muted-foreground shadow-none ring-0 hover:bg-transparent hover:text-foreground data-[active]:border-foreground data-[active]:bg-transparent data-[active]:text-foreground data-[active]:shadow-none data-[active]:ring-0 md:min-h-10"
 					>
 						<Icon className="h-4 w-4" aria-hidden="true" />
 						{tab.label}

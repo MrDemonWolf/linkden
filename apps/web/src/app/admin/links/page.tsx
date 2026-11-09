@@ -27,7 +27,7 @@ import {
 } from "@dnd-kit/sortable";
 import type { EmbedType } from "@linkden/validators/blocks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Blocks, Plus, Rocket, Upload } from "lucide-react";
+import { Blocks, Check, Loader2, Plus } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -58,7 +58,7 @@ import { trpc } from "@/utils/trpc";
 
 const FILTERS = [
 	{ id: "all", label: "All" },
-	{ id: "drafts", label: "Unpublished" },
+	{ id: "drafts", label: "Drafts" },
 	{ id: "hidden", label: "Hidden" },
 ] as const;
 type Filter = (typeof FILTERS)[number]["id"];
@@ -84,7 +84,7 @@ const BLOCK_DEFAULT_TITLE: Record<string, string> = {
 };
 
 /**
- * Follows `?filter=drafts` (the StatePill's "n unpublished" link). A same-route
+ * Follows `?filter=drafts` from the publishing control. A same-route
  * link only changes the search params — the page doesn't remount — so this
  * watches them instead of reading the URL once on mount. Isolated behind its
  * own Suspense boundary so only this null-rendering child bails out of
@@ -103,7 +103,7 @@ const SCREEN_READER_INSTRUCTIONS = {
 		"To reorder a block, press Space or Enter to pick it up. Use the up and down arrow keys to move it, then press Space or Enter to drop it, or Escape to cancel.",
 };
 
-/** Links → Blocks: the block list, inline editor (shell preview column ≥lg, bottom Sheet below) and Publish. */
+/** Links → Blocks: the list, inline editor and block-draft action. */
 export default function LinksBlocksPage() {
 	const qc = useQueryClient();
 
@@ -309,9 +309,9 @@ export default function LinksBlocksPage() {
 		try {
 			await publishAll.mutateAsync();
 			invalidate();
-			toast.success("All changes published");
+			toast.success("New blocks applied");
 		} catch {
-			toast.error("Failed to publish");
+			toast.error("Failed to apply block drafts");
 		}
 	}, [publishAll, invalidate]);
 
@@ -438,12 +438,9 @@ export default function LinksBlocksPage() {
 			<Suspense fallback={null}>
 				<DraftsFilterSync onDrafts={showDrafts} />
 			</Suspense>
-			{/* One toolbar line, edge-to-edge with the block list panel below it:
-			    the single-select filter group on the left, Publish on the right.
-			    Publish only ever promotes never-published blocks — edits to a live
-			    block go out immediately (blocks.update keeps status="published").
-			    No wrapping — the two always share a row. */}
-			<div className="flex items-center gap-2">
+			{/* Applying drafts changes their content status only; static publication
+			    remains a separate action in the shell header. */}
+			<div className="flex flex-wrap items-center gap-2">
 				<ToggleGroup
 					aria-label="Filter blocks"
 					value={[filter]}
@@ -473,17 +470,17 @@ export default function LinksBlocksPage() {
 					size="sm"
 					disabled={!hasDrafts || publishAll.isPending}
 					onClick={handlePublishAll}
-					className={cn("ml-auto shrink-0 gap-2", hasDrafts && "shadow-glow")}
+					className="ml-auto shrink-0 gap-2"
 				>
 					{publishAll.isPending ? (
 						<>
-							<Upload className="h-3.5 w-3.5 animate-pulse" />
-							Publishing…
+							<Loader2 className="h-3.5 w-3.5 animate-spin" />
+							Applying…
 						</>
 					) : (
 						<>
-							<Rocket className="h-3.5 w-3.5" />
-							{draftCount > 0 ? `Publish ${draftCount} new` : "All published"}
+							<Check className="h-3.5 w-3.5" />
+							{draftCount > 0 ? `Apply ${draftCount} new` : "No block drafts"}
 						</>
 					)}
 				</Button>
@@ -524,7 +521,7 @@ export default function LinksBlocksPage() {
 					/>
 				) : visibleBlocks.length === 0 ? (
 					<p className="py-8 text-center text-xs text-muted-foreground">
-						{filter === "drafts" ? "No unpublished blocks" : "No hidden blocks"}
+						{filter === "drafts" ? "No block drafts" : "No hidden blocks"}
 					</p>
 				) : (
 					<SortableContext
@@ -568,22 +565,21 @@ export default function LinksBlocksPage() {
 
 			{/* Single + Add block CTA with the flat type picker under it */}
 			<div className="space-y-2">
-				<button
+				<Button
+					variant="outline"
 					type="button"
 					onClick={() => setShowPicker(!showPicker)}
 					aria-expanded={showPicker}
 					className={cn(
-						"flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed p-4 text-sm transition-all",
+						"min-h-12 w-full gap-2 border-dashed text-sm",
 						showPicker
 							? "border-primary/40 bg-primary/5 text-primary"
-							: "border-border text-muted-foreground hover:border-primary/30 hover:text-primary hover:shadow-glow",
+							: "border-border text-muted-foreground hover:border-primary/30 hover:text-foreground",
 					)}
 				>
-					<Plus
-						className={cn("h-4 w-4 transition-transform duration-200", showPicker && "rotate-45")}
-					/>
+					<Plus className={cn("h-4 w-4", showPicker && "rotate-45")} />
 					{showPicker ? "Cancel" : "Add block"}
-				</button>
+				</Button>
 
 				{showPicker && (
 					<div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -606,7 +602,7 @@ export default function LinksBlocksPage() {
 									<item.icon className="h-4 w-4" />
 								</div>
 								<div>
-									<div className="text-xs font-semibold transition-colors group-hover/picker:text-primary">
+									<div className="text-sm font-medium transition-colors group-hover/picker:text-foreground">
 										{item.label}
 									</div>
 									<div className="mt-0.5 text-micro leading-tight text-muted-foreground">

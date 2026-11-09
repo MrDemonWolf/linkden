@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const api = vi.hoisted(() => ({
@@ -36,16 +36,26 @@ const savedKeys = {
 	teamId: "ABC123DEF4",
 	passTypeId: "pass.com.example",
 };
+const readyStatus = {
+	signerCert: true,
+	signerKey: true,
+	wwdrCert: true,
+	teamId: true,
+	passTypeId: true,
+	source: {},
+};
 
-function renderSection() {
+function renderSection(cachedStatus?: typeof readyStatus) {
 	const client = new QueryClient({
 		defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
 	});
-	return render(
+	if (cachedStatus) client.setQueryData(["getSigningStatus"], cachedStatus);
+	const view = render(
 		<QueryClientProvider client={client}>
 			<SigningKeysSection />
 		</QueryClientProvider>,
 	);
+	return { ...view, client };
 }
 
 describe("SigningKeysSection", () => {
@@ -119,6 +129,103 @@ describe("SigningKeysSection", () => {
 		expect(api.updateSigningKeys.mock.calls[0]?.[0]).toMatchObject({
 			teamId: "NEWTEAM123",
 			passTypeId: undefined,
+		});
+	});
+
+	it("keeps edited IDs across a refetch while refreshing untouched IDs", async () => {
+		const { client } = renderSection();
+		const teamId = await screen.findByLabelText("Team ID");
+		fireEvent.change(teamId, { target: { value: "NEWTEAM123" } });
+		act(() => {
+			client.setQueryData(["getSigningKeys"], {
+				...savedKeys,
+				teamId: "SERVER1234",
+				passTypeId: "pass.com.updated",
+			});
+		});
+		await waitFor(() =>
+			expect((screen.getByLabelText("Pass Type ID") as HTMLInputElement).value).toBe(
+				"pass.com.updated",
+			),
+		);
+		expect((teamId as HTMLInputElement).value).toBe("NEWTEAM123");
+		fireEvent.click(screen.getByRole("button", { name: "Save Signing Keys" }));
+		await waitFor(() => expect(api.updateSigningKeys).toHaveBeenCalled());
+		expect(api.updateSigningKeys.mock.calls[0]?.[0]).toMatchObject({
+			teamId: "NEWTEAM123",
+			passTypeId: undefined,
+		});
+	});
+
+	it.each([false, true])(
+		"shows a retry for failed signing status instead of missing or stale ready keys (cached: %s)",
+		async (cached) => {
+			api.getSigningStatus
+				.mockRejectedValueOnce(new Error("offline"))
+				.mockResolvedValue(readyStatus);
+			renderSection(cached ? readyStatus : undefined);
+			expect(await screen.findByText("Couldn't check your signing keys")).toBeTruthy();
+			expect(screen.queryByText(/missing or unusable|: ready/)).toBeNull();
+			const teamId = screen.getByLabelText("Team ID");
+			fireEvent.change(teamId, { target: { value: "NEWTEAM123" } });
+			fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+			await waitFor(() =>
+				expect(screen.queryByText("Couldn't check your signing keys")).toBeNull(),
+			);
+			expect(screen.getAllByText(": ready")).toHaveLength(5);
+			expect((teamId as HTMLInputElement).value).toBe("NEWTEAM123");
+		},
+	);
+
+	it("keeps the signing check pending without reporting keys as missing", async () => {
+		api.getSigningStatus.mockImplementationOnce(() => new Promise(() => {}));
+		renderSection();
+		expect(await screen.findByText("Checking signing keys…")).toBeTruthy();
+		expect(screen.queryByText(/missing or unusable/)).toBeNull();
+	});
+
+	it("locks ID, certificate and paste controls until a pending save settles", async () => {
+		let finishSave!: (value: { success: boolean }) => void;
+		api.updateSigningKeys.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					finishSave = resolve;
+				}),
+		);
+		renderSection();
+		const teamId = await screen.findByLabelText("Team ID");
+		fireEvent.change(teamId, { target: { value: "NEWTEAM123" } });
+		fireEvent.click(screen.getByRole("button", { name: "Paste Signer Certificate" }));
+		fireEvent.change(screen.getByLabelText("Signer Certificate"), { target: { value: CERT_PEM } });
+		fireEvent.click(screen.getByRole("button", { name: "Apply pasted Signer Certificate" }));
+		fireEvent.click(screen.getByRole("button", { name: "Paste Signer Key" }));
+		fireEvent.change(screen.getByLabelText("Signer Key"), {
+			target: { value: "Unapplied draft key" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Save Signing Keys" }));
+		await waitFor(() => expect(api.updateSigningKeys).toHaveBeenCalled());
+		expect(teamId).toBeDisabled();
+		expect(screen.getByLabelText("Pass Type ID")).toBeDisabled();
+		expect(screen.getByLabelText("Signer Key")).toBeDisabled();
+		for (const name of [
+			"Replace Signer Certificate file",
+			"Paste Signer Certificate",
+			"Undo Signer Certificate change",
+			"Clear saved Signer Key",
+			"Apply pasted Signer Key",
+		]) {
+			expect(screen.getByRole("button", { name })).toBeDisabled();
+		}
+		await act(async () => finishSave({ success: true }));
+		await waitFor(() => expect(teamId).not.toBeDisabled());
+		expect((teamId as HTMLInputElement).value).toBe("NEWTEAM123");
+		expect((screen.getByLabelText("Signer Key") as HTMLTextAreaElement).value).toBe(
+			"Unapplied draft key",
+		);
+		expect(api.updateSigningKeys.mock.calls[0]?.[0]).toMatchObject({
+			teamId: "NEWTEAM123",
+			signerCert: CERT_PEM,
+			signerKey: undefined,
 		});
 	});
 });

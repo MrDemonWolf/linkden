@@ -24,6 +24,12 @@ import { hasSessionCookie, isPublicAdminRoute } from "@/lib/admin-routes";
  */
 export function proxy(request: NextRequest) {
 	const { pathname, searchParams } = request.nextUrl;
+	if (pathname === "/") {
+		return process.env.LINKDEN_SERVING_MODE === "split"
+			? NextResponse.redirect(new URL("/admin/links", request.url), 307)
+			: NextResponse.next();
+	}
+	if (pathname !== "/admin" && !pathname.startsWith("/admin/")) return NextResponse.next();
 
 	// Allow public admin routes through without auth check
 	if (isPublicAdminRoute(pathname)) {
@@ -49,5 +55,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-	matcher: ["/admin/:path*"],
+	matcher: ["/", "/admin/:path*"],
 };

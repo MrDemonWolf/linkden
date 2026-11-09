@@ -1,294 +1,150 @@
 import {
 	ArrowRight,
-	Code2,
-	Github,
+	BookOpen,
 	LayoutDashboard,
-	Lock,
-	Mail,
+	Link2,
 	Paintbrush,
 	Palette,
-	Shield,
-	Smartphone,
-	Terminal,
-	Wallet,
-	Zap,
+	ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
-// Single source of truth for the app version: root version.json
 import versionJson from "../../../../../version.json";
 
-const features = [
+const guides = [
 	{
-		title: "Edge-First Performance",
+		title: "Start with your page",
 		description:
-			"Built on Cloudflare Workers and D1. Your links load in milliseconds from the nearest edge node, worldwide.",
-		icon: Zap,
+			"Set up LinkDen, add your profile and blocks, and choose a layout that works on every screen.",
+		href: "/docs/getting-started/quick-start",
+		icon: BookOpen,
 	},
 	{
-		title: "Full Admin Panel",
-		description:
-			"A polished 3-panel editor with live phone preview, drag-and-drop blocks, and one-click publishing.",
-		icon: LayoutDashboard,
-	},
-	{
-		title: "Apple Wallet Passes",
-		description:
-			"Generate signed .pkpass files so visitors can save your contact directly to their iPhone wallet.",
-		icon: Wallet,
-	},
-	{
-		title: "100% Whitelabel",
-		description:
-			"Remove all LinkDen branding with a single toggle. MIT licensed — no attribution required. Fully yours.",
+		title: "Design your page",
+		description: "Choose a theme, adjust your brand colors, and preview your public profile.",
+		href: "/docs/guide/appearance",
 		icon: Paintbrush,
 	},
 	{
-		title: "Themes & Dark Mode",
-		description:
-			"7 built-in themes, each with dark and light variants. Custom colors, auto-mode that follows system preference.",
+		title: "Build with the design system",
+		description: "Use the same colors, spacing, controls and interaction patterns as the app.",
+		href: "/docs/design-system",
 		icon: Palette,
 	},
-	{
-		title: "Contact Form & CAPTCHA",
-		description:
-			"Built-in contact form with Cloudflare Turnstile protection and email notifications via Resend.",
-		icon: Mail,
-	},
-	{
-		title: "Draft / Publish Flow",
-		description:
-			"Edit freely without affecting your live page. Preview changes, then publish them all at once.",
-		icon: Shield,
-	},
-	{
-		title: "35+ Social Brands",
-		description:
-			"Branded buttons for YouTube, Instagram, TikTok, GitHub, Discord, and 30+ more — auto-updated via CI.",
-		icon: Smartphone,
-	},
-	{
-		title: "Type-Safe API",
-		description:
-			"End-to-end TypeScript with tRPC. Frontend and backend share types — no codegen, no schema drift.",
-		icon: Code2,
-	},
-];
-
-const steps = [
-	{
-		step: "1",
-		title: "Clone & Install",
-		description: "Clone the repository and install dependencies.",
-		code: "git clone https://github.com/mrdemonwolf/linkden.git\ncd linkden && bun install",
-	},
-	{
-		step: "2",
-		title: "Configure",
-		description: "Set up your environment variables, authentication, and database.",
-		code: "cp .env.example .env\ncp apps/web/.env.example apps/web/.env.local",
-	},
-	{
-		step: "3",
-		title: "Deploy",
-		description: "Push your database schema and deploy to Cloudflare in one command.",
-		code: "bun db:push && bun cf:deploy",
-	},
-];
-
-const techStack = [
-	{ name: "Next.js 15", role: "Frontend" },
-	{ name: "Hono", role: "API Framework" },
-	{ name: "tRPC", role: "Type-Safe RPC" },
-	{ name: "Cloudflare Workers", role: "Runtime" },
-	{ name: "D1 (SQLite)", role: "Database" },
-	{ name: "Drizzle ORM", role: "ORM" },
-	{ name: "Tailwind CSS", role: "Styling" },
-	{ name: "Turborepo", role: "Monorepo" },
 ];
 
 export default function HomePage() {
 	return (
-		<main className="min-h-screen">
-			{/* Hero */}
-			<section className="relative overflow-hidden">
-				<div className="hero-glow absolute inset-0 pointer-events-none" />
-				<div className="relative mx-auto max-w-5xl px-6 pt-24 pb-20 sm:pt-32 sm:pb-28 text-center">
-					<div className="inline-flex items-center gap-2 rounded-full border border-fd-border bg-fd-card px-4 py-1.5 text-xs font-medium text-fd-muted-foreground mb-8">
-						<span className="relative flex h-2 w-2">
-							<span
-								className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"
-								style={{ backgroundColor: "var(--color-fd-primary)" }}
-							/>
-							<span
-								className="relative inline-flex h-2 w-2 rounded-full"
-								style={{ backgroundColor: "var(--color-fd-primary)" }}
-							/>
-						</span>
-						Open Source &middot; MIT Licensed &middot; v{versionJson.version}
-					</div>
-
-					<h1 className="text-5xl font-bold tracking-tight text-fd-foreground sm:text-6xl lg:text-7xl leading-[1.1]">
-						Your links, your brand,
+		<div id="nd-page" className="ld-home w-full">
+			<section
+				aria-labelledby="home-title"
+				className="grid gap-12 lg:grid-cols-[1.2fr_1fr] lg:items-center"
+			>
+				<div>
+					<p className="ld-eyebrow">LinkDen documentation · v{versionJson.version}</p>
+					<h1 id="home-title">
+						Your page.
 						<br />
-						<span style={{ color: "var(--color-fd-primary)" }}>your rules.</span>
+						Your links.
+						<br />
+						<span className="text-fd-primary">Your control.</span>
 					</h1>
-
-					<p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-fd-muted-foreground">
-						LinkDen is a self-hosted link-in-bio platform built on the Cloudflare stack. Full admin
-						panel, edge performance, complete whitelabel support. No subscriptions. No vendor
-						lock-in.
+					<p className="mt-6 max-w-xl text-base leading-8 text-fd-muted-foreground">
+						A personal profile page and private editor, hosted on your own Cloudflare account. Learn
+						the app, understand its limits, and make it your own.
 					</p>
-
-					<div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-						<Link
-							href="/docs"
-							className="group flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-fd-primary-foreground shadow-lg transition-all hover:shadow-xl"
-							style={{ backgroundColor: "var(--color-fd-primary)" }}
-						>
-							Get Started
-							<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+					<div className="mt-8 flex flex-wrap gap-3">
+						<Link href="/docs/getting-started/quick-start" className="ld-action ld-action-primary">
+							Get started <ArrowRight size={16} aria-hidden="true" />
 						</Link>
-						<a
-							href="https://github.com/mrdemonwolf/linkden"
-							target="_blank"
-							rel="noopener noreferrer"
-							className="flex items-center gap-2 rounded-lg border border-fd-border bg-fd-card px-6 py-3 text-sm font-semibold text-fd-foreground transition hover:border-fd-ring hover:bg-fd-accent"
-						>
-							<Github className="h-4 w-4" />
-							View on GitHub
-						</a>
-					</div>
-				</div>
-			</section>
-
-			{/* Tech Stack Ribbon */}
-			<section className="border-y border-fd-border bg-fd-card/50">
-				<div className="mx-auto max-w-6xl px-6 py-5">
-					<div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-						{techStack.map((tech) => (
-							<div
-								key={tech.name}
-								className="flex items-center gap-2 text-sm text-fd-muted-foreground"
-							>
-								<span className="font-semibold text-fd-foreground">{tech.name}</span>
-								<span className="text-fd-border">/</span>
-								<span className="text-xs">{tech.role}</span>
-							</div>
-						))}
-					</div>
-				</div>
-			</section>
-
-			{/* Features Grid */}
-			<section className="px-6 py-24 lg:px-8">
-				<div className="mx-auto max-w-6xl">
-					<div className="text-center mb-16">
-						<h2 className="text-3xl font-bold tracking-tight text-fd-foreground sm:text-4xl">
-							Everything you need
-						</h2>
-						<p className="mt-4 max-w-xl mx-auto text-fd-muted-foreground">
-							Built for developers who want full control over their link-in-bio page without
-							compromising on features or performance.
-						</p>
-					</div>
-					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-						{features.map((feature) => {
-							const Icon = feature.icon;
-							return (
-								<div
-									key={feature.title}
-									className="feature-card rounded-xl border border-fd-border bg-fd-card p-6"
-								>
-									<div
-										className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg"
-										style={{ backgroundColor: "var(--ld-glow)" }}
-									>
-										<Icon className="h-5 w-5" style={{ color: "var(--color-fd-primary)" }} />
-									</div>
-									<h3 className="text-[15px] font-semibold text-fd-foreground">{feature.title}</h3>
-									<p className="mt-2 text-sm leading-relaxed text-fd-muted-foreground">
-										{feature.description}
-									</p>
-								</div>
-							);
-						})}
-					</div>
-				</div>
-			</section>
-
-			{/* Get Started in 3 Steps */}
-			<section className="border-t border-fd-border bg-fd-card/30 px-6 py-24 lg:px-8">
-				<div className="mx-auto max-w-3xl">
-					<div className="text-center mb-16">
-						<h2 className="text-3xl font-bold tracking-tight text-fd-foreground sm:text-4xl">
-							Deploy in minutes
-						</h2>
-						<p className="mt-4 text-fd-muted-foreground">Three commands. That's all it takes.</p>
-					</div>
-					<div className="space-y-10">
-						{steps.map((step) => (
-							<div key={step.step} className="flex gap-5">
-								<div
-									className="step-number flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-fd-primary-foreground"
-									style={{ backgroundColor: "var(--color-fd-primary)" }}
-								>
-									{step.step}
-								</div>
-								<div className="flex-1 min-w-0">
-									<h3 className="text-lg font-semibold text-fd-foreground">{step.title}</h3>
-									<p className="mt-1 text-sm text-fd-muted-foreground">{step.description}</p>
-									<pre className="mt-3 overflow-x-auto rounded-lg border border-fd-border bg-fd-secondary p-4 text-sm text-fd-secondary-foreground">
-										<code>{step.code}</code>
-									</pre>
-								</div>
-							</div>
-						))}
-					</div>
-					<div className="mt-12 text-center">
-						<Link
-							href="/docs/getting-started/installation"
-							className="inline-flex items-center gap-2 text-sm font-semibold transition-colors hover:underline"
-							style={{ color: "var(--color-fd-primary)" }}
-						>
-							Read the full installation guide
-							<ArrowRight className="h-3.5 w-3.5" />
+						<Link href="/docs/design-system" className="ld-action">
+							Explore the design system
 						</Link>
 					</div>
+					<p className="mt-5 text-xs leading-6 text-fd-muted-foreground">
+						Open source · MIT licensed · Cloudflare Workers, D1 and R2
+					</p>
+				</div>
+				<div className="overflow-hidden rounded-2xl border border-fd-border bg-fd-card">
+					<div className="border-b border-fd-border p-6 sm:p-8">
+						<p className="ld-eyebrow">One page, one editor</p>
+						<h2 className="mt-4 text-xl font-semibold tracking-tight">
+							A home for your work.
+							<br />A private place to shape it.
+						</h2>
+					</div>
+					<dl className="divide-y divide-fd-border">
+						<div className="p-6 sm:p-8">
+							<dt className="flex items-center gap-3 text-sm font-semibold">
+								<Link2 size={18} className="text-fd-primary" aria-hidden="true" />
+								Profile page
+							</dt>
+							<dd className="mt-3 text-sm leading-7 text-fd-muted-foreground">
+								Your bio, social icons, contact details and content blocks on one page that works on
+								every screen.
+							</dd>
+						</div>
+						<div className="p-6 sm:p-8">
+							<dt className="flex items-center gap-3 text-sm font-semibold">
+								<LayoutDashboard size={18} className="text-fd-primary" aria-hidden="true" />
+								Private editor
+							</dt>
+							<dd className="mt-3 text-sm leading-7 text-fd-muted-foreground">
+								Arrange blocks and choose your layout, colors, and branding. Preview the same
+								content visitors see; only your admin account can sign in.
+							</dd>
+						</div>
+					</dl>
 				</div>
 			</section>
 
-			{/* CTA */}
-			<section className="px-6 py-24 lg:px-8">
-				<div className="mx-auto max-w-2xl text-center">
-					<Lock className="mx-auto h-8 w-8 text-fd-muted-foreground mb-6" />
-					<h2 className="text-2xl font-bold tracking-tight text-fd-foreground sm:text-3xl">
-						Own your data. Own your page.
+			<section aria-labelledby="guides-title" className="mt-20 border-t border-fd-border pt-12">
+				<div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+					<h2 id="guides-title" className="text-2xl font-semibold tracking-tight">
+						Find your next step
 					</h2>
-					<p className="mt-4 text-fd-muted-foreground leading-relaxed">
-						No monthly fees. No tracking. No vendor lock-in. Deploy on your own Cloudflare account
-						and keep full control of your links, analytics, and visitor data.
-					</p>
-					<div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-						<Link
-							href="/docs"
-							className="group flex items-center gap-2 rounded-lg px-6 py-3 text-sm font-semibold text-fd-primary-foreground shadow-lg transition-all hover:shadow-xl"
-							style={{ backgroundColor: "var(--color-fd-primary)" }}
-						>
-							<Terminal className="h-4 w-4" />
-							Start Building
+					<Link
+						href="/docs"
+						className="inline-flex items-center gap-2 text-sm text-fd-primary hover:underline"
+					>
+						All documentation <ArrowRight size={16} aria-hidden="true" />
+					</Link>
+				</div>
+				<div className="grid gap-4 md:grid-cols-3">
+					{guides.map(({ title, description, href, icon: Icon }) => (
+						<Link key={href} href={href} className="ld-doc-card">
+							<Icon size={22} className="text-fd-primary" aria-hidden="true" />
+							<h3 className="text-base font-semibold tracking-tight">{title}</h3>
+							<p className="text-sm leading-7 text-fd-muted-foreground">{description}</p>
+							<ArrowRight
+								size={16}
+								className="mt-auto text-fd-muted-foreground"
+								aria-hidden="true"
+							/>
 						</Link>
-						<a
-							href="https://github.com/mrdemonwolf/linkden"
-							target="_blank"
-							rel="noopener noreferrer"
-							className="flex items-center gap-2 rounded-lg border border-fd-border px-6 py-3 text-sm font-semibold text-fd-foreground transition hover:border-fd-ring hover:bg-fd-accent"
-						>
-							<Github className="h-4 w-4" />
-							Star on GitHub
-						</a>
-					</div>
+					))}
 				</div>
 			</section>
-		</main>
+
+			<aside className="mt-12 flex items-start gap-4 rounded-xl border border-fd-border p-6">
+				<ShieldCheck
+					size={22}
+					className="mt-0.5 shrink-0 text-fd-muted-foreground"
+					aria-hidden="true"
+				/>
+				<div>
+					<h2 className="text-sm font-semibold">Know what is connected</h2>
+					<p className="mt-2 max-w-3xl text-sm leading-7 text-fd-muted-foreground">
+						Email, CAPTCHA, Wallet signing and publication need their own setup. The guides
+						distinguish available controls from integrations that still need verification.
+					</p>
+					<Link
+						href="/docs/self-hosting/cloudflare"
+						className="mt-3 inline-flex text-sm text-fd-primary hover:underline"
+					>
+						Read the hosting and deployment guide
+					</Link>
+				</div>
+			</aside>
+		</div>
 	);
 }

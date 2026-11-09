@@ -36,12 +36,10 @@ export function SocialIconShapeSection({
 	return (
 		<Card>
 			<CardHeader>
-				<h2>
-					<CardTitle className="flex items-center gap-1.5">
-						<Shapes className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-						Social icon shape
-					</CardTitle>
-				</h2>
+				<CardTitle className="flex items-center gap-1.5">
+					<Shapes className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+					Social icon shape
+				</CardTitle>
 			</CardHeader>
 			<CardContent>
 				<div className="grid grid-cols-2 gap-2.5">
@@ -82,7 +80,7 @@ export function SocialIconShapeSection({
 									))}
 								</div>
 								<div className="space-y-0.5">
-									<div className="text-xs font-medium">{opt.label}</div>
+									<div className="text-sm font-medium">{opt.label}</div>
 									<div className="text-micro text-muted-foreground leading-tight">
 										{opt.description}
 									</div>

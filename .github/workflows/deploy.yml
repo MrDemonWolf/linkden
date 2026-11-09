@@ -48,6 +48,11 @@ jobs:
             NEXT_PUBLIC_SERVER_URL CORS_ORIGIN NEXT_PUBLIC_SITE_URL; do
             if [ -z "${!name// /}" ]; then missing="$missing $name"; fi
           done
+          if [ "$LINKDEN_SERVING_MODE" = "split" ]; then
+            for name in ADMIN_SITE_URL PUBLIC_SITE_URL; do
+              if [ -z "${!name// /}" ]; then missing="$missing $name"; fi
+            done
+          fi
           if [ -n "$missing" ]; then
             echo "::error title=Deploy not configured::Missing in the production environment:${missing}"
             {
@@ -68,6 +73,10 @@ jobs:
           NEXT_PUBLIC_SERVER_URL: ${{ secrets.NEXT_PUBLIC_SERVER_URL }}
           CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
           NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+          LINKDEN_SERVING_MODE: ${{ vars.LINKDEN_SERVING_MODE }}
+          ADMIN_SITE_URL: ${{ vars.ADMIN_SITE_URL }}
+          PUBLIC_SITE_URL: ${{ vars.PUBLIC_SITE_URL }}
+          PUBLIC_CONTACT_URL: ${{ vars.PUBLIC_CONTACT_URL }}
 
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -134,6 +143,15 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+          # Optional public publisher. These bindings never reach the web/browser bundle.
+          PUBLIC_SITE_URL: ${{ vars.PUBLIC_SITE_URL }}
+          PUBLIC_CONTACT_URL: ${{ vars.PUBLIC_CONTACT_URL }}
+          PUBLICATION_ENABLED: ${{ vars.PUBLICATION_ENABLED }}
+          PUBLICATION_TARGET: ${{ vars.PUBLICATION_TARGET }}
+          PUBLICATION_RENDERER_SOURCE_ID: ${{ vars.PUBLICATION_RENDERER_SOURCE_ID }}
+          PUBLICATION_GITHUB_TOKEN: ${{ secrets.PUBLICATION_GITHUB_TOKEN }}
+          PUBLICATION_SCHEDULER_ENABLED: ${{ vars.PUBLICATION_SCHEDULER_ENABLED }}
           ALCHEMY_PASSWORD: ${{ secrets.ALCHEMY_PASSWORD }}
           # Shared across every MrDemonWolf Alchemy app — auths the shared
           # `alchemy-state` CloudflareStateStore worker. Must be the same value
@@ -147,6 +165,9 @@ jobs:
           # the web worker owns (unset = stay on workers.dev) and the public
           # site origin baked into robots/sitemap/metadataBase.
           SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
+          # Explicit owner-approved serving cutover; unset keeps the legacy layout.
+          LINKDEN_SERVING_MODE: ${{ vars.LINKDEN_SERVING_MODE }}
+          ADMIN_SITE_URL: ${{ vars.ADMIN_SITE_URL }}
           NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
           # Only for installs that deployed before 0.5.0 pinned the resource
           # names: the D1 database / R2 bucket Alchemy generated back then
@@ -175,16 +196,39 @@ jobs:
       # replaced); follow the rollback runbook in docs/self-hosting/cloudflare.
       - name: Smoke test production
         run: |
+          # Access service-token headers belong only on the approved admin
+          # origin. Never send them to the public native-assets target or
+          # follow redirects with them. This does not create an Access policy.
+          ADMIN_HEADERS=()
+          if [ "$LINKDEN_SERVING_MODE" = "split" ]; then
+            if { [ -n "$CF_ACCESS_CLIENT_ID" ] && [ -z "$CF_ACCESS_CLIENT_SECRET" ]; } || \
+               { [ -z "$CF_ACCESS_CLIENT_ID" ] && [ -n "$CF_ACCESS_CLIENT_SECRET" ]; }; then
+              echo "ERROR: both Access service-token secrets must be configured together"; exit 1
+            fi
+            if [ -n "$CF_ACCESS_CLIENT_ID" ]; then
+              if [[ "$CF_ACCESS_CLIENT_ID$CF_ACCESS_CLIENT_SECRET" =~ [[:space:]] ]]; then
+                echo "ERROR: invalid Access service-token format"; exit 1
+              fi
+              umask 077
+              ACCESS_HEADERS=$(mktemp)
+              trap 'rm -f "$ACCESS_HEADERS"' EXIT
+              printf 'CF-Access-Client-Id: %s\nCF-Access-Client-Secret: %s\n' \
+                "$CF_ACCESS_CLIENT_ID" "$CF_ACCESS_CLIENT_SECRET" > "$ACCESS_HEADERS"
+              ADMIN_HEADERS=(--header "@$ACCESS_HEADERS")
+            fi
+          fi
           # With a custom domain the API is routed under the site origin
           # (/api/* route on the web worker's domain); otherwise probe the
           # server's workers.dev URL directly.
-          if [ -n "$SITE_DOMAIN" ]; then
+          if [ "$LINKDEN_SERVING_MODE" = "split" ]; then
+            HEALTH_URL="${ADMIN_SITE_URL}/api/health"
+          elif [ -n "$SITE_DOMAIN" ]; then
             HEALTH_URL="https://${SITE_DOMAIN}/api/health"
           else
             HEALTH_URL="${SERVER_URL%/}/api/health"
           fi
           echo "Probing $HEALTH_URL"
-          RESPONSE=$(curl -fsS --retry 5 --retry-delay 5 --retry-all-errors --max-time 15 "$HEALTH_URL" || echo "FAILED")
+          RESPONSE=$(curl -fsS "${ADMIN_HEADERS[@]}" --retry 5 --retry-delay 5 --retry-all-errors --max-time 15 "$HEALTH_URL" || echo "FAILED")
           echo "Response: $RESPONSE"
           # Readiness means more than a 200: the DB must be reachable and the
           # deployed version must be reported.
@@ -217,9 +261,11 @@ jobs:
 
           # Social cards: /og renders a PNG in the web worker (next/og). A
           # bundling regression ships a 500 here while the page itself works.
-          OG_URL="${SITE_URL%/}/og?template=minimal&name=My%20Links&bio=&theme=%236366f1"
+          OG_ORIGIN="${SITE_URL%/}"
+          if [ "$LINKDEN_SERVING_MODE" = "split" ]; then OG_ORIGIN="$ADMIN_SITE_URL"; fi
+          OG_URL="${OG_ORIGIN}/og?template=minimal&name=My%20Links&bio=&theme=%236366f1"
           echo "Probing $OG_URL"
-          OG=$(curl -fsS --retry 5 --retry-delay 5 --retry-all-errors --max-time 20 \
+          OG=$(curl -fsS "${ADMIN_HEADERS[@]}" --retry 5 --retry-delay 5 --retry-all-errors --max-time 20 \
             -o /dev/null -w '%{http_code} %{content_type}' "$OG_URL" || echo "FAILED")
           echo "Response: $OG"
           case "$OG" in
@@ -231,3 +277,7 @@ jobs:
           SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
           SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
           SERVER_URL: ${{ secrets.NEXT_PUBLIC_SERVER_URL }}
+          LINKDEN_SERVING_MODE: ${{ vars.LINKDEN_SERVING_MODE }}
+          ADMIN_SITE_URL: ${{ vars.ADMIN_SITE_URL }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}

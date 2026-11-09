@@ -1,0 +1,47 @@
+---
+title: Design system
+description: The tokens, shared components, and layout patterns used by LinkDen.
+---
+
+LinkDen has two visual layers. The admin is a compact workspace with neutral surfaces and blue actions. Public pages keep the owner's theme, colors, imagery, and softer shapes. The editor preview renders that same public page inside the admin.
+
+These pages describe the implemented app. Change the source tokens and shared components first, then update the examples here.
+
+## Start here
+
+| Page | What it covers |
+| --- | --- |
+| [Foundations](/docs/design-system/foundations) | Colors, fonts, spacing, radii, control sizes, and motion |
+| [Components](/docs/design-system/components) | Existing primitives, form sections, navigation, and confirmation dialogs |
+| [Patterns](/docs/design-system/patterns) | Page structure, saving, document previews, Wallet, and public layouts |
+
+## Keep the two scopes separate
+
+| Surface | Scope and behavior |
+| --- | --- |
+| Admin, login, and setup | `.admin-scope`; Montserrat headings, Roboto body, tighter corners, neutral gray/black dark mode |
+| Public profile | `.public-scope` and `.ld-page`; Sora headings, DM Sans body, resolved public theme colors |
+| Page preview | The real public renderer inside `.public-scope`, with inactive content and a separate admin toolbar |
+| Wallet preview | `WalletPassPreview`; a pass card with its own colors and system font |
+| Documentation | Fumadocs layout; reference material for the app, without changing its token definitions |
+
+`AdminShell` also applies the admin scope to `body` while mounted so portalled dialogs and menus inherit the same tokens. The nested public scope restores public fonts, radii, and control fallbacks inside the preview.
+
+The public color controls edit public theme overrides. There is no separate admin accent-color picker. Do not use a saved public palette to recolor admin navigation or forms.
+
+## Source map
+
+Paths are relative to the repository root.
+
+| Source | Responsibility |
+| --- | --- |
+| `apps/web/src/index.css` | Semantic colors, scope overrides, type/radius scales, control tokens, reduced motion |
+| `apps/web/src/public-fonts.css` and `apps/web/public/fonts/` | Shared, local public fonts for Next and static rendering |
+| `apps/web/src/app/admin/layout.tsx` | Admin font variables and route metadata |
+| `apps/web/src/components/ui/` | App primitives built on Base UI and Tailwind |
+| `packages/ui/src/` | Shared `Checkbox`, `Switch`, `Avatar`, `Tabs`, class merging, public themes, and banner presets |
+| `apps/web/src/components/admin/` | Shell, navigation, page structure, forms, previews, and feedback |
+| `apps/web/src/components/public/` | Shared public profile and block renderers |
+| `packages/validators/src/` | Field limits, accepted settings, block configuration, and pass content rules |
+
+Reuse these sources before adding a component or utility. A visual example here is not a second implementation of the app.

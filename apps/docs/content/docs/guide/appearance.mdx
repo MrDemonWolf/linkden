@@ -3,21 +3,25 @@ title: Appearance & Themes
 description: Customize your page's look with theme presets, custom colors, banners, dark mode, and more.
 ---
 
-# 🎨 Appearance & Themes
+Public design lives at `/admin/design` (Theme · Banner · Branding · SEO). Changes appear in the plain page preview beside the tools; use the header **Preview** action on smaller screens. The admin's neutral light/dark theme is separate and lives in its footer.
 
-Everything visual lives at `/admin/design` (Theme · Banner · Branding · SEO). Changes preview instantly in the phone on the right (tap the preview button on mobile).
-
-### ⚡ Quick Look
+## At a glance
 - **Presets:** 11 themes, each with light and dark variants.
 - **Custom:** Override any color, in both light and dark.
 - **Banners:** Gradients or custom images.
 - **Social icon shape:** Circle or rounded square.
-- **Consent banner:** On by default; asks visitors before analytics and embeds.
+- **Consent banner:** On by default; asks visitors before embedded media. Profile analytics collection is retired.
 - **CSS:** Full custom code support.
+
+Save the page's form with the save bar. The preview can show unsaved values; an assets-only public page changes only after a successful publication. Its light/dark preview toggle does not save a visitor color mode.
+
+## Page layout
+
+Under **Theme → Page layout**, choose **Side by side** for a sticky profile on the left and one vertical block list on the right, or **Stacked** for the profile above the blocks. Mobile always stacks the profile and each block in one column. Saved header grid/carousel settings no longer create cramped multi-column sections.
 
 ---
 
-## 🌈 Theme Presets
+## Theme Presets
 
 Pick from **11 built-in themes**. Each has a Light and a Dark palette; your color mode picks between them.
 
@@ -39,7 +43,7 @@ Pick from **11 built-in themes**. Each has a Light and a Dark palette; your colo
 
 ---
 
-## 🎨 Custom Colors
+## Custom Colors
 
 Override individual colors on top of any preset.
 - **Primary:** Buttons & Links.
@@ -51,7 +55,7 @@ Override individual colors on top of any preset.
 
 ---
 
-## 🌓 Color Mode
+## Color Mode
 
 Control what visitors see first.
 
@@ -61,7 +65,7 @@ Control what visitors see first.
 
 ---
 
-## 🖼️ Banners & Profile
+## Banners & Profile
 
 Customize the top of your page.
 
@@ -72,11 +76,11 @@ Customize the top of your page.
 
 ### Banner Types
 1. **Preset Gradients and shaders:** Adapt to your theme colors automatically. Animated shader banners freeze for visitors who prefer reduced motion and have a pause button.
-2. **Custom Image:** Upload anything.
+2. **Custom Image:** Upload a supported image up to 5 MiB and use the crop controls.
 
 ---
 
-## 🔵 Social Icon Shape
+## Social Icon Shape
 
 Choose how social network icons appear on your public page.
 
@@ -89,7 +93,7 @@ Choose how social network icons appear on your public page.
 
 ---
 
-## 🏷️ Branding / Whitelabel
+## Branding / Whitelabel
 
 Control the footer on your public page. **Fully Allowed (MIT).**
 
@@ -97,26 +101,28 @@ Control the footer on your public page. **Fully Allowed (MIT).**
 - **Custom Text:** Replace "Powered by LinkDen".
 - **Custom Link:** Change where it links.
 
+Branding also includes the normal site logo/name, favicon, and privacy/terms documents. Sign-in uses the normal site branding; there are no separate login logo or background controls. **Settings → Account → Admin panel branding** separately controls branding in the editor footer.
+
 ---
 
-## 🍪 Consent Banner
+## Consent Banner
 
-The consent banner is **on by default**, and it is what decides whether a visitor is counted in your analytics.
+The consent banner is **on by default** and controls third-party embedded media. Profile pages and buttons are not tracked, regardless of this setting.
 
-- **Banner on (default):** a new visitor's page views and link clicks are recorded only after they accept **Analytics**. Embedded media (YouTube, Spotify, SoundCloud, custom embeds) shows a click-to-load placeholder until they click **Load** or allow **Embedded media**. A first visit is counted the moment they accept.
-- **Banner off:** analytics are recorded for **every visitor without asking**, and embeds load immediately. If you turn it off, you need another lawful basis for analytics (ask your own counsel), and your privacy notice should say so.
+- **Banner on (default):** Embedded media shows a click-to-load placeholder until visitors click **Load** or allow **Embedded media**.
+- **Banner off:** Embeds load immediately. Their providers may process visitor data; review the public privacy notice before changing this setting.
 
 Visitors can change their mind any time with the **Cookie settings** link in the footer. A choice expires after 12 months, or sooner when LinkDen changes what it asks. Escape hides the banner for the current page view without recording a choice.
 
 To configure it:
 
 1. Go to `/admin/design/branding` → **Consent Banner**.
-2. Leave **Show consent banner** on (or turn it off, with the caveat above).
+2. Leave **Show consent banner** on unless you deliberately want embeds to load immediately.
 3. Edit the banner text and the privacy-policy link (it falls back to your branding privacy URL).
 
 ---
 
-## 💻 Custom CSS
+## Custom CSS
 
 For advanced users. Add your own styles.
 
@@ -128,7 +134,7 @@ For advanced users. Add your own styles.
 - `.ld-contact-block` - Contact (Connect) form.
 - `.ld-header-block`, `.ld-embed-block`, `.ld-image-block`, `.ld-text-block`, `.ld-divider-block`, `.ld-location-block`, `.ld-vcard-block` - The other block types.
 
-> The admin preview scopes your CSS to the phone frame and strips external `url()` / `@import` fetches; the live page applies it as written.
+> The admin preview scopes CSS to the public page canvas and removes external fetches. The legacy public renderer applies the sanitized CSS. The static publisher rejects unresolved external media/CSS dependencies; it does not silently fetch arbitrary assets.
 
 ### CSS Variables
 `--ld-primary`, `--ld-accent`, `--ld-background`, `--ld-foreground`, `--ld-card`, `--ld-card-foreground`, `--ld-border`, `--ld-muted`, `--ld-muted-foreground`

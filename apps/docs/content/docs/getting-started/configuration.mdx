@@ -1,113 +1,89 @@
 ---
 title: Configuration
-description: Set up environment variables and authentication for your LinkDen instance.
+description: Configure local authentication, app origins, and the rebuilt admin settings.
 ---
 
-# ⚙️ Configuration
+Keep deployment secrets in the environment and ordinary preferences in the admin. Public page changes on an assets-only deployment need a successful publication after saving.
 
-LinkDen keeps its `.env` file **minimal on purpose**. You only need five environment variables to get running. Everything else -- email, CAPTCHA, branding, and more -- is configured through the admin panel and stored in the database.
+## App environment
 
-### ⚡ TL;DR
-- **Required:** 5 variables (`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CORS_ORIGIN`, `NEXT_PUBLIC_SERVER_URL`, `NEXT_PUBLIC_SITE_URL`).
-- **Config Location:** Most settings are in `/admin/settings` (DB), not `.env`.
-- **Auth:** Built-in email/password (Better Auth). No external provider needed.
-
----
-
-## 1. 🔑 Environment Variables
-
-Create your `.env` file from the example:
-
-```bash
-cp .env.example .env
-```
-
-### Required Variables Checklist
-
-- [ ] `BETTER_AUTH_SECRET` - **Private.** Signs session cookies.
-- [ ] `BETTER_AUTH_URL` - **Public.** URL where the API server runs.
-- [ ] `CORS_ORIGIN` - **Public.** URL where the web frontend runs.
-- [ ] `NEXT_PUBLIC_SERVER_URL` - **Public.** Same as `BETTER_AUTH_URL`.
-- [ ] `NEXT_PUBLIC_SITE_URL` - **Public.** URL of the site itself (used for `robots.txt`, `sitemap.xml`, and Open Graph links).
-
-### Generating a Secret
-
-Run this to generate a strong, random secret:
+Start from `.env.example`. Generate a real secret with:
 
 ```bash
 openssl rand -base64 32
 ```
-Paste the output as your `BETTER_AUTH_SECRET`. Use a different secret for production. Outside localhost the secret must be at least 32 characters and not a placeholder: with a weak or empty secret, sign-in and the admin API answer 503, and `bun ship` refuses to deploy.
 
----
+| Variable | Purpose |
+| --- | --- |
+| `BETTER_AUTH_SECRET` | Private authentication secret; use at least 32 random characters |
+| `BETTER_AUTH_URL` | Browser-facing auth origin; locally `http://localhost:3001` through the web bridge |
+| `CORS_ORIGIN` | Exact trusted editor origin, including protocol and no trailing slash |
+| `NEXT_PUBLIC_SERVER_URL` | Browser-facing API origin; locally `http://localhost:3001`, embedded in the frontend build |
+| `NEXT_PUBLIC_SITE_URL` | Public profile origin for metadata and links |
 
-## 2. 📝 Examples
+Empty secrets fail closed. Outside plain-HTTP loopback, short or placeholder secrets also disable authentication. Production deployment validates these values before changing resources.
 
-### 💻 Local Development
+### Where local values go
 
-```bash
-BETTER_AUTH_SECRET=your-generated-secret
-BETTER_AUTH_URL=http://localhost:3000
+- **Alchemy development:** `packages/infra/.env` first, with `apps/web/.env` and `apps/server/.env` supplying unset development values.
+- **Standalone API:** `apps/server/.dev.vars`.
+- **Standalone web:** `apps/web/.env.local`.
+- **Standalone web API bridge:** set `INTERNAL_SERVER_URL=http://127.0.0.1:3000`; only a bare plain-HTTP loopback origin is accepted.
+
+```dotenv
+# API values
+BETTER_AUTH_SECRET=replace-with-your-generated-secret
+BETTER_AUTH_URL=http://localhost:3001
 CORS_ORIGIN=http://localhost:3001
-NEXT_PUBLIC_SERVER_URL=http://localhost:3000
+
+# Web values
+NEXT_PUBLIC_SERVER_URL=http://localhost:3001
 NEXT_PUBLIC_SITE_URL=http://localhost:3001
+INTERNAL_SERVER_URL=http://127.0.0.1:3000
 ```
 
-### 🌍 Production
+Use port 3001 for all browser-facing local URLs. The API listener and its health route remain on port 3000; `INTERNAL_SERVER_URL` connects the web bridge and server-side requests to it.
 
-```bash
-SITE_DOMAIN=links.yourdomain.com
-BETTER_AUTH_SECRET=your-production-secret
-BETTER_AUTH_URL=https://links.yourdomain.com
-CORS_ORIGIN=https://links.yourdomain.com
-NEXT_PUBLIC_SERVER_URL=https://links.yourdomain.com
-NEXT_PUBLIC_SITE_URL=https://links.yourdomain.com
-```
+Restart the frontend after changing public environment values. Do not put private keys in a `NEXT_PUBLIC_*` variable.
 
-> **Tip:** In production all four URLs are the same hostname. The web app owns `SITE_DOMAIN` and the API is routed under it at `/api/*` and `/trpc/*`, so there is no separate API domain. Locally the API (`:3000`) and web app (`:3001`) are different origins, which is why the local values differ. See [Environment Variables](/docs/self-hosting/environment-variables) for the deploy-only variables.
+### Deployment origins
 
----
+The legacy same-host deployment uses one public HTTPS origin for auth, CORS, the browser API, and the profile.
 
-## 3. 🔐 Authentication
+The opt-in split topology uses separate public and admin origins. The admin reaches its private API through a service binding; public profile assets are published separately. Do not switch an existing deployment by changing a few URLs: follow the [Cloudflare guide](/docs/self-hosting/cloudflare) and [environment reference](/docs/self-hosting/environment-variables). Access policies, alternate-host closure, public contact ingress, and staged verification remain deployment gates.
 
-LinkDen uses **email and password** authentication, with optional **two-factor (TOTP)** and **magic link** sign-in.
-- 🚫 **No OAuth needed.**
-- 🚫 **No external auth service needed.**
+## Authentication
 
-### How it works:
-1. Navigate to `/admin/setup`.
-2. Create your admin account (enter the **Setup token** if your deploy sets `SETUP_TOKEN`).
-3. The first user becomes the admin.
-4. Registration **locks automatically**.
-5. Sign in at `/admin/login`. With two-factor on, you are then asked for the 6-digit code from your authenticator app or one of your backup codes.
+Setup at `/admin/setup` creates one administrator. Set `SETUP_TOKEN` before exposing a fresh instance, then enter it in the wizard to prevent someone else claiming the first account.
 
-### Two-factor authentication
-Turn it on under **Settings → Account → Two-factor authentication**: scan the QR code (or type the key), enter a code to confirm, and **save the backup codes** somewhere safe. 2FA only switches on once the first code verifies. You can tick "trust this device for 30 days" at login. Lost both your authenticator and your codes? Run `bun reset:password -- --email you@example.com --remote --disable-2fa`.
+Under **Settings → Account**:
 
-### Magic link
-Optional passwordless sign-in under **Settings → Account**. It can only be turned on once email is configured and while two-factor is off, links expire after 10 minutes, and only your admin address can receive one.
+- Enable **Two-factor authentication**, scan the QR code or enter its key, verify a TOTP, and save the backup codes. Enrollment is incomplete until that first code verifies.
+- After password sign-in, enter a TOTP or a single-use backup code. The optional trusted-device choice lasts 30 days.
+- Enable **Magic link** only after configuring email and while two-factor is off. Links expire after ten minutes and never create another account.
+- Change your password or start the email-change confirmation flow.
 
-> **Note:** Unauthenticated visitors only see your public link page.
+Email recovery requires configured Resend delivery. Without it, the login page explains operator recovery. See [Security](/docs/guide/security) for the password-reset command.
 
----
+### Local development login
 
-## 4. 🎛️ Admin Settings (Runtime Config)
+`DEV_LOGIN="true"` belongs only in the standalone API's gitignored `.dev.vars`. `NEXT_PUBLIC_DEV_LOGIN=true` can show the matching local frontend button.
 
-Most configuration lives in the admin panel (`/admin/design` for the page, `/admin/settings` for account, email, integrations, wallet and data), **not** in environment variables. This means you can change settings **without redeploying**:
+Both the configured auth URL and the actual request must pass strict plain-HTTP loopback checks. Non-development runtime modes, tunnels, forwarded hosts, public pages, and nonlocal origins cannot use it. Alchemy never binds the bypass into deployed Workers. Use real credentials for remote previews.
 
-- 📧 **Email provider** -- Resend (Cloudflare Email Workers coming soon), plus where contact-form messages go (Inbox, email, or both).
-- 🛡️ **CAPTCHA** -- Cloudflare Turnstile, Google reCAPTCHA (v2 checkbox), or hCaptcha on the contact form.
-- 🏷️ **Branding** -- Whitelabel footer text, link, logo, site name, and admin panel branding.
-- 📇 **vCard** -- Enable or disable the downloadable contact card.
-- 🍏 **Apple Wallet** -- Pass design, Team ID, Pass Type ID, signing keys, and custom QR URL.
-- 🔍 **SEO** -- Page title, meta description, and OG image.
-- 🗺️ **MapKit** -- Apple Maps token (stored for a planned map embed; Location blocks currently link out to a map).
-- 🍪 **Consent Banner** -- On by default. Asks visitors before analytics and embedded media load.
-- 🖥️ **Admin Branding** -- Show or hide LinkDen branding inside the admin panel itself.
+## Find the right setting
 
----
+| Area | What it controls |
+| --- | --- |
+| **Profile page → Profile / Social** | Profile details and social links |
+| **Design → Theme / Banner / Branding / SEO** | Public layout, 11 presets, color overrides, images, legal text, vCard, consent, and share metadata |
+| **Inbox** | Messages and the **Accepting messages** switch |
+| **Settings → Account** | Security, account details, timezone, and editor preferences |
+| **Settings → Email** | Resend API key, sender, and contact delivery |
+| **Settings → Integrations** | CAPTCHA provider, site key, and secret |
+| **Settings → Wallet** | Pass design, private download switch, identity, and signing material |
+| **Settings → Data** | Backup/import, LinkStack migration, and confirmed destructive actions |
 
-## Next Steps
+Dedicated login-background and login-logo controls have been removed; sign-in uses normal site branding. MapKit settings remain accepted for compatibility, but the Integrations page no longer offers a map embed. Location blocks open an outbound map link.
 
-- 🚀 [Quick Start](/docs/getting-started/quick-start) -- Walk through the setup wizard.
-- ☁️ [Self-Hosting](/docs/self-hosting/cloudflare) -- Deploy to Cloudflare.
+The admin footer contains LinkDen branding, build/development information, and the editor theme control. Public themes and public branding are separate settings.

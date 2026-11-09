@@ -11,7 +11,7 @@ interface MobilePreviewSheetProps {
 }
 
 /**
- * Below-lg preview overlay, opened by the shell's FAB. Own header so Share sits
+ * Below-lg preview overlay, opened by the shell's header action. Own header so Share sits
  * next to Close: edit → preview → share is one flow on a phone.
  */
 export function MobilePreviewSheet({ open, onOpenChange, children }: MobilePreviewSheetProps) {

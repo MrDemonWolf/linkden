@@ -12,24 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { friendlyMessage } from "@/lib/validate";
+import { schemaErrors } from "@/lib/validate";
 import { trpc } from "@/utils/trpc";
 import { FieldGroup } from "./field-group";
-
-/**
- * Same schema the vcard router validates against, so an inline error here is
- * exactly what the server would reject. Keyed by dotted path (`urls.2.url`).
- */
-function vcardErrors(data: VCardData): Record<string, string> {
-	const result = vcardDataSchema.safeParse(data);
-	if (result.success) return {};
-	const errors: Record<string, string> = {};
-	for (const issue of result.error.issues) {
-		const key = issue.path.map(String).join(".");
-		if (!(key in errors)) errors[key] = friendlyMessage(issue.message);
-	}
-	return errors;
-}
 
 interface UrlEntry {
 	label: string;
@@ -134,7 +119,7 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 	// so hidden edits neither count as unsaved nor block the save.
 	const isDirty =
 		enabled !== savedEnabled || (enabled && JSON.stringify(data) !== JSON.stringify(savedData));
-	const errors = enabled ? vcardErrors(data) : {};
+	const errors = enabled ? schemaErrors(vcardDataSchema, data) : {};
 	const hasErrors = Object.keys(errors).length > 0;
 
 	// Report dirty state to the parent so the global unsaved-changes bar covers vCard edits.
@@ -284,9 +269,7 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 				<>
 					{/* Personal */}
 					<div className="space-y-2">
-						<p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-							Personal
-						</p>
+						<h3 className="text-sm font-medium">Personal</h3>
 						<FieldGroup columns={2}>
 							<div className="space-y-1.5">
 								<Label htmlFor="s-vc-name">Full Name</Label>
@@ -341,9 +324,7 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 
 					{/* Organization */}
 					<div className="space-y-2">
-						<p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-							Organization
-						</p>
+						<h3 className="text-sm font-medium">Organization</h3>
 						<FieldGroup columns={2}>
 							<div className="space-y-1.5">
 								<Label htmlFor="s-vc-org">Organization</Label>
@@ -383,9 +364,7 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 
 					{/* Contact */}
 					<div className="space-y-2">
-						<p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-							Contact
-						</p>
+						<h3 className="text-sm font-medium">Contact</h3>
 						<FieldGroup columns={2}>
 							<div className="space-y-1.5">
 								<Label htmlFor="s-vc-email">Personal Email</Label>
@@ -457,17 +436,18 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 					{/* URLs */}
 					<div className="space-y-2">
 						<div className="flex items-center justify-between">
-							<p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-								URLs
-							</p>
+							<h3 className="text-sm font-medium">URLs</h3>
 							<Button variant="outline" size="xs" onClick={addUrl}>
 								<Plus className="mr-1 h-3 w-3" />
 								Add URL
 							</Button>
 						</div>
 						{data.urls.map((entry, i) => (
-							<div key={`url-${i}`} className="flex items-end gap-2">
-								<div className="flex-1 space-y-1.5">
+							<div
+								key={`url-${i}`}
+								className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_auto]"
+							>
+								<div className="col-span-full min-w-0 space-y-1.5 sm:col-span-1">
 									<Label htmlFor={`s-vc-url-label-${i}`}>Label</Label>
 									<Input
 										id={`s-vc-url-label-${i}`}
@@ -477,7 +457,7 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 										maxLength={40}
 									/>
 								</div>
-								<div className="flex-[2] space-y-1.5">
+								<div className="min-w-0 space-y-1.5">
 									<Label htmlFor={`s-vc-url-val-${i}`}>URL</Label>
 									<Input
 										id={`s-vc-url-val-${i}`}
@@ -494,10 +474,10 @@ export const VCardSection = forwardRef<VCardSectionHandle, VCardSectionProps>(fu
 								</div>
 								<Button
 									variant="ghost"
-									size="sm"
+									size="icon"
 									onClick={() => removeUrl(i)}
 									className="text-destructive shrink-0"
-									aria-label="Remove URL"
+									aria-label={`Remove URL ${i + 1}`}
 								>
 									<Trash2 className="h-3.5 w-3.5" />
 								</Button>

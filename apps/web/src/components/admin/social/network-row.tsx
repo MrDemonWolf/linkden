@@ -4,6 +4,12 @@ import { getAccessibleIconFill, isLowLuminance } from "@linkden/ui/color-contras
 import type { socialBrands } from "@linkden/ui/social-brands";
 import { useTheme } from "next-themes";
 import { Input } from "@/components/ui/input";
+import {
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
+	InputGroupText,
+} from "@/components/ui/input-group";
 import { Switch } from "@/components/ui/switch";
 import { getPrefix, getSuffix, isFullUrlTemplate } from "@/lib/social-url-utils";
 import { cn, getAdminThemeColors } from "@/lib/utils";
@@ -45,19 +51,17 @@ export function NetworkRow({
 		// Neutral container — callers own the list semantics (<li>/role="listitem").
 		<div
 			className={cn(
-				"flex rounded-xl px-2 sm:px-4 py-2.5 sm:py-3.5 transition-all",
-				draft.isActive
-					? "border border-primary/20 bg-card/80 backdrop-blur-sm shadow-sm"
-					: "group border border-transparent hover:bg-accent/60",
+				"group @container/social-row flex rounded-lg border px-3 py-4 transition-colors sm:px-4",
+				draft.isActive ? "border-border bg-card" : "border-transparent hover:bg-muted/50",
 			)}
 		>
-			<div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+			<div className="flex w-full flex-col gap-2 @min-[500px]/social-row:flex-row @min-[500px]/social-row:items-center @min-[500px]/social-row:gap-3">
 				{/* Icon + Name row */}
 				<div className="flex items-center gap-2 sm:gap-3">
 					<div
 						className={cn(
-							"flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl transition-transform",
-							draft.isActive ? "" : "bg-muted/50 group-hover:scale-105",
+							"flex h-7 w-7 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg",
+							draft.isActive ? "" : "bg-muted/50",
 							needsRing && draft.isActive && "ring-1 ring-border dark:ring-white/20",
 						)}
 						style={draft.isActive ? { backgroundColor: `${social.hex}15` } : undefined}
@@ -69,14 +73,14 @@ export function NetworkRow({
 
 					<label
 						htmlFor={`input-${social.slug}`}
-						className="sm:w-28 shrink-0 truncate text-xs font-medium text-foreground cursor-pointer"
+						className="@min-[500px]/social-row:w-28 shrink-0 truncate text-sm font-medium text-foreground cursor-pointer"
 					>
 						{social.name}
 					</label>
 				</div>
 
 				{/* URL input + toggle */}
-				<div className="flex items-center gap-2 sm:gap-3 sm:flex-1">
+				<div className="flex items-center gap-2 @min-[500px]/social-row:flex-1 @min-[500px]/social-row:gap-3">
 					<div className="min-w-0 flex-1">
 						{fullUrlMode ? (
 							<Input
@@ -84,32 +88,30 @@ export function NetworkRow({
 								value={draft.url}
 								onChange={(e) => onUrlChange(social.slug, e.target.value)}
 								placeholder="https://..."
-								className="h-11 text-base md:h-8 md:text-xs"
 								aria-label={`URL for ${social.name}`}
 							/>
 						) : (
-							<div className="flex h-11 items-center overflow-hidden rounded-lg border border-input-border bg-transparent focus-within:ring-1 focus-within:ring-ring md:h-8">
+							<InputGroup>
 								{prefix && (
-									<span className="shrink-0 select-none pl-2.5 text-base text-muted-foreground md:text-xs">
-										{prefix}
-									</span>
+									<InputGroupAddon>
+										<InputGroupText>{prefix}</InputGroupText>
+									</InputGroupAddon>
 								)}
-								<input
+								<InputGroupInput
 									id={`input-${social.slug}`}
 									value={displayValue}
 									onChange={(e) =>
 										onUrlChange(social.slug, buildSocialUrl(e.target.value, template))
 									}
 									placeholder="username"
-									className="min-w-0 flex-1 bg-transparent px-1.5 text-base outline-none placeholder:text-muted-foreground md:text-xs"
 									aria-label={`URL for ${social.name}`}
 								/>
 								{suffix && (
-									<span className="shrink-0 select-none pr-2.5 text-xs text-muted-foreground">
-										{suffix}
-									</span>
+									<InputGroupAddon align="inline-end">
+										<InputGroupText>{suffix}</InputGroupText>
+									</InputGroupAddon>
 								)}
-							</div>
+							</InputGroup>
 						)}
 					</div>
 

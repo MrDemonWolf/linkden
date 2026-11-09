@@ -1,10 +1,9 @@
 "use client";
 
-import { MapPin, Shield } from "lucide-react";
+import { Shield } from "lucide-react";
 import { QueryError } from "@/components/admin/dashboard/query-error";
 import { SectionCard } from "@/components/admin/section-header";
 import { CaptchaSection, captchaErrors } from "@/components/admin/settings/captcha-section";
-import { MapKitSection, mapkitErrors } from "@/components/admin/settings/mapkit-section";
 import { StickySaveBar } from "@/components/admin/sticky-save-bar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSettingsForm } from "@/hooks/use-settings-form";
@@ -13,27 +12,21 @@ interface IntegrationsState {
 	captchaProvider: string;
 	captchaSiteKey: string;
 	captchaSecretKey: string;
-	mapkitEnabled: boolean;
-	mapkitToken: string;
 }
 
 const parse = (s: Record<string, string>): IntegrationsState => ({
 	captchaProvider: s.captcha_provider ?? "none",
 	captchaSiteKey: s.captcha_site_key ?? "",
 	captchaSecretKey: s.captcha_secret_key ?? "",
-	mapkitEnabled: s.mapkit_enabled === "true",
-	mapkitToken: s.mapkit_token ?? "",
 });
 
 const serialize = (s: IntegrationsState) => [
 	{ key: "captcha_provider" as const, value: s.captchaProvider },
 	{ key: "captcha_site_key" as const, value: s.captchaSiteKey },
 	{ key: "captcha_secret_key" as const, value: s.captchaSecretKey },
-	{ key: "mapkit_enabled" as const, value: String(s.mapkitEnabled) },
-	{ key: "mapkit_token" as const, value: s.mapkitToken },
 ];
 
-const validate = (s: IntegrationsState) => ({ ...captchaErrors(s), ...mapkitErrors(s) });
+const validate = captchaErrors;
 
 export default function IntegrationsSettingsPage() {
 	const form = useSettingsForm<IntegrationsState>({
@@ -46,7 +39,13 @@ export default function IntegrationsSettingsPage() {
 	if (form.isError) {
 		return <QueryError message="Couldn't load settings" onRetry={() => form.refetch()} />;
 	}
-	if (form.isLoading || !form.state) return <Skeleton className="h-64" />;
+	if (form.isLoading || !form.state) {
+		return (
+			<div aria-busy="true" role="status" aria-label="Loading integrations">
+				<Skeleton className="h-64" />
+			</div>
+		);
+	}
 	const { state, setState } = form;
 
 	return (
@@ -59,19 +58,6 @@ export default function IntegrationsSettingsPage() {
 					onCaptchaProviderChange={(v) => setState({ ...state, captchaProvider: v })}
 					onCaptchaSiteKeyChange={(v) => setState({ ...state, captchaSiteKey: v })}
 					onCaptchaSecretKeyChange={(v) => setState({ ...state, captchaSecretKey: v })}
-				/>
-			</SectionCard>
-
-			<SectionCard
-				icon={MapPin}
-				title="Apple Maps (MapKit JS)"
-				description="Address autocomplete for Location blocks"
-			>
-				<MapKitSection
-					mapkitEnabled={state.mapkitEnabled}
-					mapkitToken={state.mapkitToken}
-					onMapkitEnabledChange={(v) => setState({ ...state, mapkitEnabled: v })}
-					onMapkitTokenChange={(v) => setState({ ...state, mapkitToken: v })}
 				/>
 			</SectionCard>
 

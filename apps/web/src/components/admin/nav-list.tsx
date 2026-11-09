@@ -1,21 +1,29 @@
 "use client";
 
-import { BarChart3, Inbox, Link2, type LucideIcon, Palette, Settings } from "lucide-react";
+import { Inbox, Link2, type LucideIcon, Palette, Settings } from "lucide-react";
 import type { Route } from "next";
 
 export interface NavItem {
 	href: Route;
 	label: string;
 	icon: LucideIcon;
+	group: "Create" | "Manage";
+	/** A compact primary tab; other destinations live in the mobile More menu. */
+	mobileLabel?: string;
 }
 
-/** The five destinations. One data source for the sidebar, the bottom tab bar and the breadcrumb. */
+/** Shared destinations for the sidebar, mobile tabs and breadcrumb. */
 export const NAV_ITEMS: readonly NavItem[] = [
-	{ href: "/admin/links", label: "Links", icon: Link2 },
-	{ href: "/admin/design", label: "Design", icon: Palette },
-	{ href: "/admin/insights", label: "Insights", icon: BarChart3 },
-	{ href: "/admin/inbox", label: "Inbox", icon: Inbox },
-	{ href: "/admin/settings", label: "Settings", icon: Settings },
+	{
+		href: "/admin/links",
+		label: "Profile page",
+		mobileLabel: "Profile",
+		icon: Link2,
+		group: "Create",
+	},
+	{ href: "/admin/design", label: "Design", icon: Palette, group: "Create" },
+	{ href: "/admin/inbox", label: "Inbox", mobileLabel: "Inbox", icon: Inbox, group: "Manage" },
+	{ href: "/admin/settings", label: "Settings", icon: Settings, group: "Manage" },
 ];
 
 export function isNavActive(href: string, pathname: string) {

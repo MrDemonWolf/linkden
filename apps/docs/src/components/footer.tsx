@@ -25,11 +25,17 @@ export function Footer() {
 				</a>
 			</div>
 			<div className="mt-2 flex items-center justify-center gap-3">
-				<Link href="/docs/privacy-policy" className="transition-colors hover:text-fd-foreground">
+				<Link
+					href="/docs/privacy-policy"
+					className="inline-flex min-h-11 items-center transition-colors hover:text-fd-foreground"
+				>
 					Privacy Policy
 				</Link>
 				<span>&middot;</span>
-				<Link href="/docs/terms-of-service" className="transition-colors hover:text-fd-foreground">
+				<Link
+					href="/docs/terms-of-service"
+					className="inline-flex min-h-11 items-center transition-colors hover:text-fd-foreground"
+				>
 					Terms of Service
 				</Link>
 			</div>

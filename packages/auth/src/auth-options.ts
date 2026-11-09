@@ -127,6 +127,8 @@ export interface AuthOptionsDeps {
 	trustedOrigins?: string[];
 	/** Raw DEV_LOGIN binding; see `isDevLoginEnabled`. */
 	devLogin?: string;
+	/** Optional runtime mode; a present non-development value disables dev login. */
+	nodeEnv?: string;
 	/**
 	 * Deliver an auth email. Must not throw when email delivery is not
 	 * configured: password reset and magic link answer the same either way.
@@ -224,10 +226,9 @@ export function createAuthOptions(deps: AuthOptionsDeps) {
 			},
 			session: {
 				create: {
-					// Backstop for magic links issued before 2FA was turned on: refuse
-					// to mint a session that would skip the second factor.
+					// Neither an old magic link nor signed-out email verification may skip 2FA.
 					before: async (session, ctx) => {
-						if (ctx?.path !== "/magic-link/verify") return;
+						if (ctx?.path !== "/magic-link/verify" && ctx?.path !== "/verify-email") return;
 						const found = await ctx.context.internalAdapter.findUserById(session.userId);
 						if ((found as { twoFactorEnabled?: boolean | null } | null)?.twoFactorEnabled) {
 							return false;
@@ -285,7 +286,7 @@ export function createAuthOptions(deps: AuthOptionsDeps) {
 			// DEV ONLY: the bypass-login endpoint (POST /api/auth/dev-login) exists only
 			// when DEV_LOGIN === "true" AND the base URL is local http. Otherwise the
 			// plugin is unregistered and the route 404s.
-			...(isDevLoginEnabled(deps.devLogin, deps.baseURL) ? [devLoginPlugin()] : []),
+			...(isDevLoginEnabled(deps.devLogin, deps.baseURL, deps.nodeEnv) ? [devLoginPlugin()] : []),
 			// Enabling stores an unverified secret; `twoFactorEnabled` only flips
 			// after the first TOTP code verifies, so a half-finished setup can't
 			// lock the admin out. The login page answers `twoFactorRedirect` with

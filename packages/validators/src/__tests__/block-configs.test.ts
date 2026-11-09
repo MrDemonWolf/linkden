@@ -166,11 +166,22 @@ describe("new block configs", () => {
 			alt: "A photo",
 			caption: "Caption",
 			aspect: "4:5",
+			fit: "contain",
 		});
 		expect(ok.aspect).toBe("4:5");
+		expect(ok.fit).toBe("contain");
 		expect(imageConfigSchema.parse({ src: "" }).src).toBe("");
 		expect(imageConfigSchema.safeParse({ src: "https://x.y", aspect: "3:2" }).success).toBe(false);
 		expect(imageConfigSchema.safeParse({ src: "javascript:1" }).success).toBe(false);
+	});
+
+	it("image: retains an explicit crop choice and rejects stretching", () => {
+		expect(parseBlockConfig("image", JSON.stringify({ fit: "cover" }))).toEqual({
+			ok: true,
+			data: { fit: "cover" },
+		});
+		expect(imageConfigSchema.parse({})).toEqual({});
+		expect(imageConfigSchema.safeParse({ fit: "fill" }).success).toBe(false);
 	});
 
 	it("text: requires body ≤ 2000", () => {

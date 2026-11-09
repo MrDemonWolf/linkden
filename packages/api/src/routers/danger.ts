@@ -1,7 +1,14 @@
 import { db } from "@linkden/db";
 import * as schema from "@linkden/db/schema/index";
-import { block, contactSubmission, linkClick, pageView, user } from "@linkden/db/schema/index";
-import { is } from "drizzle-orm";
+import {
+	block,
+	contactSubmission,
+	linkClick,
+	pageView,
+	publicationState,
+	user,
+} from "@linkden/db/schema/index";
+import { is, sql } from "drizzle-orm";
 import { SQLiteTable } from "drizzle-orm/sqlite-core";
 import { protectedProcedure, router } from "../index";
 import { logAudit } from "../utils/audit";
@@ -35,7 +42,27 @@ export const dangerRouter = router({
 	deleteAllContent: protectedProcedure.mutation(async () => {
 		// Audit the destructive action BEFORE wiping (the log survives this op).
 		await logAudit("danger.deleteAllContent");
+		// Optional publication migrations may not be installed on an older site.
+		const publicationColumns = await db.all<{ name: string }>(
+			sql`PRAGMA table_info(publication_state)`,
+		);
+		const revokeApproval = publicationColumns.some((column) => column.name === "approval_revision")
+			? [
+					db.update(publicationState).set({
+						approvalRevision: null,
+						currentRevision: null,
+						generation: sql`${publicationState.generation} + 1`,
+						nextVisibilityBoundary: null,
+						lastScheduleAttemptAt: null,
+						scheduleFailureCode: null,
+						// A runner may already be activating remotely; preserve that uncertainty.
+						recoveryRequired: sql`CASE WHEN EXISTS (SELECT 1 FROM publication_revision WHERE revision = ${publicationState.currentRevision} AND status = 'publishing') THEN 1 ELSE ${publicationState.recoveryRequired} END`,
+						recoveryRevision: sql`CASE WHEN EXISTS (SELECT 1 FROM publication_revision WHERE revision = ${publicationState.currentRevision} AND status = 'publishing') THEN ${publicationState.currentRevision} ELSE ${publicationState.recoveryRevision} END`,
+					}),
+				]
+			: [];
 		await runBatch([
+			...revokeApproval,
 			db.delete(block),
 			db.delete(pageView),
 			db.delete(linkClick),

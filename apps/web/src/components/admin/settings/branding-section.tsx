@@ -97,7 +97,7 @@ function Toggle({
 	return (
 		<div className="flex items-start gap-3">
 			<div className="min-w-0 flex-1">
-				<Label htmlFor={id} className="text-xs font-medium">
+				<Label htmlFor={id} className="text-sm font-medium">
 					{label}
 				</Label>
 				<p className="mt-0.5 text-micro leading-tight text-muted-foreground">{description}</p>
@@ -214,7 +214,7 @@ export function BrandingSection({
 			    upload's generic Replace / Re-crop / Remove buttons for screen readers. */}
 			<div className="grid gap-6 sm:grid-cols-2">
 				<fieldset className="min-w-0 space-y-1.5" aria-describedby="branding-logo-hint">
-					<legend className="text-xs font-medium">Logo</legend>
+					<legend className="text-sm font-medium">Logo</legend>
 					<p id="branding-logo-hint" className="text-micro text-muted-foreground">
 						Shown on login page and admin sidebar
 					</p>
@@ -227,7 +227,7 @@ export function BrandingSection({
 					/>
 				</fieldset>
 				<fieldset className="min-w-0 space-y-1.5" aria-describedby="branding-favicon-hint">
-					<legend className="text-xs font-medium">Favicon</legend>
+					<legend className="text-sm font-medium">Favicon</legend>
 					<p id="branding-favicon-hint" className="text-micro text-muted-foreground">
 						Browser tab icon (auto-cropped to square)
 					</p>
@@ -302,7 +302,7 @@ export function BrandingSection({
 
 			{/* Legal Links */}
 			<div className="space-y-3">
-				<p className="text-xs font-medium">Legal Links</p>
+				<h3 className="text-sm font-medium">Legal Links</h3>
 				<p className="text-micro text-muted-foreground -mt-2">
 					Both appear on the login page. The privacy policy also appears on your public page: in the
 					footer and next to the contact form's consent checkbox.

@@ -13,6 +13,7 @@ import {
 	type SharedProps,
 } from "fumadocs-ui/components/dialog/search";
 import { useI18n } from "fumadocs-ui/contexts/i18n";
+import { basePath } from "@/lib/site";
 
 function initOrama() {
 	return create({ schema: { _: "string" }, language: "english" });
@@ -20,7 +21,12 @@ function initOrama() {
 
 export default function DefaultSearchDialog(props: SharedProps) {
 	const { locale } = useI18n();
-	const { search, setSearch, query } = useDocsSearch({ type: "static", initOrama, locale });
+	const { search, setSearch, query } = useDocsSearch({
+		type: "static",
+		from: `${basePath}/api/search`,
+		initOrama,
+		locale,
+	});
 	return (
 		<SearchDialog search={search} onSearchChange={setSearch} isLoading={query.isLoading} {...props}>
 			<SearchDialogOverlay />

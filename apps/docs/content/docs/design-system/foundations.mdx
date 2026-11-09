@@ -1,0 +1,113 @@
+---
+title: Foundations
+description: Actual color, typography, spacing, shape, and motion values from the app.
+---
+
+## Color roles
+
+Use semantic utilities such as `bg-card`, `text-foreground`, `text-muted-foreground`, and `border-input-border`. The values below come from `.admin-scope` in `apps/web/src/index.css`.
+
+| Token | Light admin | Dark admin | Use |
+| --- | --- | --- | --- |
+| `--background` | `#F6F7F9` | `#101012` | Page ground |
+| `--card` | `#FFFFFF` | `#18181B` | Cards and top bar |
+| `--surface-2` | `#F0F0F3` | `#242427` | Inset surfaces |
+| `--popover` | `#FFFFFF` | `#202023` | Menus and popovers |
+| `--foreground` | `#18181B` | `#F4F4F5` | Primary text |
+| `--muted-foreground` | `#606068` | `#A8A8B2` | Supporting text |
+| `--primary` | `#1D4ED8` | `#60A5FA` | Primary actions and links |
+| `--primary-foreground` | `#FFFFFF` | `#111113` | Text on primary |
+| `--accent` | `#EAF1FC` | `#202B3D` | Selected and hover surfaces |
+| `--accent-foreground` | `#1D4ED8` | `#93C5FD` | Text on accent |
+| `--border` | `#DEDEE5` | `#38383F` | Structural edges |
+| `--input-border` | `#85858F` | `#777783` | Identifiable form boundaries |
+| `--ring` | `#2563EB` | `#60A5FA` | Keyboard focus |
+| `--success` | `#176B40` | `#74D39B` | Success state |
+| `--warning` | `#765100` | `#F0BE55` | Warning state |
+| `--destructive` | `#A32626` | `#FF9C9C` | Destructive actions and errors |
+
+The dark sidebar uses `#111113`. Other sidebar roles derive from the same semantic tokens. Dark mode stays neutral; blue identifies actions and selected states.
+
+`--input` is a fill color, not a control boundary. Input, Select, Textarea, InputGroup, Checkbox, and the off Switch use `--input-border`. The palette regression test is `apps/web/src/components/ui/__tests__/admin-palette-contrast.test.ts`; it checks text and control-boundary contrast against the app's surface colors.
+
+Public colors are resolved separately by `packages/ui/src/themes.ts` and `apps/web/src/lib/theme-colors.ts`. Saved `custom_primary`, `custom_secondary`, `custom_accent`, and `custom_background` values override the selected public preset. Empty values inherit the preset in each color mode.
+
+Classic, the default public preset, uses neutral gray surfaces: `#F6F6F7` with white cards in light mode, and `#101012` with `#18181B` cards in dark mode. Brand navy `#091533` anchors light-mode actions; cyan `#0FACED` supplies accents and dark-mode actions.
+
+Every preset shares these neutral dark surfaces and neutral text, borders, and inset fills. Each preset retains its own primary and accent colors for actions and decorative highlights; light-mode palettes stay distinct. Saved custom color overrides still take precedence.
+
+## Typography
+
+| Surface | Headings | Body |
+| --- | --- | --- |
+| Admin | Montserrat | Roboto |
+| Public page | Sora | DM Sans |
+| Numeric/code text | Geist Mono | Geist Mono |
+| Wallet pass card | System/SF font stack | System/SF font stack |
+
+Admin fonts are configured in `apps/web/src/app/admin/layout.tsx`. Public fonts are local files loaded by `apps/web/src/public-fonts.css` for both Next and static output. `data-mono` adds tabular figures for numeric displays.
+
+| Role | Current size and source |
+| --- | --- |
+| Admin page title | `PageHeader`: 24px, 28px from `sm`; semibold |
+| Card/section title | `CardTitle`: 16px semibold; native `h2` |
+| Admin labels/body/subsections | Typically `text-sm`: 14px |
+| Helper text | `text-xs`: 12px, or fluid `text-micro` |
+| Public/fluid `text-h1` | 28–40px; line height 1.05 |
+| Fluid `text-h2` | 18–22px; line height 1.2 |
+| Fluid `text-body` | 16–17px; line height 1.55 |
+| Fluid `text-small` | 14–15px; line height 1.45 |
+| Fluid `text-micro` | 12–13px; line height 1.35 |
+
+The fluid roles use `clamp()` and container units in `index.css`. The 12px helper floor is for interface text; the miniature Wallet pass canvas has its own smaller label scale. Do not copy those pass labels into editor forms.
+
+`cn` in `packages/ui/src/utils.ts` registers the custom text-size names with `tailwind-merge`, so `text-micro text-muted-foreground` retains both size and color.
+
+## Spacing and widths
+
+The app uses Tailwind's spacing utilities rather than a second spacing-token file. Common values in the shared components are:
+
+| Utility step | Pixels | Current examples |
+| --- | --- | --- |
+| `1` | 4px | Sidebar item gaps and sub-tab gaps |
+| `1.5` | 6px | Label-to-control field groups |
+| `2` | 8px | Inline actions and icon/text gaps |
+| `3` | 12px | Public blocks and small groups |
+| `4` | 16px | Form grid gaps and mobile horizontal padding |
+| `5` | 20px | Default card vertical padding and larger horizontal gutters |
+| `6` | 24px | Page/section rhythm from `sm` |
+| `8` | 32px | Large-screen page padding and editor/preview gap |
+| `10` | 40px | Public split-layout column gap |
+
+`PageShell` uses 16px vertical gaps, increasing to 24px from `sm`. The admin main area uses 16/24/32px horizontal padding and 24/32px vertical padding. Cards use 16px horizontal padding, increasing to 20px from `sm`, with 20px vertical padding. Compact cards use 16px.
+
+The shell is capped at 1680px. A page without a preview stops at 1120px; the editor column beside a preview stops at 760px. These are source constraints, not additional page wrappers to stack inside the shell.
+
+## Controls and radii
+
+| Control | Fine pointer from `md` | Narrow/coarse pointer |
+| --- | --- | --- |
+| Standard Button, Input, Select | 36px | 44px |
+| Compact Button (`sm`, `xs`, matching icon sizes) | 32px | 44px |
+| Large Button | 44px | 44px |
+| Textarea | Minimum 80px height | Minimum 80px height |
+
+Inputs and selects use 16px text on narrow/coarse-pointer screens and 14px on desktop fine-pointer screens. The coarse-pointer media rule also keeps tablet controls at least 44px. The Switch remains a 36×20px visual pill with an expanded hit area; do not enlarge its track to match a text field.
+
+| Radius utility | Admin | Public scope |
+| --- | --- | --- |
+| `rounded-sm` | 6px | 8px |
+| `rounded-md` | 8px | 12px |
+| `rounded-lg` | 12px | 18px |
+| `rounded-xl` | 16px | 24px |
+| `rounded-2xl` | 20px | 28px |
+
+The radius scale is declared in a non-inline Tailwind `@theme` so scope overrides work at runtime. Keep controls on the shared scale instead of adding one-off rounded values.
+
+## Surfaces and motion
+
+Admin cards are matte `bg-card` surfaces with a border and the shared `shadow-surface`. Avoid decorative page, card, and chart entrance animations in the admin. Keep real pending indicators, focus feedback, menu transitions, and the 220ms preview-collapse transition.
+
+The Unsaved control uses a warning outline and text without a glow or animated dot. Public page elements use the shared `ld-rise` entrance (480ms, 45ms stagger). The global reduced-motion rule shortens transitions and disables the public entrance classes explicitly. JavaScript scrolling uses `prefersReducedMotion()` from `apps/web/src/hooks/use-reduced-motion.ts`.
+
+Public hero treatments and the Wallet card have their own surfaces. They do not establish a glass or glow style for admin forms.

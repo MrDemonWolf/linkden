@@ -1,0 +1,19 @@
+{
+	"name": "@linkden/public",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"check-types": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@linkden/db": "workspace:*",
+		"@linkden/ui": "workspace:*",
+		"@linkden/validators": "workspace:*",
+		"web": "workspace:*",
+		"zod": "catalog:"
+	},
+	"devDependencies": {
+		"@types/bun": "1.3.14",
+		"typescript": "catalog:"
+	}
+}

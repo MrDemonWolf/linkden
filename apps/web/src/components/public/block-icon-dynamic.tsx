@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 /**
  * Client-side resolution of a block's `icon` column, for callers that have no
  * server-resolved glyph (the admin preview and icon picker). It pulls the
- * whole lucide dynamic-import map and the social-brand catalog, so `BlockIcon`
+ * whole lucide dynamic-import map and the social-brand catalog, so the editor runtime
  * only loads this module lazily — the public page resolves icons on the server
  * (lib/block-icons.ts) and never downloads it.
  *

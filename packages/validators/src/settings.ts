@@ -10,6 +10,7 @@ export const VALID_SETTING_KEYS = [
 	"banner_enabled",
 	"banner_mode",
 	"banner_custom_url",
+	"page_layout",
 	"theme_preset",
 	"theme",
 	"custom_primary",

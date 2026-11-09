@@ -32,13 +32,28 @@ test("public.getPage answers through the API", async ({ request }) => {
 });
 
 test("health endpoint responds through the web origin", async ({ request }) => {
-	// Exercises the dev rewrite (next.config.ts) when DEV_API_ORIGIN is set, or
-	// plain wrangler when hit directly — either way the contract is the same.
+	// Exercises the same-origin API bridge used by the editor.
 	const res = await request.get("/api/health");
 	expect(res.status()).toBe(200);
 	const body = (await res.json()) as { status: string; database: string };
 	expect(body.status).toBe("ok");
 	expect(body.database).toBe("ok");
+});
+
+test("the web API bridge preserves cross-site write rejection", async ({ request }) => {
+	const res = await request.post("/trpc/settings.update", {
+		headers: { Origin: "https://untrusted.example" },
+		data: { key: "profile_name", value: "Must never be saved" },
+	});
+	expect(res.status()).toBe(403);
+});
+
+test("the web API bridge preserves auth body limits", async ({ request, baseURL }) => {
+	const res = await request.post("/api/auth/sign-in/email", {
+		headers: { Origin: new URL(baseURL as string).origin },
+		data: { email: "oversize@example.test", password: "x".repeat(70_000) },
+	});
+	expect(res.status()).toBe(413);
 });
 
 test("/og is served by Next, not proxied to the API", async ({ request }) => {
@@ -65,7 +80,6 @@ const ADMIN_ROUTES = [
 	"/admin/design/banner",
 	"/admin/design/branding",
 	"/admin/design/seo",
-	"/admin/insights",
 	"/admin/inbox",
 	"/admin/settings",
 	"/admin/settings/email",

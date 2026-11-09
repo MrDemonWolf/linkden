@@ -1,6 +1,7 @@
 import { db } from "@linkden/db";
 import { retentionDeletes } from "@linkden/db/retention";
 import { block, siteSettings } from "@linkden/db/schema/index";
+import { sql } from "drizzle-orm";
 import { extractImageKeys } from "./image-keys";
 import { logError } from "./log";
 
@@ -26,6 +27,30 @@ export async function collectReferencedKeys(): Promise<Set<string>> {
 		if (b.icon) texts.push(b.icon);
 		if (b.socialIcons) texts.push(b.socialIcons);
 		if (b.config) texts.push(b.config);
+	}
+	try {
+		// A future approved upload may no longer be referenced by mutable drafts.
+		// Read one active private approval; never enumerate publication history.
+		const approvals = await db.all<{ approvedSourceJson: string | null }>(sql`
+			SELECT r.approved_source_json AS approvedSourceJson FROM publication_state s
+			INNER JOIN publication_revision r ON r.revision = s.approval_revision
+			WHERE s.id = 'site' LIMIT 1`);
+		for (const row of approvals) if (row.approvedSourceJson) texts.push(row.approvedSourceJson);
+	} catch (error) {
+		let cause: unknown = error;
+		let optionalSchemaMissing = false;
+		for (let depth = 0; depth < 4 && cause instanceof Error; depth++) {
+			if (
+				/no such (?:table|column):[^\n]*(?:publication_(?:state|revision)|approved_source_json|approval_revision)/i.test(
+					cause.message,
+				)
+			)
+				optionalSchemaMissing = true;
+			cause = cause.cause;
+		}
+		// Existing installations without optional publication migrations keep working.
+		// Every other storage failure aborts cleanup before any R2 object is deleted.
+		if (!optionalSchemaMissing) throw error;
 	}
 	return extractImageKeys(texts);
 }
