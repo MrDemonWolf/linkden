@@ -1,0 +1,658 @@
+[
+	{
+		"group": "components",
+		"name": "account-menu-dark",
+		"width": 560,
+		"height": 584,
+		"bytes": 10436,
+		"description": "Account DropdownMenu opened from the sidebar footer: identity header and account actions, dark"
+	},
+	{
+		"group": "components",
+		"name": "account-menu-light",
+		"width": 560,
+		"height": 584,
+		"bytes": 10884,
+		"description": "Account DropdownMenu opened from the sidebar footer: identity header and account actions, light"
+	},
+	{
+		"group": "components",
+		"name": "admin-footer-dark",
+		"width": 2368,
+		"height": 142,
+		"bytes": 4350,
+		"description": "AdminFooter: Powered by LinkDen, version, Development tag and the ThemeToggle segmented control, dark"
+	},
+	{
+		"group": "components",
+		"name": "admin-footer-light",
+		"width": 2368,
+		"height": 142,
+		"bytes": 4608,
+		"description": "AdminFooter: Powered by LinkDen, version, Development tag and the ThemeToggle segmented control, light"
+	},
+	{
+		"group": "components",
+		"name": "badge-wallet-dark",
+		"width": 958,
+		"height": 96,
+		"bytes": 6636,
+		"description": "Outline Badge with warning text (\"Setup required\") beside a section heading, plus an off Switch, dark"
+	},
+	{
+		"group": "components",
+		"name": "badge-wallet-light",
+		"width": 958,
+		"height": 96,
+		"bytes": 6476,
+		"description": "Outline Badge with warning text (\"Setup required\") beside a section heading, plus an off Switch, light"
+	},
+	{
+		"group": "components",
+		"name": "bottom-tab-bar-dark-mobile",
+		"width": 780,
+		"height": 114,
+		"bytes": 2942,
+		"description": "Bottom tab bar below lg: Profile active, Inbox with unread badge, More, dark"
+	},
+	{
+		"group": "components",
+		"name": "bottom-tab-bar-light-mobile",
+		"width": 780,
+		"height": 114,
+		"bytes": 3234,
+		"description": "Bottom tab bar below lg: Profile active, Inbox with unread badge, More, light"
+	},
+	{
+		"group": "components",
+		"name": "bottom-tab-more-dark-mobile",
+		"width": 780,
+		"height": 408,
+		"bytes": 11664,
+		"description": "More menu above the tab bar: Design and Settings, dark"
+	},
+	{
+		"group": "components",
+		"name": "bottom-tab-more-light-mobile",
+		"width": 780,
+		"height": 408,
+		"bytes": 12428,
+		"description": "More menu above the tab bar: Design and Settings, light"
+	},
+	{
+		"group": "components",
+		"name": "button-link-dark",
+		"width": 904,
+		"height": 664,
+		"bytes": 16282,
+		"description": "Login \"Reset from the server\" status card ending in a full-width link-variant Button (\"Back to sign in\"), dark"
+	},
+	{
+		"group": "components",
+		"name": "button-link-light",
+		"width": 904,
+		"height": 664,
+		"bytes": 17210,
+		"description": "Login \"Reset from the server\" status card ending in a full-width link-variant Button (\"Back to sign in\"), light"
+	},
+	{
+		"group": "components",
+		"name": "checkbox-checked-dark",
+		"width": 326,
+		"height": 80,
+		"bytes": 2120,
+		"description": "Checkbox checked: primary fill with primary-foreground check (\"Keep me signed in\" on the login page), dark"
+	},
+	{
+		"group": "components",
+		"name": "checkbox-checked-light",
+		"width": 326,
+		"height": 80,
+		"bytes": 2214,
+		"description": "Checkbox checked: primary fill with primary-foreground check (\"Keep me signed in\" on the login page), light"
+	},
+	{
+		"group": "components",
+		"name": "checkbox-unchecked-dark",
+		"width": 326,
+		"height": 80,
+		"bytes": 1890,
+		"description": "Checkbox unchecked: 3:1 input-border boundary (\"Keep me signed in\" on the login page), dark"
+	},
+	{
+		"group": "components",
+		"name": "checkbox-unchecked-light",
+		"width": 326,
+		"height": 80,
+		"bytes": 1968,
+		"description": "Checkbox unchecked: 3:1 input-border boundary (\"Keep me signed in\" on the login page), light"
+	},
+	{
+		"group": "components",
+		"name": "color-field-pass-dark",
+		"width": 710,
+		"height": 220,
+		"bytes": 5802,
+		"description": "ColorField with a passing contrast guard (ratio vs background, passes AA), dark"
+	},
+	{
+		"group": "components",
+		"name": "color-field-pass-light",
+		"width": 710,
+		"height": 220,
+		"bytes": 6018,
+		"description": "ColorField with a passing contrast guard (ratio vs background, passes AA), light"
+	},
+	{
+		"group": "components",
+		"name": "color-field-states-dark",
+		"width": 1412,
+		"height": 458,
+		"bytes": 18258,
+		"description": "ColorField grid: Primary fails AA with the Fix chip, Accent shows the invalid-hex error, Secondary/Background empty with preset placeholders, dark"
+	},
+	{
+		"group": "components",
+		"name": "color-field-states-light",
+		"width": 1412,
+		"height": 458,
+		"bytes": 18986,
+		"description": "ColorField grid: Primary fails AA with the Fix chip, Accent shows the invalid-hex error, Secondary/Background empty with preset placeholders, light"
+	},
+	{
+		"group": "components",
+		"name": "confirm-dialog-dark",
+		"width": 864,
+		"height": 396,
+		"bytes": 10974,
+		"description": "ConfirmDialog for deleting a block: title, description, Cancel first (initial focus), destructive Delete, dark"
+	},
+	{
+		"group": "components",
+		"name": "confirm-dialog-light",
+		"width": 864,
+		"height": 396,
+		"bytes": 11782,
+		"description": "ConfirmDialog for deleting a block: title, description, Cancel first (initial focus), destructive Delete, light"
+	},
+	{
+		"group": "components",
+		"name": "danger-confirm-dialog-dark",
+		"width": 864,
+		"height": 744,
+		"bytes": 37658,
+		"description": "DangerConfirmDialog: type-to-confirm input with a partial word, destructive action still disabled, dark"
+	},
+	{
+		"group": "components",
+		"name": "danger-confirm-dialog-light",
+		"width": 864,
+		"height": 744,
+		"bytes": 39918,
+		"description": "DangerConfirmDialog: type-to-confirm input with a partial word, destructive action still disabled, light"
+	},
+	{
+		"group": "components",
+		"name": "danger-zone-dark",
+		"width": 1888,
+		"height": 454,
+		"bytes": 21486,
+		"description": "Settings → Data danger zone: outline sm \"Delete\" and destructive sm \"Reset…\" buttons on the destructive-tinted card, dark"
+	},
+	{
+		"group": "components",
+		"name": "danger-zone-light",
+		"width": 1888,
+		"height": 454,
+		"bytes": 21140,
+		"description": "Settings → Data danger zone: outline sm \"Delete\" and destructive sm \"Reset…\" buttons on the destructive-tinted card, light"
+	},
+	{
+		"group": "components",
+		"name": "dialog-add-network-dark",
+		"width": 992,
+		"height": 600,
+		"bytes": 16260,
+		"description": "Dialog (Social → Add Behance): title with brand tile, description, Input in its invalid state with the inline error, ghost Cancel and disabled default \"Add Network\", dark"
+	},
+	{
+		"group": "components",
+		"name": "dialog-add-network-light",
+		"width": 992,
+		"height": 600,
+		"bytes": 17496,
+		"description": "Dialog (Social → Add Behance): title with brand tile, description, Input in its invalid state with the inline error, ghost Cancel and disabled default \"Add Network\", light"
+	},
+	{
+		"group": "components",
+		"name": "email-provider-card-dark",
+		"width": 1888,
+		"height": 592,
+		"bytes": 19038,
+		"description": "Settings → Email: SectionCard with FieldGroup columns={2}, SecretInput (API Key) and Input (From Address), dark"
+	},
+	{
+		"group": "components",
+		"name": "email-provider-card-light",
+		"width": 1888,
+		"height": 592,
+		"bytes": 19786,
+		"description": "Settings → Email: SectionCard with FieldGroup columns={2}, SecretInput (API Key) and Input (From Address), light"
+	},
+	{
+		"group": "components",
+		"name": "empty-state-dark",
+		"width": 2304,
+		"height": 500,
+		"bytes": 8860,
+		"description": "EmptyState in the Inbox (\"No messages yet\"): Card, tinted icon disc, title and description, dark"
+	},
+	{
+		"group": "components",
+		"name": "empty-state-light",
+		"width": 2304,
+		"height": 500,
+		"bytes": 9140,
+		"description": "EmptyState in the Inbox (\"No messages yet\"): Card, tinted icon disc, title and description, light"
+	},
+	{
+		"group": "components",
+		"name": "field-error-save-bar-dark",
+		"width": 1888,
+		"height": 1270,
+		"bytes": 47896,
+		"description": "Invalid From Address: destructive border and FieldError, StickySaveBar in error mode with Save disabled, dark"
+	},
+	{
+		"group": "components",
+		"name": "field-error-save-bar-light",
+		"width": 1888,
+		"height": 1270,
+		"bytes": 50436,
+		"description": "Invalid From Address: destructive border and FieldError, StickySaveBar in error mode with Save disabled, light"
+	},
+	{
+		"group": "components",
+		"name": "image-crop-dialog-dark",
+		"width": 832,
+		"height": 1332,
+		"bytes": 21170,
+		"description": "ImageCropDialog for an avatar: square crop area, zoom slider, rotate, Cancel (ghost) and confirm, dark"
+	},
+	{
+		"group": "components",
+		"name": "image-crop-dialog-light",
+		"width": 832,
+		"height": 1332,
+		"bytes": 21328,
+		"description": "ImageCropDialog for an avatar: square crop area, zoom slider, rotate, Cancel (ghost) and confirm, light"
+	},
+	{
+		"group": "components",
+		"name": "image-upload-banner-dark",
+		"width": 1412,
+		"height": 418,
+		"bytes": 10182,
+		"description": "Banner ImageUploadField with an uploaded image and its Replace/Re-crop/Remove actions, dark"
+	},
+	{
+		"group": "components",
+		"name": "image-upload-banner-light",
+		"width": 1412,
+		"height": 418,
+		"bytes": 10404,
+		"description": "Banner ImageUploadField with an uploaded image and its Replace/Re-crop/Remove actions, light"
+	},
+	{
+		"group": "components",
+		"name": "image-upload-empty-dark",
+		"width": 1412,
+		"height": 400,
+		"bytes": 11360,
+		"description": "Empty ImageUploadField dropzones inside fieldsets: logo (aspectRatio \"logo\", rounded square) and favicon (\"square\", circle), dark"
+	},
+	{
+		"group": "components",
+		"name": "image-upload-empty-light",
+		"width": 1412,
+		"height": 400,
+		"bytes": 11710,
+		"description": "Empty ImageUploadField dropzones inside fieldsets: logo (aspectRatio \"logo\", rounded square) and favicon (\"square\", circle), light"
+	},
+	{
+		"group": "components",
+		"name": "inbox-detail-dark",
+		"width": 864,
+		"height": 840,
+		"bytes": 29602,
+		"description": "Inbox message detail: secondary \"Read\" Badge, message body, Reply and destructive Delete actions, dark"
+	},
+	{
+		"group": "components",
+		"name": "inbox-detail-light",
+		"width": 864,
+		"height": 840,
+		"bytes": 30912,
+		"description": "Inbox message detail: secondary \"Read\" Badge, message body, Reply and destructive Delete actions, light"
+	},
+	{
+		"group": "components",
+		"name": "input-focus-dark",
+		"width": 1412,
+		"height": 236,
+		"bytes": 5166,
+		"description": "Display Name Input with keyboard focus: 2px ring with offset, dark"
+	},
+	{
+		"group": "components",
+		"name": "input-focus-light",
+		"width": 1412,
+		"height": 236,
+		"bytes": 5272,
+		"description": "Display Name Input with keyboard focus: 2px ring with offset, light"
+	},
+	{
+		"group": "components",
+		"name": "login-security-card-dark",
+		"width": 1888,
+		"height": 742,
+		"bytes": 29200,
+		"description": "Settings → Account: Switch off and disabled, secondary Badge, outline Change buttons, dark"
+	},
+	{
+		"group": "components",
+		"name": "login-security-card-light",
+		"width": 1888,
+		"height": 742,
+		"bytes": 30364,
+		"description": "Settings → Account: Switch off and disabled, secondary Badge, outline Change buttons, light"
+	},
+	{
+		"group": "components",
+		"name": "page-header-inbox-dark",
+		"width": 2304,
+		"height": 134,
+		"bytes": 9124,
+		"description": "Inbox PageHeader with actions: instant-save Switch (on), filter buttons, Select and Mark All Read, dark"
+	},
+	{
+		"group": "components",
+		"name": "page-header-inbox-light",
+		"width": 2304,
+		"height": 134,
+		"bytes": 9360,
+		"description": "Inbox PageHeader with actions: instant-save Switch (on), filter buttons, Select and Mark All Read, light"
+	},
+	{
+		"group": "components",
+		"name": "page-header-links-dark",
+		"width": 1496,
+		"height": 374,
+		"bytes": 7276,
+		"description": "PageHeader h1, SubTabs (Blocks active), block filter ToggleGroup and the primary \"Apply 1 new\" button, dark"
+	},
+	{
+		"group": "components",
+		"name": "page-header-links-light",
+		"width": 1496,
+		"height": 374,
+		"bytes": 7432,
+		"description": "PageHeader h1, SubTabs (Blocks active), block filter ToggleGroup and the primary \"Apply 1 new\" button, light"
+	},
+	{
+		"group": "components",
+		"name": "profile-card-dark",
+		"width": 1496,
+		"height": 1088,
+		"bytes": 22502,
+		"description": "Links → Profile card: SectionHeader, round ImageUploadField with Replace/Re-crop/Remove, Input and Textarea with CharCount, dark"
+	},
+	{
+		"group": "components",
+		"name": "profile-card-light",
+		"width": 1496,
+		"height": 1088,
+		"bytes": 23868,
+		"description": "Links → Profile card: SectionHeader, round ImageUploadField with Replace/Re-crop/Remove, Input and Textarea with CharCount, light"
+	},
+	{
+		"group": "components",
+		"name": "query-error-dark",
+		"width": 360,
+		"height": 296,
+		"bytes": 3234,
+		"description": "QueryError after the settings read failed: destructive icon, message and outline Retry, dark"
+	},
+	{
+		"group": "components",
+		"name": "query-error-light",
+		"width": 360,
+		"height": 296,
+		"bytes": 3280,
+		"description": "QueryError after the settings read failed: destructive icon, message and outline Retry, light"
+	},
+	{
+		"group": "components",
+		"name": "section-label-dark",
+		"width": 1496,
+		"height": 522,
+		"bytes": 20404,
+		"description": "SectionCard header (icon tile, title, description, hairline) with a SectionLabel (\"Meta Tags\") and a field, dark"
+	},
+	{
+		"group": "components",
+		"name": "section-label-light",
+		"width": 1496,
+		"height": 522,
+		"bytes": 20872,
+		"description": "SectionCard header (icon tile, title, description, hairline) with a SectionLabel (\"Meta Tags\") and a field, light"
+	},
+	{
+		"group": "components",
+		"name": "section-rule-public-dark",
+		"width": 1568,
+		"height": 102,
+		"bytes": 2680,
+		"description": "Public SectionRule: signal dash, h2 and hairline rule (\"Latest work\" header block), dark"
+	},
+	{
+		"group": "components",
+		"name": "section-rule-public-light",
+		"width": 1568,
+		"height": 102,
+		"bytes": 2524,
+		"description": "Public SectionRule: signal dash, h2 and hairline rule (\"Latest work\" header block), light"
+	},
+	{
+		"group": "components",
+		"name": "select-open-dark",
+		"width": 1834,
+		"height": 312,
+		"bytes": 7474,
+		"description": "Select open: selected item check, highlighted option with primary tint and inset ring, dark"
+	},
+	{
+		"group": "components",
+		"name": "select-open-light",
+		"width": 1834,
+		"height": 312,
+		"bytes": 7786,
+		"description": "Select open: selected item check, highlighted option with primary tint and inset ring, light"
+	},
+	{
+		"group": "components",
+		"name": "settings-nav-dark",
+		"width": 400,
+		"height": 520,
+		"bytes": 4160,
+		"description": "Settings section nav at xl: ghost lg Buttons rendered as links, active item with primary/10 fill, dark"
+	},
+	{
+		"group": "components",
+		"name": "settings-nav-light",
+		"width": 400,
+		"height": 520,
+		"bytes": 4016,
+		"description": "Settings section nav at xl: ghost lg Buttons rendered as links, active item with primary/10 fill, light"
+	},
+	{
+		"group": "components",
+		"name": "sidebar-collapsed-dark",
+		"width": 196,
+		"height": 560,
+		"bytes": 4400,
+		"description": "Collapsed icon rail: active item, badge hidden, label shown as a Tooltip on hover, dark"
+	},
+	{
+		"group": "components",
+		"name": "sidebar-collapsed-light",
+		"width": 196,
+		"height": 560,
+		"bytes": 4482,
+		"description": "Collapsed icon rail: active item, badge hidden, label shown as a Tooltip on hover, light"
+	},
+	{
+		"group": "components",
+		"name": "sidebar-dark",
+		"width": 510,
+		"height": 688,
+		"bytes": 9844,
+		"description": "Sidebar: brand row, Create/Manage group labels, active Profile page, hovered Design, Inbox unread badge, dark"
+	},
+	{
+		"group": "components",
+		"name": "sidebar-light",
+		"width": 510,
+		"height": 688,
+		"bytes": 10286,
+		"description": "Sidebar: brand row, Create/Manage group labels, active Profile page, hovered Design, Inbox unread badge, light"
+	},
+	{
+		"group": "components",
+		"name": "skeleton-rows-dark",
+		"width": 2304,
+		"height": 560,
+		"bytes": 4302,
+		"description": "SkeletonRows (count 4, h-14) while the Inbox list loads: role=\"status\", aria-busy, dark"
+	},
+	{
+		"group": "components",
+		"name": "skeleton-rows-light",
+		"width": 2304,
+		"height": 560,
+		"bytes": 2766,
+		"description": "SkeletonRows (count 4, h-14) while the Inbox list loads: role=\"status\", aria-busy, light"
+	},
+	{
+		"group": "components",
+		"name": "state-pill-menu-dark",
+		"width": 706,
+		"height": 556,
+		"bytes": 16006,
+		"description": "StatePill popover: Publish changes title, unavailable reason, Review block drafts link, Refresh status (ghost) and disabled Publish, dark"
+	},
+	{
+		"group": "components",
+		"name": "state-pill-menu-light",
+		"width": 706,
+		"height": 556,
+		"bytes": 17220,
+		"description": "StatePill popover: Publish changes title, unavailable reason, Review block drafts link, Refresh status (ghost) and disabled Publish, light"
+	},
+	{
+		"group": "components",
+		"name": "state-pill-unsaved-dark",
+		"width": 508,
+		"height": 114,
+		"bytes": 3090,
+		"description": "Publication pill reading \"Unsaved\" with the warning outline while any form is dirty, dark"
+	},
+	{
+		"group": "components",
+		"name": "state-pill-unsaved-light",
+		"width": 508,
+		"height": 114,
+		"bytes": 3624,
+		"description": "Publication pill reading \"Unsaved\" with the warning outline while any form is dirty, light"
+	},
+	{
+		"group": "components",
+		"name": "sticky-save-bar-dark",
+		"width": 1888,
+		"height": 182,
+		"bytes": 7124,
+		"description": "StickySaveBar while a form is dirty: message, ghost Discard, default Save changes, dark"
+	},
+	{
+		"group": "components",
+		"name": "sticky-save-bar-dark-mobile",
+		"width": 780,
+		"height": 372,
+		"bytes": 15408,
+		"description": "StickySaveBar on a phone: stacked message and actions, resting 8px above the 56px bottom tab bar, dark"
+	},
+	{
+		"group": "components",
+		"name": "sticky-save-bar-light",
+		"width": 1888,
+		"height": 182,
+		"bytes": 7530,
+		"description": "StickySaveBar while a form is dirty: message, ghost Discard, default Save changes, light"
+	},
+	{
+		"group": "components",
+		"name": "sticky-save-bar-light-mobile",
+		"width": 780,
+		"height": 372,
+		"bytes": 16378,
+		"description": "StickySaveBar on a phone: stacked message and actions, resting 8px above the 56px bottom tab bar, light"
+	},
+	{
+		"group": "components",
+		"name": "toast-error-dark",
+		"width": 744,
+		"height": 140,
+		"bytes": 3932,
+		"description": "Sonner error toast (richColors) after choosing a non-image file, dark"
+	},
+	{
+		"group": "components",
+		"name": "toast-error-light",
+		"width": 744,
+		"height": 140,
+		"bytes": 4624,
+		"description": "Sonner error toast (richColors) after choosing a non-image file, light"
+	},
+	{
+		"group": "components",
+		"name": "top-bar-actions-dark",
+		"width": 574,
+		"height": 114,
+		"bytes": 3308,
+		"description": "Top-bar actions: publication pill (outline xs, rounded-full), Share (ghost icon), View live (outline sm), dark"
+	},
+	{
+		"group": "components",
+		"name": "top-bar-actions-light",
+		"width": 574,
+		"height": 114,
+		"bytes": 3580,
+		"description": "Top-bar actions: publication pill (outline xs, rounded-full), Share (ghost icon), View live (outline sm), light"
+	},
+	{
+		"group": "components",
+		"name": "wallet-tabs-dark",
+		"width": 890,
+		"height": 128,
+		"bytes": 4488,
+		"description": "Tabs from @linkden/ui styled like SubTabs: icon + label, 2px foreground underline on the active tab, dark"
+	},
+	{
+		"group": "components",
+		"name": "wallet-tabs-light",
+		"width": 890,
+		"height": 128,
+		"bytes": 4704,
+		"description": "Tabs from @linkden/ui styled like SubTabs: icon + label, 2px foreground underline on the active tab, light"
+	}
+]

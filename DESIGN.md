@@ -1,10 +1,13 @@
 # LinkDen design system
 
-The current system is documented in the docs app at **[/docs/design-system](/docs/design-system)**. This file is the repository entry point; the app source owns the actual values and behavior.
+The current system is documented in the docs app at **[/docs/design-system](/docs/design-system)**, with screenshots of the running app in light and dark. This file is the repository entry point; the app source owns the actual values and behavior.
 
+- [Overview](apps/docs/content/docs/design-system/index.mdx): the admin and public layers side by side, numbered anatomy of the editor and the public page, where each scope applies, breakpoints, the source map, and how the screenshots are made.
 - [Foundations](apps/docs/content/docs/design-system/foundations.mdx): tokens, type, spacing, controls, radii, and motion.
 - [Shared components](apps/docs/content/docs/design-system/components.mdx): primitives, form sections, navigation, feedback, and confirmations.
 - [Layout and interaction patterns](apps/docs/content/docs/design-system/patterns.mdx): editing, saving, previews, Wallet, and public layouts.
+
+Read those pages for exact values, states, and captures; the summary below is the short version.
 
 ## Source ownership
 
@@ -42,6 +45,16 @@ Reuse these sources. Do not add a parallel token file, component library, render
 - Public images default to contain; explicit cover crops to fill. The same renderer and theme projection serve Next, inline preview, and static output.
 - Login/reset-password stay compact with ordinary site branding. Dedicated login-logo/background controls are removed, with legacy records preserved for backups. Keep the TOTP/backup-code step and local-only development-login safeguards.
 
+## Screenshots
+
+Every image in the design-system docs is a capture of the real app with synthetic sample content (Rowan Ellis of Ellis Studio, `example.com` links, generated images). The workflow lives in `scripts/design-screenshots/` and its [README](scripts/design-screenshots/README.md):
+
+1. Start a disposable stack from a separate worktree (API on `127.0.0.1:3100` with `DEV_LOGIN=true`, web on `127.0.0.1:3101`). Never use your normal `bun dev` stack on 3000/3001.
+2. `bun scripts/design-screenshots/seed.ts` resets that stack to the sample state. It replaces all content.
+3. `bun scripts/design-screenshots/capture.ts [group...]` writes WebP files to `apps/docs/content/docs/design-system/images/<group>/` (`overview`, `foundations`, `components`, `patterns`, `stateful`) and records each in the group's `manifest.json`.
+
+Captures are read-only (open, type, discard; never save or toggle instant-save switches); anything that needs saved state belongs to the `stateful` group. Budgets: 250 KB per image and 8 MB for the images folder. Look at every changed image before committing it. Embed captures with `<Screenshot light dark alt caption>` and `<ScreenshotGrid>` (`apps/docs/src/components/screenshot.tsx`); the overview page's Screenshots section has the details.
+
 ## Change and verify
 
-Update source first, then the relevant docs page. Reuse validators for accepted values and limits. Check light/dark, desktop/touch, focus and error states, actual public output, and reduced motion for affected surfaces. A screenshot or local preview is not proof of publication, pass signing, or a live integration.
+Update source first, then the relevant docs page, then recapture the affected screenshot group. Reuse validators for accepted values and limits. Check light/dark, desktop/touch, focus and error states, actual public output, and reduced motion for affected surfaces. A screenshot or local preview is not proof of publication, pass signing, or a live integration.

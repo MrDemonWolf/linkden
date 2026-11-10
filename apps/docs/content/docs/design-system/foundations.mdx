@@ -1,113 +1,460 @@
 ---
 title: Foundations
-description: Actual color, typography, spacing, shape, and motion values from the app.
+description: Color, type, spacing, control sizes, focus, shape, theme presets and motion as the app implements them, with captures from the running app.
 ---
 
-## Color roles
+import tokenMapLight from "./images/foundations/token-map-light.webp";
+import tokenMapDark from "./images/foundations/token-map-dark.webp";
+import surfacesSplit from "./images/foundations/surfaces-split.webp";
+import typeAdminLight from "./images/foundations/type-admin-light.webp";
+import typeAdminDark from "./images/foundations/type-admin-dark.webp";
+import typeMonoLight from "./images/foundations/type-mono-light.webp";
+import typeMonoDark from "./images/foundations/type-mono-dark.webp";
+import typePublicLight from "./images/foundations/type-public-light.webp";
+import typePublicDark from "./images/foundations/type-public-dark.webp";
+import controlSizesDesktop from "./images/foundations/control-sizes-desktop.webp";
+import controlSizesMobile from "./images/foundations/control-sizes-mobile.webp";
+import focusInputLight from "./images/foundations/focus-ring-input-light.webp";
+import focusInputDark from "./images/foundations/focus-ring-input-dark.webp";
+import focusButtonLight from "./images/foundations/focus-ring-button-light.webp";
+import focusButtonDark from "./images/foundations/focus-ring-button-dark.webp";
+import radiusAdmin from "./images/foundations/radius-admin-light.webp";
+import radiusPublic from "./images/foundations/radius-public-light.webp";
+import themePresetsLight from "./images/foundations/theme-presets-light.webp";
+import themePresetsDark from "./images/foundations/theme-presets-dark.webp";
+import presetClassicLight from "./images/foundations/preset-classic-light.webp";
+import presetClassicDark from "./images/foundations/preset-classic-dark.webp";
+import presetGraphiteLight from "./images/foundations/preset-graphite-light.webp";
+import presetGraphiteDark from "./images/foundations/preset-graphite-dark.webp";
+import presetOceanLight from "./images/foundations/preset-ocean-blue-light.webp";
+import presetOceanDark from "./images/foundations/preset-ocean-blue-dark.webp";
+import presetSunsetLight from "./images/foundations/preset-sunset-light.webp";
+import presetSunsetDark from "./images/foundations/preset-sunset-dark.webp";
+import presetForestLight from "./images/foundations/preset-forest-light.webp";
+import presetForestDark from "./images/foundations/preset-forest-dark.webp";
+import presetAbyssalLight from "./images/foundations/preset-abyssal-light.webp";
+import presetAbyssalDark from "./images/foundations/preset-abyssal-dark.webp";
 
-Use semantic utilities such as `bg-card`, `text-foreground`, `text-muted-foreground`, and `border-input-border`. The values below come from `.admin-scope` in `apps/web/src/index.css`.
+## How the tokens are organized
 
-| Token | Light admin | Dark admin | Use |
-| --- | --- | --- | --- |
-| `--background` | `#F6F7F9` | `#101012` | Page ground |
-| `--card` | `#FFFFFF` | `#18181B` | Cards and top bar |
-| `--surface-2` | `#F0F0F3` | `#242427` | Inset surfaces |
-| `--popover` | `#FFFFFF` | `#202023` | Menus and popovers |
-| `--foreground` | `#18181B` | `#F4F4F5` | Primary text |
-| `--muted-foreground` | `#606068` | `#A8A8B2` | Supporting text |
-| `--primary` | `#1D4ED8` | `#60A5FA` | Primary actions and links |
-| `--primary-foreground` | `#FFFFFF` | `#111113` | Text on primary |
-| `--accent` | `#EAF1FC` | `#202B3D` | Selected and hover surfaces |
-| `--accent-foreground` | `#1D4ED8` | `#93C5FD` | Text on accent |
-| `--border` | `#DEDEE5` | `#38383F` | Structural edges |
-| `--input-border` | `#85858F` | `#777783` | Identifiable form boundaries |
-| `--ring` | `#2563EB` | `#60A5FA` | Keyboard focus |
-| `--success` | `#176B40` | `#74D39B` | Success state |
-| `--warning` | `#765100` | `#F0BE55` | Warning state |
-| `--destructive` | `#A32626` | `#FF9C9C` | Destructive actions and errors |
+The color, type, radius and control tokens live in two files: `apps/web/src/index.css` for the interface, and `packages/ui/src/themes.ts` for the public theme presets. Spacing uses Tailwind's scale directly. Components use semantic utilities such as `bg-card`, `text-muted-foreground` and `border-input-border`, never raw hex values. The color and scale tables below are rendered from those two files when the docs build, so they always show the current values.
 
-The dark sidebar uses `#111113`. Other sidebar roles derive from the same semantic tokens. Dark mode stays neutral; blue identifies actions and selected states.
+| Layer | Defined in | Applies to |
+| --- | --- | --- |
+| Admin palette | `.admin-scope` and `.dark .admin-scope, .admin-scope.dark` | The admin shell root, plus `<body>` while the console is mounted, so portalled menus, popovers and dialogs get the same tokens (`components/admin/admin-shell.tsx`) |
+| Base palette | `:root, .public-scope` and `.dark, .dark .public-scope` | Pages outside the shell that use semantic utilities, such as `/offline`, and every `.public-scope` element: the static build's `<body>` and the admin preview viewport |
+| Public theme | `--ld-*` variables from `themes.ts`, resolved by `getThemeColors` (`apps/web/src/lib/theme-colors.ts`) | Set inline on `.ld-page` by `components/public/public-page-content.tsx` for the live page, the static build and the admin preview |
+| Tailwind mapping | `@theme inline` maps each semantic variable to a `--color-*` theme key | Utilities such as `bg-surface-2`, `text-primary`, `border-input-border` and `bg-code-surface` |
 
-`--input` is a fill color, not a control boundary. Input, Select, Textarea, InputGroup, Checkbox, and the off Switch use `--input-border`. The palette regression test is `apps/web/src/components/ui/__tests__/admin-palette-contrast.test.ts`; it checks text and control-boundary contrast against the app's surface colors.
+The `.dark` class sits on `<html>`. In the admin it comes from next-themes (`attribute="class"`, `defaultTheme="dark"`, `enableSystem`) in `components/providers.tsx`, and the footer's theme control changes it. The public page chooses its own mode: the visitor's `linkden-color-mode` cookie, else the `default_color_mode` setting, where `system` follows the browser. That mode is passed to `getThemeColors`.
 
-Public colors are resolved separately by `packages/ui/src/themes.ts` and `apps/web/src/lib/theme-colors.ts`. Saved `custom_primary`, `custom_secondary`, `custom_accent`, and `custom_background` values override the selected public preset. Empty values inherit the preset in each color mode.
+See [Where each scope applies](/docs/design-system#where-each-scope-applies) on the overview for screenshots of each surface.
 
-Classic, the default public preset, uses neutral gray surfaces: `#F6F6F7` with white cards in light mode, and `#101012` with `#18181B` cards in dark mode. Brand navy `#091533` anchors light-mode actions; cyan `#0FACED` supplies accents and dark-mode actions.
+## Color
 
-Every preset shares these neutral dark surfaces and neutral text, borders, and inset fills. Each preset retains its own primary and accent colors for actions and decorative highlights; light-mode palettes stay distinct. Saved custom color overrides still take precedence.
+### Admin palette
+
+The admin is a neutral gray tool with one blue for actions and selection. Every label in this capture was resolved by matching the element's computed color against the custom properties, so it names the token the element actually paints with.
+
+<Screenshot
+	light={tokenMapLight}
+	dark={tokenMapDark}
+	alt="The Links page with fuchsia labels on the sidebar (--sidebar), the active Profile page item (--sidebar-accent), the Inbox count (--sidebar-primary), the top bar (--card), the page ground (--background), the pressed All chip (--surface-2), the Apply button and an on Switch (--primary), the block rows (--card with --border hairlines) and a row's muted subtitle (--muted-foreground)."
+	caption="Links at 1440px with token labels. Notice the three planes: ground, card rows, and the inset chip on --surface-2. Blue appears only on the action, the on switches and the selected item."
+/>
+
+<TokenTable
+	light=".admin-scope"
+	dark=".dark .admin-scope, .admin-scope.dark"
+	rows={[
+		["--background", "Page ground"],
+		["--card", "Cards, top bar, light sidebar"],
+		["--sidebar", "Sidebar surface (its own value in dark)"],
+		["--surface-2", "Inset tiles, pressed chips, nested panels"],
+		["--popover", "Menus, select lists, popovers"],
+		["--foreground", "Primary text"],
+		["--muted-foreground", "Supporting text, helpers, subtitles"],
+		["--primary", "Primary buttons, links, on switches, selection"],
+		["--primary-foreground", "Text and icons on primary"],
+		["--secondary", "Secondary buttons and badges"],
+		["--muted", "Muted fills and hover backgrounds"],
+		["--accent", "Selected and hover surfaces"],
+		["--accent-foreground", "Text on accent"],
+		["--sidebar-accent", "Active sidebar item"],
+		["--border", "Structural edges and dividers"],
+		["--input", "Control fill only, never a boundary"],
+		["--input-border", "Form control boundary (3:1)"],
+		["--ring", "Keyboard focus"],
+		["--success", "Success text and fills"],
+		["--warning", "Warning text, draft dots, Unsaved control"],
+		["--destructive", "Destructive actions and errors"],
+		["--signal", "SectionRule dash"],
+	]}
+/>
+
+Rules for the admin palette:
+
+- `--input` is a fill. Input, Select trigger, Textarea, InputGroup, Checkbox and the off Switch draw their boundary with `--input-border`, which clears 3:1 on the card, ground and inset planes (WCAG 1.4.11). Hand-rolled fields use `border-input-border`, never `border-input`.
+- Status text sits on its own 10–20% tint, for example `text-warning` on `bg-warning/10`. The palette regression test, `apps/web/src/components/ui/__tests__/admin-palette-contrast.test.ts`, checks status text on its tint, the control boundary on every plane, and primary and muted text on every content plane, in both modes.
+- The dark sidebar uses its own `#111113`; in light it shares `--card`. Other sidebar roles derive from the semantic tokens.
+- The PWA status-bar colors in `apps/web/src/app/admin/layout.tsx` (`#FFFFFF` and `#18181B`) mirror `--card`. Change them together.
+
+### Light and dark side by side
+
+<Screenshot
+	light={surfacesSplit}
+	alt="Settings, Account page at 1440 by 900 pixels. The left half is the light capture and the right half is the dark capture of the same view, divided by a vertical line."
+	caption="The same view composed from a light capture (left) and a dark capture (right). Dark keeps the same layering with neutral grays; cards separate from the ground by their border because --shadow-surface is none in dark."
+/>
+
+Both modes use the same four planes (values in the table above). Keep a surface on its plane rather than inventing an in-between gray:
+
+| Plane | Token | Examples |
+| --- | --- | --- |
+| Ground | `--background` | Page behind cards, outline button fill |
+| Card | `--card` | Cards, top bar, preview column, block rows |
+| Inset | `--surface-2` | Block type tiles, pressed filter chip |
+| Popover | `--popover` | Select lists, dropdown menus, popovers |
+
+Cards lift with `shadow-surface`, which is `0 1px 2px oklch(0 0 0 / 0.04)` in light and `none` in dark, where the `--border` edge does the work.
+
+### Base palette
+
+Outside `.admin-scope` the base palette applies. It is a cooler, cerulean variant used by pages such as `/offline` and the root error page, and by `.public-scope` wrappers. The public page's own colors come from the presets below, not from this table.
+
+<TokenTable
+	light=":root, .public-scope"
+	dark=".dark, .dark .public-scope"
+	rows={[
+		["--background", "Page ground"],
+		["--card", "Cards"],
+		["--surface-2", "Inset surfaces"],
+		["--foreground", "Primary text"],
+		["--muted-foreground", "Supporting text"],
+		["--primary", "Actions"],
+		["--border", "Edges"],
+		["--input-border", "Control boundary"],
+		["--ring", "Focus"],
+		["--rule", "SectionRule hairline, header divider"],
+		["--signal", "SectionRule dash"],
+	]}
+/>
+
+### Other tokens
+
+| Token | Value and use |
+| --- | --- |
+| `--rule` | The hairline in `SectionRule` and the public header block divider (`bg-[color:var(--rule)]`) |
+| `--signal` | The 2px dash in `SectionRule`. On the public page it is redefined inline as `linear-gradient(90deg, var(--ld-primary), var(--ld-secondary))` and also draws the divider under the profile name |
+| `--shadow-surface` | Admin card lift (see above) |
+| `--shadow-card` | `0 1px 2px oklch(0 0 0 / 0.05), 0 10px 28px -14px oklch(0 0 0 / 0.28)`, used by public link cards and the featured title pill |
+| `--code-surface`, `--code-foreground` | The custom CSS editor (CodeMirror One Dark), dark in both modes |
+| `--chart-1` … `--chart-5` | Chart series colors, mapped to `--color-chart-*` |
+
+`--canvas-dot`, `--shadow-glow`, `--glass-*`, `--dim` and `--data-up`/`--data-down` are still declared in `index.css`, but no component in `apps/web/src` references them. Don't build new UI on them without checking the palette test.
 
 ## Typography
 
-| Surface | Headings | Body |
+| Surface | Headings | Body | Loaded by |
+| --- | --- | --- | --- |
+| Admin | Montserrat | Roboto | `next/font/google` in `apps/web/src/app/admin/layout.tsx` (`--font-admin-display`, `--font-admin-sans`) |
+| Public page | Sora | DM Sans | Checked-in, licensed WOFF2 files in `apps/web/public/fonts`, declared in `apps/web/src/public-fonts.css` for both Next and the static build |
+| Numbers and code | Geist Mono | Geist Mono | `next/font/google` in `apps/web/src/app/layout.tsx` (`--font-mono`, weights 400 and 500) |
+| Wallet pass card | System stack | System stack | `-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui` in `wallet-pass-preview.tsx` |
+
+`h1`–`h4` use `var(--font-display)` from the base layer, so a heading picks Montserrat inside `.admin-scope` and Sora elsewhere without a class.
+
+### Admin type in context
+
+<Screenshot
+	light={typeAdminLight}
+	dark={typeAdminDark}
+	alt="Design, SEO page with labels: the Design page title is Montserrat 600 at 28px, the SEO and Open Graph card title Montserrat 600 at 16px, its description Roboto 400 at 12.2px, the Meta Tags section rule Montserrat 600 at 14px, the Page Title label Roboto 500 at 14px, the field text Roboto 400 at 14px, the helper Roboto 400 at 12.2px and the 46/70 counter Roboto 400 at 12.2px with tabular numbers."
+	caption="Design → SEO at 1440px. Labels are read from the computed styles. Notice three heading levels in Montserrat and everything else in Roboto, with helpers at the 12px floor."
+/>
+
+| Role | Source | Size |
 | --- | --- | --- |
-| Admin | Montserrat | Roboto |
-| Public page | Sora | DM Sans |
-| Numeric/code text | Geist Mono | Geist Mono |
-| Wallet pass card | System/SF font stack | System/SF font stack |
+| Page title | `PageHeader` `h1`: `text-[24px] sm:text-[28px] font-semibold tracking-[-0.025em]` | 24px, 28px from `sm` |
+| Card and section title | `CardTitle` (native `h2`, or `as="h3"`): `text-base font-semibold` | 16px |
+| Section label | `SectionLabel` (a `SectionRule` with an `h3`, `text-sm font-display font-semibold`) | 14px |
+| Labels, field text, body | `text-sm` (`font-medium` for labels) | 14px |
+| Helpers and counters | `text-micro` (fluid) or `text-xs` | 12–13px |
 
-Admin fonts are configured in `apps/web/src/app/admin/layout.tsx`. Public fonts are local files loaded by `apps/web/src/public-fonts.css` for both Next and static output. `data-mono` adds tabular figures for numeric displays.
+### Numbers
 
-| Role | Current size and source |
-| --- | --- |
-| Admin page title | `PageHeader`: 24px, 28px from `sm`; semibold |
-| Card/section title | `CardTitle`: 16px semibold; native `h2` |
-| Admin labels/body/subsections | Typically `text-sm`: 14px |
-| Helper text | `text-xs`: 12px, or fluid `text-micro` |
-| Public/fluid `text-h1` | 28–40px; line height 1.05 |
-| Fluid `text-h2` | 18–22px; line height 1.2 |
-| Fluid `text-body` | 16–17px; line height 1.55 |
-| Fluid `text-small` | 14–15px; line height 1.45 |
-| Fluid `text-micro` | 12–13px; line height 1.35 |
+<Screenshot
+	light={typeMonoLight}
+	dark={typeMonoDark}
+	alt="The Links filter chips All 17, Drafts 1 and Hidden 1 with labels: the chip label is Roboto 500 at 12px and the count is Geist Mono 500 at 13px, beside the blue Apply 1 new button."
+	caption="Filter chips on Links. Counts use font-mono with tabular-nums so the digits stay aligned as they change."
+/>
 
-The fluid roles use `clamp()` and container units in `index.css`. The 12px helper floor is for interface text; the miniature Wallet pass canvas has its own smaller label scale. Do not copy those pass labels into editor forms.
+Use `font-mono tabular-nums` for counts, digests and codes (filter chips, the retention days in Settings → Data, the setup progress, backup codes, error references). Character counters such as `46/70` stay in Roboto with `tabular-nums`. `index.css` also defines a `.data-mono` class (Geist Mono plus `tnum`) for the same purpose.
 
-`cn` in `packages/ui/src/utils.ts` registers the custom text-size names with `tailwind-merge`, so `text-micro text-muted-foreground` retains both size and color.
+### Public type
+
+<Screenshot
+	light={typePublicLight}
+	dark={typePublicDark}
+	alt="The public page in a 1000 pixel window with labels: the name Rowan Ellis is Sora 700 at 40px, the bio DM Sans 400 at 17px, the Latest work header Sora 600 at 22px, the featured link description DM Sans 400 at 15px, the Portfolio link title DM Sans 600 at 17px and a link description DM Sans 400 at 15px."
+	caption="The Classic page at the top of the fluid scale. Sora carries the name and section headers; DM Sans carries the bio, link titles and descriptions."
+/>
+
+The public roles are fluid. These sizes were measured on the seeded page:
+
+| Element | Utility | 390px phone | 1440px desktop |
+| --- | --- | --- | --- |
+| Profile name | `text-h1 font-bold` | 28.6px | 40px |
+| Section header (`h2`) | `text-h2 font-semibold` | 18.3px | 22px |
+| Bio and link titles | `text-body` | 16.2px | 17px |
+| Link descriptions, captions | `text-small` | 14.2px | 15px |
+
+### Fluid scale
+
+<TypeScale />
+
+The middle term of each `clamp()` uses container query units (`cqw`). The public page root, `.ld-page`, is an inline-size container, so the scale follows the page frame, which is also what keeps the admin preview at phone sizes. Admin containers such as `CardHeader` (`@container/card-header`) and `FieldGroup` (`@container/admin-fields`) do the same for `text-micro`, which is why a card description measures 12.2px rather than exactly 12px. Outside any container, `cqw` falls back to the viewport.
+
+`text-micro` is the floor: nothing in the interface renders below 12px. The miniature Wallet pass canvas has its own smaller label scale; don't copy it into editor forms.
+
+`cn` in `packages/ui/src/utils.ts` registers `h1`, `h2`, `body`, `small` and `micro` with `tailwind-merge`, so `text-micro text-muted-foreground` keeps both the size and the color.
 
 ## Spacing and widths
 
-The app uses Tailwind's spacing utilities rather than a second spacing-token file. Common values in the shared components are:
+The app uses Tailwind's spacing scale rather than a separate spacing-token file. Common steps in the shared components:
 
-| Utility step | Pixels | Current examples |
+| Step | Pixels | Current examples |
 | --- | --- | --- |
-| `1` | 4px | Sidebar item gaps and sub-tab gaps |
-| `1.5` | 6px | Label-to-control field groups |
-| `2` | 8px | Inline actions and icon/text gaps |
-| `3` | 12px | Public blocks and small groups |
-| `4` | 16px | Form grid gaps and mobile horizontal padding |
-| `5` | 20px | Default card vertical padding and larger horizontal gutters |
-| `6` | 24px | Page/section rhythm from `sm` |
-| `8` | 32px | Large-screen page padding and editor/preview gap |
+| `1` | 4px | `SidebarMenu` and `SubTabs` gaps |
+| `1.5` | 6px | Label-to-control groups (`space-y-1.5`) |
+| `2` | 8px | Inline actions and icon-to-text gaps |
+| `3` | 12px | Public block stack (`space-y-3`), small groups |
+| `4` | 16px | `FieldGroup` grid gap, mobile page gutter, compact card padding |
+| `5` | 20px | Card vertical padding and header-to-content gap, card side padding from `sm` |
+| `6` | 24px | Page rhythm from `sm` (`PageShell`), page gutter from `sm` |
+| `8` | 32px | Page padding from `lg`, editor-to-preview gap, settings nav gap |
 | `10` | 40px | Public split-layout column gap |
 
-`PageShell` uses 16px vertical gaps, increasing to 24px from `sm`. The admin main area uses 16/24/32px horizontal padding and 24/32px vertical padding. Cards use 16px horizontal padding, increasing to 20px from `sm`, with 20px vertical padding. Compact cards use 16px.
-
-The shell is capped at 1680px. A page without a preview stops at 1120px; the editor column beside a preview stops at 760px. These are source constraints, not additional page wrappers to stack inside the shell.
-
-## Controls and radii
-
-| Control | Fine pointer from `md` | Narrow/coarse pointer |
+| Element | Value | Source |
 | --- | --- | --- |
-| Standard Button, Input, Select | 36px | 44px |
-| Compact Button (`sm`, `xs`, matching icon sizes) | 32px | 44px |
-| Large Button | 44px | 44px |
-| Textarea | Minimum 80px height | Minimum 80px height |
+| Admin main area | 16px / 24px (`sm`) / 32px (`lg`) sides, 24px / 32px (`lg`) top and bottom, capped at 1680px | `admin-shell.tsx` |
+| `PageShell` | 16px vertical rhythm, 24px from `sm` | `page-shell.tsx` |
+| `Card` | 20px vertical padding, 16px sides (20px from `sm`), 20px gap; `size="sm"` uses 16px | `components/ui/card.tsx` |
+| Page without a preview | Max 1120px | `MainGrid` |
+| Tool column beside a preview | Max 760px, 32px gap | `MainGrid` |
+| Preview column | 300px at `lg`, 372px at `xl`, 425px for the wide Wallet variant, 40px collapsed (44px on touch) | `preview-column.tsx` |
+| Sidebar | 256px (`16rem`), 48px icon rail, 288px mobile sheet | `components/ui/sidebar.tsx` |
+| Settings section nav | 176px column from `xl` | `settings-shell.tsx` |
+| Top bar / bottom tab bar | 64px / 56px | `admin-shell.tsx` |
+| Public split layout | 320px profile column and a fluid block column from an 896px container (`@4xl`) | `public-page-content.tsx` |
 
-Inputs and selects use 16px text on narrow/coarse-pointer screens and 14px on desktop fine-pointer screens. The coarse-pointer media rule also keeps tablet controls at least 44px. The Switch remains a 36×20px visual pill with an expanded hit area; do not enlarge its track to match a text field.
+These are source constraints. Don't add more width wrappers inside the shell.
 
-| Radius utility | Admin | Public scope |
+## Controls
+
+### Sizes
+
+<ScreenshotGrid>
+	<Screenshot
+		light={controlSizesDesktop}
+		alt="Design, SEO card at 1440 pixels with a mouse: dashed outlines show a 36px Page Title input, an 80px Meta Description textarea and 32px Template and Upload Image toggles."
+		caption="Fine pointer from md: 36px Input, 32px compact toggles, 14px field text."
+	/>
+	<Screenshot
+		light={controlSizesMobile}
+		alt="The same SEO card on a 390 pixel touch phone: the input and both toggles measure 44px and the field text is larger."
+		caption="Touch: every control reaches 44px and field text rises to 16px."
+		maxWidth={360}
+	/>
+</ScreenshotGrid>
+
+| Control | Fine pointer from `md` | Narrow or coarse pointer |
 | --- | --- | --- |
-| `rounded-sm` | 6px | 8px |
-| `rounded-md` | 8px | 12px |
-| `rounded-lg` | 12px | 18px |
-| `rounded-xl` | 16px | 24px |
-| `rounded-2xl` | 20px | 28px |
+| Button `default`, `icon`; Input; Select trigger | 36px | 44px |
+| Button `sm`, `xs`, `icon-sm`, `icon-xs` | 32px | 44px |
+| Button `lg`, `icon-lg` | 44px | 44px |
+| Hand-rolled toggles (`min-h-11 md:min-h-8`) | 32px | 44px |
+| Textarea | Minimum 80px (`min-h-20`) | Minimum 80px |
+| Switch | 36×20px pill | 36×20px pill with an expanded hit area |
 
-The radius scale is declared in a non-inline Tailwind `@theme` so scope overrides work at runtime. Keep controls on the shared scale instead of adding one-off rounded values.
+Button heights read the scoped tokens below. Outside the admin the tokens are not set (and `.public-scope` resets them to `initial` inside the preview), so with a fine pointer from `md` Button falls back to 32px `default`, 28px `sm`, 24px `xs` and 36px `lg`, which keeps the public footer buttons small.
 
-## Surfaces and motion
+<ControlScale />
 
-Admin cards are matte `bg-card` surfaces with a border and the shared `shadow-surface`. Avoid decorative page, card, and chart entrance animations in the admin. Keep real pending indicators, focus feedback, menu transitions, and the 220ms preview-collapse transition.
+Details that matter:
 
-The Unsaved control uses a warning outline and text without a glow or animated dot. Public page elements use the shared `ld-rise` entrance (480ms, 45ms stagger). The global reduced-motion rule shortens transitions and disables the public entrance classes explicitly. JavaScript scrolling uses `prefersReducedMotion()` from `apps/web/src/hooks/use-reduced-motion.ts`.
+- Inputs and Select triggers use 16px text below `md` or on coarse pointers and 14px with a fine pointer (`md:pointer-fine:text-sm`). The 16px size also stops iOS from zooming into a focused field.
+- `@media (pointer: coarse)` in `index.css` gives every admin button, input, input group, color input, combobox, settings-section link and footer link a 44px minimum height (buttons and color inputs also a 44px minimum width), so tablets get touch targets even above `md`.
+- The Switch keeps its 36×20px track and gets a 44px target from an `after:` pseudo-element (`after:-inset-x-2 after:-inset-y-3`). Don't enlarge the track to match a text field.
+- Buttons use `--control-font-size` (14px in the admin) from `md`.
 
-Public hero treatments and the Wallet card have their own surfaces. They do not establish a glass or glow style for admin forms.
+### Focus
+
+<Screenshot
+	light={focusInputLight}
+	dark={focusInputDark}
+	alt="The Page Title input with keyboard focus: a solid blue ring drawn 2px outside the field's blue border."
+	caption="Input focus: border-ring plus a solid 2px ring offset 2px from the card, so it reads on every plane."
+/>
+
+<Screenshot
+	light={focusButtonLight}
+	dark={focusButtonDark}
+	alt="The Login and Security card's right edge: the first Change button shows a blue focus border with a soft ring; the second Change button, a disabled badge and two switches are unfocused."
+	caption="Button focus: border-ring with a 2px ring at 50% opacity and no offset."
+	maxWidth={360}
+/>
+
+| Primitive | Focus style |
+| --- | --- |
+| Input, Select trigger | `focus-visible:border-ring ring-2 ring-ring ring-offset-2 ring-offset-background` |
+| Button | `focus-visible:border-ring ring-2 ring-ring/50` |
+| Textarea | `focus-visible:border-ring ring-[1.5px] ring-ring/50` |
+| Switch, theme preset tiles, SEO mode toggles | `ring-2 ring-ring ring-offset-2 ring-offset-background` |
+| Everything else | The base layer sets `outline-ring/50` on all elements, so a native outline is already in `--ring` |
+
+Focus is always `:focus-visible`. Never remove a ring without replacing it, and keep `--ring` (`#2563EB` light, `#60A5FA` dark in the admin) as its only color.
+
+## Shape
+
+### Radius scale
+
+The admin is a dense tool with tighter corners; the public page is softer. Both read the same utilities. The global scale is declared in a non-inline `@theme`, which emits `--radius-*` variables, so `.admin-scope` and `.public-scope` can retune it at runtime.
+
+<RadiusScale />
+
+<Screenshot
+	light={radiusAdmin}
+	alt="The SEO and Open Graph card with radius labels: the card is rounded-lg at 12px, the icon tile rounded-md at 8px, the Page Title input rounded-md at 8px, the Template mode toggle rounded-lg at 12px and a template option rounded-lg at 12px."
+	caption="Admin scale on Design → SEO: 12px cards and option tiles, 8px inputs, buttons and icon tiles."
+/>
+
+<Screenshot
+	light={radiusPublic}
+	alt="The public page with radius labels: the profile card is rounded-3xl at 32px, social icons and the featured title pill are fully rounded, and the featured, highlighted and plain link cards are rounded-2xl at 28px."
+	caption="Public scale: 32px profile card, 28px link cards (the default link radius), full pills and circular social icons."
+/>
+
+Rules:
+
+- Use the shared utilities; don't add one-off `rounded-[…]` values.
+- The preview viewport renders the real public page inside the admin. Its `.public-scope` wrapper restores the public scale, which is why the preview's cards stay soft inside the tighter console.
+- Link blocks can pick their own radius (`none`, `sm`, `md`, `lg`, `xl`, `2xl`, `full`); the default is `2xl`.
+
+### Surfaces
+
+Admin cards are matte: `bg-card border border-border shadow-surface rounded-lg`, with no blur. Navigation uses solid state fills (`--sidebar-accent`, `--surface-2`), and the Unsaved control uses a warning outline and text with no glow. Public link cards use `shadow-card` with a `backdrop-blur-xl`, and the public hero and the Wallet card have their own treatments. Those don't establish a glass or glow style for admin forms.
+
+## Public theme presets
+
+The public page has eleven presets, picked in Design → Theme. Each tile in the picker is split diagonally into the preset's light and dark ground, card, primary and accent.
+
+<Screenshot
+	light={themePresetsLight}
+	dark={themePresetsDark}
+	alt="The Theme Presets card listing Classic, Graphite, Ocean Blue, Sunset, Forest, Minimal, Corporate Classic, Blood Moon, Hacker Terminal, Hellfire and Abyssal. Each tile shows a light half and a dark half; Classic is selected with a check."
+	caption="Design → Theme Presets. Classic is the default (its stored name is default)."
+/>
+
+Here is the same page in six presets, as the Design preview renders it. Each capture picks a preset without saving and scrolls the preview to the social row, so you can compare the ground tint, the signal dash on the section header, link descriptions and the primary fill on the highlighted link. Switch the docs between light and dark to see each preset's other mode.
+
+<ScreenshotGrid columns={3}>
+	<Screenshot
+		light={presetClassicLight}
+		dark={presetClassicDark}
+		alt="Classic preset in the preview: a neutral gray ground, white cards and a navy highlighted link in light; a cyan highlighted link on neutral dark surfaces in dark."
+		caption="Classic"
+	/>
+	<Screenshot
+		light={presetGraphiteLight}
+		dark={presetGraphiteDark}
+		alt="Graphite preset in the preview: a slate highlighted link on a cool gray ground in light; a light slate highlighted link in dark."
+		caption="Graphite"
+	/>
+	<Screenshot
+		light={presetOceanLight}
+		dark={presetOceanDark}
+		alt="Ocean Blue preset in the preview: a pale blue ground, blue descriptions and a deep blue highlighted link in light; a sky blue highlighted link in dark."
+		caption="Ocean Blue"
+	/>
+	<Screenshot
+		light={presetSunsetLight}
+		dark={presetSunsetDark}
+		alt="Sunset preset in the preview: a warm cream ground, orange descriptions and a burnt orange highlighted link in light; an orange highlighted link in dark."
+		caption="Sunset"
+	/>
+	<Screenshot
+		light={presetForestLight}
+		dark={presetForestDark}
+		alt="Forest preset in the preview: a pale green ground, green descriptions and a dark green highlighted link in light; a bright green highlighted link in dark."
+		caption="Forest"
+	/>
+	<Screenshot
+		light={presetAbyssalLight}
+		dark={presetAbyssalDark}
+		alt="Abyssal preset in the preview: a near-white lavender ground and a violet highlighted link in light; a lighter violet highlighted link in dark."
+		caption="Abyssal"
+	/>
+</ScreenshotGrid>
+
+### Preset palette
+
+<PresetPalette />
+
+Light palettes are distinct per preset. In dark mode every preset shares the same neutral surfaces, text, borders and inset fills, and keeps only its own primary and accent:
+
+<SharedDarkSurfaces />
+
+Each preset sets ten `--ld-*` roles per mode. Classic, in full:
+
+<PresetVars name="default" />
+
+### Custom colors
+
+Design → Theme also takes `custom_primary`, `custom_secondary`, `custom_accent` and `custom_background`. They are true overrides and apply in both modes; an empty field inherits the preset. Picking a preset clears them (`clearCustomColors` in `apps/web/src/app/admin/design/theme-form.ts`). `getThemeColors` keeps the result readable:
+
+- A custom background re-derives the foreground only when the preset's foreground falls below 4.5:1 on it.
+- When the card and the custom background land on opposite sides of the light/dark line, the card, muted and border colors are rebuilt from the background (4%, 8% and 16% toward the foreground).
+- `--ld-muted-foreground` must pass 4.5:1 on the ground, the card and the muted panel. Otherwise it is eased from the foreground toward the background only as far as AA allows.
+- Single-color places (the OG card, browser chrome, the manifest) use `pagePrimaryColor`: the custom primary when set, else the preset's light primary.
+
+`ColorField` in the editor shows a contrast guard while you pick.
+
+## Motion
+
+Motion is limited to feedback and real state changes. Admin pages, forms and charts have no decorative entrance animation.
+
+| Motion | Duration and easing | Source |
+| --- | --- | --- |
+| Public entrance `ld-rise` (hero, blocks, social icons) | 480ms, `--ease-out`, 8px rise; 45ms stagger per `--ld-i`, index capped at 12 | `index.css`, `public-page-content.tsx` |
+| Link card hover (lift, border, glow, accent bar) | 220ms ease-out | `components/public/link-block.tsx` |
+| Preview column collapse | 220ms width transition | `components/admin/preview-column.tsx` |
+| Theme preset tile | 200ms | `theme-presets-section.tsx` |
+| Select list open and close | 150ms fade and zoom | `components/ui/select.tsx` |
+| Easing tokens | `--ease-out: cubic-bezier(0.22, 1, 0.36, 1)`, `--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1)` | `@theme inline` |
+
+Reduced motion:
+
+- A global `@media (prefers-reduced-motion: reduce)` rule cuts every animation and transition to 0.01ms, runs animations once and sets `scroll-behavior: auto`.
+- That rule is a universal selector, so the `ld-rise` classes would outrank it. A second media rule sets `animation: none` on `.ld-hero`, `.ld-blocks > *` and `.ld-social-icons > a`. Any new class that sets an `animation` shorthand belongs in that list.
+- CSS can't reach `scrollIntoView` or `scrollBy({ behavior: "smooth" })`. Imperative scrolls pass `behavior: prefersReducedMotion() ? "auto" : "smooth"` from `apps/web/src/hooks/use-reduced-motion.ts`.
+- The public page turns transitions off briefly (50ms) when it corrects a first-visit color mode, so the palette swaps instantly instead of fading.
+
+Every capture in these docs is taken with `reducedMotion: "reduce"`, which is also how you can check that a page settles without its entrance.
+
+## Source map
+
+| What | Where |
+| --- | --- |
+| Semantic tokens, scopes, radii, type scale, control sizes, reduced motion | `apps/web/src/index.css` |
+| Public preset palettes | `packages/ui/src/themes.ts` |
+| Preset resolution and custom-color guards | `apps/web/src/lib/theme-colors.ts` |
+| Public fonts | `apps/web/src/public-fonts.css`, `apps/web/public/fonts` |
+| Admin fonts, mono font | `apps/web/src/app/admin/layout.tsx`, `apps/web/src/app/layout.tsx` |
+| Button, Input, Textarea, Select, Card | `apps/web/src/components/ui/` |
+| Switch, Checkbox | `packages/ui/src/components/` |
+| `cn` with the custom text sizes | `packages/ui/src/utils.ts` |
+| Palette contrast test | `apps/web/src/components/ui/__tests__/admin-palette-contrast.test.ts` |
+| These captures | `scripts/design-screenshots/groups/foundations.ts` (`bun scripts/design-screenshots/capture.ts foundations`) |
+| These token tables | `apps/docs/src/components/design-tokens.tsx`, rebuilt when `index.css` or `themes.ts` changes |

@@ -1,36 +1,330 @@
 ---
 title: Layout and interaction patterns
-description: How the shared pieces form editing, preview, saving, and public-page flows.
+description: How the shared pieces form the admin shell, the editing preview, saving and publication state, the block editor, settings, the Inbox, first run and sign-in, public layouts, and the Wallet preview.
 ---
+
+import adminShellLight from "./images/patterns/admin-shell-light.webp";
+import adminShellDark from "./images/patterns/admin-shell-dark.webp";
+import topBarLight from "./images/patterns/top-bar-light.webp";
+import pageHeaderSubtabsLight from "./images/patterns/page-header-subtabs-light.webp";
+import sidebarCollapsedLight from "./images/patterns/admin-shell-sidebar-collapsed-light.webp";
+import shellMobileLight from "./images/patterns/admin-shell-mobile-light.webp";
+import shellMobileDark from "./images/patterns/admin-shell-mobile-dark.webp";
+import bottomNavMoreLight from "./images/patterns/bottom-nav-more-mobile-light.webp";
+import bottomNavMoreDark from "./images/patterns/bottom-nav-more-mobile-dark.webp";
+import previewRailLight from "./images/patterns/preview-rail-light.webp";
+import previewRailDark from "./images/patterns/preview-rail-dark.webp";
+import previewRailSocialLight from "./images/patterns/preview-rail-social-card-light.webp";
+import previewRailSocialDark from "./images/patterns/preview-rail-social-card-dark.webp";
+import previewRailCollapsedLight from "./images/patterns/preview-rail-collapsed-light.webp";
+import previewSheetLight from "./images/patterns/mobile-preview-sheet-light.webp";
+import previewSheetDark from "./images/patterns/mobile-preview-sheet-dark.webp";
+import unsavedLight from "./images/patterns/unsaved-save-bar-light.webp";
+import unsavedDark from "./images/patterns/unsaved-save-bar-dark.webp";
+import saveBarLight from "./images/patterns/save-bar-light.webp";
+import pillUnsavedLight from "./images/patterns/state-pill-unsaved-light.webp";
+import pillAfterDiscardLight from "./images/patterns/state-pill-after-discard-light.webp";
+import pillPopoverLight from "./images/patterns/state-pill-popover-light.webp";
+import saveBarMobileLight from "./images/patterns/save-bar-mobile-light.webp";
+import settingsInvalidLight from "./images/patterns/settings-invalid-light.webp";
+import editorXlLight from "./images/patterns/block-editor-xl-light.webp";
+import editorXlDark from "./images/patterns/block-editor-xl-dark.webp";
+import editorSeamLight from "./images/patterns/block-editor-xl-seam-light.webp";
+import editorLgLight from "./images/patterns/block-editor-lg-light.webp";
+import editorMobileLight from "./images/patterns/block-editor-mobile-light.webp";
+import filtersDraftsLight from "./images/patterns/block-filters-drafts-light.webp";
+import filtersHiddenLight from "./images/patterns/block-filters-hidden-light.webp";
+import addBlockLight from "./images/patterns/add-block-picker-light.webp";
+import settingsLight from "./images/patterns/settings-form-light.webp";
+import settingsDark from "./images/patterns/settings-form-dark.webp";
+import settingsMobileLight from "./images/patterns/settings-form-mobile-light.webp";
+import inboxLight from "./images/patterns/inbox-split-light.webp";
+import inboxDark from "./images/patterns/inbox-split-dark.webp";
+import inboxSelectLight from "./images/patterns/inbox-select-mode-light.webp";
+import inboxMobileLight from "./images/patterns/inbox-mobile-light.webp";
+import inboxDetailMobileLight from "./images/patterns/inbox-detail-mobile-light.webp";
+import linksEmptyLight from "./images/patterns/links-empty-light.webp";
+import linksEmptyDark from "./images/patterns/links-empty-dark.webp";
+import previewNoVisibleLight from "./images/patterns/preview-no-visible-blocks-light.webp";
+import inboxEmptyLight from "./images/patterns/inbox-empty-light.webp";
+import queryErrorLight from "./images/patterns/settings-query-error-light.webp";
+import setupAccountLight from "./images/patterns/setup-account-light.webp";
+import setupAccountDark from "./images/patterns/setup-account-dark.webp";
+import setupProfileLight from "./images/patterns/setup-profile-light.webp";
+import setupThemeLight from "./images/patterns/setup-theme-light.webp";
+import setupLaunchLight from "./images/patterns/setup-launch-light.webp";
+import loginLight from "./images/patterns/login-light.webp";
+import loginDark from "./images/patterns/login-dark.webp";
+import loginMobileLight from "./images/patterns/login-mobile-light.webp";
+import loginMobileDark from "./images/patterns/login-mobile-dark.webp";
+import loginForgotLight from "./images/patterns/login-forgot-light.webp";
+import loginForgotDark from "./images/patterns/login-forgot-dark.webp";
+import loginTwoFactorLight from "./images/patterns/login-two-factor-light.webp";
+import loginTwoFactorDark from "./images/patterns/login-two-factor-dark.webp";
+import publicSplitLight from "./images/patterns/public-split-light.webp";
+import publicSplitDark from "./images/patterns/public-split-dark.webp";
+import publicNarrowLight from "./images/patterns/public-narrow-860-light.webp";
+import publicNarrowDark from "./images/patterns/public-narrow-860-dark.webp";
+import publicMobileLight from "./images/patterns/public-narrow-mobile-light.webp";
+import publicMobileDark from "./images/patterns/public-narrow-mobile-dark.webp";
+import walletLight from "./images/patterns/wallet-settings-light.webp";
+import walletDark from "./images/patterns/wallet-settings-dark.webp";
+import walletCard from "./images/patterns/wallet-pass-card.webp";
+import walletZone from "./images/patterns/wallet-zone-highlight.webp";
+import featureHiddenLight from "./images/stateful/block-row-feature-hidden-light.webp";
+import inboxLoadOlderLight from "./images/stateful/inbox-load-older-light.webp";
+import publicStackedLight from "./images/stateful/public-stacked-light.webp";
+import publicStackedDark from "./images/stateful/public-stacked-dark.webp";
+import walletBack from "./images/stateful/wallet-pass-back.webp";
+import twoFactorEnableLight from "./images/stateful/two-factor-enable-light.webp";
+import twoFactorEnableDark from "./images/stateful/two-factor-enable-dark.webp";
+import twoFactorVerifyLight from "./images/stateful/two-factor-verify-light.webp";
+import twoFactorVerifyDark from "./images/stateful/two-factor-verify-dark.webp";
+import accountTwoFactorOnLight from "./images/stateful/account-two-factor-on-light.webp";
+import accountTwoFactorOnDark from "./images/stateful/account-two-factor-on-dark.webp";
+import loginBackupCodeLight from "./images/stateful/login-backup-code-light.webp";
+import loginBackupCodeDark from "./images/stateful/login-backup-code-dark.webp";
+
+This page shows how the [components](/docs/design-system/components) combine into screens and flows. The [overview](/docs/design-system) names each region of the editor and the public page; here you see how those regions behave when something is edited, saved, previewed, emptied, or signed into.
+
+Every capture is the running app with the synthetic Rowan Ellis profile: desktop at 1440 × 900, phones at 390 × 844. A few states cannot exist on the sample stack without changing saved data: an empty block list, an empty Inbox, a failed request, the first-run wizard, and the two-factor prompt. For those, the capture script rewrites one response inside its own browser, so the real components render the state while the database stays unchanged. The captions say when this was done.
 
 ## Admin page structure
 
-`AdminShell` owns the sidebar, 64px top bar, one `main`, global footer, and preview rail. Below 1024px, the shell uses a 56px bottom navigation bar and opens preview in a sheet. Pages supply content through `PageShell` and `PageHeader`; they do not create a second main landmark or right-hand preview column.
+`AdminShell` (`components/admin/admin-shell.tsx`) is the client chrome around every signed-in admin page. The server layout `app/admin/layout.tsx` renders it and owns the metadata. The shell owns the session gate, the sidebar, the 64px sticky top bar, the one `main#main-content` landmark, `AdminFooter`, and the preview rail. Below 1024px it swaps the sidebar for a bottom tab bar and the rail for a preview sheet. Pages fill it through `PageShell` and `PageHeader`. They never render a second `main` or their own right-hand column.
 
-```tsx
-import { PageHeader } from "@/components/admin/page-header";
-import { PageShell } from "@/components/admin/page-shell";
+<Screenshot
+  light={adminShellLight}
+  dark={adminShellDark}
+  alt="The Links destination at 1440px: a sidebar with Profile page selected, a top bar reading Profile page with Publishing off, Share and View live, the Links heading over Blocks, Profile and Social sub-tabs, the All 17, Drafts 1 and Hidden 1 filters with Apply 1 new, the block list, and a Preview rail showing the public profile."
+  caption="The shell at 1440px on /admin/links. The tool column stops at 760px and the preview rail takes its own width, with a 32px gap between them."
+/>
 
-<PageShell>
-  <PageHeader title="Profile" kicker="Profile">
-    <p className="text-sm text-muted-foreground">
-      Edit the details visitors see at the top of your page.
-    </p>
-  </PageHeader>
-  {profileSection}
-</PageShell>
+| Region | Value | Source |
+| --- | --- | --- |
+| Sidebar | 16rem (256px) expanded, 3rem (48px) as an icon rail; `collapsible="icon"`; open state kept in the `sidebar_state` cookie for 7 days | `components/ui/sidebar.tsx` |
+| Top bar | 64px (`h-16`), `sticky top-0 z-30`, `bg-card` with a bottom border, 16px side padding | `admin-shell.tsx` |
+| Main | Up to 1680px wide; 16px side padding, 24px from `sm`, 32px from `lg`; 24px vertical padding, 32px from `lg` | `admin-shell.tsx` |
+| Grid with a preview | `minmax(0,1fr) auto` from `lg` with a 32px gap; the tool column is capped at 760px | `MainGrid` |
+| Grid without a preview | One column capped at 1120px | `MainGrid` |
+| Bottom tab bar (below 1024px) | Fixed, 56px items, plus the bottom safe-area inset | `BottomTabBar` |
+| Scroll padding on `<html>` | Top `calc(64px + 0.75rem)`, bottom `calc(56px + env(safe-area-inset-bottom) + 8rem)`, set only while the shell is mounted | `admin-shell.tsx` |
+
+A "Skip to main content" link is the first focusable element. The scroll padding keeps a focused field clear of the sticky top bar, the tab bar, and a save bar (WCAG 2.4.11).
+
+### Top bar
+
+<Screenshot
+  light={topBarLight}
+  alt="The admin top bar on Design, Branding: a sidebar toggle, a divider, the breadcrumb Design then Branding, and on the right the Publishing off pill, a Share icon and an outlined View live button."
+  caption="The top bar at 2x. The breadcrumb links back to the destination; the current sub-tab is plain text."
+/>
+
+From left to right:
+
+- **Sidebar trigger** and a vertical divider, from `lg` only.
+- **Breadcrumb.** The destination label links to the destination root. On a sub-tab, the current label follows a chevron. The label comes from `PageHeader`'s `kicker` when the page sets one. Otherwise the shell takes the path segment, replaces hyphens with spaces, and capitalizes it, so `/admin/design/seo` reads "Seo". Pass `kicker` when a label needs other casing. A destination root shows only the destination name.
+- **`StatePill`**, the publication status. See [Save, discard, and publication state](#save-discard-and-publication-state).
+- **Preview action**, below `lg` and only when the page registered a preview. It is an icon button named "Open live preview".
+- **`SharePopover`**.
+- **View live**, an outline `sm` button from `lg`. It opens `NEXT_PUBLIC_SITE_URL` in a new tab.
+- **Account menu**, below `lg`, where the sidebar footer is not rendered. The menu holds identity, Account, Wallet pass, and Sign out.
+
+### Page header and sub-tabs
+
+<Screenshot
+  light={pageHeaderSubtabsLight}
+  alt="The Design heading above a tab strip with Theme, Banner, Branding and SEO; Branding is current, with darker text and a 2px underline over the strip's hairline."
+  caption="PageHeader above SubTabs on Design, Branding. The active tab has a static 2px foreground underline; there is no sliding indicator."
+  maxWidth={480}
+/>
+
+Destination layouts place the header and tabs once for every sub-page. This is the real Design layout:
+
+```tsx title="apps/web/src/app/admin/design/layout.tsx"
+const DESIGN_TABS = [
+  { href: "/admin/design", label: "Theme" },
+  { href: "/admin/design/banner", label: "Banner" },
+  { href: "/admin/design/branding", label: "Branding" },
+  { href: "/admin/design/seo", label: "SEO" },
+] as const;
+
+export default function DesignLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <PageShell>
+      <PageHeader title="Design" />
+      <SubTabs items={DESIGN_TABS} ariaLabel="Design sections" />
+      {children}
+    </PageShell>
+  );
+}
 ```
 
-`PageHeader` places actions after the description on narrow screens. The optional `kicker` reports the current section to the shell breadcrumb. Destination layouts own their `SubTabs`, and server layouts supply descriptive page metadata.
+- `PageShell` adds vertical rhythm only: 16px between children, 24px from `sm`. It has no entrance fade.
+- `PageHeader` renders one `h1` in the display font: 24px, 28px from `sm`, semibold, `tracking-[-0.025em]`. An optional `badge` sits beside the title. From `sm`, `actions` move to a second column. On phones they follow the title and description.
+- `SubTabs` are plain Next `Link`s styled as a tab strip. They are 44px tall, 40px from `md`, with 12px text. The strip scrolls horizontally and never wraps. The current tab gets `aria-current="page"`. The longest matching `href` wins, so a destination root never outranks its own child route.
+- Every admin route has a server `layout.tsx` that exports metadata. Titles follow the `'<Page> · <Destination> · LinkDen Admin'` template.
 
-The shell supplies a skip link and scroll padding so focused content stays clear of the sticky bars. Keep page content within its existing width and spacing constraints.
+### Collapsed sidebar
+
+<Screenshot
+  light={sidebarCollapsedLight}
+  alt="The Design, Theme page with the sidebar collapsed to a narrow icon rail showing the wolf mark, four destination icons and the RE avatar; the theme preset grid and the preview rail fill the rest."
+  caption="The sidebar collapsed to its 48px icon rail. Labels move into tooltips, and the main column keeps its 760px cap."
+/>
+
+The sidebar trigger, the `SidebarRail` edge, and the keyboard shortcut all toggle the sidebar. The shortcut is Cmd+B on Apple platforms and Ctrl+B elsewhere. It is ignored inside editable fields and at mobile widths, where the shell renders no sidebar. When collapsed, the site name and account details fold away. Every menu button keeps its label as a tooltip.
+
+### Phone layout
+
+<ScreenshotGrid>
+  <Screenshot
+    light={shellMobileLight}
+    dark={shellMobileDark}
+    alt="The Links page on a 390px phone: a top bar with Profile page, the Publishing off pill, a phone icon, Share and the RE avatar; the Links heading, sub-tabs, filters and block rows; and a bottom tab bar with Profile, Inbox with a badge of 2, and More."
+    caption="Below 1024px: no sidebar, a compact top bar with the account avatar, and the 56px bottom tab bar."
+  />
+  <Screenshot
+    light={bottomNavMoreLight}
+    dark={bottomNavMoreDark}
+    alt="The same phone screen with the More tab pressed and a menu labeled More destinations listing Design and Settings above the tab bar."
+    caption="More opens a menu with the destinations that have no tab of their own."
+  />
+</ScreenshotGrid>
+
+`NAV_ITEMS` (`components/admin/nav-list.tsx`) is the single source for the sidebar, the tab bar, and the breadcrumb. Items with a `mobileLabel` (Profile, Inbox) get a tab. The rest (Design, Settings) live under More, which is marked `aria-current="page"` while one of them is open. Tabs are at least 56px tall with `text-micro` labels, and the active tab uses `text-primary`. Inbox shows its unread count, capped at 99+. The footer adds the tab bar's height and the safe-area inset to its bottom padding, so nothing hides behind the bar.
+
+## Preview rail and mobile sheet
+
+An editing page hands its preview to the shell with `usePreviewSlot` and keeps its own form state. The shell renders the same registration in the desktop rail and the mobile sheet. Pages call the hook on every render, because overrides are fresh objects each time. They never read the registration back: the state and the setter live in two separate contexts to avoid a render loop.
+
+```tsx
+import { usePreviewSlot } from "@/components/admin/preview-slot";
+
+usePreviewSlot({ overrides: { profile: { name, bio } } });
+```
+
+| Field | Purpose | Used by |
+| --- | --- | --- |
+| `overrides` | Unsaved `profile`, `settings`, `blocks`, or `socialNetworks` layered over `public.getPage` | Links (Blocks, Profile, Social) and Design (Theme, Banner, Branding, SEO) |
+| `mode`, `onModeChange` | Control the preview's light or dark mode | Pages that drive the preview mode |
+| `preview` | A custom node that replaces `PagePreview` | Settings → Wallet |
+| `size` | `"default"` or `"wide"` (425px rail) | Settings → Wallet |
+| `panel` | A panel that replaces the preview at `lg` and stacks above it at `xl` | Links → Blocks (the block editor) |
+| `altView` | `{ label, node }`, a second view the rail header can switch to | Design → SEO (Social card) |
+
+<ScreenshotGrid>
+  <Screenshot
+    light={previewRailLight}
+    dark={previewRailDark}
+    alt="The preview rail: a Preview header with a collapse icon, a toolbar with light and dark toggles, Copy link and Open live page, the status line Includes block drafts, and a bordered viewport showing the public profile card and the Latest work section."
+    caption="The expanded rail on Profile. The toolbar keeps normal admin size; only the page inside the bordered viewport is scaled."
+  />
+  <Screenshot
+    light={previewRailSocialLight}
+    dark={previewRailSocialDark}
+    alt="The preview rail on Design, SEO switched to Social card: a Page button in the header, and Twitter / X and Facebook / LinkedIn previews of the generated profile card with the SEO title and description."
+    caption="SEO registers an altView. The header button toggles between Social card and Page."
+  />
+</ScreenshotGrid>
+
+<Screenshot
+  light={previewRailCollapsedLight}
+  alt="The Profile page with the preview rail collapsed to a narrow bordered button at the top right holding two icons; the Profile Info form keeps its 760px width."
+  caption="The rail collapsed to its 40px Show preview button. Collapse persists per browser in local storage."
+/>
+
+| Rail property | Value |
+| --- | --- |
+| Width | 300px at `lg`, 372px at `xl`, 425px for `size: "wide"`, 40px collapsed (44px with a coarse pointer) |
+| Position | `sticky` at `top: calc(64px + 1.5rem)`, `max-height: calc(100dvh - 64px - 3rem)`, with its own vertical scroll |
+| Header | At least 56px: the "Preview" label, then the alt-view toggle, Show preview or Back to editor (between `lg` and `xl` with a panel), and Hide preview |
+| Body | A `bg-muted/30` canvas with 16px padding, inside a bordered `rounded-2xl` card |
+| Collapse | Stored as `admin.preview.collapsed`. The width animates over 220ms. The 112px collapsed button shows panel and eye icons with a "Show preview" tooltip. A registered panel stays mounted while collapsed |
+
+The toolbar has a Light preview and Dark preview toggle (`aria-pressed`), Copy link (toast "Link copied"), and Open live page. The first mode follows `default_color_mode`, and `system` uses the browser's preference. A status line under the toolbar says what the viewport contains:
+
+| Status line | Shown when |
+| --- | --- |
+| Includes block drafts | At least one shown block is still a draft |
+| Preview of enabled blocks | Enabled blocks are shown and none is a draft |
+| No visible blocks | Blocks are saved but none is enabled or visible |
+| Sample content · no blocks yet | No blocks are saved; a Sample chip appears in the toolbar |
+
+`PagePreview` renders the real `PublicPage`. Do not fork block markup for the preview. It takes everything except blocks from `public.getPage`. Blocks come from `blocks.list`, so enabled drafts appear before they are applied. The same feature gates as the live page apply: Connect blocks hide while the contact form is off, and vCard blocks hide while vCard is off. Saves that invalidate `settings.*`, `social.*`, or `vcard.*` queries also refetch the page data, and unsaved overrides stay layered on top. If either query fails, the viewport is replaced by `QueryError` ("Couldn't load the preview").
+
+`PagePreviewViewport` is a plain bordered document viewport. It renders the page at 390px and scales it to the available width, measuring the scaled height so short pages keep their natural height. Long pages scroll inside a 570px cap. There is no phone bezel, clock, status bar, or notch. The content is `inert` and exposed as one `role="img"` named "Live preview of your page". The outer scroller stays outside the inert subtree, so wheel scrolling still works. Use View live for interactive checking. Responsive public content measures `.ld-page`, so a narrow inline preview never adopts the editor's desktop width.
+
+### Mobile preview sheet
+
+<Screenshot
+  light={previewSheetLight}
+  dark={previewSheetDark}
+  alt="A full-height phone sheet titled Preview with Share and Close buttons, the light and dark toggles, Copy link and Open live page, the status Includes block drafts, and the scaled public profile below."
+  caption="Below 1024px the top bar's Preview action opens MobilePreviewSheet: a full-height sheet with Share next to Close, so edit, preview, and share are one flow."
+  maxWidth={390}
+/>
+
+`MobilePreviewSheet` is a `BottomSheet` (Base UI Dialog) at `h-dvh` with no rounded top. It has a "Preview" title, `SharePopover`, and a 44px Close button. It shows the same registration: the custom `preview`, or `PagePreview` up to 390px wide. The sheet traps and restores focus, closes on Escape, and closes itself when the viewport grows past `lg`.
 
 ## Save, discard, and publication state
 
-Use one `useSettingsForm` scope and one `StickySaveBar` per settings page. The hook validates before save, writes only changed keys, and preserves unsaved fields when fresh server data arrives. Show `QueryError` for an initial load failure instead of leaving a permanent skeleton.
+Saving and publishing are separate steps. A save writes authoring data. Only a verified publication receipt means the public site changed.
 
-```tsx
-import { StickySaveBar } from "@/components/admin/sticky-save-bar";
+<Screenshot
+  light={unsavedLight}
+  dark={unsavedDark}
+  alt="Design, Theme after selecting the Forest preset: the top-bar pill reads Unsaved in amber, the Forest card is selected, the preview rail is recolored in green, and a bar at the bottom of the tool column reads You have unsaved changes with Discard and Save changes."
+  caption="One unsaved edit: Forest is picked but not saved. The pill reads Unsaved, the preview already shows the change, and the save bar sticks to the bottom of the tool column."
+/>
+
+1. **Edit.** `useSettingsForm` compares the form with its saved baseline (shallow equality). While they differ, `useUnsavedChanges(true)` adds one to a module-level dirty counter.
+2. **Signal.** `StatePill` reads the counter through `useAnyUnsaved()` and shows Unsaved with a warning outline. The page's `StickySaveBar` appears.
+3. **Save or discard.** Save validates first, then sends only the changed keys in one `settings.updateBulk` call (one `db.batch`). It invalidates `settings.getAll` and shows the page's success toast. Discard restores the saved baseline, and the bar and the Unsaved label disappear.
+4. **Leave.** While anything is dirty, one shared guard asks "Discard unsaved changes?" once. It catches in-app link clicks (capture phase, before Next handles them), Back and Forward (a Navigation API `traverse`, where supported), and reloads or closes (`beforeunload`). Modifier and middle clicks, `target="_blank"` links, hash links, and other origins pass through.
+
+Fresh server data, such as the refetch after a save or a window-focus refetch, moves the baseline and every field you have not edited. Edited fields keep their unsaved values.
+
+<Screenshot
+  light={saveBarLight}
+  alt="The save bar: a rounded panel with a blue outline, the text You have unsaved changes on the left, and Discard and a blue Save changes button on the right."
+  caption="StickySaveBar at 2x."
+/>
+
+<ScreenshotGrid>
+  <Screenshot
+    light={pillUnsavedLight}
+    alt="The StatePill reading Unsaved in amber text with an amber outline."
+    caption="While any form is dirty."
+    maxWidth={202}
+  />
+  <Screenshot
+    light={pillAfterDiscardLight}
+    alt="The StatePill reading Publishing off in neutral text."
+    caption="After Discard: back to the publication label."
+    maxWidth={268}
+  />
+</ScreenshotGrid>
+
+| `StickySaveBar` | Value |
+| --- | --- |
+| Visibility | Renders only while `isDirty` |
+| Position | `sticky`, `bottom: calc(56px + env(safe-area-inset-bottom) + 8px)` below `lg` (above the tab bar), 16px from `lg` |
+| Surface | `rounded-lg`, `border-primary/60`, `bg-background`, `shadow-[0_8px_24px_-12px_rgba(0,0,0,0.4)]`; stacked below `sm`, one row from `sm` |
+| Message | `text-xs`: a custom `message`, else "You have unsaved changes"; with `hasErrors`, "Fix the highlighted fields to save" in the destructive color with `role="status"` |
+| Actions | Discard (ghost `sm`, undo icon) and Save changes (primary `sm`, "Saving…" while pending). Save is disabled while saving or while `hasErrors` |
+
+```tsx title="apps/web/src/app/admin/settings/email/page.tsx"
+const form = useSettingsForm<EmailState>({
+  parse,
+  serialize,
+  validate,
+  successMessage: "Email settings saved",
+});
+// A failed load would otherwise leave the skeleton up forever.
+if (form.isError) {
+  return <QueryError message="Couldn't load settings" onRetry={() => form.refetch()} />;
+}
 
 <StickySaveBar
   isDirty={form.isDirty}
@@ -41,35 +335,363 @@ import { StickySaveBar } from "@/components/admin/sticky-save-bar";
 />
 ```
 
-The save bar sits above mobile navigation and disables save for invalid fields. `useUnsavedChanges` shares one navigation/unload guard, so multiple dirty sections do not prompt repeatedly.
+Use one `useSettingsForm` scope and one `StickySaveBar` per settings page. `validate` returns `{ field: message }`. While it is non-empty, `save()` does nothing and `hasErrors` disables Save:
 
-A successful save updates authoring data. It does not prove that the public site is published. `StatePill` keeps Unsaved state separate from publication receipts and exposes the explicit Publish action only through the configured publication flow. Keep pending, unavailable, failed, and verified states distinct.
+<Screenshot
+  light={settingsInvalidLight}
+  alt="The Contact-form delivery card with Email only selected in a red-outlined select, a red error reading Email delivery needs an API key and a sender address, or keep messages in the Inbox, and below it the save bar reading Fix the highlighted fields to save in red with Discard and a dimmed Save changes."
+  caption="An invalid unsaved edit on Settings → Email: Email only without an API key or sender. The field shows its error, the bar names the problem, and Save is disabled."
+/>
 
-## Document preview
+<Screenshot
+  light={saveBarMobileLight}
+  alt="Design on a phone with Stacked chosen in the Page layout select: the top pill reads Unsaved and the save bar, with its message above Discard and Save changes, sits just above the bottom tab bar."
+  caption="On a phone the bar stacks its message over the buttons and sits 8px above the 56px tab bar."
+  maxWidth={390}
+/>
 
-Editing pages register with `usePreviewSlot` on every render. The shell uses that registration for both the desktop rail and mobile sheet.
+### Publication status
 
-```tsx
-import { usePreviewSlot } from "@/components/admin/preview-slot";
+`StatePill` is an outline `xs` pill in the top bar. Its label follows this order of precedence:
 
-usePreviewSlot({ overrides: { profile: { name, bio } } });
-```
+| Label | Shown when | Tone |
+| --- | --- | --- |
+| Unsaved | Any mounted form is dirty | Warning |
+| Check status | The `publication.status` query failed | Neutral |
+| Checking… | The status has not loaded yet | Neutral |
+| Failed | Recovery is required | Destructive |
+| Publishing off | Publication is not available (this sample stack: "Publishing has not been enabled") | Neutral |
+| Publishing | A revision is queued or publishing; status is polled every 10s for up to 2 minutes | Neutral |
+| Published | The last publication succeeded and the live page was verified | Success |
+| Failed | The last publication failed | Destructive |
+| Draft | Anything else: saved content that is not yet published | Neutral |
 
-`PagePreview` renders the real `PublicPage` with unsaved overrides. Do not fork block markup for preview. Sample blocks appear only when the saved block inventory is empty; hidden or disabled saved blocks must remain an honest empty preview.
+<Screenshot
+  light={pillPopoverLight}
+  alt="A popover titled Publish changes with the description Publishing has not been enabled, a Review block drafts link, Refresh status and a disabled Publish button, and the note At least 60 seconds between new revisions, up to 20 per UTC day."
+  caption="The popover behind the pill. With publishing off, Publish stays disabled; Review block drafts opens Links with the Drafts filter."
+  maxWidth={353}
+/>
 
-`PagePreviewViewport` is a plain bordered document viewport. It fits a 390px layout to the available width, keeps short pages at natural height, and scrolls long pages within a 570px height cap. The toolbar stays at normal admin size. There is no phone bezel, clock, status bar, or notch.
+The popover (320px) holds the title "Publish changes", a description for the current state, the last verified revision when there is one, scheduling notes, a "Review block drafts" link to `/admin/links?filter=drafts`, Refresh status, Publish, and the rate-limit line. Publish stays disabled when there are unsaved changes, while a request or fetch is in flight, when the status failed or publishing is unavailable, while recovery is required, while a revision is pending, and when saved content already matches the published revision. Only successful saves of public source data mark the status stale. Keep pending, unavailable, failed, and verified states distinct, and never show Published because a save succeeded.
 
-The preview content is `inert` and named as one `role="img"`; its outer scroller stays usable. Use View live for interactive checking. Responsive public content measures `.ld-page`, so a narrow inline preview does not adopt the desktop editor's width.
+## Block editor
 
-From 1024px, `PreviewColumn` is sticky and collapsible. A block editor replaces the page preview between 1024px and 1279px, with a Show preview action; from 1280px it stacks above the preview. Hidden panels stay mounted to preserve in-progress edits. Below 1024px, `MobilePreviewSheet` keeps preview, sharing, and close controls in one overlay.
+Links → Blocks edits one block at a time in a panel whose home depends on the width:
 
-## Wallet preview
+| Viewport | Where the editor opens | Page preview |
+| --- | --- | --- |
+| Below 1024px | A page-owned `BottomSheet` ("Edit block", `h-[90vh]`) over the block list | The top bar's Preview action and sheet |
+| 1024–1279px | In the rail, replacing the preview | "Show preview" peeks at the page; "Back to editor" returns |
+| From 1280px | In the rail, above the preview | Below the editor, in the same scrolling rail |
 
-Settings → Wallet registers `WalletPassPreview` directly in the shared preview slot. Show the pass card itself, without a phone or a simulated Wallet app screen.
+<Screenshot
+  light={editorXlLight}
+  dark={editorXlDark}
+  alt="Links at 1440px with Book a design review highlighted in the list and an Edit link panel in the rail: Title changed to Book a 30-minute design review, URL, Card style Button, Description, and an open Style section with the Calendar Days icon and Highlighted, Open in new tab and No follow switches. The pill reads Unsaved."
+  caption="At 1440px the editor stacks above the preview. The edited row is tinted, and the unsaved title already makes the pill read Unsaved."
+/>
 
-The card uses system typography, configured pass colors, logo/thumbnail/strip assets, fields, and a generated QR preview. Back fields can be viewed on the reverse. Content limits come from `PASS_FIELD_LIMITS` and `resolvePassContent` so editor and generated pass stay aligned.
+<Screenshot
+  light={editorLgLight}
+  alt="Links at 1200px: the rail shows Preview with a Show preview button, and the Edit link panel fills the rail in place of the page preview."
+  caption="At 1200px the panel takes the preview's place. Show preview peeks at the page without closing the editor."
+/>
 
-The preview is not proof of signing or installation in Apple Wallet. Pass download remains an authenticated admin action and requires configured signing material; it is not a public footer action.
+<ScreenshotGrid>
+  <Screenshot
+    light={editorSeamLight}
+    alt="The rail at 1440px scrolled down: the end of the Style section, collapsed Schedule and Advanced sections, a delete icon button and Save Changes, then the preview toolbar, Includes block drafts, and the profile card."
+    caption="From 1280px, scroll the rail past Save Changes to reach the page preview."
+  />
+  <Screenshot
+    light={editorMobileLight}
+    alt="A phone with a dimmed, blurred page behind a bottom sheet titled Edit link holding Title, URL, Card style, Description and the Style section, with a delete button and Save Changes pinned at the bottom."
+    caption="Below 1024px the editor is a 90vh bottom sheet, the only mounted editor at this width."
+  />
+</ScreenshotGrid>
+
+- The page mounts the panel in exactly one place, chosen by a `(min-width: 1024px)` media query, so input IDs never repeat. The panel is keyed by block id.
+- The panel stays mounted (hidden) while you peek or collapse the rail, so in-progress fields survive. Opening another block or closing the editor ends a peek.
+- While you edit, the preview shows the enabled blocks with your in-progress values applied through `overrides.blocks`.
+- The panel header reads "Edit" plus the block type (for example "Edit link") with a Close button named "Close edit panel". The body uses `Field` stacks. The footer has a delete icon button and Save Changes ("Saving..." while pending).
+- `CollapsibleSection` groups the optional fields: Style (Link, Connect, vCard, and Embed blocks) and Form Fields (Connect), both open by default, then Schedule and Advanced. Headers are at least 44px. An open section gets a 2px `border-l-primary/40`. A collapsed section's content is `inert`. `forceOpen` opens Schedule or Advanced when a failed save flags a field inside them.
+- A field shows its error after you leave it. A save attempt reveals every error at once. Errors use `role="status"`, so they are announced politely. Config JSON must be a plain object.
+
+### Block list, filters, and drafts
+
+<Screenshot
+  light={filtersDraftsLight}
+  alt="The block filters with Drafts 1 selected and one row, Spring workshop sign-ups, with an amber draft dot; Apply 1 new on the right."
+  caption="Drafts: the one draft row and its dot. Apply 1 new changes block status only; it does not publish."
+/>
+
+<Screenshot
+  light={filtersHiddenLight}
+  alt="The block filters with Hidden 1 selected and one dimmed row, 2025 conference talk, with its switch off."
+  caption="Hidden: disabled rows are dimmed to 60% opacity with their switch off."
+/>
+
+- The All, Drafts, and Hidden pills filter the list in the browser, with counts in tabular mono. They are 44px tall, 32px from `md`. The StatePill's Review block drafts link opens this page with Drafts selected.
+- "Apply n new" calls `blocks.publishAll`, a status update. It reads "No block drafts" and is disabled when there is nothing to apply, and "Applying…" while pending. Applying content is not deploying it. Keep the two apart in labels, toasts, and previews.
+- A draft row shows a dot named "Block draft". A block whose feature is off shows a warning link, "Hidden — turn on in" plus where the switch lives ("Hidden" on phones), that opens that page.
+- Rows share one bordered card with dividers; they are never individually rounded. The drag handle is named "Reorder" plus the block title and supports the keyboard: Space or Enter picks a block up, the arrow keys move it, Space or Enter drops it, and Escape cancels.
+
+<Screenshot
+  light={featureHiddenLight}
+  alt="Four block rows: Get in touch (Header), Work with me (Connect) with an amber Hidden — turn on in Inbox link, Save my contact (Vcard) with an amber Hidden — turn on in Branding link, and Studio (Location). Every row's visibility switch is still on."
+  caption="With the contact form and vCard turned off, their rows keep the switch on but warn that the public page skips them. Captured after saving both features off on the screenshot stack, then restored."
+/>
+
+<Screenshot
+  light={addBlockLight}
+  alt="The Add block control opened: a dashed button now reading Cancel, above a three-column grid of block types: Link, Header, Embed, Connect With Me, vCard, Location, Image, Text and Divider, each with an icon chip and a one-line description."
+  caption="Add block turns into Cancel and opens the flat type picker: two columns, three from sm."
+/>
+
+## Settings forms
+
+<Screenshot
+  light={settingsLight}
+  dark={settingsDark}
+  alt="Settings, Email at 1440px: the Settings heading, a left column of section links with Email selected, and two cards, Email provider with the Resend API key and From Address fields, and Contact-form delivery set to Inbox only. No preview rail."
+  caption="Settings at 1440px: a 176px section column beside the form cards. Settings pages register no preview, so the content can use the full 1120px."
+/>
+
+`SettingsShell` (`app/admin/settings/settings-shell.tsx`) renders one `h1` and reports the current section as the breadcrumb `kicker`. From `xl` it shows a sticky 176px column of ghost Buttons rendered as Links, with a 32px gap. The current link has `aria-current="page"` and a `bg-primary/10` fill. Below `xl` the same sections become a `SubTabs` strip. Links stay real anchors, so the unsaved guard can catch them.
+
+<Screenshot
+  light={settingsMobileLight}
+  alt="Settings, Email on a phone: the breadcrumb Settings then Email, the Settings heading, a scrolling tab strip with Account, Email, Integrations, Wallet and Data, and the Email provider and Contact-form delivery cards."
+  caption="Below xl the section column becomes a scrolling SubTabs strip."
+  maxWidth={390}
+/>
+
+- Each sub-page owns its form scope and its `StickySaveBar`. While loading it shows a skeleton with `role="status"`; a failed first load shows `QueryError`.
+- Sections are `SectionCard`s: a 32px icon chip, a `CardTitle` `h2`, and a `text-micro` description in a bordered header band. See [Components](/docs/design-system/components).
+- Instant-save switches are the exception to the save bar. They save on toggle and confirm with a toast: Accepting messages in the Inbox header and Downloads enabled on Settings → Wallet.
+- Write-only secrets use `SecretInput`: the stored mask is selected on focus and never kept in an edit.
+
+## Inbox
+
+<Screenshot
+  light={inboxLight}
+  dark={inboxDark}
+  alt="The Inbox at 1440px: header controls with an Accepting messages switch, All, Unread and Read filters, Select and Mark All Read; a list of four messages with avatars, where-we-met chips and relative times; and a detail card for Sam Okafor with Where You Met, Contact Info, the message, and Mark Unread, Reply and Delete."
+  caption="The list and a 400px detail card. Unread rows have a bold name and a dot; the open message is tinted in the list."
+/>
+
+| Part | Behavior |
+| --- | --- |
+| Header actions | The Accepting messages switch saves `contact_form_enabled` instantly. All, Unread, and Read filter with `aria-pressed`. Select is icon-only below `sm`. Mark All Read appears only while something is unread |
+| Form filter | "Form:" pills appear when the page has more than one contact form block |
+| List | One card with divided rows: initials avatar, name, email, where-we-met chip, message excerpt, relative time |
+| Detail | A 400px card from `md` (768px). With nothing open it reads "Select a message to view details". Below `md`, a `BottomSheet` titled Message, closed by Escape |
+| Reading | Opening an unread message marks it read. The open message stays in the detail pane even if it no longer matches the Unread filter ("No other matching messages.") |
+| Paging | 50 messages per request, "Load older messages", and "Showing n of total" |
+| Time | Timestamps follow the `timezone` setting (UTC when unset); Reply opens a percent-encoded `mailto:` link |
+
+<Screenshot
+  light={inboxLoadOlderLight}
+  alt="The bottom of the Inbox list: two older read messages dated 9/20/2026 and 9/19/2026, then a footer with an outline Load older messages button and the line Showing 50 of 56."
+  caption="Past one page the list ends in a footer: an outline sm Load older messages button and a polite Showing n of total line. Messages older than a week show a date in the admin time zone instead of a relative time. Captured with 52 extra sample messages imported, then removed."
+/>
+
+<Screenshot
+  light={inboxSelectLight}
+  alt="The Inbox in select mode: a tinted bar with a Select all checkbox, 2 selected, Mark Read, Delete and Done; checkboxes on every row with Sam Okafor and Lena Fischer checked; the detail card shows Select a message to view details."
+  caption="Select mode replaces the header's Select button with a bulk bar. Delete asks for confirmation first."
+/>
+
+<ScreenshotGrid>
+  <Screenshot
+    light={inboxMobileLight}
+    alt="The Inbox on a phone: Accepting messages, filter buttons and icon-only Select and Mark all read, then four message rows, the admin footer and the tab bar."
+    caption="On a phone the list fills the width and Select and Mark all read become icons."
+  />
+  <Screenshot
+    light={inboxDetailMobileLight}
+    alt="A bottom sheet titled Message over the dimmed Inbox, showing Sam Okafor, the timestamp, Where You Met, Contact Info, the message, and Mark Unread, Reply and Delete."
+    caption="Below 768px a message opens in a bottom sheet."
+  />
+</ScreenshotGrid>
+
+## Empty, loading, and error states
+
+Every list and form has an empty, loading, and error state built from the same few pieces. Each one says what happened and what to do next.
+
+<Screenshot
+  light={linksEmptyLight}
+  dark={linksEmptyDark}
+  alt="Links with no blocks: zero counts on the filters, a disabled No block drafts button, an empty-state card reading No blocks yet with Add your first block below to start building your page, the Add block button, and a preview rail with a Sample chip, Sample content, no blocks yet, and sample My Links, My Website and Get in Touch blocks."
+  caption="No blocks saved: the list shows EmptyState, and the preview shows labeled sample blocks so theming is still visible. Captured with the block list emptied in the capture browser only."
+/>
+
+<Screenshot
+  light={previewNoVisibleLight}
+  alt="The preview rail reading No visible blocks above the profile card and a muted panel with Nothing here yet and Add blocks in the builder."
+  caption="Blocks saved but none visible: an honest empty page, never sample blocks. Captured with every block hidden in the capture browser only."
+  maxWidth={404}
+/>
+
+<Screenshot
+  light={inboxEmptyLight}
+  alt="The Inbox with no messages: header controls without Select or Mark All Read, and an empty-state card with a handshake icon, No messages yet, and When people write to you through your page, they'll appear here."
+  caption="An empty Inbox: Select and Mark All Read disappear with the messages. Captured with an empty message list in the capture browser only."
+/>
+
+<Screenshot
+  light={queryErrorLight}
+  alt="Settings, Email with its section column, and in place of the form a red alert icon, the text Couldn't load settings, and a Retry button."
+  caption="A failed first load shows QueryError with Retry instead of a permanent skeleton. Captured by failing settings.getAll in the capture browser only."
+/>
+
+| State | Component | Copy in the app |
+| --- | --- | --- |
+| Nothing saved yet | `EmptyState`: a `Card` around the `Empty` primitives, a 56px gradient icon disc, title, description, and an optional outline action (link or button) | "No blocks yet"; "No messages yet" |
+| Filter matches nothing | Inline `text-xs` line, or `EmptyState` | "No block drafts", "No hidden blocks"; "No matching messages" |
+| Feature turned off | `EmptyState` description | "Messages are off. Turn on Accepting messages so visitors can write to you." |
+| Loading | `SkeletonRows` (`role="status"`, "Loading", 56px rows) or `Skeleton` | — |
+| Load failed | `QueryError` (`role="alert"`, alert icon, message, Retry) | "Couldn't load settings", "Couldn't load messages", "Couldn't load the preview" |
+| Block list failed | Inline message with Retry | "Failed to load blocks — your page may be out of date" |
+| Preview with no saved blocks | Sample blocks and a Sample chip | "Sample content · no blocks yet" |
+| Preview with nothing visible | The real empty public page | "No visible blocks"; on the page, "Nothing here yet." plus "Add blocks in the builder." (preview only) |
+
+Sample blocks appear only when the saved block inventory is empty. Disabling or feature-hiding saved blocks must show the real empty page.
+
+## First-run setup
+
+`/admin/setup` is a four-step, WordPress-style wizard. There is no setup token: whoever finishes it first becomes the admin, so the owner runs it right after deploying. While no admin exists, `/` answers a 307 to this page and `/admin/login` redirects here. The `public.hasUsers` gate is read once; when an admin already exists, the wizard replaces itself with `/admin/login`.
+
+<Screenshot
+  light={setupAccountLight}
+  dark={setupAccountDark}
+  alt="The setup wizard's first step: the LinkDen wolf and name, a four-step indicator with Account current and Profile, Theme and Launch ahead, and a card titled Create your admin account with Full Name, Email Address, Password with a show toggle and an 8-character hint, Confirm Password, and Continue."
+  caption="Step 1 in its 480px column. Captured with hasUsers answered as false in the capture browser, because the sample stack already has an admin."
+  maxWidth={512}
+/>
+
+<ScreenshotGrid>
+  <Screenshot
+    light={setupProfileLight}
+    alt="Step 2, Set up your profile: Account checked in the indicator, Display Name Rowan Ellis, a Short Bio with a 95/300 counter, and Back, Skip and Continue."
+    caption="Step 2: display name and bio."
+  />
+  <Screenshot
+    light={setupThemeLight}
+    alt="Step 3, Choose a theme: a four-column grid of preset swatches with Classic selected, and Back, Skip and Finish Setup."
+    caption="Step 3: theme preset."
+  />
+</ScreenshotGrid>
+
+<Screenshot
+  light={setupLaunchLight}
+  alt="Step 4: no step indicator, a check icon, Your editor is ready, Rowan., a full-width Open editor button and a note that everything stays editable from the admin panel."
+  caption="Step 4: the launch card. The step indicator is gone."
+  maxWidth={512}
+/>
+
+Steps 2 to 4 above were restored from saved wizard progress, which is why step 2 offers Back. Right after step 1 creates the account in the same tab, step 2 offers only Skip and Continue, because sign-up cannot run twice.
+
+| Step | Indicator | Card heading | Writes |
+| --- | --- | --- | --- |
+| 1 | Account | Create your admin account | Better Auth email sign-up: name, email, password of at least 8 characters, and a confirmation |
+| 2 | Profile | Set up your profile | `profile_name` and `bio` through `settings.updateBulk`; Skip is allowed |
+| 3 | Theme | Choose a theme | `theme_preset` (Finish Setup); Skip is allowed |
+| 4 | (hidden) | Your editor is ready, plus the owner's name | Nothing; Open editor goes to `/admin/links` |
+
+- The step indicator is a `nav` named "Setup progress". The current step has `aria-current="step"`, and finished steps show a check. On each step change, focus moves to the new card heading.
+- Progress (step, name, display name, bio, theme) is saved in local storage under `linkden_setup_progress`. Email and password never are. Restored progress shows "Progress saved — start over" under the card.
+- A failed profile or theme save shows a toast and the wizard moves on; everything stays editable later. If the API is unreachable, a "Can't reach the server" card offers Retry.
+- `?test=true` prefills dev values only in development on a local URL.
+
+## Sign-in and two-factor
+
+<Screenshot
+  light={loginLight}
+  dark={loginDark}
+  alt="The login page at 1440px: a centered card with the wolf mark, Welcome back, Sign in to LinkDen, an Email field with a mail icon, a Password field with a lock icon, a show toggle and a Forgot password? link, a checked Keep me signed in box, and a blue Sign in button. Below it, First time setting up this instance? Set up LinkDen, and at the bottom Privacy Policy and Terms of Service."
+  caption="Login uses ordinary site branding in a compact 420px card. Local development adds a dashed Dev login (bypass) button under Sign in; it is hidden in these captures."
+/>
+
+<ScreenshotGrid>
+  <Screenshot
+    light={loginMobileLight}
+    dark={loginMobileDark}
+    alt="The login card on a 390px phone with the Email and Password fields, Keep me signed in, Sign in, the Set up LinkDen link, and Privacy Policy and Terms of Service at the bottom."
+    caption="On a phone the card fills the width; touch controls are 44px."
+  />
+  <Screenshot
+    light={loginTwoFactorLight}
+    dark={loginTwoFactorDark}
+    alt="A card with a shield icon titled Two-factor check: Enter the 6-digit code from your authenticator app, an Authentication code field with the 123456 placeholder, a Don't ask again on this device for 30 days checkbox, Verify, Use a backup code instead, and Back to sign in."
+    caption="The two-factor step. Captured by answering the sign-in request locally; two-factor was not turned on."
+  />
+</ScreenshotGrid>
+
+<Screenshot
+  light={loginForgotLight}
+  dark={loginForgotDark}
+  alt="A card with a key icon titled Reset from the server: Email isn't set up on this instance, so a reset link can't be sent. Run bun reset:password on the server to set a new password. A Back to sign in link."
+  caption="Forgot password with no email configured: the card explains the server-side reset instead of offering a form that cannot send."
+  maxWidth={452}
+/>
+
+- The card is `rounded-xl`, bordered, `bg-card`, with 24px padding (32px from `sm`). It shows a 44px logo (the branding logo or the wolf mark), "Welcome back", and "Sign in to" plus the site name. Primary buttons are full width; controls follow the shared sizes (36px with a fine pointer on desktop, 44px on touch).
+- "Keep me signed in" is checked by default. A magic-link option appears only when magic link is enabled and email is configured.
+- Forgot password shows a "Reset password" email form when email is configured, and "Reset from the server" with `bun reset:password` when it is not.
+- When Better Auth answers a password sign-in with `twoFactorRedirect`, the card becomes "Two-factor check". The code field is centered mono text with `autocomplete="one-time-code"`. You can trust the device for 30 days, or switch to a backup code (`xxxxx-xxxxx`). Never ship a two-factor path without this step.
+- After any sign-in method, `?from=` is honored only for plain `/admin` paths (`safeAdminRedirect`), never login, setup, or reset-password. Sign out returns to login.
+- Privacy Policy and Terms of Service appear when branding provides them: a link in URL mode, a dialog in text mode. Dedicated login-logo and background controls are gone; saved legacy values stay compatible with backups.
+- The development-login button is a development-only convenience with independent server checks. It must not appear or authenticate through a public hostname, proxy, or tunnel; a visual preview is not an authorization boundary.
+
+### Turning two-factor on
+
+Two-factor lives in the Login & Security card on Settings → Account (`components/admin/settings/account-tab.tsx`). Its Switch never saves on its own: it opens a dialog, and two-factor turns on only after the first authenticator code verifies, so a half-finished setup cannot lock the owner out.
+
+These captures ran the real flow on the disposable screenshot stack: enable, verify with a code computed from the secret, sign out, then sign in with the password. Two-factor was turned off again afterwards. The manual entry key and the backup codes shown are placeholders swapped into the response inside the capture browser, so the QR code encodes the placeholder key, not the stack's secret.
+
+<ScreenshotGrid>
+  <Screenshot
+    light={twoFactorEnableLight}
+    dark={twoFactorEnableDark}
+    alt="A dialog with a key icon titled Enable two-factor: Require a code from your authenticator app (or a backup code) after your password when signing in. Magic-link sign-in is unavailable while two-factor is on. A filled Current password field, then Cancel and a Continue button with a shield icon."
+    caption="Step 1: the switch opens Enable two-factor, which asks for the current password before twoFactor.enable runs."
+  />
+  <Screenshot
+    light={twoFactorVerifyLight}
+    dark={twoFactorVerifyDark}
+    alt="A dialog titled Verify authenticator: a tinted panel with Scan with your authenticator app, a QR code, and an open Manual entry key disclosure holding a long placeholder key; an amber Save your backup codes panel with ten placeholder codes in two mono columns and Copy codes and Download .txt buttons; a Verification code field with the 123456 placeholder; Cancel and a disabled Verify & activate button."
+    caption="Step 2: scan the QR code or type the key, save the backup codes, then verify one code. Verify & activate stays disabled until six digits are entered."
+  />
+</ScreenshotGrid>
+
+<ScreenshotGrid>
+  <Screenshot
+    light={accountTwoFactorOnLight}
+    dark={accountTwoFactorOnDark}
+    alt="The Login & Security card with Email and Password rows, a Two-factor authentication row with a solid blue enabled badge and an on switch, and the Magic link sign-in row with an off switch and Needs an email provider — configure Email."
+    caption="Two-factor on: the badge switches from secondary disabled to default enabled. Turning it off opens Disable two-factor, which asks for the password again."
+  />
+  <Screenshot
+    light={loginBackupCodeLight}
+    dark={loginBackupCodeDark}
+    alt="The Two-factor check card in backup-code mode: a key icon, Enter one of the backup codes you saved when you turned on 2FA, a Backup code field with the xxxxx-xxxxx placeholder, the 30-day trust checkbox, Verify, Use your authenticator app instead, and Back to sign in."
+    caption="Signing in after a real password sign-in: Use a backup code instead swaps the shield for a key icon and the code field for a backup-code field."
+  />
+</ScreenshotGrid>
+
+| Step | What the owner sees | What happens |
+| --- | --- | --- |
+| Switch | Enable two-factor dialog with Current password | Nothing is saved; Cancel closes the dialog |
+| Continue | Verify authenticator with a 200px QR (`qrcode` `toDataURL`), a Manual entry key disclosure, and ten backup codes | `authClient.twoFactor.enable` stores an unverified secret; the toast reads "Scan the QR code with your authenticator app" |
+| Verify & activate | The dialog closes; toast "Two-factor authentication enabled"; badge "enabled" | `twoFactor.verifyTotp` turns two-factor on and replaces the session |
+| Next password sign-in | Two-factor check (code or backup code) | Better Auth answers `twoFactorRedirect`; the session exists only after the code verifies |
+
+- The backup-code panel uses the warning treatment (`border-warning/30 bg-warning/10`) and says the codes won't be shown again. Copy codes writes them to the clipboard; Download .txt saves `linkden-backup-codes.txt`.
+- The verification field is numeric, keeps digits only, and allows six characters with `autocomplete="one-time-code"`.
+- While two-factor is on, magic-link sign-in is unavailable; the magic-link row explains this once email is configured.
+- The dialog asks for `max-w-md`, but the shared `DialogContent` default `sm:max-w-sm` wins, so it renders 384px wide on desktop and the verify step scrolls within `max-h-[90vh]` on short windows.
 
 ## Public layouts and blocks
 
@@ -80,28 +702,104 @@ The preview is not proof of signing or installation in Apple Wallet. Pass downlo
 | `split` (default) | Sticky 320px profile column on the left; one vertical block list on the right; 40px gap | Profile above one vertical block list |
 | `stacked` | Profile above one vertical block list | Same stacked structure |
 
-The split threshold is a container query on `.ld-page`, not the browser viewport. Split pages use `max-w-lg` until that threshold, then `max-w-6xl`; stacked pages use `max-w-2xl`. The profile has a 32px sticky top offset and its own bounded scroll area on wide pages.
+<Screenshot
+  light={publicSplitLight}
+  dark={publicSplitDark}
+  alt="The public page at 1440px: the profile card with banner, avatar, Rowan Ellis with a verified badge, bio and five social icons in a left column; on the right the Latest work header, a featured Field Notes image link, and Portfolio, a highlighted Book a design review, Open-source UI kit and Newsletter links. Share and color-mode buttons float at the top right."
+  caption="split at 1440px: the profile column stays put while the blocks scroll. The Share and color-mode buttons float outside .ld-page."
+/>
 
-Every section renders a vertical list with 12px between blocks and 24px between sections. Header layout values remain accepted for saved-data compatibility; they no longer turn the content list into adjacent block columns or a section carousel.
+<Screenshot
+  light={publicNarrowLight}
+  dark={publicNarrowDark}
+  alt="The same page in an 860px window: the profile card is centered above the Latest work section in one column, with the floating Share and color-mode buttons at the top right."
+  caption="An 860px window is under the 896px container threshold, so split stacks."
+  maxWidth={600}
+/>
 
-Images default to `contain`, so the complete image stays visible; explicit `cover` crops to fill its media area. Preserve the selected fit in the real page, inline preview, and static rendering.
+<Screenshot
+  light={publicMobileLight}
+  dark={publicMobileDark}
+  alt="The public page on a 390px phone: the profile card with the floating Share and color-mode buttons over the banner, then Latest work and the featured image link."
+  caption="On a phone every layout is one column."
+  maxWidth={390}
+/>
 
-`PublicPageContent` is shared by the live page, preview, and static output. Public fonts and resolved theme settings come from the same shared sources. Public customization must not leak into surrounding editor controls.
+<Screenshot
+  light={publicStackedLight}
+  dark={publicStackedDark}
+  alt="The public page at 1440px with the stacked layout: one centered column with the profile card (banner, avatar, Rowan Ellis with a verified badge, bio, five social icons), then the Latest work header and the featured Field Notes image link, with wide empty margins on both sides and the Share and color-mode buttons at the top right."
+  caption="stacked at 1440px: the same content as split, in one max-w-2xl column with the profile card on top. Captured with page_layout saved as stacked on the screenshot stack, then restored to split."
+/>
 
-## Authentication and motion
+- The split threshold is a container query on `.ld-page` (`@4xl`, 56rem), not the browser viewport. Split pages use `max-w-lg` below it and `max-w-6xl` above it; stacked pages use `max-w-2xl`. On wide split pages the profile is `sticky` with a 32px top offset and scrolls on its own within `calc(100dvh - 4rem)`.
+- Every section renders a vertical list, with 12px between blocks and 24px between sections. A header block starts a new section. Header layout values from older saves are still accepted; they no longer turn the list into columns or a carousel.
+- Images default to `contain`, so the whole image stays visible. An explicit `cover` crops to fill the media area. Keep the selected fit in the live page, the inline preview, and static output.
+- `PublicPageContent` is shared by the live page, the preview, and static output. Public fonts and resolved theme settings come from the same shared sources. Public customization must not leak into the surrounding editor controls.
 
-Login and password reset use compact centered forms with normal site branding and semantic tokens. Dedicated login-logo and background controls are removed from the UI; saved legacy settings remain compatible with backups. Password sign-in continues into a TOTP or backup-code step when required. Sign out returns to login.
+## Wallet preview
 
-Keep decorative entrance animations on public content rather than admin pages or forms. Retain loading indicators for actual work. Honor reduced motion in CSS and JavaScript; see [Foundations](/docs/design-system/foundations#surfaces-and-motion).
+Settings → Wallet registers `WalletPassPreview` as a custom `preview` with `size: "wide"`, so the rail is 425px and shows the pass card itself. There is no phone frame or simulated Wallet app.
 
-The local development-login button is a development-only convenience with independent server checks. It must not appear or authenticate through a public hostname, proxy, or tunnel; visual preview is not an authorization boundary.
+<Screenshot
+  light={walletLight}
+  dark={walletDark}
+  alt="Settings, Wallet at 1440px: the Apple Wallet pass heading with a Setup required badge and a Downloads enabled switch that is off; an editor with Business, Images, Context, Colors and Background tabs, template choices with Contact card selected, Identity fields and a QR code switch; and a 425px preview rail with a navy pass card showing Ellis Studio, Your Name, a thumbnail, Role and Phone, and a QR code."
+  caption="The pass editor beside the wide rail. The header holds the signing status badge and the instant-save Downloads enabled switch."
+/>
+
+<ScreenshotGrid>
+  <Screenshot
+    light={walletCard}
+    alt="The pass card: an E logo chip, STUDIO and Ellis Studio at the top right, ELLIS STUDIO over Your Name with a rounded thumbnail, Role Product designer and Phone +1 555 0100, a white QR tile, and Scan to view profile."
+    caption="The card at 2x: system fonts, the saved pass colors, a QR preview."
+  />
+  <Screenshot
+    light={walletZone}
+    alt="The same pass card with a cyan outline around the Role and Phone row."
+    caption="Focus in an editor's field section outlines the matching zone on the card."
+  />
+</ScreenshotGrid>
+
+- The card is `rounded-[20px]` in the system font stack (`-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif`). It layers a gradient and a dot texture from the pass colors. When a color is blank, `WALLET_DEFAULTS` applies: background `#091533`, foreground `#FFFFFF`, label `#0FACED`, organization "LinkDen".
+- The QR code is generated in the browser with `qrcode` (240px, no margin, error correction M) under "Scan to view profile". The signed pass uses Wallet's own `barcodes[]` instead.
+- An optional strip image (92px tall) sits behind the primary field, under a dark gradient. With back fields, a "Back ›" control flips to the reverse; an empty reverse reads "No back-of-pass fields yet."
+- Field counts and lengths come from `packages/validators/src/wallet.ts`, so the editor and the generated pass agree:
+
+| `PASS_FIELD_LIMITS` | Header | Primary | Secondary | Auxiliary | Back |
+| --- | --- | --- | --- | --- | --- |
+| Fields | 3 | 1 | 4 | 4 | 20 |
+
+Each field allows a 64-character key, a 40-character label, and a 200-character value. Context-aware relevance allows up to 10 locations (`PASS_LOCATION_LIMIT`). `resolvePassContent` resolves the same capped content for the preview and the `.pkpass` generator.
+
+<Screenshot
+  light={walletBack}
+  alt="The reverse of the pass card: Ellis Studio at the top left and a FRONT › control at the top right, then three fields separated by faint rules: STUDIO HOURS Tuesday to Friday, 10:00 to 16:00; WEBSITE https://example.com; BOOKINGS Design reviews are booked through the profile page."
+  caption="The reverse after Back ›: the organization name, Front › to flip back, and each back field as a label in the label color over its value. Captured with three back fields saved on the screenshot stack, then removed."
+  maxWidth={400}
+/>
+
+The editor's section tabs (Business, Images, Context, Colors, Background) use `WalletTabBar`, which matches the look of `SubTabs`. The preview is not proof of signing or installation in Apple Wallet. Pass downloads remain an authenticated admin action (`GET /api/admin/wallet-pass`), offered as Download pass only when downloads are on and signing material is configured. There is no public pass route or footer button.
+
+## Motion
+
+Keep decorative entrance animations on public content, not on admin pages or forms. The preview rail's 220ms width transition and real loading indicators stay. Honor reduced motion in CSS and JavaScript: imperative smooth scrolls check `prefersReducedMotion()`. See [Foundations](/docs/design-system/foundations).
 
 ## Source locations
 
 All paths below start at `apps/web/src/`.
 
-- Shell and navigation: `components/admin/{admin-shell,nav-list,sub-tabs,admin-footer}.tsx`.
-- Save flow: `hooks/{use-settings-form,use-unsaved-changes}.ts` and `components/admin/{sticky-save-bar,state-pill}.tsx`.
-- Preview: `components/admin/{preview-slot,preview-column,page-preview,page-preview-viewport,mobile-preview-sheet}.tsx`.
-- Wallet: `components/admin/wallet-pass-preview.tsx`; shared pass rules are in `packages/validators/src/wallet.ts` from the repository root.
-- Public layout and media: `components/public/{public-page,public-page-content,image-block}.tsx`.
+| Area | Files |
+| --- | --- |
+| Shell and navigation | `components/admin/{admin-shell,nav-list,page-header,page-shell,sub-tabs,admin-footer}.tsx`, `components/ui/sidebar.tsx`, destination `app/admin/*/layout.tsx` |
+| Preview | `components/admin/{preview-slot,preview-column,page-preview,page-preview-viewport,mobile-preview-sheet}.tsx`, `components/ui/bottom-sheet.tsx` |
+| Save and publication | `hooks/{use-settings-form,use-unsaved-changes}.ts`, `components/admin/{sticky-save-bar,state-pill}.tsx`, `lib/publication-state.ts` |
+| Block editor | `app/admin/links/page.tsx`, `components/admin/builder/{block-edit-panel,block-row,collapsible-section}.tsx` |
+| Settings | `app/admin/settings/settings-shell.tsx`, `app/admin/settings/*/page.tsx`, `components/admin/section-header.tsx` |
+| Inbox | `app/admin/inbox/{page.tsx,use-inbox-selection.ts,inbox-pages.ts}`, `components/admin/connections/*` |
+| Empty and error states | `components/admin/{empty-state,skeleton-rows}.tsx`, `components/admin/dashboard/query-error.tsx`, `components/ui/empty.tsx` |
+| Setup and sign-in | `app/admin/setup/page.tsx`, `app/admin/login/{page.tsx,redirect.ts}` |
+| Public layout and media | `components/public/{public-page,public-page-content,image-block}.tsx` |
+| Wallet | `components/admin/wallet-pass-preview.tsx`, `components/admin/wallet/*`, `app/admin/settings/wallet/page.tsx`; shared pass rules in `packages/validators/src/wallet.ts` from the repository root |
+
+The captures come from `scripts/design-screenshots/groups/patterns.ts`. Regenerate them with `bun scripts/design-screenshots/capture.ts patterns`; `PATTERNS_ONLY=shell,preview` limits a run to some sections.

@@ -1,0 +1,250 @@
+[
+	{
+		"group": "foundations",
+		"name": "control-sizes-desktop",
+		"width": 1432,
+		"height": 806,
+		"bytes": 64550,
+		"description": "Design → SEO at 1440px with a fine pointer: 36px Input, 32px mode toggles, 14px field text, 80px Textarea minimum (measurement outlines added)"
+	},
+	{
+		"group": "foundations",
+		"name": "control-sizes-mobile",
+		"width": 716,
+		"height": 910,
+		"bytes": 57346,
+		"description": "Design → SEO at 390px with a touch pointer: 44px Input and mode toggles, 16px field text, 80px Textarea minimum (measurement outlines added)"
+	},
+	{
+		"group": "foundations",
+		"name": "focus-ring-button-dark",
+		"width": 692,
+		"height": 494,
+		"bytes": 5986,
+		"description": "Settings → Account (dark): the first outline Change Button with keyboard focus (--ring border, 2px ring at 50% opacity, no offset) above an unfocused one, the secondary badge and Switches"
+	},
+	{
+		"group": "foundations",
+		"name": "focus-ring-button-light",
+		"width": 692,
+		"height": 494,
+		"bytes": 6412,
+		"description": "Settings → Account (light): the first outline Change Button with keyboard focus (--ring border, 2px ring at 50% opacity, no offset) above an unfocused one, the secondary badge and Switches"
+	},
+	{
+		"group": "foundations",
+		"name": "focus-ring-input-dark",
+		"width": 1412,
+		"height": 234,
+		"bytes": 11978,
+		"description": "Page Title Input with keyboard focus (dark): --ring border plus a solid 2px --ring ring, offset 2px"
+	},
+	{
+		"group": "foundations",
+		"name": "focus-ring-input-light",
+		"width": 1412,
+		"height": 234,
+		"bytes": 12188,
+		"description": "Page Title Input with keyboard focus (light): --ring border plus a solid 2px --ring ring, offset 2px"
+	},
+	{
+		"group": "foundations",
+		"name": "preset-abyssal-dark",
+		"width": 676,
+		"height": 1144,
+		"bytes": 33466,
+		"description": "Abyssal preset in the Design preview (dark), unsaved: page ground, hero card edge, social icons, signal header, featured and link cards, highlighted link"
+	},
+	{
+		"group": "foundations",
+		"name": "preset-abyssal-light",
+		"width": 676,
+		"height": 1144,
+		"bytes": 38748,
+		"description": "Abyssal preset in the Design preview (light), unsaved: page ground, hero card edge, social icons, signal header, featured and link cards, highlighted link"
+	},
+	{
+		"group": "foundations",
+		"name": "preset-classic-dark",
+		"width": 676,
+		"height": 1144,
+		"bytes": 34414,
+		"description": "Classic preset in the Design preview (dark), unsaved: page ground, hero card edge, social icons, signal header, featured and link cards, highlighted link"
+	},
+	{
+		"group": "foundations",
+		"name": "preset-classic-light",
+		"width": 676,
+		"height": 1144,
+		"bytes": 34048,
+		"description": "Classic preset in the Design preview (light), unsaved: page ground, hero card edge, social icons, signal header, featured and link cards, highlighted link"
+	},
+	{
+		"group": "foundations",
+		"name": "preset-forest-dark",
+		"width": 676,
+		"height": 1144,
+		"bytes": 33960,
+		"description": "Forest preset in the Design preview (dark), unsaved: page ground, hero card edge, social icons, signal header, featured and link cards, highlighted link"
+	},
+	{
+		"group": "foundations",
+		"name": "preset-forest-light",
+		"width": 676,
+		"height": 1144,
+		"bytes": 37992,
+		"description": "Forest preset in the Design preview (light), unsaved: page ground, hero card edge, social icons, signal header, featured and link cards, highlighted link"
+	},
+	{
+		"group": "foundations",
+		"name": "preset-graphite-dark",
+		"width": 676,
+		"height": 1144,
+		"bytes": 31720,
+		"description": "Graphite preset in the Design preview (dark), unsaved: page ground, hero card edge, social icons, signal header, featured and link cards, highlighted link"
+	},
+	{
+		"group": "foundations",
+		"name": "preset-graphite-light",
+		"width": 676,
+		"height": 1144,
+		"bytes": 34734,
+		"description": "Graphite preset in the Design preview (light), unsaved: page ground, hero card edge, social icons, signal header, featured and link cards, highlighted link"
+	},
+	{
+		"group": "foundations",
+		"name": "preset-ocean-blue-dark",
+		"width": 676,
+		"height": 1144,
+		"bytes": 34376,
+		"description": "Ocean Blue preset in the Design preview (dark), unsaved: page ground, hero card edge, social icons, signal header, featured and link cards, highlighted link"
+	},
+	{
+		"group": "foundations",
+		"name": "preset-ocean-blue-light",
+		"width": 676,
+		"height": 1144,
+		"bytes": 40504,
+		"description": "Ocean Blue preset in the Design preview (light), unsaved: page ground, hero card edge, social icons, signal header, featured and link cards, highlighted link"
+	},
+	{
+		"group": "foundations",
+		"name": "preset-sunset-dark",
+		"width": 676,
+		"height": 1144,
+		"bytes": 34488,
+		"description": "Sunset preset in the Design preview (dark), unsaved: page ground, hero card edge, social icons, signal header, featured and link cards, highlighted link"
+	},
+	{
+		"group": "foundations",
+		"name": "preset-sunset-light",
+		"width": 676,
+		"height": 1144,
+		"bytes": 40716,
+		"description": "Sunset preset in the Design preview (light), unsaved: page ground, hero card edge, social icons, signal header, featured and link cards, highlighted link"
+	},
+	{
+		"group": "foundations",
+		"name": "radius-admin-light",
+		"width": 1512,
+		"height": 1330,
+		"bytes": 84632,
+		"description": "Design → SEO card with computed corner radii on the admin scale: card, icon tile, Input, mode toggle and template option"
+	},
+	{
+		"group": "foundations",
+		"name": "radius-public-light",
+		"width": 2000,
+		"height": 1592,
+		"bytes": 107516,
+		"description": "Public page in a 1000px window (Classic) with computed corner radii on the public scale: profile card, social icon, featured link, title pill and link cards"
+	},
+	{
+		"group": "foundations",
+		"name": "surfaces-split",
+		"width": 1440,
+		"height": 900,
+		"bytes": 34832,
+		"description": "Settings → Account at 1440×900: the left half from the light capture, the right half from the dark capture of the same view"
+	},
+	{
+		"group": "foundations",
+		"name": "theme-presets-dark",
+		"width": 1480,
+		"height": 1412,
+		"bytes": 39004,
+		"description": "Design → Theme Presets card (dark): all eleven presets, each tile split diagonally into its light and dark ground, card, primary and accent; Classic selected"
+	},
+	{
+		"group": "foundations",
+		"name": "theme-presets-light",
+		"width": 1480,
+		"height": 1412,
+		"bytes": 39976,
+		"description": "Design → Theme Presets card (light): all eleven presets, each tile split diagonally into its light and dark ground, card, primary and accent; Classic selected"
+	},
+	{
+		"group": "foundations",
+		"name": "token-map-dark",
+		"width": 2038,
+		"height": 956,
+		"bytes": 50656,
+		"description": "Links at 1440px (dark) with token labels resolved from the computed styles: sidebar, top bar, ground, card rows, pressed chip, primary actions and muted text"
+	},
+	{
+		"group": "foundations",
+		"name": "token-map-light",
+		"width": 2038,
+		"height": 956,
+		"bytes": 52538,
+		"description": "Links at 1440px (light) with token labels resolved from the computed styles: sidebar, top bar, ground, card rows, pressed chip, primary actions and muted text"
+	},
+	{
+		"group": "foundations",
+		"name": "type-admin-dark",
+		"width": 1512,
+		"height": 812,
+		"bytes": 49906,
+		"description": "Design → SEO (dark) with computed type labels: Montserrat page title, card title and section rule; Roboto description, label, field text, helper and tabular counter"
+	},
+	{
+		"group": "foundations",
+		"name": "type-admin-light",
+		"width": 1512,
+		"height": 812,
+		"bytes": 50768,
+		"description": "Design → SEO (light) with computed type labels: Montserrat page title, card title and section rule; Roboto description, label, field text, helper and tabular counter"
+	},
+	{
+		"group": "foundations",
+		"name": "type-mono-dark",
+		"width": 1496,
+		"height": 172,
+		"bytes": 12822,
+		"description": "Links filter chips (dark): Roboto chip labels with Geist Mono tabular counts, beside the compact primary Apply button"
+	},
+	{
+		"group": "foundations",
+		"name": "type-mono-light",
+		"width": 1496,
+		"height": 172,
+		"bytes": 13272,
+		"description": "Links filter chips (light): Roboto chip labels with Geist Mono tabular counts, beside the compact primary Apply button"
+	},
+	{
+		"group": "foundations",
+		"name": "type-public-dark",
+		"width": 2000,
+		"height": 1592,
+		"bytes": 97112,
+		"description": "Public page in a 1000px window (dark, Classic) with computed type labels: Sora name and section header, DM Sans bio, link title and descriptions at the top of the fluid scale"
+	},
+	{
+		"group": "foundations",
+		"name": "type-public-light",
+		"width": 2000,
+		"height": 1592,
+		"bytes": 98476,
+		"description": "Public page in a 1000px window (light, Classic) with computed type labels: Sora name and section header, DM Sans bio, link title and descriptions at the top of the fluid scale"
+	}
+]

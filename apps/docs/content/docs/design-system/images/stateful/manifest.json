@@ -1,0 +1,218 @@
+[
+	{
+		"group": "stateful",
+		"name": "account-two-factor-on-dark",
+		"width": 1888,
+		"height": 742,
+		"bytes": 29912,
+		"description": "Login & Security with two-factor on: default \"enabled\" badge and an on switch (dark)"
+	},
+	{
+		"group": "stateful",
+		"name": "account-two-factor-on-light",
+		"width": 1888,
+		"height": 742,
+		"bytes": 31288,
+		"description": "Login & Security with two-factor on: default \"enabled\" badge and an on switch (light)"
+	},
+	{
+		"group": "stateful",
+		"name": "block-row-feature-hidden-light",
+		"width": 1492,
+		"height": 582,
+		"bytes": 20630,
+		"description": "Block rows with vCard and the contact form turned off: warning links Hidden — turn on in Inbox / Branding"
+	},
+	{
+		"group": "stateful",
+		"name": "inbox-load-older-light",
+		"width": 1468,
+		"height": 546,
+		"bytes": 23522,
+		"description": "Inbox list footer with 56 messages: the last rows, Load older messages and Showing 50 of n"
+	},
+	{
+		"group": "stateful",
+		"name": "login-backup-code-dark",
+		"width": 904,
+		"height": 1148,
+		"bytes": 22364,
+		"description": "Two-factor check in backup-code mode: key icon, Backup code field (xxxxx-xxxxx), 30-day trust, Verify, switch back to the app (dark)"
+	},
+	{
+		"group": "stateful",
+		"name": "login-backup-code-light",
+		"width": 904,
+		"height": 1148,
+		"bytes": 24264,
+		"description": "Two-factor check in backup-code mode: key icon, Backup code field (xxxxx-xxxxx), 30-day trust, Verify, switch back to the app (light)"
+	},
+	{
+		"group": "stateful",
+		"name": "public-stacked-dark",
+		"width": 1440,
+		"height": 900,
+		"bytes": 21200,
+		"description": "Public page at 1440px with page_layout stacked: profile card above one max-w-2xl block column (dark)"
+	},
+	{
+		"group": "stateful",
+		"name": "public-stacked-light",
+		"width": 1440,
+		"height": 900,
+		"bytes": 22638,
+		"description": "Public page at 1440px with page_layout stacked: profile card above one max-w-2xl block column (light)"
+	},
+	{
+		"group": "stateful",
+		"name": "secret-input-saved-dark",
+		"width": 1888,
+		"height": 592,
+		"bytes": 23104,
+		"description": "Email provider card with a saved API key: SecretInput shows the mask and the Saved hint, dark"
+	},
+	{
+		"group": "stateful",
+		"name": "secret-input-saved-light",
+		"width": 1888,
+		"height": 592,
+		"bytes": 24020,
+		"description": "Email provider card with a saved API key: SecretInput shows the mask and the Saved hint, light"
+	},
+	{
+		"group": "stateful",
+		"name": "state-pill-failed-dark",
+		"width": 476,
+		"height": 114,
+		"bytes": 2660,
+		"description": "StatePill reading Failed beside Share and View live; publication.status rewritten in the capture browser (no publication target on the stack), dark"
+	},
+	{
+		"group": "stateful",
+		"name": "state-pill-failed-light",
+		"width": 476,
+		"height": 114,
+		"bytes": 3350,
+		"description": "StatePill reading Failed beside Share and View live; publication.status rewritten in the capture browser (no publication target on the stack), light"
+	},
+	{
+		"group": "stateful",
+		"name": "state-pill-failed-menu-dark",
+		"width": 706,
+		"height": 868,
+		"bytes": 36680,
+		"description": "StatePill popover for Failed: description, last verified revision, Refresh status and Publish; publication.status rewritten in the capture browser, dark"
+	},
+	{
+		"group": "stateful",
+		"name": "state-pill-failed-menu-light",
+		"width": 706,
+		"height": 868,
+		"bytes": 39384,
+		"description": "StatePill popover for Failed: description, last verified revision, Refresh status and Publish; publication.status rewritten in the capture browser, light"
+	},
+	{
+		"group": "stateful",
+		"name": "state-pill-published-dark",
+		"width": 524,
+		"height": 114,
+		"bytes": 3114,
+		"description": "StatePill reading Published beside Share and View live; publication.status rewritten in the capture browser (no publication target on the stack), dark"
+	},
+	{
+		"group": "stateful",
+		"name": "state-pill-published-light",
+		"width": 524,
+		"height": 114,
+		"bytes": 3566,
+		"description": "StatePill reading Published beside Share and View live; publication.status rewritten in the capture browser (no publication target on the stack), light"
+	},
+	{
+		"group": "stateful",
+		"name": "state-pill-published-menu-dark",
+		"width": 706,
+		"height": 868,
+		"bytes": 34880,
+		"description": "StatePill popover for Published: description, last verified revision, Refresh status and Publish; publication.status rewritten in the capture browser, dark"
+	},
+	{
+		"group": "stateful",
+		"name": "state-pill-published-menu-light",
+		"width": 706,
+		"height": 868,
+		"bytes": 37434,
+		"description": "StatePill popover for Published: description, last verified revision, Refresh status and Publish; publication.status rewritten in the capture browser, light"
+	},
+	{
+		"group": "stateful",
+		"name": "theme-isolation-dark",
+		"width": 1440,
+		"height": 947,
+		"bytes": 34296,
+		"description": "Profile page with the Sunset preset saved: admin chrome unchanged, preview rail in Sunset (dark)"
+	},
+	{
+		"group": "stateful",
+		"name": "theme-isolation-light",
+		"width": 1440,
+		"height": 947,
+		"bytes": 38130,
+		"description": "Profile page with the Sunset preset saved: admin chrome unchanged, preview rail in Sunset (light)"
+	},
+	{
+		"group": "stateful",
+		"name": "toast-success-dark",
+		"width": 776,
+		"height": 172,
+		"bytes": 3690,
+		"description": "Sonner success toast (richColors) after saving Settings → Email: \"Email settings saved\", dark"
+	},
+	{
+		"group": "stateful",
+		"name": "toast-success-light",
+		"width": 776,
+		"height": 172,
+		"bytes": 3840,
+		"description": "Sonner success toast (richColors) after saving Settings → Email: \"Email settings saved\", light"
+	},
+	{
+		"group": "stateful",
+		"name": "two-factor-enable-dark",
+		"width": 832,
+		"height": 588,
+		"bytes": 22754,
+		"description": "Enable two-factor dialog: explanation, Current password, Cancel and Continue (dark)"
+	},
+	{
+		"group": "stateful",
+		"name": "two-factor-enable-light",
+		"width": 832,
+		"height": 588,
+		"bytes": 24270,
+		"description": "Enable two-factor dialog: explanation, Current password, Cancel and Continue (light)"
+	},
+	{
+		"group": "stateful",
+		"name": "two-factor-verify-dark",
+		"width": 832,
+		"height": 1684,
+		"bytes": 64956,
+		"description": "Verify authenticator dialog: QR, manual entry key, backup codes (placeholders), verification code (dark)"
+	},
+	{
+		"group": "stateful",
+		"name": "two-factor-verify-light",
+		"width": 832,
+		"height": 1684,
+		"bytes": 66962,
+		"description": "Verify authenticator dialog: QR, manual entry key, backup codes (placeholders), verification code (light)"
+	},
+	{
+		"group": "stateful",
+		"name": "wallet-pass-back",
+		"width": 746,
+		"height": 444,
+		"bytes": 16514,
+		"description": "Pass card reverse: organization name, Front › control and three back fields"
+	}
+]

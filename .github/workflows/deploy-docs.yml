@@ -6,6 +6,8 @@ on:
     paths:
       - "apps/docs/**"
       - "packages/**"
+      # The design-system foundations page reads the app's tokens at build time.
+      - "apps/web/src/index.css"
       # Root catalog / lockfile bumps change what the docs build installs.
       - "package.json"
       - "bun.lock"

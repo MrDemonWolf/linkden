@@ -1,17 +1,163 @@
 ---
 title: Shared components
-description: Reuse the primitives and form patterns that already power the app.
+description: The primitives and admin building blocks LinkDen already renders, shown in the running app, with their variants, states, exact values and source files.
 ---
+
+import dangerZoneLight from "./images/components/danger-zone-light.webp";
+import dangerZoneDark from "./images/components/danger-zone-dark.webp";
+import topBarActionsLight from "./images/components/top-bar-actions-light.webp";
+import topBarActionsDark from "./images/components/top-bar-actions-dark.webp";
+import buttonLinkLight from "./images/components/button-link-light.webp";
+import buttonLinkDark from "./images/components/button-link-dark.webp";
+import profileCardLight from "./images/components/profile-card-light.webp";
+import profileCardDark from "./images/components/profile-card-dark.webp";
+import inputFocusLight from "./images/components/input-focus-light.webp";
+import inputFocusDark from "./images/components/input-focus-dark.webp";
+import fieldErrorLight from "./images/components/field-error-save-bar-light.webp";
+import fieldErrorDark from "./images/components/field-error-save-bar-dark.webp";
+import selectOpenLight from "./images/components/select-open-light.webp";
+import selectOpenDark from "./images/components/select-open-dark.webp";
+import checkboxCheckedLight from "./images/components/checkbox-checked-light.webp";
+import checkboxCheckedDark from "./images/components/checkbox-checked-dark.webp";
+import checkboxUncheckedLight from "./images/components/checkbox-unchecked-light.webp";
+import checkboxUncheckedDark from "./images/components/checkbox-unchecked-dark.webp";
+import loginSecurityLight from "./images/components/login-security-card-light.webp";
+import loginSecurityDark from "./images/components/login-security-card-dark.webp";
+import colorPassLight from "./images/components/color-field-pass-light.webp";
+import colorPassDark from "./images/components/color-field-pass-dark.webp";
+import colorStatesLight from "./images/components/color-field-states-light.webp";
+import colorStatesDark from "./images/components/color-field-states-dark.webp";
+import uploadBannerLight from "./images/components/image-upload-banner-light.webp";
+import uploadBannerDark from "./images/components/image-upload-banner-dark.webp";
+import uploadEmptyLight from "./images/components/image-upload-empty-light.webp";
+import uploadEmptyDark from "./images/components/image-upload-empty-dark.webp";
+import emailCardLight from "./images/components/email-provider-card-light.webp";
+import emailCardDark from "./images/components/email-provider-card-dark.webp";
+import sectionLabelLight from "./images/components/section-label-light.webp";
+import sectionLabelDark from "./images/components/section-label-dark.webp";
+import sectionRuleLight from "./images/components/section-rule-public-light.webp";
+import sectionRuleDark from "./images/components/section-rule-public-dark.webp";
+import pageHeaderLinksLight from "./images/components/page-header-links-light.webp";
+import pageHeaderLinksDark from "./images/components/page-header-links-dark.webp";
+import pageHeaderInboxLight from "./images/components/page-header-inbox-light.webp";
+import pageHeaderInboxDark from "./images/components/page-header-inbox-dark.webp";
+import settingsNavLight from "./images/components/settings-nav-light.webp";
+import settingsNavDark from "./images/components/settings-nav-dark.webp";
+import walletTabsLight from "./images/components/wallet-tabs-light.webp";
+import walletTabsDark from "./images/components/wallet-tabs-dark.webp";
+import sidebarLight from "./images/components/sidebar-light.webp";
+import sidebarDark from "./images/components/sidebar-dark.webp";
+import sidebarCollapsedLight from "./images/components/sidebar-collapsed-light.webp";
+import sidebarCollapsedDark from "./images/components/sidebar-collapsed-dark.webp";
+import accountMenuLight from "./images/components/account-menu-light.webp";
+import accountMenuDark from "./images/components/account-menu-dark.webp";
+import tabBarLight from "./images/components/bottom-tab-bar-light-mobile.webp";
+import tabBarDark from "./images/components/bottom-tab-bar-dark-mobile.webp";
+import tabBarMoreLight from "./images/components/bottom-tab-more-light-mobile.webp";
+import tabBarMoreDark from "./images/components/bottom-tab-more-dark-mobile.webp";
+import saveBarLight from "./images/components/sticky-save-bar-light.webp";
+import saveBarDark from "./images/components/sticky-save-bar-dark.webp";
+import saveBarMobileLight from "./images/components/sticky-save-bar-light-mobile.webp";
+import saveBarMobileDark from "./images/components/sticky-save-bar-dark-mobile.webp";
+import pillUnsavedLight from "./images/components/state-pill-unsaved-light.webp";
+import pillUnsavedDark from "./images/components/state-pill-unsaved-dark.webp";
+import pillMenuLight from "./images/components/state-pill-menu-light.webp";
+import pillMenuDark from "./images/components/state-pill-menu-dark.webp";
+import badgeWalletLight from "./images/components/badge-wallet-light.webp";
+import badgeWalletDark from "./images/components/badge-wallet-dark.webp";
+import inboxDetailLight from "./images/components/inbox-detail-light.webp";
+import inboxDetailDark from "./images/components/inbox-detail-dark.webp";
+import confirmDialogLight from "./images/components/confirm-dialog-light.webp";
+import confirmDialogDark from "./images/components/confirm-dialog-dark.webp";
+import dangerDialogLight from "./images/components/danger-confirm-dialog-light.webp";
+import dangerDialogDark from "./images/components/danger-confirm-dialog-dark.webp";
+import addNetworkLight from "./images/components/dialog-add-network-light.webp";
+import addNetworkDark from "./images/components/dialog-add-network-dark.webp";
+import toastErrorLight from "./images/components/toast-error-light.webp";
+import toastErrorDark from "./images/components/toast-error-dark.webp";
+import skeletonLight from "./images/components/skeleton-rows-light.webp";
+import skeletonDark from "./images/components/skeleton-rows-dark.webp";
+import emptyStateLight from "./images/components/empty-state-light.webp";
+import emptyStateDark from "./images/components/empty-state-dark.webp";
+import queryErrorLight from "./images/components/query-error-light.webp";
+import queryErrorDark from "./images/components/query-error-dark.webp";
+import footerLight from "./images/components/admin-footer-light.webp";
+import footerDark from "./images/components/admin-footer-dark.webp";
+import secretSavedLight from "./images/stateful/secret-input-saved-light.webp";
+import secretSavedDark from "./images/stateful/secret-input-saved-dark.webp";
+import pillPublishedLight from "./images/stateful/state-pill-published-light.webp";
+import pillPublishedDark from "./images/stateful/state-pill-published-dark.webp";
+import pillFailedLight from "./images/stateful/state-pill-failed-light.webp";
+import pillFailedDark from "./images/stateful/state-pill-failed-dark.webp";
+import pillPublishedMenuLight from "./images/stateful/state-pill-published-menu-light.webp";
+import pillPublishedMenuDark from "./images/stateful/state-pill-published-menu-dark.webp";
+import pillFailedMenuLight from "./images/stateful/state-pill-failed-menu-light.webp";
+import pillFailedMenuDark from "./images/stateful/state-pill-failed-menu-dark.webp";
+import toastSuccessLight from "./images/stateful/toast-success-light.webp";
+import toastSuccessDark from "./images/stateful/toast-success-dark.webp";
+
+Every component on this page is shown where the running app renders it, with the synthetic "Rowan Ellis" sample content. Captures follow the docs theme: switch the docs to dark mode to see the dark captures. Component crops are taken at 2x on a 1440px-wide window; phone crops at 390px.
+
+There is no component gallery route in the product. To see a component, open the screen named in its caption.
 
 ## Where components live
 
-`apps/web/src/components/ui/` contains the app's Base UI/Tailwind primitives. `packages/ui/src/` exports the shared `Checkbox`, `Switch`, `Avatar`, and `Tabs`, along with themes and `cn`. The package is not a second copy of every web primitive.
+| Layer | Path | What it holds |
+| --- | --- | --- |
+| App primitives | `apps/web/src/components/ui/` | Base UI + Tailwind building blocks: `Button`, `Input`, `Textarea`, `Select`, `Label`, `Card`, `Badge`, `Alert`, `Dialog`, `AlertDialog`, `Popover`, `DropdownMenu`, `Tooltip`, `ToggleGroup`, `Tabs`, `Sidebar`, `Skeleton`, `Empty`, `InputGroup`, `SectionRule`, `ThemeToggle`, `Toaster` (Sonner) |
+| Shared package | `packages/ui/src/` | `Checkbox`, `Switch`, `Avatar` and `Tabs`, plus theme presets, banner presets, social brands, `color-contrast` helpers and `cn` |
+| Admin building blocks | `apps/web/src/components/admin/` | `PageShell`, `PageHeader`, `SubTabs`, `SectionCard`, `SectionHeader`, `SectionLabel`, `ColorField`, `ImageUploadField`, `StickySaveBar`, `StatePill`, `ConfirmDialog`, `EmptyState`, `FieldError`, `CharCount`, `AdminFooter` |
+| Settings helpers | `apps/web/src/components/admin/settings/` | `FieldGroup`, `SecretInput`, `DangerConfirmDialog`, `mutationErrorMessage` |
 
-Import the existing component from its owning module. Do not install another component library to recreate a button, dialog, form grid, or preview.
+`packages/ui` is not a second copy of every web primitive. The app re-exports its `Switch` (`components/ui/switch.tsx`) and wraps its `Tabs` (`components/ui/tabs.tsx`) to add the 44px touch floor.
 
-## Buttons and form controls
+Import the existing component from its owning module. Do not install another component library to recreate a button, dialog, form grid or preview.
 
-`Button` supports `default`, `outline`, `secondary`, `ghost`, `destructive`, and `link`. Its sizes are `default`, `xs`, `sm`, `lg`, and the corresponding icon sizes. Use the [control scale](/docs/design-system/foundations#controls-and-radii) rather than overriding heights on each page.
+## Buttons
+
+`Button` (`components/ui/button.tsx`) is a Base UI button with six variants and eight sizes. The captures below show every variant the admin uses.
+
+<Screenshot
+  light={dangerZoneLight}
+  dark={dangerZoneDark}
+  alt="The Danger zone card on Settings, Data: a warning icon, two rows with descriptions, an outline Delete button and a red-tinted Reset button."
+  caption="Settings → Data. Outline sm Delete and destructive sm Reset… on a card tinted with border-destructive/40 and bg-destructive/5. The destructive variant is a tint, not a solid red fill."
+/>
+
+<ScreenshotGrid>
+  <Screenshot
+    light={topBarActionsLight}
+    dark={topBarActionsDark}
+    alt="Top bar actions: a rounded Publishing off pill, a share icon button and an outline View live button with a globe icon."
+    caption="Top bar: the publication pill (outline xs, rounded-full), Share (a ghost icon trigger) and View live (outline sm)."
+    maxWidth={360}
+  />
+  <Screenshot
+    light={buttonLinkLight}
+    dark={buttonLinkDark}
+    alt="A login status card titled Reset from the server, explaining that email is not set up, ending in a blue Back to sign in text button."
+    caption="Login → Forgot password? with email unconfigured. Back to sign in is the link variant: primary text, underline on hover."
+    maxWidth={420}
+  />
+</ScreenshotGrid>
+
+| Variant | Look | Used for |
+| --- | --- | --- |
+| `default` | `bg-primary`, `text-primary-foreground`; `hover:bg-primary/80` | The one primary action: Save changes, Apply n new, Publish, Crop & upload |
+| `outline` | `border-border bg-background`; dark: `bg-input/30` | Secondary actions: View live, Change, Delete (row action), Retry, Cancel in alert dialogs |
+| `secondary` | `bg-secondary`, hover mixes 5% foreground | The share popover's "Share…" button, shown only when the browser supports `navigator.share` |
+| `ghost` | Transparent; `hover:bg-muted` | Discard, Refresh status, icon triggers, settings nav items, upload Replace/Re-crop/Remove |
+| `destructive` | `bg-destructive/10 text-destructive`; dark: `bg-destructive/20` | Delete, Reset everything, Reset… |
+| `link` | `text-primary`, `underline-offset-4`, underline on hover | Back to sign in and "Use a backup code instead" on the login page |
+
+| Size | Touch (below `md`, or coarse pointer) | Admin, fine pointer from `md` | Outside `.admin-scope` (fallback) |
+| --- | --- | --- | --- |
+| `default`, `icon` | 44px | `--control-height` = 36px | 32px |
+| `sm`, `icon-sm` | 44px | `--control-height-compact` = 32px | 28px |
+| `xs`, `icon-xs` | 44px | `--control-height-compact` = 32px | 24px |
+| `lg`, `icon-lg` | 44px | `--control-height-large` = 44px | 36px |
+
+Text is 16px on touch layouts and `--control-font-size` (14px in the admin, 12px fallback) from `md`. `xs` and `sm` share a height in the admin; `xs` has tighter padding (`px-2.5`, `gap-1.5`) and 14px icons. The `@media (pointer: coarse)` rule in `apps/web/src/index.css` sets all three control heights to 44px, so tablets keep touch targets. See [Controls and radii](/docs/design-system/foundations#controls-and-radii).
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -26,11 +172,50 @@ import { Button } from "@/components/ui/button";
 </div>
 ```
 
-Keep a visible label for text actions. Icon-only buttons need an accessible name. `disabled` blocks repeat actions while pending; `aria-invalid` applies the shared error treatment.
+- Keep a visible label for text actions. Icon-only buttons need an `aria-label` (Share is "Share your page").
+- Use `disabled` to block repeat actions while a request is pending. Disabled buttons drop to 50% opacity and ignore pointer events.
+- `aria-invalid` applies the shared error treatment (`border-destructive`, `ring-destructive/20`).
+- Focus shows `border-ring` plus a 2px `ring-ring/50`. Pressing nudges the button down 1px (`active:translate-y-px`), except for menu triggers.
+- To render a link, pass `nativeButton={false}` and `render={<Link href=… />}` (Settings nav, View live, EmptyState actions). Base UI keeps button semantics on the rendered anchor (`role="button"`), so screen readers announce these as buttons.
+- Do not override heights per page. The sizes above come from the scoped tokens.
 
-`Input`, `Textarea`, and `Select` share form-boundary and focus tokens. `Select` takes an `items` array and `onValueChange`, and forwards `aria-labelledby`, `aria-describedby`, and `aria-invalid` to its trigger.
+## Text fields
+
+`Input`, `Textarea` and `Label` live in `components/ui/`. `FieldError` and `CharCount` (`components/admin/field-feedback.tsx`) add inline validation and limits.
+
+<Screenshot
+  light={profileCardLight}
+  dark={profileCardDark}
+  alt="The Profile Info card: a round avatar upload with Replace, Re-crop and Remove, a Display Name input reading Rowan Ellis with an 11 of 50 counter, and a Bio textarea with a 95 of 300 counter."
+  caption="Links → Profile. Input and Textarea at rest, each with a CharCount below it. The card header is a SectionHeader with the primary icon tile."
+/>
+
+<Screenshot
+  light={inputFocusLight}
+  dark={inputFocusDark}
+  alt="The Display Name input with a blue focus ring separated from the field by a small gap."
+  caption="Keyboard focus on an Input: border-ring, a 2px ring-ring and a 2px ring offset in the background color."
+/>
+
+<Screenshot
+  light={fieldErrorLight}
+  dark={fieldErrorDark}
+  alt="The Email settings page with studio@ typed in From Address: the field has a red border, Enter a valid email address appears below it, and the save bar reads Fix the highlighted fields to save with Save changes disabled."
+  caption="Settings → Email with an invalid From Address. The Input shows aria-invalid, FieldError appears after its delay, and StickySaveBar switches to its error message with Save disabled."
+/>
+
+| State | `Input` | `Textarea` |
+| --- | --- | --- |
+| Rest | `border-input-border` (the 3:1 control boundary), transparent fill; dark: `bg-input/30` | Same |
+| Height and text | 44px and 16px; 36px and 14px from `md` with a fine pointer | `min-h-20` (80px), `resize-y`; 14px text from `md` |
+| Focus | `border-ring`, `ring-2 ring-ring`, `ring-offset-2` | `border-ring`, `ring-[1.5px] ring-ring/50`, no offset |
+| Invalid (`aria-invalid`) | `border-destructive`, `ring-1 ring-destructive/20`; dark: `/50` border, `/40` ring | Same |
+| Disabled | `bg-input/50`, 50% opacity, `cursor-not-allowed` | Same |
+
+`FieldError` renders only after an error has been stable for 700ms (`delay`), so a half-typed URL does not flash red on every keystroke. It clears at once when the value becomes valid. It is a `role="status"` paragraph in `text-micro text-destructive`. `CharCount` prints `n/max` in `text-micro` and turns destructive past the limit.
 
 ```tsx
+import { CharCount, FieldError } from "@/components/admin/field-feedback";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -40,66 +225,480 @@ import { Label } from "@/components/ui/label";
     id="profile-name"
     value={name}
     onChange={(event) => setName(event.target.value)}
-    aria-describedby="profile-name-help"
+    aria-invalid={error ? true : undefined}
+    aria-describedby={error ? "profile-name-error" : "profile-name-help"}
   />
-  <p id="profile-name-help" className="text-xs text-muted-foreground">
+  <p id="profile-name-help" className="text-micro text-muted-foreground">
     Shown at the top of your public page.
   </p>
+  <FieldError id="profile-name-error" error={error} />
+  <CharCount value={name} max={50} />
 </div>
 ```
 
-For validation, associate the error text with the control and set `aria-invalid`. Use the shared schemas in `@linkden/validators`; descriptions and limits must reflect the actual accepted values.
+- Associate help and error text with `aria-describedby`, and set `aria-invalid` only while the value is invalid.
+- Validate with the shared schemas in `@linkden/validators` (`fieldError`, `schemaErrors` and `configErrors` in `lib/validate.ts`). Descriptions and limits must match the values the API accepts.
+- Hand-rolled fields use `border-input-border`, never `border-input` (`--input` is a fill only).
 
-## Cards and form sections
+## Select
 
-| Component | Current contract |
+`Select` (`components/ui/select.tsx`) is a single-value Base UI select that mirrors the `Input` box: same height, border, focus ring and 16px mobile text, so it sits flush beside a text field.
+
+<Screenshot
+  light={selectOpenLight}
+  dark={selectOpenDark}
+  alt="The Deliver messages to select opened: Inbox only has a check mark, Inbox and email is highlighted with a blue tint and outline, Email only is plain."
+  caption="Settings → Email, Deliver messages to. The selected item carries a check; the highlighted item gets bg-primary/10 and an inset ring-ring so it reaches 3:1 against the popover."
+/>
+
+| Prop | Type | Notes |
+| --- | --- | --- |
+| `value`, `onValueChange` | `string`, `(value: string) => void` | Controlled only |
+| `items` | `readonly { value, label }[]` | A flat list; there are no groups |
+| `id`, `placeholder`, `className`, `disabled` | | `disabled` dims the trigger and blocks pointer events |
+| `aria-label`, `aria-labelledby`, `aria-describedby`, `aria-invalid` | | Forwarded to the trigger, which gets the same invalid treatment as `Input` |
+
+The popup is a portal, at least as wide as the trigger, and scrolls within the available height. In the capture Base UI has placed it over the trigger with the selected item aligned to the field. Items are 44px tall on touch layouts.
+
+## Checkbox and Switch
+
+Both come from `packages/ui` and render Base UI spans, so their disabled state is `data-disabled` (never `:disabled`).
+
+<ScreenshotGrid>
+  <Screenshot
+    light={checkboxCheckedLight}
+    dark={checkboxCheckedDark}
+    alt="A checked checkbox with a white check on a blue fill, labeled Keep me signed in."
+    caption="Checked: primary fill and border, primary-foreground check."
+    maxWidth={200}
+  />
+  <Screenshot
+    light={checkboxUncheckedLight}
+    dark={checkboxUncheckedDark}
+    alt="An unchecked checkbox with a gray outline, labeled Keep me signed in."
+    caption="Unchecked: the whole control is its input-border outline."
+    maxWidth={200}
+  />
+</ScreenshotGrid>
+
+<Screenshot
+  light={loginSecurityLight}
+  dark={loginSecurityDark}
+  alt="The Login and Security card: Email and Password rows with outline Change buttons, a Two-factor authentication row with a gray disabled badge and an off switch, and a dimmed Magic link sign-in switch with a configure Email link."
+  caption="Settings → Account. An off Switch (Two-factor), a disabled Switch (Magic link sign-in, until email is configured) and a secondary Badge."
+/>
+
+| | `Checkbox` | `Switch` |
+| --- | --- | --- |
+| Size | 16px box, `rounded-sm` | 36×20px track, 16px thumb |
+| Off | `border-input-border` | `border-input-border bg-muted` track, `bg-foreground` thumb |
+| On | `bg-primary border-primary text-primary-foreground`, 14px check | `bg-primary` track, `bg-primary-foreground` thumb, moved 16px |
+| Hit area | Paired `Label` with `min-h-11` (login page) | An `::after` box extends the target to 52×44px without growing the pill |
+| Focus | 2px `ring-ring` with offset | Same |
+| Label | Optional `label` prop renders a `<label>` beside it | Pair with a `Label htmlFor` |
+
+Some switches act immediately and confirm with a toast: Inbox "Accepting messages" (`contact_form_enabled`), Settings → Wallet "Downloads enabled" and Settings → Account "Magic link sign-in". The Two-factor switch opens a password dialog instead of changing anything. Switches inside a settings form save with the rest of the form through `StickySaveBar`.
+
+## ColorField
+
+`ColorField` (`components/admin/color-field.tsx`) pairs a hex text input with the native color picker inside one `InputGroup`. It can check WCAG contrast against a paired color.
+
+<Screenshot
+  light={colorPassLight}
+  dark={colorPassDark}
+  alt="The Primary color field with a hex value and a matching swatch, and a green line reading passes AA."
+  caption="A passing guard: the ratio against the preset background in green, ending in “passes AA”."
+  maxWidth={360}
+/>
+
+<Screenshot
+  light={colorStatesLight}
+  dark={colorStatesDark}
+  alt="Four color fields. Primary fails AA and shows a Fix button, Accent contains the word teal with a red border and an invalid hex message, and Secondary and Background are empty with the preset colors as placeholders."
+  caption="Design → Theme. Primary fails AA and offers Fix; Accent holds an invalid value; Secondary and Background are empty and inherit the preset."
+/>
+
+| Prop | Type | Notes |
+| --- | --- | --- |
+| `id`, `label` | `string` | The swatch is labeled "`label` color" |
+| `value`, `onChange` | `string`, `(value: string) => void` | An empty value is allowed: it inherits the theme or preset default |
+| `placeholder` | `string` | Shown when empty; also the swatch color when the value is empty or invalid |
+| `contrastAgainst` | `{ hex, label }` | Enables the live ratio line and the Fix chip |
+
+- On blur the value is normalized: `#RGB` becomes `#RRGGBB`, a missing `#` is added and the result is uppercased. An unparseable value shows "Enter a valid hex colour, e.g. #0FACED" immediately (`FieldError` with `delay={0}`).
+- The swatch only ever receives a valid 7-character value. It falls back to the placeholder, then `#FFFFFF`, never `#000000`.
+- The ratio line is `text-success` at 4.5:1 or more and `text-warning` below it, reading "fails AA (4.5:1 needed)". Fix (outline xs) sets the readable text color from `getReadableTextColor`.
+- The swatch is a direct child of the group, not an `InputGroupAddon`: the addon would refocus the text input and fight the native picker.
+
+| Where | Contrast checked against |
 | --- | --- |
-| `Card` | Matte bordered surface; `size="sm"` supplies compact spacing |
-| `CardHeader`, `CardContent` | Own the aligned card gutters |
-| `CardTitle` | Native `h2`; use `as="h3"` for a subsection |
-| `SectionCard` | Card with an icon, title, optional description, and body |
-| `SectionLabel` | `h3` group label within a section |
-| `FieldGroup` | 16px grid gap; `columns={2}` splits only when its own container reaches 480px |
+| Design → Theme: Primary | The background of the previewed mode (`custom_background` or the preset's) |
+| Design → Theme: Secondary, Accent, Background | Not checked: these are surface tints |
+| Settings → Wallet: Foreground, Label | The pass background |
+| Block editor: Custom text | The block's custom background |
 
-Do not wrap `CardTitle` in another heading or add a second set of card gutters around `CardContent`.
+## ImageUploadField
+
+Use `ImageUploadField` (`components/admin/image-upload-field.tsx`) for every image setting. Never use a plain URL text input.
+
+<Screenshot
+  light={uploadBannerLight}
+  dark={uploadBannerDark}
+  alt="The Banner Image field showing an uploaded navy-to-cyan banner inside a dashed rounded frame, with Replace, Re-crop and Remove buttons below."
+  caption="Design → Banner. A banner-shaped field with a saved image and its ghost xs actions, each named after the field (“Replace Banner Image”)."
+/>
+
+<Screenshot
+  light={uploadEmptyLight}
+  dark={uploadEmptyDark}
+  alt="Two empty upload areas: a dashed rounded square reading Drop logo under the Logo legend, and a dashed circle reading Upload under the Favicon legend."
+  caption="Design → Branding. Empty logo (rounded square) and favicon (circle) fields, each inside a fieldset whose legend and hint name it."
+/>
+
+| Prop | Values | Notes |
+| --- | --- | --- |
+| `label` or `ariaLabel` | `string` | Names the dropzone (“Change `name`”), the image and the three actions |
+| `value`, `onUploadComplete` | `string`, `(url: string) => void` | Stores the origin-relative `/api/images/…` path |
+| `purpose` | An `UPLOAD_PURPOSES` value | Selects the crop preset and the upload endpoint's purpose |
+| `aspectRatio` | `"square"` (default), `"banner"`, `"logo"` | 96px circle, full-width 112px-tall frame, or 112px rounded square |
+| `previewFit` | `"cover"` (default), `"contain"` | Preview only; the crop decides the uploaded pixels |
+| `hint` | `string` | Mono uppercase hint beside a visible `label` |
+
+1. Choose or drop a file. Non-images are refused with the toast "Please select an image file"; files over 5MB (`MAX_UPLOAD_BYTES`) with "File must be under 5MB".
+2. The crop dialog opens with the purpose's preset from `lib/image-crop-presets.ts`, for example avatar 512×512 JPEG, banner 1920×1080 WebP, favicon 256×256 PNG and block thumbnail 256×256 WebP.
+3. Crop & upload posts to `/api/upload`, then shows "Image uploaded". The form still needs saving.
+
+- A dragged file switches the dashed `border-muted-foreground/25` frame to a solid primary border on `bg-primary/5`.
+- `replaces` is sent only for an upload made during the current unsaved edit, never for the saved value.
+- A field without a visible `label` should sit in a `fieldset` with a `legend` (Branding's logo and favicon; SEO's social image uses an `sr-only` legend) so its Replace, Re-crop and Remove buttons have group context.
+
+## SecretInput
+
+`SecretInput` (`components/admin/settings/secret-input.tsx`) is the input for write-only secrets: the email API key (Settings → Email) and the CAPTCHA secret (Settings → Integrations).
+
+<Screenshot
+  light={emailCardLight}
+  dark={emailCardDark}
+  alt="The Email provider card: a Resend row, then an API Key password field with placeholder re_... beside a From Address field with a verified sender hint."
+  caption="Settings → Email with no key saved. SecretInput (API Key) and Input (From Address) side by side in a FieldGroup with columns={2}."
+/>
+
+<Screenshot
+  light={secretSavedLight}
+  dark={secretSavedDark}
+  alt="The same Email provider card after a save: the API Key field shows six mask dots with the hint Saved — type or paste a new value to replace it, and From Address holds Ellis Studio <studio@example.com>."
+  caption="After a save, settings.getAll returns the key as SECRET_MASK, so the field shows the mask and the Saved hint. Captured with a placeholder key saved on the disposable screenshot stack, then cleared."
+/>
+
+- The server returns a saved secret as `SECRET_MASK` (`"••••••"`) and ignores the mask on save.
+- Focusing a masked field selects the mask, so the next keystroke or paste replaces it. `editMaskedSecret` strips any remaining mask characters from an edit.
+- While the mask shows and `hintId` is set, the field shows "Saved — type or paste a new value to replace it" and adds it to `aria-describedby`.
+- `type="password"` fields use `autoComplete="new-password"`; others use `off`. Spell checking is always off.
+
+## Cards and section headers
+
+Admin sections are matte cards. Pick the header that matches the section's role.
+
+<Screenshot
+  light={sectionLabelLight}
+  dark={sectionLabelDark}
+  alt="The SEO and Open Graph card header with a blue search icon tile, title and description above a hairline, then a Meta Tags group label with a short blue dash and a rule, and a Page Title input."
+  caption="Design → SEO. A SectionCard header (32px icon tile, title, description, hairline) and a SectionLabel group heading. For FieldGroup columns={2}, see the Email provider card under SecretInput."
+/>
+
+| Component | File | Contract |
+| --- | --- | --- |
+| `Card` | `components/ui/card.tsx` | `bg-card`, `border-border`, `shadow-surface`, `rounded-lg` (12px in the admin), `py-5 gap-5`; `size="sm"` uses `py-4 gap-3` |
+| `CardHeader`, `CardContent` | same | Own the gutters: `px-4`, `sm:px-5` (`px-4` on small cards) |
+| `CardTitle` | same | A native `h2` (`as="h3"` for a subsection), `text-base font-semibold` (16px) |
+| `SectionHeader` | `components/admin/section-header.tsx` | `CardHeader` + `CardTitle` with a 28px icon tile: `variant="primary"` (`bg-primary/10`, primary icon) or `"muted"`; optional `count` |
+| `SectionCard` | same | `Card` with a bordered header band: 32px primary icon tile, title, optional `text-micro` description, then `CardContent` |
+| `SectionLabel` | same | `SectionRule as="h3"` at `text-sm`, for groups inside a `SectionCard` |
+| `SectionRule` | `components/ui/section-rule.tsx` | 16×2px `--signal` dash, `font-display` heading, `--rule` hairline to the edge; `as` accepts `h1`–`h4`, `p` or `div` |
+| `FieldGroup` | `components/admin/settings/field-group.tsx` | `grid gap-4` in an `@container/admin-fields`; `columns={2}` splits at a 480px container |
 
 ```tsx
 import { User } from "lucide-react";
-import { SectionCard } from "@/components/admin/section-header";
+import { SectionCard, SectionLabel } from "@/components/admin/section-header";
 import { FieldGroup } from "@/components/admin/settings/field-group";
 
 <SectionCard icon={User} title="Profile" description="Details visitors see on your page.">
+  <SectionLabel>Identity</SectionLabel>
   <FieldGroup columns={2}>
     {nameField}
-    {bioField}
+    {emailField}
   </FieldGroup>
 </SectionCard>
 ```
 
-Use `ImageUploadField` for image uploads, `ColorField` for hex plus native color selection, and `SecretInput` for write-only credentials. They preserve the existing validation, upload replacement, contrast, and masked-secret behavior.
+- Do not wrap `CardTitle` in another heading, and do not add a second set of gutters around `CardContent`.
+- A destructive section keeps `Card` and tints it (`border-destructive/40 bg-destructive/5`), as the Danger zone above does.
+- The public page reuses `SectionRule` for header blocks. There the dash runs from the theme's primary to its accent and the hairline uses the theme border:
 
-## Navigation and the shell
+<Screenshot
+  light={sectionRuleLight}
+  dark={sectionRuleDark}
+  alt="The public Latest work section heading with a short gradient dash on the left and a thin rule running to the right edge."
+  caption="Public header block. The same SectionRule, with its dash and hairline colored from the page theme. Headers without a divider hide the hairline."
+/>
 
-`NAV_ITEMS` in `components/admin/nav-list.tsx` owns the four destinations: Profile page, Design, Inbox, and Settings. `AdminShell` derives the sidebar, mobile navigation, and breadcrumb from it.
+## Page header and in-page navigation
 
-`SidebarMenu` uses `gap-1` (4px), keeping adjacent hover/active backgrounds separate. `SubTabs` also uses 4px gaps, horizontal overflow, a static active underline, and `aria-current="page"`. These are route links, not an ARIA tab widget. The longest matching path selects the active item.
+`PageShell`, `PageHeader` and `SubTabs` form every admin page's skeleton. For how they combine with the shell, see [Admin page structure](/docs/design-system/patterns#admin-page-structure).
 
-`AdminFooter` owns the admin branding link, version/development metadata, and theme control. Account menus hold identity and account actions. Keep those responsibilities separate when adding a destination.
+<Screenshot
+  light={pageHeaderLinksLight}
+  dark={pageHeaderLinksDark}
+  alt="The Links page header: a large Links heading, a tab strip with Blocks underlined and Profile and Social in gray, then filter chips All 17, Drafts 1 and Hidden 1 and a blue Apply 1 new button."
+  caption="Links. PageHeader h1, SubTabs with Blocks current, the block filter ToggleGroup (pressed chip: border-border, bg-surface-2) and the default sm Apply 1 new."
+/>
 
-## Feedback and destructive actions
+<Screenshot
+  light={pageHeaderInboxLight}
+  dark={pageHeaderInboxDark}
+  alt="The Inbox page header: the Inbox heading on the left and, on the right, Accepting messages with an on switch, a filled All button, outline Unread and Read buttons, and outline Select and Mark All Read buttons."
+  caption="Inbox. PageHeader actions sit in the second grid column from sm: an instant-save Switch, filter buttons (default variant when active, outline otherwise) and outline actions."
+/>
 
-| Need | Existing component or hook |
+| Component | Contract |
 | --- | --- |
-| Settings load failure | `QueryError` with retry |
-| Advisory content | `Alert`, with no live-region role by default |
-| Urgent error announcement | Explicit `role="alert"` |
-| Polite state announcement | Explicit `role="status"` |
-| Dirty form actions | `StickySaveBar` |
-| Save/navigation protection | `useSettingsForm` and `useUnsavedChanges` |
-| Delete confirmation | `ConfirmDialog` |
-| Destructive data reset | `DangerConfirmDialog` |
+| `PageShell` | `space-y-4`, `sm:space-y-6`. Vertical rhythm only; no page fade |
+| `PageHeader` | `title` (an h1 at 24px, 28px from `sm`, `font-display`, `tracking-[-0.025em]`), `badge`, `actions`, `children` (description row), `kicker` (the sub-tab label reported to the top-bar breadcrumb) |
+| `SubTabs` | `items` of `{ href, label }`, `ariaLabel` (default "Sections"). Route links with `aria-current="page"`, 4px gaps, `text-xs`, 44px tall (40px from `md`), a static 2px foreground underline, horizontal scroll, never wrapping. The longest matching `href` wins |
 
-`ConfirmDialog` uses the shared AlertDialog, with Cancel first and both actions disabled while pending. `DangerConfirmDialog` requires an exact confirmation word, resets the typed value when opened or closed, and focuses its input. Use it for the existing Settings → Data reset operations rather than a browser confirm prompt.
+<ScreenshotGrid>
+  <Screenshot
+    light={settingsNavLight}
+    dark={settingsNavDark}
+    alt="A vertical settings menu: Account, Email highlighted with a pale blue fill, Integrations, Wallet and Data."
+    caption="Settings at xl: a 176px column of ghost lg Buttons rendered as links; the current one gets bg-primary/10. Below xl the same items are a SubTabs strip."
+    maxWidth={240}
+  />
+  <Screenshot
+    light={walletTabsLight}
+    dark={walletTabsDark}
+    alt="Tabs labeled Business, Images, Context, Colors and a partly hidden Background, each with an icon; Business is underlined."
+    caption="Settings → Wallet. Base UI Tabs styled like SubTabs. The strip scrolls when its column is narrow."
+    maxWidth={460}
+  />
+</ScreenshotGrid>
+
+- `SubTabs` are navigation between routes, not an ARIA tab widget. Use `Tabs` (`components/ui/tabs.tsx`) only for panels within one page, as the Wallet editor does; Base UI then supplies roving focus and arrow keys.
+- The app's `Tabs` wrapper keeps triggers at 44px below `md` and 32px from `md`. `packages/ui` also defines `pills` and `bar` list variants.
+- Add every new sub-tab to its destination layout and give it a `layout.tsx` with a document title.
+
+## Sidebar, account menu and bottom tab bar
+
+`NAV_ITEMS` in `components/admin/nav-list.tsx` is the single source for the four destinations (Profile page, Design, Inbox and Settings). `AdminShell` builds the sidebar, the bottom tab bar and the breadcrumb from it.
+
+<ScreenshotGrid columns={3}>
+  <Screenshot
+    light={sidebarLight}
+    dark={sidebarDark}
+    alt="The expanded sidebar: the LinkDen wolf logo and name, a Create group with Profile page active and Design hovered, a Manage group with Inbox showing a badge of 2 and Settings."
+    caption="Expanded. Profile page is current (semibold, primary icon); Design is hovered and shares the accent fill; Inbox shows its unread count."
+  />
+  <Screenshot
+    light={sidebarCollapsedLight}
+    dark={sidebarCollapsedDark}
+    alt="The collapsed icon rail with the logo and four icons; a dark Inbox tooltip points at the hovered Inbox icon."
+    caption="Collapsed to the 48px icon rail. Labels become tooltips and the count badge hides."
+    maxWidth={140}
+  />
+  <Screenshot
+    light={accountMenuLight}
+    dark={accountMenuDark}
+    alt="An account menu opened upward from the sidebar footer, showing Rowan Ellis and rowan@example.com, Account, Wallet pass and a red Sign out."
+    caption="The account menu from the sidebar footer: identity, Account, Wallet pass, then a destructive Sign out."
+  />
+</ScreenshotGrid>
+
+| Part | Values |
+| --- | --- |
+| Width | 16rem expanded, 3rem as an icon rail (`collapsible="icon"`). The state persists in the `sidebar_state` cookie for 7 days. Cmd+B / Ctrl+B toggles it, except in editable fields and below `md` |
+| Group labels | "Create" and "Manage", `text-micro`, uppercase, `tracking-[0.12em]` |
+| Items | `gap-1` (4px) between items so hover and active fills never touch; 44px minimum height, `rounded-lg` |
+| Current item | `bg-sidebar-accent`, `font-semibold`, icon in `text-sidebar-primary`, `aria-current="page"`. Hover uses the same accent fill without the weight change |
+| Inbox badge | `bg-sidebar-primary`, capped at "99+", hidden on the rail; the link's name becomes "Inbox, 2 unread" |
+| Account menu | `DropdownMenu`, 256px wide; Sign out uses the destructive item variant. Below `lg` it moves to an avatar button in the top bar |
+
+<ScreenshotGrid>
+  <Screenshot
+    light={tabBarLight}
+    dark={tabBarDark}
+    alt="A phone bottom tab bar with Profile active in blue, Inbox with a badge of 2, and More."
+    caption="Below lg. Destinations with a mobileLabel get a tab; Profile is current."
+    maxWidth={390}
+  />
+  <Screenshot
+    light={tabBarMoreLight}
+    dark={tabBarMoreDark}
+    alt="The More menu opened above the tab bar, titled More destinations, listing Design and Settings."
+    caption="More opens a DropdownMenu above the bar with the remaining destinations."
+    maxWidth={390}
+  />
+</ScreenshotGrid>
+
+The bottom tab bar is `fixed`, `bg-card` with a top border, and pads for the safe area. Each tab is 56px tall with a 20px icon and a `text-micro` label; the current tab is `text-primary`. Only one navigation system shows per breakpoint: the sidebar from `lg`, the tab bar below it.
+
+## StickySaveBar and publication status
+
+Settings forms share one save bar per page. The top bar's publication pill reflects any unsaved form. The full flow is in [Save, discard, and publication state](/docs/design-system/patterns#save-discard-and-publication-state).
+
+<Screenshot
+  light={saveBarLight}
+  dark={saveBarDark}
+  alt="A save bar with a blue outline reading You have unsaved changes, with a Discard text button and a blue Save changes button."
+  caption="StickySaveBar while a form is dirty: muted message, ghost sm Discard, default sm Save changes."
+/>
+
+<ScreenshotGrid>
+  <Screenshot
+    light={saveBarMobileLight}
+    dark={saveBarMobileDark}
+    alt="On a phone, the save bar stacks its message above Discard and Save changes and floats just above the bottom tab bar."
+    caption="On a phone the message stacks above the actions, and the bar rests 8px above the 56px tab bar."
+    maxWidth={390}
+  />
+  <Screenshot
+    light={pillUnsavedLight}
+    dark={pillUnsavedDark}
+    alt="The top bar pill reading Unsaved in amber text with an amber outline, beside the share icon and View live."
+    caption="The pill reads Unsaved, with a warning outline, while any form on the page is dirty."
+    maxWidth={300}
+  />
+</ScreenshotGrid>
+
+| `StickySaveBar` prop | Type | Effect |
+| --- | --- | --- |
+| `isDirty` | `boolean` | Renders nothing when false |
+| `isSaving` | `boolean` | Disables both buttons; Save reads "Saving…" |
+| `onSave`, `onDiscard` | `() => void` | Wire to `useSettingsForm`'s `save` and `reset` |
+| `hasErrors` | `boolean` | Message becomes "Fix the highlighted fields to save" (`text-destructive`, `role="status"`) and Save is disabled |
+| `message` | `string` | Overrides either message |
+
+The bar is `sticky` with `bottom: calc(56px + env(safe-area-inset-bottom) + 8px)`, and `bottom-4` from `lg`. It has a `border-primary/60` outline on `bg-background`.
+
+<Screenshot
+  light={pillMenuLight}
+  dark={pillMenuDark}
+  alt="The publication popover under the Publishing off pill: a Publish changes title, Publishing has not been enabled, a Review block drafts link, Refresh status and a disabled Publish button, and a rate-limit note."
+  caption="StatePill opened on a stack without publishing configured. Publish stays disabled; Review block drafts links to /admin/links?filter=drafts."
+  maxWidth={420}
+/>
+
+`StatePill` (`components/admin/state-pill.tsx`) is an outline xs, `rounded-full` Popover trigger. Its label is a polite live region. `publicationView` in `lib/publication-state.ts` picks the first matching label, top to bottom:
+
+| Label | When | Treatment |
+| --- | --- | --- |
+| Unsaved | Any `useUnsavedChanges` form is dirty (checked first) | `border-warning/40 text-warning` |
+| Check status | The status read failed | Outline |
+| Checking… | No status has arrived yet | Outline |
+| Failed | Recovery is required, or the current revision failed | `border-destructive/40 text-destructive` |
+| Publishing off | The API reports publication unavailable | Outline |
+| Publishing | A requested revision is still pending | Outline |
+| Published | The current revision is published and the live page verified | `border-success/30 text-success` |
+| Draft | Any other state | Outline |
+
+The screenshot stack has no publication target, so the next four captures rewrite the `publication.status` response in the capture browser only (a verified revision on `https://example.com`, then a failed newer revision). The components and their styling are the real ones.
+
+<ScreenshotGrid>
+  <Screenshot
+    light={pillPublishedLight}
+    dark={pillPublishedDark}
+    alt="The top bar pill reading Published in green text with a pale green outline, beside the share icon and View live."
+    caption="Published: border-success/30 text-success. Shown only when the current revision is published and the live page verified."
+    maxWidth={300}
+  />
+  <Screenshot
+    light={pillFailedLight}
+    dark={pillFailedDark}
+    alt="The top bar pill reading Failed in red text with a pale red outline, beside the share icon and View live."
+    caption="Failed: border-destructive/40 text-destructive, for a failed revision or required recovery."
+    maxWidth={300}
+  />
+</ScreenshotGrid>
+
+<ScreenshotGrid>
+  <Screenshot
+    light={pillPublishedMenuLight}
+    dark={pillPublishedMenuDark}
+    alt="The Publish changes popover under the Published pill: Saved public content matches this revision. No new publication is needed. Then Last verified publication with a revision ID in mono, an Open verified page link, a note that automatic scheduling is not configured, Review block drafts, Refresh status and a disabled Publish button, and the rate-limit note."
+    caption="Published and unchanged: the popover names the last verified revision and links to it; Publish stays disabled."
+  />
+  <Screenshot
+    light={pillFailedMenuLight}
+    dark={pillFailedMenuDark}
+    alt="The Publish changes popover under the Failed pill: The last publication failed. The previous verified revision is retained; refresh status before trying again. The same Last verified publication block, Review block drafts, Refresh status and an enabled Publish button."
+    caption="Failed with a verified earlier revision: that revision is kept and Publish is available again."
+  />
+</ScreenshotGrid>
+
+- While the popover is open, the trigger takes the outline variant's `aria-expanded:bg-muted aria-expanded:text-foreground`, so the Published and Failed colors show only on the closed pill.
+- The popover text comes from `publicationView`; the "Last verified publication" block appears whenever the status has a `lastGood` revision, with Open verified page only when `liveVerified` is true.
+
+## Badges
+
+`Badge` (`components/ui/badge.tsx`) is a `rounded-full`, `text-xs font-semibold` label with a border. It renders a `div`.
+
+<ScreenshotGrid>
+  <Screenshot
+    light={badgeWalletLight}
+    dark={badgeWalletDark}
+    alt="Apple Wallet pass heading followed by an amber outlined Setup required badge with a settings icon, then Downloads enabled with an off switch."
+    caption="Settings → Wallet. An outline Badge colored with border-warning/30 text-warning for “Setup required”."
+  />
+  <Screenshot
+    light={inboxDetailLight}
+    dark={inboxDetailDark}
+    alt="An Inbox message from Sam Okafor with a gray Read badge, Where You Met, Contact Info and Message sections, and Mark Unread, Reply and a red Delete button."
+    caption="Inbox detail. A secondary Read badge; outline Mark Unread and Reply; a destructive Delete."
+    maxWidth={440}
+  />
+</ScreenshotGrid>
+
+| Variant | Classes | In the app today |
+| --- | --- | --- |
+| `default` | `bg-primary text-primary-foreground` | Two-factor "enabled" |
+| `secondary` | `bg-secondary text-secondary-foreground` | Two-factor "disabled", Inbox "Read" |
+| `outline` | `border-border text-foreground` | Wallet status, Branding wallet "Enabled/Disabled", Inbox "Unread" (with a primary dot), `SectionHeader` counts |
+| `success`, `warning`, `destructive` | Solid status fills | Defined but not rendered; status badges tint an outline Badge instead |
+
+The footer's "Development" tag is a plain bordered `span`, not a Badge.
+
+## Dialogs, menus and popovers
+
+Overlays are Base UI primitives, so they keep focus inside, close on Escape and return focus to the trigger. Every dialog needs its title and description.
+
+<ScreenshotGrid>
+  <Screenshot
+    light={confirmDialogLight}
+    dark={confirmDialogDark}
+    alt="A Delete block dialog explaining that Section break and its click history will be deleted and that Undo restores the block but not the history, with Cancel and a red Delete button."
+    caption="ConfirmDialog for deleting a block. Cancel comes first, so it receives initial focus."
+  />
+  <Screenshot
+    light={dangerDialogLight}
+    dark={dangerDialogDark}
+    alt="A Reset LinkDen completely dialog with a long warning, a field labeled Type RESET to confirm containing RES, Cancel, and a dimmed Reset everything button."
+    caption="DangerConfirmDialog on Settings → Data. The action stays disabled until the typed word matches RESET exactly."
+  />
+</ScreenshotGrid>
+
+<Screenshot
+  light={addNetworkLight}
+  dark={addNetworkDark}
+  alt="An Add Behance dialog with a brand icon, a description, a URL field containing behance.net/ellis with a red border and the error Enter a valid URL starting with http:// or https://, and Cancel and a disabled Add Network button."
+  caption="A regular Dialog (Links → Social → Add network) with a close button, an Input in its invalid state, ghost Cancel and a disabled default action."
+  maxWidth={520}
+/>
+
+| Component | Props | Behavior |
+| --- | --- | --- |
+| `ConfirmDialog` (`components/admin/confirm-dialog.tsx`) | `open`, `onOpenChange`, `title`, `description`, `confirmLabel` ("Confirm"), `cancelLabel` ("Cancel"), `variant` (`"destructive"` default or `"default"`), `onConfirm`, `isPending` | `AlertDialog` with `role="alertdialog"`; both buttons disabled while pending, with a spinner in the action |
+| `DangerConfirmDialog` (`components/admin/settings/danger-confirm-dialog.tsx`) | `open`, `onOpenChange`, `title`, `description`, `confirmWord`, `confirmLabel`, `onConfirm`, `isPending` | Focuses its input, resets the typed text whenever it opens or closes, and arms the action only on an exact match |
+| `AlertDialogContent` | `size` (`"default"` or `"sm"`) | `default`: 320px, 384px from `sm`, left-aligned header from `sm`; `sm`: 320px with a two-column footer. Cancel defaults to the outline variant |
+| `DialogContent` | `className` | 384px from `sm` (`sm:max-w-sm`) unless a caller overrides it with an `sm:` width (Social uses `sm:max-w-md`) |
 
 ```tsx
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
@@ -115,14 +714,84 @@ import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 />
 ```
 
-Dialogs need their shared title and description. Preserve keyboard focus, Escape behavior, and focus return through the Base UI primitives.
+- Use `DangerConfirmDialog` for the Settings → Data resets, never a browser `confirm()` prompt.
+- `DropdownMenu` items have a `destructive` variant (Sign out). `Popover` hosts the publication and share panels. `Tooltip` labels the collapsed sidebar rail.
+
+## Toasts, loading, empty and error states
+
+<ScreenshotGrid>
+  <Screenshot
+    light={toastErrorLight}
+    dark={toastErrorDark}
+    alt="A red-tinted error toast with an octagon icon reading Please select an image file."
+    caption="A Sonner error toast after choosing a non-image file in an ImageUploadField."
+    maxWidth={420}
+  />
+  <Screenshot
+    light={queryErrorLight}
+    dark={queryErrorDark}
+    alt="A red alert icon, the text Couldn't load settings and an outline Retry button."
+    caption="QueryError after the settings read failed, with its outline sm Retry."
+    maxWidth={220}
+  />
+</ScreenshotGrid>
+
+<Screenshot
+  light={emptyStateLight}
+  dark={emptyStateDark}
+  alt="A wide card with a handshake icon in a pale circle, the title No messages yet and the line When people write to you through your page, they'll appear here."
+  caption="EmptyState in the Inbox: the shared Empty layout inside a Card, with a 56px tinted disc and a 28px muted icon."
+/>
+
+<Screenshot
+  light={skeletonLight}
+  dark={skeletonDark}
+  alt="Four pale gray rounded bars stacked on top of each other."
+  caption="SkeletonRows (count 4) while the Inbox list loads. The bars pulse unless reduced motion is on."
+/>
+
+<Screenshot
+  light={toastSuccessLight}
+  dark={toastSuccessDark}
+  alt="A green-tinted success toast with a check-circle icon reading Email settings saved."
+  caption="A success toast after a real save in Settings → Email: useSettingsForm shows its successMessage once updateBulk resolves."
+  maxWidth={420}
+/>
+
+| Need | Component | Contract |
+| --- | --- | --- |
+| Transient result | `toast` from `sonner` | One `<Toaster richColors />` in `components/providers.tsx`; popover colors, 12px radius, lucide icons. Show a router's own 4xx message through `mutationErrorMessage` |
+| Data is loading | `SkeletonRows` (`components/admin/skeleton-rows.tsx`) | `count` (3) bars of `height` (`h-14`), `role="status"`, `aria-busy`, labeled "Loading"; each `Skeleton` is `bg-muted rounded-lg animate-pulse` |
+| Nothing to show | `EmptyState` (`components/admin/empty-state.tsx`) | `icon`, `title`, `description`, optional `action` (`{ label, onClick }` or `{ label, href }`, rendered as an outline sm Button) |
+| A query failed | `QueryError` (`components/admin/dashboard/query-error.tsx`) | `role="alert"`; `message` (default "Couldn't load this data"), `onRetry` adds Retry |
+| Advisory content | `Alert` (`components/ui/alert.tsx`) | No live-region role by default; pass `role="alert"` (urgent) or `role="status"` (polite). No current admin screen renders it |
+| Dirty form | `StickySaveBar` with `useSettingsForm` | One bar per page; `useSettingsForm` also exposes `isError`, `error` and `refetch` for a `QueryError` retry |
+| Navigation guard | `useUnsavedChanges` | One shared guard prompts once for Back, Forward, link clicks and unload |
+| Delete confirmation | `ConfirmDialog` | See above |
+| Destructive data reset | `DangerConfirmDialog` | See above |
+
+Where each state appears across the admin is covered in [Empty, loading, and error states](/docs/design-system/patterns#empty-loading-and-error-states).
+
+## Admin footer
+
+<Screenshot
+  light={footerLight}
+  dark={footerDark}
+  alt="The admin footer: Powered by LinkDen with an arrow, v0.5.0, a bordered Development tag, and on the right a three-button theme switcher for light, dark and system."
+  caption="AdminFooter: the branding link, version, the development-only tag and the ThemeToggle."
+/>
+
+`AdminFooter` (`components/admin/admin-footer.tsx`) owns the admin branding link (only when `admin_branding_enabled` is on), `v` plus `NEXT_PUBLIC_APP_VERSION`, the "Development" tag in development builds, and `ThemeToggle`. `ThemeToggle` is a `ToggleGroup` named "Color theme" with Light, Dark and System buttons, 44px on touch and 32px from `md`; the pressed one is `bg-primary/15 text-primary`. Account menus hold identity and account actions only. Keep those responsibilities separate when adding a destination.
 
 ## Source locations
 
-All app paths below start at `apps/web/src/`.
+All app paths start at `apps/web/src/`.
 
-- Primitives: `components/ui/{button,input,textarea,select,card,label,alert,dialog,alert-dialog}.tsx`.
-- Page structure: `components/admin/{page-shell,page-header,section-header}.tsx`.
-- Forms: `components/admin/settings/{field-group,secret-input}.tsx`, `components/admin/image-upload-field.tsx`, and `components/admin/color-field.tsx`.
-- Feedback: `components/admin/{sticky-save-bar,confirm-dialog}.tsx`, `components/admin/settings/danger-confirm-dialog.tsx`, and `components/admin/dashboard/query-error.tsx`.
-- Shared controls and class merging: `packages/ui/src/` from the repository root.
+- **Primitives** in `components/ui/`: `button.tsx`, `input.tsx`, `textarea.tsx`, `label.tsx`, `select.tsx`, `card.tsx`, `badge.tsx`, `alert.tsx`, `dialog.tsx`, `alert-dialog.tsx`, `popover.tsx`, `dropdown-menu.tsx`, `tooltip.tsx`, `toggle.tsx`, `toggle-group.tsx`, `tabs.tsx`, `input-group.tsx`, `skeleton.tsx`, `empty.tsx`, `section-rule.tsx`, `sonner.tsx`, `theme-toggle.tsx`, `sidebar.tsx`.
+- **Shared package** (from the repository root): `packages/ui/src/components/` (`checkbox.tsx`, `switch.tsx`, `tabs.tsx`, `avatar.tsx`) and `packages/ui/src/color-contrast.ts`.
+- **Page structure**: `components/admin/page-shell.tsx`, `page-header.tsx`, `sub-tabs.tsx`, `section-header.tsx`, `nav-list.tsx`, `admin-shell.tsx`, `admin-footer.tsx`, and `app/admin/settings/settings-shell.tsx`.
+- **Forms**: `components/admin/field-feedback.tsx`, `color-field.tsx`, `image-upload-field.tsx`, `image-crop-dialog.tsx`; `components/admin/settings/field-group.tsx`, `secret-input.tsx`; `lib/image-crop-presets.ts`, `lib/validate.ts`.
+- **Saving and status**: `components/admin/sticky-save-bar.tsx`, `state-pill.tsx`; `hooks/use-settings-form.ts`, `hooks/use-unsaved-changes.ts`; `lib/publication-state.ts`; `components/admin/settings/mutation-error.ts`.
+- **Feedback and dialogs**: `components/admin/confirm-dialog.tsx`, `empty-state.tsx`, `skeleton-rows.tsx`; `components/admin/settings/danger-confirm-dialog.tsx`; `components/admin/dashboard/query-error.tsx`; `components/providers.tsx` (the `Toaster`).
+- **Tokens**: `index.css` (`.admin-scope` control heights and radii, the coarse-pointer rule, `--input-border`, `--signal`, `--rule`).
+- **Screenshots** (from the repository root): `scripts/design-screenshots/groups/components.ts`. Run `bun scripts/design-screenshots/capture.ts components`; `COMPONENTS_ONLY=buttons,fields` limits a run to some sections.

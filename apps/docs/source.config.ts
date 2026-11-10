@@ -10,6 +10,9 @@ export const docs = defineDocs({
 	},
 	meta: {
 		schema: metaSchema,
+		// Only navigation files. The design-system screenshot folders keep a
+		// manifest.json each (scripts/design-screenshots), which is not page meta.
+		files: ["**/meta.json"],
 	},
 });
 
