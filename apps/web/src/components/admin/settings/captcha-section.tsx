@@ -73,8 +73,9 @@ export function CaptchaSection({
 					value={captchaProvider}
 					onValueChange={onCaptchaProviderChange}
 					items={PROVIDER_ITEMS}
+					aria-describedby="s-captcha-provider-hint"
 				/>
-				<p className="text-micro text-muted-foreground">
+				<p id="s-captcha-provider-hint" className="text-micro text-muted-foreground">
 					Visitors solve the challenge on the contact form before it sends. Use the site and secret
 					keys from the same provider and site.
 				</p>

@@ -9,7 +9,9 @@ vi.mock("@linkden/db", async () => {
 });
 
 const { db } = await import("@linkden/db");
-const { block, siteSettings } = await import("@linkden/db/schema/index");
+const { block, publicationRevision, publicationState, siteSettings } = await import(
+	"@linkden/db/schema/index"
+);
 const { ORPHAN_GRACE_MS, runScheduledMaintenance, sweepOrphanImages } = await import(
 	"../lib/retention-sweep"
 );
@@ -46,11 +48,63 @@ beforeAll(async () => {
 	});
 });
 
-afterEach(() => {
+afterEach(async () => {
 	vi.restoreAllMocks();
+	await db.delete(publicationState);
+	await db.delete(publicationRevision);
 });
 
 describe("sweepOrphanImages", () => {
+	it("retains an upload referenced only by the active immutable future approval", async () => {
+		await db.insert(publicationRevision).values({
+			revision: "approval",
+			sourceDigest: "a".repeat(64),
+			approvedSourceDigest: "b".repeat(64),
+			approvalRevision: "approval",
+			approvedSourceJson: JSON.stringify({
+				blocks: [
+					{
+						scheduledStart: "2026-12-01T00:00:00.000Z",
+						config: '{"src":"https://api.example/api/images/block_image/future.png"}',
+					},
+				],
+			}),
+			targetId: "test",
+			rendererSourceId: "build",
+			publicOrigin: "https://public.example",
+			snapshotJson: "{}",
+			createdAt: NOW,
+		});
+		const { bucket, del } = fakeBucket([
+			[
+				{ key: "block_image/future.png", uploaded: old },
+				{ key: "block_image/orphan.png", uploaded: old },
+			],
+		]);
+		expect(await sweepOrphanImages(bucket, NOW.getTime())).toEqual({ deleted: 1, failed: 0 });
+		expect(deletedKeys(del)).toEqual(["block_image/orphan.png"]);
+	});
+
+	it("supports an older database without optional publication columns", async () => {
+		vi.spyOn(db, "all").mockRejectedValueOnce(new Error("no such column: r.approved_source_json"));
+		const { bucket, del } = fakeBucket([
+			[
+				{ key: "avatar/live.png", uploaded: old },
+				{ key: "avatar/orphan.png", uploaded: old },
+			],
+		]);
+		expect(await sweepOrphanImages(bucket, NOW.getTime())).toEqual({ deleted: 1, failed: 0 });
+		expect(deletedKeys(del)).toEqual(["avatar/orphan.png"]);
+	});
+
+	it("aborts image cleanup on any other approval storage failure", async () => {
+		vi.spyOn(db, "all").mockRejectedValueOnce(new Error("database unavailable"));
+		const { bucket, list, del } = fakeBucket([[{ key: "block_image/future.png", uploaded: old }]]);
+		await expect(sweepOrphanImages(bucket, NOW.getTime())).rejects.toThrow("database unavailable");
+		expect(list).not.toHaveBeenCalled();
+		expect(del).not.toHaveBeenCalled();
+	});
+
 	it("keeps referenced and young objects, deletes old orphans across pages", async () => {
 		const { bucket, list, del } = fakeBucket([
 			[

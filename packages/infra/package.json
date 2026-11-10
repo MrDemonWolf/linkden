@@ -8,6 +8,7 @@
 		"destroy": "node alchemy.run.ts --destroy"
 	},
 	"dependencies": {
+		"@linkden/validators": "workspace:*",
 		"dotenv": "catalog:"
 	},
 	"devDependencies": {

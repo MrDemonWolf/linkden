@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { EMBED_PROVIDER_MAP, validateEmbedUrl } from "./embed";
-import { blankable, httpUrlSchema } from "./primitives";
+import { blankable, httpUrlSchema, imageUrlSchema } from "./primitives";
 import { vcardDataSchema } from "./vcard";
 
-export { httpUrlSchema };
+export { httpUrlSchema, imageUrlSchema };
 
 // ─── Block schemas ───────────────────────────────────────────────────────────
 // Single source of truth for block shapes, shared by the tRPC router (server
@@ -50,7 +50,7 @@ const styleSchema = z.object({
 
 export const linkConfigSchema = styleSchema.extend({
 	variant: z.enum(["classic", "thumbnail", "featured"]).optional(),
-	thumbnail: blankable(httpUrlSchema),
+	thumbnail: blankable(imageUrlSchema),
 	description: z.string().max(200).optional(),
 	emoji: emojiSchema.optional(),
 	emojiPosition: sideSchema.optional(),
@@ -125,10 +125,11 @@ export const locationConfigSchema = z.object({
 
 export const imageConfigSchema = z.object({
 	/** Blank until the user uploads — renderers skip the block when empty. */
-	src: blankable(httpUrlSchema),
+	src: blankable(imageUrlSchema),
 	alt: z.string().max(200).optional(),
 	caption: z.string().max(200).optional(),
 	aspect: z.enum(["auto", "16:9", "1:1", "4:5"]).optional(),
+	fit: z.enum(["contain", "cover"]).optional(),
 });
 
 export const textConfigSchema = z.object({

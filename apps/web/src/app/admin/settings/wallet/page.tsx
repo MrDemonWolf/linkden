@@ -1,10 +1,11 @@
 "use client";
 
+import { env } from "@linkden/env/web";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, KeyRound, Settings2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { DeviceFrame } from "@/components/admin/device-frame";
+import { QueryError } from "@/components/admin/dashboard/query-error";
 import { usePreviewSlot } from "@/components/admin/preview-slot";
 import { SectionCard } from "@/components/admin/section-header";
 import { StickySaveBar } from "@/components/admin/sticky-save-bar";
@@ -42,8 +43,10 @@ export default function WalletSettingsPage() {
 	useUnsavedChanges(isDirty);
 
 	// Header switch: instant save (same pattern as the magic-link toggle on Account).
+	const configAvailable = !!configQuery.data && !configQuery.isError;
 	const enabled = configQuery.data?.wallet_pass_enabled === "true";
 	const handleToggle = async (next: boolean) => {
+		if (!configAvailable || updateConfig.isPending) return;
 		try {
 			await updateConfig.mutateAsync({ enabled: next });
 			qc.invalidateQueries({ queryKey: trpc.wallet.getConfig.queryOptions().queryKey });
@@ -71,15 +74,24 @@ export default function WalletSettingsPage() {
 		qc.invalidateQueries({ queryKey: trpc.wallet.getConfig.queryOptions().queryKey });
 	};
 
-	const isConfigured = !!(
-		signingQuery.data?.signerCert &&
-		signingQuery.data?.signerKey &&
-		signingQuery.data?.wwdrCert &&
-		signingQuery.data?.teamId &&
-		signingQuery.data?.passTypeId
-	);
+	const isConfigured =
+		!signingQuery.isError &&
+		!!(
+			signingQuery.data?.signerCert &&
+			signingQuery.data?.signerKey &&
+			signingQuery.data?.wwdrCert &&
+			signingQuery.data?.teamId &&
+			signingQuery.data?.passTypeId
+		);
+	const signingStatus = signingQuery.isError
+		? "Unavailable"
+		: !signingQuery.data
+			? "Checking setup"
+			: isConfigured
+				? "Ready"
+				: "Setup required";
 
-	const publicProfileUrl = typeof window !== "undefined" ? window.location.origin : undefined;
+	const publicProfileUrl = env.NEXT_PUBLIC_SITE_URL;
 
 	const view = live ?? {
 		templatePreset: previewQuery.data?.templatePreset ?? "contact-card",
@@ -100,52 +112,66 @@ export default function WalletSettingsPage() {
 		showQrCode: previewQuery.data?.showQrCode ?? true,
 	};
 	const walletPreview = (
-		<DeviceFrame width={393} height="auto" previewDark>
-			<div className="p-4">
-				<WalletPassPreview
-					backgroundColor={view.backgroundColor || undefined}
-					foregroundColor={view.foregroundColor || undefined}
-					labelColor={view.labelColor || undefined}
-					logoUrl={view.logoUrl || undefined}
-					iconUrl={view.iconUrl || undefined}
-					thumbnailUrl={view.thumbnailUrl || undefined}
-					stripUrl={view.stripUrl || undefined}
-					organizationName={view.organizationName}
-					profileImage={previewQuery.data?.profile?.image ?? undefined}
-					headerFields={view.headerFields}
-					primaryFields={view.primaryFields}
-					secondaryFields={view.secondaryFields}
-					auxiliaryFields={view.auxiliaryFields}
-					backFields={view.backFields}
-					qrUrl={publicProfileUrl}
-					showQrCode={view.showQrCode}
-					highlightedZone={highlightedZone}
-				/>
-			</div>
-		</DeviceFrame>
+		<div className="mx-auto w-full max-w-[349px] self-start">
+			<WalletPassPreview
+				backgroundColor={view.backgroundColor || undefined}
+				foregroundColor={view.foregroundColor || undefined}
+				labelColor={view.labelColor || undefined}
+				logoUrl={view.logoUrl || undefined}
+				iconUrl={view.iconUrl || undefined}
+				thumbnailUrl={view.thumbnailUrl || undefined}
+				stripUrl={view.stripUrl || undefined}
+				organizationName={view.organizationName}
+				profileImage={previewQuery.data?.profile?.image ?? undefined}
+				headerFields={view.headerFields}
+				primaryFields={view.primaryFields}
+				secondaryFields={view.secondaryFields}
+				auxiliaryFields={view.auxiliaryFields}
+				backFields={view.backFields}
+				qrUrl={publicProfileUrl}
+				showQrCode={view.showQrCode}
+				highlightedZone={highlightedZone}
+			/>
+		</div>
 	);
-	usePreviewSlot({ preview: walletPreview, size: "wide" });
+	usePreviewSlot({
+		preview: previewQuery.isError ? (
+			<QueryError
+				message="Couldn't load your Wallet preview"
+				onRetry={() => previewQuery.refetch()}
+			/>
+		) : !previewQuery.data && !live ? (
+			<p role="status" className="py-6 text-center text-sm text-muted-foreground">
+				Loading Wallet preview…
+			</p>
+		) : (
+			walletPreview
+		),
+		size: "wide",
+	});
 
 	return (
 		<div className="space-y-6">
 			{/* Sub-header: status, admin download, and availability switch. */}
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<div className="flex items-center gap-2">
-					<h2 className="text-sm font-semibold">Apple Wallet pass</h2>
+					<h2 className="text-base font-semibold">Apple Wallet pass</h2>
 					<Badge
 						variant="outline"
 						className={
-							isConfigured
-								? "gap-1 border-success/30 text-success"
-								: "gap-1 border-warning/30 text-warning"
+							!signingQuery.data || signingQuery.isError
+								? "gap-1 text-muted-foreground"
+								: isConfigured
+									? "gap-1 border-success/30 text-success"
+									: "gap-1 border-warning/30 text-warning"
 						}
 					>
 						<Settings2 className="h-3 w-3" />
-						{isConfigured ? "Ready" : "Setup required"}
+						{signingStatus}
 					</Badge>
 				</div>
 				<div className="flex items-center gap-3">
-					{enabled && isConfigured && (
+					{configAvailable && enabled && isConfigured && (
 						<a href="/api/admin/wallet-pass" download className={buttonVariants({ size: "sm" })}>
 							<Download className="h-4 w-4" aria-hidden="true" />
 							Download pass
@@ -158,11 +184,17 @@ export default function WalletSettingsPage() {
 						id="wallet-enabled"
 						checked={enabled}
 						onCheckedChange={handleToggle}
-						disabled={configQuery.isLoading || updateConfig.isPending}
+						disabled={!configAvailable || updateConfig.isPending}
 						aria-label="Enable authenticated Wallet pass downloads"
 					/>
 				</div>
 			</div>
+			{(configQuery.isError || signingQuery.isError) && (
+				<QueryError
+					message="Couldn't check Wallet download availability"
+					onRetry={() => Promise.all([configQuery.refetch(), signingQuery.refetch()])}
+				/>
+			)}
 
 			<section aria-label="Pass editor" className="rounded-2xl border border-border bg-card p-4">
 				<WalletBuilderSection

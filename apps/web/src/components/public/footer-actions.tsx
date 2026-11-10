@@ -4,6 +4,7 @@ import { Download } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ThemeColors } from "./public-page";
+import { usePublicRuntime } from "./public-runtime";
 
 interface FooterActionsProps {
 	vcardEnabled: boolean;
@@ -20,10 +21,8 @@ const pillClass = cn(
 	"rounded-full gap-2 px-4 text-sm backdrop-blur-2xl bg-white/5 dark:bg-white/5 border-white/20 dark:border-white/20 hover:bg-white/10 dark:hover:bg-white/10 hover:text-inherit hover:-translate-y-0.5 hover:opacity-90 transition-all duration-300 no-underline",
 );
 
-// vCard is served by the Hono API, not the Next app.
-const apiBase = process.env.NEXT_PUBLIC_SERVER_URL ?? "";
-
 export function FooterActions({ vcardEnabled, themeColors }: FooterActionsProps) {
+	const runtime = usePublicRuntime();
 	if (!vcardEnabled) return null;
 
 	// Theme-aware glass: tint from the page foreground so the pills read on both
@@ -37,12 +36,7 @@ export function FooterActions({ vcardEnabled, themeColors }: FooterActionsProps)
 
 	return (
 		<div className="mt-6 flex justify-center gap-3 pb-4">
-			<a
-				href={`${apiBase}/api/vcard`}
-				download="contact.vcf"
-				className={pillClass}
-				style={pillStyle}
-			>
+			<a href={runtime.vcardHref()} download="contact.vcf" className={pillClass} style={pillStyle}>
 				<Download className="h-4 w-4" aria-hidden="true" />
 				<span>Save vCard</span>
 			</a>

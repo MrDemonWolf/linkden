@@ -15,7 +15,10 @@ const { version } = JSON.parse(
 // Same-origin is what keeps auth working: the Better Auth cookie is SameSite=Lax
 // (packages/auth/src/index.ts) and src/proxy.ts reads it from the web domain's
 // own jar, so splitting web and API across hostnames breaks both.
-const devApiOrigin = process.env.NODE_ENV !== "production" ? process.env.DEV_API_ORIGIN : undefined;
+const devApiOrigin =
+	process.env.NODE_ENV === "development" ? process.env.DEV_API_ORIGIN : undefined;
+const servingMode = process.env.LINKDEN_SERVING_MODE || "legacy";
+if (!["legacy", "split"].includes(servingMode)) throw new Error("Invalid LINKDEN_SERVING_MODE");
 
 // The contact form's CAPTCHA widget (components/public/captcha-widget.tsx) loads
 // the configured provider's script; only that provider's script is ever
@@ -47,6 +50,7 @@ function contentSecurityPolicy(production: boolean): string {
 const nextConfig: NextConfig = {
 	env: {
 		NEXT_PUBLIC_APP_VERSION: version,
+		LINKDEN_SERVING_MODE: servingMode,
 	},
 	typedRoutes: true,
 	reactCompiler: true,
@@ -60,15 +64,13 @@ const nextConfig: NextConfig = {
 	// but the HMR WebSocket handshake does — without this it is rejected by Next's
 	// cross-site dev guard and Fast Refresh dies behind a tunnel. Matched as a
 	// hostname, so no scheme.
-	allowedDevOrigins: ["*.trycloudflare.com"],
+	allowedDevOrigins: ["127.0.0.1", "*.trycloudflare.com"],
 	async rewrites() {
 		if (!devApiOrigin) return [];
-		// afterFiles: Next's own filesystem routes are matched first, so
-		// src/app/og/route.tsx serves /og outside the proxied /api prefix. Sources are enumerated
-		// rather than a blanket /api/:path* so this stays correct if another Next
-		// route handler is added under /api later.
+		// Explicit dev proxying must precede the filesystem API bridge's loopback fallback.
+		// Enumerated paths leave /og and other Next handlers on the web server.
 		return {
-			afterFiles: [
+			beforeFiles: [
 				{ source: "/trpc/:path*", destination: `${devApiOrigin}/trpc/:path*` },
 				{
 					source: "/api/auth/:path*",

@@ -1,6 +1,6 @@
 import { env } from "@linkden/env/web";
 import type { Metadata, Viewport } from "next";
-import { DM_Sans, Geist_Mono, Sora } from "next/font/google";
+import { Geist_Mono } from "next/font/google";
 import "../index.css";
 import Providers from "@/components/providers";
 import { SwRegister } from "@/components/sw-register";
@@ -15,25 +15,6 @@ export const viewport: Viewport = {
 	maximumScale: 5,
 	themeColor: "#00ACED",
 };
-
-const sora = Sora({
-	subsets: ["latin"],
-	variable: "--font-display",
-	weight: ["600", "700", "800"],
-	display: "swap",
-	preload: true,
-});
-
-// next/font only allows `axes` on the variable build, so DM Sans ships as a
-// variable font (covers 400/500/600) to get the optical-size axis.
-const dmSans = DM_Sans({
-	subsets: ["latin"],
-	variable: "--font-sans",
-	weight: "variable",
-	axes: ["opsz"],
-	display: "swap",
-	preload: true,
-});
 
 const geistMono = Geist_Mono({
 	subsets: ["latin"],
@@ -64,7 +45,7 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en" suppressHydrationWarning>
-			<body className={`${sora.variable} ${dmSans.variable} ${geistMono.variable} antialiased`}>
+			<body className={`${geistMono.variable} antialiased`}>
 				<Providers>{children}</Providers>
 				<SwRegister />
 			</body>

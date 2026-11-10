@@ -21,7 +21,7 @@ describe("service worker navigation policy", () => {
 	};
 	const fetch = vi.fn(async () => new Response("ok"));
 
-	beforeEach(() => {
+	function loadWorker(origin = "https://linkden.test") {
 		handlers.clear();
 		vi.clearAllMocks();
 		const source = readFileSync(resolve(process.cwd(), "apps/web/public/sw.js"), "utf8");
@@ -32,12 +32,29 @@ describe("service worker navigation policy", () => {
 			caches,
 			fetch,
 			self: {
-				location: { origin: "https://linkden.test", href: "https://linkden.test/sw.js?v=1.2.3" },
+				location: { origin, href: `${origin}/sw.js?v=1.2.3` },
 				clients: { claim: vi.fn() },
 				skipWaiting: vi.fn(),
 				addEventListener: (type: string, handler: Handler) => handlers.set(type, handler),
 			},
 		});
+	}
+	beforeEach(() => loadWorker());
+
+	it.each([
+		"http://localhost:3001",
+		"http://127.0.0.1:3001",
+		"http://127.1.2.3:3001",
+		"http://[::1]:3001",
+	])("never intercepts mutable local assets at %s", (origin) => {
+		loadWorker(origin);
+		const respondWith = vi.fn();
+		handlers.get("fetch")?.({
+			request: { method: "GET", url: `${origin}/_next/static/chunks/dev.js` },
+			respondWith,
+		});
+		expect(respondWith).not.toHaveBeenCalled();
+		expect(caches.match).not.toHaveBeenCalled();
 	});
 
 	it("caches only the public root navigation", async () => {
@@ -108,6 +125,21 @@ describe("service worker navigation policy", () => {
 		expect(cache.put).not.toHaveBeenCalled();
 	});
 
+	it.each([
+		{ url: "https://linkden.test/admin/links", redirected: true },
+		{ url: "https://linkden.test/admin/login", redirected: false },
+		{ url: "https://another.test/", redirected: false },
+	])(
+		"does not cache a root response that resolves outside the public root: %s",
+		async ({ url, redirected }) => {
+			const response = new Response("private destination");
+			Object.defineProperties(response, { url: { value: url }, redirected: { value: redirected } });
+			fetch.mockResolvedValueOnce(response);
+			expect(await navigate("https://linkden.test/")).toBe(response);
+			expect(cache.put).not.toHaveBeenCalled();
+		},
+	);
+
 	it("serves the cached home page offline, ignoring the query", async () => {
 		fetch.mockRejectedValueOnce(new Error("offline"));
 		await navigate("https://linkden.test/?utm_campaign=x");
@@ -123,12 +155,13 @@ describe("service worker navigation policy", () => {
 
 	it("names its cache after the release so each deploy starts clean", async () => {
 		let activation: Promise<unknown> | undefined;
-		caches.keys.mockResolvedValueOnce(["linkden-v4-1.2.2", "linkden-v4-1.2.3"]);
+		caches.keys.mockResolvedValueOnce(["linkden-v5-1.2.3", "linkden-v6-1.2.2", "linkden-v6-1.2.3"]);
 		handlers.get("activate")?.({
 			waitUntil: (promise: Promise<unknown>) => (activation = promise),
 		});
 		await activation;
-		expect(caches.delete).toHaveBeenCalledWith("linkden-v4-1.2.2");
-		expect(caches.delete).not.toHaveBeenCalledWith("linkden-v4-1.2.3");
+		expect(caches.delete).toHaveBeenCalledWith("linkden-v5-1.2.3");
+		expect(caches.delete).toHaveBeenCalledWith("linkden-v6-1.2.2");
+		expect(caches.delete).not.toHaveBeenCalledWith("linkden-v6-1.2.3");
 	});
 });

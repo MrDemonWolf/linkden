@@ -1,0 +1,442 @@
+{
+	"version": "1.0",
+	"notes": "Synthetic sample profile for the design-system screenshots. Every name, address, handle and link is fictional (example.com). `data` is the backup.import payload; seed.ts uploads generated images and fills the targets listed in `seedImages`, then sends `seedMessages` through the public contact form.",
+	"account": {
+		"name": "Rowan Ellis",
+		"email": "rowan@example.com"
+	},
+	"seedImages": [
+		{
+			"id": "avatar",
+			"purpose": "avatar",
+			"targets": [
+				{
+					"setting": "avatar_url"
+				},
+				{
+					"setting": "wallet_thumbnail_url"
+				}
+			]
+		},
+		{
+			"id": "banner",
+			"purpose": "banner",
+			"targets": [
+				{
+					"setting": "banner_custom_url"
+				}
+			]
+		},
+		{
+			"id": "field-notes-cover",
+			"purpose": "block_thumbnail",
+			"targets": [
+				{
+					"block": "ds-link-field-notes",
+					"config": "thumbnail"
+				}
+			]
+		},
+		{
+			"id": "portfolio-tile",
+			"purpose": "block_thumbnail",
+			"targets": [
+				{
+					"block": "ds-link-portfolio",
+					"config": "thumbnail"
+				}
+			]
+		},
+		{
+			"id": "cover-study",
+			"purpose": "block_image",
+			"targets": [
+				{
+					"block": "ds-image-cover-study",
+					"config": "src"
+				}
+			]
+		}
+	],
+	"seedMessages": [
+		{
+			"firstName": "Jordan",
+			"lastName": "Blake",
+			"email": "jordan.blake@example.com",
+			"whereMet": "Conference",
+			"message": "Loved your talk on calm interfaces. Our team is rebuilding its onboarding flow and would like a design review in January. Do you have availability?",
+			"ageHours": 2,
+			"read": false
+		},
+		{
+			"firstName": "Mei",
+			"lastName": "Tanaka",
+			"email": "mei.tanaka@example.org",
+			"whereMet": "Online",
+			"message": "Is Field Notes, Vol. 3 available in print? I would like five copies for our studio library.",
+			"ageHours": 27,
+			"read": false
+		},
+		{
+			"firstName": "Sam",
+			"lastName": "Okafor",
+			"email": "sam.okafor@example.net",
+			"whereMet": "Mutual Friend",
+			"message": "A colleague suggested I reach out about illustrations for a children's science book. Happy to share the brief and timeline.",
+			"ageHours": 74,
+			"read": true
+		},
+		{
+			"firstName": "Lena",
+			"lastName": "Fischer",
+			"email": "lena.fischer@example.com",
+			"whereMet": "Social Media",
+			"message": "Quick question about the UI kit license: can we use the tokens in a commercial product if we credit the studio?",
+			"ageHours": 121,
+			"read": true
+		}
+	],
+	"data": {
+		"blocks": [
+			{
+				"id": "ds-header-latest",
+				"type": "header",
+				"title": "Latest work",
+				"url": null,
+				"icon": null,
+				"embedType": null,
+				"embedUrl": null,
+				"isEnabled": true,
+				"status": "published",
+				"position": 0,
+				"scheduledStart": null,
+				"scheduledEnd": null,
+				"config": "{\"headingLevel\":\"h2\",\"textAlign\":\"left\",\"showDivider\":true}"
+			},
+			{
+				"id": "ds-link-field-notes",
+				"type": "link",
+				"title": "Field Notes, Vol. 3",
+				"url": "https://example.com/field-notes",
+				"icon": null,
+				"embedType": null,
+				"embedUrl": null,
+				"isEnabled": true,
+				"status": "published",
+				"position": 1,
+				"scheduledStart": null,
+				"scheduledEnd": null,
+				"config": "{\"variant\":\"featured\",\"thumbnail\":\"\",\"description\":\"A 48-page zine of sketches and notes from a season of fieldwork.\"}"
+			},
+			{
+				"id": "ds-link-portfolio",
+				"type": "link",
+				"title": "Portfolio",
+				"url": "https://example.com/portfolio",
+				"icon": null,
+				"embedType": null,
+				"embedUrl": null,
+				"isEnabled": true,
+				"status": "published",
+				"position": 2,
+				"scheduledStart": null,
+				"scheduledEnd": null,
+				"config": "{\"variant\":\"thumbnail\",\"thumbnail\":\"\",\"textAlign\":\"left\",\"description\":\"Selected product and illustration work, 2021–2026\"}"
+			},
+			{
+				"id": "ds-link-design-review",
+				"type": "link",
+				"title": "Book a design review",
+				"url": "https://example.com/book",
+				"icon": "lucide:calendar-days",
+				"embedType": null,
+				"embedUrl": null,
+				"isEnabled": true,
+				"status": "published",
+				"position": 3,
+				"scheduledStart": null,
+				"scheduledEnd": null,
+				"config": "{\"isHighlighted\":true,\"textAlign\":\"left\",\"description\":\"30-minute calls on Tuesdays and Thursdays\"}"
+			},
+			{
+				"id": "ds-link-ui-kit",
+				"type": "link",
+				"title": "Open-source UI kit",
+				"url": "https://example.com/ui-kit",
+				"icon": "lucide:package",
+				"embedType": null,
+				"embedUrl": null,
+				"isEnabled": true,
+				"status": "published",
+				"position": 4,
+				"scheduledStart": null,
+				"scheduledEnd": null,
+				"config": "{\"textAlign\":\"left\",\"description\":\"Tokens, components and usage notes\"}"
+			},
+			{
+				"id": "ds-link-newsletter",
+				"type": "link",
+				"title": "Newsletter: Quiet Interfaces",
+				"url": "https://example.com/newsletter",
+				"icon": null,
+				"embedType": null,
+				"embedUrl": null,
+				"isEnabled": true,
+				"status": "published",
+				"position": 5,
+				"scheduledStart": null,
+				"scheduledEnd": null,
+				"config": "{\"emoji\":\"✉️\",\"emojiPosition\":\"left\",\"isOutlined\":true,\"textAlign\":\"left\"}"
+			},
+			{
+				"id": "ds-header-watch",
+				"type": "header",
+				"title": "Watch and read",
+				"url": null,
+				"icon": null,
+				"embedType": null,
+				"embedUrl": null,
+				"isEnabled": true,
+				"status": "published",
+				"position": 6,
+				"scheduledStart": null,
+				"scheduledEnd": null,
+				"config": "{\"headingLevel\":\"h2\",\"textAlign\":\"left\",\"showDivider\":true}"
+			},
+			{
+				"id": "ds-embed-studio-tour",
+				"type": "embed",
+				"title": "Studio tour",
+				"url": null,
+				"icon": null,
+				"embedType": "youtube",
+				"embedUrl": "https://www.youtube.com/watch?v=Ex4mpleVid0",
+				"isEnabled": true,
+				"status": "published",
+				"position": 7,
+				"scheduledStart": null,
+				"scheduledEnd": null,
+				"config": "{\"aspectRatio\":\"16:9\",\"maxWidth\":\"full\",\"showTitle\":true}"
+			},
+			{
+				"id": "ds-image-cover-study",
+				"type": "image",
+				"title": "Cover study",
+				"url": "https://example.com/field-notes",
+				"icon": null,
+				"embedType": null,
+				"embedUrl": null,
+				"isEnabled": true,
+				"status": "published",
+				"position": 8,
+				"scheduledStart": null,
+				"scheduledEnd": null,
+				"config": "{\"src\":\"\",\"alt\":\"Abstract cover study: a coral circle beside a navy card with cyan bars\",\"caption\":\"Cover study for Field Notes, Vol. 3\",\"aspect\":\"16:9\",\"fit\":\"cover\"}"
+			},
+			{
+				"id": "ds-text-availability",
+				"type": "text",
+				"title": "Availability",
+				"url": null,
+				"icon": null,
+				"embedType": null,
+				"embedUrl": null,
+				"isEnabled": true,
+				"status": "published",
+				"position": 9,
+				"scheduledStart": null,
+				"scheduledEnd": null,
+				"config": "{\"body\":\"Booking projects for spring 2027. I help small teams with design systems, onboarding flows and editorial illustration.\",\"textAlign\":\"left\"}"
+			},
+			{
+				"id": "ds-divider-dots",
+				"type": "divider",
+				"title": "Section break",
+				"url": null,
+				"icon": null,
+				"embedType": null,
+				"embedUrl": null,
+				"isEnabled": true,
+				"status": "published",
+				"position": 10,
+				"scheduledStart": null,
+				"scheduledEnd": null,
+				"config": "{\"style\":\"dots\",\"size\":\"md\"}"
+			},
+			{
+				"id": "ds-header-contact",
+				"type": "header",
+				"title": "Get in touch",
+				"url": null,
+				"icon": null,
+				"embedType": null,
+				"embedUrl": null,
+				"isEnabled": true,
+				"status": "published",
+				"position": 11,
+				"scheduledStart": null,
+				"scheduledEnd": null,
+				"config": "{\"headingLevel\":\"h2\",\"textAlign\":\"left\",\"showDivider\":true}"
+			},
+			{
+				"id": "ds-connect-work-with-me",
+				"type": "connect",
+				"title": "Work with me",
+				"url": null,
+				"icon": null,
+				"embedType": null,
+				"embedUrl": null,
+				"isEnabled": true,
+				"status": "published",
+				"position": 12,
+				"scheduledStart": null,
+				"scheduledEnd": null,
+				"config": "{\"preset\":\"contact\",\"displayMode\":\"inline\",\"buttonText\":\"Send message\",\"successMessage\":\"Thanks for writing. I reply within two working days.\",\"showWhereMet\":true}"
+			},
+			{
+				"id": "ds-vcard-save-contact",
+				"type": "vcard",
+				"title": "Save my contact",
+				"url": null,
+				"icon": null,
+				"embedType": null,
+				"embedUrl": null,
+				"isEnabled": true,
+				"status": "published",
+				"position": 13,
+				"scheduledStart": null,
+				"scheduledEnd": null,
+				"config": "{\"buttonText\":\"Save contact card\",\"fullName\":\"Rowan Ellis\",\"org\":\"Ellis Studio\",\"title\":\"Product designer\",\"email\":\"hello@example.com\",\"phone\":\"+1 555 0100\",\"address\":\"100 Example Avenue, Portland, OR 97201\",\"urls\":[{\"label\":\"Website\",\"url\":\"https://example.com\"}]}"
+			},
+			{
+				"id": "ds-location-studio",
+				"type": "location",
+				"title": "Studio",
+				"url": null,
+				"icon": null,
+				"embedType": null,
+				"embedUrl": null,
+				"isEnabled": true,
+				"status": "published",
+				"position": 14,
+				"scheduledStart": null,
+				"scheduledEnd": null,
+				"config": "{\"address\":\"Ellis Studio, 100 Example Avenue, Portland, OR\",\"linkType\":\"google\"}"
+			},
+			{
+				"id": "ds-link-workshops-draft",
+				"type": "link",
+				"title": "Spring workshop sign-ups",
+				"url": "https://example.com/workshops",
+				"icon": "lucide:pencil-ruler",
+				"embedType": null,
+				"embedUrl": null,
+				"isEnabled": true,
+				"status": "draft",
+				"position": 15,
+				"scheduledStart": null,
+				"scheduledEnd": null,
+				"config": "{\"textAlign\":\"left\",\"description\":\"Three evenings of sketching interfaces by hand\"}"
+			},
+			{
+				"id": "ds-link-talk-hidden",
+				"type": "link",
+				"title": "2025 conference talk",
+				"url": "https://example.com/talks/2025",
+				"icon": "lucide:mic",
+				"embedType": null,
+				"embedUrl": null,
+				"isEnabled": false,
+				"status": "published",
+				"position": 16,
+				"scheduledStart": null,
+				"scheduledEnd": null,
+				"config": "{\"textAlign\":\"left\"}"
+			}
+		],
+		"settings": {
+			"profile_name": "Rowan Ellis",
+			"bio": "Product designer and illustrator. I make calm interfaces, field guides and the occasional zine.",
+			"verified_badge": "true",
+			"avatar_url": "",
+			"page_layout": "split",
+			"theme_preset": "default",
+			"default_color_mode": "system",
+			"social_icon_shape": "circle",
+			"banner_enabled": "true",
+			"banner_mode": "custom",
+			"banner_preset": "theme-mesh",
+			"banner_custom_url": "",
+			"seo_title": "Rowan Ellis · Product designer and illustrator",
+			"seo_description": "Portfolio, design reviews, Field Notes zines and ways to get in touch with Rowan Ellis of Ellis Studio.",
+			"seo_og_mode": "template",
+			"seo_og_template": "profile",
+			"site_language": "en",
+			"branding_enabled": "true",
+			"admin_branding_enabled": "true",
+			"branding_pp_mode": "text",
+			"branding_pp_text": "Sample privacy notice for a demo profile. Messages sent through the contact form are stored in this site's inbox so Rowan can reply, and are deleted after 12 months. Embedded media loads only after you allow it.",
+			"branding_tos_mode": "text",
+			"branding_tos_text": "Sample terms for a demo profile. Content on this page is provided as is. Links lead to example.com pages.",
+			"vcard_enabled": "true",
+			"vcard_data": "{\"fullName\":\"Rowan Ellis\",\"org\":\"Ellis Studio\",\"title\":\"Product designer and illustrator\",\"email\":\"hello@example.com\",\"phone\":\"+1 555 0100\",\"urls\":[{\"label\":\"Website\",\"url\":\"https://example.com\"}]}",
+			"contact_form_enabled": "true",
+			"contact_delivery": "database",
+			"captcha_provider": "none",
+			"consent_banner_enabled": "true",
+			"timezone": "America/Los_Angeles",
+			"wallet_pass_enabled": "false",
+			"wallet_template_preset": "contact-card",
+			"wallet_organization_name": "Ellis Studio",
+			"wallet_pass_description": "Rowan Ellis contact card",
+			"wallet_background_color": "#091533",
+			"wallet_foreground_color": "#FFFFFF",
+			"wallet_label_color": "#7DD3FC",
+			"wallet_show_name": "true",
+			"wallet_show_email": "true",
+			"wallet_show_qr_code": "true",
+			"wallet_thumbnail_url": "",
+			"wallet_header_fields": "[{\"key\":\"studio\",\"label\":\"STUDIO\",\"value\":\"Ellis Studio\"}]",
+			"wallet_secondary_fields": "[{\"key\":\"role\",\"label\":\"ROLE\",\"value\":\"Product designer\"},{\"key\":\"phone\",\"label\":\"PHONE\",\"value\":\"+1 555 0100\"}]"
+		},
+		"socialNetworks": [
+			{
+				"slug": "instagram",
+				"url": "https://instagram.com/ellis.studio.example",
+				"isActive": true,
+				"addedAt": "2026-09-01T16:00:00.000Z"
+			},
+			{
+				"slug": "dribbble",
+				"url": "https://dribbble.com/ellis-studio-example",
+				"isActive": true,
+				"addedAt": "2026-09-02T16:00:00.000Z"
+			},
+			{
+				"slug": "linkedin",
+				"url": "https://linkedin.com/in/rowan-ellis-example",
+				"isActive": true,
+				"addedAt": "2026-09-03T16:00:00.000Z"
+			},
+			{
+				"slug": "youtube",
+				"url": "https://youtube.com/@ellisstudioexample",
+				"isActive": true,
+				"addedAt": "2026-09-04T16:00:00.000Z"
+			},
+			{
+				"slug": "github",
+				"url": "https://github.com/ellis-studio-example",
+				"isActive": true,
+				"addedAt": "2026-09-05T16:00:00.000Z"
+			},
+			{
+				"slug": "x",
+				"url": "https://x.com/ellisstudioexample",
+				"isActive": false,
+				"addedAt": "2026-09-06T16:00:00.000Z"
+			}
+		],
+		"contactSubmissions": []
+	}
+}

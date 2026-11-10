@@ -1,10 +1,11 @@
 "use client";
 
+import { Checkbox } from "@linkden/ui";
 import { MAX_BLOCKS } from "@linkden/validators/blocks";
 import { themePresetFromName } from "@linkden/validators/settings-registry";
 import { useMutation } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, CheckCircle2, FileJson, Upload } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +50,7 @@ export function LinkStackImportWizard({
 	const [importTheme, setImportTheme] = useState(true);
 	const [stats, setStats] = useState<ImportStats | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const checkboxId = useId();
 
 	const importMutation = useMutation(trpc.backup.importLinkStack.mutationOptions());
 
@@ -218,14 +220,14 @@ export function LinkStackImportWizard({
 
 						<div className="space-y-3">
 							<label
+								htmlFor={`${checkboxId}-links`}
 								className={`flex items-center gap-3 rounded-lg border border-border/50 p-3 transition-colors ${linkCount > 0 && !tooManyLinks ? "cursor-pointer hover:bg-muted/50" : "opacity-50 cursor-not-allowed"}`}
 							>
-								<input
-									type="checkbox"
+								<Checkbox
+									id={`${checkboxId}-links`}
 									checked={willImportLinks}
-									onChange={(e) => setImportLinks(e.target.checked)}
+									onCheckedChange={setImportLinks}
 									disabled={linkCount === 0 || tooManyLinks}
-									className="h-4 w-4 rounded border-border accent-primary"
 								/>
 								<div>
 									<p className="text-sm font-medium">Import Links</p>
@@ -241,14 +243,14 @@ export function LinkStackImportWizard({
 							</label>
 
 							<label
+								htmlFor={`${checkboxId}-profile`}
 								className={`flex items-center gap-3 rounded-lg border border-border/50 p-3 transition-colors ${hasProfile ? "cursor-pointer hover:bg-muted/50" : "opacity-50 cursor-not-allowed"}`}
 							>
-								<input
-									type="checkbox"
+								<Checkbox
+									id={`${checkboxId}-profile`}
 									checked={importProfile && hasProfile}
-									onChange={(e) => setImportProfile(e.target.checked)}
+									onCheckedChange={setImportProfile}
 									disabled={!hasProfile}
-									className="h-4 w-4 rounded border-border accent-primary"
 								/>
 								<div>
 									<p className="text-sm font-medium">Import Profile</p>
@@ -259,14 +261,14 @@ export function LinkStackImportWizard({
 							</label>
 
 							<label
+								htmlFor={`${checkboxId}-theme`}
 								className={`flex items-center gap-3 rounded-lg border border-border/50 p-3 transition-colors ${hasTheme ? "cursor-pointer hover:bg-muted/50" : "opacity-50 cursor-not-allowed"}`}
 							>
-								<input
-									type="checkbox"
+								<Checkbox
+									id={`${checkboxId}-theme`}
 									checked={importTheme && hasTheme}
-									onChange={(e) => setImportTheme(e.target.checked)}
+									onCheckedChange={setImportTheme}
 									disabled={!hasTheme}
-									className="h-4 w-4 rounded border-border accent-primary"
 								/>
 								<div>
 									<p className="text-sm font-medium">Import Theme</p>

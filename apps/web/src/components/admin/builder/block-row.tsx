@@ -4,6 +4,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ChevronRight, GripVertical, Trash2, TriangleAlert } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { TooltipHint } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -51,7 +52,7 @@ export function BlockRow({
 			role="group"
 			aria-roledescription="sortable"
 			aria-label={title}
-			// One flat 56px row of the list panel (the panel owns the border, radius
+			// One flat row of the list panel (the panel owns the border, radius
 			// and dividers): hover lifts to --surface-2, the selected row tints
 			// primary. No edge bar — the tint alone marks selection.
 			//
@@ -59,7 +60,7 @@ export function BlockRow({
 			// action cluster) are fixed widths so every row's columns line up down
 			// the list and the right cluster never drifts as titles change length.
 			className={cn(
-				"group relative grid h-14 grid-cols-[2.75rem_2rem_minmax(0,1fr)_5.25rem] items-center gap-x-1 bg-card px-2 transition-colors hover:bg-surface-2 sm:grid-cols-[1.75rem_2rem_minmax(0,1fr)_7rem] sm:gap-x-2 sm:px-3 lg:grid-cols-[1.75rem_2rem_minmax(0,1fr)_6.25rem]",
+				"group relative grid min-h-18 grid-cols-[2.75rem_2rem_minmax(0,1fr)_5.25rem] items-center gap-x-1 bg-card px-2 transition-colors hover:bg-muted/40 sm:min-h-16 sm:grid-cols-[1.75rem_2rem_minmax(0,1fr)_7rem] sm:gap-x-2 sm:px-3 lg:grid-cols-[1.75rem_2rem_minmax(0,1fr)_6.25rem]",
 				accent && "bg-primary/5 hover:bg-primary/5",
 				isDragging && "opacity-30 ring-2 ring-inset ring-primary/40",
 				!block.isEnabled && !isDragging && "opacity-60",
@@ -102,7 +103,7 @@ export function BlockRow({
 							<span
 								className="inline-block h-2 w-2 shrink-0 rounded-full bg-warning"
 								role="img"
-								aria-label="Unpublished changes"
+								aria-label="Block draft"
 							/>
 						)}
 					</span>
@@ -121,7 +122,7 @@ export function BlockRow({
 					<TooltipHint content="This block's feature is turned off, so it won't appear on your public page">
 						<Link
 							href={featureHref}
-							className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full border border-warning/40 bg-warning/10 px-2 text-micro font-medium leading-none text-warning transition-colors hover:bg-warning/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-7"
+							className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-md border border-warning/40 bg-warning/10 px-2 text-xs font-medium leading-none text-warning transition-colors hover:bg-warning/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-8"
 						>
 							<TriangleAlert className="h-3 w-3" aria-hidden="true" />
 							<span className="max-sm:hidden">Hidden — turn on in {featureLabel}</span>
@@ -140,17 +141,19 @@ export function BlockRow({
 					// Stable name; aria-checked carries the on/off state.
 					aria-label={`Show ${title} on page`}
 				/>
-				<button
+				<Button
+					variant="ghost"
+					size="icon-sm"
 					type="button"
 					onClick={(e) => {
 						e.stopPropagation();
 						onDelete();
 					}}
-					className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground opacity-70 transition-colors hover:bg-destructive/10 hover:text-destructive hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100 lg:h-8 lg:w-8"
+					className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
 					aria-label={`Delete ${title}`}
 				>
 					<Trash2 className="h-3.5 w-3.5" />
-				</button>
+				</Button>
 				<span
 					aria-hidden
 					className="hidden h-8 w-6 items-center justify-center text-muted-foreground sm:flex"

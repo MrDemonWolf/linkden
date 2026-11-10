@@ -111,3 +111,132 @@ describe("0010_drop_social_icons_blocks", () => {
 		expect(clicks.rows.map((r) => r.id)).toEqual(["c2"]);
 	});
 });
+
+describe("0011_relative_image_paths", () => {
+	it("rewrites absolute upload URLs to paths, leaves external and non-image values alone", async () => {
+		const client = await freshClient();
+		await applyThrough(client, "0010");
+
+		const api = "https://linkden-api.me.workers.dev";
+		await client.batch(
+			[
+				{
+					sql: "INSERT INTO site_settings (key, value) VALUES ('avatar_url', ?), ('branding_logo_url', ?), ('branding_link', ?)",
+					args: [
+						`${api}/api/images/avatar/a1.png`,
+						"https://cdn.test/logo.png",
+						`${api}/api/images/avatar/a1.png`,
+					],
+				},
+				{
+					sql: "INSERT INTO block (id, type, position, config) VALUES ('b1', 'link', 0, ?), ('b2', 'image', 1, ?), ('b3', 'link', 2, ?)",
+					args: [
+						JSON.stringify({ thumbnail: `${api}/api/images/block_thumbnail/t1.webp`, style: "x" }),
+						JSON.stringify({ src: `${api}/api/images/block_image/i1.jpg`, alt: "hi" }),
+						"not json",
+					],
+				},
+			],
+			"write",
+		);
+
+		await applyThrough(client, "0011", "0011");
+
+		const settings = await client.execute("SELECT key, value FROM site_settings ORDER BY key");
+		expect(Object.fromEntries(settings.rows.map((r) => [r.key, r.value]))).toEqual({
+			avatar_url: "/api/images/avatar/a1.png",
+			branding_link: `${api}/api/images/avatar/a1.png`,
+			branding_logo_url: "https://cdn.test/logo.png",
+		});
+		const blocks = await client.execute("SELECT id, config FROM block ORDER BY id");
+		const config = Object.fromEntries(blocks.rows.map((r) => [r.id, r.config]));
+		expect(JSON.parse(String(config.b1))).toEqual({
+			thumbnail: "/api/images/block_thumbnail/t1.webp",
+			style: "x",
+		});
+		expect(JSON.parse(String(config.b2))).toEqual({
+			src: "/api/images/block_image/i1.jpg",
+			alt: "hi",
+		});
+		expect(config.b3).toBe("not json");
+	});
+});
+
+describe("0015_publication_approvals", () => {
+	it("preserves old frozen revisions and last-good state while adding private approval fences", async () => {
+		const client = await freshClient();
+		try {
+			await applyThrough(client, "0014");
+			await client.execute(
+				"INSERT INTO user (id,name,email,email_verified) VALUES ('owner','Owner','owner@example.test',1)",
+			);
+			await client.execute(
+				"INSERT INTO block (id,type,position,config) VALUES ('keep','text',0,'{\"body\":\"Preserved\"}')",
+			);
+			await client.execute(
+				"INSERT INTO publication_revision (revision,source_digest,target_id,renderer_source_id,public_origin,snapshot_json,created_at) VALUES ('old','digest','target','renderer','https://public.example','{}',1000000)",
+			);
+			await client.execute(
+				"UPDATE publication_revision SET status='publishing',runner_id='runner',started_at=1000001 WHERE revision='old'",
+			);
+			await client.execute(
+				"UPDATE publication_revision SET status='published',artifact_digest='digest',deployment_id='deployment',provider_version_id='version',artifact_manifest_json='{}',finished_at=1000002 WHERE revision='old'",
+			);
+			await client.execute("UPDATE publication_state SET last_good_revision='old' WHERE id='site'");
+			await applyThrough(client, "0015", "0015");
+			expect((await client.execute("SELECT id FROM user")).rows).toMatchObject([{ id: "owner" }]);
+			expect((await client.execute("SELECT config FROM block")).rows).toMatchObject([
+				{ config: '{"body":"Preserved"}' },
+			]);
+			expect(
+				(
+					await client.execute(
+						"SELECT revision,snapshot_json,approved_source_json,approval_revision,request_kind FROM publication_revision",
+					)
+				).rows,
+			).toMatchObject([
+				{
+					revision: "old",
+					snapshot_json: "{}",
+					approved_source_json: null,
+					approval_revision: null,
+					request_kind: "manual",
+				},
+			]);
+			expect(
+				(
+					await client.execute(
+						"SELECT current_revision,last_good_revision,generation,approval_revision FROM publication_state",
+					)
+				).rows,
+			).toMatchObject([
+				{
+					current_revision: "old",
+					last_good_revision: "old",
+					generation: 1,
+					approval_revision: null,
+				},
+			]);
+			await client.execute({
+				sql: "INSERT INTO publication_revision (revision,source_digest,target_id,renderer_source_id,public_origin,snapshot_json,approved_source_json,approved_source_digest,approval_revision,created_at) VALUES ('approved','digest2','target','renderer','https://public.example','{}',?,?, 'approved',1060000)",
+				args: ['{"schemaVersion":1}', "a".repeat(64)],
+			});
+			await expect(
+				client.execute(
+					"UPDATE publication_revision SET approved_source_json='{}' WHERE revision='approved'",
+				),
+			).rejects.toThrow(/publication_source_immutable/);
+			expect(
+				(
+					await client.execute(
+						"SELECT last_good_revision,approval_revision,generation FROM publication_state",
+					)
+				).rows,
+			).toMatchObject([
+				{ last_good_revision: "old", approval_revision: "approved", generation: 2 },
+			]);
+		} finally {
+			client.close();
+		}
+	});
+});

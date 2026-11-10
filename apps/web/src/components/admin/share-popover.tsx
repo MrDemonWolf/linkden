@@ -1,5 +1,6 @@
 "use client";
 
+import { env } from "@linkden/env/web";
 import { Copy, Share2 } from "lucide-react";
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
@@ -16,13 +17,11 @@ import { cn } from "@/lib/utils";
 export function SharePopover({ className }: { className?: string }) {
 	const [open, setOpen] = useState(false);
 	const [qr, setQr] = useState<string | null>(null);
-	const [url, setUrl] = useState("");
+	const url = env.NEXT_PUBLIC_SITE_URL;
 
 	useEffect(() => {
 		if (!open) return;
-		const origin = window.location.origin;
-		setUrl(origin);
-		QRCode.toDataURL(origin, { margin: 1, width: 200 })
+		QRCode.toDataURL(url, { margin: 1, width: 200 })
 			.then(setQr)
 			.catch(() => setQr(null));
 	}, [open]);

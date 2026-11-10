@@ -19,7 +19,7 @@ vi.mock("@linkden/email", () => ({
 }));
 
 const { db } = await import("@linkden/db");
-const { auditLog, contactSubmission, siteSettings, user } = await import(
+const { auditLog, contactSubmission, contactQuota, siteSettings, user } = await import(
 	"@linkden/db/schema/index"
 );
 const { appRouter } = await import("../routers/index");
@@ -71,6 +71,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
 	await db.delete(contactSubmission);
+	await db.delete(contactQuota);
 	await db.delete(auditLog);
 	await db.delete(siteSettings);
 	await setSettings({ contact_form_enabled: "true" });

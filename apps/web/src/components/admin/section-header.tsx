@@ -14,33 +14,31 @@ interface SectionHeaderProps {
 export function SectionHeader({ icon: Icon, title, count, variant = "muted" }: SectionHeaderProps) {
 	return (
 		<CardHeader>
-			<h2>
-				<CardTitle className="flex items-center gap-2 text-sm text-foreground">
-					<span
+			<CardTitle className="flex items-center gap-2 text-base text-foreground">
+				<span
+					className={cn(
+						"flex size-7 items-center justify-center rounded-md",
+						variant === "primary" ? "bg-primary/10 ring-1 ring-primary/20" : "bg-muted/80",
+					)}
+				>
+					<Icon
 						className={cn(
-							"flex size-7 items-center justify-center rounded-md",
-							variant === "primary" ? "bg-primary/10 ring-1 ring-primary/20" : "bg-muted/80",
+							"size-4",
+							variant === "primary" ? "text-primary" : "text-muted-foreground",
 						)}
-					>
-						<Icon
-							className={cn(
-								"size-4",
-								variant === "primary" ? "text-primary" : "text-muted-foreground",
-							)}
-							aria-hidden="true"
-						/>
-					</span>
-					{title}
-					{count !== undefined &&
-						(variant === "primary" ? (
-							<Badge variant="outline" className="ml-1 text-micro border-primary/30 text-primary">
-								{count}
-							</Badge>
-						) : (
-							<span className="text-xs font-normal text-muted-foreground">({count})</span>
-						))}
-				</CardTitle>
-			</h2>
+						aria-hidden="true"
+					/>
+				</span>
+				{title}
+				{count !== undefined &&
+					(variant === "primary" ? (
+						<Badge variant="outline" className="ml-1 text-micro border-primary/30 text-primary">
+							{count}
+						</Badge>
+					) : (
+						<span className="text-xs font-normal text-muted-foreground">({count})</span>
+					))}
+			</CardTitle>
 		</CardHeader>
 	);
 }
@@ -77,9 +75,7 @@ export function SectionCard({
 					<Icon className="size-4" aria-hidden="true" />
 				</div>
 				<div className="min-w-0">
-					<h2>
-						<CardTitle className="font-semibold">{title}</CardTitle>
-					</h2>
+					<CardTitle className="font-semibold">{title}</CardTitle>
 					{description && <p className="mt-0.5 text-micro text-muted-foreground">{description}</p>}
 				</div>
 			</CardHeader>
@@ -100,7 +96,7 @@ export function SectionLabel({
 	className?: string;
 }) {
 	return (
-		<SectionRule as="h3" className={cn("text-small", className)}>
+		<SectionRule as="h3" className={cn("text-sm", className)}>
 			{children}
 		</SectionRule>
 	);

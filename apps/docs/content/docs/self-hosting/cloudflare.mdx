@@ -1,303 +1,168 @@
 ---
 title: Cloudflare Deployment
-description: Deploy LinkDen on Cloudflare Workers and D1 — the recommended hosting option.
+description: Configure LinkDen's default deployment and the separately approved static publication path.
 ---
 
-# ☁️ Cloudflare Deployment
 
-Deploy LinkDen to Cloudflare's **free tier** with two Workers, a D1 database, and two R2 buckets. LinkDen was built for this. One command provisions everything.
+LinkDen's default deployment uses a Next.js web Worker, a Hono API Worker, D1 and R2. The rebuilt source also includes an **opt-in** split deployment and native static publisher. Building this checkout does not activate that publisher, change routing, or prove a live deployment.
 
-### ⚡ TL;DR
-1. Get a free Cloudflare account → create an API token.
-2. Fill in `.env` with your token, account ID, Alchemy state settings, and secrets.
-3. Run `bun ship`. *(Deploy everything in one shot.)*
-4. Copy the real URLs from the output → update `.env` → run `bun ship` again.
-5. Set `SITE_DOMAIN` to your hostname, point the URLs at it, `bun ship` once more.
-6. Go to `/admin/setup` and create your account. Done.
+## Serving modes
 
----
+| Mode | Public page | Browser API and sign-in | Publication |
+|------|-------------|-------------------------|-------------|
+| `legacy` (default) | Next.js renders saved profile data | Same web origin; service binding reaches the API | Existing dynamic behavior |
+| `split` (opt-in) | A separate native-assets target serves a frozen revision | Approved admin hostname; API stays behind its service binding | Explicit build, activation and HTTP verification |
 
-## ✅ Step 0 — Prerequisites
+## Before deploying
 
-Before you start, make sure you have:
-
-- [ ] A [Cloudflare account](https://dash.cloudflare.com/sign-up) (free tier is fine)
-- [ ] [Bun](https://bun.sh) installed (`bun --version` should work)
-- [ ] [Node.js](https://nodejs.org) 24 installed (the deploy runs Alchemy under Node via `tsx`; Bun crashes on it)
-- [ ] The repo cloned and dependencies installed:
+- Install the Bun version declared by `package.json` and Node.js 24. Alchemy runs under Node; use the repository's installed tooling.
+- Identify the exact Cloudflare account, environment, resource names and hostnames. Inspect existing resources before creating or adopting them.
+- Review your account plan, CPU budget and shared allowances. This guide does not guarantee Free-plan compatibility or a particular bill.
+- Obtain approval for production deployment, DNS, routes, certificates, billing changes and destructive recovery. Designate isolated resources before a staging deployment.
+- For GitHub deployment, configure the `production` environment's required reviewer and selected deployment branch `main`. Workflow source guards do not create those environment protections.
 
 ```bash
-git clone https://github.com/mrdemonwolf/linkden.git
+git clone https://github.com/MrDemonWolf/linkden.git
 cd linkden
-bun install
+bun install --frozen-lockfile
+cp .env.example packages/infra/.env
 ```
 
----
+The example file starts with local HTTP URLs. Replace them with your chosen deployment configuration before deploying.
 
-## 🔑 Step 1 — Create a Cloudflare API Token
+## Configure deployment
 
-LinkDen uses Alchemy (IaC) to provision your Workers, D1 database, R2 buckets, custom domain, and routes automatically. It needs an API token to do that.
-
-- [ ] Log in to the [Cloudflare dashboard](https://dash.cloudflare.com).
-- [ ] Click your profile icon (top right) → **My Profile**.
-- [ ] Go to **API Tokens** → **Create Token** → **Custom token**.
-- [ ] Add the following permissions:
-
-  | Resource | Permission |
-  |----------|-----------|
-  | Account → Workers Scripts | Edit |
-  | Account → D1 | Edit |
-  | Account → Workers R2 Storage | Edit |
-  | Zone → Workers Routes | Edit |
-  | Zone → Zone | Read |
-  | Zone → DNS | Edit |
-  | Zone → SSL and Certificates | Edit |
-
-  The Zone permissions are what let Alchemy attach your custom domain and the `/api/*` and `/trpc/*` routes. If you only ever deploy to `workers.dev`, the Account permissions alone are enough.
-
-- [ ] Under **Account Resources**, select your account. Under **Zone Resources**, select the zone that will host your site (or all zones).
-- [ ] Click **Continue to summary** → **Create Token**.
-- [ ] **Copy the token immediately** — it's only shown once.
-
-> 💡 **Where's my Account ID?** Find it on the main Cloudflare dashboard in the right sidebar, or run `npx wrangler whoami`.
-
----
-
-## ⚙️ Step 2 — Configure `.env`
-
-Create a `.env` file in the **project root** (not inside `apps/`):
+Use the [environment reference](/docs/self-hosting/environment-variables) for the complete variable list. A new legacy deployment with an approved custom hostname uses:
 
 ```bash
-# ── Cloudflare ─────────────────────────────────────────────
-CLOUDFLARE_API_TOKEN=paste-your-token-here
-CLOUDFLARE_ACCOUNT_ID=paste-your-account-id-here
-
-# ── Alchemy (deploy state) ──────────────────────────────────
-ALCHEMY_PASSWORD=paste-a-random-secret-here
-ALCHEMY_STATE_TOKEN=paste-your-state-worker-token-here
-# ALCHEMY_STAGE=prod
-
-# ── App URLs ────────────────────────────────────────────────
-# Use placeholder values for now — you'll get real URLs after first deploy.
-# Your subdomain is your Cloudflare account name (shown in the dashboard).
-NEXT_PUBLIC_SERVER_URL=https://linkden-api.<your-subdomain>.workers.dev
-CORS_ORIGIN=https://linkden.<your-subdomain>.workers.dev
-NEXT_PUBLIC_SITE_URL=https://linkden.<your-subdomain>.workers.dev
-
-# ── Better Auth ─────────────────────────────────────────────
-BETTER_AUTH_SECRET=paste-a-random-secret-here
-BETTER_AUTH_URL=https://linkden-api.<your-subdomain>.workers.dev
-
-# ── Custom domain (leave unset until you are ready) ────────
-# SITE_DOMAIN=links.yourdomain.com
-
-# ── First-run guard (recommended on a public deploy) ───────
-# SETUP_TOKEN=paste-a-random-secret-here
-
-# ── Apple Wallet (optional — skip if you don't need Wallet passes) ──
-# One line each: base64 of the PEM file (raw PEM also works) — see the Apple Wallet guide.
-# WALLET_SIGNER_CERT=base64-of-signer_cert.pem
-# WALLET_SIGNER_KEY=base64-of-signer_key.pem
-# WALLET_WWDR_CERT=base64-of-AppleWWDRCAG4.cer
-# WALLET_SIGNER_KEY_PASSPHRASE=only-if-the-key-is-encrypted
-# WALLET_TEAM_ID=ABC12DEF34
-# WALLET_PASS_TYPE_ID=pass.com.yourname.linkden
+LINKDEN_SERVING_MODE=legacy
+SITE_DOMAIN=links.example.com
+BETTER_AUTH_URL=https://links.example.com
+CORS_ORIGIN=https://links.example.com
+NEXT_PUBLIC_SERVER_URL=https://links.example.com
+NEXT_PUBLIC_SITE_URL=https://links.example.com
 ```
 
-**Generate a secret** (once each for `ALCHEMY_PASSWORD`, `BETTER_AUTH_SECRET` and `SETUP_TOKEN`):
+Set `BETTER_AUTH_SECRET`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `ALCHEMY_PASSWORD` and the appropriate Alchemy state configuration privately. Generate separate random secrets with:
+
 ```bash
 openssl rand -base64 32
 ```
 
-> 🛡️ **The deploy checks these before it touches anything.** `bun ship` refuses to run while a required value is empty, while `BETTER_AUTH_SECRET` is shorter than 32 characters (or is Better Auth's public default), while a URL is not `https://`, while `CORS_ORIGIN` is more than a bare origin, or (once `SITE_DOMAIN` is set) while `BETTER_AUTH_URL`, `CORS_ORIGIN` or `NEXT_PUBLIC_SITE_URL` differ from `https://SITE_DOMAIN`. `apps/web/.env` and `apps/server/.env` are dev-only and never read by a deploy.
+Scope the Cloudflare token to the selected account and zones. The existing IaC needs access to Workers, D1 and R2; custom-domain and route changes also need the relevant zone, DNS, route and certificate permissions. Use the provider's current permission names and grant only the resources required for the approved operation.
 
-### About the Alchemy state store
+A deployment reads `packages/infra/.env` or CI values. It does not use `apps/web/.env` or `apps/server/.env`. The preflight rejects missing values, weak auth secrets, non-HTTPS deployment URLs and mismatched origins before provisioning.
 
-Alchemy keeps a record of which Cloudflare resources it created. LinkDen's `packages/infra/alchemy.run.ts` points that record at a **shared `alchemy-state` Worker** (a `CloudflareStateStore`) that the MrDemonWolf apps all use, authenticated by `ALCHEMY_STATE_TOKEN`. `ALCHEMY_PASSWORD` encrypts the secrets inside that state.
+A custom domain is optional in legacy mode. Without `SITE_DOMAIN`, the whole site, admin included, runs on the web Worker's `workers.dev` URL, so use the **actual web Worker origin** for all four URL variables:
 
-That shared worker is specific to the MrDemonWolf account. As a third-party self-hoster you have two options:
+```bash
+LINKDEN_SERVING_MODE=legacy
+# SITE_DOMAIN unset
+BETTER_AUTH_URL=https://linkden.<workers-subdomain>.workers.dev
+CORS_ORIGIN=https://linkden.<workers-subdomain>.workers.dev
+NEXT_PUBLIC_SERVER_URL=https://linkden.<workers-subdomain>.workers.dev
+NEXT_PUBLIC_SITE_URL=https://linkden.<workers-subdomain>.workers.dev
+```
 
-1. **Deploy your own `alchemy-state` worker** in your account (see the [Alchemy docs for `CloudflareStateStore`](https://alchemy.run/state-store)) and set `ALCHEMY_STATE_TOKEN` to the token you gave it, or
-2. **Switch the `stateStore`** in `packages/infra/alchemy.run.ts` to something local, for example the default file-system store, by removing the `stateStore` option. Then `ALCHEMY_STATE_TOKEN` is not needed and state lives in `packages/infra/.alchemy/` (keep it out of git, but do not lose it: it is how Alchemy knows what it already deployed).
+Find the Workers subdomain in your account; do not infer it from the account name. The web Worker's API bridge forwards `/api/*` and `/trpc/*` to the API Worker over its service binding, so the browser never calls the API Worker's separate `linkden-api` hostname. Pointing any URL there would put the session cookie on a different site (`workers.dev` is on the Public Suffix List); the preflight refuses auth, CORS and API URLs that differ from `NEXT_PUBLIC_SITE_URL`. With `SITE_DOMAIN`, zone Routes send those paths straight to the API Worker and skip the bridge. Verify sign-in and cookies in either environment.
 
-`ALCHEMY_STAGE` separates deployments of the same app. It defaults to `prod`; set it to `dev` for a throwaway staging copy. Every resource of a non-`prod` stage gets the stage as a name suffix (`linkden-db-dev`, `linkden-images-dev`, `linkden-backups-dev`, `linkden-api-dev`, `linkden-dev`), so a staging deploy — and `ALCHEMY_STAGE=dev bun run destroy` — can never touch the production database, buckets, or Workers.
+### Alchemy state
+
+The checked-in program uses MrDemonWolf's shared `alchemy-state` Worker and `ALCHEMY_STATE_TOKEN`. Third-party self-hosters must configure their own state store; they cannot use that account's store by copying the example.
+
+Keep `ALCHEMY_PASSWORD` and the state store available for later deployments. Review the [Alchemy state-store documentation](https://alchemy.run/state-store) against the installed package version before changing stores; current website API examples can differ from this checked-in program. `ALCHEMY_STAGE` defaults to `prod`; other stages use suffixed resource names. Confirm those names and the state namespace before acting.
 
 ### Upgrading a deploy made before 0.5.0
 
-Before 0.5.0 the D1 database and R2 bucket had no fixed names, so Alchemy generated them: a GitHub Actions deploy created **`linkden-database-runner`** and **`linkden-images-runner`** (a local `bun ship` used your login name instead of `runner`). 0.5.0 pins the names to `linkden-db` / `linkden-images` and moves state to the `prod` stage. On its own that would create a brand-new, empty database and bucket, put the public page back on the Welcome screen, and reopen `/admin/setup` to anyone — so **before you deploy 0.5.0 over an existing install**, set two variables to the names you already have (Cloudflare dashboard → Storage & Databases → D1 / R2):
+Older deployments may have generated D1 and image-bucket names. Set `LINKDEN_DB_NAME` and `LINKDEN_IMAGES_BUCKET` to the **existing** names before an approved production upgrade. These overrides apply only to `prod`; other stages ignore them.
 
 ```bash
 LINKDEN_DB_NAME=linkden-database-runner
 LINKDEN_IMAGES_BUCKET=linkden-images-runner
 ```
 
-In GitHub Actions these are **variables** on the `production` environment (next to `SITE_DOMAIN`). The overrides apply to the **`prod` stage only**: any other stage ignores them (with a warning), so a staging deploy can never adopt your production data. The `prod` stage then adopts your existing resources by name, runs any pending migrations against them, and nothing is re-created. The old `runner` (or `<login>`) stage's state is simply left behind. Do **not** try to keep the old stage by setting `ALCHEMY_STAGE` to it instead: in the same stage Alchemy treats the new name as a rename, which creates the new resource and deletes the old one.
+Export the database and inventory uploaded objects before changing adoption or state configuration. A new empty database would send the home page back to the setup wizard and reopen first-run setup to anyone. Do not destroy an old stage to repair adoption.
 
-> 💡 **What's my subdomain?** It's the account name shown in the Cloudflare dashboard sidebar (e.g. `myname` → `linkden-api.myname.workers.dev`). You can also find it after the first deploy in the command output.
+### Migration history
 
----
+Alchemy tracks **full SQL filenames** in `d1_migrations`, not just their numeric prefixes. Preserve applied filenames and the current Drizzle snapshot lineage. The history runs from `0000` to `0015`:
 
-## 🚀 Step 3 — First Deploy
+| Migration | Change |
+|-----------|--------|
+| `0011_relative_image_paths` | Data only: rewrites absolute upload URLs in image settings and block `thumbnail`/`src` to origin-relative `/api/images/…` paths |
+| `0012_parallel_gertrude_yorkes` | Adds the `contact_quota` table for the daily contact delivery quota |
+| `0013_publication_revisions`–`0015_publication_approvals` | Add the publication revision/state tables, their guard triggers and approval columns |
 
-```bash
-bun ship
-```
+`0011` matches any `http(s)` URL whose value contains `/api/images/`; it does not check the host. An external image hosted under another LinkDen instance's `/api/images/` path would also be shortened, so inventory such values before upgrading. Local upgrade tests do not replace an approved staging migration and restore test.
 
-This single command:
-1. Creates your **D1 database** (`linkden-db`) and runs schema migrations.
-2. Creates the **R2 buckets** `linkden-images` (uploads) and `linkden-backups` (daily D1 exports, 30-day expiry).
-3. Deploys the **API Worker** (`linkden-api`).
-4. Deploys the **Web Worker** (`linkden`) with a service binding to the API.
+## Deploy and initialize
 
-At the end, the terminal prints your **real Worker URLs**, like:
-```
-Web    -> https://linkden.myname.workers.dev
-Server -> https://linkden-api.myname.workers.dev
-```
-
----
-
-## 🔄 Step 4 — Update URLs and Redeploy
-
-> **This step is required.** Workers need to know their own URLs to handle auth and CORS correctly.
-
-1. Copy the URLs from the Step 3 output.
-2. Update `.env` with the real URLs (replace the placeholder `<your-subdomain>` values):
+Once the target, configuration and changes are approved:
 
 ```bash
-NEXT_PUBLIC_SERVER_URL=https://linkden-api.myname.workers.dev
-CORS_ORIGIN=https://linkden.myname.workers.dev
-NEXT_PUBLIC_SITE_URL=https://linkden.myname.workers.dev
-BETTER_AUTH_URL=https://linkden-api.myname.workers.dev
+bun run deploy
 ```
 
-3. Run deploy again:
+This applies pending migrations and provisions or updates the selected web/API Workers, D1 and R2 resources. It is a cloud mutation, not a preview command.
 
-```bash
-bun ship
-```
+1. Read the actual output and verify `/api/health` through the web/admin origin.
+2. Open the site right away. Until an admin exists, `/` redirects to `/admin/setup`; create the sole admin account there.
+3. Enable two-factor authentication in Settings → Account and save backup codes.
+4. Verify sign-out, password sign-in, the TOTP/backup-code step and session persistence.
 
-> ⚠️ **Admin login does not work on `workers.dev`.** The web and API Workers sit on two different `workers.dev` origins, and the session cookie cannot cross them, so `/admin` redirects back to the login page. The public page and `/api/health` work fine, which is what a `workers.dev` deploy is for (staging). For a working admin, finish Step 5.
+The database enforces one admin. First-run setup is WordPress-style with no setup token: until setup is finished, the first person to complete it claims a new public instance.
 
----
+## Split deployment and public publication
 
-## 🌐 Step 5 — Custom Domain (Recommended)
+`LINKDEN_SERVING_MODE=split` is an explicit routing cutover. It requires distinct `ADMIN_SITE_URL` and `PUBLIC_SITE_URL`, with `SITE_DOMAIN` unset. Auth, CORS and browser API URLs use admin; public metadata uses the public origin. See [Custom Domain](/docs/self-hosting/custom-domain) for an example.
 
-With a custom domain LinkDen runs **same-origin**: the web app owns the hostname and the API is routed under it.
+The server has no public API routes by default in split mode. An optional `PUBLIC_CONTACT_URL` exposes only one exact HTTPS `/api/contact` action on an approved custom hostname distinct from admin. The public site's Origin is checked independently. CAPTCHA, credential rejection, body limits, client throttling and the daily submission quota remain in force.
 
-| What | Where |
-|------|-------|
-| Web Worker `linkden` | Custom Domain on `SITE_DOMAIN` |
-| API Worker `linkden-api` | Routes `SITE_DOMAIN/api/*` and `SITE_DOMAIN/trpc/*` |
+Before cutover, configure and verify admin access protection, close alternate Workers and version-preview URLs, test contact ingress and its emergency disable procedure, and prove public delivery while the application API is unavailable. IaC flags and a successful build are not proof of those boundaries.
 
-Routes are matched before the custom-domain Worker, so `/api/*` and `/trpc/*` reach the API and everything else reaches Next.js. No CORS, no cookie domain tricks.
+### Publish public revisions
 
-1. The domain must be a zone in your Cloudflare account, and the hostname must **not** already have a DNS record (Cloudflare creates it for you and refuses to overwrite an existing one).
-2. Set `SITE_DOMAIN` and point every URL at it:
+The publisher uses frozen approved source, bundled public uploads and generated social images. Saving authoring data does not replace the last verified public version. Failed or ambiguous activation requires verified rollback or explicit recovery; it must not be labelled Published.
 
-```bash
-SITE_DOMAIN=links.yourdomain.com
-BETTER_AUTH_URL=https://links.yourdomain.com
-NEXT_PUBLIC_SERVER_URL=https://links.yourdomain.com
-CORS_ORIGIN=https://links.yourdomain.com
-NEXT_PUBLIC_SITE_URL=https://links.yourdomain.com
-```
+The workflow uses separate `public-staging` and `public-production` GitHub environments, owner opt-in, an approved exact `main` renderer commit with successful CI, and serialized runs per target. Configure their protections and the [publisher variables](/docs/self-hosting/environment-variables#public-publisher-environments) deliberately.
 
-3. Run `bun ship` one more time. The deploy log shows the custom domain and two routes being created.
+The runner, dispatcher and workflow currently restrict automation to `MrDemonWolf/linkden`. Forks must review and adapt those repository checks before using automated publication. `bun run build:public` only builds local artifacts; it is not a production deployment command.
 
-See the [Custom Domain guide](/docs/self-hosting/custom-domain) for DNS details and rollback.
+Optional five-minute publication ticks use the previously approved immutable source. They do not reread mutable drafts or rebuild on every tick. Profile analytics collection remains retired.
 
----
+## GitHub deployment and backups
 
-## 👤 Step 6 — Create Your Admin Account
+`.github/workflows/deploy.yml` deploys after successful CI for a push to this repository's `main`, uses the `production` environment, and does not cancel a running deploy. Store secrets and variables in that approved environment using the [reference](/docs/self-hosting/environment-variables). Its preflight, restore-point capture and smoke probes can fail; inspect each actual result.
 
-1. Open `https://links.yourdomain.com/admin/setup`.
-2. Fill in your email and password. If you set `SETUP_TOKEN`, paste it into the **Setup token** field.
-3. Click **Create Account**.
+`backup-db.yml` schedules a D1 export into `linkden-backups` and refuses a dump with no admin row. The configured R2 lifecycle expires these exports after 30 days. Verify a real export and an isolated restore before depending on it. JSON exports from Settings → Data contain references to uploaded images, not the image files themselves.
 
-> **First user is admin.** Registration permanently locks after this — no one else can sign up. Until you finish this step, anyone who reaches `/admin/setup` first could claim the install, which is what `SETUP_TOKEN` prevents.
+## Resource use
 
----
+These are source-derived application operations, not measured invoices:
 
-## 🤖 Deploying from GitHub Actions
+| Request reaching the deployment | Application work |
+|--------------------------------|------------------|
+| Legacy anonymous profile render | Web Worker + API service-binding execution; four D1 SELECTs in one batch |
+| Legacy uploaded image | Image handler; an R2 read on a cache miss, with an additional web hop when proxied |
+| Native published HTML, bundled asset or static 404 | Zero application Worker executions, D1 queries or R2 reads on that delivery path |
 
-The repo ships `.github/workflows/deploy.yml`, which runs the same `bun run deploy` after CI passes on a **push** to this repository's `main` (a fork's pull request never deploys, even from a branch named `main`). A running deploy is never cancelled by a newer one.
+The native row requires an assets-only target with no application fallback or Worker-first routing, and Workers Cache disabled. External media has its own requests. Admin/auth activity, contact forms, publication builds and media reads, daily maintenance, optional schedule ticks and backup jobs still consume resources.
 
-Put the values from Step 2 into the repo's **`production` environment**:
+Cloudflare distinguishes static asset delivery from Worker script execution in its [current asset billing documentation](https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/). Shared account usage, billed D1 rows, CPU time, storage and retries must be measured separately. No verified account plan, Free-plan CPU result or savings estimate is implied here.
 
-- **Secrets:** `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `ALCHEMY_PASSWORD`, `ALCHEMY_STATE_TOKEN`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `CORS_ORIGIN`, `NEXT_PUBLIC_SERVER_URL`, plus the optional `WALLET_*` and `SETUP_TOKEN`.
-- **Variables:** `SITE_DOMAIN`, `NEXT_PUBLIC_SITE_URL`, and `LINKDEN_DB_NAME` / `LINKDEN_IMAGES_BUCKET` for pre-0.5.0 installs.
+### Workers Free and Paid
 
-A **preflight** step lists any missing secret or variable by name, and the deploy refuses empty, weak or mismatched auth values (same rules as above). Every deploy's job summary records a **D1 Time Travel bookmark** taken just before the deploy (see **Rollback** below), and a smoke test probes the web app afterwards.
+LinkDen's D1, R2, rate-limit, cron and service bindings have no documented Workers Paid requirement. On Free, the shared `alchemy-state` prerequisite must use a SQLite-backed Durable Object, and R2 must be activated separately. Static assets that bypass the Worker do not spend the Workers request allowance.
 
-A separate `backup-db.yml` workflow exports D1 to `linkden-backups` daily. It only runs once the `production` environment secrets are set; run it once by hand (`workflow_dispatch`) and check that `linkden-backups/d1/<date>.sql` exists.
+Free has a [10 ms CPU limit per invocation and 100,000 Worker requests per day](https://developers.cloudflare.com/workers/platform/limits/). Dynamic page rendering, `/og`, wallet signing and the daily retention job may need more CPU. Paid starts HTTP requests at a 30-second CPU limit and gives the daily cron more headroom; both plans retain the 128 MB memory limit. Check CPU usage and the final Worker bundle size on your own deployment before relying on Free for every feature. See [D1 limits](https://developers.cloudflare.com/d1/platform/limits/) and [R2 pricing and activation](https://developers.cloudflare.com/r2/pricing/) for their separate allowances.
 
-> 🔐 **Recommended GitHub settings:** give the `production` environment a required reviewer and a `main`-only deployment branch policy, keep the Alchemy secrets on the environment (not the repository), and require approval for workflows from external contributors.
+## Rollback
 
----
+Preserve an export, the exact deployed code/version IDs, the D1 bookmark and a tested recovery procedure before cutover.
 
-## ⏪ Rollback
+- A web/API code rollback does not undo database changes. Confirm schema compatibility with the version being restored. New migrations are additive (expand, then contract in a later release), but historical migrations `0002`, `0008` and `0010` removed data or columns, and `0011` rewrote stored upload URLs.
+- D1 Time Travel rewinds the entire database. Check the provider's [current Time Travel documentation](https://developers.cloudflare.com/d1/reference/time-travel/) and the exact database/bookmark before an approved restore.
+- Public publication uses its recorded last-good immutable version and HTTP checks. Explicit interrupted-job recovery restores that version rather than publishing mutable drafts. A missing last-good receipt remains a recovery gate.
+- Deleting editor content or resetting its database does not withdraw files already published to the separate native target. Replace or disable that target through the approved publication/operations procedure.
 
-Every deploy uploads both Workers and applies any pending migrations.
-
-- **Undo a bad code release:** `bunx wrangler rollback --name linkden-api` (API) and/or `bunx wrangler rollback --name linkden` (web). The next `bun ship` re-uploads both Workers, so nothing needs reconciling in Alchemy state.
-- **Undo a migration** (only when a migration itself has to go): restore D1 to the bookmark printed in that deploy's job summary — `bunx wrangler d1 time-travel restore <db> --bookmark=<id>` (run from the repo root; `<db>` is `LINKDEN_DB_NAME`, default `linkden-db`). This rewinds *all* data to that moment.
-- Migrations are written **additive-only** (expand, then contract in a later release), so rolling back code alone is always safe.
-
----
-
-## 🛠️ Common Commands
-
-| Command | What it does |
-|---------|-------------|
-| `bun ship` | Build and deploy (safe to run repeatedly; applies pending migrations) |
-| `bun run destroy` | ⚠️ Tears down the Workers. On `prod` it refuses unless `LINKDEN_CONFIRM_DESTROY_PROD=yes`, and keeps D1/R2 (`delete: false`) once a deploy from this version has recorded it. Staging: `ALCHEMY_STAGE=<stage> bun run destroy` |
-| `bunx wrangler tail linkden-api` | Stream live API logs |
-| `bunx wrangler tail linkden` | Stream live web logs |
-| `bun db:generate` | Generate a migration from schema changes (contributors only) |
-| `bun reset:password -- --email <you> --remote` | Reset the admin password on production (prompted, never on the command line) |
-
----
-
-## 💰 Cost Check
-
-For a typical single-user LinkDen instance, you will stay **100% within Cloudflare's free tier**:
-
-| Resource | Free Tier Limit | Typical Usage |
-|----------|----------------|---------------|
-| Workers requests | 100,000 / day | ~100s / day |
-| D1 reads | 5,000,000 / day | ~1,000s / day |
-| D1 writes | 100,000 / day | ~10s / day |
-| R2 storage | 10 GB | Depends on uploads |
-| R2 requests | 10,000,000 / month | Low |
-
----
-
-## 🧯 Troubleshooting
-
-### "Missing CORS_ORIGIN" or auth errors after deploy
-You skipped Step 4. Update `.env` with the real URLs and run `bun ship` again.
-
-### Admin redirects to login in a loop
-You are on `workers.dev`, where web and API are different origins. Set `SITE_DOMAIN` (Step 5) so both run on one hostname.
-
-### "Registration is closed" on `/admin/setup`
-An account already exists. Go to `/admin/login` instead. If you've lost access, run this from the repo root (you are prompted for the new password; add `--disable-2fa` if you also lost your authenticator and backup codes):
-
-```bash
-bun reset:password -- --email you@example.com --remote
-```
-
-### "Invalid setup token" on `/admin/setup`
-`SETUP_TOKEN` is set on the API Worker. Paste the same value into the **Setup token** field.
-
-### API answers 503 "authentication is misconfigured"
-`BETTER_AUTH_SECRET` is empty, shorter than 32 characters, or a placeholder. `/api/health` reports `"auth": "misconfigured"`. Set a real secret (`openssl rand -base64 32`) and redeploy. Changing it signs everyone out.
-
-### Worker returns 500 on all routes
-Run `bunx wrangler tail linkden-api` to see the error; errors are logged as JSON with the request path (never query strings or tokens).
-
-### D1 binding not found
-Re-run `bun ship`. Alchemy adopts the existing `linkden-db` / `linkden-images` by their pinned names (`adopt: true`) and re-binds them. If your resources have other names (a pre-0.5.0 install), set `LINKDEN_DB_NAME` / `LINKDEN_IMAGES_BUCKET` first. Do **not** run `bun run destroy` to "start fresh".
-
-More in the [Troubleshooting guide](/docs/self-hosting/troubleshooting).
+Production deployment, DNS, routing, billing and destructive recovery remain explicit operator decisions. See [Troubleshooting](/docs/self-hosting/troubleshooting) for diagnosis before changing resources.

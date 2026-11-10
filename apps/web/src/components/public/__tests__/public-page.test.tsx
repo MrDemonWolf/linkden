@@ -1,9 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const trackViewFn = vi.fn();
+const fetchFn = vi.fn();
+const sessionFn = vi.fn();
+
+vi.mock("@/lib/auth-client", () => ({ authClient: { useSession: sessionFn } }));
 
 vi.mock("@linkden/env/web", () => ({
 	env: {
@@ -74,45 +78,80 @@ const grant = (analytics: boolean) =>
 		);
 	});
 
-describe("PublicPage page-view tracking", () => {
+describe("PublicPage privacy", () => {
 	beforeEach(() => {
 		localStorage.clear();
 		trackViewFn.mockReset();
-		trackViewFn.mockResolvedValue({ success: true });
+		sessionFn.mockReset();
+		fetchFn.mockReset();
+		fetchFn.mockResolvedValue(new Response(null, { status: 204 }));
+		vi.stubGlobal("fetch", fetchFn);
 	});
-	afterEach(cleanup);
-
-	// mutate() runs the mutation on a later tick.
-	const settle = () => act(() => new Promise((r) => setTimeout(r, 20)));
-
-	it("counts a first visit once the visitor accepts analytics — and only once", async () => {
-		renderPage(pageData());
-		await settle();
-		expect(trackViewFn).not.toHaveBeenCalled();
-		grant(true);
-		grant(true);
-		await waitFor(() => expect(trackViewFn).toHaveBeenCalled());
-		await settle();
-		expect(trackViewFn).toHaveBeenCalledOnce();
+	afterEach(() => {
+		cleanup();
+		vi.unstubAllGlobals();
 	});
 
-	it("doesn't count a visitor who declines", async () => {
-		renderPage(pageData());
-		grant(false);
-		await settle();
-		expect(trackViewFn).not.toHaveBeenCalled();
-	});
+	it.each([true, false])(
+		"does not collect views or clicks with consent banner %s",
+		async (enabled) => {
+			const data = pageData({ consentBannerEnabled: enabled, vcardEnabled: true });
+			data.blocks = [
+				{ type: "link", title: "Website", url: "https://example.com/", config: null },
+				{
+					type: "image",
+					title: "Gallery",
+					url: "https://example.com/gallery",
+					config: JSON.stringify({ src: "https://example.com/image.png" }),
+				},
+				{
+					type: "location",
+					title: "Chicago",
+					url: null,
+					config: JSON.stringify({ address: "Chicago", linkType: "google" }),
+				},
+				{ type: "vcard", title: "Save contact", url: null, config: null },
+			].map((b, position) => ({
+				...b,
+				id: `b${position}`,
+				icon: null,
+				embedType: null,
+				embedUrl: null,
+				socialIcons: null,
+				position,
+			}));
+			data.socialNetworks = [
+				{
+					slug: "github",
+					name: "GitHub",
+					url: "https://github.com/ada",
+					hex: "000000",
+					svgPath: "M0 0",
+				},
+			];
+			renderPage(data, { maybeAdmin: true });
+			grant(true);
+			grant(false);
+			for (const link of screen.getAllByRole("link")) {
+				// Observe the React click handlers without navigating jsdom away.
+				link.addEventListener("click", (event) => event.preventDefault());
+				fireEvent.click(link);
+			}
+			await act(async () => {});
+			expect(screen.getByRole("link", { name: "Admin" }).getAttribute("href")).toBe("/admin");
+			expect(trackViewFn).not.toHaveBeenCalled();
+			expect(sessionFn).not.toHaveBeenCalled();
+			expect(fetchFn).not.toHaveBeenCalled();
+		},
+	);
 
-	it("counts on load when there is no consent gate", async () => {
-		renderPage(pageData({ consentBannerEnabled: false }));
-		await waitFor(() => expect(trackViewFn).toHaveBeenCalledOnce());
-	});
-
-	it("never tracks the admin preview", async () => {
+	it("never collects in the admin preview", async () => {
 		renderPage(pageData({ consentBannerEnabled: false }), { previewMode: "light" });
 		grant(true);
-		await settle();
+		await act(async () => {});
 		expect(trackViewFn).not.toHaveBeenCalled();
+		expect(sessionFn).not.toHaveBeenCalled();
+		expect(fetchFn).not.toHaveBeenCalled();
 	});
 });
 

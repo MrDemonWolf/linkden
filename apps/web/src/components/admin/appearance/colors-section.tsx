@@ -61,19 +61,17 @@ export function ColorsSection({
 	return (
 		<Card>
 			<CardHeader>
-				<h2>
-					<CardTitle className="flex items-center gap-1.5">
-						<Paintbrush className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-						Colors
-					</CardTitle>
-				</h2>
+				<CardTitle className="flex items-center gap-1.5">
+					<Paintbrush className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+					Colors
+				</CardTitle>
 			</CardHeader>
 			<CardContent className="space-y-4">
 				{/* Color mode toggle — single-select ToggleGroup (Base UI `multiple`
 				    defaults to false). An empty `next` means the pressed segment was
 				    re-pressed; ignoring it keeps exactly one mode selected. */}
 				<div>
-					<Label id={colorModeLabelId} className="mb-2 block text-xs">
+					<Label id={colorModeLabelId} className="mb-2 block text-sm">
 						Default Color Mode
 					</Label>
 					<ToggleGroup
@@ -119,7 +117,7 @@ export function ColorsSection({
 				</div>
 
 				{/* Custom color pickers apply in both light and dark mode (see getThemeColors) */}
-				<Label className="text-xs">Custom colors</Label>
+				<Label className="text-sm">Custom colors</Label>
 				<p className="text-micro text-muted-foreground -mt-2">
 					These override the preset in both light and dark mode. Leave a field empty to keep the
 					preset&apos;s color.

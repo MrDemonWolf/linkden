@@ -16,6 +16,7 @@ concurrency:
 
 jobs:
   backup:
+    if: github.ref == 'refs/heads/main'
     name: Export D1 to R2
     environment: production
     runs-on: ubuntu-latest

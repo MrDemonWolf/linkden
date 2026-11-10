@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { useUnsavedChanges } from "@/hooks/use-unsaved-changes";
 import { trpc } from "@/utils/trpc";
 import {
@@ -148,7 +149,7 @@ function CertFileInput({
 			</div>
 			{showPaste && (
 				<div className="space-y-1.5">
-					<textarea
+					<Textarea
 						id={pasteId}
 						value={pasteValue}
 						onChange={(e) => setPasteValue(e.target.value)}
@@ -156,7 +157,7 @@ function CertFileInput({
 						rows={4}
 						spellCheck={false}
 						aria-describedby={status ? statusId : undefined}
-						className="w-full rounded-lg border border-border bg-transparent px-2.5 py-1.5 text-xs font-mono outline-none focus:ring-1 focus:ring-ring dark:bg-input/30"
+						className="font-mono"
 					/>
 					<Button
 						type="button"
@@ -200,11 +201,19 @@ export function SigningKeysSection() {
 	const [wwdrCert, setWwdrCert] = useState<Pending>();
 	const [savedTeamId, setSavedTeamId] = useState("");
 	const [savedPassTypeId, setSavedPassTypeId] = useState("");
+	const savedIds = useRef({ teamId: savedTeamId, passTypeId: savedPassTypeId });
+	useEffect(() => {
+		savedIds.current = { teamId: savedTeamId, passTypeId: savedPassTypeId };
+	});
 
 	useEffect(() => {
 		if (keysQuery.data) {
-			setTeamId(keysQuery.data.teamId);
-			setPassTypeId(keysQuery.data.passTypeId);
+			const next = keysQuery.data;
+			const baseline = savedIds.current;
+			setTeamId((current) => (current.trim() === baseline.teamId ? next.teamId : current));
+			setPassTypeId((current) =>
+				current.trim() === baseline.passTypeId ? next.passTypeId : current,
+			);
 			setSavedTeamId(keysQuery.data.teamId);
 			setSavedPassTypeId(keysQuery.data.passTypeId);
 		}
@@ -276,104 +285,117 @@ export function SigningKeysSection() {
 
 	return (
 		<div className="space-y-3">
-			<div className="relative overflow-hidden rounded-lg border border-border bg-muted px-3.5 py-2.5 text-xs">
-				<div
-					className={`absolute inset-y-0 left-0 w-0.5 ${allSet ? "bg-success" : "bg-warning"}`}
+			{statusQuery.isError ? (
+				<QueryError
+					message="Couldn't check your signing keys"
+					onRetry={() => statusQuery.refetch()}
 				/>
-				<div className="flex flex-wrap gap-x-4 gap-y-1 pl-1.5">
-					{[
-						{
-							label: "Signer Certificate",
-							ok: status?.signerCert,
-							src: status?.source?.signerCert,
-						},
-						{ label: "Signer Key", ok: status?.signerKey, src: status?.source?.signerKey },
-						{ label: "WWDR Certificate", ok: status?.wwdrCert, src: status?.source?.wwdrCert },
-						{ label: "Team ID", ok: status?.teamId, src: status?.source?.teamId },
-						{ label: "Pass Type ID", ok: status?.passTypeId, src: status?.source?.passTypeId },
-					].map((item) => (
-						<span key={item.label} className="inline-flex items-center gap-1">
-							{item.ok ? (
-								<CheckCircle2 className="h-3 w-3 text-success" aria-hidden="true" />
-							) : (
-								<CircleAlert className="h-3 w-3 text-warning" aria-hidden="true" />
-							)}
-							<span className="text-muted-foreground">
-								{item.label}
-								<span className="sr-only">{item.ok ? ": ready" : ": missing or unusable"}</span>
-								{item.src && item.src !== "missing" && (
-									<span className="ml-0.5 text-micro">({item.src})</span>
+			) : !status ? (
+				<p role="status" className="text-xs text-muted-foreground">
+					Checking signing keys…
+				</p>
+			) : (
+				<div className="relative overflow-hidden rounded-lg border border-border bg-muted px-3.5 py-2.5 text-xs">
+					<div
+						className={`absolute inset-y-0 left-0 w-0.5 ${allSet ? "bg-success" : "bg-warning"}`}
+					/>
+					<div className="flex flex-wrap gap-x-4 gap-y-1 pl-1.5">
+						{[
+							{
+								label: "Signer Certificate",
+								ok: status?.signerCert,
+								src: status?.source?.signerCert,
+							},
+							{ label: "Signer Key", ok: status?.signerKey, src: status?.source?.signerKey },
+							{ label: "WWDR Certificate", ok: status?.wwdrCert, src: status?.source?.wwdrCert },
+							{ label: "Team ID", ok: status?.teamId, src: status?.source?.teamId },
+							{ label: "Pass Type ID", ok: status?.passTypeId, src: status?.source?.passTypeId },
+						].map((item) => (
+							<span key={item.label} className="inline-flex items-center gap-1">
+								{item.ok ? (
+									<CheckCircle2 className="h-3 w-3 text-success" aria-hidden="true" />
+								) : (
+									<CircleAlert className="h-3 w-3 text-warning" aria-hidden="true" />
 								)}
+								<span className="text-muted-foreground">
+									{item.label}
+									<span className="sr-only">{item.ok ? ": ready" : ": missing or unusable"}</span>
+									{item.src && item.src !== "missing" && (
+										<span className="ml-0.5 text-micro">({item.src})</span>
+									)}
+								</span>
 							</span>
-						</span>
-					))}
+						))}
+					</div>
+					{!allSet && (
+						<p className="mt-1.5 pl-1.5 text-micro leading-relaxed text-muted-foreground">
+							Upload signing keys below or set them as environment variables. Saved keys override
+							the environment.
+						</p>
+					)}
 				</div>
-				{!allSet && (
-					<p className="mt-1.5 pl-1.5 text-micro leading-relaxed text-muted-foreground">
-						Upload signing keys below or set them as environment variables. Saved keys override the
-						environment.
-					</p>
-				)}
-			</div>
-
-			<FieldGroup columns={2}>
-				<div className="space-y-1.5">
-					<Label htmlFor="s-wallet-team-id">Team ID</Label>
-					<Input
-						id="s-wallet-team-id"
-						value={teamId}
-						onChange={(e) => setTeamId(e.target.value)}
-						placeholder="ABC123DEF4"
-						maxLength={20}
-					/>
-				</div>
-				<div className="space-y-1.5">
-					<Label htmlFor="s-wallet-pass-type-id">Pass Type ID</Label>
-					<Input
-						id="s-wallet-pass-type-id"
-						value={passTypeId}
-						onChange={(e) => setPassTypeId(e.target.value)}
-						placeholder="pass.com.example.linkden"
-						maxLength={100}
-					/>
-				</div>
-			</FieldGroup>
-
-			<CertFileInput
-				label="Signer Certificate"
-				kind="certificate"
-				stored={keysQuery.data.hasSignerCert}
-				pending={signerCert}
-				onChange={setSignerCert}
-				accept=".pem,.cer,.crt"
-			/>
-			<CertFileInput
-				label="Signer Key"
-				kind="privateKey"
-				stored={keysQuery.data.hasSignerKey}
-				pending={signerKey}
-				onChange={setSignerKey}
-				accept=".pem,.key"
-			/>
-			<CertFileInput
-				label="WWDR Certificate"
-				kind="certificate"
-				stored={keysQuery.data.hasWwdrCert}
-				pending={wwdrCert}
-				onChange={setWwdrCert}
-				accept=".pem,.cer,.crt"
-			/>
-			<p className="text-micro leading-relaxed text-muted-foreground">
-				PEM (.pem, .crt, .key) or DER (.cer). The key must be RSA; an encrypted key also needs the{" "}
-				<code className="rounded bg-muted px-1">WALLET_SIGNER_KEY_PASSPHRASE</code> environment
-				variable.
-			</p>
-
-			{isDirty && (
-				<Button onClick={handleSaveKeys} disabled={updateKeys.isPending} className="w-full">
-					{updateKeys.isPending ? "Saving..." : "Save Signing Keys"}
-				</Button>
 			)}
+
+			<fieldset disabled={updateKeys.isPending} className="min-w-0 space-y-3">
+				<FieldGroup columns={2}>
+					<div className="space-y-1.5">
+						<Label htmlFor="s-wallet-team-id">Team ID</Label>
+						<Input
+							id="s-wallet-team-id"
+							value={teamId}
+							onChange={(e) => setTeamId(e.target.value)}
+							placeholder="ABC123DEF4"
+							maxLength={20}
+						/>
+					</div>
+					<div className="space-y-1.5">
+						<Label htmlFor="s-wallet-pass-type-id">Pass Type ID</Label>
+						<Input
+							id="s-wallet-pass-type-id"
+							value={passTypeId}
+							onChange={(e) => setPassTypeId(e.target.value)}
+							placeholder="pass.com.example.linkden"
+							maxLength={100}
+						/>
+					</div>
+				</FieldGroup>
+
+				<CertFileInput
+					label="Signer Certificate"
+					kind="certificate"
+					stored={keysQuery.data.hasSignerCert}
+					pending={signerCert}
+					onChange={setSignerCert}
+					accept=".pem,.cer,.crt"
+				/>
+				<CertFileInput
+					label="Signer Key"
+					kind="privateKey"
+					stored={keysQuery.data.hasSignerKey}
+					pending={signerKey}
+					onChange={setSignerKey}
+					accept=".pem,.key"
+				/>
+				<CertFileInput
+					label="WWDR Certificate"
+					kind="certificate"
+					stored={keysQuery.data.hasWwdrCert}
+					pending={wwdrCert}
+					onChange={setWwdrCert}
+					accept=".pem,.cer,.crt"
+				/>
+				<p className="text-micro leading-relaxed text-muted-foreground">
+					PEM (.pem, .crt, .key) or DER (.cer). The key must be RSA; an encrypted key also needs the{" "}
+					<code className="rounded bg-muted px-1">WALLET_SIGNER_KEY_PASSPHRASE</code> environment
+					variable.
+				</p>
+
+				{isDirty && (
+					<Button onClick={handleSaveKeys} disabled={updateKeys.isPending} className="w-full">
+						{updateKeys.isPending ? "Saving..." : "Save Signing Keys"}
+					</Button>
+				)}
+			</fieldset>
 		</div>
 	);
 }

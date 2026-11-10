@@ -22,14 +22,13 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ShaderBanner } from "@/components/public/shader-banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { WolfLogo } from "@/components/wolf-logo";
 import { authClient } from "@/lib/auth-client";
-import { getLoginBgStyle, getLoginShaderPreset, isCustomLoginBg } from "@/lib/login-bg";
+import { isLocalDevelopmentUrl } from "@/lib/local-development";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 
@@ -94,91 +93,9 @@ const STEPS = [
 	{ label: "Launch", icon: Rocket },
 ] as const;
 
-function SetupSidebar({
-	currentStep,
-	siteName,
-	logoUrl,
-}: {
-	currentStep: number;
-	siteName: string;
-	logoUrl: string | null;
-}) {
-	const percent = Math.min(100, Math.round(((currentStep - 1) / (STEPS.length - 1)) * 100));
-	return (
-		<aside className="hidden lg:flex lg:w-[240px] lg:flex-col lg:shrink-0 border-r border-border/60 bg-muted/20 p-6">
-			<div className="flex items-center gap-2.5 mb-8">
-				{logoUrl ? (
-					<img
-						src={logoUrl}
-						alt=""
-						className="h-8 w-8 rounded-lg object-cover ring-1 ring-white/10"
-					/>
-				) : (
-					<WolfLogo className="h-8 w-8" />
-				)}
-				<span className="text-sm font-semibold tracking-tight">{siteName}</span>
-			</div>
-
-			<div className="mb-1 flex items-baseline justify-between">
-				<span className="text-micro font-semibold uppercase tracking-widest text-muted-foreground">
-					Setup
-				</span>
-				<span className="data-mono text-micro text-muted-foreground">{percent}%</span>
-			</div>
-			<div className="mb-6 h-1 overflow-hidden rounded-full bg-border">
-				<div
-					className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500"
-					style={{ width: `${percent}%` }}
-				/>
-			</div>
-
-			<nav aria-label="Setup steps">
-				<ol className="space-y-1">
-					{STEPS.map(({ label, icon: Icon }, i) => {
-						const num = i + 1;
-						const isComplete = num < currentStep;
-						const isActive = num === currentStep;
-						return (
-							<li key={label}>
-								<div
-									className={cn(
-										"flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors",
-										isActive && "bg-primary/10 text-primary",
-										isComplete && "text-foreground",
-										!isActive && !isComplete && "text-muted-foreground",
-									)}
-									aria-current={isActive ? "step" : undefined}
-								>
-									<span
-										className={cn(
-											"flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-colors",
-											isComplete && "border-primary bg-primary text-white",
-											isActive && "border-primary bg-primary/15 text-primary",
-											!isActive &&
-												!isComplete &&
-												"border-border bg-background text-muted-foreground",
-										)}
-									>
-										{isComplete ? (
-											<Check className="h-3 w-3 stroke-[3]" />
-										) : (
-											<Icon className="h-3 w-3" />
-										)}
-									</span>
-									{label}
-								</div>
-							</li>
-						);
-					})}
-				</ol>
-			</nav>
-		</aside>
-	);
-}
-
 function StepIndicator({ currentStep }: { currentStep: number }) {
 	return (
-		<nav aria-label="Setup progress" className="mb-8">
+		<nav aria-label="Setup progress" className="mb-6">
 			<ol className="flex items-center justify-between">
 				{STEPS.map(({ label, icon: Icon }, i) => {
 					const num = i + 1;
@@ -189,11 +106,9 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 							<div className="flex flex-col items-center gap-2">
 								<div
 									className={cn(
-										"relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-500",
-										isComplete &&
-											"border-primary bg-primary text-white shadow-lg shadow-primary/30",
-										isActive &&
-											"border-primary bg-primary/10 text-primary shadow-lg shadow-primary/20",
+										"relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full border",
+										isComplete && "border-primary bg-primary text-primary-foreground",
+										isActive && "border-primary bg-primary/10 text-primary",
 										!isComplete && !isActive && "border-border bg-muted text-muted-foreground",
 									)}
 									aria-current={isActive ? "step" : undefined}
@@ -203,16 +118,10 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 									) : (
 										<Icon className="h-4 w-4" />
 									)}
-									{isActive && (
-										<span
-											className="absolute inset-0 rounded-full animate-ping border border-primary/30"
-											style={{ animationDuration: "2s" }}
-										/>
-									)}
 								</div>
 								<span
 									className={cn(
-										"whitespace-nowrap text-micro font-semibold uppercase tracking-widest transition-colors duration-300",
+										"whitespace-nowrap text-xs font-medium transition-colors",
 										isActive && "text-primary",
 										isComplete && "text-primary/60",
 										!isActive && !isComplete && "text-muted-foreground",
@@ -223,9 +132,9 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 							</div>
 							{/* Connector line */}
 							{i < STEPS.length - 1 && (
-								<div className="mx-3 mt-[-20px] flex-1 h-[2px] overflow-hidden rounded-full bg-border">
+								<div className="mx-2 mt-[-20px] flex-1 h-px overflow-hidden rounded-full bg-border">
 									<div
-										className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-700 ease-out"
+										className="h-full rounded-full bg-primary"
 										style={{ width: currentStep > num ? "100%" : "0%" }}
 									/>
 								</div>
@@ -289,7 +198,7 @@ function StepHeader({
 			<h1
 				data-step-heading
 				tabIndex={-1}
-				className="text-xl font-bold tracking-tight text-foreground outline-none"
+				className="text-xl font-semibold tracking-tight text-foreground outline-none"
 			>
 				{title}
 			</h1>
@@ -322,8 +231,6 @@ function Step1Account({
 	setShowPassword,
 	showConfirmPassword,
 	setShowConfirmPassword,
-	setupToken,
-	setSetupToken,
 	formErrors,
 	setFormErrors,
 	isSubmitting,
@@ -341,8 +248,6 @@ function Step1Account({
 	setShowPassword: (v: boolean) => void;
 	showConfirmPassword: boolean;
 	setShowConfirmPassword: (v: boolean) => void;
-	setupToken: string;
-	setSetupToken: (v: string) => void;
 	formErrors: Record<string, string>;
 	setFormErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>;
 	isSubmitting: boolean;
@@ -385,7 +290,6 @@ function Step1Account({
 						}}
 						placeholder="Your name"
 						autoComplete="name"
-						className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
 						aria-invalid={!!formErrors.name}
 						aria-describedby={describedBy(formErrors.name, "setup-name-error")}
 						autoFocus
@@ -407,7 +311,6 @@ function Step1Account({
 						}}
 						placeholder="you@example.com"
 						autoComplete="email"
-						className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
 						aria-invalid={!!formErrors.email}
 						aria-describedby={describedBy(formErrors.email, "setup-email-error")}
 					/>
@@ -429,7 +332,7 @@ function Step1Account({
 							}}
 							placeholder="At least 8 characters"
 							autoComplete="new-password"
-							className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary pr-11"
+							className="pr-11"
 							aria-invalid={!!formErrors.password}
 							aria-describedby={describedBy(
 								formErrors.password,
@@ -471,7 +374,7 @@ function Step1Account({
 							}}
 							placeholder="Re-enter your password"
 							autoComplete="new-password"
-							className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary pr-11"
+							className="pr-11"
 							aria-invalid={!!formErrors.confirmPassword}
 							aria-describedby={describedBy(
 								formErrors.confirmPassword,
@@ -494,46 +397,11 @@ function Step1Account({
 					</div>
 					<FieldError id="setup-confirm-password-error" message={formErrors.confirmPassword} />
 				</div>
-
-				{/* Only enforced when the server has a SETUP_TOKEN secret bound. */}
-				<div className="space-y-1.5">
-					<Label htmlFor="setup-token" className="text-sm font-medium text-foreground">
-						Setup token <span className="font-normal text-muted-foreground">(optional)</span>
-					</Label>
-					<Input
-						id="setup-token"
-						value={setupToken}
-						onChange={(e) => {
-							setSetupToken(e.target.value);
-							clear("setupToken");
-						}}
-						autoComplete="off"
-						spellCheck={false}
-						aria-invalid={!!formErrors.setupToken}
-						aria-describedby={describedBy(
-							formErrors.setupToken,
-							"setup-token-error",
-							"setup-token-hint",
-						)}
-					/>
-					{formErrors.setupToken ? (
-						<FieldError id="setup-token-error" message={formErrors.setupToken} />
-					) : (
-						<p id="setup-token-hint" className="mt-1 text-micro text-muted-foreground">
-							Only needed if this server was deployed with a SETUP_TOKEN. Your setup link fills it
-							in.
-						</p>
-					)}
-				</div>
 			</div>
 
 			<StepFooter
 				right={
-					<Button
-						type="submit"
-						disabled={isSubmitting}
-						className="w-full sm:w-auto shadow-lg shadow-primary/20 active:scale-[0.98]"
-					>
+					<Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
 						{isSubmitting ? (
 							<>
 								<Loader2 className="h-4 w-4 animate-spin" />
@@ -600,7 +468,6 @@ function Step2Profile({
 						value={displayName}
 						onChange={(e) => setDisplayName(e.target.value)}
 						placeholder="How you want to be known"
-						className="bg-input border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
 					/>
 				</div>
 
@@ -665,11 +532,7 @@ function Step2Profile({
 					</div>
 				}
 				right={
-					<Button
-						type="submit"
-						disabled={isSubmitting || bio.length > BIO_MAX}
-						className="shadow-lg shadow-primary/20 active:scale-[0.98]"
-					>
+					<Button type="submit" disabled={isSubmitting || bio.length > BIO_MAX}>
 						{isSubmitting ? (
 							<>
 								<Loader2 className="h-4 w-4 animate-spin" />
@@ -710,10 +573,8 @@ function ThemeCard({
 			type="button"
 			onClick={onSelect}
 			className={cn(
-				"group relative flex flex-col overflow-hidden rounded-xl border-2 transition-all duration-200",
-				selected
-					? "border-primary shadow-lg shadow-primary/20 scale-[1.02]"
-					: "border-white/10 hover:border-white/20 hover:shadow-md hover:shadow-white/5",
+				"group relative flex flex-col overflow-hidden rounded-xl border-2 duration-200",
+				selected ? "border-primary ring-1 ring-primary" : "border-border hover:border-input-border",
 			)}
 			aria-pressed={selected}
 			title={preset.label}
@@ -806,11 +667,7 @@ function Step3Customize({
 					</div>
 				}
 				right={
-					<Button
-						onClick={onSubmit}
-						disabled={isSubmitting}
-						className="shadow-lg shadow-primary/20 active:scale-[0.98]"
-					>
+					<Button onClick={onSubmit} disabled={isSubmitting}>
 						{isSubmitting ? (
 							<>
 								<Loader2 className="h-4 w-4 animate-spin" />
@@ -838,10 +695,6 @@ function Step4Done({ displayName, onContinue }: { displayName: string; onContinu
 			<div className="mb-6 flex justify-center">
 				<div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-primary/30 bg-primary/10">
 					<Check className="h-7 w-7 stroke-[2.5] text-primary" />
-					<div
-						className="absolute inset-0 animate-ping rounded-full border border-primary/25"
-						style={{ animationDuration: "2.5s" }}
-					/>
 				</div>
 			</div>
 
@@ -850,18 +703,15 @@ function Step4Done({ displayName, onContinue }: { displayName: string; onContinu
 				tabIndex={-1}
 				className="text-2xl font-bold tracking-tight text-foreground outline-none"
 			>
-				You&apos;re all set, {firstName}!
+				Your editor is ready, {firstName}.
 			</h1>
 			<p className="mx-auto mt-2 mb-8 max-w-xs text-sm text-muted-foreground">
-				Your LinkDen is ready. Start building your page, adding links, and making it yours.
+				Add your profile content, then prepare your public version.
 			</p>
 
-			<Button
-				onClick={onContinue}
-				className="h-11 w-full shadow-lg shadow-primary/20 active:scale-[0.98]"
-			>
+			<Button onClick={onContinue} className="h-11 w-full">
 				<Rocket className="mr-2 h-4 w-4" />
-				Open Dashboard
+				Open editor
 			</Button>
 
 			<p className="mt-4 text-micro text-muted-foreground">
@@ -886,8 +736,6 @@ export default function SetupPage() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
-	// First-run guard (server SETUP_TOKEN). Never persisted with the progress.
-	const [setupToken, setSetupToken] = useState("");
 	const [displayName, setDisplayName] = useState("");
 	const [bio, setBio] = useState("");
 	const [themePreset, setThemePreset] = useState("default");
@@ -917,11 +765,8 @@ export default function SetupPage() {
 		meta: { skipErrorToast: true },
 	});
 	const branding = setupStatus.data?.branding;
-	const loginBgStyle = getLoginBgStyle(branding);
-	const loginShaderPreset = getLoginShaderPreset(branding);
-	const hasCustomBg = isCustomLoginBg(branding);
 	const siteName = branding?.siteName || "LinkDen";
-	const loginLogoUrl = branding?.loginLogoUrl || branding?.logoUrl || null;
+	const logoUrl = branding?.logoUrl || null;
 	const updateBulk = useMutation(trpc.settings.updateBulk.mutationOptions());
 
 	// Dev-only prefill (?test=true). The env check is inlined at build time, so
@@ -929,21 +774,11 @@ export default function SetupPage() {
 	// admin with a known password on a real instance.
 	const [testMode] = useState(
 		() =>
-			(process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_DEV_LOGIN === "true") &&
+			process.env.NODE_ENV === "development" &&
 			typeof window !== "undefined" &&
+			isLocalDevelopmentUrl(window.location.href) &&
 			new URLSearchParams(window.location.search).get("test") === "true",
 	);
-
-	// `?token=` (the setup link from the deploy output) prefills the setup token,
-	// then leaves the address bar so it doesn't sit in history or a screenshot.
-	useEffect(() => {
-		const url = new URL(window.location.href);
-		const token = url.searchParams.get("token");
-		if (!token) return;
-		setSetupToken(token);
-		url.searchParams.delete("token");
-		window.history.replaceState(window.history.state, "", url);
-	}, []);
 
 	// Restore from localStorage after mount to avoid SSR hydration mismatch
 	useEffect(() => {
@@ -992,9 +827,9 @@ export default function SetupPage() {
 	// API unreachable — surface an error card with a retry path instead of spinning forever
 	if (hasUsersError && !hasUsersData) {
 		return (
-			<main className="login-bg flex min-h-screen items-center justify-center p-4 sm:p-6">
+			<main className="bg-background text-foreground flex min-h-screen items-center justify-center p-4 sm:p-6">
 				<div
-					className="login-glass-card w-full max-w-[420px] rounded-2xl p-6 text-center shadow-2xl sm:p-8"
+					className="w-full max-w-[420px] rounded-xl border border-border bg-card p-6 text-center shadow-sm sm:p-8"
 					role="alert"
 				>
 					<div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-destructive/20 bg-destructive/10">
@@ -1013,7 +848,7 @@ export default function SetupPage() {
 							setupStatus.refetch();
 						}}
 						disabled={hasUsersFetching}
-						className="mt-6 shadow-lg shadow-primary/20 active:scale-[0.98]"
+						className="mt-6"
 					>
 						{hasUsersFetching ? (
 							<>
@@ -1031,7 +866,7 @@ export default function SetupPage() {
 
 	if (isLoading || setupTaken) {
 		return (
-			<main className="login-bg flex min-h-screen items-center justify-center">
+			<main className="bg-background text-foreground flex min-h-screen items-center justify-center">
 				<div role="status" aria-label="Loading" className="flex items-center justify-center">
 					<div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
 					<span className="sr-only">Loading</span>
@@ -1071,11 +906,9 @@ export default function SetupPage() {
 
 		setIsSubmitting(true);
 		try {
-			const token = setupToken.trim();
 			await authClient.signUp.email(
 				{ name: name.trim(), email: email.trim(), password },
 				{
-					headers: token ? { "x-setup-token": token } : undefined,
 					onSuccess: () => {
 						const dn = name.trim();
 						setAccountCreated(true);
@@ -1084,17 +917,7 @@ export default function SetupPage() {
 						goStep(2);
 					},
 					onError: (error) => {
-						// The server's first-run gate answers 403 { error: "Invalid setup token" }.
-						const body = error.error as { status?: number; error?: unknown; message?: string };
-						if (body.status === 403 && body.error === "Invalid setup token") {
-							setFormErrors({
-								setupToken: token
-									? "That setup token doesn't match. Copy it again from your deploy output."
-									: "This server requires a setup token. Paste the one from your deploy output.",
-							});
-							document.getElementById("setup-token")?.focus();
-							return;
-						}
+						const body = error.error as { error?: unknown; message?: string };
 						const msg =
 							body.message ||
 							(typeof body.error === "string" ? body.error : "") ||
@@ -1157,51 +980,31 @@ export default function SetupPage() {
 	};
 
 	return (
-		// Same forced-dark text scope as the login page: preset/custom backgrounds
-		// sit under a black overlay, where light-mode tokens are unreadable.
-		<div
-			className={cn("login-bg relative min-h-screen overflow-hidden", hasCustomBg && "dark")}
-			style={loginBgStyle}
-		>
-			{loginShaderPreset && (
-				<div className="absolute inset-0">
-					<ShaderBanner preset={loginShaderPreset} />
-				</div>
-			)}
-			{hasCustomBg && <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />}
+		<div className="relative min-h-screen bg-background text-foreground">
 			{/* Theme toggle */}
 			<div className="absolute right-4 top-4 z-20">
 				<ThemeToggle />
 			</div>
 
-			<main className="relative z-10 flex min-h-screen items-center justify-center p-4 sm:p-6">
-				<div
-					className={cn(
-						"login-card-enter w-full",
-						step < 4
-							? "lg:flex lg:w-[820px] lg:max-w-full lg:overflow-hidden lg:rounded-2xl lg:shadow-2xl lg:bg-card lg:border lg:border-border"
-							: "max-w-[480px]",
-					)}
-				>
-					{step < 4 && (
-						<SetupSidebar currentStep={step} siteName={siteName} logoUrl={loginLogoUrl} />
-					)}
-
-					<div className={cn("flex-1 min-w-0", step < 4 && "lg:flex lg:flex-col")}>
-						{/* Mobile / small-screen stepper — hidden once sidebar shows */}
-						{step < 4 && (
-							<div className="lg:hidden mb-6 max-w-[480px] mx-auto">
-								<StepIndicator currentStep={step} />
-							</div>
+			{/* On phones the toggle (three 44px items) reaches the centred brand row, so
+			    the extra top padding starts the content below it. */}
+			<main className="relative z-10 flex min-h-screen items-center justify-center p-4 pt-20 sm:p-6">
+				<div className="w-full max-w-[480px]">
+					<div className="mb-6 flex items-center justify-center gap-2.5">
+						{logoUrl ? (
+							<img
+								src={logoUrl}
+								alt=""
+								className="h-8 w-8 rounded-lg object-cover ring-1 ring-border"
+							/>
+						) : (
+							<WolfLogo className="h-8 w-8" />
 						)}
-
-						<div
-							className={cn(
-								"login-glass-card overflow-hidden rounded-2xl shadow-2xl mx-auto w-full max-w-[480px]",
-								step < 4 &&
-									"lg:rounded-none lg:border-0 lg:shadow-none lg:bg-transparent lg:max-w-none lg:flex-1",
-							)}
-						>
+						<span className="text-sm font-semibold tracking-tight">{siteName}</span>
+					</div>
+					<div className="min-w-0">
+						{step < 4 && <StepIndicator currentStep={step} />}
+						<div className="w-full overflow-hidden rounded-xl border border-border bg-card shadow-sm">
 							{step === 1 && (
 								<Step1Account
 									name={name}
@@ -1216,8 +1019,6 @@ export default function SetupPage() {
 									setShowPassword={setShowPassword}
 									showConfirmPassword={showConfirmPassword}
 									setShowConfirmPassword={setShowConfirmPassword}
-									setupToken={setupToken}
-									setSetupToken={setSetupToken}
 									formErrors={formErrors}
 									setFormErrors={setFormErrors}
 									isSubmitting={isSubmitting}

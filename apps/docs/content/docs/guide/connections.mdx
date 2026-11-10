@@ -3,11 +3,9 @@ title: Inbox
 description: View and manage contact form submissions from your visitors in the Inbox.
 ---
 
-# 🤝 Inbox
+Messages configured for database delivery appear in the **Inbox** at `/admin/inbox`. Email-only delivery also falls back here when the notification fails. Read messages, change their read state, reply through your mail app, or delete them.
 
-When visitors fill out your contact form, their messages land in the **Inbox** at `/admin/inbox`. Think of it as a simple read-only inbox built into your admin panel — no external tools required.
-
-### ⚡ TL;DR
+## At a glance
 - Messages from your contact form appear here automatically.
 - Filter by **All**, **Unread**, or **Read**.
 - Select any message to read the full details.
@@ -16,7 +14,7 @@ When visitors fill out your contact form, their messages land in the **Inbox** a
 
 ---
 
-## 📬 What You'll See
+## What You'll See
 
 Each connection card shows:
 - **Name** and **email** of the visitor.
@@ -28,7 +26,7 @@ Clicking a card opens the full message in a side panel (desktop) or a slide-up s
 
 ---
 
-## 🔍 Filtering
+## Filtering
 
 Use the filter buttons at the top of the list:
 
@@ -44,7 +42,7 @@ Scroll to the bottom and click **Load older messages** to see more.
 
 ---
 
-## ✅ Actions
+## Actions
 
 ### Single Connection
 - **Mark as read / unread** — Toggle the read state manually.
@@ -62,9 +60,9 @@ Scroll to the bottom and click **Load older messages** to see more.
 
 ---
 
-## ⚙️ Prerequisites
+## Prerequisites
 
-Messages only appear here while **Accepting messages** (in the Inbox header) is on and visitors have submitted the form.
+New messages require **Accepting messages** (in the Inbox header) to be on and a working form transport. Switching it off prevents new submissions; it does not hide messages already stored here.
 
 1. Go to `/admin/inbox`.
 2. Turn on **Accepting messages** in the header.
@@ -74,12 +72,12 @@ See the [Contact Form guide](/docs/guide/contact-form) for full setup.
 
 ---
 
-## 📧 Email Notifications (Optional)
+## Email Notifications (Optional)
 
 If you'd rather get an email for each new submission than check this inbox:
 
 1. Go to `/admin/settings/email`.
-2. Set your email provider: Resend (Cloudflare Email Workers coming soon), API key and sender address.
+2. Configure Resend with your API key and sender address.
 3. Under **Contact-form delivery**, choose **Email only** or **Inbox and email**. In Email only mode a failed send still lands here.
 
 See [Email Templates](/docs/guide/email-templates) for what the notification looks like.

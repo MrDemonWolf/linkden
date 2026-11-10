@@ -2,6 +2,7 @@
 
 import { themePresets } from "@linkden/ui/themes";
 import { SETTING_REGISTRY } from "@linkden/validators/settings-registry";
+import { LayoutTemplate } from "lucide-react";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { VerifiedBadgeSection } from "@/components/admin/appearance/branding-section";
@@ -13,6 +14,8 @@ import { QueryError } from "@/components/admin/dashboard/query-error";
 import { FieldError } from "@/components/admin/field-feedback";
 import { usePreviewSlot } from "@/components/admin/preview-slot";
 import { StickySaveBar } from "@/components/admin/sticky-save-bar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useSettingsForm } from "@/hooks/use-settings-form";
@@ -69,6 +72,7 @@ export default function DesignThemePage() {
 			? {
 					profile: { isVerified: f.verifiedBadge },
 					settings: {
+						pageLayout: f.pageLayout,
 						themePreset: f.theme,
 						customPrimary: f.primaryColor,
 						customSecondary: f.secondaryColor,
@@ -106,6 +110,32 @@ export default function DesignThemePage() {
 	return (
 		<div className="space-y-5">
 			<ThemePresetsSection selectedTheme={f.theme} onThemeSelect={handleThemeSelect} />
+
+			<Card>
+				<CardHeader>
+					<CardTitle className="flex items-center gap-1.5">
+						<LayoutTemplate className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+						Page layout
+					</CardTitle>
+				</CardHeader>
+				<CardContent className="space-y-3">
+					<Select
+						aria-label="Page layout"
+						value={f.pageLayout}
+						onValueChange={(value) => {
+							if (value === "split" || value === "stacked") set("pageLayout", value);
+						}}
+						items={[
+							{ value: "split", label: "Side by side" },
+							{ value: "stacked", label: "Stacked" },
+						]}
+					/>
+					<p className="text-micro text-muted-foreground">
+						On desktop, Side by side keeps your profile sticky on the left with full-width blocks on
+						the right. Stacked places your profile above the blocks. Mobile always uses one column.
+					</p>
+				</CardContent>
+			</Card>
 
 			<ColorsSection
 				colorMode={f.colorMode}

@@ -26,8 +26,8 @@ import { protectedProcedure, router } from "../index";
 import { logAudit } from "../utils/audit";
 import { transformLinkStackData } from "../utils/linkstack-transformer";
 import { stripHtml } from "../utils/sanitize";
-import { runBatch, settingUpsertStmt } from "../utils/settings";
-import { sanitizeSetting } from "./settings";
+import { sanitizeSetting } from "../utils/sanitize-setting";
+import { assertMagicLinkAllowed, runBatch, settingUpsertStmt } from "../utils/settings";
 
 // ─── Backup Router ─────────────────────────────────────────────────────────
 // Export format is versioned ("1.0") so future migrations can detect and upgrade
@@ -204,6 +204,7 @@ export const backupRouter = router({
 			}
 
 			if (data.settings) {
+				let entries: { key: string; value: string }[] = [];
 				if (mode === "replace") {
 					// Exports never carry secrets, so a replace must not delete them —
 					// that would silently break CAPTCHA, email and wallet signing.
@@ -225,13 +226,21 @@ export const backupRouter = router({
 						continue;
 					}
 					try {
-						stmts.push(settingUpsertStmt(key, sanitizeSetting(key, value)));
+						entries.push({ key, value: sanitizeSetting(key, value) });
 					} catch {
 						// Value failed validation (bad URL/color/enum/JSON shape/…) —
 						// skip it rather than aborting the whole restore.
 						skippedSettings++;
 					}
 				}
+				try {
+					await assertMagicLinkAllowed(entries, mode === "replace");
+				} catch (error) {
+					if (!(error instanceof TRPCError) || error.code !== "BAD_REQUEST") throw error;
+					entries = entries.filter(({ key }) => key !== "magic_link_enabled");
+					skippedSettings++;
+				}
+				stmts.push(...entries.map(({ key, value }) => settingUpsertStmt(key, value)));
 			}
 
 			if (data.socialNetworks) {

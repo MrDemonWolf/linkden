@@ -12,12 +12,14 @@ export default defineConfig({
 		// .claude/ holds agent worktrees (stale branch copies of the whole repo);
 		// without this they would run alongside the real suite against the root
 		// aliases and inflate or break the local run.
+		// tmp/ likewise contains ignored local artifacts and disposable app copies.
 		exclude: [
 			...configDefaults.exclude,
 			"**/.claude/**",
 			"**/.next/**",
 			"**/.wrangler/**",
 			"**/.alchemy/**",
+			"tmp/**",
 			"e2e/**",
 		],
 		coverage: {

@@ -87,4 +87,29 @@ describe("WalletBuilderSection", () => {
 			locations: [{ latitude: 10, longitude: -122.4, relevantText: "" }],
 		});
 	});
+
+	it("lets the visible QR label toggle the draft and exposes the selected template", async () => {
+		api.getConfig.mockResolvedValue({ wallet_show_qr_code: "true" });
+		const saveRef: MutableRefObject<(() => Promise<void>) | null> = { current: null };
+		renderBuilder(saveRef);
+		const qr = await screen.findByRole("switch", { name: /Show QR code/ });
+		expect(qr.getAttribute("aria-checked")).toBe("true");
+		fireEvent.click(screen.getByText("Show QR code on the pass"));
+		expect(qr.getAttribute("aria-checked")).toBe("false");
+		expect(screen.getByRole("button", { name: /Contact card/ }).getAttribute("aria-pressed")).toBe(
+			"true",
+		);
+		fireEvent.click(screen.getByRole("button", { name: /Member card/ }));
+		expect(screen.getByRole("button", { name: /Member card/ }).getAttribute("aria-pressed")).toBe(
+			"true",
+		);
+		expect(screen.getByText(/Applying a template replaces the card fields/)).toBeTruthy();
+		await act(async () => {
+			await saveRef.current?.();
+		});
+		expect(api.updateConfig.mock.calls[0]?.[0]).toMatchObject({
+			showQrCode: false,
+			templatePreset: "member-card",
+		});
+	});
 });

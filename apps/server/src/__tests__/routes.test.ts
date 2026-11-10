@@ -3,6 +3,7 @@
 // gates, limiters, origin/body guards, upload, image serving, downloads, cron.
 // Workers-only modules are mocked; the DB is the in-memory libsql test DB.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MAX_UPLOAD_BODY_SIZE } from "../lib/upload-validation";
 
 const ORIGIN = "https://links.example.com";
 
@@ -161,16 +162,6 @@ describe("sign-up gate", () => {
 		expect(authHandler).toHaveBeenCalledOnce();
 	});
 
-	it("requires the setup token when SETUP_TOKEN is bound", async () => {
-		const env = envWith({ SETUP_TOKEN: "first-run-token" });
-		const missing = await signUp({}, env);
-		expect(missing.status).toBe(403);
-		expect(await missing.json()).toEqual({ error: "Invalid setup token" });
-		expect((await signUp({ "x-setup-token": "wrong" }, env)).status).toBe(403);
-		expect(authHandler).not.toHaveBeenCalled();
-		expect((await signUp({ "x-setup-token": "first-run-token" }, env)).status).toBe(200);
-	});
-
 	it("closes registration once a user exists", async () => {
 		await db.insert(user).values({ id: "u1", name: "Admin", email: "admin@x.co" });
 		const res = await signUp();
@@ -206,6 +197,13 @@ describe("magic-link gate", () => {
 		await setSetting("magic_link_enabled", "true");
 		expect((await send()).status).toBe(200);
 		expect((await verify()).status).toBe(200);
+	});
+});
+
+describe("unknown tRPC procedures", () => {
+	it("returns 404 for an unknown query and mutation", async () => {
+		expect((await call("/trpc/nonexistent.read")).status).toBe(404);
+		expect((await call("/trpc/nonexistent.write", post({}))).status).toBe(404);
 	});
 });
 
@@ -315,11 +313,40 @@ describe("body limits", () => {
 		expect(authHandler).not.toHaveBeenCalled();
 	});
 
+	it("counts auth bytes even when Content-Length is understated", async () => {
+		const res = await call(
+			"/api/auth/sign-in/email",
+			post({ pad: "x".repeat(70_000) }, { "content-length": "1" }),
+		);
+		expect(res.status).toBe(413);
+		expect(authHandler).not.toHaveBeenCalled();
+	});
+
 	it("caps ordinary tRPC bodies but leaves room for backup import", async () => {
 		const big = { pad: "x".repeat(1_100_000) };
 		expect((await call("/trpc/settings.update", post(big))).status).toBe(413);
 		// Over the general cap, under the backup cap: reaches tRPC (401, no session).
 		expect((await call("/trpc/backup.import", post(big))).status).toBe(401);
+	});
+
+	it("keeps mixed backup batches within the ordinary body cap", async () => {
+		const big = { pad: "x".repeat(1_100_000) };
+		const headerCases: Record<string, string>[] = [{}, { "content-length": "1" }];
+		for (const headers of headerCases) {
+			const response = await call(
+				"/trpc/backup.import,public.trackView?batch=1",
+				post(big, headers),
+			);
+			expect(response.status).toBe(413);
+		}
+	});
+
+	it.each([
+		["/trpc/settings.update", 1_100_000],
+		["/trpc/backup.import", 16 * 1024 * 1024],
+	])("counts actual bytes for %s despite a false length", async (path, size) => {
+		const response = await call(path, post({ pad: "x".repeat(size) }, { "content-length": "1" }));
+		expect(response.status).toBe(413);
 	});
 });
 
@@ -337,8 +364,22 @@ describe("POST /api/upload", () => {
 		const init = await uploadInit(png);
 		const headers = new Headers(init.headers);
 		headers.delete("content-length");
+		headers.set("transfer-encoding", "chunked");
 		expect((await call("/api/upload", { ...init, headers })).status).toBe(411);
+		headers.delete("transfer-encoding");
 		headers.set("content-length", String(6 * 1024 * 1024));
+		expect((await call("/api/upload", { ...init, headers })).status).toBe(413);
+		expect(bucket.put).not.toHaveBeenCalled();
+	});
+
+	it("rejects an oversized multipart body despite a false Content-Length", async () => {
+		getSession.mockResolvedValue({ user: { id: "u1" } });
+		const init = await uploadInit(png, {
+			purpose: "avatar",
+			padding: "x".repeat(MAX_UPLOAD_BODY_SIZE),
+		});
+		const headers = new Headers(init.headers);
+		headers.set("content-length", "1");
 		expect((await call("/api/upload", { ...init, headers })).status).toBe(413);
 		expect(bucket.put).not.toHaveBeenCalled();
 	});
@@ -530,6 +571,23 @@ describe("misconfigured BETTER_AUTH_SECRET", () => {
 });
 
 describe("scheduled()", () => {
+	it("keeps the opt-in publication cadence separate from daily retention", async () => {
+		await worker.scheduled(
+			{ cron: "*/5 * * * *", scheduledTime: Date.now() } as ScheduledController,
+			envWith() as never,
+			ctx as unknown as ExecutionContext,
+		);
+		expect(ctx.waitUntil).toHaveBeenCalledOnce();
+		await expect(ctx.waitUntil.mock.calls[0]?.[0]).resolves.toEqual({ status: "disabled" });
+		expect(bucket.list).not.toHaveBeenCalled();
+		ctx.waitUntil.mockClear();
+		await worker.scheduled(
+			{ cron: "* * * * *" } as ScheduledController,
+			envWith() as never,
+			ctx as unknown as ExecutionContext,
+		);
+		expect(ctx.waitUntil).not.toHaveBeenCalled();
+	});
 	it("hands the maintenance run to waitUntil", async () => {
 		await worker.scheduled(
 			{ cron: "0 3 * * *" } as ScheduledController,

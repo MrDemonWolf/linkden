@@ -1,165 +1,129 @@
 ---
 title: Troubleshooting
-description: Common issues and solutions for self-hosted LinkDen instances.
+description: Diagnose local, deployment and publication failures before changing existing data or routes.
 ---
 
-# Troubleshooting
+Start with the exact environment, Worker/resource names and last verified revision. Source configuration, local tests and a green CI run are different from a successful live deployment. See [Cloudflare Deployment](/docs/self-hosting/cloudflare) for the approved deployment flow.
 
-Solutions to common problems for self-hosted LinkDen instances. For deployment steps, see the [Cloudflare](/docs/self-hosting/cloudflare) guide.
+## Deployment configuration fails
 
----
+The deploy preflight lists missing variables/secrets by name. Check the selected GitHub environment or `packages/infra/.env`; app-specific development files do not configure deployment.
 
-## Cloudflare Workers
+- Legacy mode uses the web origin for auth, CORS, browser API and public site URLs, including a `workers.dev` deployment without `SITE_DOMAIN`.
+- `BETTER_AUTH_URL`, `CORS_ORIGIN` and `NEXT_PUBLIC_SERVER_URL` must be bare origins: no path, query or trailing slash. A trailing slash would make the client call `//trpc`, which neither the zone Routes nor the web API bridge match. `NEXT_PUBLIC_SITE_URL` must also be a bare origin, though one trailing slash is allowed.
+- Split mode requires separate bare HTTPS admin/public origins, admin auth/CORS/browser API values, public metadata values, and an unset `SITE_DOMAIN`.
+- An optional split contact URL must be the exact HTTPS `/api/contact` action on an approved custom hostname distinct from admin.
+- Changing the built serving mode or public frontend variables requires a new build.
 
-Worker names are `linkden` (web) and `linkden-api` (API). Their configuration lives in `apps/server/wrangler.jsonc` (local dev bindings) and `packages/infra/alchemy.run.ts` (what actually gets deployed). There is no `wrangler.toml`.
+Do not weaken validation, enable dev login, or point a staging run at production resources to make preflight pass.
 
-### D1 binding errors
+## Admin sign-in loops
 
-The API Worker can't find the database.
+Check `BETTER_AUTH_URL`, `CORS_ORIGIN` and `NEXT_PUBLIC_SERVER_URL` against the actual browser/admin origin. A trailing slash, different hostname, direct API hostname or changed auth secret can break the session flow.
 
-- Verify the D1 database exists: `bunx wrangler d1 list` (it is named `linkden-db`, or whatever `LINKDEN_DB_NAME` says on a pre-0.5.0 install)
-- Check the `DB` binding in `apps/server/wrangler.jsonc` and `packages/infra/alchemy.run.ts`
-- Redeploy with `bun ship`: Alchemy adopts the existing database by name and re-binds it. Never run `bun run destroy` to fix a binding
+The web API bridge keeps requests on the web origin through a service binding. `workers.dev` alone is not a reason to configure the browser to call the separate API Worker: on `workers.dev`, all four URL values must be the web Worker's origin (`https://linkden.<workers-subdomain>.workers.dev`). Pointing any of them at the API Worker's `linkden-api` hostname puts the session cookie on a different site (`workers.dev` is on the Public Suffix List), and `/admin` bounces back to `/admin/login`. The deploy preflight refuses auth, CORS and API values that differ from `NEXT_PUBLIC_SITE_URL`. In split mode, also verify the intended Access policy and alternate-URL closure. A successful password response does not prove that the subsequent session/2FA step succeeded.
 
-### R2 bucket not working
+## Dev login is unavailable
 
-Image uploads fail with "Image storage not configured".
+This is expected outside strict local development. The endpoint requires `DEV_LOGIN="true"`, plain-HTTP loopback auth/request/Host values, local Origin/Referer and trusted local proxy metadata. An explicit non-development runtime disables it. The button also requires `NEXT_PUBLIC_DEV_LOGIN` and a local development page.
 
-- Ensure the `linkden-images` bucket exists and is bound as `IMAGES_BUCKET` in `packages/infra/alchemy.run.ts`
-- Verify with `bunx wrangler r2 bucket list`
+Tunnels, public hostnames, production pages and edge/proxy headers must not establish trust. Use normal credentials in those environments.
 
-### CORS errors on workers.dev subdomains
+## Authentication is misconfigured
 
-- `CORS_ORIGIN` must exactly match the web Worker URL, including `https://` and no trailing slash
-- Example: `CORS_ORIGIN=https://linkden.your-subdomain.workers.dev`
+A missing, weak or placeholder `BETTER_AUTH_SECRET` disables auth and protected routes; health reports `auth: "misconfigured"`. Configure a proper private secret and approve the required redeployment. Rotating that secret invalidates sessions.
 
-### Admin login loops back to the login page on workers.dev
+## Setup is closed or already claimed
 
-On `workers.dev` the web Worker (`linkden.<sub>.workers.dev`) and the API Worker (`linkden-api.<sub>.workers.dev`) are separate origins. `workers.dev` is on the Public Suffix List, so the session cookie set by the API is never sent back from the web origin and `/admin` bounces to `/admin/login` on every request.
+An existing admin closes registration with 403 "Registration is closed"; the database enforces the single-admin rule. Go to `/admin/login` rather than resetting the database.
 
-This is expected. `workers.dev` is a staging target: the public page and `/api/health` prove the deploy, nothing more.
+Until an admin exists, `/` and `/admin/login` redirect to `/admin/setup`. There is no setup token: the first signup on an unclaimed public installation becomes the admin, so finish setup right after deploying. If an unknown account claimed a fresh install, treat it as a security incident: export the database for review, then factory-reset the still-empty install (`bun reset:factory -- --confirm --remote`) and complete setup immediately.
 
-**Fix:** set `SITE_DOMAIN` to your hostname, point `BETTER_AUTH_URL`, `NEXT_PUBLIC_SERVER_URL`, `CORS_ORIGIN`, and `NEXT_PUBLIC_SITE_URL` at `https://SITE_DOMAIN`, and redeploy. The web app gets the hostname as a Custom Domain and the API is routed under it at `/api/*` and `/trpc/*`, so everything is one origin. See [Custom Domain](/docs/self-hosting/custom-domain).
+For owner-controlled recovery, the repository provides a password-reset command. Confirm the target database before using a remote action; it signs existing sessions out. Add `--disable-2fa` only when deliberately removing two-factor protection after losing both the authenticator and backup codes.
 
-### Reading API errors
+```bash
+bun reset:password -- --email you@example.com --remote
+```
 
-Unhandled errors in the API are logged as one JSON line with the request method, path, and error message (SQL parameters, which can hold visitor data, are stripped). Every request also logs one line, `METHOD path status ms`: the path only, never the query string, and the password-reset token is redacted. Stream them with:
+The password comes from a prompt/stdin or the supported private environment variable, not command-line arguments.
+
+## Database or image binding failures
+
+Inspect the deployed `DB` and `IMAGES_BUCKET` bindings and the exact resource names. The standalone local config is `apps/server/wrangler.jsonc`; cloud deployment uses `packages/infra/alchemy.run.ts`.
+
+Read-only inventory commands from the repository root include:
+
+```bash
+bunx wrangler d1 list
+bunx wrangler r2 bucket list
+```
+
+Older production deployments may need `LINKDEN_DB_NAME` and `LINKDEN_IMAGES_BUCKET` to preserve adoption. Fix the approved configuration and redeploy only after confirming the target. Do not destroy resources or create an empty replacement to repair a missing binding.
+
+## Migrations fail or filenames disagree
+
+Alchemy uses the full `d1_migrations.name` filename and skips names it has already applied. The history runs from `0000` to `0015`; `0011_relative_image_paths` is a data-only rewrite of absolute upload URLs to `/api/images/…` paths (see [Migration history](/docs/self-hosting/cloudflare#migration-history)).
+
+Preserve applied filenames and the current snapshot chain. Do not rename applied SQL files or replay raw SQL loops. Inspect an existing database read-only and test its upgrade/restore in isolation before an approved migration. Never use `drizzle-kit push` to bypass this history.
+
+A local development store created from an unreleased checkout that numbered the contact-quota and publication migrations `0011`–`0014` fails on `0012_parallel_gertrude_yorkes` because `contact_quota` already exists. That only affects local stores: wipe them with `bun db:reset` and apply the migrations again. Never edit ledger rows to silence the error.
+
+## Publishing is off, stuck or failed
+
+- **Publishing off:** check the server's approved target, public origin, renderer SHA and runner configuration. Saving settings does not enable the runner.
+- **Draft versus Published:** saved authoring data and block visibility are separate from a verified public publication receipt.
+- **Publishing:** do not start another writer or transfer runner ownership while the original job is active. Inspect that exact workflow run and its target.
+- **Recovery required:** confirm the interrupted job has stopped, then use the explicit protected recovery operation. It requires a matching last-good immutable version and successful HTTP verification; missing or ambiguous receipts remain unresolved.
+
+Do not label a saved form or successful upload as a live publication.
+
+If old content remains, inspect the active provider version and exact HTTP responses before blaming browser cache. Deleting editor content or resetting D1 does not withdraw an already published native site.
+
+## Public contact is unavailable
+
+In split mode, compare the API's `PUBLIC_CONTACT_URL` with the public publisher's `PUBLICATION_CONTACT_ACTION`. The request must target that exact endpoint, use the configured profile `PUBLIC_SITE_URL` Origin, omit credentials, and pass configured CAPTCHA and limits.
+
+The public endpoint intentionally does not expose auth, health, tRPC, uploads, images or Wallet routes. Do not open a broad `/api/*` route as a workaround. Test the separately approved contact ingress and emergency disable procedure in staging.
+
+## Local preview shows an old interface
+
+An old service worker can retain development JavaScript even after the source changes. Development now retires LinkDen's own root worker and caches, and the updated worker passes loopback requests through. After retirement, reload once more to release the old controller.
+
+If an older worker has not received that update, use the browser's service-worker controls to update or unregister only LinkDen's `localhost` registration, then reload. Keep the database and unrelated site data. Local loopback previews deliberately bypass offline caching; verify deployed offline behavior separately.
+
+## Email does not arrive
+
+Use Settings → Email to configure the supported Resend provider, a valid key and a verified sender. A restored unsupported provider does not send until explicitly changed. Magic links are unavailable without configured email or while two-factor is enabled.
+
+Contact notifications can fall back to the Inbox when delivery fails or email is unavailable. Check the selected delivery setting and server result; a UI preview is not a delivery receipt.
+
+## Uploads or previews fail
+
+- Resize a file rejected by the app's upload size limit.
+- Check the supported extension and the actual image signature; renaming an HTML file to `.png` does not make it an image.
+- Submit authenticated uploads from the configured admin origin and verify R2 binding/access.
+- For static publication, inspect unresolved legacy origins, public upload keys, media byte limits and custom-CSS dependencies. The builder does not fetch arbitrary media to make a candidate pass.
+- A Wallet preview is a design preview. Signed downloads additionally require usable certificates, an RSA key, IDs and any needed key passphrase.
+
+## Logs and throttling
+
+The API emits path-only request lines and structured errors, with token-bearing reset segments and Drizzle bound parameters redacted. Invocation logs are disabled in the checked-in IaC. Inspect your provider's actual logging configuration separately.
 
 ```bash
 bunx wrangler tail linkden-api --format=pretty
 ```
 
-The daily retention job (03:00 UTC) logs each failed step as a JSON line with path `scheduled` and step `prune` or `orphan-sweep`, and the run then shows as failed in **Workers → linkden-api → Cron Events**.
+Daily maintenance reports failed prune/orphan-sweep steps and rejects the scheduled run. Optional publication scheduling has its own outcomes. Inspect the actual cron/workflow result; a configured schedule is not evidence that cleanup or publication succeeded.
 
-### API answers 503 "authentication is misconfigured"
+A rate-limited request should be retried after its limit window. Limits apply per tRPC procedure in a batch; sign-in also has a global cap.
 
-`BETTER_AUTH_SECRET` is empty, shorter than 32 characters, or a placeholder value. Sign-in, the admin API and uploads stay off until it is fixed; `/api/health` reports `"auth": "misconfigured"`. Generate one with `openssl rand -base64 32`, set it, and redeploy.
+## Restore or roll back
 
-### Restore a D1 backup
+Take a current export and confirm the exact environment before an approved recovery. Code rollback, database restore and public-version rollback are separate operations.
 
-Run every command below from the **repo root**. `DB` is your database name: `LINKDEN_DB_NAME` if you set it, otherwise `linkden-db`.
+- [D1 Time Travel](https://developers.cloudflare.com/d1/reference/time-travel/) restores the whole database in place. Check the current provider requirements and chosen bookmark; it can discard newer data.
+- The scheduled D1 export goes to `linkden-backups/d1/<date>.sql` with the configured lifecycle. Restore an export into a new isolated database first and verify it before repointing production.
+- Preserve migration ledgers, auth constraints and resource adoption settings when restoring. Do not edit ledger rows merely to silence a duplicate-table error.
+- Use the publisher's last-good version/recovery flow for native public files; restoring D1 alone does not restore or withdraw those files.
 
-**1. D1 Time Travel (try this first).** D1 keeps a point-in-time history of the database for its retention window (30 days on paid plans, 7 on the free plan). Every GitHub deploy also records a bookmark in its job summary.
-
-```bash
-DB=linkden-db
-bunx wrangler d1 time-travel info "$DB"
-bunx wrangler d1 time-travel restore "$DB" --timestamp=2026-10-01T12:00:00Z
-# or, to undo a deploy: --bookmark=<bookmark from the deploy summary>
-```
-
-The restore rewinds the whole database in place. No redeploy is needed.
-
-**2. The nightly export.** The `backup-db` workflow exports the database every day to the `linkden-backups` R2 bucket as `d1/<date>.sql` (kept 30 days). It only runs once the `production` environment secrets are set, and it fails (rather than uploading) when the dump has no `user` row. An export contains `CREATE TABLE` statements, so restore it into a **fresh** database and point the deploy at that:
-
-```bash
-# Download the export you want
-bunx wrangler r2 object get linkden-backups/d1/2026-08-21.sql --file=backup.sql --remote
-
-# Import it into a new database
-bunx wrangler d1 create linkden-db-restore
-bunx wrangler d1 execute linkden-db-restore --remote --file=backup.sql
-
-# Point production at it and redeploy
-LINKDEN_DB_NAME=linkden-db-restore bun ship
-```
-
-Keep `LINKDEN_DB_NAME=linkden-db-restore` set (in `.env` or as a GitHub `production` variable) for every later deploy, and point the `backup-db` workflow at it through the same variable.
-
-> **Wiping instead?** `bun reset:factory -- --confirm --remote` empties every data table in one atomic step (the schema and migration history stay). It asks you to type the database name (or pass `--confirm-db <name>`). Take an export first: `bunx wrangler d1 export "$DB" --remote --output=before-reset.sql`.
-
----
-
-## General Issues
-
-### CORS errors
-
-**Symptom:** Browser console shows `Access-Control-Allow-Origin` errors.
-
-**Fix:**
-1. `CORS_ORIGIN` must exactly match the frontend URL (protocol + domain + port, no trailing slash)
-2. Wrong: `http://localhost:3001/` or `localhost:3001`
-3. Right: `http://localhost:3001`
-
-### Auth cookie issues
-
-**Symptom:** Login succeeds but you're immediately logged out, or admin pages show "Unauthorized".
-
-**Causes:**
-- `BETTER_AUTH_URL` doesn't match the actual API URL the browser reaches
-- Frontend and API are on different origins (the `workers.dev` case above)
-- `BETTER_AUTH_SECRET` changed between deployments (invalidates existing sessions)
-
-**Fix:**
-- Ensure `BETTER_AUTH_URL` matches the publicly accessible API URL (`https://SITE_DOMAIN` in production)
-- Set `SITE_DOMAIN` so web and API share one origin
-- If you changed `BETTER_AUTH_SECRET`, users need to log in again
-
-### Email sending failures
-
-**Symptom:** Password reset or magic link emails don't arrive.
-
-**Causes:**
-- Email provider not configured in admin settings
-- API key is invalid or expired
-- From email address not verified with the provider
-
-**Fix:**
-1. Go to `/admin/settings/email`
-2. Select your provider: Resend (Cloudflare Email Workers coming soon)
-3. Enter a valid API key
-4. Ensure the "From" email is verified with your provider
-5. Check spam folders
-
-Without email, you can still recover the admin account from the command line: `bun reset:password -- --email you@example.com --remote`.
-
-### "Registration is closed" message
-
-**Symptom:** Trying to sign up returns 403 "Registration is closed".
-
-**Explanation:** This is expected behavior. LinkDen is a single-user platform. After the first admin account is created, registration is permanently locked. This protects your instance from unauthorized account creation.
-
-Locked out? Reset the password instead: `bun reset:password -- --email you@example.com --remote` (add `--disable-2fa` if you also lost your authenticator and backup codes). To start over completely, factory-reset the database (see **Restore a D1 backup** above).
-
-If the API Worker has a `SETUP_TOKEN` secret, the first signup also needs that token; a wrong one returns 403 "Invalid setup token".
-
-### File upload errors
-
-**Symptom:** Image uploads are rejected.
-
-**Possible causes:**
-- **413 error:** File exceeds the 5 MB size limit. Resize or compress the image.
-- **400 error (file type):** Only image files are allowed: jpg, jpeg, png, gif, webp, ico.
-- **403 error:** The upload did not come from your site's own origin (`CORS_ORIGIN`). Uploads and admin writes must come from the admin panel itself.
-- **400 error (signature):** The file's bytes don't match its extension (for example an HTML file renamed to `.png`). Re-export the file in a supported format.
-- **500 error:** R2 bucket (Cloudflare) or image storage is not configured. Check your deployment's storage bindings.
-
-### Settings validation errors
-
-**Symptom:** Saving settings fails with a validation error.
-
-**Explanation:** The settings API only accepts known setting keys, and each value is checked against its rules (length, URL, colour, enum, JSON shape). The error message names the problem. If you're making direct API calls, ensure you're using valid keys and values. The admin UI handles this automatically.
-
-### "Too many requests"
-
-The API rate-limits sign-in, two-factor, password reset, magic links, sign-up, uploads, the contact form and analytics per client IP (and caps sign-in attempts globally). Wait a minute and try again. A batched tRPC request counts once per limited procedure in it.
+Do not factory-reset an instance as routine troubleshooting. Production restore, deletion, DNS and routing changes require explicit operator approval.

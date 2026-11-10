@@ -110,7 +110,9 @@ export function EmbedBlock({
 	const primary = themeColors?.primary || "#2563eb";
 
 	return (
-		<div className={`ld-embed-block mx-auto ${maxWidthClasses[maxWidth] || "max-w-full"}`}>
+		<div
+			className={`ld-embed-block mx-auto min-w-0 w-full ${maxWidthClasses[maxWidth] || "max-w-full"}`}
+		>
 			{showTitle && block.title && (
 				<h3
 					className="mb-2 text-sm font-medium"
@@ -123,8 +125,10 @@ export function EmbedBlock({
 				</h3>
 			)}
 			<div
-				className={`overflow-hidden rounded-lg ${
-					aspectRatioClasses[aspectRatio] || "aspect-video"
+				className={`min-w-0 overflow-hidden rounded-lg ${
+					isPreview || consented
+						? aspectRatioClasses[aspectRatio] || "aspect-video"
+						: "grid grid-cols-1"
 				}`}
 			>
 				{isPreview ? (
@@ -145,27 +149,34 @@ export function EmbedBlock({
 						sandbox="allow-scripts allow-same-origin"
 					/>
 				) : (
-					<div
-						className="flex h-full w-full flex-col items-center justify-center gap-3 p-4 text-center"
-						style={placeholderStyle}
-					>
-						<p className="text-small">
-							{providerName ? `This ${providerName} content` : "This content"} loads from{" "}
-							{hostOf(src)}, which receives your IP address.
-						</p>
-						<button
-							type="button"
-							onClick={loadNow}
-							className="min-h-11 rounded-lg px-4 py-2 text-small font-medium hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2"
-							style={{
-								backgroundColor: primary,
-								color: getReadableTextColor(primary),
-								outlineColor: primary,
-							}}
+					<>
+						{/* Preserve the selected ratio as a minimum; the notice can make a narrow tile taller. */}
+						<div
+							aria-hidden="true"
+							className={`col-start-1 row-start-1 min-w-0 w-full ${aspectRatioClasses[aspectRatio] || "aspect-video"}`}
+						/>
+						<div
+							className="col-start-1 row-start-1 flex min-h-40 min-w-0 w-full max-w-full flex-col items-center justify-center gap-3 p-4 text-center"
+							style={placeholderStyle}
 						>
-							Load {providerName ?? "embed"}
-						</button>
-					</div>
+							<p className="min-w-0 w-full text-small">
+								{providerName ? `This ${providerName} content` : "This content"} loads from{" "}
+								{hostOf(src)}, which receives your IP address.
+							</p>
+							<button
+								type="button"
+								onClick={loadNow}
+								className="min-h-11 min-w-0 max-w-full whitespace-normal rounded-lg px-3 py-2 text-small font-medium [overflow-wrap:anywhere] hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2"
+								style={{
+									backgroundColor: primary,
+									color: getReadableTextColor(primary),
+									outlineColor: primary,
+								}}
+							>
+								Load {providerName ?? "embed"}
+							</button>
+						</div>
+					</>
 				)}
 			</div>
 		</div>

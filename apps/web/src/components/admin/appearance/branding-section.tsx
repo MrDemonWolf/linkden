@@ -15,17 +15,15 @@ export function VerifiedBadgeSection({
 	return (
 		<Card>
 			<CardHeader>
-				<h2>
-					<CardTitle className="flex items-center gap-1.5">
-						<BadgeCheck className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-						Verified Badge
-					</CardTitle>
-				</h2>
+				<CardTitle className="flex items-center gap-1.5">
+					<BadgeCheck className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+					Verified Badge
+				</CardTitle>
 			</CardHeader>
 			<CardContent>
 				<div className="flex items-start gap-3 rounded-lg border border-border p-3">
 					<div className="min-w-0 flex-1">
-						<Label htmlFor="a-verified" className="text-xs font-medium">
+						<Label htmlFor="a-verified" className="text-sm font-medium">
 							Show verified badge
 						</Label>
 						<p className="mt-0.5 text-micro leading-tight text-muted-foreground">

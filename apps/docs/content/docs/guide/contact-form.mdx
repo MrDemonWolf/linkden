@@ -3,16 +3,14 @@ title: Contact Form
 description: Enable a built-in contact form with CAPTCHA protection, an Inbox, and optional email notifications via Resend.
 ---
 
-# Contact Form
-
-Let visitors send you messages without exposing your email address. Messages are stored in your database and optionally forwarded to your inbox.
+Let visitors send you messages without displaying your email address. Delivery can go to the built-in Inbox, your email, or both.
 
 ## How It Works
 
-1. A visitor fills out a **Connect** block on your public page (first and last name, email, an optional message, and a consent checkbox).
-2. If CAPTCHA is configured, the widget checks the visitor is a real person and the server verifies the token. A hidden honeypot field catches simple bots either way.
+1. A visitor opens a **Connect** block's form on your public page (first and last name, email, an optional message, and a consent checkbox).
+2. If CAPTCHA is configured, its provider checks the challenge and the server verifies the token. A hidden honeypot field catches simple bots either way.
 3. The message is saved to your Inbox and/or emailed to you, depending on the delivery mode.
-4. You can view and manage all submissions at `/admin/inbox`.
+4. View and manage messages stored in the Inbox at `/admin/inbox`. Successfully delivered **Email only** messages are not stored there.
 
 Visitors are never told a message failed once it is saved. If an email notification fails (or email isn't set up) the message is kept in your Inbox, and the failure is written to the server log and the audit log (`contact.email_failed`).
 
@@ -26,7 +24,7 @@ Go to `/admin/inbox` and turn on **Accepting messages** in the header, then add 
 
 At `/admin/settings/email`:
 
-1. Select a provider: **Resend** (Cloudflare Email Workers coming soon).
+1. Configure **Resend**, the supported email provider.
 2. Enter your API key.
 3. Set the "From" email address (must be verified with your provider).
 4. Pick the **Contact-form delivery**:
@@ -60,11 +58,19 @@ At `/admin/settings/integrations` → **CAPTCHA**, choose a provider. Both the s
 
 The widget loads from the provider in the visitor's browser, and the server sends the provider the token and the visitor's IP to verify it. Mention your provider in your privacy notice.
 
-> **Tip:** Without CAPTCHA, the form still works but relies on rate limiting and the honeypot only. Turnstile is recommended for a frictionless visitor experience.
+The legacy form transport can work without CAPTCHA, relying on its other controls. The dedicated static-public contact action **requires CAPTCHA** and fails closed if it is absent or misconfigured.
+
+## Static-public contact setup
+
+An assets-only profile does not call the private admin API. Its operator must explicitly configure the public contact action and matching profile origin, then publish that action into the page. No public action is enabled automatically.
+
+The action accepts credential-free JSON from the exact configured profile origin. It rejects account cookies/Authorization, caps the body at 64 KiB, and verifies CAPTCHA for the profile hostname. All contact transports share **100 delivery reservations per UTC day**; a failed delivery does not return a reservation. These limits do not cap arbitrary incoming traffic or provider billing.
+
+Test a real CAPTCHA and delivery on the designated environment before advertising the form. Opening the dialog or seeing its validation errors does not prove delivery.
 
 ## Managing Submissions
 
-Navigate to `/admin/inbox` to view all submissions. Each one shows:
+Navigate to `/admin/inbox` to view stored submissions, including messages saved after an email failure. Each one shows:
 
 - Sender name and email
 - Message content

@@ -13,7 +13,7 @@ export function StickySaveBar({
 	isSaving,
 	onSave,
 	onDiscard,
-	message = "You have unsaved changes",
+	message,
 	hasErrors = false,
 }: {
 	isDirty: boolean;
@@ -26,15 +26,15 @@ export function StickySaveBar({
 }) {
 	if (!isDirty) return null;
 	return (
-		<div className="sticky bottom-[calc(56px+env(safe-area-inset-bottom)+8px)] z-10 flex items-center justify-between gap-3 rounded-lg border border-primary/60 bg-background px-4 py-2.5 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.4)] lg:bottom-4">
+		<div className="sticky bottom-[calc(56px+env(safe-area-inset-bottom)+8px)] z-10 flex flex-col gap-3 rounded-lg border border-primary/60 bg-background px-4 py-3 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.4)] sm:flex-row sm:items-center sm:justify-between lg:bottom-4">
 			<span
 				role={hasErrors ? "status" : undefined}
 				className={cn("text-xs", hasErrors ? "text-destructive" : "text-muted-foreground")}
 			>
-				{hasErrors ? "Fix the highlighted fields to save" : message}
+				{message ?? (hasErrors ? "Fix the highlighted fields to save" : "You have unsaved changes")}
 			</span>
-			<div className="flex gap-2">
-				<Button variant="ghost" size="sm" onClick={onDiscard}>
+			<div className="flex shrink-0 justify-end gap-2">
+				<Button variant="ghost" size="sm" disabled={isSaving} onClick={onDiscard}>
 					<Undo2 className="mr-1.5 h-3.5 w-3.5" />
 					Discard
 				</Button>

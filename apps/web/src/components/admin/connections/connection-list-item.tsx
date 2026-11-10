@@ -55,15 +55,15 @@ export function ConnectionListItem({
 			)}
 		>
 			{showCheckbox && (
-				<span className="-my-2 flex h-11 w-11 shrink-0 items-center justify-center md:my-0 md:h-6 md:w-6">
+				<label className="-my-2 flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center">
 					<input
 						type="checkbox"
 						checked={isChecked}
 						onChange={(e) => onCheck(e.target.checked)}
-						className="h-4 w-4 rounded border-border accent-primary"
+						className="h-4 w-4 rounded border-input-border accent-primary"
 						aria-label={`Select ${connection.name}`}
 					/>
-				</span>
+				</label>
 			)}
 			<button
 				type="button"
@@ -108,7 +108,7 @@ export function ConnectionListItem({
 						{connection.whereMet && connection.message && (
 							<span className="text-muted-foreground/30">·</span>
 						)}
-						<p className="truncate text-xs text-muted-foreground">
+						<p className="truncate text-sm text-muted-foreground">
 							{connection.message?.slice(0, 50) || "No message"}
 						</p>
 					</div>

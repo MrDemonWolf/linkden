@@ -1,0 +1,162 @@
+[
+	{
+		"group": "overview",
+		"name": "admin-anatomy-dark",
+		"width": 1440,
+		"height": 947,
+		"bytes": 85964,
+		"description": "Admin editor with numbered regions: sidebar header, navigation, account footer, breadcrumb, top-bar actions, PageHeader, SubTabs, card, preview rail, page viewport, footer, dark mode"
+	},
+	{
+		"group": "overview",
+		"name": "admin-anatomy-light",
+		"width": 1440,
+		"height": 947,
+		"bytes": 93516,
+		"description": "Admin editor with numbered regions: sidebar header, navigation, account footer, breadcrumb, top-bar actions, PageHeader, SubTabs, card, preview rail, page viewport, footer, light mode"
+	},
+	{
+		"group": "overview",
+		"name": "admin-editor-dark",
+		"width": 1440,
+		"height": 947,
+		"bytes": 34302,
+		"description": "Profile page (Profile sub-tab) in the admin shell with the preview rail and footer, dark mode"
+	},
+	{
+		"group": "overview",
+		"name": "admin-editor-light",
+		"width": 1440,
+		"height": 947,
+		"bytes": 36318,
+		"description": "Profile page (Profile sub-tab) in the admin shell with the preview rail and footer, light mode"
+	},
+	{
+		"group": "overview",
+		"name": "public-anatomy-dark",
+		"width": 1440,
+		"height": 900,
+		"bytes": 75626,
+		"description": "Public profile at 1440px with numbered regions: floating controls, profile card, banner, name, bio, social icons, section header and five link styles, dark mode"
+	},
+	{
+		"group": "overview",
+		"name": "public-anatomy-light",
+		"width": 1440,
+		"height": 900,
+		"bytes": 81480,
+		"description": "Public profile at 1440px with numbered regions: floating controls, profile card, banner, name, bio, social icons, section header and five link styles, light mode"
+	},
+	{
+		"group": "overview",
+		"name": "public-footer-dark",
+		"width": 1120,
+		"height": 328,
+		"bytes": 4920,
+		"description": "Public page footer: Privacy and Cookie settings links above the Powered by LinkDen branding line, dark mode"
+	},
+	{
+		"group": "overview",
+		"name": "public-footer-light",
+		"width": 1120,
+		"height": 328,
+		"bytes": 4866,
+		"description": "Public page footer: Privacy and Cookie settings links above the Powered by LinkDen branding line, light mode"
+	},
+	{
+		"group": "overview",
+		"name": "public-profile-mobile-dark",
+		"width": 780,
+		"height": 1688,
+		"bytes": 43852,
+		"description": "Public profile on a 390px phone: profile card above the block list, dark mode"
+	},
+	{
+		"group": "overview",
+		"name": "public-profile-mobile-light",
+		"width": 780,
+		"height": 1688,
+		"bytes": 46608,
+		"description": "Public profile on a 390px phone: profile card above the block list, light mode"
+	},
+	{
+		"group": "overview",
+		"name": "public-split-dark",
+		"width": 1440,
+		"height": 900,
+		"bytes": 36572,
+		"description": "Public profile, split layout at 1440px: sticky profile card left, block list right, dark mode"
+	},
+	{
+		"group": "overview",
+		"name": "public-split-light",
+		"width": 1440,
+		"height": 900,
+		"bytes": 37294,
+		"description": "Public profile, split layout at 1440px: sticky profile card left, block list right, light mode"
+	},
+	{
+		"group": "overview",
+		"name": "scope-admin-dark",
+		"width": 1496,
+		"height": 1088,
+		"bytes": 22502,
+		"description": "Admin scope: the Profile Info form card, dark mode"
+	},
+	{
+		"group": "overview",
+		"name": "scope-admin-light",
+		"width": 1496,
+		"height": 1088,
+		"bytes": 23868,
+		"description": "Admin scope: the Profile Info form card, light mode"
+	},
+	{
+		"group": "overview",
+		"name": "scope-public-dark",
+		"width": 1560,
+		"height": 992,
+		"bytes": 27752,
+		"description": "Public scope: the inline Connect form block, dark mode"
+	},
+	{
+		"group": "overview",
+		"name": "scope-public-light",
+		"width": 1560,
+		"height": 992,
+		"bytes": 27414,
+		"description": "Public scope: the inline Connect form block, light mode"
+	},
+	{
+		"group": "overview",
+		"name": "surface-preview-dark",
+		"width": 808,
+		"height": 1560,
+		"bytes": 30588,
+		"description": "Preview rail: admin toolbar and status line above the inert public page, dark mode"
+	},
+	{
+		"group": "overview",
+		"name": "surface-preview-light",
+		"width": 808,
+		"height": 1560,
+		"bytes": 32240,
+		"description": "Preview rail: admin toolbar and status line above the inert public page, light mode"
+	},
+	{
+		"group": "overview",
+		"name": "surface-wallet-dark",
+		"width": 914,
+		"height": 956,
+		"bytes": 23700,
+		"description": "Settings → Wallet preview rail showing the pass card, dark mode"
+	},
+	{
+		"group": "overview",
+		"name": "surface-wallet-light",
+		"width": 914,
+		"height": 956,
+		"bytes": 24468,
+		"description": "Settings → Wallet preview rail showing the pass card, light mode"
+	}
+]

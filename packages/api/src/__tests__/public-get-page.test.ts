@@ -212,3 +212,18 @@ describe("public.getSetupStatus", () => {
 		}
 	});
 });
+
+describe("first run", () => {
+	it("reports no profile until the admin exists, so / redirects to the setup wizard", async () => {
+		const admins = await db.select().from(user);
+		await db.delete(user);
+		try {
+			const page = await caller.public.getPage();
+			expect(page.profile).toBeNull();
+			expect((await caller.public.getSetupStatus()).completed).toBe(false);
+		} finally {
+			await db.insert(user).values(admins);
+		}
+		expect((await caller.public.getPage()).profile).not.toBeNull();
+	});
+});

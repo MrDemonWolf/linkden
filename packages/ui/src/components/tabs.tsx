@@ -1,5 +1,5 @@
-import * as React from "react";
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
+import * as React from "react";
 import { cn } from "../utils";
 
 type TabsVariant = "default" | "pills" | "bar";
@@ -17,6 +17,11 @@ const TabsList = React.forwardRef<
 			ref={ref}
 			data-slot="tabs-list"
 			className={cn(
+				// `relative` makes the list its tabs' offsetParent. Base UI scrolls the
+				// active tab into view on mount by its offsetLeft, which is measured from
+				// the nearest positioned ancestor; without this a scrolling strip measures
+				// from a far-off ancestor and opens scrolled to its end.
+				"relative",
 				variant === "pills"
 					? "flex gap-2 overflow-x-auto scrollbar-none bg-transparent p-0"
 					: variant === "bar"
@@ -97,4 +102,4 @@ const TabsContent = React.forwardRef<
 ));
 TabsContent.displayName = "TabsContent";
 
-export { Tabs, TabsList, TabsTrigger, TabsContent };
+export { Tabs, TabsContent, TabsList, TabsTrigger };

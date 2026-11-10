@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { hexColorSchema, httpUrlSchema } from "./blocks";
+import { hexColorSchema, imageUrlSchema } from "./blocks";
 
 /** Empty string means "cleared" — the admin sends "" when a field is blanked. */
 const blankable = <T extends z.ZodType>(schema: T) => schema.optional().or(z.literal(""));
@@ -238,10 +238,10 @@ export const walletConfigSchema = z.object({
 	backgroundColor: blankable(hexColorSchema),
 	foregroundColor: blankable(hexColorSchema),
 	labelColor: blankable(hexColorSchema),
-	logoUrl: blankable(httpUrlSchema),
-	iconUrl: blankable(httpUrlSchema),
-	thumbnailUrl: blankable(httpUrlSchema),
-	stripUrl: blankable(httpUrlSchema),
+	logoUrl: blankable(imageUrlSchema),
+	iconUrl: blankable(imageUrlSchema),
+	thumbnailUrl: blankable(imageUrlSchema),
+	stripUrl: blankable(imageUrlSchema),
 	headerFields: headerFieldsSchema.optional(),
 	primaryFields: primaryFieldsSchema.optional(),
 	secondaryFields: secondaryFieldsSchema.optional(),

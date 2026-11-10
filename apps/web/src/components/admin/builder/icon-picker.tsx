@@ -174,10 +174,7 @@ export function IconPicker({
 					<Popover.Popup
 						initialFocus={searchRef}
 						aria-label="Icon picker"
-						className={cn(
-							"flex max-h-[var(--available-height)] w-[min(22rem,calc(100vw-1rem))] flex-col gap-2 rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-md outline-none",
-							"data-[open]:animate-in data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:fade-in-0 data-[closed]:zoom-out-95 data-[open]:zoom-in-95 duration-150",
-						)}
+						className="flex max-h-[var(--available-height)] w-[min(22rem,calc(100vw-1rem))] flex-col gap-2 rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-md outline-none"
 					>
 						<div className="relative">
 							<Search

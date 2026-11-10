@@ -1,6 +1,6 @@
 import { Download, ExternalLink, Upload } from "lucide-react";
 import type { RefObject } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 interface DataSectionProps {
 	onExport: () => void;
@@ -64,9 +64,8 @@ export function DataSection({
 				/>
 			</div>
 			<p className="text-micro text-muted-foreground">
-				Backups hold your blocks, settings, social links and messages, not the uploaded images
-				themselves (the file lists which images it references). Keep those images in place to
-				restore a page as it was.
+				Backups include profile blocks, settings, social links, and messages. Uploaded images are
+				referenced, not included. Keep the images in place to restore the profile.
 			</p>
 
 			<div className="flex items-center justify-between">
@@ -80,11 +79,14 @@ export function DataSection({
 					)}
 				</div>
 				{versionCheck?.hasUpdate ? (
-					<a href={versionCheck.releaseUrl ?? "#"} target="_blank" rel="noopener noreferrer">
-						<Button size="sm">
-							Update to {versionCheck.latest}
-							<ExternalLink className="ml-1.5 h-3 w-3" />
-						</Button>
+					<a
+						href={versionCheck.releaseUrl ?? "#"}
+						target="_blank"
+						rel="noopener noreferrer"
+						className={buttonVariants({ size: "sm" })}
+					>
+						Update to {versionCheck.latest}
+						<ExternalLink className="ml-1.5 h-3 w-3" />
 					</a>
 				) : (
 					<Button size="sm" variant="outline" onClick={onCheckUpdates} disabled={isCheckingUpdates}>

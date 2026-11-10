@@ -12,7 +12,8 @@
 		{
 			"binding": "DB",
 			"database_name": "linkden-db",
-			"database_id": "local"
+			"database_id": "local",
+			"migrations_dir": "../../packages/db/src/migrations"
 		}
 	],
 	"r2_buckets": [
@@ -21,14 +22,14 @@
 			"bucket_name": "linkden-images"
 		}
 	],
-	"rate_limits": [
-		{ "binding": "RL_AUTH", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
-		{ "binding": "RL_STRICT", "namespace_id": "1002", "simple": { "limit": 5, "period": 60 } },
-		{ "binding": "RL_UPLOAD", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } },
-		{ "binding": "RL_PUBLIC", "namespace_id": "1004", "simple": { "limit": 60, "period": 60 } },
+	"ratelimits": [
+		{ "name": "RL_AUTH", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
+		{ "name": "RL_STRICT", "namespace_id": "1002", "simple": { "limit": 5, "period": 60 } },
+		{ "name": "RL_UPLOAD", "namespace_id": "1003", "simple": { "limit": 20, "period": 60 } },
+		{ "name": "RL_PUBLIC", "namespace_id": "1004", "simple": { "limit": 60, "period": 60 } },
 		// Global (constant-key) cap on sign-in / 2FA / password-reset attempts.
 		// 1005 is RL_OG on the web worker (packages/infra/alchemy.run.ts).
-		{ "binding": "RL_SIGNIN", "namespace_id": "1006", "simple": { "limit": 30, "period": 60 } }
+		{ "name": "RL_SIGNIN", "namespace_id": "1006", "simple": { "limit": 30, "period": 60 } }
 	],
 	"triggers": {
 		// Daily retention sweep — see src/lib/retention-sweep.ts.

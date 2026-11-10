@@ -1,0 +1,522 @@
+[
+	{
+		"group": "patterns",
+		"name": "add-block-picker-light",
+		"width": 1496,
+		"height": 834,
+		"bytes": 37218,
+		"description": "Add block opened: the dashed button turns into Cancel above the block type grid"
+	},
+	{
+		"group": "patterns",
+		"name": "admin-shell-dark",
+		"width": 1440,
+		"height": 900,
+		"bytes": 43050,
+		"description": "Links destination at 1440px: sidebar, top bar, PageHeader, SubTabs, block list and preview rail (dark)"
+	},
+	{
+		"group": "patterns",
+		"name": "admin-shell-light",
+		"width": 1440,
+		"height": 900,
+		"bytes": 45014,
+		"description": "Links destination at 1440px: sidebar, top bar, PageHeader, SubTabs, block list and preview rail (light)"
+	},
+	{
+		"group": "patterns",
+		"name": "admin-shell-mobile-dark",
+		"width": 780,
+		"height": 1688,
+		"bytes": 42938,
+		"description": "Links on a 390px phone: compact top bar, page content and the 56px bottom tab bar (dark)"
+	},
+	{
+		"group": "patterns",
+		"name": "admin-shell-mobile-light",
+		"width": 780,
+		"height": 1688,
+		"bytes": 45108,
+		"description": "Links on a 390px phone: compact top bar, page content and the 56px bottom tab bar (light)"
+	},
+	{
+		"group": "patterns",
+		"name": "admin-shell-sidebar-collapsed-light",
+		"width": 1440,
+		"height": 900,
+		"bytes": 39126,
+		"description": "Design → Theme with the sidebar collapsed to its icon rail"
+	},
+	{
+		"group": "patterns",
+		"name": "block-editor-lg-light",
+		"width": 1200,
+		"height": 900,
+		"bytes": 46344,
+		"description": "Block editor at 1200px: the panel replaces the preview; Show preview peeks at the page"
+	},
+	{
+		"group": "patterns",
+		"name": "block-editor-mobile-light",
+		"width": 780,
+		"height": 1688,
+		"bytes": 36952,
+		"description": "Block editor below 1024px: a 90vh bottom sheet over the block list"
+	},
+	{
+		"group": "patterns",
+		"name": "block-editor-xl-dark",
+		"width": 1440,
+		"height": 900,
+		"bytes": 44352,
+		"description": "Block editor at 1440px: panel stacked above the preview, with an unsaved title (dark)"
+	},
+	{
+		"group": "patterns",
+		"name": "block-editor-xl-light",
+		"width": 1440,
+		"height": 900,
+		"bytes": 46394,
+		"description": "Block editor at 1440px: panel stacked above the preview, with an unsaved title (light)"
+	},
+	{
+		"group": "patterns",
+		"name": "block-editor-xl-seam-light",
+		"width": 808,
+		"height": 1640,
+		"bytes": 37064,
+		"description": "Preview rail scrolled to the seam: the editor's Schedule, Advanced and Save Changes above the page preview"
+	},
+	{
+		"group": "patterns",
+		"name": "block-filters-drafts-light",
+		"width": 1494,
+		"height": 290,
+		"bytes": 11376,
+		"description": "Drafts filter: one draft row with its dot, beside the Apply 1 new action"
+	},
+	{
+		"group": "patterns",
+		"name": "block-filters-hidden-light",
+		"width": 1494,
+		"height": 290,
+		"bytes": 9506,
+		"description": "Hidden filter: the disabled block row at 60% opacity with its switch off"
+	},
+	{
+		"group": "patterns",
+		"name": "bottom-nav-more-mobile-dark",
+		"width": 780,
+		"height": 1688,
+		"bytes": 43080,
+		"description": "Bottom tab bar with the More menu open (Design, Settings) (dark)"
+	},
+	{
+		"group": "patterns",
+		"name": "bottom-nav-more-mobile-light",
+		"width": 780,
+		"height": 1688,
+		"bytes": 45304,
+		"description": "Bottom tab bar with the More menu open (Design, Settings) (light)"
+	},
+	{
+		"group": "patterns",
+		"name": "inbox-detail-mobile-light",
+		"width": 780,
+		"height": 1688,
+		"bytes": 35172,
+		"description": "Inbox message in a bottom sheet below 768px"
+	},
+	{
+		"group": "patterns",
+		"name": "inbox-empty-light",
+		"width": 1440,
+		"height": 900,
+		"bytes": 16858,
+		"description": "Inbox with no messages: the shared EmptyState card under the header controls"
+	},
+	{
+		"group": "patterns",
+		"name": "inbox-mobile-light",
+		"width": 780,
+		"height": 1688,
+		"bytes": 49932,
+		"description": "Inbox list on a phone"
+	},
+	{
+		"group": "patterns",
+		"name": "inbox-select-mode-light",
+		"width": 1440,
+		"height": 900,
+		"bytes": 33310,
+		"description": "Inbox select mode: bulk bar with Select all, count, Mark Read, Delete and Done"
+	},
+	{
+		"group": "patterns",
+		"name": "inbox-split-dark",
+		"width": 1440,
+		"height": 900,
+		"bytes": 42040,
+		"description": "Inbox list and detail at 1440px with a read message open (dark)"
+	},
+	{
+		"group": "patterns",
+		"name": "inbox-split-light",
+		"width": 1440,
+		"height": 900,
+		"bytes": 44114,
+		"description": "Inbox list and detail at 1440px with a read message open (light)"
+	},
+	{
+		"group": "patterns",
+		"name": "links-empty-dark",
+		"width": 1440,
+		"height": 900,
+		"bytes": 29704,
+		"description": "Links with no blocks: EmptyState card and the preview's Sample badge and sample blocks (dark)"
+	},
+	{
+		"group": "patterns",
+		"name": "links-empty-light",
+		"width": 1440,
+		"height": 900,
+		"bytes": 30934,
+		"description": "Links with no blocks: EmptyState card and the preview's Sample badge and sample blocks (light)"
+	},
+	{
+		"group": "patterns",
+		"name": "login-dark",
+		"width": 1440,
+		"height": 900,
+		"bytes": 11826,
+		"description": "Login at 1440px: compact centered card with site branding (dark)"
+	},
+	{
+		"group": "patterns",
+		"name": "login-forgot-dark",
+		"width": 904,
+		"height": 664,
+		"bytes": 16282,
+		"description": "Forgot password without email configured: Reset from the server card (dark)"
+	},
+	{
+		"group": "patterns",
+		"name": "login-forgot-light",
+		"width": 904,
+		"height": 664,
+		"bytes": 17210,
+		"description": "Forgot password without email configured: Reset from the server card (light)"
+	},
+	{
+		"group": "patterns",
+		"name": "login-light",
+		"width": 1440,
+		"height": 900,
+		"bytes": 12296,
+		"description": "Login at 1440px: compact centered card with site branding (light)"
+	},
+	{
+		"group": "patterns",
+		"name": "login-mobile-dark",
+		"width": 780,
+		"height": 1688,
+		"bytes": 24500,
+		"description": "Login on a phone (dark)"
+	},
+	{
+		"group": "patterns",
+		"name": "login-mobile-light",
+		"width": 780,
+		"height": 1688,
+		"bytes": 26048,
+		"description": "Login on a phone (light)"
+	},
+	{
+		"group": "patterns",
+		"name": "login-two-factor-dark",
+		"width": 904,
+		"height": 1108,
+		"bytes": 20710,
+		"description": "Two-factor check after a password sign-in: code field, 30-day trust, backup-code switch (dark)"
+	},
+	{
+		"group": "patterns",
+		"name": "login-two-factor-light",
+		"width": 904,
+		"height": 1108,
+		"bytes": 22200,
+		"description": "Two-factor check after a password sign-in: code field, 30-day trust, backup-code switch (light)"
+	},
+	{
+		"group": "patterns",
+		"name": "mobile-preview-sheet-dark",
+		"width": 780,
+		"height": 1688,
+		"bytes": 30942,
+		"description": "MobilePreviewSheet below 1024px: Preview title, Share and Close above the fitted page (dark)"
+	},
+	{
+		"group": "patterns",
+		"name": "mobile-preview-sheet-light",
+		"width": 780,
+		"height": 1688,
+		"bytes": 32528,
+		"description": "MobilePreviewSheet below 1024px: Preview title, Share and Close above the fitted page (light)"
+	},
+	{
+		"group": "patterns",
+		"name": "page-header-subtabs-light",
+		"width": 960,
+		"height": 262,
+		"bytes": 4076,
+		"description": "PageHeader h1 above the path-segment SubTabs strip on Design → Branding"
+	},
+	{
+		"group": "patterns",
+		"name": "preview-no-visible-blocks-light",
+		"width": 808,
+		"height": 1560,
+		"bytes": 28926,
+		"description": "Every saved block hidden: No visible blocks and the public page's Nothing here yet panel"
+	},
+	{
+		"group": "patterns",
+		"name": "preview-rail-collapsed-light",
+		"width": 1440,
+		"height": 900,
+		"bytes": 23220,
+		"description": "Profile with the preview rail collapsed to its 40px Show preview button"
+	},
+	{
+		"group": "patterns",
+		"name": "preview-rail-dark",
+		"width": 808,
+		"height": 1560,
+		"bytes": 30658,
+		"description": "Expanded preview rail: header row, mode toggle, copy/open actions, status line and the 390px viewport (dark)"
+	},
+	{
+		"group": "patterns",
+		"name": "preview-rail-light",
+		"width": 808,
+		"height": 1560,
+		"bytes": 32226,
+		"description": "Expanded preview rail: header row, mode toggle, copy/open actions, status line and the 390px viewport (light)"
+	},
+	{
+		"group": "patterns",
+		"name": "preview-rail-social-card-dark",
+		"width": 808,
+		"height": 1454,
+		"bytes": 39392,
+		"description": "SEO registers an altView: the rail header toggles between Page and Social card (dark)"
+	},
+	{
+		"group": "patterns",
+		"name": "preview-rail-social-card-light",
+		"width": 808,
+		"height": 1454,
+		"bytes": 40128,
+		"description": "SEO registers an altView: the rail header toggles between Page and Social card (light)"
+	},
+	{
+		"group": "patterns",
+		"name": "public-narrow-860-dark",
+		"width": 860,
+		"height": 900,
+		"bytes": 22728,
+		"description": "Split page in an 860px window: under the 896px container threshold it stacks (dark)"
+	},
+	{
+		"group": "patterns",
+		"name": "public-narrow-860-light",
+		"width": 860,
+		"height": 900,
+		"bytes": 23740,
+		"description": "Split page in an 860px window: under the 896px container threshold it stacks (light)"
+	},
+	{
+		"group": "patterns",
+		"name": "save-bar-light",
+		"width": 1496,
+		"height": 180,
+		"bytes": 8346,
+		"description": "StickySaveBar: message, Discard and Save changes"
+	},
+	{
+		"group": "patterns",
+		"name": "save-bar-mobile-light",
+		"width": 780,
+		"height": 1688,
+		"bytes": 37880,
+		"description": "Design → Theme on a phone after an unsaved layout change: save bar above the tab bar"
+	},
+	{
+		"group": "patterns",
+		"name": "settings-form-dark",
+		"width": 1440,
+		"height": 900,
+		"bytes": 29126,
+		"description": "Settings → Email at 1440px: 176px section nav, form cards, no preview rail (dark)"
+	},
+	{
+		"group": "patterns",
+		"name": "settings-form-light",
+		"width": 1440,
+		"height": 900,
+		"bytes": 30436,
+		"description": "Settings → Email at 1440px: 176px section nav, form cards, no preview rail (light)"
+	},
+	{
+		"group": "patterns",
+		"name": "settings-form-mobile-light",
+		"width": 780,
+		"height": 1688,
+		"bytes": 44474,
+		"description": "Settings → Email on a phone: SubTabs strip instead of the side nav"
+	},
+	{
+		"group": "patterns",
+		"name": "settings-invalid-light",
+		"width": 1888,
+		"height": 698,
+		"bytes": 37988,
+		"description": "Settings → Email with Email only and no key: field error, save bar message and disabled Save"
+	},
+	{
+		"group": "patterns",
+		"name": "settings-query-error-light",
+		"width": 2304,
+		"height": 654,
+		"bytes": 10892,
+		"description": "Settings → Email when settings.getAll fails: QueryError with Retry in place of the form"
+	},
+	{
+		"group": "patterns",
+		"name": "setup-account-dark",
+		"width": 1024,
+		"height": 1530,
+		"bytes": 35792,
+		"description": "Setup step 1: step indicator and the Create your admin account card (dark)"
+	},
+	{
+		"group": "patterns",
+		"name": "setup-account-light",
+		"width": 1024,
+		"height": 1530,
+		"bytes": 37324,
+		"description": "Setup step 1: step indicator and the Create your admin account card (light)"
+	},
+	{
+		"group": "patterns",
+		"name": "setup-account-mobile-light",
+		"width": 780,
+		"height": 1750,
+		"bytes": 37958,
+		"description": "Setup step 1 on a 390px phone: theme toggle at the top right, brand row below it, step indicator and the account card"
+	},
+	{
+		"group": "patterns",
+		"name": "setup-launch-light",
+		"width": 1024,
+		"height": 898,
+		"bytes": 22258,
+		"description": "Setup step 4: the launch card, without the step indicator"
+	},
+	{
+		"group": "patterns",
+		"name": "setup-profile-light",
+		"width": 1024,
+		"height": 1364,
+		"bytes": 33442,
+		"description": "Setup step 2: Set up your profile"
+	},
+	{
+		"group": "patterns",
+		"name": "setup-theme-light",
+		"width": 1024,
+		"height": 1500,
+		"bytes": 45592,
+		"description": "Setup step 3: Choose a theme"
+	},
+	{
+		"group": "patterns",
+		"name": "state-pill-after-discard-light",
+		"width": 268,
+		"height": 114,
+		"bytes": 1894,
+		"description": "StatePill after Discard: back to the publication label"
+	},
+	{
+		"group": "patterns",
+		"name": "state-pill-popover-light",
+		"width": 706,
+		"height": 478,
+		"bytes": 14978,
+		"description": "Publish changes popover opened from the StatePill"
+	},
+	{
+		"group": "patterns",
+		"name": "state-pill-unsaved-light",
+		"width": 202,
+		"height": 114,
+		"bytes": 1902,
+		"description": "StatePill reading Unsaved while any form is dirty"
+	},
+	{
+		"group": "patterns",
+		"name": "top-bar-light",
+		"width": 1688,
+		"height": 128,
+		"bytes": 4988,
+		"description": "64px top bar on Design → SEO: sidebar trigger, breadcrumb Design › SEO, StatePill, share, View live"
+	},
+	{
+		"group": "patterns",
+		"name": "unsaved-save-bar-dark",
+		"width": 1440,
+		"height": 900,
+		"bytes": 42416,
+		"description": "Design → Theme after picking Forest without saving: Unsaved pill, recolored preview, sticky save bar (dark)"
+	},
+	{
+		"group": "patterns",
+		"name": "unsaved-save-bar-light",
+		"width": 1440,
+		"height": 900,
+		"bytes": 45412,
+		"description": "Design → Theme after picking Forest without saving: Unsaved pill, recolored preview, sticky save bar (light)"
+	},
+	{
+		"group": "patterns",
+		"name": "wallet-pass-card",
+		"width": 746,
+		"height": 760,
+		"bytes": 21712,
+		"description": "WalletPassPreview card: logo chip, header field, name and thumbnail, secondary fields, QR"
+	},
+	{
+		"group": "patterns",
+		"name": "wallet-settings-dark",
+		"width": 1440,
+		"height": 900,
+		"bytes": 42440,
+		"description": "Settings → Wallet: pass editor beside the 425px wide preview rail (dark)"
+	},
+	{
+		"group": "patterns",
+		"name": "wallet-settings-light",
+		"width": 1440,
+		"height": 900,
+		"bytes": 43914,
+		"description": "Settings → Wallet: pass editor beside the 425px wide preview rail (light)"
+	},
+	{
+		"group": "patterns",
+		"name": "wallet-zone-highlight",
+		"width": 746,
+		"height": 760,
+		"bytes": 23050,
+		"description": "Focus in the Secondary fields editor outlines the secondary row on the pass card"
+	}
+]

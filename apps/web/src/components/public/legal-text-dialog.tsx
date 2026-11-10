@@ -33,8 +33,8 @@ export function LegalTextDialog({
 				<div
 					className={
 						textStyle
-							? "whitespace-pre-wrap text-sm"
-							: "whitespace-pre-wrap text-sm text-muted-foreground"
+							? "whitespace-pre-wrap [overflow-wrap:anywhere] text-sm"
+							: "whitespace-pre-wrap [overflow-wrap:anywhere] text-sm text-muted-foreground"
 					}
 					style={textStyle}
 				>

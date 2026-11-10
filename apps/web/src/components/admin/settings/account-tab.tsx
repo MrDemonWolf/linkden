@@ -27,7 +27,7 @@ import { trpc } from "@/utils/trpc";
 
 // ─── Settings → Account ────────────────────────────────────────────────────
 // Login & Security (email, password, 2FA, magic link) → Preferences (timezone,
-// admin branding, login page). The public profile is edited on Links → Profile
+// admin branding). The public profile is edited on Links → Profile
 // and the danger zone lives on Settings → Data.
 
 /** The base32 secret from an otpauth:// URI — what an app's "enter a key" screen asks for. */
@@ -37,14 +37,6 @@ function totpSecret(uri: string): string {
 	} catch {
 		return uri;
 	}
-}
-
-function relativeDays(date: Date | null | undefined): string {
-	if (!date) return "never changed";
-	const days = Math.max(0, Math.floor((Date.now() - date.getTime()) / 86_400_000));
-	if (days === 0) return "changed today";
-	if (days === 1) return "changed yesterday";
-	return `last changed ${days} days ago`;
 }
 
 export function AccountTab() {
@@ -148,6 +140,8 @@ export function AccountTab() {
 					},
 				},
 			);
+		} catch {
+			toast.error("Couldn't update your password. Check your connection and try again.");
 		} finally {
 			setIsChangingPw(false);
 		}
@@ -236,6 +230,8 @@ export function AccountTab() {
 					},
 				},
 			);
+		} catch {
+			toast.error("Couldn't verify the code. Check your connection and try again.");
 		} finally {
 			setIs2faLoading(false);
 		}
@@ -261,6 +257,10 @@ export function AccountTab() {
 						toast.error(err.error.message || "Failed to disable 2FA");
 					},
 				},
+			);
+		} catch {
+			toast.error(
+				"Couldn't disable two-factor authentication. Check your connection and try again.",
 			);
 		} finally {
 			setIs2faLoading(false);
@@ -310,9 +310,6 @@ export function AccountTab() {
 		}
 	};
 
-	// updatedAt as a proxy for "last password change" — auth doesn't track this separately.
-	const userUpdatedAt = user?.updatedAt ? new Date(user.updatedAt) : null;
-
 	if (prefs.isError) {
 		return <QueryError message="Couldn't load settings" onRetry={() => prefs.refetch()} />;
 	}
@@ -334,7 +331,7 @@ export function AccountTab() {
 					{/* Email row */}
 					<div className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-dashed border-border py-3">
 						<div className="min-w-0">
-							<div className="flex items-center gap-1.5 text-xs font-medium">
+							<div className="flex items-center gap-1.5 text-sm font-medium">
 								<Mail className="h-3 w-3 text-muted-foreground" />
 								Email
 							</div>
@@ -343,7 +340,13 @@ export function AccountTab() {
 							</div>
 						</div>
 						{!emailEditing ? (
-							<Button size="sm" variant="outline" onClick={() => setEmailEditing(true)}>
+							<Button
+								size="sm"
+								variant="outline"
+								onClick={() => setEmailEditing(true)}
+								aria-label="Change email"
+								aria-expanded={false}
+							>
 								Change
 							</Button>
 						) : (
@@ -362,7 +365,7 @@ export function AccountTab() {
 					</div>
 					{emailEditing && (
 						<div className="space-y-2 border-b border-dashed border-border py-3">
-							<Label htmlFor="newEmail" className="text-xs text-muted-foreground">
+							<Label htmlFor="newEmail" className="text-sm text-muted-foreground">
 								New email address
 							</Label>
 							<div className="flex gap-2">
@@ -385,7 +388,10 @@ export function AccountTab() {
 									onClick={handleChangeEmail}
 									disabled={isChangingEmail || !newEmail}
 								>
-									{isChangingEmail ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Send"}
+									{isChangingEmail && (
+										<Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+									)}
+									{isChangingEmail ? "Sending..." : "Send"}
 								</Button>
 							</div>
 							{emailError ? (
@@ -404,25 +410,30 @@ export function AccountTab() {
 					{/* Password row */}
 					<div className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-dashed border-border py-3">
 						<div className="min-w-0">
-							<div className="text-xs font-medium">Password</div>
-							<div className="text-micro text-muted-foreground">{relativeDays(userUpdatedAt)}</div>
+							<div className="text-sm font-medium">Password</div>
+							<div className="text-micro text-muted-foreground">
+								Use a unique password with at least 8 characters
+							</div>
 						</div>
 						<Button
 							size="sm"
 							variant={passwordOpen ? "ghost" : "outline"}
 							onClick={() => setPasswordOpen((v) => !v)}
-							aria-label={passwordOpen ? "Close password form" : undefined}
+							aria-label={passwordOpen ? "Close password form" : "Change password"}
+							aria-expanded={passwordOpen}
+							aria-controls={passwordOpen ? "change-password-form" : undefined}
 						>
 							{passwordOpen ? <X className="h-3.5 w-3.5" /> : "Change"}
 						</Button>
 					</div>
 					{passwordOpen && (
 						<form
+							id="change-password-form"
 							onSubmit={handleChangePassword}
 							className="space-y-3 border-b border-dashed border-border py-3"
 						>
 							<div className="space-y-1.5">
-								<Label htmlFor="currentPw" className="text-xs text-muted-foreground">
+								<Label htmlFor="currentPw" className="text-sm text-muted-foreground">
 									Current password
 								</Label>
 								<div className="relative">
@@ -436,7 +447,7 @@ export function AccountTab() {
 									/>
 									<button
 										type="button"
-										className="absolute right-0.5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-muted-foreground hover:text-foreground md:h-9 md:w-9"
+										className="absolute right-0.5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-muted-foreground hover:text-foreground md:pointer-fine:h-9 md:pointer-fine:w-9"
 										onClick={() => setShowCurrentPw(!showCurrentPw)}
 										aria-label={showCurrentPw ? "Hide password" : "Show password"}
 									>
@@ -449,7 +460,7 @@ export function AccountTab() {
 								</div>
 							</div>
 							<div className="space-y-1.5">
-								<Label htmlFor="newPw" className="text-xs text-muted-foreground">
+								<Label htmlFor="newPw" className="text-sm text-muted-foreground">
 									New password
 								</Label>
 								<div className="relative">
@@ -475,7 +486,7 @@ export function AccountTab() {
 									/>
 									<button
 										type="button"
-										className="absolute right-0.5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-muted-foreground hover:text-foreground md:h-9 md:w-9"
+										className="absolute right-0.5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-muted-foreground hover:text-foreground md:pointer-fine:h-9 md:pointer-fine:w-9"
 										onClick={() => setShowNewPw(!showNewPw)}
 										aria-label={showNewPw ? "Hide password" : "Show password"}
 									>
@@ -493,7 +504,7 @@ export function AccountTab() {
 								)}
 							</div>
 							<div className="space-y-1.5">
-								<Label htmlFor="confirmPw" className="text-xs text-muted-foreground">
+								<Label htmlFor="confirmPw" className="text-sm text-muted-foreground">
 									Confirm new password
 								</Label>
 								<Input
@@ -535,7 +546,7 @@ export function AccountTab() {
 					{/* 2FA row */}
 					<div className="grid grid-cols-[1fr_auto_auto] items-center gap-3 border-b border-dashed border-border py-3">
 						<div className="min-w-0">
-							<div className="text-xs font-medium">Two-factor authentication</div>
+							<div className="text-sm font-medium">Two-factor authentication</div>
 							<div className="text-micro text-muted-foreground">TOTP via authenticator app</div>
 						</div>
 						<Badge variant={is2faEnabled ? "default" : "secondary"} className="text-micro">
@@ -551,7 +562,7 @@ export function AccountTab() {
 					{/* Magic link row */}
 					<div className="grid grid-cols-[1fr_auto] items-center gap-3 py-3">
 						<div className="min-w-0">
-							<div className="text-xs font-medium">Magic link sign-in</div>
+							<div className="text-sm font-medium">Magic link sign-in</div>
 							<div id="magic-link-status" className="text-micro text-muted-foreground">
 								{!settingsQuery.data || (emailConfigured && !is2faEnabled) ? (
 									"passwordless · email-only"
@@ -580,11 +591,7 @@ export function AccountTab() {
 			</Card>
 
 			{/* ─── Preferences ─── */}
-			<SectionCard
-				icon={Settings2}
-				title="Preferences"
-				description="Timezone, admin branding, and the login screen"
-			>
+			<SectionCard icon={Settings2} title="Preferences" description="Timezone and admin branding">
 				<PreferencesSection state={prefs.state} onChange={prefs.setState} />
 			</SectionCard>
 
@@ -600,7 +607,7 @@ export function AccountTab() {
 				open={twoFaModalOpen}
 				onOpenChange={(v) => !v && !is2faLoading && setTwoFaModalOpen(false)}
 			>
-				<DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
+				<DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-1.5 text-sm font-semibold">
 							<Key className="h-4 w-4" />
@@ -614,13 +621,13 @@ export function AccountTab() {
 
 					{twoFaMode !== "verify" && (
 						<div className="space-y-4">
-							<p className="text-xs text-muted-foreground">
+							<p className="text-sm text-muted-foreground">
 								{twoFaMode === "disable"
 									? "Confirm your password to disable two-factor authentication."
 									: "Require a code from your authenticator app (or a backup code) after your password when signing in. Magic-link sign-in is unavailable while two-factor is on."}
 							</p>
 							<div className="space-y-1.5">
-								<Label htmlFor="twoFaPw" className="text-xs text-muted-foreground">
+								<Label htmlFor="twoFaPw" className="text-sm text-muted-foreground">
 									Current password
 								</Label>
 								<Input
@@ -671,7 +678,7 @@ export function AccountTab() {
 					{twoFaMode === "verify" && (
 						<div className="space-y-4">
 							<div className="space-y-3 rounded-lg border border-border/50 bg-muted/30 p-4">
-								<p className="flex items-center gap-1.5 text-xs font-medium">
+								<p className="flex items-center gap-1.5 text-sm font-medium">
 									<QrCode className="h-3.5 w-3.5" />
 									Scan with your authenticator app
 								</p>
@@ -749,7 +756,7 @@ export function AccountTab() {
 								</div>
 							)}
 							<div className="space-y-1.5">
-								<Label htmlFor="twoFaCode" className="text-xs text-muted-foreground">
+								<Label htmlFor="twoFaCode" className="text-sm text-muted-foreground">
 									Verification code
 								</Label>
 								<Input

@@ -3,7 +3,7 @@
 import type { LucideIcon } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
 	Empty,
@@ -32,26 +32,24 @@ export function EmptyState({ icon: Icon, title, description, action }: EmptyStat
 	return (
 		<Card>
 			<CardContent>
-				<Empty className="py-12">
-					<EmptyHeader>
+				<Empty className="py-6 sm:py-8">
+					<EmptyHeader className="max-w-md">
 						<EmptyMedia className="relative mb-0 size-14">
 							<div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/10 to-primary/5" />
 							<Icon className="relative size-7 text-muted-foreground/50" aria-hidden="true" />
 						</EmptyMedia>
 						<EmptyTitle className="font-semibold">{title}</EmptyTitle>
-						<EmptyDescription className="max-w-xs">{description}</EmptyDescription>
+						<EmptyDescription className="max-w-md">{description}</EmptyDescription>
 					</EmptyHeader>
 					{action && (
 						<EmptyContent>
 							{"href" in action ? (
-								<Button
-									variant="outline"
-									size="sm"
-									nativeButton={false}
-									render={<Link href={action.href} />}
+								<Link
+									href={action.href}
+									className={buttonVariants({ variant: "outline", size: "sm" })}
 								>
 									{action.label}
-								</Button>
+								</Link>
 							) : (
 								<Button variant="outline" size="sm" onClick={action.onClick}>
 									{action.label}

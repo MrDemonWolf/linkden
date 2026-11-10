@@ -35,27 +35,22 @@ export function CollapsibleSection({
 			<button
 				type="button"
 				onClick={() => setOpen(!open)}
-				className="flex min-h-11 w-full items-center justify-between px-4 py-2.5 text-micro font-medium uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground md:min-h-9"
+				className="flex min-h-11 w-full items-center justify-between px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
 				aria-expanded={open}
 				aria-controls={contentId}
 			>
 				{label}
-				<ChevronDown
-					className={cn("h-3.5 w-3.5 transition-transform duration-200", open && "rotate-180")}
-				/>
+				<ChevronDown className={cn("h-3.5 w-3.5", open && "rotate-180")} />
 			</button>
 			{/* Collapsed content stays mounted for the height transition, so `inert`
 			    keeps its fields out of the tab order and the accessibility tree. */}
 			<div
 				id={contentId}
 				inert={!open}
-				className={cn(
-					"grid transition-all duration-200 ease-in-out",
-					open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
-				)}
+				className={cn("grid", open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}
 			>
 				<div className="overflow-hidden">
-					<div className="space-y-3 px-4 pb-4">{children}</div>
+					<div className="space-y-4 px-4 pb-5">{children}</div>
 				</div>
 			</div>
 		</div>

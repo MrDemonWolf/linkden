@@ -11,6 +11,7 @@ import {
 	isSecretKey,
 	maskSecret,
 	OG_TEMPLATE_IDS,
+	PAGE_LAYOUTS,
 	SECRET_MASK,
 	SECRET_SETTING_KEYS,
 	SETTING_REGISTRY,
@@ -45,6 +46,7 @@ describe("settings registry", () => {
 
 	it("settingKeySchema rejects unknown keys", () => {
 		expect(settingKeySchema.safeParse("theme_preset").success).toBe(true);
+		expect(settingKeySchema.safeParse("page_layout").success).toBe(true);
 		expect(settingKeySchema.safeParse("vcard_data").success).toBe(false);
 		expect(settingKeySchema.safeParse("").success).toBe(false);
 	});
@@ -75,6 +77,7 @@ describe("settings registry", () => {
 		expect(getSettingMeta("default_color_mode")).toMatchObject({
 			values: ["light", "dark", "system"],
 		});
+		expect(getSettingMeta("page_layout")).toMatchObject({ kind: "enum", values: PAGE_LAYOUTS });
 	});
 
 	it("theme_preset values match themePresets names", () => {

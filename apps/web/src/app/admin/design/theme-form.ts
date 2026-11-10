@@ -1,4 +1,5 @@
 import type { SettingKey } from "@linkden/validators/settings";
+import type { PageLayout } from "@linkden/validators/settings-registry";
 import type { SocialIconShape } from "@/components/admin/appearance/social-icon-shape-section";
 
 /**
@@ -12,6 +13,7 @@ import type { SocialIconShape } from "@/components/admin/appearance/social-icon-
 export interface ThemeForm {
 	theme: string;
 	colorMode: string;
+	pageLayout: PageLayout;
 	primaryColor: string;
 	secondaryColor: string;
 	accentColor: string;
@@ -25,6 +27,7 @@ export function parse(s: Record<string, string>): ThemeForm {
 	return {
 		theme: s.theme_preset ?? "default",
 		colorMode: s.default_color_mode ?? "light",
+		pageLayout: s.page_layout === "stacked" ? "stacked" : "split",
 		primaryColor: s.custom_primary ?? "",
 		secondaryColor: s.custom_secondary ?? "",
 		accentColor: s.custom_accent ?? "",
@@ -39,6 +42,7 @@ export function serialize(f: ThemeForm): Array<{ key: SettingKey; value: string 
 	return [
 		{ key: "theme_preset", value: f.theme },
 		{ key: "default_color_mode", value: f.colorMode },
+		{ key: "page_layout", value: f.pageLayout },
 		{ key: "custom_primary", value: f.primaryColor },
 		{ key: "custom_secondary", value: f.secondaryColor },
 		{ key: "custom_accent", value: f.accentColor },

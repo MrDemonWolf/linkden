@@ -1,14 +1,16 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./public-fonts.css";
 
-/* Tailwind v4 only auto-scans this app — without this, classes used solely in
-   @linkden/ui components are never generated (e.g. tab selected states). */
+/* Explicit component roots keep CLI/static/dev builds consistent and avoid
+   scanning generated caches or disposable app copies in this monorepo. */
+@source "./";
 @source "../../../packages/ui/src";
 
 @custom-variant dark (&:is(.dark *));
 
-:root {
+:root, .public-scope {
   /* Midnight Studio — light "day" mode. Branded, not generic grey.
      Surface layering: page ground is off-white, cards are pure white, inset
      lists/chips sit on --surface-2 — three distinct planes, not one. */
@@ -91,7 +93,7 @@
   --code-foreground: oklch(0.7621 0.0202 262.99);
 }
 
-.dark {
+.dark, .dark .public-scope {
   /* Neutral dark workspace with cool-blue interactive accents. */
   --background: #111318;
   --foreground: #f1f5f9;
@@ -155,19 +157,19 @@
   --font-display: var(--font-display), system-ui, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, monospace;
 
-  /* Fluid type scale (375px -> 1280px). `micro` is the floor: nothing in the
+  /* Fluid type follows the content container (viewport when none exists). `micro` is the floor: nothing in the
      UI renders below 12px, which is what retired text-[10px]/text-[11px]. */
-  --text-h1: clamp(1.75rem, 1.3rem + 2vw, 2.5rem);
+  --text-h1: clamp(1.75rem, 1.3rem + 2cqw, 2.5rem);
   --text-h1--line-height: 1.05;
   --text-h1--letter-spacing: -0.03em;
-  --text-h2: clamp(1.125rem, 1rem + 0.6vw, 1.375rem);
+  --text-h2: clamp(1.125rem, 1rem + 0.6cqw, 1.375rem);
   --text-h2--line-height: 1.2;
   --text-h2--letter-spacing: -0.02em;
-  --text-body: clamp(1rem, 0.95rem + 0.25vw, 1.0625rem);
+  --text-body: clamp(1rem, 0.95rem + 0.25cqw, 1.0625rem);
   --text-body--line-height: 1.55;
-  --text-small: clamp(0.875rem, 0.85rem + 0.15vw, 0.9375rem);
+  --text-small: clamp(0.875rem, 0.85rem + 0.15cqw, 0.9375rem);
   --text-small--line-height: 1.45;
-  --text-micro: clamp(0.75rem, 0.72rem + 0.1vw, 0.8125rem);
+  --text-micro: clamp(0.75rem, 0.72rem + 0.1cqw, 0.8125rem);
   --text-micro--line-height: 1.35;
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
@@ -218,13 +220,6 @@
   --shadow-glow: var(--shadow-glow);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  /* Top-bar Unsaved dot: one 600ms pulse when the pill appears, then still. */
-  --animate-pulse-once: pulse-once 600ms var(--ease-out) 1;
-  @keyframes pulse-once {
-    0% { transform: scale(1); opacity: 1; }
-    40% { transform: scale(1.9); opacity: 0.45; }
-    100% { transform: scale(1); opacity: 1; }
-  }
 }
 
 /* Radius scale lives in a NON-inline `@theme` on purpose. `@theme inline`
@@ -251,27 +246,152 @@
    shell root carries `.admin-scope`, everything under it inherits the tighter
    scale, and no component has to branch on where it is rendered. Unlayered so
    it outranks Tailwind's `@layer theme` `:root`. */
+/* Neutral editor surfaces with a blue accent; saved public themes retain their palette. */
 .admin-scope {
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
-  --radius-2xl: 1rem;
+  --font-sans: var(--font-admin-sans), system-ui, sans-serif;
+  --font-display: var(--font-admin-display), system-ui, sans-serif;
+  font-family: var(--font-sans);
+  --brand-navy-900: #0A1633;
+  --brand-navy-800: #0D2A56;
+  --brand-navy-700: #0D4D8C;
+  --brand-blue-600: #1178B8;
+  --brand-blue-500: #1795D2;
+  --brand-blue-400: #3AAEE3;
+  --brand-success: #2FAB66;
+  --brand-warning: #E3A008;
+  --brand-danger: #D33A3A;
+  --background: #F6F7F9;
+  --foreground: #18181B;
+  --card: #FFFFFF;
+  --card-foreground: #18181B;
+  --surface-2: #F0F0F3;
+  --popover: #FFFFFF;
+  --popover-foreground: #18181B;
+  --primary: #1D4ED8;
+  --primary-foreground: #FFFFFF;
+  --secondary: #F0F0F3;
+  --secondary-foreground: #27272A;
+  --muted: #F0F0F3;
+  --muted-foreground: #606068;
+  --accent: #EAF1FC;
+  --accent-foreground: #1D4ED8;
+  --border: #DEDEE5;
+  --input: #F0F0F3;
+  --input-border: #85858F;
+  --ring: #2563EB;
+  --destructive: #A32626;
+  --destructive-foreground: #FFFFFF;
+  --success: #176B40;
+  --success-foreground: #FFFFFF;
+  --warning: #765100;
+  --warning-foreground: #FFFFFF;
+  --data-up: var(--success);
+  --data-down: var(--destructive);
+  --glass-tint-1: #1795D2;
+  --glass-tint-2: #3AAEE3;
+  --signal: linear-gradient(90deg, #1D4ED8, #2563EB);
+  --sidebar: var(--card);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+  --chart-1: #1D4ED8;
+  --chart-2: #2563EB;
+  --chart-3: #1795D2;
+  --chart-4: #176B40;
+  --chart-5: #765100;
+  --control-height: 2.25rem;
+  --control-height-compact: 2rem;
+  --control-height-large: 2.75rem;
+  --control-font-size: 0.875rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
 }
 
-/* Restores the global scale inside an `.admin-scope` subtree. Two consumers,
-   both of which must NOT inherit the console's radii:
-   - the live preview (`PhoneFrame`), which renders the real `PublicPage`
-     inline — under the admin scale it would lie about the live page;
-   - nothing else today, but any future embed of public surfaces in the admin.
+.dark .admin-scope, .admin-scope.dark {
+  --background: #101012;
+  --foreground: #F4F4F5;
+  --card: #18181B;
+  --card-foreground: #F4F4F5;
+  --surface-2: #242427;
+  --popover: #202023;
+  --popover-foreground: #F4F4F5;
+  --primary: #60A5FA;
+  --primary-foreground: #111113;
+  --secondary: #29292E;
+  --secondary-foreground: #E4E4E7;
+  --muted: #27272B;
+  --muted-foreground: #A8A8B2;
+  --accent: #202B3D;
+  --accent-foreground: #93C5FD;
+  --border: #38383F;
+  --input: #242427;
+  --input-border: #777783;
+  --ring: #60A5FA;
+  --destructive: #FF9C9C;
+  --destructive-foreground: #111113;
+  --success: #74D39B;
+  --data-up: var(--success);
+  --data-down: var(--destructive);
+  --success-foreground: #111113;
+  --warning: #F0BE55;
+  --warning-foreground: #111113;
+  --glass-tint-1: #1795D2;
+  --glass-tint-2: #60A5FA;
+  --signal: linear-gradient(90deg, #60A5FA, #1795D2);
+  --sidebar: #111113;
+  --sidebar-accent: #202B3D;
+  --chart-1: #60A5FA;
+  --chart-2: #1795D2;
+  --chart-3: #74D39B;
+  --chart-4: #F0BE55;
+  --chart-5: #A8A8B2;
+}
+
+/* Tablet-sized touch screens still need the mobile control targets. */
+@media (pointer: coarse) {
+  .admin-scope {
+    --control-height: 2.75rem;
+    --control-height-compact: 2.75rem;
+    --control-height-large: 2.75rem;
+  }
+
+  .admin-scope :is(button:not([role="switch"], [role="checkbox"], [role="radio"], [data-slot="sidebar-rail"]), [data-slot="input"], [data-slot="input-group"], input[data-slot="input-group-control"], input[type="color"], [role="combobox"], nav[aria-label$="sections"] a, footer a):not(.public-scope *) {
+    min-height: 2.75rem;
+  }
+
+  .admin-scope :is(button:not([role="switch"], [role="checkbox"], [role="radio"], [data-slot="sidebar-rail"]), input[type="color"]):not(.public-scope *) {
+    min-width: 2.75rem;
+  }
+
+  .admin-scope :is([data-slot="input"], [data-slot="input-group-control"], [role="combobox"], textarea):not(.public-scope *) {
+    font-size: 1rem;
+  }
+}
+
+/* Restores the public scale inside the admin document preview. It renders the
+   real `PublicPage` inline and must not inherit the console's radii.
    Unlayered, like `.admin-scope`, and declared after it so it wins on order at
    equal specificity when the two are nested. */
 .public-scope {
+  --font-sans: var(--font-public-sans), system-ui, sans-serif;
+  --font-display: var(--font-public-display), system-ui, sans-serif;
+  font-family: var(--font-sans);
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
   --radius-lg: 1.125rem;
   --radius-xl: 1.5rem;
   --radius-2xl: 1.75rem;
+  --control-height: initial;
+  --control-height-compact: initial;
+  --control-height-large: initial;
+  --control-font-size: initial;
 }
 
 @layer base {
@@ -279,6 +399,8 @@
     @apply border-border outline-ring/50;
   }
   body {
+    --font-sans: var(--font-public-sans), system-ui, sans-serif;
+    --font-display: var(--font-public-display), system-ui, sans-serif;
     @apply font-sans bg-background text-foreground;
   }
   html {
@@ -313,22 +435,6 @@
   font-family: var(--font-mono);
   font-feature-settings: 'tnum';
   font-variant-numeric: tabular-nums;
-}
-
-/* Login/Setup background — theme-aware, uses primary color glow over base background */
-.login-bg {
-  background:
-    radial-gradient(ellipse at 50% 40%, oklch(from var(--primary) l c h / 0.08) 0%, transparent 60%),
-    var(--background);
-  background-attachment: fixed;
-}
-
-@keyframes login-card-enter {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
-}
-.login-card-enter {
-  animation: login-card-enter 200ms ease-out both;
 }
 
 /* "Grain Dark" banner preset (packages/ui banner-presets.ts). The host is
@@ -366,6 +472,12 @@
   );
 }
 
+/* Owner text can contain long names, URLs and addresses without word spaces. */
+.ld-page,
+.ld-connect-dialog {
+  overflow-wrap: anywhere;
+}
+
 /* Public page entrance — one mechanism. Components set `--ld-i` (stagger index)
    inline; unset = delay 0. */
 @keyframes ld-rise {
@@ -383,7 +495,6 @@
    0 for the whole delay). Switch the entrance off explicitly — every class
    that sets an `animation` shorthand belongs in this list. */
 @media (prefers-reduced-motion: reduce) {
-  .login-card-enter,
   .ld-hero,
   .ld-blocks > *,
   .ld-social-icons > a {

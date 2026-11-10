@@ -2,30 +2,18 @@
 
 import { Checkbox } from "@linkden/ui";
 import { useQuery } from "@tanstack/react-query";
-import {
-	AlertCircle,
-	ArrowRight,
-	Eye,
-	EyeOff,
-	KeyRound,
-	Loader2,
-	Lock,
-	Mail,
-	ShieldCheck,
-} from "lucide-react";
+import { AlertCircle, Eye, EyeOff, KeyRound, Loader2, Lock, Mail, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { LegalTextDialog } from "@/components/public/legal-text-dialog";
-import { ShaderBanner } from "@/components/public/shader-banner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { WolfLogo } from "@/components/wolf-logo";
 import { authClient } from "@/lib/auth-client";
-import { getLoginBgStyle, getLoginShaderPreset, isCustomLoginBg } from "@/lib/login-bg";
-import { cn } from "@/lib/utils";
+import { isLocalDevelopmentUrl } from "@/lib/local-development";
 import { trpc } from "@/utils/trpc";
 import { postLoginTarget } from "./redirect";
 
@@ -45,8 +33,12 @@ export default function AdminLoginPage() {
 	const [loginSuccess, setLoginSuccess] = useState(false);
 	const [isMagicLinkSubmitting, setIsMagicLinkSubmitting] = useState(false);
 	const [isDevLoginSubmitting, setIsDevLoginSubmitting] = useState(false);
-	// Inlined at build time; the server endpoint additionally requires DEV_LOGIN==="true".
-	const devLoginEnabled = process.env.NEXT_PUBLIC_DEV_LOGIN === "true";
+	const [devLoginEnabled, setDevLoginEnabled] = useState(false);
+	useEffect(() => {
+		setDevLoginEnabled(
+			process.env.NEXT_PUBLIC_DEV_LOGIN === "true" && isLocalDevelopmentUrl(window.location.href),
+		);
+	}, []);
 	const [magicLinkSent, setMagicLinkSent] = useState(false);
 	const [ppDialogOpen, setPpDialogOpen] = useState(false);
 	const [tosDialogOpen, setTosDialogOpen] = useState(false);
@@ -71,11 +63,8 @@ export default function AdminLoginPage() {
 		setupStatus.data.emailConfigured === false
 	);
 	const magicLinkEnabled = (setupStatus.data?.magicLinkEnabled ?? false) && emailConfigured;
-	const loginBgStyle = getLoginBgStyle(branding);
-	const loginShaderPreset = getLoginShaderPreset(branding);
-	const hasCustomBg = isCustomLoginBg(branding);
 	const siteName = branding?.siteName || "LinkDen";
-	const loginLogoUrl = branding?.loginLogoUrl || branding?.logoUrl || null;
+	const logoUrl = branding?.logoUrl || null;
 
 	// If no users exist yet, redirect to setup
 	useEffect(() => {
@@ -256,7 +245,7 @@ export default function AdminLoginPage() {
 		description: React.ReactNode;
 		action?: React.ReactNode;
 	}) => (
-		<div className="login-glass-card relative rounded-2xl p-8 sm:p-10 text-center space-y-4">
+		<div className="rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8 text-center space-y-4">
 			<div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20">
 				{icon}
 			</div>
@@ -267,72 +256,18 @@ export default function AdminLoginPage() {
 	);
 
 	const BackLink = ({ onClick }: { onClick: () => void }) => (
-		<button
-			type="button"
-			className="text-sm text-primary hover:text-primary/80 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
-			onClick={onClick}
-		>
+		<Button type="button" variant="link" className="min-h-11 w-full" onClick={onClick}>
 			Back to sign in
-		</button>
+		</Button>
 	);
 
 	return (
-		// A background preset/custom image always sits under a black overlay, so
-		// the text outside the card takes the dark tokens there whatever the
-		// admin theme is (light-mode foregrounds measured ~1.1:1 on it).
-		<div
-			className={cn("login-bg relative min-h-screen overflow-hidden", hasCustomBg && "dark")}
-			style={loginBgStyle}
-		>
-			{/* Shader background — full-bleed when a shader preset is selected */}
-			{loginShaderPreset && (
-				<div className="absolute inset-0">
-					<ShaderBanner preset={loginShaderPreset} />
-				</div>
-			)}
-			{/* Legibility overlay for custom + preset images */}
-			{hasCustomBg && <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />}
-
-			<div className="relative z-10 min-h-screen lg:grid lg:grid-cols-2">
-				{/* Brand panel — lg+ only */}
-				<aside className="hidden lg:flex flex-col justify-between p-10 xl:p-14 bg-primary/[0.06] border-r border-border">
-					<div className="flex items-center gap-3">
-						{loginLogoUrl ? (
-							<img
-								src={loginLogoUrl}
-								alt=""
-								className="h-10 w-10 rounded-xl object-cover ring-1 ring-border"
-							/>
-						) : (
-							<WolfLogo className="h-10 w-10" />
-						)}
-						<span className="text-sm font-semibold tracking-tight text-foreground">{siteName}</span>
-					</div>
-
-					<div className="max-w-md">
-						<h2 className="text-3xl xl:text-4xl font-bold tracking-tight text-foreground leading-[1.1]">
-							Your link-in-bio,
-							<br />
-							<span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-								self-hosted.
-							</span>
-						</h2>
-						<p className="mt-4 text-sm text-muted-foreground leading-relaxed">
-							Owns its data. No accounts, no sync.
-							<br />
-							One person. One page.
-						</p>
-					</div>
-
-					<div className="data-mono text-micro text-muted-foreground">
-						v{process.env.NEXT_PUBLIC_APP_VERSION} · self-hosted
-					</div>
-				</aside>
-
+		<div className="min-h-screen bg-background text-foreground">
+			<div className="min-h-screen">
 				{/* Form column */}
-				<div className="flex flex-col min-h-screen lg:min-h-0">
+				<div className="flex min-h-screen flex-col">
 					<main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6">
-						<div className="w-full max-w-[420px] login-card-enter">
+						<div className="w-full max-w-[420px]">
 							{loginSuccess ? (
 								<StatusCard
 									icon={<Loader2 className="h-5 w-5 animate-spin text-primary" />}
@@ -381,7 +316,7 @@ export default function AdminLoginPage() {
 									}
 								/>
 							) : twoFactorStep ? (
-								<div className="login-glass-card relative rounded-2xl p-8 sm:p-10 transition-shadow duration-300">
+								<div className="rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
 									<div className="text-center mb-8">
 										<div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 ring-1 ring-primary/20">
 											{twoFactorMode === "totp" ? (
@@ -390,7 +325,7 @@ export default function AdminLoginPage() {
 												<KeyRound className="h-5 w-5 text-primary" aria-hidden="true" />
 											)}
 										</div>
-										<h1 className="mt-5 text-2xl font-bold text-foreground tracking-tight">
+										<h1 className="mt-4 text-xl font-semibold text-foreground tracking-tight">
 											Two-factor check
 										</h1>
 										<p className="mt-2 text-sm text-muted-foreground">
@@ -451,7 +386,7 @@ export default function AdminLoginPage() {
 											/>
 											<Label
 												htmlFor="trust-device"
-												className="text-xs text-muted-foreground cursor-pointer"
+												className="inline-flex min-h-11 flex-1 cursor-pointer items-center text-sm text-muted-foreground"
 											>
 												Don&apos;t ask again on this device for 30 days
 											</Label>
@@ -459,7 +394,7 @@ export default function AdminLoginPage() {
 
 										<Button
 											type="submit"
-											className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-medium shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
+											className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
 											disabled={isVerifying}
 										>
 											{isVerifying ? (
@@ -468,17 +403,15 @@ export default function AdminLoginPage() {
 													Verifying...
 												</>
 											) : (
-												<>
-													Verify
-													<ArrowRight className="h-4 w-4 ml-1" />
-												</>
+												<>Verify</>
 											)}
 										</Button>
 
 										<div className="flex flex-col items-center gap-2 pt-1">
-											<button
+											<Button
 												type="button"
-												className="text-sm text-primary hover:text-primary/80 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
+												variant="link"
+												className="min-h-11 w-full"
 												onClick={() => {
 													setTwoFactorMode(twoFactorMode === "totp" ? "backup" : "totp");
 													setTwoFactorCode("");
@@ -488,7 +421,7 @@ export default function AdminLoginPage() {
 												{twoFactorMode === "totp"
 													? "Use a backup code instead"
 													: "Use your authenticator app instead"}
-											</button>
+											</Button>
 											<BackLink onClick={leaveTwoFactor} />
 										</div>
 									</form>
@@ -514,19 +447,19 @@ export default function AdminLoginPage() {
 									}
 								/>
 							) : forgotMode ? (
-								<div className="login-glass-card relative rounded-2xl p-8 sm:p-10 transition-shadow duration-300">
+								<div className="rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
 									{/* Header */}
 									<div className="text-center mb-8">
-										{loginLogoUrl ? (
+										{logoUrl ? (
 											<img
-												src={loginLogoUrl}
+												src={logoUrl}
 												alt=""
 												className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-border"
 											/>
 										) : (
-											<WolfLogo className="mx-auto h-22 w-22" />
+											<WolfLogo className="mx-auto h-11 w-11" />
 										)}
-										<h1 className="mt-5 text-2xl font-bold text-foreground tracking-tight">
+										<h1 className="mt-4 text-xl font-semibold text-foreground tracking-tight">
 											Reset password
 										</h1>
 										<p className="mt-2 text-sm text-muted-foreground">
@@ -558,7 +491,7 @@ export default function AdminLoginPage() {
 											>
 												Email
 											</Label>
-											<div className="relative login-input rounded-lg">
+											<div className="relative">
 												<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
 												<Input
 													id="forgot-email"
@@ -575,7 +508,7 @@ export default function AdminLoginPage() {
 
 										<Button
 											type="submit"
-											className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-medium shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
+											className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
 											disabled={isForgotSubmitting}
 										>
 											{isForgotSubmitting ? (
@@ -584,10 +517,7 @@ export default function AdminLoginPage() {
 													Sending...
 												</>
 											) : (
-												<>
-													Send reset link
-													<ArrowRight className="h-4 w-4 ml-1" />
-												</>
+												<>Send reset link</>
 											)}
 										</Button>
 
@@ -602,22 +532,22 @@ export default function AdminLoginPage() {
 									</form>
 								</div>
 							) : (
-								<div className="login-glass-card relative rounded-2xl p-8 sm:p-10 transition-shadow duration-300">
+								<div className="rounded-xl border border-border bg-card p-6 shadow-sm sm:p-8">
 									{/* Header */}
 									<div className="text-center mb-8">
-										{loginLogoUrl ? (
+										{logoUrl ? (
 											<img
-												src={loginLogoUrl}
+												src={logoUrl}
 												alt=""
 												className="h-11 w-11 rounded-xl object-cover mx-auto ring-1 ring-border"
 											/>
 										) : (
-											<WolfLogo className="mx-auto h-22 w-22" />
+											<WolfLogo className="mx-auto h-11 w-11" />
 										)}
-										<h1 className="mt-5 text-2xl font-bold text-foreground tracking-tight">
+										<h1 className="mt-4 text-xl font-semibold text-foreground tracking-tight">
 											Welcome back
 										</h1>
-										<p className="mt-2 text-sm text-muted-foreground">Sign in to your dashboard</p>
+										<p className="mt-2 text-sm text-muted-foreground">Sign in to {siteName}</p>
 									</div>
 
 									<form
@@ -641,7 +571,7 @@ export default function AdminLoginPage() {
 											<Label htmlFor="email" className="text-sm font-medium text-muted-foreground">
 												Email
 											</Label>
-											<div className="relative login-input rounded-lg">
+											<div className="relative">
 												<Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
 												<Input
 													id="email"
@@ -671,12 +601,12 @@ export default function AdminLoginPage() {
 														setForgotMode(true);
 														setFormError("");
 													}}
-													className="text-xs text-primary cursor-pointer hover:text-primary/80 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
+													className="min-h-11 md:min-h-6 text-xs text-primary cursor-pointer hover:text-primary/80 transition-colors focus-visible:ring-2 focus-visible:ring-ring rounded"
 												>
 													Forgot password?
 												</button>
 											</div>
-											<div className="relative login-input rounded-lg">
+											<div className="relative">
 												<Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
 												<Input
 													id="password"
@@ -712,7 +642,7 @@ export default function AdminLoginPage() {
 											/>
 											<Label
 												htmlFor="remember-me"
-												className="text-xs text-muted-foreground cursor-pointer"
+												className="inline-flex min-h-11 flex-1 cursor-pointer items-center text-sm text-muted-foreground"
 											>
 												Keep me signed in
 											</Label>
@@ -720,7 +650,7 @@ export default function AdminLoginPage() {
 
 										<Button
 											type="submit"
-											className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-medium shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
+											className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
 											disabled={isSubmitting}
 										>
 											{isSubmitting ? (
@@ -729,10 +659,7 @@ export default function AdminLoginPage() {
 													Signing in...
 												</>
 											) : (
-												<>
-													Sign in
-													<ArrowRight className="h-4 w-4 ml-1" />
-												</>
+												<>Sign in</>
 											)}
 										</Button>
 									</form>
@@ -749,7 +676,7 @@ export default function AdminLoginPage() {
 											<Button
 												type="button"
 												variant="outline"
-												className="w-full h-11 transition-all"
+												className="w-full h-11"
 												disabled={isMagicLinkSubmitting}
 												onClick={handleMagicLink}
 											>
@@ -772,7 +699,7 @@ export default function AdminLoginPage() {
 										<Button
 											type="button"
 											variant="outline"
-											className="mt-4 w-full h-11 border-dashed transition-all"
+											className="mt-4 w-full h-11 border-dashed"
 											disabled={isDevLoginSubmitting}
 											onClick={handleDevLogin}
 										>
@@ -792,7 +719,7 @@ export default function AdminLoginPage() {
 							{/* Below-card link */}
 							{!loginSuccess && !magicLinkSent && !resetLinkSent && !twoFactorStep && (
 								<p className="mt-5 text-center text-xs text-muted-foreground">
-									Don&apos;t have an account?{" "}
+									First time setting up this instance?{" "}
 									<a
 										href="/admin/setup"
 										className="text-primary hover:text-primary/80 transition-colors"

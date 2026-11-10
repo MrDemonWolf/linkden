@@ -22,8 +22,10 @@ If the frontend and API end up on **different** public hostnames, cookie auth
 breaks (SameSite=Lax cookies don't cross sites) and CORS fights you. A quick
 tunnel forwards a single port, so route everything through one origin:
 
-- **Next.js:** dev-only `rewrites()` proxying API paths to the backend
-  (see `apps/web/next.config.ts`, gated on `DEV_API_ORIGIN`).
+- **Next.js:** explicit dev-only `beforeFiles` rewrites proxying known API paths
+  to the backend (see `apps/web/next.config.ts`, gated on `DEV_API_ORIGIN`).
+  They must run before the normal filesystem API bridge, whose URL fallback
+  intentionally accepts only local requests.
 - **Vite:** `server.proxy` does the same thing out of the box.
 - **Anything else:** point the tunnel at whichever process can proxy to the
   other one.
@@ -38,7 +40,7 @@ cloudflared tunnel --url http://localhost:3001 --no-autoupdate
 
 # 2. paste https://<host>.trycloudflare.com into:
 #    apps/server/.dev.vars  -> BETTER_AUTH_URL, CORS_ORIGIN
-#    apps/web/.env.local    -> NEXT_PUBLIC_SERVER_URL
+#    apps/web/.env.local    -> NEXT_PUBLIC_SERVER_URL, NEXT_PUBLIC_SITE_URL
 #    (keep DEV_API_ORIGIN=http://127.0.0.1:3000 and
 #     INTERNAL_SERVER_URL=http://127.0.0.1:3000 as-is)
 
@@ -52,20 +54,23 @@ bun dev:web      # next :3001
 First boot on a fresh DB: apply migrations first —
 
 ```bash
-cd apps/server && for f in ../../packages/db/src/migrations/*.sql; do bunx wrangler d1 execute linkden-db --local --file="$f" --yes; done
+bun run --cwd apps/server wrangler d1 migrations apply linkden-db --local
 ```
 
 ### Gotchas (Next.js specific, learned the hard way)
 
 - `NEXT_PUBLIC_*` vars are **inlined at compile time even in `next dev`** —
   changing the tunnel URL requires restarting `next dev`, not just re-saving.
-- `allowedDevOrigins: ["*.trycloudflare.com"]` is required in `next.config.ts`
-  or the HMR WebSocket is 403'd and Fast Refresh dies (assets still load,
-  which makes it confusing).
+- `allowedDevOrigins` in `next.config.ts` must list `*.trycloudflare.com`
+  (it also lists `127.0.0.1` for Playwright's local web server) or the HMR
+  WebSocket is 403'd and Fast Refresh dies (assets still load, which makes it
+  confusing).
 - Use `127.0.0.1`, not `localhost`, for proxy destinations — Node may resolve
   `localhost` to `::1` while the backend binds IPv4 only.
-- Server-side fetches should use a loopback env var (`INTERNAL_SERVER_URL`),
-  not the public origin, or every SSR render hairpins through the internet.
+- Server-side fetches use a validated bare HTTP loopback `INTERNAL_SERVER_URL`
+  when no Cloudflare API binding exists, avoiding an internet round trip. The
+  binding takes priority in Cloudflare. Credentials, paths, nonlocal hosts and
+  HTTPS are not accepted for this local transport setting.
 - Rewrites buffer request bodies (default cap 10MB, 30s proxy timeout) —
   fine for normal uploads, raise `experimental.proxyClientMaxBodySize` /
   `proxyTimeout` if needed.
@@ -80,8 +85,7 @@ cd apps/server && for f in ../../packages/db/src/migrations/*.sql; do bunx wrang
   non-loopback `Host`. A tunnel needs an `https://` `BETTER_AUTH_URL`, so sign in
   with a real account instead.
 - On a fresh LinkDen DB, complete `/admin/setup` immediately — first account
-  becomes the single admin. Setting `SETUP_TOKEN` in `apps/server/.dev.vars`
-  closes that window (enter it in the wizard's Setup token field).
+  becomes the single admin.
 - With an `https://` tunnel `BETTER_AUTH_URL`, `BETTER_AUTH_SECRET` must be 32+
   characters and not a placeholder, or auth answers 503.
 - Want a stable hostname + real auth? Use a **named** tunnel

@@ -1,19 +1,14 @@
 "use client";
 
 import { Settings } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
 import type { ThemeColors } from "./public-page";
 import { glassStyle } from "./theme-toggle";
 
 /**
- * "Admin" pill in the top-left of the public page, only for a signed-in admin.
- * Client-only: the page is SSR'd anonymously, so the session is checked here
- * after hydration rather than threaded as an `isAdmin` prop.
+ * Cookie-gated editor shortcut. The admin route checks authorization on entry;
+ * rendering the profile never probes a session.
  */
 export function AdminBadge({ themeColors }: { themeColors: ThemeColors }) {
-	const { data: session } = authClient.useSession();
-	if (!session?.user) return null;
-
 	return (
 		<a
 			href="/admin"

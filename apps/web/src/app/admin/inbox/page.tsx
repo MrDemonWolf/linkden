@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
 import { flattenPages, INBOX_PAGE_SIZE, pageHasMore } from "./inbox-pages";
 import { useInboxSelection } from "./use-inbox-selection";
@@ -288,7 +287,7 @@ export default function InboxPage() {
 								<Button
 									key={f.value}
 									variant={filter === f.value ? "default" : "outline"}
-									size="xs"
+									size="sm"
 									onClick={() => changeFilter(f.value)}
 									aria-pressed={filter === f.value}
 								>
@@ -299,23 +298,23 @@ export default function InboxPage() {
 						{connections.length > 0 && !showBulkActions && (
 							<Button
 								variant="outline"
-								size="xs"
+								size="sm"
 								onClick={() => setSelectMode(true)}
 								aria-label="Select messages"
 							>
-								<CheckSquare className="mr-1 h-3 w-3" />
+								<CheckSquare aria-hidden="true" />
 								<span className="hidden sm:inline">Select</span>
 							</Button>
 						)}
 						{totalUnread > 0 && (
 							<Button
 								variant="outline"
-								size="xs"
+								size="sm"
 								onClick={handleMarkAllRead}
 								disabled={markAllRead.isPending}
 								aria-label="Mark all read"
 							>
-								<MailCheck className="mr-1 h-3 w-3" />
+								<MailCheck aria-hidden="true" />
 								<span className="hidden sm:inline">Mark All Read</span>
 							</Button>
 						)}
@@ -329,72 +328,64 @@ export default function InboxPage() {
 					<span className="shrink-0 text-micro font-medium uppercase tracking-wider text-muted-foreground">
 						Form:
 					</span>
-					<button
-						type="button"
+					<Button
+						variant={formBlockFilter === null ? "default" : "secondary"}
+						size="sm"
 						onClick={() => changeFormFilter(null)}
-						className={cn(
-							"inline-flex h-11 shrink-0 items-center rounded-full px-3 text-micro font-medium transition-colors md:h-auto md:py-1",
-							formBlockFilter === null
-								? "bg-primary text-primary-foreground"
-								: "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
-						)}
+						className="shrink-0 rounded-full"
 						aria-pressed={formBlockFilter === null}
 					>
 						All Forms
-					</button>
+					</Button>
 					{formBlocks.map((fb) => (
-						<button
+						<Button
 							key={fb.id}
-							type="button"
+							variant={formBlockFilter === fb.id ? "default" : "secondary"}
+							size="sm"
 							onClick={() => changeFormFilter(fb.id)}
-							className={cn(
-								"inline-flex h-11 shrink-0 items-center gap-1 rounded-full px-3 text-micro font-medium transition-colors md:h-auto md:py-1",
-								formBlockFilter === fb.id
-									? "bg-primary text-primary-foreground"
-									: "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground",
-							)}
+							className="shrink-0 rounded-full"
 							aria-pressed={formBlockFilter === fb.id}
 						>
-							<MessageSquare className="h-3 w-3" />
+							<MessageSquare aria-hidden="true" />
 							{fb.title || "Untitled Form"}
-						</button>
+						</Button>
 					))}
 				</div>
 			)}
 
 			{/* Bulk action bar */}
 			{showBulkActions && (
-				<div className="flex items-center gap-3 px-3 py-2 bg-primary/5 border border-primary/20 rounded-lg">
-					<span className="-my-2 flex h-11 w-11 shrink-0 items-center justify-center md:my-0 md:h-6 md:w-6">
+				<div className="flex flex-wrap items-center gap-3 px-3 py-2 bg-primary/5 border border-primary/20 rounded-lg">
+					<label className="-my-2 flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center">
 						<input
 							type="checkbox"
 							checked={allChecked}
 							onChange={toggleSelectAll}
-							className="h-4 w-4 rounded border-border accent-primary"
+							className="h-4 w-4 rounded border-input-border accent-primary"
 							aria-label="Select all"
 						/>
-					</span>
-					<span className="text-xs font-medium text-primary">{checkedIds.size} selected</span>
+					</label>
+					<span className="text-sm font-medium text-primary">{checkedIds.size} selected</span>
 					<Button
 						variant="ghost"
-						size="xs"
+						size="sm"
 						onClick={handleBulkMarkRead}
 						disabled={checkedIds.size === 0}
 					>
-						<MailCheck className="mr-1 h-3.5 w-3.5" />
+						<MailCheck aria-hidden="true" />
 						Mark Read
 					</Button>
 					<Button
 						variant="ghost"
-						size="xs"
+						size="sm"
 						className="ml-auto text-destructive hover:text-destructive hover:bg-destructive/10"
 						onClick={() => setBulkDeleteConfirm(true)}
 						disabled={checkedIds.size === 0 || deleteMultiple.isPending}
 					>
-						<Trash2 className="mr-1 h-3.5 w-3.5" />
+						<Trash2 aria-hidden="true" />
 						Delete
 					</Button>
-					<Button variant="ghost" size="xs" onClick={exitSelectMode}>
+					<Button variant="ghost" size="sm" onClick={exitSelectMode}>
 						Done
 					</Button>
 				</div>

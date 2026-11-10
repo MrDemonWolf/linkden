@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { captchaErrors } from "../captcha-section";
 import { isLinkStackExport, prepareLinkStackImport } from "../linkstack-payload";
 import { mutationErrorMessage } from "../mutation-error";
-import { timezoneItems } from "../preferences-section";
+import { parsePreferences, serializePreferences, timezoneItems } from "../preferences-section";
 import { editMaskedSecret } from "../secret-input";
 import { seoErrors } from "../seo-section";
 
@@ -77,6 +77,25 @@ describe("seoErrors", () => {
 	it("rejects lengths past the registry limit", () => {
 		const errors = seoErrors({ seoTitle: "t".repeat(101), seoDescription: "d".repeat(251) });
 		expect(Object.keys(errors).sort()).toEqual(["seoDescription", "seoTitle"]);
+	});
+});
+
+describe("preferences", () => {
+	it("saves only current preferences without overwriting retained login settings", () => {
+		const stored = {
+			timezone: "America/Chicago",
+			admin_branding_enabled: "false",
+			branding_login_logo_url: "https://example.com/legacy-logo.png",
+			branding_login_bg_mode: "custom",
+			branding_login_bg_preset: "wolf-shadow",
+			branding_login_bg_custom_url: "https://example.com/legacy-background.png",
+		};
+		const preferences = parsePreferences(stored);
+		expect(preferences).toEqual({ timezone: "America/Chicago", adminBrandingEnabled: false });
+		expect(serializePreferences(preferences)).toEqual([
+			{ key: "timezone", value: "America/Chicago" },
+			{ key: "admin_branding_enabled", value: "false" },
+		]);
 	});
 });
 

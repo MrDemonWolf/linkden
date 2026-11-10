@@ -1,22 +1,24 @@
-import { Sora } from "next/font/google";
 import type { Metadata } from "next";
-import { Provider } from "@/components/provider";
+import { Geist_Mono, Montserrat, Roboto } from "next/font/google";
 import { Footer } from "@/components/footer";
+import { Provider } from "@/components/provider";
+import { basePath } from "@/lib/site";
 import "./global.css";
 
-const sora = Sora({
+const montserrat = Montserrat({
 	subsets: ["latin"],
-	variable: "--font-sora",
+	variable: "--font-montserrat",
 	display: "swap",
 });
+const roboto = Roboto({ subsets: ["latin"], variable: "--font-roboto", display: "swap" });
+const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
 
 export const metadata: Metadata = {
 	title: {
 		default: "LinkDen - Your Links, Your Brand, Your Rules",
 		template: "%s | LinkDen",
 	},
-	description:
-		"Self-hosted link-in-bio platform built on Cloudflare. A modern, whitelabel-friendly Linktree alternative.",
+	description: "Build a personal page and run LinkDen on your own Cloudflare account.",
 	keywords: [
 		"LinkDen",
 		"link-in-bio",
@@ -36,25 +38,27 @@ export const metadata: Metadata = {
 		locale: "en_US",
 		siteName: "LinkDen",
 		title: "LinkDen - Your Links, Your Brand, Your Rules",
-		description:
-			"Self-hosted link-in-bio platform built on Cloudflare. A modern, whitelabel-friendly Linktree alternative.",
+		description: "Build a personal page on your own Cloudflare account.",
 	},
 	twitter: {
 		card: "summary_large_image",
 		title: "LinkDen - Your Links, Your Brand, Your Rules",
-		description:
-			"Self-hosted link-in-bio platform built on Cloudflare. A modern, whitelabel-friendly Linktree alternative.",
+		description: "Build a personal page on your own Cloudflare account.",
 	},
 	metadataBase: new URL("https://mrdemonwolf.github.io/linkden"),
 	icons: {
-		icon: "/favicon.svg",
-		apple: "/favicon.svg",
+		icon: `${basePath}/favicon.svg`,
+		apple: `${basePath}/favicon.svg`,
 	},
 };
 
 export default function Layout({ children }: LayoutProps<"/">) {
 	return (
-		<html lang="en" className={`${sora.variable} ${sora.className}`} suppressHydrationWarning>
+		<html
+			lang="en"
+			className={`${montserrat.variable} ${roboto.variable} ${mono.variable}`}
+			suppressHydrationWarning
+		>
 			<body className="flex flex-col min-h-screen">
 				<Provider>{children}</Provider>
 				<Footer />

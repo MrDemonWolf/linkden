@@ -43,7 +43,8 @@ export function describeError(err: unknown): Record<string, unknown> {
 
 /** One-line JSON error log, shared by the Hono, tRPC, cron, and health paths. */
 export function logError(fields: Record<string, unknown>, err: unknown): void {
-	console.error(JSON.stringify({ level: "error", ...fields, ...describeError(err) }));
+	const path = typeof fields.path === "string" ? redactLogPath(fields.path) : fields.path;
+	console.error(JSON.stringify({ level: "error", ...fields, path, ...describeError(err) }));
 }
 
 // Better Auth's only route with a bearer token in the path is the password

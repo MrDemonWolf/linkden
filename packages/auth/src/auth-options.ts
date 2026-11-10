@@ -127,6 +127,8 @@ export interface AuthOptionsDeps {
 	trustedOrigins?: string[];
 	/** Raw DEV_LOGIN binding; see `isDevLoginEnabled`. */
 	devLogin?: string;
+	/** Optional runtime mode; a present non-development value disables dev login. */
+	nodeEnv?: string;
 	/**
 	 * Deliver an auth email. Must not throw when email delivery is not
 	 * configured: password reset and magic link answer the same either way.
@@ -224,10 +226,10 @@ export function createAuthOptions(deps: AuthOptionsDeps) {
 			},
 			session: {
 				create: {
-					// Backstop for magic links issued before 2FA was turned on: refuse
-					// to mint a session that would skip the second factor.
+					// Backstop for magic links issued before 2FA was turned on and
+					// signed-out change-email links: neither may skip the second factor.
 					before: async (session, ctx) => {
-						if (ctx?.path !== "/magic-link/verify") return;
+						if (ctx?.path !== "/magic-link/verify" && ctx?.path !== "/verify-email") return;
 						const found = await ctx.context.internalAdapter.findUserById(session.userId);
 						if ((found as { twoFactorEnabled?: boolean | null } | null)?.twoFactorEnabled) {
 							return false;
@@ -285,12 +287,18 @@ export function createAuthOptions(deps: AuthOptionsDeps) {
 			// DEV ONLY: the bypass-login endpoint (POST /api/auth/dev-login) exists only
 			// when DEV_LOGIN === "true" AND the base URL is local http. Otherwise the
 			// plugin is unregistered and the route 404s.
-			...(isDevLoginEnabled(deps.devLogin, deps.baseURL) ? [devLoginPlugin()] : []),
+			...(isDevLoginEnabled(deps.devLogin, deps.baseURL, deps.nodeEnv) ? [devLoginPlugin()] : []),
 			// Enabling stores an unverified secret; `twoFactorEnabled` only flips
 			// after the first TOTP code verifies, so a half-finished setup can't
 			// lock the admin out. The login page answers `twoFactorRedirect` with
-			// the TOTP / backup-code step.
-			twoFactor({ issuer: "LinkDen" }),
+			// the TOTP / backup-code step. Guessing is capped twice: Better Auth
+			// ends a sign-in challenge after 5 wrong codes, and the lockout below
+			// refuses every challenge for an hour after 5 consecutive failures, so
+			// a stolen password buys ~120 TOTP guesses a day, not thousands.
+			twoFactor({
+				issuer: "LinkDen",
+				accountLockout: { enabled: true, maxFailedAttempts: 5, durationSeconds: 3600 },
+			}),
 			magicLink({
 				// Single admin: never create an account from a magic link.
 				disableSignUp: true,

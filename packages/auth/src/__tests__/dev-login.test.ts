@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 // without pulling the full better-auth runtime into the test.
 vi.mock("better-auth/api", () => ({
 	createAuthEndpoint: () => ({}),
+	formCsrfMiddleware: () => {},
 	APIError: class extends Error {},
 }));
 vi.mock("better-auth/cookies", () => ({ setSessionCookie: vi.fn() }));
@@ -40,8 +41,29 @@ describe("isDevLoginEnabled", () => {
 		"https://abc.trycloudflare.com",
 		"http://localhost.example.com",
 		"not a url",
+		"http://user:password@localhost:3000",
+		"http://%6cocalhost:3000",
+		"http://2130706433:3000",
+		"http://0x7f000001:3000",
+		"http://127.1:3000",
+		"http://[::ffff:127.0.0.1]:3000",
+		"http://localhost:3000?mode=dev",
+		"http://localhost:3000#dev",
 	])("is false for a non-local base URL %j even with the flag set", (baseURL) => {
 		expect(isDevLoginEnabled("true", baseURL)).toBe(false);
+	});
+
+	it.each(["production", "staging", "test", ""])(
+		"refuses an explicit non-development runtime %j",
+		(nodeEnv) => {
+			expect(isDevLoginEnabled("true", LOCAL, nodeEnv)).toBe(false);
+		},
+	);
+
+	it("supports explicit development and Wrangler's unset NODE_ENV with the local opt-in", () => {
+		expect(isDevLoginEnabled("true", LOCAL, "development")).toBe(true);
+		expect(isDevLoginEnabled("true", LOCAL, undefined)).toBe(true);
+		expect(isDevLoginEnabled(undefined, LOCAL, undefined)).toBe(false);
 	});
 });
 

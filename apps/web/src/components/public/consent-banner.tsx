@@ -9,7 +9,8 @@ import type { ThemeColors } from "./public-page";
 const CONSENT_KEY = "linkden-consent";
 /**
  * Bump when the categories or what they gate change: every stored choice from
- * an older version is asked again (it still counts until the visitor answers).
+ * an older version is asked again, and while the banner is on it grants
+ * nothing until the visitor answers.
  */
 export const CONSENT_VERSION = 2;
 /** A choice older than this is treated as absent and asked again (~12 months). */
@@ -34,22 +35,22 @@ const DEFAULT_CONSENT: ConsentCategories = {
 	functional: false,
 };
 
-// Whether the admin has the banner switched on lives here as a module
-// flag (set by <ConsentBanner/> on render) so trackClick callers deep in the
-// block tree don't need `settings.consentBannerEnabled` threaded to them.
+// Shared default for consent helpers used outside the banner.
 let consentBannerEnabled = true;
 
 interface StoredConsentRecord {
 	choices: ConsentCategories;
-	/** False for legacy values and older versions: honoured, but asked again. */
+	/** False for legacy values and older versions: asked again, and until then
+	 * they grant nothing while the banner is on (a decline is still honoured). */
 	current: boolean;
 }
 
 /**
  * Parse the stored choice. Returns null when nothing usable is stored or the
  * choice has expired (it then grants nothing). Legacy values — the
- * "accepted"/"declined" strings and the unversioned JSON — still count, but
- * are not `current`, so the banner asks again to record a dated choice.
+ * "accepted"/"declined" strings, the unversioned JSON and older versions — are
+ * not `current`: the banner asks again, and `hasConsent` treats them as no
+ * consent until it gets a dated choice under this version.
  */
 export function parseStoredConsent(
 	stored: string | null,
@@ -98,6 +99,9 @@ export function hasConsent(
 	if (typeof window === "undefined") return false;
 	const record = readStoredConsent();
 	if (!record) return !bannerEnabled;
+	// A choice made under an older banner (or undated) consented to something
+	// else: with the banner on it grants nothing until the visitor chooses again.
+	if (!record.current && bannerEnabled) return false;
 	return record.choices[category] === true;
 }
 
@@ -136,18 +140,16 @@ interface ConsentBannerProps {
 }
 
 interface EnabledCategories {
-	analytics: boolean;
 	functional: boolean;
 }
 
 /**
- * The categories the banner offers. "marketing" is never offered: nothing on
- * the page uses it, and asking for consent that gates nothing is misleading.
- * Embeds ride on "functional". A bad stored value falls back to the defaults.
+ * Only embedded-media consent is offered. Legacy analytics choices remain
+ * parseable, but profile analytics collection is retired.
  */
 function enabledCategories(json: string | null): EnabledCategories {
-	const { analytics, functional } = parseConsentCategories(json);
-	return { analytics, functional };
+	const { functional } = parseConsentCategories(json);
+	return { functional };
 }
 
 /** Keeps the page clear of the fixed banner while it shows (WCAG 2.4.11). */
@@ -185,7 +187,7 @@ export function ConsentBanner({ settings, themeColors }: ConsentBannerProps) {
 		settings?.consentPrivacyUrl,
 		settings?.consentPrivacyText,
 	);
-	const hasCategories = enabled.analytics || enabled.functional;
+	const hasCategories = enabled.functional;
 
 	useEffect(() => {
 		if (!bannerOn) return;
@@ -230,10 +232,15 @@ export function ConsentBanner({ settings, themeColors }: ConsentBannerProps) {
 
 	const bannerText =
 		settings?.consentBannerText ||
-		"This site uses cookies for authentication and optional analytics to understand visitor behaviour. You can accept or decline analytics tracking.";
+		"Embedded videos and music may use third-party cookies. Choose whether to load embedded media. LinkDen does not track profile views or button clicks.";
 
 	const saveConsent = (consent: ConsentCategories) => {
-		const choices: ConsentCategories = { ...consent, essential: true, marketing: false };
+		const choices: ConsentCategories = {
+			...consent,
+			essential: true,
+			analytics: false,
+			marketing: false,
+		};
 		try {
 			localStorage.setItem(
 				CONSENT_KEY,
@@ -251,7 +258,7 @@ export function ConsentBanner({ settings, themeColors }: ConsentBannerProps) {
 	const acceptAll = () => {
 		saveConsent({
 			essential: true,
-			analytics: enabled.analytics,
+			analytics: false,
 			marketing: false,
 			functional: enabled.functional,
 		});
@@ -311,7 +318,7 @@ export function ConsentBanner({ settings, themeColors }: ConsentBannerProps) {
 			<section
 				ref={sectionRef}
 				aria-label="Cookie consent"
-				className="fixed bottom-0 left-0 right-0 z-50 flex flex-col gap-3 border-t p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-lg sm:flex-row sm:items-center sm:justify-between"
+				className="fixed bottom-0 left-0 right-0 z-50 flex max-h-[70dvh] flex-col gap-3 overflow-y-auto border-t p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-lg [overflow-wrap:anywhere] sm:flex-row sm:items-center sm:justify-between"
 				style={containerStyle}
 			>
 				<div className="min-w-0 flex-1">
@@ -355,7 +362,7 @@ export function ConsentBanner({ settings, themeColors }: ConsentBannerProps) {
 		<section
 			ref={sectionRef}
 			aria-label="Cookie consent"
-			className="fixed bottom-0 left-0 right-0 z-50 max-h-[70dvh] overflow-y-auto border-t p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-lg"
+			className="fixed bottom-0 left-0 right-0 z-50 max-h-[70dvh] overflow-y-auto border-t p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-lg [overflow-wrap:anywhere]"
 			style={containerStyle}
 		>
 			<div className="mx-auto max-w-3xl space-y-3">
@@ -391,22 +398,6 @@ export function ConsentBanner({ settings, themeColors }: ConsentBannerProps) {
 								— Required for authentication and core features
 							</span>
 						</label>
-
-						{enabled.analytics && (
-							<label className="flex items-center gap-2 text-small">
-								<input
-									type="checkbox"
-									checked={selections.analytics}
-									onChange={(e) => setSelections((s) => ({ ...s, analytics: e.target.checked }))}
-									className="h-3.5 w-3.5 rounded"
-									style={checkboxStyle}
-								/>
-								<span className="font-medium">Analytics</span>
-								<span className="text-small" style={bodyTextStyle}>
-									— Counts page views and link clicks
-								</span>
-							</label>
-						)}
 
 						{enabled.functional && (
 							<label className="flex items-center gap-2 text-small">

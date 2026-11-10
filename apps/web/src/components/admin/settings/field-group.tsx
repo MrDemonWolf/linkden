@@ -7,5 +7,11 @@ export function FieldGroup({
 	children: React.ReactNode;
 	columns?: 1 | 2;
 }) {
-	return <div className={cn("grid gap-4", columns === 2 && "sm:grid-cols-2")}>{children}</div>;
+	return (
+		<div className="@container/admin-fields">
+			<div className={cn("grid gap-4", columns === 2 && "@min-[480px]/admin-fields:grid-cols-2")}>
+				{children}
+			</div>
+		</div>
+	);
 }

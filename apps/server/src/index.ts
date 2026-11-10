@@ -30,7 +30,6 @@
 //     /api/health stays up and reports `auth: "misconfigured"`.
 //   - Signup lock: after the first user registers, /sign-up returns 403 here;
 //     the DB trigger (0007_single_admin_trigger.sql) is the real enforcement.
-//     With a SETUP_TOKEN secret bound, the first signup must also send it.
 //   - Magic link gate: both the send and verify steps are refused unless the
 //     magic_link_enabled setting is "true", so admins can disable it at runtime.
 //   - Same-origin writes: POSTs to /trpc/* and /api/upload must come from the
@@ -42,47 +41,57 @@
 import { trpcServer } from "@hono/trpc-server";
 import { createContext } from "@linkden/api/context";
 import { appRouter } from "@linkden/api/routers/index";
+import { submitContact } from "@linkden/api/routers/public";
+import { runScheduledPublication } from "@linkden/api/routers/publication";
 import { resolvePublicVcard } from "@linkden/api/routers/vcard";
+import {
+	dispatchPublication,
+	publicationConfiguration,
+} from "@linkden/api/utils/publication-dispatch";
 import { auth, authConfigProblem, getSessionQuery } from "@linkden/auth";
 import { db } from "@linkden/db";
 import { siteSettings, user } from "@linkden/db/schema/index";
+import { contactSubmissionSchema } from "@linkden/validators/blocks";
 import {
 	normalizeRelevantDate,
 	parsePassLocationsJson,
 	resolvePassContent,
 } from "@linkden/validators/wallet";
+import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { type Context, Hono, type MiddlewareHandler } from "hono";
-import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { HTTPException } from "hono/http-exception";
+import { bodyWithinLimit, countedBodyLimit } from "./lib/body-limit";
 import { buildHealth } from "./lib/health";
 import { logError, redactLogPath } from "./lib/log";
-import { allowedOrigin, isTrustedRequestOrigin } from "./lib/origin";
+import { allowedOrigin, isTrustedRequestOrigin, publicContactOrigin } from "./lib/origin";
 import { generatePkpass } from "./lib/pkpass";
 import { rateLimitKey, trpcProcedurePaths } from "./lib/rate-limit";
 import { collectReferencedKeys, runScheduledMaintenance } from "./lib/retention-sweep";
-import { SETUP_TOKEN_HEADER, setupTokenAccepted } from "./lib/setup-token";
+import { splitApiIngress } from "./lib/split-ingress";
 import {
 	buildR2Key,
 	isServableImageKey,
+	MAX_UPLOAD_BODY_SIZE,
 	replacementKeyForPurpose,
 	signatureMatchesExt,
 	validateUpload,
 	validateUploadContentLength,
 } from "./lib/upload-validation";
 
-// Rate-limit bindings are optional: local `wrangler dev` (miniflare) does not
-// simulate `rate_limits`, and RL_SIGNIN is new, so a missing binding is a no-op.
+// Rate-limit bindings are optional; a missing binding is a no-op.
 type Bindings = {
+	LINKDEN_SERVING_MODE?: string;
+	PUBLIC_CONTACT_URL?: string;
 	CORS_ORIGIN?: string;
+	PUBLIC_SITE_URL?: string;
 	IMAGES_BUCKET?: R2Bucket;
 	RL_AUTH?: RateLimit;
 	RL_STRICT?: RateLimit;
 	RL_UPLOAD?: RateLimit;
 	RL_PUBLIC?: RateLimit;
 	RL_SIGNIN?: RateLimit;
-	SETUP_TOKEN?: string;
 	WALLET_SIGNER_CERT?: string;
 	WALLET_SIGNER_KEY?: string;
 	WALLET_WWDR_CERT?: string;
@@ -140,15 +149,54 @@ app.use("/*", async (c, next) => {
 	);
 });
 
+// In split mode public ingress is one opt-in action, before CORS/auth or any storage read.
+app.use("/*", async (c, next) => {
+	const ingress = splitApiIngress(c.req.raw, c.env ?? {});
+	if (ingress === "allow") return next();
+	c.header("Cache-Control", "no-store");
+	return ingress === "not-found"
+		? c.json({ error: "Not found" }, 404)
+		: c.json({ error: "Public ingress is not configured" }, 503);
+});
+
+const adminCors = cors({
+	origin: (origin, c) => (origin === allowedOrigin(c.env?.CORS_ORIGIN) ? origin : null),
+	credentials: true,
+	allowMethods: ["GET", "POST", "OPTIONS"],
+	allowHeaders: ["Content-Type", "Authorization"],
+});
+app.use("/*", (c, next) => (c.req.path === "/api/contact" ? next() : adminCors(c, next)));
+
+app.use("/api/contact", async (c, next) => {
+	c.header("Cache-Control", "no-store");
+	if (c.req.method !== "POST" && c.req.method !== "OPTIONS")
+		return c.json({ error: "Method not allowed" }, 405);
+	const origin = publicContactOrigin(c.env?.PUBLIC_SITE_URL);
+	if (!origin) return c.json({ error: "Public contact is not configured" }, 503);
+	if (c.req.header("origin") !== origin)
+		return c.json({ error: "Public contact origin is not allowed" }, 403);
+	if (c.req.header("cookie") || c.req.header("authorization"))
+		return c.json({ error: "Public contact does not accept account credentials" }, 403);
+	if (
+		c.req.method === "OPTIONS" &&
+		(c.req.header("access-control-request-method") !== "POST" ||
+			(c.req.header("access-control-request-headers") || "")
+				.split(",")
+				.some((header) => header.trim() && header.trim().toLowerCase() !== "content-type"))
+	)
+		return c.json({ error: "Unsupported public contact preflight" }, 403);
+	await next();
+});
 app.use(
-	"/*",
+	"/api/contact",
 	cors({
-		origin: (origin, c) => (origin === allowedOrigin(c.env?.CORS_ORIGIN) ? origin : null),
-		credentials: true,
-		allowMethods: ["GET", "POST", "OPTIONS"],
-		allowHeaders: ["Content-Type", "Authorization", SETUP_TOKEN_HEADER],
+		origin: (origin, c) => (origin === publicContactOrigin(c.env?.PUBLIC_SITE_URL) ? origin : null),
+		credentials: false,
+		allowMethods: ["POST", "OPTIONS"],
+		allowHeaders: ["Content-Type"],
 	}),
 );
+app.use("/api/contact", countedBodyLimit(AUTH_BODY_LIMIT));
 
 // Auth misconfigured (empty / short / placeholder BETTER_AUTH_SECRET): every
 // route that needs a session answers 503 instead of touching Better Auth, while
@@ -184,7 +232,7 @@ app.use("/trpc/*", requireSameOrigin);
 app.use("/api/upload", requireSameOrigin);
 
 // Cap request bodies before Better Auth / tRPC buffer and parse them.
-app.use("/api/auth/*", bodyLimit({ maxSize: AUTH_BODY_LIMIT }));
+app.use("/api/auth/*", countedBodyLimit(AUTH_BODY_LIMIT));
 
 // ─── Rate limiting ───────────────────────────────────────────────────────────
 type Limiter = (env: Bindings) => RateLimit | undefined;
@@ -206,6 +254,42 @@ const rateLimit =
 		}
 		await next();
 	};
+
+app.use(
+	"/api/contact",
+	rateLimit((env) => env.RL_AUTH),
+);
+app.post("/api/contact", async (c) => {
+	if (c.req.header("content-type")?.split(";")[0]?.trim().toLowerCase() !== "application/json")
+		return c.json({ error: "Send contact fields as JSON" }, 415);
+	let body: unknown;
+	try {
+		body = await c.req.json();
+	} catch {
+		return c.json({ error: "Invalid contact JSON" }, 400);
+	}
+	const parsed = contactSubmissionSchema.strict().safeParse(body);
+	if (!parsed.success)
+		return c.json({ error: "Check the contact fields and required consent" }, 400);
+	const expectedOrigin = publicContactOrigin(c.env?.PUBLIC_SITE_URL);
+	if (!expectedOrigin) return c.json({ error: "Public contact is not configured" }, 503);
+	const headers = new Headers();
+	const ip = c.req.header("cf-connecting-ip");
+	if (ip) headers.set("cf-connecting-ip", ip);
+	try {
+		return c.json(
+			await submitContact(parsed.data, { headers, expectedOrigin, requireCaptcha: true }),
+		);
+	} catch (error) {
+		if (error instanceof TRPCError) {
+			if (error.code === "BAD_REQUEST") return c.json({ error: error.message }, 400);
+			if (error.code === "FORBIDDEN") return c.json({ error: error.message }, 403);
+			if (error.code === "TOO_MANY_REQUESTS") return c.json({ error: error.message }, 429);
+		}
+		console.error(JSON.stringify({ level: "error", path: "/api/contact", stage: "delivery" }));
+		return c.json({ error: "Contact service is unavailable. Please try again later." }, 503);
+	}
+});
 
 const isMagicLinkEnabled = (value: string | null | undefined) => value === "true";
 
@@ -262,7 +346,7 @@ app.use(
 	"/api/auth/magic-link/*",
 	rateLimit((env) => env.RL_STRICT),
 );
-// Signup: limiter first so failed setup-token guesses spend RL_STRICT budget.
+// Signup: limiter first, then the single-admin lock.
 app.use(
 	"/api/auth/sign-up/*",
 	rateLimit((env) => env.RL_STRICT),
@@ -272,9 +356,6 @@ app.use("/api/auth/sign-up/*", async (c, next) => {
 	const [existingUser] = await db.select({ id: user.id }).from(user).limit(1);
 	if (existingUser) {
 		return c.json({ error: "Registration is closed" }, 403);
-	}
-	if (!(await setupTokenAccepted(c.env?.SETUP_TOKEN, c.req.header(SETUP_TOKEN_HEADER)))) {
-		return c.json({ error: "Invalid setup token" }, 403);
 	}
 	await next();
 });
@@ -297,8 +378,8 @@ const TRPC_LIMITS = new Map<string, Limiter>([
 	["public.trackView", (env) => env.RL_PUBLIC],
 	["public.trackClick", (env) => env.RL_PUBLIC],
 ]);
-const trpcBodyLimit = bodyLimit({ maxSize: TRPC_BODY_LIMIT });
-const backupBodyLimit = bodyLimit({ maxSize: BACKUP_BODY_LIMIT });
+const trpcBodyLimit = countedBodyLimit(TRPC_BODY_LIMIT);
+const backupBodyLimit = countedBodyLimit(BACKUP_BODY_LIMIT);
 
 app.use("/trpc/*", async (c, next) => {
 	const procedures = trpcProcedurePaths(new URL(c.req.url));
@@ -308,9 +389,12 @@ app.use("/trpc/*", async (c, next) => {
 	c.set("trpcProcedures", procedures);
 	await next();
 });
-// Backup import is the only procedure that legitimately sends large bodies.
+// Backup import is the only procedure that legitimately sends large bodies, and
+// only a request made solely of backup calls gets the large limit (the web
+// client sends backup.* unbatched): a mixed batch would otherwise make tRPC
+// parse a 16MB body for its public procedures.
 app.use("/trpc/*", (c, next) =>
-	c.get("trpcProcedures").some((p) => p.startsWith("backup."))
+	c.get("trpcProcedures").every((p) => p.startsWith("backup."))
 		? backupBodyLimit(c, next)
 		: trpcBodyLimit(c, next),
 );
@@ -366,6 +450,9 @@ app.post("/api/upload", async (c) => {
 	const contentLength = validateUploadContentLength(c.req.header("content-length"));
 	if (!contentLength.ok) {
 		return c.json({ error: contentLength.error }, contentLength.status);
+	}
+	if (!(await bodyWithinLimit(c, MAX_UPLOAD_BODY_SIZE))) {
+		return c.json({ error: "File too large. Maximum size is 5MB." }, 413);
 	}
 
 	const formData = await c.req.formData();
@@ -525,6 +612,9 @@ app.get("/api/admin/wallet-pass", async (c) => {
 
 	const [profile] = await db.select().from(user).limit(1);
 	const content = resolvePassContent(s, profile);
+	const publicProfileUrl = publicContactOrigin(c.env.PUBLIC_SITE_URL ?? c.env.CORS_ORIGIN);
+	if (content.showBarcode && !publicProfileUrl)
+		return c.text("Wallet public profile URL is misconfigured.", 503);
 
 	const bucket = c.env.IMAGES_BUCKET;
 	const [icon, logo, thumbnail, strip] = await Promise.all([
@@ -546,7 +636,7 @@ app.get("/api/admin/wallet-pass", async (c) => {
 				foregroundColor: content.foregroundColor,
 				labelColor: content.labelColor,
 				logoText: s.wallet_organization_name || undefined,
-				barcodeMessage: content.showBarcode ? c.env.CORS_ORIGIN || null : null,
+				barcodeMessage: content.showBarcode ? publicProfileUrl : null,
 				// Writes are validated; this only hardens legacy stored values.
 				relevantDate: normalizeRelevantDate(s.wallet_relevant_date),
 				locations: parsePassLocationsJson(s.wallet_locations),
@@ -616,7 +706,20 @@ export default {
 	fetch: app.fetch,
 	// Cron-triggered maintenance (see wrangler.jsonc [triggers]/crons). Each step
 	// logs its own failure; the rejection marks the invocation as an exception.
-	async scheduled(_event: ScheduledController, env: Bindings, ctx: ExecutionContext) {
-		ctx.waitUntil(runScheduledMaintenance(env.IMAGES_BUCKET));
+	async scheduled(event: ScheduledController, env: Bindings, ctx: ExecutionContext) {
+		if (event.cron === "*/5 * * * *") {
+			ctx.waitUntil(
+				runScheduledPublication(
+					publicationConfiguration(env),
+					(job) => dispatchPublication(env, job),
+					new Date(),
+				).catch((error) => {
+					logError({ path: "scheduled", step: "publication" }, error);
+					throw new Error("Scheduled publication failed");
+				}),
+			);
+		} else if (event.cron === "0 3 * * *") {
+			ctx.waitUntil(runScheduledMaintenance(env.IMAGES_BUCKET, new Date()));
+		}
 	},
 };

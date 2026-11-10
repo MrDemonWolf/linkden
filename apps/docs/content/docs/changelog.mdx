@@ -1,31 +1,66 @@
 ---
 title: Changelog
-description: What changed in LinkDen. Each release has a plain-language summary for site owners and a technical section for developers.
+description: Repository change notes, including unreleased work and preserved version history.
 ---
 
-## TL;DR
+Repository change notes. The Unreleased section describes work awaiting release;
+versioned sections preserve earlier repository notes and do not prove a published
+GitHub release or deployed site.
 
-- **Latest release:** **0.5.0** (2026-08-21)
-- **Format:** **✨ What's new** for site owners + **🔧 Technical** for
-  developers and self-hosters.
-- **Source of truth:** [`CHANGELOG.md`](https://github.com/MrDemonWolf/linkden/blob/main/CHANGELOG.md)
-  in the repository root.
+- **What's new** describes behavior for site owners.
+- **Technical** records implementation details for developers and self-hosters.
 
-Each release below has two sections:
+Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+Canonical version: [`version.json`](https://github.com/MrDemonWolf/linkden/blob/main/version.json).
 
-- **✨ What's new** — plain-language summary for site owners.
-- **🔧 Technical** — internal changes, refactors, security details for
-  developers and self-hosters.
+## [Unreleased]
 
-The canonical version number lives in `version.json` at the repository
-root. This page mirrors
-[`CHANGELOG.md`](https://github.com/MrDemonWolf/linkden/blob/main/CHANGELOG.md) —
-that file is the source of truth.
+This section describes the current worktree, including changes not committed,
+released or deployed. Local implementation/checks do not establish staging,
+production routing, provider delivery, account plan or CPU compatibility.
 
-## Unreleased
+### Current worktree
+
+- Documentation now includes the implemented design system, a neutral Notebook
+  layout, current setup/feature guides and a static search index that respects
+  the GitHub Pages base path. Standalone migrations use the shared SQL history.
+- Opt-in static publication reuses public components, fonts and OG templates,
+  bundles approved media, and emits security artifacts.
+  Publishing is serialized and frozen-source based, with last-good rollback and
+  explicit interrupted-job recovery. Cloud integration remains gated.
+- Legacy serving remains the default. Split mode adds the approved private
+  admin/service-binding boundary and optional exact public contact action.
+  Access policies, alternate-URL closure and production cutover are not claimed.
+- Wallet and account forms preserve drafts, expose usable labels/keyboard
+  controls, distinguish unavailable status and report failed requests.
+  Unused historical dashboard components and duplicate validation helpers
+  were removed or consolidated without deleting historical records.
+- Migration `0011_relative_image_paths` (data only) rewrites absolute upload
+  URLs to origin-relative paths; additive migrations `0012`–`0015` add the
+  contact quota and publication tables. Released `0000`–`0010` filenames and
+  snapshots are unchanged. Upgrade tests run the installed migration runner
+  on a fresh database and on stores migrated through `0010`, `0011` and a
+  frozen-publication `0014`.
+- Native public delivery is designed to avoid application Worker/D1/R2 work
+  per ordinary HTML/bundled-asset request. Publishing, cron, admin,
+  contact, backups and external content still consume resources. No billing
+  savings or Free-plan CPU result is asserted.
+
 
 ### ✨ What's new
 
+- **Safer sign-in and tidier data.** Five wrong two-factor codes now lock
+  sign-in for an hour. Uploaded images are saved in a way that survives
+  moving your site to a new address (existing ones are converted). Visitors
+  who chose cookie settings under an older banner are asked again before
+  any embedded media loads.
+- **Admin works on workers.dev, no domain needed.** Deploy and your whole
+  site, admin included, runs on `linkden.<you>.workers.dev`. Then open
+  your site: like a fresh WordPress install it sends you straight to the
+  setup wizard to claim it (whoever finishes setup first becomes the
+  admin, so do it right away). A custom domain is still supported and a
+  little faster.
 - **Two-factor sign-in works.** Turn on an authenticator app under
   Settings → Account and save your backup codes. After your password,
   the login page now asks for the 6-digit code (or a backup code), with
@@ -36,23 +71,25 @@ that file is the source of truth.
   (v2 checkbox) or hCaptcha now renders on the public contact form and
   is checked on the server. Site and secret keys are both required once
   a provider is picked.
-- **A rebuilt admin console.** Five places instead of eight: Links,
-  Design, Insights, Inbox and Settings, with a sidebar, a live phone
-  preview on every editing page, and an honest status pill (Unsaved /
-  n unpublished / Live). Every page has its own browser-tab title, and
-  old admin links redirect to their new home.
-- **New blocks and a desktop layout.** Image, text and divider blocks;
-  link cards in button, thumbnail or featured-image style; headers that
-  lay out the blocks below them as a list, grid or carousel. On wide
-  screens your profile sits in a sticky column beside your blocks. A
-  share button (with QR code) sits on the page, and the page and admin
-  can be installed as apps.
-- **Editing a live block keeps it live.** Renaming, dragging or hiding a
-  published block no longer pulls it off your page until you click
-  Publish. Publish now only promotes brand-new blocks ("Publish 3 new").
-- **Destructive actions ask first.** Deleting a block, importing a
-  backup and applying a wallet template preset all confirm before
-  anything changes, and Undo puts a deleted block back in its old spot.
+- **A simpler admin console.** Profile page, Design, Inbox and
+  Settings share consistent controls, neutral
+  gray/charcoal surfaces, restrained blue accents and a global footer.
+  The public preview is a document viewport; Wallet shows a pass card,
+  with no simulated phone chrome. Legacy admin links still redirect.
+- **Two public layouts.** Desktop can show a sticky profile beside
+  full-width stacked blocks, or a single vertical page. Narrow pages
+  always stack one block per row. Live rendering, editor preview and
+  static builds reuse the same layout; old grid/carousel configuration
+  remains compatible without retaining the cramped presentation.
+- **Saved and Published are separate.** Draft-block visibility remains
+  separate from saving. The opt-in native publisher freezes approved
+  source and requires activation plus HTTP verification before reporting
+  Published. Legacy dynamic pages continue to render saved public data.
+- **Explicit editing and data actions.** Block deletion and backup import
+  keep their confirmations; Undo restores a deleted block's position.
+  Wallet presets explain that they replace draft fields, with changes
+  still requiring Save. Data confirmations explain that an already
+  published static site is separate from editor data.
 - **Apple Wallet passes are now downloaded by you, not your visitors.**
   The public "Add to Wallet" button and `/api/wallet-pass` are gone.
   Download the signed pass from Settings → Wallet ("Downloads enabled")
@@ -69,25 +106,20 @@ that file is the source of truth.
   notification fails (or email isn't set up), the message is kept in
   your Inbox and the failure is logged. Contact-form delivery
   (Inbox, email or both) can now be chosen under Settings → Email.
-- **Cookie consent visitors can change.** A footer "Cookie settings"
-  link reopens the banner, a choice expires after 12 months, Accept and
-  Reject look equally prominent, and embedded media (YouTube, Spotify,
-  SoundCloud, custom) waits for a click while the banner is on. A first
-  visit is still counted once the visitor accepts analytics. If you turn
-  the banner off, analytics run for every visitor without asking.
-- **Less data about visitors.** Browser user-agent strings are no longer
-  stored, referrers are kept as a bare hostname, and "Where did we
-  meet?" is only asked when you switch it on for a form.
+- **Embedded-media consent.** A footer "Cookie settings" link reopens
+  preferences. With the banner enabled, embeds wait for a load action or
+  permission for Embedded media; disabling it permits direct loading.
+  These choices do not enable retired profile analytics.
+- **Profile collection is retired.** The public page and buttons send
+  no profile tracking events. Historical records/read APIs remain
+  compatible. Contact forms ask "Where did we meet?" only when enabled.
 - **Inbox upgrades.** Older messages load page by page ("Showing n of
   total"), a Select mode marks read or deletes in bulk, opening a
   message marks it read once (Mark unread sticks), timestamps follow the
   timezone in Settings → Account, and reply links can't be hijacked by a
   crafted email address.
-- **Insights in your timezone.** Daily views and clicks follow your
-  timezone setting, every day of the period shows (zeros included),
-  dates no longer show a day early west of UTC, "All time" no longer
-  claims +100%, the Clicks line is dashed, and the chart has a
-  screen-reader table.
+- **Privacy controls.** Profile analytics collection remains retired. Public pages
+  do not collect events; the historical profile dashboard is removed.
 - **Paste a social profile link.** Social rows accept a full profile URL
   or an `@handle` and store a clean link (no more
   `https://x.com/https://x.com/ada`).
@@ -102,9 +134,6 @@ that file is the source of truth.
 - **`bun reset:password` no longer locks you out**, works against
   production, and never takes the password on the command line.
   Production deploys refuse unsafe auth settings.
-- **Claim your install safely.** Set the optional `SETUP_TOKEN` secret
-  and only someone who knows it can create the admin account on a fresh
-  public deploy.
 - **Image fixes.** Discarding an image change no longer breaks the saved
   image, crops upload on Safari/iOS, pinch-zoom no longer tilts a crop,
   and Enter on the crop dialog's buttons does what the button says.
@@ -131,15 +160,13 @@ that file is the source of truth.
 - Migration `0009_auth_and_block_data_fixes` (data only): backfills
   `user.email_verified = 1` and converts `form` / `contact_form` blocks to
   `connect`. Migration `0010_drop_social_icons_blocks` removes retired
-  `social_icons` block rows.
+  `social_icons` block rows. Migration `0011_relative_image_paths` (data
+  only) rewrites absolute upload URLs in image settings and block
+  `thumbnail`/`src` to origin-relative `/api/images/…` paths; it matches
+  any host whose URL contains `/api/images/`.
 - `createAuthOptions(deps)` in `packages/auth/src/auth-options.ts`: the
   env-free Better Auth factory; `index.ts` only wires env, D1, Resend and
   secret validation, and tests build instances from the same factory.
-- Optional `SETUP_TOKEN` secret (`apps/server/src/lib/setup-token.ts`):
-  when bound, the first signup must send a matching `x-setup-token`
-  header (constant-time compare) or gets 403 `Invalid setup token`.
-  Bound by Alchemy only when set; wired into `deploy.yml`, `turbo.json`
-  and `.env.example`.
 - `RL_SIGNIN` rate limit (30/60s, namespace 1006 prod / 2006 non-prod)
   with constant keys `global:sign-in` / `global:two-factor` /
   `global:password-reset`, so the single admin can't be brute-forced by
@@ -149,8 +176,9 @@ that file is the source of truth.
   exposes `captchaProvider` + `captchaSiteKey` only.
 - `forms.count({ isRead?, blockId? })`; `forms.list` takes
   `limit`/`offset`. `submitContact` gains a `website` honeypot and an
-  optional `whereMet`; `trackView` / `trackClick` take an optional
-  `referrer`. `version.checkUpdate` takes `{ force?: boolean }`.
+  optional `whereMet`. Legacy `trackView` / `trackClick` payloads stay
+  bounded but the procedures reject collection. `version.checkUpdate`
+  takes `{ force?: boolean }`.
 - `resolvePublicVcard()` (`packages/api/src/routers/vcard.ts`): single
   source for `GET /api/vcard` (`?block=<id>`, else the first live vCard
   block, else `vcard_data`).
@@ -169,12 +197,23 @@ that file is the source of truth.
   `components/admin/connections/mailto.ts`; `SecretInput`;
   `mutationErrorMessage`; `--input-border` token
   (`border-input-border`); `unsavedEditSnapshot()`;
-  `prefersReducedMotion()` / `useReducedMotion()`.
+  `prefersReducedMotion()`.
 - `.github/workflows/release.yml`: a `version.json` change on `main`
   tags `vX.Y.Z` and publishes a GitHub release, so
   `version.checkUpdate` has something to compare against.
 - Deploy: preflight step naming missing secrets/vars, a D1 Time Travel
   restore-point bookmark in every job summary, and a web smoke probe.
+- Single-origin `workers.dev` deploys: the web Worker's filesystem API
+  bridge (`app/api/[[...path]]`, `app/trpc/[[...path]]` →
+  `apps/web/src/lib/api-proxy.ts`) forwards `/api/*` and `/trpc/*` to the
+  API Worker over the `API` service binding at the fixed
+  `https://api.internal` origin. It strips hop-by-hop, forwarding and
+  `cf-*` headers (keeping `cf-connecting-ip` only from a trusted edge),
+  rejects encoded slashes, unknown methods and proxy loops, and marks
+  responses `private, no-store`, except successful `GET`/`HEAD`
+  `/api/images/*` reads, which keep the API's immutable `Cache-Control` and
+  `ETag`. With `SITE_DOMAIN`, zone Routes still reach the API directly. No
+  custom web Worker entrypoint is used.
 - Tests: Worker-entry route tests (`apps/server/src/__tests__/routes.test.ts`),
   router integration tests in `packages/api/src/routers/__tests__/`, and
   per-glob coverage floors for routers, the tRPC middleware,
@@ -214,10 +253,9 @@ that file is the source of truth.
 - `GET /api/images/*` 404s key shapes the app never writes without an R2
   read, sends an `ETag`, and edge-caches via `caches.default` (cache key
   without the query string).
-- `requestMeta` returns only `{ ip, country }`; analytics `user_agent` is
-  written NULL (`truncateUserAgent` removed) and the Referer header is no
-  longer read. The client `referrer` is stored as its lowercased hostname
-  and dropped for the site's own host.
+- `requestMeta` retains transient security metadata for CAPTCHA.
+  Retired tracking transports and unused referrer helpers are removed;
+  no new profile analytics rows are written.
 - `verifyCaptcha`: empty secret = misconfigured; hostname must equal the
   `CORS_ORIGIN` hostname whenever it is set (fails closed if
   unparseable); Turnstile always needs action `contact`; reCAPTCHA v3
@@ -237,14 +275,17 @@ that file is the source of truth.
   placeholder on any non-loopback `BETTER_AUTH_URL`, means auth is never
   built; `/api/auth/*`, `/trpc/*`, `/api/upload` and `/api/admin/*`
   answer 503 and `/api/health` reports `auth: "misconfigured"`.
-- `DEV_LOGIN` needs `DEV_LOGIN="true"` plus a plain-http loopback
-  `BETTER_AUTH_URL`, and the endpoint 404s for a non-loopback Host.
+- `DEV_LOGIN` requires the exact flag, strict plain-HTTP loopback
+  auth/request/Host values, local Origin/Referer and trusted local proxy
+  metadata. Explicit non-development runtimes disable it; the matching
+  UI is restricted to local development pages. It never works through
+  a public hostname or tunnel and is not bound by Alchemy.
 - `alchemy.run.ts` validates the deploy env before touching state
   (`deployEnvErrors`); `LINKDEN_DB_NAME` / `LINKDEN_IMAGES_BUCKET` apply
   to the prod stage only; prod D1/R2 use `delete: false` and a prod
   destroy needs `LINKDEN_CONFIRM_DESTROY_PROD=yes`; the Workers
-  compatibility date is pinned (2026-04-24); `apps/*/.env` load only for
-  `bun dev`. `deploy.yml` deploys only `push` runs from this repo's
+  compatibility date is pinned (2026-04-24); Alchemy reads app `.env`
+  files only in dev mode; standalone Next also loads its own env files. `deploy.yml` deploys only `push` runs from this repo's
   `main` and never cancels a running deploy.
 - `backup-db.yml` honours `LINKDEN_DB_NAME` and refuses to upload a dump
   with no `user` row. CI runs Vitest once (`test:coverage`).
@@ -291,10 +332,10 @@ that file is the source of truth.
   'unavailable'` plus `reason`.
 - Web: root layout metadata is static (profile/SEO/OG/favicon metadata
   moved to `app/page.tsx`); block icons resolved server-side;
-  `AdminBadge` loads only with a session cookie; an API outage on `/`
-  renders `app/error.tsx` with HTTP 500; the service worker is
-  `/sw.js?v=<version>` with cache `linkden-v4-<version>`, navigation
-  preload and 2xx-only caching; `/og` runs on Node with the Workers Cache
+  the public admin shortcut performs no session probe; an API outage
+  on legacy `/` renders `app/error.tsx` with HTTP 500. Its service worker
+  uses cache `linkden-v5-<version>` and rejects redirected/non-root
+  navigation responses. Native public pages retire the old worker/cache; `/og` runs on Node with the Workers Cache
   API (anonymous requests always render the stored profile); the CSP
   (`contentSecurityPolicy()`) allows the CAPTCHA providers; `/` sends
   `Accept-CH` / `Critical-CH: Sec-CH-Prefers-Color-Scheme`.
@@ -316,11 +357,33 @@ that file is the source of truth.
   `SidebarMenuButton` sets `aria-current="page"`; Switch/Checkbox disabled
   styles key off `data-disabled`. Security upgrade: next 16.3.8,
   OpenNext 1.20.9, hono 4.13.13.
-- Admin console rebuilt on shadcn/Base UI with five destinations and
-  path-segment sub-tabs; legacy routes 307 from `proxy.ts`.
+- Admin console uses four destinations and path-segment sub-tabs on the
+  existing Base UI components; legacy routes 307 from `proxy.ts`.
+- First run is WordPress-style: `/` answers a 307 to `/admin/setup` while
+  no admin exists (server-side `redirect()` in `app/page.tsx` when
+  `getPage` has no profile), as `/admin/login` already did client-side.
+- Uploads are stored as origin-relative `/api/images/…` paths
+  (`imageUrlSchema`, `UPLOADED_IMAGE_PATH`; the `url` setting kind accepts
+  them). Public renderers use `safeImageSrc`, which also reduces a leftover
+  absolute upload URL to its path, and `createPublicationSnapshot`
+  resolves upload paths against the snapshot's public origin.
+- Consent: an outdated (legacy / older-version) choice grants nothing while
+  the banner is on; a decline is still honoured.
+- `blocks.update` validates the merged row (stored + new type, config and
+  embed fields; a missing stored config counts as empty).
+- `deployEnvErrors` requires bare-origin `BETTER_AUTH_URL`, `CORS_ORIGIN`
+  and `NEXT_PUBLIC_SERVER_URL` (a trailing slash made the client call
+  `//trpc`; the error never echoes the value) and, in legacy mode, all
+  four URLs equal to the site origin (`https://SITE_DOMAIN`, else
+  `NEXT_PUBLIC_SITE_URL`). Web Worker invocation logs are off too.
 
 #### Removed
 
+- The `SETUP_TOKEN` first-run gate: server check
+  (`apps/server/src/lib/setup-token.ts`), wizard field, `x-setup-token`
+  CORS header, Alchemy binding and `turbo.json` / `deploy.yml` /
+  `.env.example` wiring. The single-admin DB trigger is unchanged.
+- The `WelcomePage` splash shown on `/` before setup.
 - Public `GET /api/wallet-pass` and the footer wallet button (download is
   now `GET /api/admin/wallet-pass`, session-gated).
 - tRPC procedures `public.getVCard`, `public.getBranding`,
@@ -343,21 +406,37 @@ that file is the source of truth.
 - Theme overrides only applied in light mode; Insights trends showed
   `+100%` for "All time" and dates shifted west of UTC.
 - Social URLs doubled their prefix when a profile URL was pasted.
+- Public renderers re-check social and custom map links (`safeHttpUrl`)
+  and image `src`/thumbnails (`safeImageSrc`); image-only links get an
+  accessible name; segmented and toggle controls use
+  `border-input-border`.
 
 #### Security
 
 - Same-origin writes: POSTs to `/trpc/*` and `/api/upload` must come from
   `CORS_ORIGIN` (normalized) or the request's own origin, with a
   `Sec-Fetch-Site` fallback, else 403. Body limits: 64KB on
-  `/api/auth/*`, 1MB on `/trpc/*`, 16MB for `backup.*`. CORS
-  `allowHeaders` include `x-setup-token`.
-- Auth tokens never reach logs (path-only request line, invocation logs
-  off); visitor PII is stripped from logged SQL errors.
+  `/api/auth/*`, 1MB on `/trpc/*`, 16MB only when every procedure in the
+  request is `backup.*` (the web client sends those through `splitLink`
+  as their own request). `bodyWithinLimit` counts actual bytes even when
+  `Content-Length` understates them and cancels oversized streams before
+  parsing.
+- Request and error logs omit query strings and redact token-bearing reset
+  paths (`redactLogPath`, also applied by `logError`); invocation logs are
+  disabled for both Workers in IaC and Drizzle bound parameters are
+  removed from structured error descriptions.
+- 2FA `accountLockout` is set explicitly (5 failures → 1h) on top of
+  Better Auth's 5-per-challenge cap, with a test that fails if it is
+  disabled. With 2FA on, a signed-out email-change verification or an
+  older magic link cannot create a session.
+- Enabling magic link is refused without a configured email transport or
+  while 2FA is on, for `settings.update`/`updateBulk` and backup imports
+  (`assertMagicLinkAllowed`).
 - Inbox `mailto:` links are percent-encoded so a stored contact email
   can't add Bcc/Subject headers.
 - tRPC error responses no longer carry stacks or internal messages.
 
-## 0.5.0 — 2026-08-21
+## [0.5.0] — 2026-08-21
 
 ### ✨ What's new
 
@@ -581,7 +660,7 @@ that file is the source of truth.
   deletes are written to the audit log
   ([#53](https://github.com/MrDemonWolf/linkden/pull/53)).
 
-## 0.4.0 — 2026-05-10
+## [0.4.0] — 2026-05-10
 
 ### ✨ What's new
 
@@ -611,49 +690,65 @@ that file is the source of truth.
 
 ### 🔧 Technical
 
-**Added**
+#### Added
 
-- Wallet pass builder (pass.mk-style) with Apple HIG field limits
+- Wallet pass builder (pass.mk-style) with HIG field limits
   (header / primary / secondary / auxiliary / back), template presets,
-  image slots, signing-keys section.
+  image slots, signing-keys section
+  ([#31](https://github.com/MrDemonWolf/linkden/pull/31)).
 - Universal `ImageCropDialog` wired into `ImageUploadField` with
-  per-purpose presets.
-- Admin settings UX: top tabs + sticky save bar.
-- `social_icon_shape` setting (`circle` | `rounded-square`).
+  per-purpose presets in [`image-crop-presets.ts`](https://github.com/MrDemonWolf/linkden/blob/main/apps/web/src/lib/image-crop-presets.ts)
+  ([#31](https://github.com/MrDemonWolf/linkden/pull/31)).
+- Admin settings: top-tabs + sticky save bar
+  ([#26](https://github.com/MrDemonWolf/linkden/pull/26)).
+- `social_icon_shape` setting (`circle` | `rounded-square`)
+  ([#23](https://github.com/MrDemonWolf/linkden/pull/23)).
 - Hero-card public-page layout, single-column blocks.
 - `/admin/analytics` page + shared analytics widgets.
 - Split-panel login, sidebar setup wizard, custom login branding.
-- `/admin/connections` contact-form inbox.
-- CI workflow: lint / type-check / test / format / build gate.
-- Unit tests for wallet + settings validators, sanitize utilities, and
-  upload validation — focused on security and data contracts.
-- Vitest v8 coverage config + `bun run test:coverage` script.
+- `/admin/connections` inbox (uses `forms.*` tRPC router).
+- CI workflow: lint / type-check / test / format / build gate
+  ([#27](https://github.com/MrDemonWolf/linkden/pull/27)).
+- Unit tests for `wallet` + `settings` validators, sanitize utilities,
+  and upload validation — focused on security and data contracts.
+- `vitest` v8 coverage configuration + `bun run test:coverage` script.
 
-**Changed**
+#### Changed
 
-- `/admin/account` redesigned as stacked sections.
-- README + `CLAUDE.md` refreshed for the current monorepo layout.
-- Upload validation extracted into
-  `apps/server/src/lib/upload-validation.ts` for unit testing.
-- Patched + minor dependency upgrades across workspaces.
+- `/admin/account` redesigned as stacked sections
+  ([#28](https://github.com/MrDemonWolf/linkden/pull/28)).
+- README and `CLAUDE.md` refreshed to match the current monorepo
+  layout ([#30](https://github.com/MrDemonWolf/linkden/pull/30)).
+- Upload validation extracted from `apps/server/src/index.ts` into
+  [`apps/server/src/lib/upload-validation.ts`](https://github.com/MrDemonWolf/linkden/blob/main/apps/server/src/lib/upload-validation.ts)
+  so the rules are unit-testable.
+- Patched + minor dependency upgrades across workspaces
+  ([#24](https://github.com/MrDemonWolf/linkden/pull/24)).
 
-**Fixed**
+#### Fixed
 
 - Narrowed `getLoginShaderPreset` return type to `ShaderBannerPreset`.
 
-**Security**
+#### Security
 
-- Per-route Cloudflare rate limiting (`RL_AUTH`, `RL_STRICT`,
-  `RL_UPLOAD`, `RL_PUBLIC`).
-- Triple-check upload validation: size ≤ 5 MB, extension allow-list,
-  MIME allow-list, purpose allow-list.
-- Single-user signup lock on `/api/auth/sign-up`.
+- Per-route Cloudflare rate limiting:
+  `RL_AUTH` (10 req / 60s) for login + contact form,
+  `RL_STRICT` (5 req / 60s) for password reset, magic link, sign-up,
+  `RL_UPLOAD` (20 req / 60s) for image uploads,
+  `RL_PUBLIC` for view/click tracking.
+- Triple-check upload validation: file size ≤ 5 MB, extension allow-list,
+  MIME-type allow-list, purpose allow-list — defends against
+  content-type spoofing.
+- Single-user signup lock — `/api/auth/sign-up` returns `403` once the
+  first user exists.
 - Magic-link runtime gate via `magic_link_enabled` setting.
-- Security headers on every response (HSTS, `X-Content-Type-Options`,
-  `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`).
-- R2 image-serving path-traversal guard.
+- Security headers on every response: `Strict-Transport-Security`,
+  `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+  `Referrer-Policy: strict-origin-when-cross-origin`,
+  `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()`.
+- R2 image-serving path-traversal guard (`..` rejected).
 
-## 0.3.0
+## [0.3.0] — 2026-XX-XX
 
 ### ✨ What's new
 
@@ -666,3 +761,8 @@ Apple Maps embed for Location blocks, Cloudflare Workers + D1 hosting.
 
 Documentation sync at commit `1691cc5`. Stack: Hono on Workers, tRPC
 v11, Drizzle ORM on D1, Better Auth, Alchemy IaC for deployment.
+
+[Unreleased]: https://github.com/MrDemonWolf/linkden/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/MrDemonWolf/linkden/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/MrDemonWolf/linkden/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/MrDemonWolf/linkden/releases/tag/v0.3.0

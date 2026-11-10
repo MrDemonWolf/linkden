@@ -131,10 +131,7 @@ export function ProfileTab({ onDirtyChange, onLiveChange }: ProfileTabProps) {
 					/>
 
 					<div className="space-y-1.5">
-						<Label
-							htmlFor="profileName"
-							className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
-						>
+						<Label htmlFor="profileName" className="text-sm font-medium">
 							Display Name
 						</Label>
 						<Input
@@ -150,10 +147,7 @@ export function ProfileTab({ onDirtyChange, onLiveChange }: ProfileTabProps) {
 					</div>
 
 					<div className="space-y-1.5">
-						<Label
-							htmlFor="bio"
-							className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
-						>
+						<Label htmlFor="bio" className="text-sm font-medium">
 							Bio
 						</Label>
 						<Textarea

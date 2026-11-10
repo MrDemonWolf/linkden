@@ -121,6 +121,8 @@ export const BANNER_PRESET_IDS = [
 export const OG_TEMPLATE_IDS = ["minimal", "gradient", "bold", "profile"] as const;
 
 export const SOCIAL_ICON_SHAPES = ["circle", "rounded-square"] as const;
+export const PAGE_LAYOUTS = ["split", "stacked"] as const;
+export type PageLayout = (typeof PAGE_LAYOUTS)[number];
 export const COLOR_MODES = ["light", "dark", "system"] as const;
 export const OG_MODES = ["template", "custom"] as const;
 export const BANNER_MODES = ["preset", "custom"] as const;
@@ -177,6 +179,7 @@ export const SETTING_REGISTRY: Record<string, SettingMeta> = {
 	banner_mode: enumOf(BANNER_MODES),
 	banner_custom_url: { kind: "url" },
 	// Appearance
+	page_layout: enumOf(PAGE_LAYOUTS),
 	theme_preset: enumOf(THEME_PRESET_NAMES),
 	/** LinkStack-import theme JSON; parsed leniently by public.getProfile. */
 	theme: { kind: "opaque", maxLength: 2_000 },

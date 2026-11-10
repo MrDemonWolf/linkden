@@ -213,7 +213,7 @@ export default function DesignBrandingPage() {
 			<SectionCard
 				icon={Cookie}
 				title="Cookie & consent banner"
-				description="The GDPR consent banner shown to visitors and its cookie categories"
+				description="Visitor choices for embedded media, banner text, and a privacy link"
 			>
 				<ConsentSection
 					enabled={f.consentBannerEnabled}

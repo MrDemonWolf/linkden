@@ -4,6 +4,7 @@ import type { EditorView } from "@codemirror/view";
 import { ChevronDown, Code2, Info } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 /* ---------- lightweight CodeMirror wrapper (lazy-loaded) ---------- */
@@ -61,7 +62,7 @@ function CssEditor({ value, onChange }: { value: string; onChange: (value: strin
 
 			const editorTheme = EditorView.theme({
 				"&": {
-					fontSize: "12px",
+					fontSize: "14px",
 					maxHeight: "280px",
 				},
 				".cm-content": {
@@ -156,13 +157,13 @@ function CssEditor({ value, onChange }: { value: string; onChange: (value: strin
 	if (fallback && !loaded) {
 		return (
 			<div className="space-y-1.5">
-				<textarea
+				<Textarea
 					value={value}
 					onChange={(e) => onChange(e.target.value)}
 					rows={12}
 					spellCheck={false}
 					aria-label="Custom CSS"
-					className="w-full resize-y rounded-lg border border-border/60 bg-code-surface px-3 py-2 font-mono text-xs text-code-foreground outline-none focus-visible:ring-1 focus-visible:ring-ring"
+					className="bg-code-surface font-mono text-code-foreground"
 				/>
 				<p className="text-micro text-muted-foreground">
 					The rich editor failed to load — using a plain text editor instead.
@@ -176,7 +177,7 @@ function CssEditor({ value, onChange }: { value: string; onChange: (value: strin
 			<div
 				ref={editorRef}
 				className={cn(
-					"overflow-hidden rounded-lg border border-border/60 bg-code-surface transition-opacity",
+					"overflow-hidden rounded-lg border border-border/60 bg-code-surface",
 					loaded ? "opacity-100" : "opacity-0",
 				)}
 			/>
@@ -203,16 +204,16 @@ function CssReference() {
 				type="button"
 				onClick={() => setOpen(!open)}
 				aria-expanded={open}
-				className="flex min-h-11 w-full items-center justify-between px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground md:min-h-9"
+				className="flex min-h-11 w-full items-center justify-between px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground md:min-h-9"
 			>
 				<span className="flex items-center gap-1.5">
 					<Info className="h-3.5 w-3.5" />
 					CSS classes &amp; variables reference
 				</span>
-				<ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
+				<ChevronDown className={cn("h-3.5 w-3.5", open && "rotate-180")} />
 			</button>
 			{open && (
-				<div className="border-t border-border/40 px-3 py-3 space-y-3 animate-in fade-in-0 slide-in-from-top-1 duration-150">
+				<div className="border-t border-border/40 px-3 py-3 space-y-3">
 					<div>
 						<p className="mb-1.5 text-micro font-semibold uppercase tracking-wider text-muted-foreground">
 							Classes
@@ -283,12 +284,10 @@ export function CustomCssSection({
 	return (
 		<Card>
 			<CardHeader>
-				<h2>
-					<CardTitle className="flex items-center gap-1.5">
-						<Code2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-						Custom CSS
-					</CardTitle>
-				</h2>
+				<CardTitle className="flex items-center gap-1.5">
+					<Code2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+					Custom CSS
+				</CardTitle>
 				<p className="text-micro text-muted-foreground mt-0.5">
 					Add custom styles to your public page
 				</p>

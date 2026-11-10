@@ -1,6 +1,7 @@
 "use client";
 
-import { createElement, lazy, type ReactNode, Suspense } from "react";
+import { createElement, type ReactNode } from "react";
+import { usePublicRuntime } from "./public-runtime";
 import { cn } from "@/lib/utils";
 
 /**
@@ -23,16 +24,14 @@ function renderIconNodes(nodes: IconNode[]): ReactNode[] {
 	);
 }
 
-const DynamicBlockIcon = lazy(() => import("./block-icon-dynamic"));
-
 /**
  * Renders a block's `icon` column: `brand:<slug>` (social brand glyph),
  * `lucide:<name>` or a legacy bare lucide name. Unknown values render nothing.
  *
  * `svg` is the server-resolved glyph: an object draws a static <svg> (no
  * client icon tables, no pop-in), `null` means the server found no such icon.
- * When it is absent (admin preview, icon picker) the lazily loaded
- * `block-icon-dynamic` resolves the name in the browser.
+ * When it is absent, the editor runtime can resolve the name in the browser;
+ * the static runtime contains only build-resolved SVG data.
  */
 export function BlockIcon({
 	icon,
@@ -43,6 +42,7 @@ export function BlockIcon({
 	svg?: ResolvedBlockIcon | null;
 	className?: string;
 }) {
+	const runtime = usePublicRuntime();
 	if (!icon || svg === null) return null;
 
 	if (svg) {
@@ -76,13 +76,5 @@ export function BlockIcon({
 		);
 	}
 
-	return (
-		<Suspense
-			fallback={
-				<span className={cn("inline-flex h-5 w-5 shrink-0", className)} aria-hidden="true" />
-			}
-		>
-			<DynamicBlockIcon icon={icon} className={className} />
-		</Suspense>
-	);
+	return runtime.renderUnresolvedIcon?.(icon, className) ?? null;
 }

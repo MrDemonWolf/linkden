@@ -1,6 +1,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { BlockIcon } from "../block-icon";
+import { PublicRuntimeProvider } from "../public-runtime";
 
 describe("BlockIcon with a server-resolved glyph", () => {
 	afterEach(cleanup);
@@ -30,5 +31,19 @@ describe("BlockIcon with a server-resolved glyph", () => {
 	it("renders nothing when the server found no such icon", () => {
 		const { container } = render(<BlockIcon icon="lucide:nope" svg={null} />);
 		expect(container.innerHTML).toBe("");
+	});
+	it("uses the editor runtime for unresolved preview icons without a public catalog", () => {
+		const { container } = render(
+			<PublicRuntimeProvider
+				value={{
+					submitContact: async () => {},
+					vcardHref: () => undefined,
+					renderUnresolvedIcon: (icon) => <span data-preview-icon={icon} />,
+				}}
+			>
+				<BlockIcon icon="lucide:demo" />
+			</PublicRuntimeProvider>,
+		);
+		expect(container.querySelector('[data-preview-icon="lucide:demo"]')).not.toBeNull();
 	});
 });

@@ -1,10 +1,11 @@
 "use client";
 
 import { getPresetById } from "@linkden/ui/banner-presets";
+import type { PageLayout } from "@linkden/validators/settings-registry";
 import { liveCustomCss, previewCustomCss } from "@/lib/custom-css";
+import { cn } from "@/lib/utils";
 import { Avatar } from "./avatar";
 import type { ResolvedBlockIcon } from "./block-icon";
-import { Carousel } from "./carousel";
 import { ConnectBlock } from "./connect-block";
 import { openConsentPreferences } from "./consent-banner";
 import { DividerBlock } from "./divider-block";
@@ -54,6 +55,7 @@ interface PageContentProps {
 	}>;
 	socialNetworks?: SocialNetwork[];
 	settings: {
+		pageLayout?: PageLayout;
 		brandingEnabled: boolean;
 		brandingText: string;
 		vcardEnabled?: boolean;
@@ -106,31 +108,26 @@ function parseConfig(config: string | null): Record<string, unknown> {
 }
 
 type Block = PageContentProps["blocks"][number];
-type SectionLayout = "list" | "grid" | "carousel";
 
 interface Section {
 	header: Block | null;
-	layout: SectionLayout;
 	blocks: Block[];
 	/** Entrance index of the section's first element (header or block), page-wide. */
 	start: number;
 }
 
 /**
- * A header block starts a new section; its `config.layout` drives the container
- * of every block after it until the next header. Blocks before the first header
- * form a plain list section.
+ * A header starts a section. Every block keeps a full-width row, including
+ * pages saved with the previous per-section grid or carousel settings.
  */
 function groupSections(blocks: Block[]): Section[] {
 	const sections: Section[] = [];
-	let current: Section = { header: null, layout: "list", blocks: [], start: 0 };
+	let current: Section = { header: null, blocks: [], start: 0 };
 	for (const [i, b] of blocks.entries()) {
 		if (b.type === "header") {
 			if (current.header || current.blocks.length) sections.push(current);
-			const layout = parseConfig(b.config).layout;
 			current = {
 				header: b,
-				layout: layout === "grid" || layout === "carousel" ? layout : "list",
 				blocks: [],
 				start: i,
 			};
@@ -142,26 +139,16 @@ function groupSections(blocks: Block[]): Section[] {
 	return sections;
 }
 
-const sectionLayoutClass: Record<SectionLayout, string> = {
-	list: "space-y-3",
-	grid: "grid grid-cols-2 gap-3",
-	carousel:
-		"flex gap-3 overflow-x-auto snap-x snap-mandatory rounded-xl pb-2 focus-visible:outline-2 focus-visible:outline-offset-2 [&>*]:min-w-[72%] [&>*]:snap-start [&>*]:shrink-0",
-};
-
 function renderBlock(
 	blockData: Block,
 	{
 		colorMode,
 		themeColors,
 		settings,
-		tile,
 	}: {
 		colorMode: "light" | "dark";
 		themeColors: ThemeColors;
 		settings: PageContentProps["settings"];
-		/** Inside a grid section: links render as square tiles. */
-		tile?: boolean;
 	},
 ) {
 	const config = parseConfig(blockData.config);
@@ -175,7 +162,6 @@ function renderBlock(
 					config={config}
 					colorMode={colorMode}
 					themeColors={themeColors}
-					tile={tile}
 				/>
 			);
 		case "header":
@@ -302,6 +288,7 @@ export function PageContent({
 	);
 	const showLegalRow = showConsentLink || !!privacyNotice;
 	const sections = groupSections(contentBlocks);
+	const splitLayout = settings.pageLayout !== "stacked";
 
 	// Project resolved theme into CSS variables so shared @linkden/ui components
 	// (which read var(--ld-*)) inherit the live theme without prop threading.
@@ -354,19 +341,28 @@ export function PageContent({
 				</style>
 			)}
 
-			{/* Container query (not viewport): the 512px admin preview stays single
-			    column while the live page goes two-column from 896px. */}
+			{/* The preview responds to its own width; split pages gain a sticky
+			    profile column from 896px without splitting the block list. */}
 			<Wrapper
 				{...(!isPreview ? { id: "main-content", role: "main" } : {})}
-				className="mx-auto w-full max-w-lg px-4 py-8 @4xl:grid @4xl:max-w-5xl @4xl:grid-cols-[360px_minmax(0,1fr)] @4xl:items-start @4xl:gap-10"
+				className={cn(
+					"mx-auto w-full px-4 py-8",
+					splitLayout
+						? "max-w-lg @4xl:grid @4xl:max-w-6xl @4xl:grid-cols-[320px_minmax(0,1fr)] @4xl:items-start @4xl:gap-10"
+						: "max-w-2xl",
+				)}
 			>
 				{/* Hero card: cover + avatar + name + bio + socials */}
 				<ProfileWrapper
-					className="ld-hero ld-profile relative mb-6 overflow-hidden rounded-3xl border shadow-lg shadow-black/5 backdrop-blur-2xl @4xl:sticky @4xl:top-8 @4xl:mb-0"
+					className={cn(
+						"ld-hero ld-profile relative mb-6 overflow-hidden rounded-3xl border shadow-lg shadow-black/5 backdrop-blur-2xl",
+						splitLayout &&
+							"@4xl:sticky @4xl:top-8 @4xl:mb-0 @4xl:max-h-[calc(100dvh-4rem)] @4xl:overflow-y-auto",
+					)}
 					style={heroCardStyle}
 				>
 					{showCover && (
-						<div className="ld-hero-cover relative h-28 w-full overflow-hidden sm:h-36">
+						<div className="ld-hero-cover relative h-28 w-full overflow-hidden @min-[640px]:h-36">
 							{settings.bannerMode === "custom" && settings.bannerCustomUrl ? (
 								<img src={settings.bannerCustomUrl} alt="" className="h-full w-full object-cover" />
 							) : coverPreset ? (
@@ -468,7 +464,6 @@ export function PageContent({
 					    caps at 12 so a long page doesn't keep the fold waiting. */}
 					<div className="space-y-6 pb-8">
 						{sections.map((section) => {
-							const tile = section.layout === "grid";
 							const firstBlock = section.start + (section.header ? 1 : 0);
 							return (
 								<section key={section.header?.id ?? "lead"} className="space-y-3">
@@ -480,64 +475,21 @@ export function PageContent({
 											{renderBlock(section.header, { colorMode, themeColors, settings })}
 										</div>
 									)}
-									{section.blocks.length > 0 &&
-										(section.layout === "carousel" ? (
-											<Carousel
-												themeColors={themeColors}
-												label={section.header?.title || "Links and content"}
-											>
-												{(listRef) => (
-													<ul
-														ref={listRef}
-														className={`ld-blocks ${sectionLayoutClass[section.layout]}`}
-														aria-label={
-															section.layout === "carousel"
-																? `${section.header?.title || "Links and content"}, scrollable`
-																: section.header?.title || "Links and content"
-														}
-														// A carousel of non-interactive blocks (images without a link,
-														// text, dividers) has nothing focusable inside it; making the
-														// scroller itself a tab stop lets the arrow keys scroll it in
-														// every browser (Safari does not focus overflow boxes on its own).
-														tabIndex={section.layout === "carousel" ? 0 : undefined}
-														style={
-															section.layout === "carousel"
-																? ({ outlineColor: themeColors.primary } as React.CSSProperties)
-																: undefined
-														}
-													>
-														{section.blocks.map((blockData, i) => (
-															// The wrapper <li> owns both the list semantics and the
-															// stagger index, so each block renders a plain <a>/<div>.
-															<li
-																key={blockData.id}
-																style={
-																	{ "--ld-i": Math.min(firstBlock + i, 12) } as React.CSSProperties
-																}
-															>
-																{renderBlock(blockData, { colorMode, themeColors, settings, tile })}
-															</li>
-														))}
-													</ul>
-												)}
-											</Carousel>
-										) : (
-											<ul
-												className={`ld-blocks ${sectionLayoutClass[section.layout]}`}
-												aria-label={section.header?.title || "Links and content"}
-											>
-												{section.blocks.map((blockData, i) => (
-													<li
-														key={blockData.id}
-														style={
-															{ "--ld-i": Math.min(firstBlock + i, 12) } as React.CSSProperties
-														}
-													>
-														{renderBlock(blockData, { colorMode, themeColors, settings, tile })}
-													</li>
-												))}
-											</ul>
-										))}
+									{section.blocks.length > 0 && (
+										<ul
+											className="ld-blocks space-y-3"
+											aria-label={section.header?.title || "Links and content"}
+										>
+											{section.blocks.map((blockData, i) => (
+												<li
+													key={blockData.id}
+													style={{ "--ld-i": Math.min(firstBlock + i, 12) } as React.CSSProperties}
+												>
+													{renderBlock(blockData, { colorMode, themeColors, settings })}
+												</li>
+											))}
+										</ul>
+									)}
 								</section>
 							);
 						})}

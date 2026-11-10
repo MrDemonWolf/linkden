@@ -2,8 +2,7 @@
 
 import { getReadableTextColor } from "@linkden/ui/color-contrast";
 import { ArrowRight } from "lucide-react";
-import { safeHttpUrl } from "@/lib/safe-url";
-import { trackClick } from "@/lib/track";
+import { safeHttpUrl, safeImageSrc } from "@/lib/safe-url";
 import { BlockIcon, type ResolvedBlockIcon } from "./block-icon";
 import { usePreview } from "./preview-context";
 import type { ThemeColors } from "./public-page";
@@ -20,8 +19,6 @@ interface LinkBlockProps {
 	config: Record<string, unknown>;
 	colorMode: "light" | "dark";
 	themeColors: ThemeColors;
-	/** Grid-section tile: square thumbnail/icon above a centered title. */
-	tile?: boolean;
 }
 
 const radiusClasses: Record<string, string> = {
@@ -60,7 +57,7 @@ function Accent({ colors }: { colors: ThemeColors }) {
 	);
 }
 
-export function LinkBlock({ block, config, themeColors: colors, tile }: LinkBlockProps) {
+export function LinkBlock({ block, config, themeColors: colors }: LinkBlockProps) {
 	const { isPreview } = usePreview();
 
 	const title = block.title || "Untitled Link";
@@ -68,7 +65,7 @@ export function LinkBlock({ block, config, themeColors: colors, tile }: LinkBloc
 	const emojiPosition = (config.emojiPosition as string) || "left";
 	const textAlign = (config.textAlign as string) || "center";
 	const description = config.description as string | undefined;
-	const thumbnail = safeHttpUrl(config.thumbnail) ?? undefined;
+	const thumbnail = safeImageSrc(config.thumbnail) ?? undefined;
 	const variant = (config.variant as string) || (thumbnail ? "thumbnail" : "classic");
 	const isHighlighted = config.isHighlighted as boolean | undefined;
 	const isOutlined = config.isOutlined as boolean | undefined;
@@ -78,7 +75,6 @@ export function LinkBlock({ block, config, themeColors: colors, tile }: LinkBloc
 
 	const handleClick = (e: React.MouseEvent) => {
 		if (isPreview) e.preventDefault();
-		trackClick(block.id, { preview: isPreview });
 	};
 
 	// Solid surface + its readable text. White-on-bright-primary fails contrast
@@ -125,7 +121,7 @@ export function LinkBlock({ block, config, themeColors: colors, tile }: LinkBloc
 	) : null;
 
 	// ── Featured: 16:9 cover, title as a solid pill over the bottom-left edge ──
-	if (variant === "featured" && thumbnail && !tile) {
+	if (variant === "featured" && thumbnail) {
 		return (
 			<a
 				{...anchorProps}
@@ -159,42 +155,6 @@ export function LinkBlock({ block, config, themeColors: colors, tile }: LinkBloc
 						className="mt-5 block px-1 text-small line-clamp-2"
 						style={{ color: colors.mutedFg }}
 					>
-						{description}
-					</span>
-				)}
-			</a>
-		);
-	}
-
-	// ── Tile (grid sections): square thumbnail / icon above a centered title ──
-	if (tile) {
-		return (
-			<a
-				{...anchorProps}
-				className={`${CARD} flex h-full min-h-11 flex-col items-center gap-2 overflow-hidden p-3 text-center ${radius}`}
-				style={cardStyle}
-			>
-				<Accent colors={colors} />
-				{thumbnail ? (
-					<img
-						src={thumbnail}
-						alt=""
-						loading="lazy"
-						className="aspect-square w-full rounded-xl object-cover"
-					/>
-				) : (
-					iconOrEmoji && (
-						<span
-							className="flex h-11 w-11 items-center justify-center rounded-xl"
-							style={{ backgroundColor: isHighlighted ? "transparent" : colors.muted }}
-						>
-							{iconOrEmoji}
-						</span>
-					)
-				)}
-				<span className="line-clamp-2 text-small font-semibold">{title}</span>
-				{description && (
-					<span className="line-clamp-1 text-micro" style={{ color: descriptionColor }}>
 						{description}
 					</span>
 				)}

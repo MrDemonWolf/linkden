@@ -1,10 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-
-// routers/settings.ts pulls in the D1 client at import time; sanitizeSetting
-// itself is pure, so stub the database out.
-vi.mock("@linkden/db", () => ({ db: {} }));
-
-const { sanitizeSetting } = await import("../routers/settings");
+import { describe, expect, it } from "vitest";
+import { sanitizeSetting } from "../utils/sanitize-setting";
 
 describe("sanitizeSetting", () => {
 	it("rejects unknown keys", () => {
@@ -41,6 +36,14 @@ describe("sanitizeSetting", () => {
 		expect(sanitizeSetting("avatar_url", "https://a.b/c.png")).toBe("https://a.b/c.png");
 		expect(() => sanitizeSetting("avatar_url", "javascript:alert(1)")).toThrow(/Invalid URL/);
 		expect(() => sanitizeSetting("avatar_url", `https://a.b/${"x".repeat(2048)}`)).toThrow();
+		// Uploads are stored as origin-relative paths (what POST /api/upload returns);
+		// any other relative or protocol-relative value is still rejected.
+		expect(sanitizeSetting("avatar_url", "/api/images/avatar/1730000000000.png")).toBe(
+			"/api/images/avatar/1730000000000.png",
+		);
+		for (const relative of ["/avatar.png", "//evil.example/a.png", "/api/images/../x.png"]) {
+			expect(() => sanitizeSetting("avatar_url", relative)).toThrow(/Invalid URL/);
+		}
 		expect(sanitizeSetting("custom_primary", "#0FACED")).toBe("#0FACED");
 		expect(() => sanitizeSetting("custom_primary", "red")).toThrow(/#RRGGBB/);
 	});

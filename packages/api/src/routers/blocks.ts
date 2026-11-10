@@ -3,7 +3,6 @@ import { block } from "@linkden/db/schema/index";
 import {
 	createBlockSchema,
 	MAX_BLOCKS,
-	parseBlockConfig,
 	reorderBlocksSchema,
 	updateBlockSchema,
 } from "@linkden/validators/blocks";
@@ -86,14 +85,41 @@ export const blocksRouter = router({
 
 	update: protectedProcedure.input(updateBlockSchema).mutation(async ({ input }) => {
 		const { id, ...data } = input;
-		// The schema only validates config against the type when both are sent;
-		// on a type-less update, check it against the stored row's type.
-		if (data.config !== undefined && !data.type) {
-			const [existing] = await db.select({ type: block.type }).from(block).where(eq(block.id, id));
+		// The schema can only check what the (partial) update carries. When the
+		// type, config or embed fields change, validate the row as it will be
+		// after the update: stored values merged with the new ones.
+		const changesConfig = data.type !== undefined || data.config !== undefined;
+		const changesEmbed = data.embedType !== undefined || data.embedUrl !== undefined;
+		if (changesConfig || changesEmbed) {
+			const [existing] = await db
+				.select({
+					type: block.type,
+					config: block.config,
+					embedType: block.embedType,
+					embedUrl: block.embedUrl,
+				})
+				.from(block)
+				.where(eq(block.id, id));
 			if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
-			const parsed = parseBlockConfig(existing.type, data.config);
-			if (!parsed.ok) {
-				throw new TRPCError({ code: "BAD_REQUEST", message: parsed.issues.join("; ") });
+			// Only changed pairs are rechecked; empty strings encode cleared nullable
+			// fields. A missing stored config is checked as `{}`, so a type change
+			// can't leave a block whose config the new type requires (e.g. text body).
+			const parsed = updateBlockSchema.safeParse({
+				id,
+				...(changesConfig && {
+					type: data.type ?? existing.type,
+					config: data.config ?? existing.config ?? "",
+				}),
+				...(changesEmbed && {
+					embedType: (data.embedType !== undefined ? data.embedType : existing.embedType) ?? "",
+					embedUrl: (data.embedUrl !== undefined ? data.embedUrl : existing.embedUrl) ?? "",
+				}),
+			});
+			if (!parsed.success) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: parsed.error.issues.map((issue) => issue.message).join("; "),
+				});
 			}
 		}
 		const [result] = await db

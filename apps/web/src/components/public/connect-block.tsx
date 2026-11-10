@@ -14,12 +14,11 @@ import {
 	validateContactForm,
 	WHERE_MET_OPTIONS,
 } from "@/lib/contact-form";
-import { trackClick } from "@/lib/track";
-import { trpc } from "@/utils/trpc";
 import { CaptchaWidget, isCaptchaRequired, resolveCaptchaProvider } from "./captcha-widget";
 import { usePreview } from "./preview-context";
 import { type PrivacyNotice, PrivacyNoticeLink } from "./privacy-notice";
 import type { ThemeColors } from "./public-page";
+import { usePublicRuntime } from "./public-runtime";
 
 // Public blocks style inline from the resolved themeColors instead of CSS design
 // tokens: the public page renders under a per-page theme preset, not the app's
@@ -52,6 +51,12 @@ function controlColors(themeColors?: ThemeColors) {
 // the computed `outlineColor`.
 const controlClasses =
 	"peer w-full rounded-xl border px-4 pt-5 pb-2 text-sm transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid";
+
+// Floated label (filled/focused fields and the always-filled select): a tight
+// 16px line 6px from the top, so its glyphs clear the value text that starts
+// below the 1px border + 20px top padding. At `top-3` with the micro size's
+// taller line the two overlapped.
+const FLOATED_LABEL = "top-1.5 translate-y-0 text-micro leading-4 font-medium";
 
 interface ConnectBlockProps {
 	block: {
@@ -120,8 +125,8 @@ function FloatingField({
 	// Filled and empty states are mutually exclusive class sets — mixing `top-1/2`
 	// and `top-3` in one string let CSS order (not intent) pick the winner.
 	const labelClasses = value
-		? `${labelBase} top-3 translate-y-0 text-micro font-medium`
-		: `${labelBase} top-1/2 -translate-y-1/2 peer-focus:top-3 peer-focus:translate-y-0 peer-focus:text-micro peer-focus:font-medium`;
+		? `${labelBase} ${FLOATED_LABEL}`
+		: `${labelBase} top-1/2 -translate-y-1/2 peer-focus:top-1.5 peer-focus:translate-y-0 peer-focus:text-micro peer-focus:leading-4 peer-focus:font-medium`;
 	const labelClassesMultiline = value
 		? `${labelBase} top-2 text-micro font-medium`
 		: `${labelBase} top-4 peer-focus:top-2 peer-focus:text-micro peer-focus:font-medium`;
@@ -264,7 +269,7 @@ function WhereMetSelect({
 				</select>
 				<label
 					htmlFor={id}
-					className="pointer-events-none absolute left-4 top-3 translate-y-0 text-micro font-medium transition-all duration-200"
+					className={`pointer-events-none absolute left-4 transition-all duration-200 ${FLOATED_LABEL}`}
 					style={labelStyle}
 				>
 					Where did we meet?{" "}
@@ -380,10 +385,10 @@ export function ConnectForm({
 		setCaptchaKey((k) => k + 1);
 	};
 
+	const runtime = usePublicRuntime();
 	const submitContact = useMutation({
-		...trpc.public.submitContact.mutationOptions(),
+		mutationFn: runtime.submitContact,
 		onSuccess: () => {
-			trackClick(blockId, { preview: !!isPreview });
 			setSubmitted(true);
 			setSubmitAttempted(false);
 			setFormData(EMPTY_FORM);
@@ -533,7 +538,10 @@ export function ConnectForm({
 				</label>
 			</div>
 
-			<div className="grid gap-3 sm:grid-cols-2">
+			{/* Live dialogs portal outside the page container; previews remain inside it. */}
+			<div
+				className={`grid gap-3 ${isPreview || config.displayMode === "inline" ? "@min-[640px]:grid-cols-2" : "sm:grid-cols-2"}`}
+			>
 				<FloatingField
 					id={fieldIds.firstName}
 					label="First Name"
@@ -907,10 +915,10 @@ export function ConnectBlock({
 						className="ld-connect-dialog fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl p-6 shadow-2xl outline-none duration-200 data-[open]:animate-in data-[open]:fade-in-0 data-[open]:zoom-in-95"
 						style={modalCardStyle}
 					>
-						<div className="mb-5 flex items-center justify-between">
-							<Dialog.Title className="text-lg font-semibold">{modalTitle}</Dialog.Title>
+						<div className="mb-5 flex items-start justify-between gap-3">
+							<Dialog.Title className="min-w-0 text-lg font-semibold">{modalTitle}</Dialog.Title>
 							<Dialog.Close
-								className="flex h-11 w-11 items-center justify-center rounded-full transition-colors hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2"
+								className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2"
 								style={{ outlineColor: themeColors?.primary || "#3b82f6" }}
 								aria-label="Close"
 							>

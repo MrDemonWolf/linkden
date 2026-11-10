@@ -7,7 +7,14 @@ import { defineConfig, devices } from "@playwright/test";
 // Targets the running dev stack (web :3001 + wrangler :3000). If the servers
 // are already up (normal on the devbox) they are reused; otherwise Playwright
 // boots them and waits on the health endpoints.
+// biome-ignore lint/suspicious/noUndeclaredEnvVars: Playwright runtime override, not a cached turbo task
 const BASE_URL = process.env.PW_BASE_URL ?? "http://127.0.0.1:3001";
+// biome-ignore lint/suspicious/noUndeclaredEnvVars: Playwright runtime override, not a cached turbo task
+const API_URL = process.env.PW_API_URL ?? "http://127.0.0.1:3000";
+const webUrl = new URL(BASE_URL);
+const apiUrl = new URL(API_URL);
+const webPort = webUrl.port || (webUrl.protocol === "https:" ? "443" : "80");
+const apiPort = apiUrl.port || (apiUrl.protocol === "https:" ? "443" : "80");
 
 export default defineConfig({
 	testDir: "./e2e",
@@ -30,14 +37,19 @@ export default defineConfig({
 	],
 	webServer: [
 		{
-			command: "bun dev:server",
-			url: "http://127.0.0.1:3000/api/health",
+			command: `bun run --cwd apps/server wrangler dev --ip 127.0.0.1 --port ${apiPort}`,
+			url: `${API_URL}/api/health`,
 			reuseExistingServer: true,
 			timeout: 120_000,
 		},
 		{
-			command: "bun dev:web",
-			url: "http://127.0.0.1:3001",
+			command: `bun run --cwd apps/web next dev --hostname 127.0.0.1 --port ${webPort}`,
+			url: BASE_URL,
+			env: {
+				INTERNAL_SERVER_URL: API_URL,
+				NEXT_PUBLIC_SERVER_URL: BASE_URL,
+				NEXT_PUBLIC_SITE_URL: BASE_URL,
+			},
 			reuseExistingServer: true,
 			timeout: 120_000,
 		},

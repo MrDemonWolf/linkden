@@ -1,99 +1,63 @@
 ---
 title: Blocks
-description: Add links, headers, embeds, contact forms, vCard buttons, locations, images, text, and dividers to your page with the drag-and-drop builder.
+description: Build a public page from nine block types and a shared responsive preview.
 ---
 
-# 🧱 Blocks
+Open **Profile page → Blocks** at `/admin/links`. Add, edit, hide, and reorder content. Social icons are managed separately under **Profile page → Social**.
 
-Build your page by adding blocks at `/admin/links`. LinkDen supports **9 block types** that you can mix, match, and reorder however you like. Social icons are not a block: add them at `/admin/links/social` and they appear under your profile.
+## Block types
 
-### ⚡ Summary
-- **9 types:** Link, Header, Embed, Connect (contact form), vCard, Location, Image, Text, Divider.
-- **Drag & Drop:** Reorder anything.
-- **Preview:** Live phone frame on the right.
-- **Schedule:** Show/hide blocks automatically by date.
-- **Style:** Custom colors, borders, and shadows per block.
+| Type | What it does |
+| --- | --- |
+| **Link** | Opens an HTTP or HTTPS destination; choose a button, thumbnail, or featured-image card, with an optional icon |
+| **Header** | Adds an aligned section heading with H1–H6 size choices; the profile remains the page's top-level heading |
+| **Embed** | Shows YouTube, Spotify, SoundCloud, or a custom HTTPS iframe destination that permits embedding |
+| **Connect** | Opens a contact form with name, email, optional message, consent, and an optional where-we-met question |
+| **vCard** | Downloads this block's contact details as a `.vcf` file |
+| **Location** | Shows an address and optional Google Maps, Apple Maps, or custom outbound link |
+| **Image** | Shows an uploaded image, alt text, caption, aspect ratio, and Contain or Cover fit |
+| **Text** | Shows up to 2,000 characters of plain text |
+| **Divider** | Separates content with a line, dots, or empty space |
 
----
+Custom iframe providers can refuse embedding or require additional deployment CSP configuration. With embedded-media consent on, external media stays behind a click-to-load gate until allowed.
 
-## 🏗️ Block Types
+Connect blocks require **Inbox → Accepting messages**. The optional **Ask where we met** question is also enabled by the Connect preset. See [Contact form](/docs/guide/contact-form) for CAPTCHA and delivery setup.
 
-### 🔗 Link
-The most common block. A clickable button to any URL.
-- **Includes:** Title, URL, Icon (Lucide icons and brand logos).
-- **Card style:** Button, Thumbnail (small image), or Featured image (16:9).
-- **Styles:** Colors, border radius, shadow, alignment.
+## Add and edit
 
-### 📝 Header
-A text heading to organize your page.
-- **Includes:** Title text.
-- **Styles:** H1-H6, alignment.
-- **Layout for blocks below:** List, grid, or carousel.
+1. Choose **Add block**, then select a type.
+2. Enter content and use the applicable Style controls.
+3. Open **Schedule** for start/end times or **Advanced** for a validated JSON config object.
+4. Save the block.
 
-### 📺 Embed
-Embed media directly on your page.
-- **Supported:** YouTube, Spotify, SoundCloud, or **any custom URL**.
-- **Privacy:** while the consent banner is on, an embed shows a click-to-load placeholder until the visitor allows **Embedded media**, because the provider receives the visitor's IP once it loads.
+New blocks start as drafts. **Apply n new** above the list includes them in the saved page content. **No block drafts** means every block has been applied; it does not confirm a public deployment.
 
-### ✉️ Connect (contact form)
-An inline contact form. Visitors message you directly; messages land in your Inbox.
-- **Fields:** First and last name, email, an optional message, a required consent checkbox, and an optional **Ask where we met** question (off unless you switch it on or use the Connect preset).
-- **Spam protection:** CAPTCHA when configured, plus a hidden honeypot field.
-> **Note:** Turn on **Accepting messages** at `/admin/inbox` first.
+On the legacy dynamic page, enabled, applied blocks appear immediately. An assets-only public page keeps its last verified revision until the header's separate **Publish** action succeeds. Check that publishing status before sharing changes.
 
-### 📇 vCard
-A **"Save contact"** button.
-- **Action:** Downloads a `.vcf` file with this block's contact details.
-- **Note:** the footer **Save vCard** button uses the first visible vCard block, or the vCard under Design → Branding when there is none.
+Your editor preview includes eligible drafts and unsaved edits. A saved page with all blocks disabled or hidden shows an empty page; sample links appear only when there are no saved blocks.
 
-### 📍 Location
-An address card with an optional "open in maps" link.
-- **Includes:** Address text, optional coordinates.
-- **Link:** Google Maps, Apple Maps, a custom URL, or none.
-> **Note:** No map is embedded on the page, so no map provider is contacted until the visitor clicks the link.
+## Order, visibility, and deletion
 
-### 🖼️ Image
-A single uploaded image with alt text, an optional caption, and an aspect ratio (auto, 16:9, 1:1, 4:5).
+Drag the grip handle to reorder, or use the keyboard drag controls; the resulting position is announced and saved. The eye control hides a block without deleting it.
 
-### 🔤 Text
-A paragraph of plain text (up to 2,000 characters) with alignment.
+Delete asks for confirmation. The toast's **Undo** restores the block at its previous position; deleted historical click records are not restored.
 
-### ➖ Divider
-A visual separator between sections: a line, dots, or empty space.
+## Responsive page layout
 
----
+Under **Design → Theme → Page layout**:
 
-## 🛠️ Managing Blocks
+- **Side by side:** on wide pages, the profile stays sticky on the left and blocks form one full-width vertical list on the right.
+- **Stacked:** the profile appears above that same block list.
+- **Mobile:** always one column, with each block on its own row.
 
-### Adding
-1. Go to `/admin/links`.
-2. Click **Add Block**.
-3. Select a type.
+Legacy saved header grid/carousel values remain accepted for compatibility. The current renderer stacks section content; headers do not create a mobile carousel or multi-column block grid.
 
-New blocks start **unpublished**; **Publish n new** in the header puts them on your page. Editing, reordering or hiding a block that is already published takes effect immediately.
+For images, **Contain** keeps the whole image visible and **Cover** fills the selected aspect ratio by cropping. Use alt text to describe meaningful image content.
 
-### Editing
-Click any block to open the editor panel:
-- **Content:** Main fields (URL, Title).
-- **Style:** Colors, Icons, Borders.
-- **Schedule:** Set start/end dates for visibility.
-- **Advanced:** Raw config (must be a JSON object).
+## Preview and the public page
 
-### Reordering
-**Drag & Drop** any block by the grip handle on the left, or use the keyboard (the new position is announced). Saves immediately.
+The desktop preview is a collapsible plain document viewport beside the editing tools. Smaller screens use the header **Preview** action. Light/dark controls affect the preview only.
 
-### Hiding (Visibility)
-Click the **Eye Icon** 👁️ to toggle visibility without deleting.
-- Great for drafting content.
-- Perfect for seasonal links.
+Scroll to review layout, but the preview is inert: links, embeds, and contact actions do not execute. Use **View live** to test actual interactions.
 
-### Deleting
-Click the **Trash Icon** 🗑️ and confirm. **Undo** in the toast puts the block back in its old spot, but its click history is gone for good.
-
----
-
-## 📱 Phone Preview
-The right side shows a **live preview**.
-- **Interactive:** Scroll and click to test.
-- **Mobile Toggle:** Use the floating button on small screens.
-- **Dark Mode:** Test your theme in both light and dark modes.
+The legacy dynamic renderer reads saved, enabled, published blocks directly. An assets-only public page instead keeps its last verified revision until the header's **Publish** action succeeds. Its scheduled changes use the configured publication scheduler and can be delayed; review the publishing status before relying on timed content.

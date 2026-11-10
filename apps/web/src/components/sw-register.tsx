@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { retireLegacyPublicWorker } from "./public/retire-service-worker";
 
 /**
  * Registers the site-wide service worker (public/sw.js) at scope "/".
@@ -8,7 +9,10 @@ import { useEffect } from "react";
  */
 export function SwRegister() {
 	useEffect(() => {
-		if (process.env.NODE_ENV !== "production") return;
+		if (process.env.NODE_ENV !== "production") {
+			void retireLegacyPublicWorker();
+			return;
+		}
 		if (!("serviceWorker" in navigator)) return;
 		const sw = navigator.serviceWorker;
 		// `?v=` (version.json via next.config.ts) is part of the script URL, so

@@ -1,0 +1,377 @@
+---
+title: Design system
+description: How LinkDen's admin workspace and public pages are built, where each token and component lives, and how the screenshots in these docs are made.
+---
+
+import adminEditorLight from "./images/overview/admin-editor-light.webp";
+import adminEditorDark from "./images/overview/admin-editor-dark.webp";
+import adminAnatomyLight from "./images/overview/admin-anatomy-light.webp";
+import adminAnatomyDark from "./images/overview/admin-anatomy-dark.webp";
+import scopeAdminLight from "./images/overview/scope-admin-light.webp";
+import scopeAdminDark from "./images/overview/scope-admin-dark.webp";
+import scopePublicLight from "./images/overview/scope-public-light.webp";
+import scopePublicDark from "./images/overview/scope-public-dark.webp";
+import publicSplitLight from "./images/overview/public-split-light.webp";
+import publicSplitDark from "./images/overview/public-split-dark.webp";
+import publicAnatomyLight from "./images/overview/public-anatomy-light.webp";
+import publicAnatomyDark from "./images/overview/public-anatomy-dark.webp";
+import publicFooterLight from "./images/overview/public-footer-light.webp";
+import publicFooterDark from "./images/overview/public-footer-dark.webp";
+import publicMobileLight from "./images/overview/public-profile-mobile-light.webp";
+import publicMobileDark from "./images/overview/public-profile-mobile-dark.webp";
+import surfacePreviewLight from "./images/overview/surface-preview-light.webp";
+import surfacePreviewDark from "./images/overview/surface-preview-dark.webp";
+import surfaceWalletLight from "./images/overview/surface-wallet-light.webp";
+import surfaceWalletDark from "./images/overview/surface-wallet-dark.webp";
+import themeIsolationLight from "./images/stateful/theme-isolation-light.webp";
+import themeIsolationDark from "./images/stateful/theme-isolation-dark.webp";
+
+LinkDen has two visual layers. The admin is a compact workspace with neutral surfaces and blue actions. Public pages keep the owner's theme, colors, imagery, and softer shapes. The editor preview renders that same public page inside the admin, so both layers often share one screen.
+
+These pages describe the implemented app. Every value comes from the source files listed in the [source map](#source-map), and every screenshot is a capture of the running app with synthetic sample content. Change the source first, then update the page and recapture its images.
+
+<Screenshot
+  light={adminEditorLight}
+  dark={adminEditorDark}
+  alt="The LinkDen admin on the Profile sub-tab: a sidebar with Profile page, Design, Inbox and Settings, a top bar with breadcrumb, Publishing off status and View live, a Profile Info form card, a Preview rail showing the public profile, and a footer with version and theme controls."
+  caption="The admin shell at 1440px on /admin/links/profile. Admin chrome is neutral with blue selection; the Preview rail on the right is the real public page in its own theme and fonts."
+/>
+
+## Start here
+
+| Page | What it covers | Read it when |
+| --- | --- | --- |
+| [Foundations](/docs/design-system/foundations) | Color roles, fonts and the type scale, spacing and widths, control sizes, radii, surfaces, and motion | You need an exact value or token name |
+| [Components](/docs/design-system/components) | Existing primitives, form sections, navigation, feedback, and confirmation dialogs | You are about to build UI and want the existing piece |
+| [Patterns](/docs/design-system/patterns) | Page structure, saving and publication state, the document preview, Wallet, and public layouts | You are composing a page or flow |
+
+Each page follows the same order: a short explanation, screenshots of the real app, then rules and source paths. This overview adds the map: the two layers, what each region of a screen is called, and where its code lives.
+
+## Two visual layers
+
+Both layers load one stylesheet, `apps/web/src/index.css`. Admin chrome and the shared primitives use semantic utilities such as `bg-card`, `text-muted-foreground`, and `border-input-border`; the scope class around them decides which values those utilities resolve to. Public blocks paint with the owner's resolved theme instead: `getThemeColors` (`apps/web/src/lib/theme-colors.ts`) combines the preset with saved overrides, and the page content projects the result onto `.ld-page` as `--ld-*` variables and inline styles.
+
+<Screenshot
+  light={publicSplitLight}
+  dark={publicSplitDark}
+  alt="The public profile at desktop width: a profile card with banner, avatar, name, verified badge, bio and social icons on the left, and on the right a Latest work section with a featured image link, a thumbnail link, a highlighted link, an icon link and an outlined link."
+  caption="The same profile as a visitor sees it at 1440px, in the Classic preset. Compare the softer 28–32px corners, Sora headings, and navy (light) or cyan (dark) primary with the admin above."
+/>
+
+The closest comparison is a form in each layer:
+
+<ScreenshotGrid>
+  <Screenshot
+    light={scopeAdminLight}
+    dark={scopeAdminDark}
+    alt="The admin Profile Info card: Montserrat title beside a blue icon chip, a circular avatar with Replace, Re-crop and Remove actions, and Display Name and Bio fields with 8px corners and character counters."
+    caption="Admin scope: Montserrat title, Roboto labels and values, 8px control corners, a 12px card on a neutral ground."
+  />
+  <Screenshot
+    light={scopePublicLight}
+    dark={scopePublicDark}
+    alt="The public Connect form titled Work with me: pill-shaped name and email fields, a Where did we meet? select with its small label floated above the Select… value, a message field, a consent checkbox with a Privacy Policy link, and a full-width Connect button in the theme's primary color."
+    caption="Public scope: Sora heading, DM Sans fields, pill-shaped controls, and a Connect button in the theme primary (navy in light, cyan in dark for Classic)."
+  />
+</ScreenshotGrid>
+
+| Attribute | Admin (`.admin-scope`) | Public (`:root` / `.public-scope`, `.ld-page`) |
+| --- | --- | --- |
+| Headings | Montserrat (`--font-admin-display`) | Sora (`--font-public-display`) |
+| Body | Roboto (`--font-admin-sans`) | DM Sans (`--font-public-sans`) |
+| Font loading | `next/font/google` in `apps/web/src/app/admin/layout.tsx` | Local WOFF2 files in `apps/web/public/fonts/`, declared in `apps/web/src/public-fonts.css` |
+| Color source | Fixed admin palette in `index.css` | Theme preset from `packages/ui/src/themes.ts` (11 presets) plus saved `custom_*` overrides, resolved by `getThemeColors` |
+| Page ground and card | `#F6F7F9` / `#FFFFFF` light, `#101012` / `#18181B` dark | Per preset; Classic is `#F6F6F7` / `#FFFFFF` light, `#101012` / `#18181B` dark |
+| Primary action | `#1D4ED8` light, `#60A5FA` dark | Per preset; Classic is navy `#091533` light, cyan `#0FACED` dark |
+| Signal line (`--signal`) | 90° gradient `#1D4ED8` → `#2563EB` light, `#60A5FA` → `#1795D2` dark | 90° gradient `--ld-primary` → `--ld-secondary` on `.ld-page` (the line under the name); header blocks reset it to `--ld-primary` → `--ld-accent` |
+| Radius `sm` / `md` / `lg` / `xl` / `2xl` | 6 / 8 / 12 / 16 / 20px | 8 / 12 / 18 / 24 / 28px |
+| Surfaces | Matte `bg-card` with a `border-border` hairline and `shadow-surface` (a 1px whisper in light, none in dark); no blur | Link cards use the theme card at 85% with `backdrop-blur-xl` and `shadow-card`; the profile card is solid with a primary-tinted shadow |
+| Control height | 36px standard, 32px compact, 44px large from `md` with a fine pointer; 44px for every size otherwise | `--control-height*` reset to `initial`, so shared Buttons fall back to their built-in sizes; public blocks style their own controls |
+| Color mode | next-themes `dark` class on `<html>`: `theme` in local storage, default `dark`, `system` allowed | The visitor's toggle (`linkden-color-mode` cookie), else `default_color_mode` (`light`, `dark` or `system`) |
+| Motion | No decorative entrance animation; real loading indicators only | `ld-rise` entrance, 480ms with a 45ms stagger capped at index 12; off under reduced motion |
+
+Counts, codes, and digests in the admin use Geist Mono with tabular figures (`font-mono tabular-nums`); the root layout loads it as `--font-mono`. The public renderer sets no mono text. The Wallet pass preview is a third, self-contained surface: it uses the system/SF font stack (`-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif`) and the pass colors saved under Settings → Wallet.
+
+A saved theme changes only the public layer. With the Sunset preset saved, the editor below keeps its fixed admin palette, while the page inside the preview rail (and the live page) switches to Sunset's colors: in light mode a `#FFFBF5` ground, `#431407` text and a `#C2410C` primary; in dark mode the same `#101012` / `#18181B` grounds as Classic with a `#FB923C` primary. Preset values live in `packages/ui/src/themes.ts`; the full table is in [Foundations](/docs/design-system/foundations#preset-palette).
+
+<Screenshot
+  light={themeIsolationLight}
+  dark={themeIsolationDark}
+  alt="The admin Profile page with the Sunset preset saved: the sidebar, top bar, Profile Info card and footer are the same neutral gray and blue as before, while the Preview rail shows the public profile on a warm cream ground with a dark brown name, an orange verified badge, brown bio text and an orange Latest work rule."
+  caption="Sunset saved. Compare with the editor capture at the top of this page: the admin chrome and blue actions are unchanged; only the preview's public page recolors. The capture saved the preset on the disposable screenshot stack, then restored Classic."
+/>
+
+## Anatomy of the editor
+
+Every signed-in admin page is the same shell around different content. The numbers match the regions in the capture; they are drawn by the capture script and are not part of the app.
+
+<Screenshot
+  light={adminAnatomyLight}
+  dark={adminAnatomyDark}
+  alt="The admin Profile page with eleven numbered dashed regions: 1 the sidebar brand row, 2 the sidebar navigation, 3 the account button, 4 the breadcrumb, 5 the top-bar actions, 6 the page heading, 7 the sub-tabs, 8 the Profile Info card, 9 the Preview rail, 10 the page preview viewport, and 11 the footer."
+  caption="Regions of the admin shell at 1440px. Desktop shows the sidebar and preview rail; below 1024px the same page uses a bottom tab bar and a preview sheet instead."
+/>
+
+| # | Region | Component | Details |
+| --- | --- | --- | --- |
+| 1 | Brand row | `SidebarHeader` | 64px tall. A 32px logo from `branding_logo_url` or the LinkDen wolf mark, then the site name (`branding_site_name`, default "LinkDen") in the display font |
+| 2 | Navigation | `NAV_ITEMS` | Create (Profile page, Design) and Manage (Inbox, Settings) groups under uppercase `text-micro` labels. Items are at least 44px; the active item gets the `--accent` fill, semibold text, and a primary icon. Inbox shows the unread count (99+ cap) |
+| 3 | Account | `AccountMenu` | Avatar, name, and email in the sidebar footer; opens the account menu (identity and account actions) |
+| 4 | Breadcrumb | `Breadcrumb` | In the 64px sticky top bar: the destination, then the sub-tab label |
+| 5 | Top-bar actions | `StatePill`, `SharePopover` | Publication status, Share, and View live (a link styled as an outline `sm` button, from `lg`). Below `lg` the account menu and the Preview sheet action move here |
+| 6 | Page heading | `PageHeader` | One `h1`, 24px and 28px from `sm`, semibold Montserrat; optional badge and actions |
+| 7 | Sub-tabs | `SubTabs` | Path-segment tabs set by the destination layout (here Blocks, Profile, Social) |
+| 8 | Section card | `Card` + `SectionHeader` | 12px corners (`rounded-lg` in admin), 20px vertical padding, 16px gutters (20px from `sm`); the `primary` header variant adds the blue icon chip |
+| 9 | Preview rail | `PreviewColumn` | Sticky below the top bar. 300px at `lg`, 372px at `xl`, 425px for a `wide` registration, 40px collapsed. Light and dark preview, Copy link, Open live page, then a status line such as "Includes block drafts" |
+| 10 | Page viewport | `PagePreviewViewport` | The real public page rendered at 390px, scaled to fit, capped at 570px of scroll, `inert`, exposed as one `role="img"` |
+| 11 | Footer | `AdminFooter` | "Powered by LinkDen" (when `admin_branding_enabled`), the version, a Development tag in development, and the light, dark, and system theme control |
+
+Where they live, under `apps/web/src/`: `components/admin/admin-shell.tsx` (shell, sidebar, top bar, `crumbsFor`), `components/admin/nav-list.tsx`, `components/admin/page-header.tsx`, `components/admin/sub-tabs.tsx`, `components/ui/card.tsx`, `components/admin/section-header.tsx`, `components/admin/preview-column.tsx`, `components/admin/page-preview-viewport.tsx`, and `components/admin/admin-footer.tsx`. Destination layouts such as `app/admin/links/layout.tsx` place the `PageHeader` and `SubTabs`.
+
+The main column is capped at 760px beside a preview and 1120px without one. Page padding is 16px, 24px from `sm`, and 32px from `lg`. The four destinations and their sub-tabs:
+
+| Destination | Group | Path | Sub-tabs |
+| --- | --- | --- | --- |
+| Profile page | Create | `/admin/links` | Blocks, Profile, Social |
+| Design | Create | `/admin/design` | Theme, Banner, Branding, SEO |
+| Inbox | Manage | `/admin/inbox` | None |
+| Settings | Manage | `/admin/settings` | Account, Email, Integrations, Wallet, Data |
+
+[Patterns](/docs/design-system/patterns) shows the same shell on a phone, with the sidebar collapsed, and with an editor open in the rail.
+
+## Anatomy of the public page
+
+The public page is one renderer used three ways: the live page, the admin preview, and static output. At 1440px the default `split` layout puts the profile card in a sticky column beside one full-width block stack.
+
+<Screenshot
+  light={publicAnatomyLight}
+  dark={publicAnatomyDark}
+  alt="The public profile with twelve numbered dashed regions: 1 the Share and color-mode buttons, 2 the profile card, 3 the banner, 4 the name with its verified badge, 5 the bio, 6 the social icons, 7 the Latest work section header, and 8 to 12 five link blocks: featured, thumbnail, highlighted, icon, and outlined with an emoji."
+  caption="Regions of the public page at 1440px in the split layout. Every color here comes from the Classic preset; another preset changes the colors but not the structure."
+/>
+
+Paths that start with `components/` or `lib/` are under `apps/web/src/`.
+
+| # | Region | Source | Details |
+| --- | --- | --- | --- |
+| 1 | Floating controls | `ShareButton` and `ThemeToggle` in `PublicPage` (`components/public/public-page.tsx`) | Fixed 16px from the top right, outside `.ld-page` so they stay put while the page scrolls. Live page only; the preview leaves them out |
+| 2 | Profile card | `.ld-hero` in `components/public/public-page-content.tsx` | Solid theme card, 32px corners (`rounded-3xl`), a shadow tinted with the theme primary. In `split` it becomes the sticky 320px column from a 896px container width |
+| 3 | Banner | `.ld-hero-cover` | 112px tall, 144px from a 640px container. A custom upload (`object-cover`) or a preset from `packages/ui/src/banner-presets.ts` |
+| 4 | Name | `h1` with the verified badge | `text-h1` bold Sora; the badge is drawn in the theme primary and labeled "Verified account". A 40×2px signal line sits below it |
+| 5 | Bio | `.ld-bio` | `text-body`, at most 384px wide, in the theme's muted foreground |
+| 6 | Social icons | `ProfileSocialIcons` (`components/public/profile-social-icons.tsx`) | A `nav` labeled "Social links" of 44px targets, circles or rounded squares (`social_icon_shape`). Brand colors pass through `getAccessibleIconFill` so each icon stays legible on the card |
+| 7 | Section header | Header block (`components/public/header-block.tsx`) with `SectionRule` | Starts a `<section>`; the blocks after it are a `<ul>` labeled with the header's title |
+| 8 | Featured link | `LinkBlock`, `variant: "featured"` (`components/public/link-block.tsx`) | 16:9 cover with the title as a solid pill over its lower left edge; the description sits below |
+| 9 | Thumbnail link | `variant: "thumbnail"` | Uploaded square tile, title, and description |
+| 10 | Highlighted link | `isHighlighted` | Filled with the theme primary; text color picked by `getReadableTextColor` |
+| 11 | Icon link | `classic` with an icon | Icons resolve on the server (`lib/block-icons.ts`), so the public bundle ships no icon map |
+| 12 | Outlined link | `isOutlined` with an emoji | Transparent fill and the page foreground for text |
+
+Link cards share one treatment: 28px corners by default (`rounded-2xl`), the theme card at 85% opacity with a hairline border, and on hover a 1px lift, a primary border and glow, and a signal accent that grows from the left edge. Embeds, images, text, dividers, Connect forms, vCard buttons, and locations follow in the later sections of the same page.
+
+The page ends with the legal row and the branding line:
+
+<Screenshot
+  light={publicFooterLight}
+  dark={publicFooterDark}
+  alt="The public page footer: Privacy and Cookie settings links in small underlined text, and below them the line Powered by LinkDen, by MrDemonWolf, Inc."
+  caption="Privacy appears whenever a privacy notice is configured (URL or text); Cookie settings appears on the live page when the consent banner is on. Both are 44px tall touch targets."
+  maxWidth={560}
+/>
+
+### On a phone
+
+<Screenshot
+  light={publicMobileLight}
+  dark={publicMobileDark}
+  alt="The same public profile on a 390px phone: the profile card spans the width, with share and color-mode buttons at its top right, followed by the Latest work section."
+  caption="On a 390px phone every layout stacks: profile card first, then the block list. The split threshold follows the container, not the device."
+  maxWidth={340}
+/>
+
+The `.ld-page` root is an inline-size container, so `split` reacts to the frame the page sits in, not the browser window. That is why the narrow preview never switches to two columns inside a wide admin. Below 896px a `split` page is at most 512px wide; `stacked` pages are at most 672px at every width.
+
+## Inside the admin: preview and Wallet
+
+Two admin surfaces show something other than admin chrome. Both sit in the same rail and keep their own look in either admin mode.
+
+<ScreenshotGrid>
+  <Screenshot
+    light={surfacePreviewLight}
+    dark={surfacePreviewDark}
+    alt="The admin Preview rail: a Preview heading with a collapse button, light and dark preview toggles, Copy link and Open live page buttons, the status line Includes block drafts, and the public profile rendered in a bordered viewport."
+    caption="The Preview rail renders the page at 390px and scales it to fit. The toolbar stays at admin size; the page inside keeps its own theme."
+    maxWidth={340}
+  />
+  <Screenshot
+    light={surfaceWalletLight}
+    dark={surfaceWalletDark}
+    alt="The Settings → Wallet Preview rail showing a navy pass card: a logo tile, STUDIO header field, organization label, a Your Name placeholder primary field, an avatar thumbnail, Role and Phone secondary fields, and a QR code captioned Scan to view profile."
+    caption="Settings → Wallet shows the pass card itself, without a phone frame. Its colors do not follow the admin's mode; an empty primary field shows the Your Name placeholder."
+    maxWidth={400}
+  />
+</ScreenshotGrid>
+
+- **Page preview.** `PagePreview` (`components/admin/page-preview.tsx`) renders the real `PublicPage` with `previewMode` inside `PagePreviewViewport`. The light and dark toggles change only the preview. The status line reads "Sample content · no blocks yet", "Includes block drafts", "No visible blocks", or "Preview of enabled blocks".
+- **Wallet preview.** `WalletPassPreview` (`components/admin/wallet-pass-preview.tsx`) paints the pass from the saved Wallet design. Field limits and content resolution come from `packages/validators/src/wallet.ts`. A preview is not proof that a pass signs or installs.
+
+## Where each scope applies
+
+| Surface | How the scope is applied |
+| --- | --- |
+| Admin console | `AdminShell` puts `.admin-scope` and the admin font variables on its root, and mirrors both onto `<body>` while mounted so portalled menus, popovers, tooltips, dialogs, and sheets inherit them |
+| Login, setup, reset password | The routes in `PUBLIC_ADMIN_ROUTES` (`apps/web/src/lib/admin-routes.ts`) render inside a plain `.admin-scope` wrapper without the sidebar; see [Patterns](/docs/design-system/patterns) for captures |
+| Live public page (`/`) | `:root` carries the public token defaults, `body` sets Sora and DM Sans, and `.ld-page` receives the resolved `--ld-*` theme variables as inline styles |
+| Static public build | `renderStaticDocument` (`components/public/static-document.tsx`) puts `.public-scope` on `<body>` and renders `StaticPage`, which wraps the same `PublicPage` |
+| Page preview | `PagePreviewViewport` wraps the real `PublicPage` in `.public-scope`, marks it `inert`, and exposes it as one `role="img"` named "Live preview of your page" |
+| Wallet preview | `WalletPassPreview` sits in the same rail and paints the pass with its own colors and the system font stack |
+| Documentation | The Fumadocs Notebook layout with its own palette in `apps/docs/src/app/global.css`; it never redefines app tokens |
+
+The cascade in `apps/web/src/index.css` is ordered so a nested public scope wins inside the admin:
+
+```css
+:root, .public-scope { /* public light tokens */ }
+.dark, .dark .public-scope { /* public dark tokens */ }
+.admin-scope { /* admin fonts, light palette, control heights, tighter radii */ }
+.dark .admin-scope, .admin-scope.dark { /* admin dark palette */ }
+.public-scope { /* restores public fonts, radii and control-height fallbacks */ }
+```
+
+`.admin-scope` and the second `.public-scope` rule are unlayered and declared in that order, so at equal specificity the public rule wins when the two are nested. The radius scale lives in a plain (not inline) `@theme` block, so utilities compile to `var(--radius-*)` and each scope can retune them at runtime. The coarse-pointer rules that raise admin controls to 44px exclude anything inside `.public-scope`.
+
+## Breakpoints at a glance
+
+The admin uses Tailwind's default viewport breakpoints. The public page uses container widths of `.ld-page`, so the same rules hold inside the preview.
+
+| Width | Admin | Public page |
+| --- | --- | --- |
+| Below 640px (`sm`) | 16px page padding; 24px page heading | Banner 112px |
+| 640px (`sm`) | 24px padding; 28px heading | Banner 144px (container width) |
+| 768px (`md`) | With a fine pointer, Buttons use the 36 / 32 / 44px control tokens and Inputs and Select triggers drop to 36px with 14px text; otherwise all stay 44px and fields keep 16px text (Button text is 14px at every width) | — |
+| 896px container | — | `split` becomes two columns: 320px sticky profile and the block stack, 40px apart, up to 1152px wide |
+| 1024px (`lg`) | Sidebar (256px, collapsible to a 48px icon rail with Cmd/Ctrl+B) and the 300px preview rail replace the 56px bottom tab bar and the preview sheet; 32px padding | — |
+| 1280px (`xl`) | Preview rail 372px; an editor panel stacks above the preview instead of replacing it | — |
+| Coarse pointer, any width | Buttons, fields, selects, color inputs, and section links are at least 44px (switches and checkboxes keep their size); fields use 16px text | — |
+
+## Rules that apply everywhere
+
+- **Use semantic utilities.** Write `bg-card`, `text-foreground`, and `border-input-border`, not hex values. A new color is a token in `index.css` first.
+- **Keep the layers separate.** The public color controls edit public theme overrides only. There is no admin accent-color picker, and a saved public palette never recolors admin navigation or forms.
+- **One renderer.** Preview, live page, and static output use the same public components. Do not fork block markup for the preview.
+- **One source for limits.** Accepted settings, block configuration, and pass content come from `packages/validators/src/`. Forms and renderers read those rules instead of restating them.
+- **Accessible by default.** Keep visible keyboard focus, label and error associations, the 3:1 `--input-border` control boundary, and the 12px text floor. Color alone never carries state.
+- **Honor reduced motion** in CSS and in JavaScript (`prefersReducedMotion()` from `apps/web/src/hooks/use-reduced-motion.ts`).
+- **No design-system route in the product app.** These docs are the reference; examples live where the app renders them.
+
+## Source map
+
+Paths are relative to the repository root.
+
+| Source | Responsibility |
+| --- | --- |
+| `apps/web/src/index.css` | Semantic colors, scope overrides, fluid type and radius scales, control tokens, `.ld-page`, reduced motion |
+| `apps/web/src/public-fonts.css` and `apps/web/public/fonts/` | Local Sora and DM Sans files with their licenses, shared by Next and static output |
+| `apps/web/src/app/admin/layout.tsx` | Montserrat and Roboto variables, admin metadata, and the admin theme color |
+| `apps/web/src/app/layout.tsx` | Geist Mono (`--font-mono`), the root theme provider, and static root metadata |
+| `apps/web/src/components/ui/` | App primitives built on Base UI and Tailwind (Button, Input, Select, Card, Dialog, Sheet, Sidebar, and more) |
+| `packages/ui/src/` | Shared `Checkbox`, `Switch`, `Avatar`, and `Tabs`; `cn` class merging; public theme presets; banner presets; social brands; contrast helpers |
+| `apps/web/src/components/admin/` | Shell, navigation, page structure, form fields, previews, and feedback |
+| `apps/web/src/components/public/` | Public profile and block renderers shared by live, preview, and static output |
+| `apps/web/src/lib/theme-colors.ts` | `getThemeColors`: preset plus custom overrides, with readable-text fallbacks |
+| `apps/web/src/hooks/` | `useSettingsForm`, `useUnsavedChanges`, `prefersReducedMotion`, media-query helpers |
+| `packages/validators/src/` | Settings registry, public settings projection, block configuration, field limits, and Wallet pass rules |
+
+Reuse these sources before adding a component or utility. A visual example here is not a second implementation of the app.
+
+## Screenshots
+
+Every image in these pages is a capture of the running app. The capture scripts live in `scripts/design-screenshots/`, and its `README.md` has the full setup.
+
+| File | Purpose |
+| --- | --- |
+| `lib.ts` | Base URL, browser and context factories, sign-in, page preparation, and `shot` (capture, encode, record) |
+| `fixture.json` | The synthetic sample profile in the backup import format, plus seed images and Inbox messages |
+| `seed.ts` | Resets a disposable stack to the sample state: admin account, images, `backup.import`, Inbox messages |
+| `capture.ts` | Runs `groups/<group>.ts` modules |
+| `groups/` | One module per image group |
+
+The sample profile is Rowan Ellis of Ellis Studio, a fictional product designer. Names, handles, and links are synthetic (`example.com`, `example.org`, `example.net`), and the images are generated shapes with no people, logos, or text.
+
+### Where images live
+
+Images are WebP files in `apps/docs/content/docs/design-system/images/<group>/<name>.webp`. Each group also keeps a `manifest.json` with the size and a description of every image. Names are kebab-case with `-light` / `-dark` and `-mobile` markers.
+
+| Group | Used by |
+| --- | --- |
+| `overview` | This page |
+| `foundations` | [Foundations](/docs/design-system/foundations) |
+| `components` | [Components](/docs/design-system/components) |
+| `patterns` | [Patterns](/docs/design-system/patterns) |
+| `stateful` | Captures that need saved state changed first, used across the pages |
+
+### Capture settings
+
+| Setting | Value |
+| --- | --- |
+| Desktop | 1440×900 viewport at 1x |
+| Phone | 390×844 at 2x, mobile and touch |
+| Element crops | 1440×900 at 2x, cropped to the element with 16px padding |
+| Environment | Reduced motion, `en-US`, `America/Los_Angeles`, service workers blocked |
+| Color mode | Browser `prefers-color-scheme` set per capture; the admin's stored theme set to match |
+| Consent | "Essential only" stored, so the consent banner does not cover public captures |
+| Stabilizing | Next.js dev indicator and query devtools hidden; lazy images, fonts, and network settled; focus cleared |
+| Encoding | `cwebp -q 82 -metadata none` |
+| Budget | 250 KB per image, 8 MB for the whole images folder |
+
+The numbered anatomy diagrams on this page come from the `overview` group: it injects a dashed outline and a badge over each region before the capture. The overlay ignores pointer events and is never part of the app.
+
+### Regenerate the images
+
+1. Start a disposable stack from a separate worktree: the API on `127.0.0.1:3100` (`wrangler dev` with `DEV_LOGIN=true` and a loopback `BETTER_AUTH_URL`) and the web app on `127.0.0.1:3101`. The README has the exact env files and commands.
+2. Seed it from the main checkout. This replaces all content, so never point it at a stack whose data you need. It refuses non-loopback URLs and port 3001.
+
+   ```bash
+   bun scripts/design-screenshots/seed.ts
+   ```
+
+3. Capture every group, or only the ones you changed:
+
+   ```bash
+   bun scripts/design-screenshots/capture.ts            # all groups
+   bun scripts/design-screenshots/capture.ts overview   # one group
+   bun scripts/design-screenshots/capture.ts --list
+   ```
+
+   The runner prints each image's size and exits non-zero when a group fails or an image is over budget. `DESIGN_SHOTS_URL` overrides the default `http://localhost:3101`. To retake single images, `OVERVIEW_ONLY=admin-anatomy,public-footer` (and `FOUNDATIONS_ONLY` for the foundations group) limits a run to shot names with those prefixes; `COMPONENTS_ONLY`, `PATTERNS_ONLY`, and `STATEFUL_ONLY` take section names instead (for example `PATTERNS_ONLY=shell,preview`).
+
+4. Look at every changed image before you commit it. Retake anything blurry, badly cropped, mid-animation, or showing development overlays.
+
+Capture modules are read-only: they open editors, dialogs, and menus, then discard. They never save, apply, delete, reset, import, or toggle instant-save switches. Captures that need a different saved state belong in the `stateful` group, followed by a fresh `seed.ts` run. Inbox times such as "2h ago" are computed at seed time, so seed shortly before capturing.
+
+### Embed a capture
+
+Import images statically, so the docs export fingerprints them and applies the `/linkden` base path:
+
+```mdx
+import adminEditorLight from "./images/overview/admin-editor-light.webp";
+import adminEditorDark from "./images/overview/admin-editor-dark.webp";
+
+<Screenshot
+  light={adminEditorLight}
+  dark={adminEditorDark}
+  alt="What the image shows, for someone who cannot see it."
+  caption="What to notice."
+/>
+```
+
+`<Screenshot>` (`apps/docs/src/components/screenshot.tsx`) shows `dark` when the docs are in dark mode and falls back to `light`. `maxWidth` caps narrow captures such as phones and single components. `<ScreenshotGrid columns={2 | 3}>` places related captures side by side from the `sm` breakpoint.
+
+## Changing the system
+
+1. Change the source token, component, or validator.
+2. Run the affected tests, including the palette contrast test in `apps/web/src/components/ui/__tests__/admin-palette-contrast.test.ts` for color changes.
+3. Update the relevant page here, keeping values and paths exact.
+4. Recapture the affected group and review it in light and dark.
+5. Check desktop and touch sizes, focus and error states, the real public output, and reduced motion.
+
+A screenshot or local preview shows how the interface looks. It is not proof of publication, pass signing, or a live integration.

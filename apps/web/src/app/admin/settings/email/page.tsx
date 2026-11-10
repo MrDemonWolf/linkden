@@ -30,7 +30,13 @@ export default function EmailSettingsPage() {
 	if (form.isError) {
 		return <QueryError message="Couldn't load settings" onRetry={() => form.refetch()} />;
 	}
-	if (form.isLoading || !form.state) return <Skeleton className="h-64" />;
+	if (form.isLoading || !form.state) {
+		return (
+			<div aria-busy="true" role="status" aria-label="Loading email settings">
+				<Skeleton className="h-64" />
+			</div>
+		);
+	}
 	const { state, setState } = form;
 
 	return (
@@ -63,8 +69,10 @@ export default function EmailSettingsPage() {
 							if (isDeliveryMode(v)) setState({ ...state, contactDelivery: v });
 						}}
 						items={DELIVERY_ITEMS}
+						aria-invalid={!!form.errors.contactDelivery}
+						aria-describedby={`s-contact-delivery-hint${form.errors.contactDelivery ? " s-contact-delivery-error" : ""}`}
 					/>
-					<p className="text-micro text-muted-foreground">
+					<p id="s-contact-delivery-hint" className="text-micro text-muted-foreground">
 						Email goes to the admin account&apos;s address through the provider above. Messages kept
 						in the Inbox are never lost to an email outage.
 					</p>

@@ -15,7 +15,7 @@ interface ContextPanelProps {
 }
 
 const pillButtonClass =
-	"flex w-full min-h-11 items-center justify-center gap-2 rounded-full border border-border bg-card/60 px-4 text-xs font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+	"flex w-full min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 /**
  * Context-Aware Presentation panel — iOS-Wallet-style pill-reveal editors for
@@ -50,7 +50,7 @@ export function ContextPanel({
 			{/* Locations */}
 			<div className="space-y-2">
 				<div className="flex items-center justify-between">
-					<Label className="text-micro">Locations</Label>
+					<Label className="text-sm">Locations</Label>
 					{locations.length > 0 && (
 						<span className="text-micro text-muted-foreground">
 							{locations.length}/{PASS_LOCATION_LIMIT}
@@ -69,7 +69,7 @@ export function ContextPanel({
 							<legend className="sr-only">Location {n}</legend>
 							<div className="grid grid-cols-2 gap-2">
 								<div className="space-y-1">
-									<Label htmlFor={id("lat")} className="text-micro">
+									<Label htmlFor={id("lat")} className="text-sm">
 										Latitude
 									</Label>
 									<Input
@@ -81,7 +81,6 @@ export function ContextPanel({
 										value={Number.isFinite(loc.latitude) ? loc.latitude : ""}
 										placeholder="37.7749"
 										onChange={(e) => updateLocation(i, { latitude: parseFloat(e.target.value) })}
-										className="text-micro"
 										aria-invalid={!!errors.latitude}
 										aria-describedby={errors.latitude ? id("lat-error") : undefined}
 									/>
@@ -92,7 +91,7 @@ export function ContextPanel({
 									)}
 								</div>
 								<div className="space-y-1">
-									<Label htmlFor={id("lng")} className="text-micro">
+									<Label htmlFor={id("lng")} className="text-sm">
 										Longitude
 									</Label>
 									<Input
@@ -104,7 +103,6 @@ export function ContextPanel({
 										value={Number.isFinite(loc.longitude) ? loc.longitude : ""}
 										placeholder="-122.4194"
 										onChange={(e) => updateLocation(i, { longitude: parseFloat(e.target.value) })}
-										className="text-micro"
 										aria-invalid={!!errors.longitude}
 										aria-describedby={errors.longitude ? id("lng-error") : undefined}
 									/>
@@ -116,7 +114,7 @@ export function ContextPanel({
 								</div>
 							</div>
 							<div className="space-y-1">
-								<Label htmlFor={id("text")} className="text-micro">
+								<Label htmlFor={id("text")} className="text-sm">
 									Lock Screen text
 								</Label>
 								<Input
@@ -125,7 +123,6 @@ export function ContextPanel({
 									maxLength={100}
 									placeholder="Save my contact"
 									onChange={(e) => updateLocation(i, { relevantText: e.target.value })}
-									className="text-micro"
 								/>
 							</div>
 							<button
@@ -154,7 +151,7 @@ export function ContextPanel({
 
 			{/* Relevant date */}
 			<div className="space-y-2">
-				<Label className="text-micro" htmlFor={dateVisible ? "w-reldate" : undefined}>
+				<Label className="text-sm" htmlFor={dateVisible ? "w-reldate" : undefined}>
 					Relevant Date
 				</Label>
 				{dateVisible ? (

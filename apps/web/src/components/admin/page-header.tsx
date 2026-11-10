@@ -19,7 +19,7 @@ interface PageHeaderProps {
 	style?: React.CSSProperties;
 }
 
-/** Page h1 row (title · badge · actions), 16px above whatever follows (sub-tabs or content). The kicker lives in the shell top bar. */
+/** Page heading and description precede actions on phones; the shell owns the kicker. */
 export function PageHeader({
 	title,
 	kicker,
@@ -36,17 +36,25 @@ export function PageHeader({
 	}, [kicker, setKicker]);
 
 	return (
-		<header style={style} className={cn("mb-4", className)}>
-			<div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-				<div className="flex min-w-0 items-center gap-2">
-					<h1 className="truncate font-display text-[22px] font-semibold leading-tight tracking-[-0.015em]">
-						{title}
-					</h1>
-					{badge}
-				</div>
-				{actions && <div className="flex items-center gap-2 shrink-0 mt-2 sm:mt-0">{actions}</div>}
+		<header
+			style={style}
+			className={cn(
+				"mb-4 grid gap-3 sm:mb-6 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-x-6 sm:gap-y-2",
+				className,
+			)}
+		>
+			<div className="flex min-w-0 flex-wrap items-center gap-2">
+				<h1 className="font-display text-[24px] font-semibold leading-tight tracking-[-0.025em] sm:text-[28px]">
+					{title}
+				</h1>
+				{badge}
 			</div>
-			{children && <div className="mt-3">{children}</div>}
+			{children && <div className="min-w-0 sm:col-start-1 sm:row-start-2">{children}</div>}
+			{actions && (
+				<div className="flex flex-wrap items-center gap-2 sm:col-start-2 sm:row-start-1 sm:self-start">
+					{actions}
+				</div>
+			)}
 		</header>
 	);
 }

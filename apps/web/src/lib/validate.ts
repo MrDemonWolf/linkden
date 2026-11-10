@@ -28,15 +28,9 @@ export function fieldError(schema: z.ZodType, value: unknown): string | null {
 	return first ? friendlyMessage(first.message) : "Invalid value";
 }
 
-/**
- * Validate a parsed block config against the schema for its type. Returns a
- * map of config key → first error message, so an editor can show each issue
- * beside the field that caused it. Nested paths (e.g. `urls.2.url`) are keyed
- * by their full dotted path. Unknown keys are stripped by the schema, never
- * reported.
- */
-export function configErrors(type: BlockType, config: object): Record<string, string> {
-	const result = blockConfigSchemaFor(type).safeParse(config);
+/** First friendly error for each full dotted field path, including nested rows. */
+export function schemaErrors(schema: z.ZodType, value: unknown): Record<string, string> {
+	const result = schema.safeParse(value);
 	if (result.success) return {};
 	const errors: Record<string, string> = {};
 	for (const issue of result.error.issues) {
@@ -44,4 +38,9 @@ export function configErrors(type: BlockType, config: object): Record<string, st
 		if (!(key in errors)) errors[key] = friendlyMessage(issue.message);
 	}
 	return errors;
+}
+
+/** Validate a parsed block config with the same schema its router uses. */
+export function configErrors(type: BlockType, config: object): Record<string, string> {
+	return schemaErrors(blockConfigSchemaFor(type), config);
 }

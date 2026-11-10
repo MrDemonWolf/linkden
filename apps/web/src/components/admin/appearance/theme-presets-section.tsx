@@ -15,12 +15,10 @@ export function ThemePresetsSection({
 	return (
 		<Card>
 			<CardHeader>
-				<h2>
-					<CardTitle className="flex items-center gap-1.5">
-						<Palette className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-						Theme Presets
-					</CardTitle>
-				</h2>
+				<CardTitle className="flex items-center gap-1.5">
+					<Palette className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+					Theme Presets
+				</CardTitle>
 			</CardHeader>
 			<CardContent>
 				<div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -107,23 +105,8 @@ export function ThemePresetsSection({
 										</div>
 									)}
 								</div>
-								{/* Label + color dots */}
-								<div className="flex items-center gap-2 px-2.5 py-2 bg-card">
-									<div className="flex gap-1">
-										<div
-											className="h-3 w-3 rounded-full border border-border/50 shadow-sm"
-											style={{ backgroundColor: light["--ld-primary"] }}
-										/>
-										<div
-											className="h-3 w-3 rounded-full border border-border/50 shadow-sm"
-											style={{ backgroundColor: light["--ld-accent"] }}
-										/>
-										<div
-											className="h-3 w-3 rounded-full border border-border/50 shadow-sm"
-											style={{ backgroundColor: light["--ld-background"] }}
-										/>
-									</div>
-									<span className="text-micro font-semibold truncate">{theme.label}</span>
+								<div className="flex min-h-14 w-full flex-1 items-center justify-center bg-card px-2 py-2">
+									<span className="text-center text-sm leading-5 font-medium">{theme.label}</span>
 								</div>
 							</button>
 						);

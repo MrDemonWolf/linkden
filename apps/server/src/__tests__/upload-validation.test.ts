@@ -1,6 +1,9 @@
+import { UPLOADED_IMAGE_PATH } from "@linkden/validators/primitives";
 import { describe, expect, it } from "vitest";
 import {
+	ALLOWED_EXTENSIONS,
 	buildR2Key,
+	isServableImageKey,
 	MAX_FILE_SIZE,
 	MAX_UPLOAD_BODY_SIZE,
 	replacementKeyForPurpose,
@@ -171,6 +174,23 @@ describe("upload request boundaries", () => {
 			"/api/images/avatar/../secret.png",
 		]) {
 			expect(replacementKeyForPurpose(value, "avatar")).toBeNull();
+		}
+	});
+});
+
+describe("UPLOADED_IMAGE_PATH (stored upload paths) matches what the API serves", () => {
+	it("accepts every servable key shape and extension, and nothing else", () => {
+		for (const ext of ALLOWED_EXTENSIONS) {
+			const key = `avatar/0b8e9a3c-1f2d-4e5f-8a9b-0c1d2e3f4a5b.${ext}`;
+			expect(isServableImageKey(key)).toBe(true);
+			expect(UPLOADED_IMAGE_PATH.test(`/api/images/${key}`)).toBe(true);
+		}
+		for (const bad of [
+			"/api/images/avatar/x.svg",
+			"/api/images/../x.png",
+			"https://a.test/api/images/avatar/x.png",
+		]) {
+			expect(UPLOADED_IMAGE_PATH.test(bad)).toBe(false);
 		}
 	});
 });

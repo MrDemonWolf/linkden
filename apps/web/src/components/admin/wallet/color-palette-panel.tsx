@@ -1,5 +1,7 @@
 "use client";
 
+import { Radio } from "@base-ui/react/radio";
+import { RadioGroup } from "@base-ui/react/radio-group";
 import { ColorField } from "@/components/admin/color-field";
 
 interface WalletPalette {
@@ -49,25 +51,30 @@ export function ColorPalettePanel({
 	onFgChange,
 	onLabelChange,
 }: ColorPalettePanelProps) {
+	const selected = WALLET_PALETTES.find(
+		(p) => eqColor(bg, p.bg) && eqColor(fg, p.fg) && eqColor(label, p.label),
+	);
 	return (
-		<div className="space-y-5">
+		<div className="@container/wallet-palette space-y-5">
 			<div className="space-y-2">
-				<h3 className="text-micro font-semibold uppercase tracking-wider text-foreground/80">
-					Colors and Palettes
-				</h3>
-				<div role="radiogroup" aria-label="Color palettes" className="grid grid-cols-3 gap-2">
+				<h3 className="text-sm font-semibold text-foreground/80">Colors and Palettes</h3>
+				<RadioGroup
+					value={selected?.name ?? null}
+					onValueChange={(name) => {
+						const palette = WALLET_PALETTES.find((p) => p.name === name);
+						if (palette) onPick(palette);
+					}}
+					aria-label="Color palettes"
+					className="grid grid-cols-3 gap-2"
+				>
 					{WALLET_PALETTES.map((p) => {
-						const active = eqColor(bg, p.bg) && eqColor(fg, p.fg) && eqColor(label, p.label);
+						const active = selected === p;
 						return (
-							// biome-ignore lint/a11y/useSemanticElements: button-based radio is intentional for this custom palette picker
-							<button
+							<Radio.Root
 								key={p.name}
-								type="button"
-								role="radio"
-								aria-checked={active}
+								value={p.name}
 								aria-label={p.name}
 								title={p.name}
-								onClick={() => onPick(p)}
 								className={`flex h-11 min-h-11 overflow-hidden rounded-full transition-all focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-foreground ${
 									active
 										? "ring-2 ring-primary ring-offset-2 ring-offset-background"
@@ -77,17 +84,15 @@ export function ColorPalettePanel({
 								<span className="flex-1" style={{ backgroundColor: p.bg }} />
 								<span className="flex-1" style={{ backgroundColor: p.fg }} />
 								<span className="flex-1" style={{ backgroundColor: p.label }} />
-							</button>
+							</Radio.Root>
 						);
 					})}
-				</div>
+				</RadioGroup>
 			</div>
 
 			<div className="space-y-2">
-				<h3 className="text-micro font-semibold uppercase tracking-wider text-foreground/80">
-					Custom
-				</h3>
-				<div className="grid grid-cols-2 gap-3">
+				<h3 className="text-sm font-semibold text-foreground/80">Custom</h3>
+				<div className="grid gap-3 @min-[360px]/wallet-palette:grid-cols-2">
 					<ColorField
 						id="w-fg"
 						label="Foreground"

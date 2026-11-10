@@ -9,7 +9,9 @@
 //   other navigations  → network-only, then /offline (never cache admin HTML)
 //   /_next/static/*    → cache-first (content-hashed, immutable), capped
 //   /api, /trpc, POST… → never touched (auth + data must always hit the network)
-const CACHE_VERSION = "v4";
+const CACHE_VERSION = "v6";
+const hostname = new URL(self.location.href).hostname;
+const IS_LOOPBACK = hostname === "localhost" || hostname === "[::1]" || /^127\./.test(hostname);
 const APP_VERSION = (() => {
 	try {
 		return new URL(self.location.href).searchParams.get("v") || "0";
@@ -70,6 +72,8 @@ async function trimStatic(cache) {
 }
 
 self.addEventListener("fetch", (event) => {
+	// Local previews use mutable development chunk URLs, so an old worker must pass them through.
+	if (IS_LOOPBACK) return;
 	const { request } = event;
 	if (request.method !== "GET") return;
 	const url = new URL(request.url);
@@ -86,7 +90,12 @@ self.addEventListener("fetch", (event) => {
 				.then((response) => {
 					// 2xx only: the API-outage render is a 500 and must not replace the
 					// last good copy that offline visits fall back to.
-					if (response.ok) {
+					const finalUrl = response.url ? new URL(response.url) : null;
+					if (
+						response.ok &&
+						!response.redirected &&
+						(!finalUrl || (finalUrl.origin === self.location.origin && finalUrl.pathname === "/"))
+					) {
 						const clone = response.clone();
 						event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(HOME_KEY, clone)));
 					}

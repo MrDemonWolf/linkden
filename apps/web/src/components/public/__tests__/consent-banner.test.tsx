@@ -86,20 +86,49 @@ describe("hasConsent", () => {
 	});
 });
 
+describe("hasConsent with an outdated choice", () => {
+	beforeEach(() => localStorage.clear());
+
+	it("grants nothing while the banner is on, until the visitor chooses again", () => {
+		localStorage.setItem("linkden-consent", "accepted");
+		expect(hasAnalyticsConsent(true)).toBe(false);
+		localStorage.setItem(
+			"linkden-consent",
+			JSON.stringify({ analytics: true, functional: true, v: 1, ts: Date.now() }),
+		);
+		expect(hasAnalyticsConsent(true)).toBe(false);
+		expect(hasConsent("functional", true)).toBe(false);
+	});
+
+	it("still honours an old decline when the banner is off", () => {
+		localStorage.setItem("linkden-consent", "declined");
+		expect(hasAnalyticsConsent(false)).toBe(false);
+		localStorage.setItem("linkden-consent", "accepted");
+		expect(hasAnalyticsConsent(false)).toBe(true);
+	});
+});
+
 describe("ConsentBanner", () => {
 	beforeEach(() => localStorage.clear());
 	afterEach(cleanup);
 
-	it("records a dated choice and tells the page (first-visit page view)", () => {
+	it("records embedded-media consent without enabling retired analytics", () => {
 		const listener = vi.fn();
 		const off = onConsentChange(listener);
-		renderBanner();
+		renderBanner('{"analytics":true,"functional":true}');
 		fireEvent.click(screen.getByRole("button", { name: "Accept All" }));
 		off();
 
-		expect(listener).toHaveBeenCalledWith(expect.objectContaining({ analytics: true }));
+		expect(listener).toHaveBeenCalledWith(
+			expect.objectContaining({ analytics: false, functional: true }),
+		);
 		const stored = JSON.parse(localStorage.getItem(KEY) ?? "{}");
-		expect(stored).toMatchObject({ analytics: true, marketing: false, v: CONSENT_VERSION });
+		expect(stored).toMatchObject({
+			analytics: false,
+			functional: true,
+			marketing: false,
+			v: CONSENT_VERSION,
+		});
 		expect(typeof stored.ts).toBe("number");
 		expect(screen.queryByRole("region", { name: "Cookie consent" })).toBeNull();
 	});
@@ -113,22 +142,22 @@ describe("ConsentBanner", () => {
 		expect(screen.queryByRole("region", { name: "Cookie consent" })).toBeNull();
 
 		act(() => openConsentPreferences());
-		expect((screen.getByRole("checkbox", { name: /analytics/i }) as HTMLInputElement).checked).toBe(
-			true,
-		);
+		expect(screen.queryByRole("checkbox", { name: /analytics/i })).toBeNull();
+		expect(screen.getByRole("checkbox", { name: /embedded media/i })).toBeTruthy();
 		fireEvent.click(screen.getByRole("button", { name: "Essential Only" }));
 		expect(hasAnalyticsConsent(true)).toBe(false);
 	});
 
-	it("offers no marketing category (nothing on the page uses it)", () => {
+	it("offers neither retired analytics nor unused marketing categories", () => {
 		renderBanner('{"analytics":true,"marketing":true,"functional":true}');
 		fireEvent.click(screen.getByRole("button", { name: "Manage Preferences" }));
 		expect(screen.queryByText("Marketing")).toBeNull();
+		expect(screen.queryByText("Analytics")).toBeNull();
 		expect(screen.getByText("Embedded media")).toBeTruthy();
 	});
 
 	it("gives accept and reject the same visual weight", () => {
-		renderBanner('{"analytics":true}');
+		renderBanner('{"analytics":true,"functional":true}');
 		const accept = screen.getByRole("button", { name: "Accept All" });
 		const reject = screen.getByRole("button", { name: "Essential Only" });
 		expect(reject.className).toBe(accept.className);
@@ -148,5 +177,37 @@ describe("ConsentBanner", () => {
 		unmount();
 		expect(document.documentElement.style.getPropertyValue("--ld-consent-h")).toBe("");
 		expect(document.documentElement.style.scrollPaddingBottom).toBe("");
+	});
+
+	it("updates footer clearance to the visible panel height after a resize", () => {
+		const bounds = vi
+			.spyOn(HTMLElement.prototype, "getBoundingClientRect")
+			.mockReturnValue(new DOMRect(0, 0, 320, 280));
+		let notifyResize = () => {};
+		vi.stubGlobal(
+			"ResizeObserver",
+			class {
+				constructor(callback: ResizeObserverCallback) {
+					notifyResize = () => callback([], this);
+				}
+				observe() {}
+				unobserve() {}
+				disconnect() {}
+			},
+		);
+		try {
+			renderBanner('{"functional":false}');
+			expect(document.documentElement.style.getPropertyValue("--ld-consent-h")).toBe("280px");
+			bounds.mockReturnValue(new DOMRect(0, 0, 320, 160));
+			act(notifyResize);
+			expect(document.documentElement.style.getPropertyValue("--ld-consent-h")).toBe("160px");
+			expect(document.documentElement.style.scrollPaddingBottom).toBe("160px");
+			fireEvent.click(screen.getByRole("button", { name: "Decline" }));
+			expect(document.documentElement.style.getPropertyValue("--ld-consent-h")).toBe("");
+			expect(screen.queryByRole("region", { name: "Cookie consent" })).toBeNull();
+		} finally {
+			bounds.mockRestore();
+			vi.unstubAllGlobals();
+		}
 	});
 });
