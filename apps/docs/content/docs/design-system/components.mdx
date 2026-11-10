@@ -31,6 +31,8 @@ import uploadBannerLight from "./images/components/image-upload-banner-light.web
 import uploadBannerDark from "./images/components/image-upload-banner-dark.webp";
 import uploadEmptyLight from "./images/components/image-upload-empty-light.webp";
 import uploadEmptyDark from "./images/components/image-upload-empty-dark.webp";
+import cropDialogLight from "./images/components/image-crop-dialog-light.webp";
+import cropDialogDark from "./images/components/image-crop-dialog-dark.webp";
 import emailCardLight from "./images/components/email-provider-card-light.webp";
 import emailCardDark from "./images/components/email-provider-card-dark.webp";
 import sectionLabelLight from "./images/components/section-label-light.webp";
@@ -129,7 +131,7 @@ Import the existing component from its owning module. Do not install another com
     light={topBarActionsLight}
     dark={topBarActionsDark}
     alt="Top bar actions: a rounded Publishing off pill, a share icon button and an outline View live button with a globe icon."
-    caption="Top bar: the publication pill (outline xs, rounded-full), Share (a ghost icon trigger) and View live (outline sm)."
+    caption="Top bar: the publication pill (outline xs, rounded-full), Share (a ghost icon trigger) and View live (a link styled as an outline sm button)."
     maxWidth={360}
   />
   <Screenshot
@@ -144,7 +146,7 @@ Import the existing component from its owning module. Do not install another com
 | Variant | Look | Used for |
 | --- | --- | --- |
 | `default` | `bg-primary`, `text-primary-foreground`; `hover:bg-primary/80` | The one primary action: Save changes, Apply n new, Publish, Crop & upload |
-| `outline` | `border-border bg-background`; dark: `bg-input/30` | Secondary actions: View live, Change, Delete (row action), Retry, Cancel in alert dialogs |
+| `outline` | `border-border bg-background`; dark: `bg-input/30` | Secondary actions: View live, Change, Delete (Danger zone), Retry, Cancel in alert dialogs |
 | `secondary` | `bg-secondary`, hover mixes 5% foreground | The share popover's "Share…" button, shown only when the browser supports `navigator.share` |
 | `ghost` | Transparent; `hover:bg-muted` | Discard, Refresh status, icon triggers, settings nav items, upload Replace/Re-crop/Remove |
 | `destructive` | `bg-destructive/10 text-destructive`; dark: `bg-destructive/20` | Delete, Reset everything, Reset… |
@@ -157,7 +159,7 @@ Import the existing component from its owning module. Do not install another com
 | `xs`, `icon-xs` | 44px | `--control-height-compact` = 32px | 24px |
 | `lg`, `icon-lg` | 44px | `--control-height-large` = 44px | 36px |
 
-Text is 16px on touch layouts and `--control-font-size` (14px in the admin, 12px fallback) from `md`. `xs` and `sm` share a height in the admin; `xs` has tighter padding (`px-2.5`, `gap-1.5`) and 14px icons. The `@media (pointer: coarse)` rule in `apps/web/src/index.css` sets all three control heights to 44px, so tablets keep touch targets. See [Controls and radii](/docs/design-system/foundations#controls-and-radii).
+Text is 14px (`text-sm`) below `md` and `--control-font-size` from `md` (14px in the admin, 12px fallback). `xs` and `sm` share a height in the admin; `xs` differs only in its tighter side padding (`px-2.5` instead of `px-3`), and both use a 6px gap and 14px icons. The `@media (pointer: coarse)` rule in `apps/web/src/index.css` sets all three control heights to 44px, so tablets keep touch targets. See [Controls](/docs/design-system/foundations#controls).
 
 ```tsx
 import { Button } from "@/components/ui/button";
@@ -176,7 +178,7 @@ import { Button } from "@/components/ui/button";
 - Use `disabled` to block repeat actions while a request is pending. Disabled buttons drop to 50% opacity and ignore pointer events.
 - `aria-invalid` applies the shared error treatment (`border-destructive`, `ring-destructive/20`).
 - Focus shows `border-ring` plus a 2px `ring-ring/50`. Pressing nudges the button down 1px (`active:translate-y-px`), except for menu triggers.
-- To render a link, pass `nativeButton={false}` and `render={<Link href=… />}` (Settings nav, View live, EmptyState actions). Base UI keeps button semantics on the rendered anchor (`role="button"`), so screen readers announce these as buttons.
+- Navigation is a link, not a button. Render a real `<Link>` or `<a>` and give it the button look with `buttonVariants({ variant, size })` from `components/ui/button.tsx`: the Settings nav, View live, Open live page, the Inbox Reply link, Download pass, EmptyState link actions and Update to … all do this, so they keep the link role and open with Enter. Do not render an anchor through `Button` (`nativeButton={false}` with `render={<a />}`): Base UI then adds `role="button"`, and screen readers announce the link as a button.
 - Do not override heights per page. The sizes above come from the scoped tokens.
 
 ## Text fields
@@ -368,6 +370,13 @@ Use `ImageUploadField` (`components/admin/image-upload-field.tsx`) for every ima
 2. The crop dialog opens with the purpose's preset from `lib/image-crop-presets.ts`, for example avatar 512×512 JPEG, banner 1920×1080 WebP, favicon 256×256 PNG and block thumbnail 256×256 WebP.
 3. Crop & upload posts to `/api/upload`, then shows "Image uploaded". The form still needs saving.
 
+<Screenshot
+  light={cropDialogLight}
+  dark={cropDialogDark}
+  alt="An Adjust image dialog: the title, a hint reading Drag to reposition, pinch or scroll to zoom, output 512 × 512, 1 : 1, a black crop stage with a square selection and rule-of-thirds grid over the avatar artwork, a row with zoom out, a zoom slider, zoom in, a Rotate 0° button and the 1 : 1 label, and Cancel and Crop & upload."
+  caption="Links → Profile after choosing an avatar file. ImageCropDialog widens DialogContent with sm:max-w-3xl, so it is 768px from sm and keeps the 1rem gutter on phones; the zoom row shrinks its slider rather than wrapping the 1 : 1 label."
+/>
+
 - A dragged file switches the dashed `border-muted-foreground/25` frame to a solid primary border on `bg-primary/5`.
 - `replaces` is sent only for an upload made during the current unsaved edit, never for the saved value.
 - A field without a visible `label` should sit in a `fieldset` with a `legend` (Branding's logo and favicon; SEO's social image uses an `sr-only` legend) so its Replace, Re-crop and Remove buttons have group context.
@@ -471,20 +480,21 @@ import { FieldGroup } from "@/components/admin/settings/field-group";
     light={settingsNavLight}
     dark={settingsNavDark}
     alt="A vertical settings menu: Account, Email highlighted with a pale blue fill, Integrations, Wallet and Data."
-    caption="Settings at xl: a 176px column of ghost lg Buttons rendered as links; the current one gets bg-primary/10. Below xl the same items are a SubTabs strip."
+    caption="Settings at xl: a 176px column of Next Links styled with buttonVariants (ghost, lg); the current one gets bg-primary/10 and aria-current=page. Below xl the same items are a SubTabs strip."
     maxWidth={240}
   />
   <Screenshot
     light={walletTabsLight}
     dark={walletTabsDark}
-    alt="Tabs labeled Business, Images, Context, Colors and a partly hidden Background, each with an icon; Business is underlined."
-    caption="Settings → Wallet. Base UI Tabs styled like SubTabs. The strip scrolls when its column is narrow."
+    alt="Tabs labeled Business, Images, Context and Colors, each with an icon, and the icon of a fifth tab at the cut-off right edge; Business is underlined."
+    caption="Settings → Wallet as it loads. Base UI Tabs styled like SubTabs. In a narrow column the strip scrolls horizontally and opens at its start, so the active tab is in view."
     maxWidth={460}
   />
 </ScreenshotGrid>
 
 - `SubTabs` are navigation between routes, not an ARIA tab widget. Use `Tabs` (`components/ui/tabs.tsx`) only for panels within one page, as the Wallet editor does; Base UI then supplies roving focus and arrow keys.
 - The app's `Tabs` wrapper keeps triggers at 44px below `md` and 32px from `md`. `packages/ui` also defines `pills` and `bar` list variants.
+- `TabsList` is `relative` in every variant, so it is its tabs' offset parent. Base UI scrolls the active tab into view on mount using the tab's offset, and a scrolling strip measured from a further ancestor would open scrolled away from the active tab.
 - Add every new sub-tab to its destination layout and give it a `layout.tsx` with a document title.
 
 ## Sidebar, account menu and bottom tab bar
@@ -594,10 +604,11 @@ The bar is `sticky` with `bottom: calc(56px + env(safe-area-inset-bottom) + 8px)
 | Unsaved | Any `useUnsavedChanges` form is dirty (checked first) | `border-warning/40 text-warning` |
 | Check status | The status read failed | Outline |
 | Checking… | No status has arrived yet | Outline |
-| Failed | Recovery is required, or the current revision failed | `border-destructive/40 text-destructive` |
+| Failed | Recovery is required | `border-destructive/40 text-destructive` |
 | Publishing off | The API reports publication unavailable | Outline |
 | Publishing | A requested revision is still pending | Outline |
 | Published | The current revision is published and the live page verified | `border-success/30 text-success` |
+| Failed | The current revision failed | `border-destructive/40 text-destructive` |
 | Draft | Any other state | Outline |
 
 The screenshot stack has no publication target, so the next four captures rewrite the `publication.status` response in the capture browser only (a verified revision on `https://example.com`, then a failed newer revision). The components and their styling are the real ones.
@@ -635,7 +646,7 @@ The screenshot stack has no publication target, so the next four captures rewrit
 </ScreenshotGrid>
 
 - While the popover is open, the trigger takes the outline variant's `aria-expanded:bg-muted aria-expanded:text-foreground`, so the Published and Failed colors show only on the closed pill.
-- The popover text comes from `publicationView`; the "Last verified publication" block appears whenever the status has a `lastGood` revision, with Open verified page only when `liveVerified` is true.
+- The popover text comes from `publicationView`. Whenever the status has a `lastGood` revision, the popover shows it: headed "Last verified publication" with an Open verified page link when `liveVerified` is true, otherwise "Historical successful revision · live state unverified" with no link.
 
 ## Badges
 
@@ -698,7 +709,7 @@ Overlays are Base UI primitives, so they keep focus inside, close on Escape and 
 | `ConfirmDialog` (`components/admin/confirm-dialog.tsx`) | `open`, `onOpenChange`, `title`, `description`, `confirmLabel` ("Confirm"), `cancelLabel` ("Cancel"), `variant` (`"destructive"` default or `"default"`), `onConfirm`, `isPending` | `AlertDialog` with `role="alertdialog"`; both buttons disabled while pending, with a spinner in the action |
 | `DangerConfirmDialog` (`components/admin/settings/danger-confirm-dialog.tsx`) | `open`, `onOpenChange`, `title`, `description`, `confirmWord`, `confirmLabel`, `onConfirm`, `isPending` | Focuses its input, resets the typed text whenever it opens or closes, and arms the action only on an exact match |
 | `AlertDialogContent` | `size` (`"default"` or `"sm"`) | `default`: 320px, 384px from `sm`, left-aligned header from `sm`; `sm`: 320px with a two-column footer. Cancel defaults to the outline variant |
-| `DialogContent` | `className` | 384px from `sm` (`sm:max-w-sm`) unless a caller overrides it with an `sm:` width (Social uses `sm:max-w-md`) |
+| `DialogContent` | `className` | Full width less a 1rem gutter on each side on phones (`max-w-[calc(100%-2rem)]`); 384px from `sm` (`sm:max-w-sm`). Widen it with an `sm:max-w-*` class, which replaces that default: Social and the two-factor dialog use `sm:max-w-md` (448px), the image crop dialog `sm:max-w-3xl` (768px). A bare `max-w-*` replaces only the phone gutter and leaves 384px in force |
 
 ```tsx
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
@@ -762,7 +773,7 @@ import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 | --- | --- | --- |
 | Transient result | `toast` from `sonner` | One `<Toaster richColors />` in `components/providers.tsx`; popover colors, 12px radius, lucide icons. Show a router's own 4xx message through `mutationErrorMessage` |
 | Data is loading | `SkeletonRows` (`components/admin/skeleton-rows.tsx`) | `count` (3) bars of `height` (`h-14`), `role="status"`, `aria-busy`, labeled "Loading"; each `Skeleton` is `bg-muted rounded-lg animate-pulse` |
-| Nothing to show | `EmptyState` (`components/admin/empty-state.tsx`) | `icon`, `title`, `description`, optional `action` (`{ label, onClick }` or `{ label, href }`, rendered as an outline sm Button) |
+| Nothing to show | `EmptyState` (`components/admin/empty-state.tsx`) | `icon`, `title`, `description`, optional `action`: `{ label, onClick }` renders an outline sm Button, `{ label, href }` a Next `Link` with the same `buttonVariants` |
 | A query failed | `QueryError` (`components/admin/dashboard/query-error.tsx`) | `role="alert"`; `message` (default "Couldn't load this data"), `onRetry` adds Retry |
 | Advisory content | `Alert` (`components/ui/alert.tsx`) | No live-region role by default; pass `role="alert"` (urgent) or `role="status"` (polite). No current admin screen renders it |
 | Dirty form | `StickySaveBar` with `useSettingsForm` | One bar per page; `useSettingsForm` also exposes `isError`, `error` and `refetch` for a `QueryError` retry |

@@ -116,7 +116,7 @@
 		"name": "scope-public-dark",
 		"width": 1560,
 		"height": 992,
-		"bytes": 27572,
+		"bytes": 27752,
 		"description": "Public scope: the inline Connect form block, dark mode"
 	},
 	{
@@ -124,7 +124,7 @@
 		"name": "scope-public-light",
 		"width": 1560,
 		"height": 992,
-		"bytes": 27592,
+		"bytes": 27414,
 		"description": "Public scope: the inline Connect form block, light mode"
 	},
 	{

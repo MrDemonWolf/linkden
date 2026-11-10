@@ -117,8 +117,9 @@ async function parkMouse(page: Page): Promise<void> {
 	await page.mouse.move(700, 880);
 }
 
-/** "View live" is an anchor rendered through Button (`nativeButton={false}`), so its role is button. */
-const viewLive = (page: Page): Locator => page.locator("header a", { hasText: "View live" });
+/** "View live": a plain anchor styled with `buttonVariants` (link role, not button). */
+const viewLive = (page: Page): Locator =>
+	page.locator("header").getByRole("link", { name: "View live" });
 
 const card = (page: Page, text: string): Locator =>
 	page.locator('[data-slot="card"]', { hasText: text }).first();
@@ -318,7 +319,7 @@ async function uploads(ctx: CaptureContext, scheme: Scheme): Promise<void> {
 	await parkMouse(profile);
 	await ctx.shot(dialog, {
 		name: `image-crop-dialog-${scheme}`,
-		description: `ImageCropDialog for an avatar: square crop area, zoom slider, rotate, Cancel (ghost) and confirm, ${scheme}`,
+		description: `ImageCropDialog for an avatar at its 768px sm:max-w-3xl width: square crop area, zoom slider, rotate, 1 : 1 label, Cancel (ghost) and Crop & upload, ${scheme}`,
 	});
 	await dialog.getByRole("button", { name: "Cancel" }).click();
 	await dialog.waitFor({ state: "hidden" });
@@ -404,7 +405,7 @@ async function headers(ctx: CaptureContext, scheme: Scheme): Promise<void> {
 	const nav = settings.getByRole("navigation", { name: "Settings sections" }).last();
 	await ctx.shot(settings, {
 		name: `settings-nav-${scheme}`,
-		description: `Settings section nav at xl: ghost lg Buttons rendered as links, active item with primary/10 fill, ${scheme}`,
+		description: `Settings section nav at xl: Next Links styled as ghost lg buttons (buttonVariants), active item with primary/10 fill, ${scheme}`,
 		clip: await unionClip(settings, [nav], 12),
 	});
 }
@@ -551,13 +552,8 @@ async function badges(ctx: CaptureContext, scheme: Scheme): Promise<void> {
 		description: `Outline Badge with warning text ("Setup required") beside a section heading, plus an off Switch, ${scheme}`,
 		padding: 12,
 	});
+	// Shown as the page loads it: the strip starts at its first (active) tab.
 	const tabs = wallet.getByRole("tablist").first();
-	// The strip overflows its 421px column and loads scrolled to the end, which
-	// hides the active first tab; show it from the start (a user scroll).
-	await tabs.evaluate((el) => {
-		el.scrollLeft = 0;
-	});
-	await ctx.prepare(wallet);
 	await ctx.shot(tabs, {
 		name: `wallet-tabs-${scheme}`,
 		description: `Tabs from @linkden/ui styled like SubTabs: icon + label, 2px foreground underline on the active tab, ${scheme}`,

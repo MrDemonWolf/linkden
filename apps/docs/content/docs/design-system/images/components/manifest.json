@@ -274,18 +274,18 @@
 	{
 		"group": "components",
 		"name": "image-crop-dialog-dark",
-		"width": 832,
-		"height": 1332,
-		"bytes": 21170,
-		"description": "ImageCropDialog for an avatar: square crop area, zoom slider, rotate, Cancel (ghost) and confirm, dark"
+		"width": 1600,
+		"height": 1292,
+		"bytes": 26812,
+		"description": "ImageCropDialog for an avatar at its 768px sm:max-w-3xl width: square crop area, zoom slider, rotate, 1 : 1 label, Cancel (ghost) and Crop & upload, dark"
 	},
 	{
 		"group": "components",
 		"name": "image-crop-dialog-light",
-		"width": 832,
-		"height": 1332,
-		"bytes": 21328,
-		"description": "ImageCropDialog for an avatar: square crop area, zoom slider, rotate, Cancel (ghost) and confirm, light"
+		"width": 1600,
+		"height": 1292,
+		"bytes": 27684,
+		"description": "ImageCropDialog for an avatar at its 768px sm:max-w-3xl width: square crop area, zoom slider, rotate, 1 : 1 label, Cancel (ghost) and Crop & upload, light"
 	},
 	{
 		"group": "components",
@@ -324,7 +324,7 @@
 		"name": "inbox-detail-dark",
 		"width": 864,
 		"height": 840,
-		"bytes": 29602,
+		"bytes": 29622,
 		"description": "Inbox message detail: secondary \"Read\" Badge, message body, Reply and destructive Delete actions, dark"
 	},
 	{
@@ -332,7 +332,7 @@
 		"name": "inbox-detail-light",
 		"width": 864,
 		"height": 840,
-		"bytes": 30912,
+		"bytes": 30924,
 		"description": "Inbox message detail: secondary \"Read\" Badge, message body, Reply and destructive Delete actions, light"
 	},
 	{
@@ -485,7 +485,7 @@
 		"width": 400,
 		"height": 520,
 		"bytes": 4160,
-		"description": "Settings section nav at xl: ghost lg Buttons rendered as links, active item with primary/10 fill, dark"
+		"description": "Settings section nav at xl: Next Links styled as ghost lg buttons (buttonVariants), active item with primary/10 fill, dark"
 	},
 	{
 		"group": "components",
@@ -493,7 +493,7 @@
 		"width": 400,
 		"height": 520,
 		"bytes": 4016,
-		"description": "Settings section nav at xl: ghost lg Buttons rendered as links, active item with primary/10 fill, light"
+		"description": "Settings section nav at xl: Next Links styled as ghost lg buttons (buttonVariants), active item with primary/10 fill, light"
 	},
 	{
 		"group": "components",

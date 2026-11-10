@@ -20,7 +20,7 @@
 		"name": "admin-shell-light",
 		"width": 1440,
 		"height": 900,
-		"bytes": 45050,
+		"bytes": 45014,
 		"description": "Links destination at 1440px: sidebar, top bar, PageHeader, SubTabs, block list and preview rail (light)"
 	},
 	{
@@ -337,38 +337,6 @@
 	},
 	{
 		"group": "patterns",
-		"name": "public-narrow-mobile-dark",
-		"width": 780,
-		"height": 1688,
-		"bytes": 43852,
-		"description": "The same split page on a 390px phone: profile above one block list (dark)"
-	},
-	{
-		"group": "patterns",
-		"name": "public-narrow-mobile-light",
-		"width": 780,
-		"height": 1688,
-		"bytes": 46608,
-		"description": "The same split page on a 390px phone: profile above one block list (light)"
-	},
-	{
-		"group": "patterns",
-		"name": "public-split-dark",
-		"width": 1440,
-		"height": 900,
-		"bytes": 36572,
-		"description": "Public page at 1440px with page_layout split: sticky profile column and full-width block list (dark)"
-	},
-	{
-		"group": "patterns",
-		"name": "public-split-light",
-		"width": 1440,
-		"height": 900,
-		"bytes": 37294,
-		"description": "Public page at 1440px with page_layout split: sticky profile column and full-width block list (light)"
-	},
-	{
-		"group": "patterns",
 		"name": "save-bar-light",
 		"width": 1496,
 		"height": 180,
@@ -441,6 +409,14 @@
 	},
 	{
 		"group": "patterns",
+		"name": "setup-account-mobile-light",
+		"width": 780,
+		"height": 1750,
+		"bytes": 37958,
+		"description": "Setup step 1 on a 390px phone: theme toggle at the top right, brand row below it, step indicator and the account card"
+	},
+	{
+		"group": "patterns",
 		"name": "setup-launch-light",
 		"width": 1024,
 		"height": 898,
@@ -492,8 +468,8 @@
 		"name": "top-bar-light",
 		"width": 1688,
 		"height": 128,
-		"bytes": 5444,
-		"description": "64px top bar on Design → Branding: sidebar trigger, breadcrumb, StatePill, share, View live"
+		"bytes": 4988,
+		"description": "64px top bar on Design → SEO: sidebar trigger, breadcrumb Design › SEO, StatePill, share, View live"
 	},
 	{
 		"group": "patterns",

@@ -70,7 +70,7 @@ The closest comparison is a form in each layer:
   <Screenshot
     light={scopePublicLight}
     dark={scopePublicDark}
-    alt="The public Connect form titled Work with me: pill-shaped name, email, Where did we meet? and message fields, a consent checkbox with a Privacy Policy link, and a full-width Connect button in the theme's primary color."
+    alt="The public Connect form titled Work with me: pill-shaped name and email fields, a Where did we meet? select with its small label floated above the Select… value, a message field, a consent checkbox with a Privacy Policy link, and a full-width Connect button in the theme's primary color."
     caption="Public scope: Sora heading, DM Sans fields, pill-shaped controls, and a Connect button in the theme primary (navy in light, cyan in dark for Classic)."
   />
 </ScreenshotGrid>
@@ -83,14 +83,14 @@ The closest comparison is a form in each layer:
 | Color source | Fixed admin palette in `index.css` | Theme preset from `packages/ui/src/themes.ts` (11 presets) plus saved `custom_*` overrides, resolved by `getThemeColors` |
 | Page ground and card | `#F6F7F9` / `#FFFFFF` light, `#101012` / `#18181B` dark | Per preset; Classic is `#F6F6F7` / `#FFFFFF` light, `#101012` / `#18181B` dark |
 | Primary action | `#1D4ED8` light, `#60A5FA` dark | Per preset; Classic is navy `#091533` light, cyan `#0FACED` dark |
-| Signal line (`--signal`) | 90° gradient `#1D4ED8` → `#2563EB` light, `#60A5FA` → `#1795D2` dark | 90° gradient from the page's `--ld-primary` to `--ld-secondary` |
+| Signal line (`--signal`) | 90° gradient `#1D4ED8` → `#2563EB` light, `#60A5FA` → `#1795D2` dark | 90° gradient `--ld-primary` → `--ld-secondary` on `.ld-page` (the line under the name); header blocks reset it to `--ld-primary` → `--ld-accent` |
 | Radius `sm` / `md` / `lg` / `xl` / `2xl` | 6 / 8 / 12 / 16 / 20px | 8 / 12 / 18 / 24 / 28px |
 | Surfaces | Matte `bg-card` with a `border-border` hairline and `shadow-surface` (a 1px whisper in light, none in dark); no blur | Link cards use the theme card at 85% with `backdrop-blur-xl` and `shadow-card`; the profile card is solid with a primary-tinted shadow |
 | Control height | 36px standard, 32px compact, 44px large from `md` with a fine pointer; 44px for every size otherwise | `--control-height*` reset to `initial`, so shared Buttons fall back to their built-in sizes; public blocks style their own controls |
 | Color mode | next-themes `dark` class on `<html>`: `theme` in local storage, default `dark`, `system` allowed | The visitor's toggle (`linkden-color-mode` cookie), else `default_color_mode` (`light`, `dark` or `system`) |
 | Motion | No decorative entrance animation; real loading indicators only | `ld-rise` entrance, 480ms with a 45ms stagger capped at index 12; off under reduced motion |
 
-Numeric text uses Geist Mono (`.data-mono`, tabular figures) in both layers; the root layout loads it as `--font-mono`. The Wallet pass preview is a third, self-contained surface: it uses the system/SF font stack (`-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif`) and the pass colors saved under Settings → Wallet.
+Counts, codes, and digests in the admin use Geist Mono with tabular figures (`font-mono tabular-nums`); the root layout loads it as `--font-mono`. The public renderer sets no mono text. The Wallet pass preview is a third, self-contained surface: it uses the system/SF font stack (`-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif`) and the pass colors saved under Settings → Wallet.
 
 A saved theme changes only the public layer. With the Sunset preset saved, the editor below keeps its fixed admin palette, while the page inside the preview rail (and the live page) switches to Sunset's colors: in light mode a `#FFFBF5` ground, `#431407` text and a `#C2410C` primary; in dark mode the same `#101012` / `#18181B` grounds as Classic with a `#FB923C` primary. Preset values live in `packages/ui/src/themes.ts`; the full table is in [Foundations](/docs/design-system/foundations#preset-palette).
 
@@ -118,7 +118,7 @@ Every signed-in admin page is the same shell around different content. The numbe
 | 2 | Navigation | `NAV_ITEMS` | Create (Profile page, Design) and Manage (Inbox, Settings) groups under uppercase `text-micro` labels. Items are at least 44px; the active item gets the `--accent` fill, semibold text, and a primary icon. Inbox shows the unread count (99+ cap) |
 | 3 | Account | `AccountMenu` | Avatar, name, and email in the sidebar footer; opens the account menu (identity and account actions) |
 | 4 | Breadcrumb | `Breadcrumb` | In the 64px sticky top bar: the destination, then the sub-tab label |
-| 5 | Top-bar actions | `StatePill`, `SharePopover` | Publication status, Share, and View live (outline `sm`, from `lg`). Below `lg` the account menu and the Preview sheet action move here |
+| 5 | Top-bar actions | `StatePill`, `SharePopover` | Publication status, Share, and View live (a link styled as an outline `sm` button, from `lg`). Below `lg` the account menu and the Preview sheet action move here |
 | 6 | Page heading | `PageHeader` | One `h1`, 24px and 28px from `sm`, semibold Montserrat; optional badge and actions |
 | 7 | Sub-tabs | `SubTabs` | Path-segment tabs set by the destination layout (here Blocks, Profile, Social) |
 | 8 | Section card | `Card` + `SectionHeader` | 12px corners (`rounded-lg` in admin), 20px vertical padding, 16px gutters (20px from `sm`); the `primary` header variant adds the blue icon chip |
@@ -247,7 +247,7 @@ The admin uses Tailwind's default viewport breakpoints. The public page uses con
 | --- | --- | --- |
 | Below 640px (`sm`) | 16px page padding; 24px page heading | Banner 112px |
 | 640px (`sm`) | 24px padding; 28px heading | Banner 144px (container width) |
-| 768px (`md`) | With a fine pointer, Buttons use the 36 / 32 / 44px control tokens and Inputs and Select triggers drop to 36px with 14px text; otherwise all stay 44px with 16px text | — |
+| 768px (`md`) | With a fine pointer, Buttons use the 36 / 32 / 44px control tokens and Inputs and Select triggers drop to 36px with 14px text; otherwise all stay 44px and fields keep 16px text (Button text is 14px at every width) | — |
 | 896px container | — | `split` becomes two columns: 320px sticky profile and the block stack, 40px apart, up to 1152px wide |
 | 1024px (`lg`) | Sidebar (256px, collapsible to a 48px icon rail with Cmd/Ctrl+B) and the 300px preview rail replace the 56px bottom tab bar and the preview sheet; 32px padding | — |
 | 1280px (`xl`) | Preview rail 372px; an editor panel stacks above the preview instead of replacing it | — |
@@ -342,7 +342,7 @@ The numbered anatomy diagrams on this page come from the `overview` group: it in
    bun scripts/design-screenshots/capture.ts --list
    ```
 
-   The runner prints each image's size and exits non-zero when a group fails or an image is over budget. `DESIGN_SHOTS_URL` overrides the default `http://localhost:3101`. To retake single images, `OVERVIEW_ONLY=admin-anatomy,public-footer` (and `FOUNDATIONS_ONLY` for the foundations group) limits a run to shot names with those prefixes.
+   The runner prints each image's size and exits non-zero when a group fails or an image is over budget. `DESIGN_SHOTS_URL` overrides the default `http://localhost:3101`. To retake single images, `OVERVIEW_ONLY=admin-anatomy,public-footer` (and `FOUNDATIONS_ONLY` for the foundations group) limits a run to shot names with those prefixes; `COMPONENTS_ONLY`, `PATTERNS_ONLY`, and `STATEFUL_ONLY` take section names instead (for example `PATTERNS_ONLY=shell,preview`).
 
 4. Look at every changed image before you commit it. Retake anything blurry, badly cropped, mid-animation, or showing development overlays.
 

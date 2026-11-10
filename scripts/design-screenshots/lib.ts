@@ -172,13 +172,57 @@ export async function newPage(browser: Browser, options: ContextOptions = {}): P
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
-let cachedCookies: Awaited<ReturnType<BrowserContext["cookies"]>> | null = null;
+type Cookies = Awaited<ReturnType<BrowserContext["cookies"]>>;
 
+/**
+ * The admin session shared by every signed-in context in this process: only
+ * the session token (and its "don't remember" companion), never Better Auth's
+ * signed `session_data` cache cookie. That cache would keep vouching for a
+ * session, with stale user data, after the session was revoked or replaced
+ * (a 2FA verify, a password change, a sign-out), so each new context starts
+ * without it and the app's first session read goes to the database.
+ */
+let cachedCookies: Cookies | null = null;
+
+const SESSION_CACHE_COOKIE = /session_data(?:\.\d+)?$/;
+const SESSION_TOKEN_COOKIE = /session_token$/;
+const sleep = (ms: number) => new Promise<void>((done) => setTimeout(done, ms));
+
+/** Seconds to wait from a 429's Retry-After / X-Retry-After header (2–30s). */
+function retryDelayMs(headers: Record<string, string>): number {
+	const seconds = Number(headers["x-retry-after"] ?? headers["retry-after"]);
+	return Math.min(30, Math.max(2, Number.isFinite(seconds) ? seconds : 5)) * 1000;
+}
+
+/**
+ * Whether the context's session cookie names a live session, read from the
+ * database (`disableCookieCache=true`), so a revoked or replaced session is
+ * never reported as signed in. One GET per call, outside the Cloudflare auth
+ * limiters; a 429 from Better Auth's own limiter is waited out and retried,
+ * never read as "signed out" (which would spend sign-in attempts).
+ */
 async function hasSession(api: APIRequestContext): Promise<boolean> {
-	const res = await api.get(`${BASE_URL}/api/auth/get-session`);
-	if (!res.ok()) return false;
-	const body = (await res.json().catch(() => null)) as { user?: unknown } | null;
-	return !!body?.user;
+	for (let attempt = 1; ; attempt++) {
+		const res = await api.get(`${BASE_URL}/api/auth/get-session?disableCookieCache=true`);
+		if (res.status() === 429 && attempt < 4) {
+			const wait = retryDelayMs(res.headers());
+			console.warn(`  session check rate limited; retrying in ${wait / 1000}s`);
+			await sleep(wait);
+			continue;
+		}
+		if (!res.ok()) {
+			throw new Error(`Session check failed on ${BASE_URL} (${res.status()}).`);
+		}
+		const body = (await res.json().catch(() => null)) as { user?: unknown } | null;
+		return !!body?.user;
+	}
+}
+
+/** The context's auth cookies minus the signed session cache (see `cachedCookies`). */
+async function sessionCookies(context: BrowserContext): Promise<Cookies> {
+	return (await context.cookies(BASE_URL)).filter(
+		(cookie) => !SESSION_CACHE_COOKIE.test(cookie.name),
+	);
 }
 
 export async function hasAdmin(api: APIRequestContext): Promise<boolean> {
@@ -187,17 +231,20 @@ export async function hasAdmin(api: APIRequestContext): Promise<boolean> {
 }
 
 /**
- * Give `context` an admin session. Prefers POST /api/auth/dev-login (needs a
- * loopback stack with DEV_LOGIN="true"), falls back to the seeded email and
- * password. The session cookies are cached for the rest of the process, so
- * many contexts cost one sign-in. Refuses to run before seed.ts: dev login on
- * an empty database would create its own "Dev Admin" account instead.
+ * Give `context` an admin session. Reuses the process's cached session after
+ * one database-backed check (see `hasSession`); otherwise prefers POST
+ * /api/auth/dev-login (needs a loopback stack with DEV_LOGIN="true") and falls
+ * back to the seeded email and password only when dev login is unavailable,
+ * never because a check was rate limited. Many contexts therefore cost one
+ * sign-in plus one session read each. Refuses to run before seed.ts: dev login
+ * on an empty database would create its own "Dev Admin" account instead.
  */
 export async function signIn(context: BrowserContext): Promise<void> {
 	const api = context.request;
 	if (cachedCookies) {
 		await context.addCookies(cachedCookies);
 		if (await hasSession(api)) return;
+		// Revoked or replaced since it was cached: start over with a new session.
 		await context.clearCookies();
 		cachedCookies = null;
 	}
@@ -208,7 +255,13 @@ export async function signIn(context: BrowserContext): Promise<void> {
 		headers: { origin: BASE_URL },
 		data: {},
 	});
-	if (!dev.ok() || !(await hasSession(api))) {
+	const hasToken = async () =>
+		(await context.cookies(BASE_URL)).some((cookie) => SESSION_TOKEN_COOKIE.test(cookie.name));
+	// A 200 that set a session token is a fresh session: no extra check needed.
+	if (!(dev.ok() && (await hasToken()))) {
+		if (dev.status() === 429) {
+			throw new Error(`Development login on ${BASE_URL} is rate limited; wait a minute and retry.`);
+		}
 		const res = await api.post(`${BASE_URL}/api/auth/sign-in/email`, {
 			headers: { origin: BASE_URL },
 			data: { email: SEED_ACCOUNT.email, password: SEED_ACCOUNT.password },
@@ -217,13 +270,13 @@ export async function signIn(context: BrowserContext): Promise<void> {
 		if (body?.twoFactorRedirect) {
 			throw new Error("The admin has two-factor on; enable DEV_LOGIN on the stack instead.");
 		}
-		if (!res.ok() || !(await hasSession(api))) {
+		if (!res.ok() || !(await hasToken())) {
 			throw new Error(
 				`Sign-in failed on ${BASE_URL}: dev login answered ${dev.status()}, password sign-in ${res.status()}.`,
 			);
 		}
 	}
-	cachedCookies = await context.cookies();
+	cachedCookies = await sessionCookies(context);
 }
 
 // ─── tRPC over HTTP (no transformer: plain JSON in, `{ result: { data } }` out) ─

@@ -60,7 +60,7 @@ The admin is a neutral gray tool with one blue for actions and selection. Every 
 	light={tokenMapLight}
 	dark={tokenMapDark}
 	alt="The Links page with fuchsia labels on the sidebar (--sidebar), the active Profile page item (--sidebar-accent), the Inbox count (--sidebar-primary), the top bar (--card), the page ground (--background), the pressed All chip (--surface-2), the Apply button and an on Switch (--primary), the block rows (--card with --border hairlines) and a row's muted subtitle (--muted-foreground)."
-	caption="Links at 1440px with token labels. Notice the three planes: ground, card rows, and the inset chip on --surface-2. Blue appears only on the action, the on switches and the selected item."
+	caption="Links at 1440px with token labels. Notice the three planes: ground, card rows, and the inset chip on --surface-2. Blue appears only on the action, the on switches, the selected item and the Inbox count."
 />
 
 <TokenTable
@@ -95,7 +95,7 @@ The admin is a neutral gray tool with one blue for actions and selection. Every 
 Rules for the admin palette:
 
 - `--input` is a fill. Input, Select trigger, Textarea, InputGroup, Checkbox and the off Switch draw their boundary with `--input-border`, which clears 3:1 on the card, ground and inset planes (WCAG 1.4.11). Hand-rolled fields use `border-input-border`, never `border-input`.
-- Status text sits on its own 10–20% tint, for example `text-warning` on `bg-warning/10`. The palette regression test, `apps/web/src/components/ui/__tests__/admin-palette-contrast.test.ts`, checks status text on its tint, the control boundary on every plane, and primary and muted text on every content plane, in both modes.
+- Status text sits on its own 10–20% tint, for example `text-warning` on `bg-warning/10`. The palette regression test, `apps/web/src/components/ui/__tests__/admin-palette-contrast.test.ts`, checks success and warning text on their tints, the control boundary on every plane, and primary and muted text on every content plane, in both modes.
 - The dark sidebar uses its own `#111113`; in light it shares `--card`. Other sidebar roles derive from the semantic tokens.
 - The PWA status-bar colors in `apps/web/src/app/admin/layout.tsx` (`#FFFFFF` and `#18181B`) mirror `--card`. Change them together.
 
@@ -145,11 +145,11 @@ Outside `.admin-scope` the base palette applies. It is a cooler, cerulean varian
 | Token | Value and use |
 | --- | --- |
 | `--rule` | The hairline in `SectionRule` and the public header block divider (`bg-[color:var(--rule)]`) |
-| `--signal` | The 2px dash in `SectionRule`. On the public page it is redefined inline as `linear-gradient(90deg, var(--ld-primary), var(--ld-secondary))` and also draws the divider under the profile name |
+| `--signal` | The 2px dash in `SectionRule`. On the public page `.ld-page` redefines it inline as `linear-gradient(90deg, var(--ld-primary), var(--ld-secondary))`, which draws the divider under the profile name; each header block sets its own `--ld-primary` → `--ld-accent` gradient (and `--rule` to the theme border) |
 | `--shadow-surface` | Admin card lift (see above) |
-| `--shadow-card` | `0 1px 2px oklch(0 0 0 / 0.05), 0 10px 28px -14px oklch(0 0 0 / 0.28)`, used by public link cards and the featured title pill |
+| `--shadow-card` | `0 1px 2px oklch(0 0 0 / 0.05), 0 10px 28px -14px oklch(0 0 0 / 0.28)`, used by public link cards, the featured title pill, image blocks and the share menu, and by the admin block-list drag overlay |
 | `--code-surface`, `--code-foreground` | The custom CSS editor (CodeMirror One Dark), dark in both modes |
-| `--chart-1` … `--chart-5` | Chart series colors, mapped to `--color-chart-*` |
+| `--chart-1` … `--chart-5` | Chart series colors, mapped to `--color-chart-*`. No current screen renders a chart |
 
 `--canvas-dot`, `--shadow-glow`, `--glass-*`, `--dim` and `--data-up`/`--data-down` are still declared in `index.css`, but no component in `apps/web/src` references them. Don't build new UI on them without checking the palette test.
 
@@ -190,7 +190,7 @@ Outside `.admin-scope` the base palette applies. It is a cooler, cerulean varian
 	caption="Filter chips on Links. Counts use font-mono with tabular-nums so the digits stay aligned as they change."
 />
 
-Use `font-mono tabular-nums` for counts, digests and codes (filter chips, the retention days in Settings → Data, the setup progress, backup codes, error references). Character counters such as `46/70` stay in Roboto with `tabular-nums`. `index.css` also defines a `.data-mono` class (Geist Mono plus `tnum`) for the same purpose.
+Use `font-mono tabular-nums` for counts, digests and codes (filter chips, the retention days in Settings → Data, the setup wizard's bio counter, backup codes, error references). `CharCount` counters such as `46/70` stay in Roboto with `tabular-nums`. `index.css` also defines a `.data-mono` class (Geist Mono plus `tnum`), but no component uses it.
 
 ### Public type
 
@@ -240,11 +240,11 @@ The app uses Tailwind's spacing scale rather than a separate spacing-token file.
 | --- | --- | --- |
 | Admin main area | 16px / 24px (`sm`) / 32px (`lg`) sides, 24px / 32px (`lg`) top and bottom, capped at 1680px | `admin-shell.tsx` |
 | `PageShell` | 16px vertical rhythm, 24px from `sm` | `page-shell.tsx` |
-| `Card` | 20px vertical padding, 16px sides (20px from `sm`), 20px gap; `size="sm"` uses 16px | `components/ui/card.tsx` |
+| `Card` | 20px vertical padding, 16px sides (20px from `sm`), 20px gap; `size="sm"` uses 16px padding and a 12px gap | `components/ui/card.tsx` |
 | Page without a preview | Max 1120px | `MainGrid` |
 | Tool column beside a preview | Max 760px, 32px gap | `MainGrid` |
 | Preview column | 300px at `lg`, 372px at `xl`, 425px for the wide Wallet variant, 40px collapsed (44px on touch) | `preview-column.tsx` |
-| Sidebar | 256px (`16rem`), 48px icon rail, 288px mobile sheet | `components/ui/sidebar.tsx` |
+| Sidebar | 256px (`16rem`), 48px icon rail; the primitive's 288px mobile sheet is never shown, because the shell renders no sidebar below `lg` | `components/ui/sidebar.tsx` |
 | Settings section nav | 176px column from `xl` | `settings-shell.tsx` |
 | Top bar / bottom tab bar | 64px / 56px | `admin-shell.tsx` |
 | Public split layout | 320px profile column and a fluid block column from an 896px container (`@4xl`) | `public-page-content.tsx` |
@@ -327,7 +327,7 @@ The admin is a dense tool with tighter corners; the public page is softer. Both 
 <Screenshot
 	light={radiusAdmin}
 	alt="The SEO and Open Graph card with radius labels: the card is rounded-lg at 12px, the icon tile rounded-md at 8px, the Page Title input rounded-md at 8px, the Template mode toggle rounded-lg at 12px and a template option rounded-lg at 12px."
-	caption="Admin scale on Design → SEO: 12px cards and option tiles, 8px inputs, buttons and icon tiles."
+	caption="Admin scale on Design → SEO: 12px cards, mode toggles and option tiles; 8px inputs, Buttons and icon tiles."
 />
 
 <Screenshot

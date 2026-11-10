@@ -238,15 +238,19 @@ async function shell(ctx: CaptureContext): Promise<void> {
 			signedIn: true,
 			viewport: { width: 1100, height: 800 },
 		});
-		await ctx.goto(page, "/admin/design/branding");
+		// Design → SEO: the breadcrumb maps the "seo" path segment to "SEO" (subTabLabel).
+		await ctx.goto(page, "/admin/design/seo");
 		await previewReady(page);
 		await parkPointer(page);
 		await ctx.shot(page.locator("header.sticky").first(), {
 			name: "top-bar-light",
 			description:
-				"64px top bar on Design → Branding: sidebar trigger, breadcrumb, StatePill, share, View live",
+				"64px top bar on Design → SEO: sidebar trigger, breadcrumb Design › SEO, StatePill, share, View live",
 			padding: 0,
 		});
+		await ctx.goto(page, "/admin/design/branding");
+		await previewReady(page);
+		await parkPointer(page);
 		await shotUnion(
 			ctx,
 			page,
@@ -827,8 +831,16 @@ async function setup(ctx: CaptureContext): Promise<void> {
 			"Setup step 4: the launch card, without the step indicator",
 		);
 	}
-	// No phone capture: at 390px the fixed theme toggle overlaps the brand row
-	// (reported upstream), and a doc image should not present that as the design.
+	// Phone: below sm the column starts under the top-right theme toggle (pt-20).
+	{
+		const page = await openWizard(ctx, { device: "phone", scheme: "light" });
+		await ctx.shot(page, {
+			name: "setup-account-mobile-light",
+			fullPage: true,
+			description:
+				"Setup step 1 on a 390px phone: theme toggle at the top right, brand row below it, step indicator and the account card",
+		});
+	}
 }
 
 // ─── Login ───────────────────────────────────────────────────────────────────
@@ -899,24 +911,9 @@ async function login(ctx: CaptureContext): Promise<void> {
 // ─── Public layouts ──────────────────────────────────────────────────────────
 
 async function publicLayouts(ctx: CaptureContext): Promise<void> {
-	for (const scheme of SCHEMES) {
-		const page = await open(ctx, { device: "desktop", scheme });
-		await ctx.goto(page, "/");
-		await ctx.prepare(page, { settleMs: 800 });
-		await ctx.shot(page, {
-			name: `public-split-${scheme}`,
-			description: `Public page at 1440px with page_layout split: sticky profile column and full-width block list (${scheme})`,
-		});
-	}
-	for (const scheme of SCHEMES) {
-		const page = await open(ctx, { device: "phone", scheme });
-		await ctx.goto(page, "/");
-		await ctx.prepare(page, { settleMs: 800 });
-		await ctx.shot(page, {
-			name: `public-narrow-mobile-${scheme}`,
-			description: `The same split page on a 390px phone: profile above one block list (${scheme})`,
-		});
-	}
+	// The split page at 1440px and on a 390px phone are the overview group's
+	// public-split-* and public-profile-mobile-* captures; patterns.mdx imports
+	// those instead of keeping identical copies here.
 	// Below the 896px container threshold a desktop window stacks too.
 	for (const scheme of SCHEMES) {
 		const page = await open(ctx, {
@@ -935,21 +932,12 @@ async function publicLayouts(ctx: CaptureContext): Promise<void> {
 
 // ─── Wallet preview ──────────────────────────────────────────────────────────
 
-/** The section tab strip can load scrolled to its end; show it from its start. */
-async function resetWalletTabs(page: Page): Promise<void> {
-	await page.evaluate(() => {
-		for (const list of document.querySelectorAll<HTMLElement>('[role="tablist"]'))
-			list.scrollLeft = 0;
-	});
-}
-
 async function wallet(ctx: CaptureContext): Promise<void> {
 	for (const scheme of SCHEMES) {
 		const page = await open(ctx, { device: "desktop", scheme, signedIn: true });
 		await ctx.goto(page, "/admin/settings/wallet");
 		await rail(page).getByText("Scan to view profile").waitFor({ timeout: 30_000 });
 		await ctx.prepare(page, { settleMs: 800 });
-		await resetWalletTabs(page);
 		await parkPointer(page);
 		await ctx.shot(page, {
 			name: `wallet-settings-${scheme}`,

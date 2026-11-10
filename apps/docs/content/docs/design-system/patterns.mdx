@@ -53,6 +53,7 @@ import setupAccountDark from "./images/patterns/setup-account-dark.webp";
 import setupProfileLight from "./images/patterns/setup-profile-light.webp";
 import setupThemeLight from "./images/patterns/setup-theme-light.webp";
 import setupLaunchLight from "./images/patterns/setup-launch-light.webp";
+import setupAccountMobileLight from "./images/patterns/setup-account-mobile-light.webp";
 import loginLight from "./images/patterns/login-light.webp";
 import loginDark from "./images/patterns/login-dark.webp";
 import loginMobileLight from "./images/patterns/login-mobile-light.webp";
@@ -61,12 +62,12 @@ import loginForgotLight from "./images/patterns/login-forgot-light.webp";
 import loginForgotDark from "./images/patterns/login-forgot-dark.webp";
 import loginTwoFactorLight from "./images/patterns/login-two-factor-light.webp";
 import loginTwoFactorDark from "./images/patterns/login-two-factor-dark.webp";
-import publicSplitLight from "./images/patterns/public-split-light.webp";
-import publicSplitDark from "./images/patterns/public-split-dark.webp";
+import publicSplitLight from "./images/overview/public-split-light.webp";
+import publicSplitDark from "./images/overview/public-split-dark.webp";
 import publicNarrowLight from "./images/patterns/public-narrow-860-light.webp";
 import publicNarrowDark from "./images/patterns/public-narrow-860-dark.webp";
-import publicMobileLight from "./images/patterns/public-narrow-mobile-light.webp";
-import publicMobileDark from "./images/patterns/public-narrow-mobile-dark.webp";
+import publicMobileLight from "./images/overview/public-profile-mobile-light.webp";
+import publicMobileDark from "./images/overview/public-profile-mobile-dark.webp";
 import walletLight from "./images/patterns/wallet-settings-light.webp";
 import walletDark from "./images/patterns/wallet-settings-dark.webp";
 import walletCard from "./images/patterns/wallet-pass-card.webp";
@@ -75,6 +76,7 @@ import featureHiddenLight from "./images/stateful/block-row-feature-hidden-light
 import inboxLoadOlderLight from "./images/stateful/inbox-load-older-light.webp";
 import publicStackedLight from "./images/stateful/public-stacked-light.webp";
 import publicStackedDark from "./images/stateful/public-stacked-dark.webp";
+import walletFrontWithBack from "./images/stateful/wallet-pass-front-with-back.webp";
 import walletBack from "./images/stateful/wallet-pass-back.webp";
 import twoFactorEnableLight from "./images/stateful/two-factor-enable-light.webp";
 import twoFactorEnableDark from "./images/stateful/two-factor-enable-dark.webp";
@@ -116,18 +118,18 @@ A "Skip to main content" link is the first focusable element. The scroll padding
 
 <Screenshot
   light={topBarLight}
-  alt="The admin top bar on Design, Branding: a sidebar toggle, a divider, the breadcrumb Design then Branding, and on the right the Publishing off pill, a Share icon and an outlined View live button."
-  caption="The top bar at 2x. The breadcrumb links back to the destination; the current sub-tab is plain text."
+  alt="The admin top bar on Design, SEO: a sidebar toggle, a divider, the breadcrumb Design then SEO, and on the right the Publishing off pill, a Share icon and an outlined View live button."
+  caption="The top bar at 2x on Design → SEO. The breadcrumb links back to the destination; the current sub-tab is plain text, mapped from the seo path segment to SEO."
 />
 
 From left to right:
 
 - **Sidebar trigger** and a vertical divider, from `lg` only.
-- **Breadcrumb.** The destination label links to the destination root. On a sub-tab, the current label follows a chevron. The label comes from `PageHeader`'s `kicker` when the page sets one. Otherwise the shell takes the path segment, replaces hyphens with spaces, and capitalizes it, so `/admin/design/seo` reads "Seo". Pass `kicker` when a label needs other casing. A destination root shows only the destination name.
+- **Breadcrumb.** The destination label links to the destination root. On a sub-tab, the current label follows a chevron. The label comes from `PageHeader`'s `kicker` when the page sets one (Settings reports its section this way). Otherwise the shell passes the path segment to `subTabLabel` (`components/admin/nav-list.tsx`): `seo` reads "SEO", and any other segment is title-cased word by word (`profile` → "Profile", `two-words` → "Two Words"), matching the destination's `SubTabs` labels. Add a segment to its `SEGMENT_LABELS` map, or pass `kicker`, when a label needs other casing. A destination root shows only the destination name.
 - **`StatePill`**, the publication status. See [Save, discard, and publication state](#save-discard-and-publication-state).
 - **Preview action**, below `lg` and only when the page registered a preview. It is an icon button named "Open live preview".
 - **`SharePopover`**.
-- **View live**, an outline `sm` button from `lg`. It opens `NEXT_PUBLIC_SITE_URL` in a new tab.
+- **View live**, from `lg`: an `<a>` styled as an outline `sm` button with `buttonVariants`, so it keeps the link role. It opens `NEXT_PUBLIC_SITE_URL` in a new tab.
 - **Account menu**, below `lg`, where the sidebar footer is not rendered. The menu holds identity, Account, Wallet pass, and Sign out.
 
 ### Page header and sub-tabs
@@ -139,7 +141,7 @@ From left to right:
   maxWidth={480}
 />
 
-Destination layouts place the header and tabs once for every sub-page. This is the real Design layout:
+Destination layouts place the header and tabs once for every sub-page. This is the Design layout, with its imports and `metadata` export left out:
 
 ```tsx title="apps/web/src/app/admin/design/layout.tsx"
 const DESIGN_TABS = [
@@ -173,7 +175,7 @@ export default function DesignLayout({ children }: { children: React.ReactNode }
   caption="The sidebar collapsed to its 48px icon rail. Labels move into tooltips, and the main column keeps its 760px cap."
 />
 
-The sidebar trigger, the `SidebarRail` edge, and the keyboard shortcut all toggle the sidebar. The shortcut is Cmd+B on Apple platforms and Ctrl+B elsewhere. It is ignored inside editable fields and at mobile widths, where the shell renders no sidebar. When collapsed, the site name and account details fold away. Every menu button keeps its label as a tooltip.
+The sidebar trigger, the `SidebarRail` edge, and the keyboard shortcut all toggle the sidebar. The shortcut is Cmd+B on Apple platforms and Ctrl+B elsewhere. It is ignored inside editable fields and below `md` (768px); the shell renders no sidebar below `lg` in any case. When collapsed, the site name and account details fold away. Every menu button keeps its label as a tooltip.
 
 ### Phone layout
 
@@ -207,7 +209,7 @@ usePreviewSlot({ overrides: { profile: { name, bio } } });
 | Field | Purpose | Used by |
 | --- | --- | --- |
 | `overrides` | Unsaved `profile`, `settings`, `blocks`, or `socialNetworks` layered over `public.getPage` | Links (Blocks, Profile, Social) and Design (Theme, Banner, Branding, SEO) |
-| `mode`, `onModeChange` | Control the preview's light or dark mode | Pages that drive the preview mode |
+| `mode`, `onModeChange` | Control the preview's light or dark mode | Design → Theme (follows its color-mode control) |
 | `preview` | A custom node that replaces `PagePreview` | Settings → Wallet |
 | `size` | `"default"` or `"wide"` (425px rail) | Settings → Wallet |
 | `panel` | A panel that replaces the preview at `lg` and stacks above it at `xl` | Links → Blocks (the block editor) |
@@ -373,7 +375,7 @@ Use one `useSettingsForm` scope and one `StickySaveBar` per settings page. `vali
   maxWidth={353}
 />
 
-The popover (320px) holds the title "Publish changes", a description for the current state, the last verified revision when there is one, scheduling notes, a "Review block drafts" link to `/admin/links?filter=drafts`, Refresh status, Publish, and the rate-limit line. Publish stays disabled when there are unsaved changes, while a request or fetch is in flight, when the status failed or publishing is unavailable, while recovery is required, while a revision is pending, and when saved content already matches the published revision. Only successful saves of public source data mark the status stale. Keep pending, unavailable, failed, and verified states distinct, and never show Published because a save succeeded.
+The popover (320px) holds the title "Publish changes", a description for the current state, the last verified revision when there is one, scheduling notes, a "Review block drafts" link to `/admin/links?filter=drafts`, Refresh status, Publish, and the rate-limit line. Publish stays disabled when there are unsaved changes, while a request or fetch is in flight, when the status read failed or publishing is unavailable, while recovery is required, while a revision is pending, and when saved content already matches the published revision. Only successful saves of public source data mark the status stale. Keep pending, unavailable, failed, and verified states distinct, and never show Published because a save succeeded.
 
 ## Block editor
 
@@ -455,10 +457,10 @@ Links → Blocks edits one block at a time in a panel whose home depends on the 
   light={settingsLight}
   dark={settingsDark}
   alt="Settings, Email at 1440px: the Settings heading, a left column of section links with Email selected, and two cards, Email provider with the Resend API key and From Address fields, and Contact-form delivery set to Inbox only. No preview rail."
-  caption="Settings at 1440px: a 176px section column beside the form cards. Settings pages register no preview, so the content can use the full 1120px."
+  caption="Settings at 1440px: a 176px section column beside the form cards. Email registers no preview (of the Settings pages only Wallet does), so the content can use the full 1120px."
 />
 
-`SettingsShell` (`app/admin/settings/settings-shell.tsx`) renders one `h1` and reports the current section as the breadcrumb `kicker`. From `xl` it shows a sticky 176px column of ghost Buttons rendered as Links, with a 32px gap. The current link has `aria-current="page"` and a `bg-primary/10` fill. Below `xl` the same sections become a `SubTabs` strip. Links stay real anchors, so the unsaved guard can catch them.
+`SettingsShell` (`app/admin/settings/settings-shell.tsx`) renders one `h1` and reports the current section as the breadcrumb `kicker`. From `xl` it shows a sticky 176px column of Next `Link`s styled with `buttonVariants` (ghost, `lg`), with a 32px gap. The current link has `aria-current="page"` and a `bg-primary/10` fill. Below `xl` the same sections become a `SubTabs` strip. Links stay real anchors, so the unsaved guard can catch them.
 
 <Screenshot
   light={settingsMobileLight}
@@ -468,8 +470,8 @@ Links → Blocks edits one block at a time in a panel whose home depends on the 
 />
 
 - Each sub-page owns its form scope and its `StickySaveBar`. While loading it shows a skeleton with `role="status"`; a failed first load shows `QueryError`.
-- Sections are `SectionCard`s: a 32px icon chip, a `CardTitle` `h2`, and a `text-micro` description in a bordered header band. See [Components](/docs/design-system/components).
-- Instant-save switches are the exception to the save bar. They save on toggle and confirm with a toast: Accepting messages in the Inbox header and Downloads enabled on Settings → Wallet.
+- Most sections are `SectionCard`s: a 32px icon chip, a `CardTitle` `h2`, and a `text-micro` description in a bordered header band. Account's Login & Security and Data's Danger zone use a `Card` with a muted `SectionHeader` instead. See [Components](/docs/design-system/components).
+- Instant-save switches are the exception to the save bar. They save on toggle and confirm with a toast: Accepting messages in the Inbox header, Downloads enabled on Settings → Wallet, and Magic link sign-in on Settings → Account.
 - Write-only secrets use `SecretInput`: the stored mask is selected on focus and never kept in an edit.
 
 ## Inbox
@@ -483,7 +485,7 @@ Links → Blocks edits one block at a time in a panel whose home depends on the 
 
 | Part | Behavior |
 | --- | --- |
-| Header actions | The Accepting messages switch saves `contact_form_enabled` instantly. All, Unread, and Read filter with `aria-pressed`. Select is icon-only below `sm`. Mark All Read appears only while something is unread |
+| Header actions | The Accepting messages switch saves `contact_form_enabled` instantly. All, Unread, and Read filter with `aria-pressed`. Select and Mark All Read are icon-only below `sm`; Select appears only while the list has messages, Mark All Read only while something is unread |
 | Form filter | "Form:" pills appear when the page has more than one contact form block |
 | List | One card with divided rows: initials avatar, name, email, where-we-met chip, message excerpt, relative time |
 | Detail | A 400px card from `md` (768px). With nothing open it reads "Select a message to view details". Below `md`, a `BottomSheet` titled Message, closed by Escape |
@@ -605,6 +607,15 @@ Steps 2 to 4 above were restored from saved wizard progress, which is why step 2
 - A failed profile or theme save shows a toast and the wizard moves on; everything stays editable later. If the API is unreachable, a "Can't reach the server" card offers Retry.
 - `?test=true` prefills dev values only in development on a local URL.
 
+On a phone the wizard keeps the same single column with 16px side padding. The theme toggle sits at the top right of the page (`absolute right-4 top-4`), and below `sm` the page adds 80px of top padding (`pt-20`) so the brand row starts under the toggle instead of beside it. From `sm` the padding is 24px on every side.
+
+<Screenshot
+  light={setupAccountMobileLight}
+  alt="The setup wizard's first step on a 390px phone: the light, dark and system theme toggle at the top right, the LinkDen wolf and name centered below it, the four-step indicator, and the Create your admin account card with Full Name, Email Address, Password, Confirm Password and Continue."
+  caption="Step 1 at 390px. The theme toggle and the brand row each get their own space. Captured with hasUsers answered as false in the capture browser."
+  maxWidth={390}
+/>
+
 ## Sign-in and two-factor
 
 <Screenshot
@@ -691,7 +702,7 @@ These captures ran the real flow on the disposable screenshot stack: enable, ver
 - The backup-code panel uses the warning treatment (`border-warning/30 bg-warning/10`) and says the codes won't be shown again. Copy codes writes them to the clipboard; Download .txt saves `linkden-backup-codes.txt`.
 - The verification field is numeric, keeps digits only, and allows six characters with `autocomplete="one-time-code"`.
 - While two-factor is on, magic-link sign-in is unavailable; the magic-link row explains this once email is configured.
-- The dialog asks for `max-w-md`, but the shared `DialogContent` default `sm:max-w-sm` wins, so it renders 384px wide on desktop and the verify step scrolls within `max-h-[90vh]` on short windows.
+- The dialog is `sm:max-w-md`: 448px wide from `sm`, and full width less a 1rem gutter on phones. It is capped at `max-h-[90vh]`, so the taller verify step scrolls inside the dialog on short windows.
 
 ## Public layouts and blocks
 
@@ -744,7 +755,7 @@ Settings → Wallet registers `WalletPassPreview` as a custom `preview` with `si
 <Screenshot
   light={walletLight}
   dark={walletDark}
-  alt="Settings, Wallet at 1440px: the Apple Wallet pass heading with a Setup required badge and a Downloads enabled switch that is off; an editor with Business, Images, Context, Colors and Background tabs, template choices with Contact card selected, Identity fields and a QR code switch; and a 425px preview rail with a navy pass card showing Ellis Studio, Your Name, a thumbnail, Role and Phone, and a QR code."
+  alt="Settings, Wallet at 1440px: the Apple Wallet pass heading with a Setup required badge and a Downloads enabled switch that is off; an editor whose tab strip shows Business (active), Images, Context and Colors with the Background icon at its edge, template choices with Contact card selected, Identity fields and a QR code switch; and a 425px preview rail with a navy pass card showing Ellis Studio, Your Name, a thumbnail, Role and Phone, and a QR code."
   caption="The pass editor beside the wide rail. The header holds the signing status badge and the instant-save Downloads enabled switch."
 />
 
@@ -763,7 +774,8 @@ Settings → Wallet registers `WalletPassPreview` as a custom `preview` with `si
 
 - The card is `rounded-[20px]` in the system font stack (`-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif`). It layers a gradient and a dot texture from the pass colors. When a color is blank, `WALLET_DEFAULTS` applies: background `#091533`, foreground `#FFFFFF`, label `#0FACED`, organization "LinkDen".
 - The QR code is generated in the browser with `qrcode` (240px, no margin, error correction M) under "Scan to view profile". The signed pass uses Wallet's own `barcodes[]` instead.
-- An optional strip image (92px tall) sits behind the primary field, under a dark gradient. With back fields, a "Back ›" control flips to the reverse; an empty reverse reads "No back-of-pass fields yet."
+- An optional strip image (92px tall) sits behind the primary field, under a dark gradient.
+- With back fields, a "Back ›" control flips to the reverse. It sits in its own row at the bottom-right of the front, under the "Scan to view profile" caption (or under the fields when the QR code is off), where Wallet puts its flip control, so it never covers the header fields. It is styled as a micro label at 50% opacity (full opacity on hover), and an `::after` hit area (16px above and below the label) keeps a touch target of at least 44px. On the reverse, "Front ›" sits at the top right beside the organization name; an empty reverse reads "No back-of-pass fields yet."
 - Field counts and lengths come from `packages/validators/src/wallet.ts`, so the editor and the generated pass agree:
 
 | `PASS_FIELD_LIMITS` | Header | Primary | Secondary | Auxiliary | Back |
@@ -772,12 +784,20 @@ Settings → Wallet registers `WalletPassPreview` as a custom `preview` with `si
 
 Each field allows a 64-character key, a 40-character label, and a 200-character value. Context-aware relevance allows up to 10 locations (`PASS_LOCATION_LIMIT`). `resolvePassContent` resolves the same capped content for the preview and the `.pkpass` generator.
 
-<Screenshot
-  light={walletBack}
-  alt="The reverse of the pass card: Ellis Studio at the top left and a FRONT › control at the top right, then three fields separated by faint rules: STUDIO HOURS Tuesday to Friday, 10:00 to 16:00; WEBSITE https://example.com; BOOKINGS Design reviews are booked through the profile page."
-  caption="The reverse after Back ›: the organization name, Front › to flip back, and each back field as a label in the label color over its value. Captured with three back fields saved on the screenshot stack, then removed."
-  maxWidth={400}
-/>
+<ScreenshotGrid>
+  <Screenshot
+    light={walletFrontWithBack}
+    alt="The front of the pass card with back fields saved: the E logo chip, STUDIO and Ellis Studio at the top right, ELLIS STUDIO over Your Name with a thumbnail, Role and Phone, the QR tile and Scan to view profile, and a faint BACK › control alone in the bottom-right corner."
+    caption="The front with back fields: Back › gets its own bottom-right row under the QR caption, clear of the header field."
+  />
+  <Screenshot
+    light={walletBack}
+    alt="The reverse of the pass card: Ellis Studio at the top left and a FRONT › control at the top right, then three fields separated by faint rules: STUDIO HOURS Tuesday to Friday, 10:00 to 16:00; WEBSITE https://example.com; BOOKINGS Design reviews are booked through the profile page."
+    caption="The reverse after Back ›: the organization name, Front › to flip back, and each back field as a label in the label color over its value."
+  />
+</ScreenshotGrid>
+
+Both sides were captured with three back fields saved on the screenshot stack, then removed.
 
 The editor's section tabs (Business, Images, Context, Colors, Background) use `WalletTabBar`, which matches the look of `SubTabs`. The preview is not proof of signing or installation in Apple Wallet. Pass downloads remain an authenticated admin action (`GET /api/admin/wallet-pass`), offered as Download pass only when downloads are on and signing material is configured. There is no public pass route or footer button.
 

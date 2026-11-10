@@ -125,6 +125,12 @@ export async function capture(ctx: CaptureContext): Promise<void> {
   (`{ keepFocus: true }` when the focus ring is the point).
 - `ctx.shot(target, { name, description, padding?, fullPage?, clip? })` takes a page
   (viewport, `fullPage` or `clip`) or a Locator (cropped with 16px padding).
+- `signedIn: true` reuses one admin session for the whole process. Each new context
+  checks it once against the database (`get-session?disableCookieCache=true`, so a
+  revoked or replaced session is never taken for a live one) and signs in again only
+  when it is gone. The shared cookies leave out Better Auth's `session_data` cache, so
+  every context reads fresh user data. A rate-limited check waits and retries instead
+  of falling back to password sign-in.
 - The admin defaults to dark (next-themes key `theme`); `scheme` stores that choice
   before the page loads. The public page follows `prefers-color-scheme`.
 - `consent: "essential"` (default) stores an "Essential only" choice so the public consent

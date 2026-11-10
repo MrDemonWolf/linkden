@@ -174,8 +174,9 @@ async function previewReady(page: Page): Promise<void> {
 const card = (page: Page, text: string): Locator =>
 	page.locator('[data-slot="card"]', { hasText: text }).first();
 
-/** "View live" is an anchor rendered through Button, so its role is button. */
-const viewLive = (page: Page): Locator => page.locator("header a", { hasText: "View live" });
+/** "View live": a plain anchor styled with `buttonVariants` (link role, not button). */
+const viewLive = (page: Page): Locator =>
+	page.locator("header").getByRole("link", { name: "View live" });
 
 /** Abort writes so a capture that only needs to look can never change saved data. */
 async function readOnly(page: Page): Promise<void> {
@@ -392,8 +393,14 @@ async function wallet(ctx: CaptureContext): Promise<void> {
 		const cardEl = rail.locator(".rounded-\\[20px\\]").first();
 		await cardEl.waitFor({ timeout: 30_000 });
 		await rail.getByRole("button", { name: "Back ›" }).waitFor();
-		// The front is not captured: its absolutely placed Back › control overlaps
-		// the header field label (STUDIO) in the top-right corner.
+		await parkPointer(page);
+		await ctx.prepare(page, { settleMs: 300 });
+		await ctx.shot(cardEl, {
+			name: "wallet-pass-front-with-back",
+			description:
+				"Pass card front with back fields saved: the Back › control in its bottom-right row under the QR caption",
+			padding: 12,
+		});
 		await rail.getByRole("button", { name: "Back ›" }).click();
 		await rail.getByRole("button", { name: "Front ›" }).waitFor();
 		await parkPointer(page);
@@ -666,10 +673,10 @@ async function passwordStep(ctx: CaptureContext, scheme: Scheme): Promise<Page> 
 }
 
 /**
- * A page with its own new development-login session. lib.ts shares one cached
- * session across contexts, and Better Auth's signed session cache keeps
- * answering for that session (with the old user data) after the 2FA verify
- * rotates it, so everything after enrollment signs in afresh instead.
+ * A page with its own new development-login session. The 2FA verify replaces
+ * the session that ran it, so the two-factor steps never use the session
+ * lib.ts shares with other contexts (lib.ts would notice a replaced session
+ * and sign in again, but a fresh one keeps each step independent).
  */
 async function freshAdmin(ctx: CaptureContext, options: ContextOptions = {}): Promise<Page> {
 	const page = await open(ctx, { ...options, signedIn: false });

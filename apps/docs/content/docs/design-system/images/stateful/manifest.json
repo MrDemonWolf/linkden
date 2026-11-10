@@ -178,33 +178,33 @@
 	{
 		"group": "stateful",
 		"name": "two-factor-enable-dark",
-		"width": 832,
+		"width": 960,
 		"height": 588,
-		"bytes": 22754,
+		"bytes": 21800,
 		"description": "Enable two-factor dialog: explanation, Current password, Cancel and Continue (dark)"
 	},
 	{
 		"group": "stateful",
 		"name": "two-factor-enable-light",
-		"width": 832,
+		"width": 960,
 		"height": 588,
-		"bytes": 24270,
+		"bytes": 23434,
 		"description": "Enable two-factor dialog: explanation, Current password, Cancel and Continue (light)"
 	},
 	{
 		"group": "stateful",
 		"name": "two-factor-verify-dark",
-		"width": 832,
-		"height": 1684,
-		"bytes": 64956,
+		"width": 960,
+		"height": 1656,
+		"bytes": 64492,
 		"description": "Verify authenticator dialog: QR, manual entry key, backup codes (placeholders), verification code (dark)"
 	},
 	{
 		"group": "stateful",
 		"name": "two-factor-verify-light",
-		"width": 832,
-		"height": 1684,
-		"bytes": 66962,
+		"width": 960,
+		"height": 1656,
+		"bytes": 66734,
 		"description": "Verify authenticator dialog: QR, manual entry key, backup codes (placeholders), verification code (light)"
 	},
 	{
@@ -214,5 +214,13 @@
 		"height": 444,
 		"bytes": 16514,
 		"description": "Pass card reverse: organization name, Front › control and three back fields"
+	},
+	{
+		"group": "stateful",
+		"name": "wallet-pass-front-with-back",
+		"width": 746,
+		"height": 798,
+		"bytes": 22566,
+		"description": "Pass card front with back fields saved: the Back › control in its bottom-right row under the QR caption"
 	}
 ]
