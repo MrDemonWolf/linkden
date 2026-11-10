@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { QueryError } from "@/components/admin/dashboard/query-error";
 import { PagePreviewViewport } from "@/components/admin/page-preview-viewport";
 import { type ColorMode, PublicPage } from "@/components/public/public-page";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { TooltipHint } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/utils/trpc";
@@ -245,18 +245,18 @@ export function PagePreview({
 							</Button>
 						</TooltipHint>
 						<TooltipHint content="Open live page">
-							<Button
-								variant="ghost"
-								size="icon"
+							<a
+								href={env.NEXT_PUBLIC_SITE_URL}
+								target="_blank"
+								rel="noopener noreferrer"
 								aria-label="Open live page"
-								className="text-muted-foreground"
-								nativeButton={false}
-								render={
-									<a href={env.NEXT_PUBLIC_SITE_URL} target="_blank" rel="noopener noreferrer" />
-								}
+								className={cn(
+									buttonVariants({ variant: "ghost", size: "icon" }),
+									"text-muted-foreground",
+								)}
 							>
 								<ExternalLink className="h-3.5 w-3.5" />
-							</Button>
+							</a>
 						</TooltipHint>
 					</div>
 				</div>

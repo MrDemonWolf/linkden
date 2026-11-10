@@ -186,7 +186,7 @@ export function ImageCropDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={(v) => !v && !exporting && onCancel()}>
-			<DialogContent className="max-w-3xl gap-0 overflow-hidden border-border/60 bg-background p-0">
+			<DialogContent className="gap-0 overflow-hidden border-border/60 bg-background p-0 sm:max-w-3xl">
 				<DialogHeader className="border-b border-border/60 px-6 py-4">
 					<DialogTitle className="text-base font-semibold tracking-tight">Adjust image</DialogTitle>
 					<DialogDescription className="text-xs text-muted-foreground">
@@ -224,7 +224,7 @@ export function ImageCropDialog({
 					<div className="pointer-events-none absolute bottom-3 right-3 h-3 w-3 border-b border-r border-white/40" />
 				</div>
 
-				<div className="flex items-center gap-3 border-t border-border/60 bg-card/40 px-6 py-3">
+				<div className="flex min-w-0 items-center gap-3 border-t border-border/60 bg-card/40 px-6 py-3">
 					<ZoomOut className="h-3.5 w-3.5 text-muted-foreground" />
 					<input
 						type="range"
@@ -233,7 +233,7 @@ export function ImageCropDialog({
 						step={0.01}
 						value={zoom}
 						onChange={(e) => setZoom(Number(e.target.value))}
-						className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-muted accent-primary"
+						className="h-1 min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-muted accent-primary"
 						aria-label="Zoom"
 					/>
 					<ZoomIn className="h-3.5 w-3.5 text-muted-foreground" />
@@ -254,7 +254,7 @@ export function ImageCropDialog({
 						</span>
 					</Button>
 
-					<div className="ml-auto font-mono text-micro uppercase tracking-wider text-muted-foreground">
+					<div className="ml-auto shrink-0 whitespace-nowrap font-mono text-micro uppercase tracking-wider text-muted-foreground">
 						{aspectLabel}
 					</div>
 				</div>

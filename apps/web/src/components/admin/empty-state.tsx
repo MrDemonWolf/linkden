@@ -3,7 +3,7 @@
 import type { LucideIcon } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
 	Empty,
@@ -44,14 +44,12 @@ export function EmptyState({ icon: Icon, title, description, action }: EmptyStat
 					{action && (
 						<EmptyContent>
 							{"href" in action ? (
-								<Button
-									variant="outline"
-									size="sm"
-									nativeButton={false}
-									render={<Link href={action.href} />}
+								<Link
+									href={action.href}
+									className={buttonVariants({ variant: "outline", size: "sm" })}
 								>
 									{action.label}
-								</Button>
+								</Link>
 							) : (
 								<Button variant="outline" size="sm" onClick={action.onClick}>
 									{action.label}

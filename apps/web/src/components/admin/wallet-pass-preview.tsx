@@ -381,15 +381,20 @@ export function WalletPassPreview({
 
 			{!showQrCode && <div className="pb-5" />}
 
+			{/* In flow at the bottom-right corner (where Wallet puts its flip control), so it
+			    never covers the header fields; the negative margin tucks it into the padding
+			    above, beside the centred QR caption. The ::after keeps a 44px touch target. */}
 			{backFields.length > 0 && (
-				<button
-					type="button"
-					onClick={() => setShowBack(true)}
-					className={`absolute right-3 top-3 rounded px-1.5 py-0.5 ${microLabel} opacity-50 transition-opacity after:absolute after:-inset-x-2 after:-inset-y-4 after:content-[''] hover:opacity-100`}
-					style={{ color: fg }}
-				>
-					Back ›
-				</button>
+				<div className="relative -mt-3 flex justify-end px-3 pb-4">
+					<button
+						type="button"
+						onClick={() => setShowBack(true)}
+						className={`relative rounded px-1.5 py-0.5 ${microLabel} opacity-50 transition-opacity after:absolute after:-inset-x-2 after:-inset-y-4 after:content-[''] hover:opacity-100`}
+						style={{ color: fg }}
+					>
+						Back ›
+					</button>
+				</div>
 			)}
 		</div>
 	);

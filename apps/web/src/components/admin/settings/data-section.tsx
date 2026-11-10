@@ -1,6 +1,6 @@
 import { Download, ExternalLink, Upload } from "lucide-react";
 import type { RefObject } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 interface DataSectionProps {
 	onExport: () => void;
@@ -79,16 +79,15 @@ export function DataSection({
 					)}
 				</div>
 				{versionCheck?.hasUpdate ? (
-					<Button
-						size="sm"
-						nativeButton={false}
-						render={
-							<a href={versionCheck.releaseUrl ?? "#"} target="_blank" rel="noopener noreferrer" />
-						}
+					<a
+						href={versionCheck.releaseUrl ?? "#"}
+						target="_blank"
+						rel="noopener noreferrer"
+						className={buttonVariants({ size: "sm" })}
 					>
 						Update to {versionCheck.latest}
 						<ExternalLink className="ml-1.5 h-3 w-3" />
-					</Button>
+					</a>
 				) : (
 					<Button size="sm" variant="outline" onClick={onCheckUpdates} disabled={isCheckingUpdates}>
 						{isCheckingUpdates ? "Checking..." : "Check for updates"}

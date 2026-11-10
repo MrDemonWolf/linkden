@@ -8,7 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AdminFooter } from "@/components/admin/admin-footer";
 import { MobilePreviewSheet } from "@/components/admin/mobile-preview-sheet";
-import { activeNavItem, isNavActive, NAV_ITEMS } from "@/components/admin/nav-list";
+import { activeNavItem, isNavActive, NAV_ITEMS, subTabLabel } from "@/components/admin/nav-list";
 import { KickerSetter } from "@/components/admin/page-header";
 import { PagePreview } from "@/components/admin/page-preview";
 import { PreviewColumn } from "@/components/admin/preview-column";
@@ -29,7 +29,7 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -72,7 +72,7 @@ function crumbsFor(pathname: string, subLabel: string | null) {
 	const item = activeNavItem(pathname);
 	if (!item) return { destination: null, sub: subLabel };
 	const segment = pathname.slice(item.href.length + 1).split("/")[0];
-	const sub = subLabel ?? (segment ? segment.replace(/-/g, " ") : null);
+	const sub = subLabel ?? (segment ? subTabLabel(segment) : null);
 	return { destination: item, sub };
 }
 
@@ -557,7 +557,7 @@ export function AdminShell({
 													</BreadcrumbItem>
 													<BreadcrumbSeparator />
 													<BreadcrumbItem className="min-w-0">
-														<BreadcrumbPage className="truncate capitalize">{sub}</BreadcrumbPage>
+														<BreadcrumbPage className="truncate">{sub}</BreadcrumbPage>
 													</BreadcrumbItem>
 												</>
 											) : (
@@ -571,22 +571,18 @@ export function AdminShell({
 									<StatePill />
 									<MobilePreview />
 									<SharePopover />
-									<Button
-										size="sm"
-										variant="outline"
-										className="hidden lg:inline-flex"
-										nativeButton={false}
-										render={
-											<a
-												href={env.NEXT_PUBLIC_SITE_URL}
-												target="_blank"
-												rel="noopener noreferrer"
-											/>
-										}
+									<a
+										href={env.NEXT_PUBLIC_SITE_URL}
+										target="_blank"
+										rel="noopener noreferrer"
+										className={cn(
+											buttonVariants({ size: "sm", variant: "outline" }),
+											"hidden lg:inline-flex",
+										)}
 									>
 										<Globe className="h-3.5 w-3.5" />
 										View live
-									</Button>
+									</a>
 									{/* Below lg the sidebar footer is not rendered, so the account
 									    menu (and with it, sign-out) lives here instead. */}
 									<span className="lg:hidden">

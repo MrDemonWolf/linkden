@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BottomTabBar } from "../admin-shell";
-import { activeNavItem, isNavActive, NAV_ITEMS } from "../nav-list";
+import { activeNavItem, isNavActive, NAV_ITEMS, subTabLabel } from "../nav-list";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/admin/links" }));
 vi.mock("@linkden/env/web", () => ({
@@ -24,6 +24,20 @@ describe("shared admin navigation", () => {
 		expect(activeNavItem("/admin/insights")).toBeUndefined();
 		expect(isNavActive("/admin/links", "/admin/links-extra")).toBe(false);
 		expect(new Set(NAV_ITEMS.map((item) => item.href)).size).toBe(NAV_ITEMS.length);
+	});
+
+	it("labels derived sub-tab crumbs like the SubTabs strips, acronyms included", () => {
+		// Design/Links layouts report no kicker, so the top bar reads the path segment.
+		expect(subTabLabel("seo")).toBe("SEO");
+		for (const [segment, label] of [
+			["banner", "Banner"],
+			["branding", "Branding"],
+			["profile", "Profile"],
+			["social", "Social"],
+			["two-words", "Two Words"],
+		]) {
+			expect(subTabLabel(segment)).toBe(label);
+		}
 	});
 
 	it("keeps compact mobile tabs and reaches Design and Settings through a keyboard menu", async () => {

@@ -81,10 +81,11 @@ describe("public links from a separate admin origin", () => {
 				<PagePreview />
 			</QueryClientProvider>,
 		);
-		expect(screen.getByLabelText("Open live page")).toHaveAttribute(
+		expect(screen.getByRole("link", { name: "Open live page" })).toHaveAttribute(
 			"href",
 			"https://public.example",
 		);
+		expect(screen.getByRole("link", { name: "Open live page" })).not.toHaveAttribute("role");
 		fireEvent.click(screen.getByRole("button", { name: "Copy live page link" }));
 		await waitFor(() => expect(api.clipboard).toHaveBeenCalledWith("https://public.example"));
 	});

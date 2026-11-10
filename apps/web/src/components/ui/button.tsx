@@ -42,6 +42,11 @@ const buttonVariants = cva(
 	},
 );
 
+/**
+ * A real button. For navigation, style a `<Link>` or `<a>` with `buttonVariants`
+ * instead: rendering an anchor through Button (with `nativeButton` off) makes
+ * Base UI add `role="button"`, so screen readers announce the link as a button.
+ */
 function Button({
 	className,
 	variant = "default",

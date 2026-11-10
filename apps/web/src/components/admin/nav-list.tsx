@@ -34,3 +34,21 @@ export function isNavActive(href: string, pathname: string) {
 export function activeNavItem(pathname: string) {
 	return NAV_ITEMS.find((item) => isNavActive(item.href, pathname));
 }
+
+/** Path segments whose sub-tab label is not just the capitalized word. */
+const SEGMENT_LABELS: Readonly<Record<string, string>> = { seo: "SEO" };
+
+/**
+ * Breadcrumb label for a sub-tab path segment when the page reports no kicker:
+ * `seo` → "SEO", `profile` → "Profile", `two-words` → "Two Words". Matches the
+ * destination layouts' SubTabs labels.
+ */
+export function subTabLabel(segment: string) {
+	return (
+		SEGMENT_LABELS[segment] ??
+		segment
+			.split("-")
+			.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+			.join(" ")
+	);
+}

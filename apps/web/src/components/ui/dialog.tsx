@@ -35,6 +35,11 @@ function DialogOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) 
 	);
 }
 
+/**
+ * Width: phones get a 1rem gutter each side, `sm` and up default to `max-w-sm`.
+ * Widen a dialog with `sm:max-w-*` so `cn` replaces that default; a bare
+ * `max-w-*` only replaces the phone gutter and leaves `sm:max-w-sm` in force.
+ */
 function DialogContent({
 	className,
 	children,

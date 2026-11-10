@@ -15,7 +15,8 @@ export const metadata: Metadata = {
 	title: { template: "%s · Design · LinkDen Admin", default: "Design" },
 };
 
-// No kicker prop — the shell derives "DESIGN / SEO" from the path segment.
+// No kicker prop — the shell derives the "SEO" crumb from the path segment
+// (`subTabLabel` in components/admin/nav-list.tsx).
 export default function DesignLayout({ children }: { children: React.ReactNode }) {
 	return (
 		<PageShell>

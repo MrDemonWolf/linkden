@@ -986,7 +986,9 @@ export default function SetupPage() {
 				<ThemeToggle />
 			</div>
 
-			<main className="relative z-10 flex min-h-screen items-center justify-center p-4 sm:p-6">
+			{/* On phones the toggle (three 44px items) reaches the centred brand row, so
+			    the extra top padding starts the content below it. */}
+			<main className="relative z-10 flex min-h-screen items-center justify-center p-4 pt-20 sm:p-6">
 				<div className="w-full max-w-[480px]">
 					<div className="mb-6 flex items-center justify-center gap-2.5">
 						{logoUrl ? (

@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { PageHeader } from "@/components/admin/page-header";
 import { PageShell } from "@/components/admin/page-shell";
 import { type SubTab, SubTabs } from "@/components/admin/sub-tabs";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const TABS: readonly SubTab[] = [
@@ -35,8 +35,8 @@ export function SettingsShell({ children }: { children: React.ReactNode }) {
 			<PageHeader title="Settings" kicker={current.label} />
 			<SubTabs items={TABS} ariaLabel="Settings sections" className="xl:hidden" />
 			<div className="xl:grid xl:grid-cols-[176px_minmax(0,1fr)] xl:gap-8">
-				{/* Ghost Buttons rendered AS Links, so navigation stays a real anchor
-				    (the unsaved-changes guard hooks capture-phase clicks on <a>). */}
+				{/* Links styled as ghost buttons: navigation stays a real anchor with link
+				    semantics (the unsaved-changes guard hooks capture-phase clicks on <a>). */}
 				<nav
 					aria-label="Settings sections"
 					className="sticky top-[calc(64px+1.5rem)] hidden flex-col gap-1 self-start xl:flex"
@@ -44,13 +44,12 @@ export function SettingsShell({ children }: { children: React.ReactNode }) {
 					{TABS.map((tab) => {
 						const active = tab === current;
 						return (
-							<Button
+							<Link
 								key={tab.href}
-								variant="ghost"
-								size="lg"
-								nativeButton={false}
-								render={<Link href={tab.href} aria-current={active ? "page" : undefined} />}
+								href={tab.href}
+								aria-current={active ? "page" : undefined}
 								className={cn(
+									buttonVariants({ variant: "ghost", size: "lg" }),
 									"w-full justify-start px-3 text-sm md:text-sm xl:h-10",
 									active
 										? "bg-primary/10 font-medium text-foreground hover:bg-primary/10"
@@ -58,7 +57,7 @@ export function SettingsShell({ children }: { children: React.ReactNode }) {
 								)}
 							>
 								{tab.label}
-							</Button>
+							</Link>
 						);
 					})}
 				</nav>
